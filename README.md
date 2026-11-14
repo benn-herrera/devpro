@@ -52,6 +52,12 @@ brew install benn-herrera/tap/devpro
 devpro install .
 ```
 
+also available via pipx:
+
+```sh
+pipx install git+https://github.com/devpro
+```
+
 The install takes the harness from the `.claude/` or `.opencode/` directory inside the target.
 Where the project holds neither, or holds both, it refuses and writes nothing; `--harness=claude`
 or `--harness=opencode` on the install line settles either case.
