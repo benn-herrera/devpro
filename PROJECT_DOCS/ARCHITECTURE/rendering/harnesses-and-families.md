@@ -1,7 +1,7 @@
 ### Harnesses and families
 
 A harness is a `Harness` dataclass (`devpro/harness.py`) holding everything that differs between
-harnesses: the eight harness strings, typed `HarnessText` — `HarnessText.MCP_TOOL_PREFIX` among
+harnesses: the seven harness strings, typed `HarnessText` — `HarnessText.MCP_TOOL_PREFIX` among
 them, `mcp__plugin_{plugin}_kbase__` under claude, `mcp_kbase_` under mage and `kbase_` under
 opencode, a server tool's offered name being that prefix plus the tool's own, `display_name`, the
 harness's name in prose, lowercase (`claude code`, `opencode`, `mage`) and refused otherwise, and

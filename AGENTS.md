@@ -1,26 +1,10 @@
 # AGENTS – devpro
 
-Must-see:
-
-- Each PROJECT_DOCS/ subtree entry point has a "Must-see:" section for critical content before any H2 or 'Contents:'
-- It is a bullet list with at most 1 level of nesting. Each (sub)bullet is one line with a max of 120 characters
-- It is aggressively curated with a cap at 20 lines – over-limit entries are re-homed or removed. It may be empty
-
-## Contents lists
-
-@PROJECT_DOCS/entry-point.md
-
-@PROJECT_DOCS/SPEC/entry-point.md
-
-@PROJECT_DOCS/ARCHITECTURE/entry-point.md
-
-@PROJECT_DOCS/CONVENTIONS/entry-point.md
-
- <!-- vvv-devpro devpro 0.17.2 do not edit at or between marker lines. devpro-vvv -->
+ <!-- vvv-devpro devpro 0.17.3 do not edit at or between marker lines. devpro-vvv -->
  
 ## Scratch space
 **INVARIANT**: `/tmp` and other system-wide scratch locations are off limits. All scratch —
-throwaway builds, probe harnesses, captured output — goes in `.opencode-temp/` under the
+throwaway builds, probe harnesses, captured output — goes in `.devpro-temp/` under the
 active project root, beside `.opencode/` and never inside it (writes there trip
 the permission system's own-settings protections). If it doesn't exist, stop and say so; don't
 improvise a location.
@@ -138,7 +122,7 @@ changes cannot be seen at its source or corrected there.
   `sed -i`, `perl -i`, a one-off script, a heredoc, or a redirect: a scripted edit hits every match,
   not the one site meant, and shows no diff. Moving or copying a file as it stands is neither.
   Specific exemptions:
-  - Writes to scratch space `.opencode-temp/`
+  - Writes to scratch space `.devpro-temp/`
   - File-writing tools — formatter, renderer, build
 - The edit and write tools write JSON escapes for U+2028/U+2029 as raw characters; spell those
   code points another way, e.g. in Python `chr(0x2028)`; elsewhere the language's own escape, built at runtime.
@@ -194,3 +178,19 @@ changes cannot be seen at its source or corrected there.
   for that wording.
 
  <!-- ^^^-devpro do not edit at or between marker lines. devpro-^^^ -->
+
+Must-see:
+
+- Each PROJECT_DOCS/ subtree entry point has a "Must-see:" section for critical content before any H2 or 'Contents:'
+- It is a bullet list with at most 1 level of nesting. Each (sub)bullet is one line with a max of 120 characters
+- It is aggressively curated with a cap at 20 lines – over-limit entries are re-homed or removed. It may be empty
+
+## Contents lists
+
+@PROJECT_DOCS/entry-point.md
+
+@PROJECT_DOCS/SPEC/entry-point.md
+
+@PROJECT_DOCS/ARCHITECTURE/entry-point.md
+
+@PROJECT_DOCS/CONVENTIONS/entry-point.md

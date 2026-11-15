@@ -21,6 +21,7 @@
   {"command": "echo hi > \"my file.txt\"", "reason": "a redirect that writes my file.txt"},
   {"command": "make &> build.log", "reason": "a redirect that writes build.log"},
   {"command": "echo hi > @scratch@/out.txt", "reason": null},
+  {"command": "echo hi > @scratch@x/out.txt", "reason": "a redirect that writes @scratch@x/out.txt"},
   {"command": "echo hi >> test-data/transient/run.log", "reason": "a redirect that writes test-data/transient/run.log"},
   {"command": "make > /dev/null 2>&1", "reason": null},
   {"command": "echo hi > -", "reason": null},
@@ -72,6 +73,7 @@
   {"command": "python3 -c \"from pathlib import Path; Path('out.bin').write_bytes(b'x')\"", "reason": "an inline script that writes a file"},
   {"command": "node -e \"require('fs').appendFileSync('log.txt', 'x')\"", "reason": "an inline script that writes a file"},
   {"command": "node -e \"require('fs').createWriteStream('out.txt').end('x')\"", "reason": "an inline script that writes a file"},
+  {"command": "python3 -c \"open('@scratch@/out.txt','w').write('x')\"", "reason": "an inline script that writes a file"},
 
   {"command": "echo x > \"$CLAUDE_PROJECT_DIR/@scratch@/a.txt\"", "harness": "claude", "reason": null},
   {"command": "echo x > ${CLAUDE_PROJECT_DIR}/@scratch@/a.txt", "harness": "claude", "reason": null},

@@ -69,7 +69,6 @@ class HarnessText(Enum):
 
     AGENTS_FILE = "agents_file"
     PROJECT_HARNESS_DIR = "project_harness_dir"
-    PROJECT_TEMP_DIR = "project_temp_dir"
     DISPLAY_NAME = "display_name"
     USER_HARNESS_DIR = "user_harness_dir"
     MCP_TOOL_PREFIX = "mcp_tool_prefix"

@@ -24,7 +24,6 @@ from devpro.vocabulary import Kind, Tool
 
 _AGENTS_FILE = "AGENTS.md"
 _PROJECT_HARNESS_DIR = ".opencode"
-_PROJECT_TEMP_DIR = ".opencode-temp"
 _USER_HARNESS_DIR = "~/.config/opencode"
 
 
@@ -93,7 +92,6 @@ HARNESS = Harness(
     name="opencode",
     agents_file=_AGENTS_FILE,
     project_harness_dir=_PROJECT_HARNESS_DIR,
-    project_temp_dir=_PROJECT_TEMP_DIR,
     display_name="opencode",
     user_harness_dir=_USER_HARNESS_DIR,
     plugin_dir="plugins/{plugin}",
@@ -102,7 +100,7 @@ HARNESS = Harness(
     entry_resource="index.ts",
     default_tier_spec="default",
     mcp_tool_prefix="kbase_",
-    scratch_rule=scratch_rule(temp_dir=_PROJECT_TEMP_DIR, harness_dir=_PROJECT_HARNESS_DIR),
+    scratch_rule=scratch_rule(harness_dir=_PROJECT_HARNESS_DIR),
     memory_file=f"`{_USER_HARNESS_DIR}/{_AGENTS_FILE}`",
     recipe_rule="",
     kbase_project_rule="",

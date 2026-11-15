@@ -13,7 +13,7 @@ use strict;
 use warnings;
 
 # Scratch trees a command may write into without the edit tools.
-my @scratch = ('.claude-temp');
+my @scratch = ('.devpro-temp');
 
 # The kbase plugin's signal, the kbase skill in this script's ROOT, the directory above `hooks/`: never
 # the project root or the working directory, which --subdir makes wrong.
@@ -270,7 +270,7 @@ if (defined $refusal) {
   exit 2;
 }
 if (defined $reason) {
-  print STDERR "Blocked: ${reason}. Use the Edit and Write tools for file changes; command output and other scratch belongs under .claude-temp/.\n";
+  print STDERR "Blocked: ${reason}. Use the Edit and Write tools for file changes; command output and other scratch belongs under .devpro-temp/.\n";
   exit 2;
 }
 exit 0;

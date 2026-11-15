@@ -27,7 +27,10 @@ from devpro.vocabulary import Kind
 TEXT_MODULE = "clauses.py"
 CLAUSES = "clauses"
 
-ASSIGNMENT_RULE = "a module-level assignment is a string literal or an f-string over the module's constant names"
+ASSIGNMENT_RULE = (
+    "a module-level assignment is a string literal, an f-string over the module's constant names, or a tuple of "
+    "those names"
+)
 CALL_RULE = (
     "a definition module calls only Definition(...) in DEFINITIONS, SkillFile(...) in a files= value, and "
     "clauses.<name>(...) or .format(...) on a string literal inside a body= or description= value"
@@ -215,7 +218,7 @@ def check_source(source: str, *, where: str, text_module: bool) -> list[str]:
         elif not text_module and _target(node) == "DEFINITIONS":
             found += _definitions_violations(node, constants)
         elif isinstance(node, ast.Assign) and _target(node):
-            if not _is_constant_text(node.value, names=constants):
+            if not _is_constant_text(node.value, names=constants, tuple_of_names=text_module):
                 found.append((node.lineno, ASSIGNMENT_RULE))
         else:
             found.append((node.lineno, TEXT_TOP_RULE if text_module else DEFINITION_TOP_RULE))
@@ -238,10 +241,13 @@ def _is_literal(node: ast.expr) -> bool:
     return isinstance(node, ast.Constant) and isinstance(node.value, str)
 
 
-def _is_constant_text(node: ast.expr, *, names: dict[str, ast.expr] | set[str]) -> bool:
-    """A string literal, or an f-string whose every expression is a bare name among `names`."""
+def _is_constant_text(node: ast.expr, *, names: dict[str, ast.expr] | set[str], tuple_of_names: bool = False) -> bool:
+    """A string literal; an f-string whose every expression is a bare name among `names`; or, where
+    `tuple_of_names`, a tuple of bare names among `names`."""
     if _is_literal(node):
         return True
+    if tuple_of_names and isinstance(node, ast.Tuple):
+        return all(isinstance(element, ast.Name) and element.id in names for element in node.elts)
     return isinstance(node, ast.JoinedStr) and all(
         part.conversion == -1
         and part.format_spec is None

@@ -38,9 +38,8 @@ also writes it, under the same rules as `install-agents-file`, in two cases:
 
 For any other install it never writes the agents file.
 
-Both plugins' blocks name the `development` skill. Under mage the block's scratch rule names
-`.mage-temp/`. `install-agents-file` installs no skill, so a harness directory that holds only the agents file
-lacks the skill it names.
+Both plugins' blocks name the `development` skill. `install-agents-file` installs no skill, so a
+harness directory that holds only the agents file lacks the skill it names.
 
 Agent directives live in `AGENTS.md`. Installed into the harness's user harness directory, the file
 takes the name that harness reads there — `CLAUDE.md` for Claude Code, `AGENTS.md` for opencode —

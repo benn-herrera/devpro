@@ -287,11 +287,10 @@ The mapping is from `devpro/harness.py` fields as described in
 | `agents_file` | `AGENTS.md` | no imports, 32 KiB cap |
 | `project_harness_dir` | `.codex` | skills go in `.agents/`, outside it (gap 2) |
 | `user_harness_dir` | `~/.codex` | user skills go in `~/.agents/skills` |
-| `project_temp_dir` | `.codex-temp` **[proposed]** | not a protected path |
 | `plugin_dir` | no single value. Agents in `agents/{plugin}/` under the harness dir; skills in `../.agents/skills/{plugin}-<name>/` | a recursive agents walk allows the subdirectory; skills are one directory each, flat **[inferred]** |
 | `reference_prefix` | `{plugin}-` | role and skill names are flat strings; `:` in a role name not tested **[unknown]** |
 | `mcp_tool_prefix` | `mcp__kbase__` | from the hook matcher example **[inferred for the model-facing name]** |
-| `scratch_rule`, `memory_file` | `scratch_rule(.codex-temp, .codex)`, `` `~/.codex/AGENTS.md` `` | |
+| `scratch_rule`, `memory_file` | `scratch_rule(.codex)`, `` `~/.codex/AGENTS.md` `` | the scratch directory is `clauses.PROJECT_TEMP_DIR`, one name under every harness |
 | `entry_resource` | none | no entry file is needed; Codex reads TOML and `SKILL.md` directly |
 | `user_plugin_shadows` | false **[inferred]** | roles merge per layer with project over user; same-named skills both list |
 | `reload_rule` | "start a new session" **[inferred]** | the docs say restart after config changes |

@@ -29,7 +29,7 @@ devpro project root is the whole build configuration.
   a byproduct of the build: SPEC.md, Package and Command names no sdist install source, and
   `check-wheel` checks only that the sdist exists.
 - **Check.** `just check-wheel [python]` builds, then installs the wheel into a throwaway venv under
-  `.claude-temp/` made from `python` (default `/usr/bin/python3`, the Python 3.9 floor on macOS only). With `PYTHONPATH` unset and
+  `.devpro-temp/` made from `python` (default `/usr/bin/python3`, the Python 3.9 floor on macOS only). With `PYTHONPATH` unset and
   `GIT_CEILING_DIRECTORIES` at that scratch directory, it checks that `devpro` imports from the
   venv, that the console script and `python -m devpro` print the same `--help` and the checkout's
   version, that an install of each plugin into a scratch project equals the checkout's

@@ -8,8 +8,9 @@ marked characters and the module's own is printed as `<path>:<line>: <clause> + 
 clauses in source order, the line being that of the unit's first clause. The last line is
 `sites: <count>`.
 
-A bare harness-string constant, such as `clauses.PROJECT_TEMP_DIR` (`@!hrn-…!@`), names a path or
-file inside the module's own sentence, so its characters count as the module's own text. So does
+A bare harness-string constant, such as `clauses.PROJECT_HARNESS_DIR` (`@!hrn-…!@`), names a path or
+file inside the module's own sentence, so its characters count as the module's own text. The same
+holds for a member of `clauses.VALUE_CONSTANTS`, which carries a value rather than a clause. So does
 the text of a module constant passed to a clause function: `clauses.f(frame=_FRAME)` marks only
 what `f` writes around `_FRAME`. A literal argument stays clause text, a slot fill of the clause's
 own sentence.
@@ -27,6 +28,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import NamedTuple
 
+from devpro import clauses
 from devpro.render import PLACEHOLDER
 from devtools.render_diff import LIST_ITEM, line_kinds
 
@@ -52,6 +54,17 @@ def _module_argument_texts(expr: ast.expr, *, namespace: dict, filename: str) ->
     ]
 
 
+def _names_a_value_constant(expr: ast.expr) -> bool:
+    """Whether `expr` reads a member of `clauses.VALUE_CONSTANTS`."""
+    return any(
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "clauses"
+        and getattr(clauses, node.attr, None) in clauses.VALUE_CONSTANTS
+        for node in ast.walk(expr)
+    )
+
+
 def composed_bodies(source: str, *, namespace: dict, filename: str) -> Iterator[tuple[str, list[Clause | None]]]:
     """Each `body=` f-string in `source`, composed against `namespace`, with the clause each character
     came from, or None for the module's own text."""
@@ -67,7 +80,7 @@ def composed_bodies(source: str, *, namespace: dict, filename: str) -> Iterator[
             expr = part.value
             piece = _evaluated(expr, namespace=namespace, filename=filename)
             names = {name.id for name in ast.walk(expr) if isinstance(name, ast.Name)}
-            if "clauses" not in names or PLACEHOLDER.fullmatch(piece):
+            if "clauses" not in names or PLACEHOLDER.fullmatch(piece) or _names_a_value_constant(expr):
                 piece_mask = [None] * len(piece)
             else:
                 clause = Clause(expr.lineno, expr.col_offset, ast.unparse(expr).split("(")[0])

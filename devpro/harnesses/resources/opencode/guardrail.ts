@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url"
 const shellTools = new Set(["bash", "shell"])
 
 // Scratch trees a command may write into without the edit tools.
-const scratch = [".opencode-temp"]
+const scratch = [".devpro-temp"]
 
 // The kbase plugin's signal, the kbase skill in its own install directory: never the project
 // directory, which --subdir makes wrong.
@@ -231,7 +231,7 @@ export default Plugin.define({
       const reason = mutation(input.command ?? "", code, cwd, root)
       if (reason) {
         throw new Error(
-          `Blocked: ${reason}. Use the edit and write tools for file changes; command output and other scratch belongs under .opencode-temp/.`,
+          `Blocked: ${reason}. Use the edit and write tools for file changes; command output and other scratch belongs under .devpro-temp/.`,
         )
       }
     })

@@ -24,7 +24,7 @@ from functools import partial
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
-from devpro import install_base
+from devpro import clauses, install_base
 from devpro.agents_file import (
     AgentsFileWrite,
     FollowedAgentsFile,
@@ -301,14 +301,18 @@ def _files_below(top: Path) -> list[Path]:
     return sorted(Path(directory, name) for directory, _, names in os.walk(top) for name in names)
 
 
-def _guardrail_probe(script: Path, *, project: Path, temp_dir: str) -> str | None:
+def _guardrail_probe(script: Path, *, project: Path) -> str | None:
     """None when `script`, run once under `GUARDRAIL_INTERPRETER` on a command it allows — a redirect
-    into `temp_dir` — exits 0 within `GUARDRAIL_PROBE_SECONDS`; otherwise why it did not: the exit status
-    and the first stderr line, the timeout, or the `OSError` raised starting the interpreter. The argv
-    runs with no shell, so a missing
+    into `clauses.PROJECT_TEMP_DIR` — exits 0 within `GUARDRAIL_PROBE_SECONDS`; otherwise why it did not:
+    the exit status and the first stderr line, the timeout, or the `OSError` raised starting the
+    interpreter. The argv runs with no shell, so a missing
     interpreter raises rather than exiting 127, and `CLAUDE_PROJECT_DIR` is removed so the hook reads
     the root from the input, as it does when that variable is unset."""
-    payload = {"tool_name": "Bash", "tool_input": {"command": f"echo x > {temp_dir}/probe"}, "cwd": str(project)}
+    payload = {
+        "tool_name": "Bash",
+        "tool_input": {"command": f"echo x > {clauses.PROJECT_TEMP_DIR}/probe"},
+        "cwd": str(project),
+    }
     env = {name: value for name, value in os.environ.items() if name != "CLAUDE_PROJECT_DIR"}
     argv = [GUARDRAIL_INTERPRETER, str(script)]
     try:
@@ -464,7 +468,7 @@ def install(
     harness_files = list(own_files)
     if guardrail is not None:
         script = PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / ctx.harness.name / guardrail.script
-        guardrail_skipped = _guardrail_probe(script, project=project, temp_dir=ctx.harness.project_temp_dir)
+        guardrail_skipped = _guardrail_probe(script, project=project)
         if guardrail_skipped is not None:
             resource_files = [(source, target) for source, target in resource_files if source != script]
         else:

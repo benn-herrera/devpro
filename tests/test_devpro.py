@@ -293,17 +293,17 @@ _OPENCODE_PERMISSIONS = {
 }
 
 # A command and a document take no frontmatter value of their own, so each fixture is the least a
-# definition of its kind can be: a name, a kind and a body. Each body does one thing — names the temp
-# directory — so that the placeholder fill is observable.
+# definition of its kind can be: a name, a kind and a body. Each body does one thing — names the user
+# harness directory — so that the placeholder fill is observable.
 _COMMAND = Definition(
     name="probe",
     kind=Kind.COMMAND,
-    body=f"Write scratch output under {hole(HarnessText.PROJECT_TEMP_DIR)}.",
+    body=f"Read the operator's notes under {hole(HarnessText.USER_HARNESS_DIR)}.",
 )
 _DOCUMENT = Definition(
     name="note",
     kind=Kind.DOCUMENT,
-    body=f"Keep a working draft under {hole(HarnessText.PROJECT_TEMP_DIR)}.",
+    body=f"Read the operator's conventions under {hole(HarnessText.USER_HARNESS_DIR)}.",
 )
 
 
@@ -369,9 +369,9 @@ def _found(discovered: Discovered, path: str) -> tuple[str, Definition]:
     return found
 
 
-def test_a_command_renders_its_banner_straight_into_a_body_naming_the_harness_temp_dir() -> None:
+def test_a_command_renders_its_banner_straight_into_a_body_naming_the_user_harness_dir() -> None:
     """A command carries no field lines, so its closing fence is the body's own first line: a blank
-    line there opens the file with an empty paragraph. The body names the scratch directory the
+    line there opens the file with an empty paragraph. The body names the user harness directory the
     definition's placeholder stands for, filled as this harness spells it."""
     ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT)
     lines = render_definition(_COMMAND, ctx, module="devpro.definitions.probe").split("\n")
@@ -382,7 +382,7 @@ def test_a_command_renders_its_banner_straight_into_a_body_naming_the_harness_te
     body = "\n".join(lines[4:])
     assert not body.startswith("\n"), "a blank line after the closing fence opens the file with an empty paragraph"
     assert body.strip(), "the command renders no body"
-    assert CLAUDE.text(HarnessText.PROJECT_TEMP_DIR) in body
+    assert CLAUDE.text(HarnessText.USER_HARNESS_DIR) in body
     assert not re.search(r"@!hrn-[a-z0-9-]+!@", body), body
 
 
@@ -569,6 +569,25 @@ def test_the_guide_names_every_harness_install_path_under_every_harness(harness:
     assert [path for path in sorted(_user_install_paths()) if path not in text] == []
 
 
+@pytest.mark.parametrize("harness", [CLAUDE, MAGE, OPENCODE], ids=lambda harness: harness.name)
+def test_the_scratch_rule_names_the_one_scratch_directory(harness: Harness) -> None:
+    """Each harness's scratch rule names the one scratch directory both guardrails allow."""
+    assert f"`{devpro.clauses.PROJECT_TEMP_DIR}/`" in harness.scratch_rule
+
+
+def test_no_rendering_names_a_retired_scratch_directory() -> None:
+    """The scratch directory is one name under every harness, so every rendering under each of them
+    carries that name and no retired one."""
+    texts = []
+    for harness in (CLAUDE, MAGE, OPENCODE):
+        for plugin in load("devpro.plugins", "PLUGIN").values():
+            ctx = Render(harness=harness, plugin=plugin, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+            texts += [text for _, text in render_all(ctx)]
+            texts.append(render_agents_file(harness, plugin, scope="x"))
+    retired = [".claude-temp", ".opencode-temp", ".mage-temp"]
+    assert [(name, text) for name in retired for text in texts if name in text] == []
+
+
 def _routed_references(router: str) -> set[str]:
     """The reference paths the router's tables route to, read off the table cells themselves."""
     routed = set()
@@ -626,8 +645,6 @@ def test_a_skill_file_body_follows_the_definition_body_rule() -> None:
         (HarnessText.AGENTS_FILE, OPENCODE, "AGENTS.md"),
         (HarnessText.PROJECT_HARNESS_DIR, CLAUDE, ".claude"),
         (HarnessText.PROJECT_HARNESS_DIR, OPENCODE, ".opencode"),
-        (HarnessText.PROJECT_TEMP_DIR, CLAUDE, ".claude-temp"),
-        (HarnessText.PROJECT_TEMP_DIR, OPENCODE, ".opencode-temp"),
         (HarnessText.DISPLAY_NAME, CLAUDE, "claude code"),
         (HarnessText.DISPLAY_NAME, OPENCODE, "opencode"),
         (HarnessText.DISPLAY_NAME, MAGE, "mage"),
@@ -715,11 +732,14 @@ _NAMESPACED = [harness for harness in (CLAUDE, MAGE, OPENCODE) if harness.refere
 
 @pytest.mark.parametrize("harness", _NAMESPACED, ids=lambda harness: harness.name)
 def test_a_reference_prefix_changes_nothing_but_the_reference_sites(harness: Harness) -> None:
-    """Every rendered file, the agents file included, read with each prefix occurrence removed is the
-    render of the same harness with the prefix empty, and that bare render spells the prefix nowhere: a
-    prefix reaches no text but the references it is put before."""
+    """Every rendered file, the agents file included, read with each reference's prefix removed is the
+    render of the same harness with the prefix empty, and that bare render spells no reference: a prefix
+    reaches no text but the references it is put before. A reference is the prefix put before a
+    definition's name; the prefix is not searched for on its own, since text that names no definition
+    may hold it (`devpro-` within `.devpro-temp`)."""
     bare = dataclasses.replace(harness, reference_prefix="")
     prefix = harness.bound(DEVPRO.name).reference_prefix
+    sites = tuple(f"{prefix}{defn.name}" for _, defn in definitions())
 
     def rendered(each: Harness) -> dict[PurePosixPath, str]:
         ctx = Render(harness=each, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
@@ -730,14 +750,22 @@ def test_a_reference_prefix_changes_nothing_but_the_reference_sites(harness: Har
     def off_marker(text: str) -> list[str]:
         return [line for line in text.split("\n") if not is_marker_line(line)]
 
+    def without_sites(line: str) -> str:
+        for site in sites:
+            line = line.replace(site, site[len(prefix) :])
+        return line
+
     def unprefixed(text: str) -> str:
-        return "\n".join(line if is_marker_line(line) else line.replace(prefix, "") for line in text.split("\n"))
+        return "\n".join(line if is_marker_line(line) else without_sites(line) for line in text.split("\n"))
+
+    def site_lines(text: str) -> list[str]:
+        return [line for line in off_marker(text) if any(site in line for site in sites)]
 
     prefixed, plain = rendered(harness), rendered(bare)
     assert prefixed.keys() == plain.keys()
     assert {path: unprefixed(text) for path, text in prefixed.items()} == plain
-    assert [path for path, text in plain.items() if any(prefix in line for line in off_marker(text))] == []
-    assert any(prefix in line for text in prefixed.values() for line in off_marker(text))
+    assert [path for path, text in plain.items() if site_lines(text)] == []
+    assert any(site_lines(text) for text in prefixed.values())
 
 
 _STEP_DOWN_BODY = f"before\n\nDefault: `{devpro.clauses.STEP_DOWN_MODEL}`, unless bound.\n\nafter"
@@ -879,11 +907,9 @@ _BAITED_FAMILY = Family(
 
 def _clause_with_a_baited_harness_value() -> tuple[Definition, Render, str]:
     """A clause constant's own holes are filled once; the value one fills to stays as it is."""
-    harness = dataclasses.replace(CLAUDE, project_temp_dir=f"temp{_BAIT}")
+    harness = dataclasses.replace(CLAUDE, project_harness_dir=f"temp{_BAIT}")
     clause = devpro.clauses.NEW_PROJECT_SETUP
-    expected = clause.replace(hole(HarnessText.PROJECT_TEMP_DIR), f"temp{_BAIT}").replace(
-        hole(HarnessText.PROJECT_HARNESS_DIR), CLAUDE.project_harness_dir
-    )
+    expected = clause.replace(hole(HarnessText.PROJECT_HARNESS_DIR), f"temp{_BAIT}")
     defn = Definition(name="probe", kind=Kind.COMMAND, body=clause)
     return defn, Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT), expected
 
@@ -1214,6 +1240,8 @@ def test_check_structure_refuses_a_definition_module_off_its_rules(source: str, 
         ('X = hole("a")\n', ASSIGNMENT_RULE),
         ('X = f"{g()}"\n', ASSIGNMENT_RULE),
         ('X = Y\nY = "y"\n', ASSIGNMENT_RULE),
+        ('X = (Y,)\nY = "y"\n', ""),
+        ("X = (a,)\n", ASSIGNMENT_RULE),
         ('def f(a):\n    return f"{a}"\n', FUNCTION_RULE),
         ('def f(*, a, b, c, d):\n    return f"{a}{b}{c}{d}"\n', FUNCTION_RULE),
         ('def f(*args):\n    return "x"\n', FUNCTION_RULE),
@@ -1428,11 +1456,19 @@ def test_a_paragraph_two_supporting_files_write_out_is_found() -> None:
 
 _CLAUSE_GRAPH = clause_graph((_PACKAGE / "clauses.py").read_text(encoding="utf-8"))
 _HARNESS_STRINGS = {hole(part) for part in (*HarnessText, *PluginText)}
-# A reference names one definition, like a harness string names one directory and the plugin name one
-# plugin: a sentence's word, not a span a prompt could deliver twice.
-_SENTENCE_HOLES = frozenset(
-    name for name, value in vars(devpro.clauses).items() if isinstance(value, str) and value in _HARNESS_STRINGS
-) | {devpro.clauses.ref.__name__, devpro.clauses.optional_ref.__name__}
+# A reference names one definition, like the scratch directory's name names one directory and the plugin
+# name one plugin: a sentence's word, not a span a prompt could deliver twice.
+_SENTENCE_HOLES = (
+    frozenset(
+        name for name, value in vars(devpro.clauses).items() if isinstance(value, str) and value in _HARNESS_STRINGS
+    )
+    | {devpro.clauses.ref.__name__, devpro.clauses.optional_ref.__name__}
+    | {
+        name
+        for name, value in vars(devpro.clauses).items()
+        if isinstance(value, str) and value in set(devpro.clauses.VALUE_CONSTANTS)
+    }
+)
 
 
 @dataclass(frozen=True)

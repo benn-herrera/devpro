@@ -8,8 +8,10 @@ agents-file block from the begin marker line to the end marker line.
 under the default family's own tiers, with no model-shape check. The `development` bullet is an optional
 reference to `development` in its own paragraph, and both plugins ship it, so both blocks carry it.
 The scratch rule and the memory file's name are the harness's `scratch_rule` and `memory_file`
-(Rendering, Placeholders); mage's scratch rule names `.mage-temp/`. `agents_file` passes
-`GLOBAL_SCOPE` for a user harness directory and otherwise the directory's name.
+(Rendering, Placeholders); the rule names the scratch directory
+([Installed tree](../SPEC/deployed-surfaces/installed-tree.md)); under claude and opencode it names
+the harness directory beside it, and mage's names none. `agents_file`
+passes `GLOBAL_SCOPE` for a user harness directory and otherwise the directory's name.
 
 `devpro/agents_file.py` implements the install SPEC.md specifies. It finds the agents-file block
 by the stripped ends of the marker lines (`agents_file.BEGIN`, `agents_file.END`, devpro's alone), replaces it with the rendered agents-file block, and

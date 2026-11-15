@@ -36,11 +36,11 @@ if [[ "${in_wheel}" != "${in_tree}" ]]; then
   fail "the wheel's package data differs from the tree"
 fi
 
-scratch="${PROJECT_ROOT}/.claude-temp/check-wheel"
+scratch="${PROJECT_ROOT}/.devpro-temp/check-wheel"
 venv="${scratch}/venv"
 command rm -rf "${scratch}"
 mkdir -p "${scratch}/home"
-trap 'command rm -rf "${scratch}/home"' EXIT
+trap 'command rm -rf "${scratch}"' EXIT
 export HOME="${scratch}/home"
 "${python}" -m venv "${venv}"
 "${venv}/${PYBIN}/python${EXE}" -m pip install -q --disable-pip-version-check --no-index "${wheel}"

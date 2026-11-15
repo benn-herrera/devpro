@@ -6,6 +6,8 @@ spelling only claude's reads ([SPEC.md, Deployed Surfaces,
 Shipped files](../../SPEC/deployed-surfaces/shipped-files.md)), and nothing at runtime
 compares them. A behaviour change edits both scripts and `tests/guardrail_cases.json` in one
 change; a change to the claude-only spelling edits `guardrail.pl` alone. `tests/test_guardrail.py`
-is what holds them to it. No further variable
+is what holds them to it. The case table spells the scratch directory `@scratch@`, which the Python
+test substitutes once for both scripts, so a change to that name edits the two scripts and
+`clauses.PROJECT_TEMP_DIR`, never the table. No further variable
 expansion is added. A detection change earns its place by the common form it catches, not by
 closing an evasion: the guardrails are no boundary against a command built to evade them.

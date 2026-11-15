@@ -22,9 +22,8 @@ Every rendering of the definitions in the deployed surfaces has five observable 
   for a command or skill also every rendered definition reached from it through `@<path>` lines,
   following on from each reached command or skill (an agent or supporting file reached loads
   nothing further); the agents file's own rendered definition is a prompt alone. The property covers a
-  definition's base text; tuning text and harness strings, the harness-specific values rendering
-  fills into a definition (a directory name, a tool spelling, the agents-file name), are not held
-  to it.
+  definition's base text; tuning text and the values a rendering or a clause fills into a definition
+  — a directory name, a tool spelling, the agents-file name — are not held to it.
 - **Additive-only tuning text.** A model family's tuning text may extend a definition's base text at
   anchors; it can never replace, suppress, or fork that text. A definition whose anchors the loaded
   family does not fill is byte-identical, below its banner, to its base text rendered under the same

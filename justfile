@@ -73,6 +73,8 @@ TOOLS_RECORD := VENV / "tools.txt"
 _venv:
     #!/usr/bin/env bash
     set -euo pipefail
+    # The project's scratch directory, so a recipe that needs it finds it.
+    mkdir -p "{{PROJECT_ROOT}}/.devpro-temp"
     tools=("pytest~=8.4.2" "isort~=6.1.0" "black~=25.11.0" "flake8~=7.3.0" "setuptools~=82.0.1" "build~=1.4.4")
     if [[ ! -x {{VENV_PYTHON}} ]]; then
         # if /usr/bin/python3 is installed it is the crappy 3.9.6 from xcode command line tools

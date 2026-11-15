@@ -92,7 +92,9 @@ edits. A harness shipping none copies nothing, which is not an error.
 
 Opencode loads the plugin directory and registers its agents, skills, commands and, where
 `kbase` ships, the `kbase` MCP server under the registry's ids. A change to the install directory
-is picked up without restarting opencode. The plugin entry is written for opencode v2.2.6 and is the
+is picked up without restarting opencode, except a change to `guardrail.ts`, which the plugin entry
+imports when it loads, so a changed one takes effect at the next opencode start. The plugin entry is
+written for opencode v2.2.6 and is the
 same file for both plugins; ARCHITECTURE.md, Install, Opencode entry holds how it works. A resource may be conditional on the probe: claude's guardrail is
 delivered only when one run of the script on the installing machine succeeds within a few seconds,
 and is otherwise skipped, with the reason reported and the rest of the install unaffected. The
@@ -105,8 +107,8 @@ is read literally. File-tool arguments are read literally, and no other variable
 
 Their mutation check blocks shell commands that change a file behind the edit tools, such as
 in-place `sed`, `perl` or `ruby` edits, shell redirections, `tee`, `cp` or `mv` onto an existing
-file, and inline scripts that write, and allows writes into the scratch directories: `.claude-temp`
-under claude and `.opencode-temp` under opencode, each under the project root. A relative
+file, and inline scripts that write, and allows a redirect, a `tee` destination or a `cp`/`mv`
+target in the scratch directory, `.devpro-temp/` under the project root. A relative
 destination is judged lexically against the working directory of the call. A heredoc's body is data:
 no check reads it, unless the heredoc feeds a script: a shell's (`bash`, `sh`, `zsh`) body is read
 by every check, an interpreter's (`python3 -`, `perl`, `ruby`, `node`) only by the inline-script

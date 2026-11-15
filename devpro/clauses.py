@@ -14,7 +14,9 @@ the blank lines between paragraphs.
 
 AGENTS_FILE = "@!hrn-agents-file!@"
 PROJECT_HARNESS_DIR = "@!hrn-project-harness-dir!@"
-PROJECT_TEMP_DIR = "@!hrn-project-temp-dir!@"
+# The project's scratch directory is one name under every harness, so it is a literal rather than a
+# harness placeholder.
+PROJECT_TEMP_DIR = ".devpro-temp"
 DISPLAY_NAME = "@!hrn-display-name!@"
 USER_HARNESS_DIR = "@!hrn-user-harness-dir!@"
 MCP_TOOL_PREFIX = "@!hrn-mcp-tool-prefix!@"
@@ -32,6 +34,14 @@ PLAN_SIZE_LIMIT_DEFAULT = "800 lines"
 PERIODIC_REVIEW_INTERVAL_DEFAULT = "3"
 
 REPOSITORY_URL = "https://github.com/benn-herrera/devpro"
+
+# Constants carrying a value rather than a clause: a new value constant is added here.
+VALUE_CONSTANTS = (
+    PROJECT_TEMP_DIR,
+    REPOSITORY_URL,
+    PLAN_SIZE_LIMIT_DEFAULT,
+    PERIODIC_REVIEW_INTERVAL_DEFAULT,
+)
 
 
 def ref(*, name: str) -> str:

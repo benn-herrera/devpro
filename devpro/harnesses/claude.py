@@ -60,21 +60,19 @@ def _guardrail_registration(plugin: str, shipped: Sequence[ShippedDefinition]) -
 
 _AGENTS_FILE = "CLAUDE.md"
 _PROJECT_HARNESS_DIR = ".claude"
-_PROJECT_TEMP_DIR = ".claude-temp"
 _USER_HARNESS_DIR = "~/.claude"
 
 HARNESS = Harness(
     name="claude",
     agents_file=_AGENTS_FILE,
     project_harness_dir=_PROJECT_HARNESS_DIR,
-    project_temp_dir=_PROJECT_TEMP_DIR,
     display_name="claude code",
     user_harness_dir=_USER_HARNESS_DIR,
     plugin_dir="skills/{plugin}",
     # a plugin's components register only under the plugin's namespace, its MCP tools included
     reference_prefix="{plugin}:",
     mcp_tool_prefix="mcp__plugin_{plugin}_kbase__",
-    scratch_rule=scratch_rule(temp_dir=_PROJECT_TEMP_DIR, harness_dir=_PROJECT_HARNESS_DIR),
+    scratch_rule=scratch_rule(harness_dir=_PROJECT_HARNESS_DIR),
     memory_file=f"`{_USER_HARNESS_DIR}/{_AGENTS_FILE}`",
     user_plugin_shadows=True,
     reload_rule=_RELOAD_RULE,

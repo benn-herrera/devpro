@@ -39,7 +39,9 @@ in just over 16K lines of runtime code, including vision tower support and an Op
 ## Requirements and Supported Platforms
 
 - Harness: claude, opencode, or mage; `--harness` takes these three names.
-- Homebrew (macOS or Linux), to install devpro.
+- Homebrew (macOS or Linux), or pipx on a machine without it, to install devpro.
+- `just` 1.33.0 or later, where the project's runner is a justfile: the include line the install writes is an `import?`, which earlier `just` rejects, and no install checks your version.
+- `perl` with core `JSON::PP` for the claude guardrail: without them the install skips the hook, says so in one line, and installs everything else.
 
 ## Quick Start Guide
 
@@ -52,11 +54,13 @@ brew install benn-herrera/tap/devpro
 devpro install .
 ```
 
-also available via pipx:
+Without Homebrew, install devpro with pipx from a release tag:
 
 ```sh
-pipx install git+https://github.com/devpro
+pipx install "git+https://github.com/benn-herrera/devpro@v0.17.3"
 ```
+
+then `pipx ensurepath` and a new shell.
 
 The install takes the harness from the `.claude/` or `.opencode/` directory inside the target.
 Where the project holds neither, or holds both, it refuses and writes nothing; `--harness=claude`
@@ -68,12 +72,14 @@ Add the installed tree, the agent scratch space and the agents file's backup to 
 ```text
 .claude/
 # agent scratch space
-.claude-temp/
+.devpro-temp/
 # the agents file's rolling backup
 backup.AGENTS.md
 ```
 
-For opencode, use `.opencode/` and `.opencode-temp/` in place of `.claude/` and `.claude-temp/`.
+Create the scratch directory as well, so your agents find it: `mkdir -p .devpro-temp`.
+
+For opencode, use `.opencode/` in place of `.claude/`.
 
 The install also adds include lines to the project's `justfile` or `Makefile` (a project with
 neither gets a new `Makefile`) for the runner files it installs, and settles the project's agents
@@ -81,10 +87,9 @@ file in one of three ways:
 
 - `AGENTS.md`, holding the devpro block;
 - under claude, `AGENTS.md` and the one-line `CLAUDE.md` redirect to it;
-- nothing, where the global agents file already holds the block, or where a hand-written
-  `CLAUDE.md` stands where the redirect would go.
+- nothing, where the global agents file already holds the block.
 
-A hand-written `CLAUDE.md` refuses the install with exit 2 and nothing written: moving its content
+Under claude, a hand-written `CLAUDE.md` refuses the install with exit 2 and nothing written: moving its content
 into `AGENTS.md` is yours to do.
 
 ### Mage
@@ -115,6 +120,9 @@ inspects or changes what you just installed.
 
 To update, run `brew upgrade devpro`, then the same install line with `--dry-run` added to preview
 it, then without to apply it.
+
+Installed with pipx, update with `pipx install --force` of the next release's tagged URL, then the
+same install line.
 
 ## Third Party Acknowledgements
 

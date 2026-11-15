@@ -24,7 +24,7 @@ plugins=()
 while IFS= read -r name; do plugins+=("${name}"); done <<<"${plugin_names}"
 slug="${1}"
 shift
-scratch_home="${PROJECT_ROOT}/.claude-temp/render-home/${slug}"
+scratch_home="${PROJECT_ROOT}/.devpro-temp/render-home/${slug}"
 command rm -rf "${scratch_home}"
 mkdir -p "${scratch_home}"
 trap 'command rm -rf "${scratch_home}"' EXIT

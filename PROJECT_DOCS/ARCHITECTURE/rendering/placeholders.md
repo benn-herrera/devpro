@@ -13,11 +13,11 @@ and copies). It departs from plain formatting in three places.
   format-string braces or inlined JSON.
 
 The renderer fills one closed set of placeholders, spelled by `vocabulary.hole`: `@!hrn-<key>!@`
-for the eight harness strings, the `HarnessText` members, which every harness supplies (agents file
-name, project harness directory, project scratch directory, display name — the harness's name in
-prose, which the `development` skill's attribution postscript names — user harness directory, MCP
-tool prefix, `scratch_rule`, the agents file's rule for where scratch goes, and `memory_file`, the
-agents file's name for the operator's own instructions file), and for the five harness-specific
+for the seven harness strings, the `HarnessText` members, which every harness supplies (agents file
+name, project harness directory, display name — the harness's name in prose, which the `development`
+skill's attribution postscript names — user harness directory, MCP tool prefix, `scratch_rule`, the
+agents file's rule for where scratch goes, and `memory_file`, the agents file's name for the
+operator's own instructions file), and for the five harness-specific
 paragraphs, the `OptionalHarnessText` members, each
 a whole rule: `recipe_rule` (the rule a dispatched agent follows running recipes),
 `kbase_project_rule` (how a kbase session locates its project where the server serves many),

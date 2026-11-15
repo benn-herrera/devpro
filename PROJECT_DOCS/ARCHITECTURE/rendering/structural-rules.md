@@ -10,7 +10,8 @@ each prompt takes its own plugin's agents file.
 
 - **Substitution depth is one.** `tests/_structure.py` walks the syntax trees of the definition
   modules and `clauses.py`. A module-level constant is a string literal or an f-string over
-  constants in the same module, never a call. The only calls in a definition module are
+  constants in the same module, never a call; the text module's one tuple of constant names is
+  `clauses.VALUE_CONSTANTS`. The only calls in a definition module are
   `Definition(...)` in `DEFINITIONS`, `SkillFile(...)` as a `files=` element, and, inside a `body=`
   or `description=` value or a `SkillFile` body, `clauses.<name>(...)` and `<constant>.format(...)` on a
   string-literal constant, every argument a literal or a constant. A
@@ -43,8 +44,8 @@ each prompt takes its own plugin's agents file.
   - Each paragraph or list item appears once. The check reads the rendered text, filled under the
     claude rendering, collapsed as in the check above, and counts across every rendered definition
     in the prompt.
-  - A `clauses.py` constant that only fills a placeholder, of any kind, is not counted by the first
-    check.
+  - A `clauses.py` constant carrying a value rather than a clause is not counted by the first check;
+    `clauses.VALUE_CONSTANTS` declares the set, and a new value constant is added there.
 - **A clause group's members carry what the group carries.** A clause group is the definitions
   whose own `Definition(...)` call names its membership clause: `CODE_PRINCIPLES_CODER` for the
   coders, `CODE_PRINCIPLES_PLATFORM` for the platform experts. `tests/test_clause_groups.py` holds,

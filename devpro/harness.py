@@ -28,7 +28,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from devpro import __version__
+from devpro import __version__, clauses
 from devpro.errors import InputError
 from devpro.vocabulary import IDENTIFIER, HarnessText, Kind, OptionalHarnessText, Tool
 
@@ -128,11 +128,11 @@ If a recipe times out, the agent hands back naming it instead of rerunning it in
 in the background."""
 
 
-def scratch_rule(*, temp_dir: str, harness_dir: str) -> str:
-    """The agents file's scratch rule, after its `/tmp` sentence, for a harness whose project scratch
-    directory sits beside its project harness directory."""
+def scratch_rule(*, harness_dir: str) -> str:
+    """The agents file's scratch rule, after its `/tmp` sentence; `harness_dir` is the harness directory
+    the project scratch directory sits beside."""
     return (
-        f"All scratch —\nthrowaway builds, probe harnesses, captured output — goes in `{temp_dir}/` under the\n"
+        f"All scratch —\nthrowaway builds, probe harnesses, captured output — goes in `{clauses.PROJECT_TEMP_DIR}/` under the\n"
         f"active project root, beside `{harness_dir}/` and never inside it (writes there trip\n"
         "the permission system's own-settings protections). If it doesn't exist, stop and say so; don't\n"
         "improvise a location."
@@ -173,7 +173,6 @@ class Harness:
     name: str  # "claude", "opencode"; the --harness value
     agents_file: str  # "CLAUDE.md" / "AGENTS.md"
     project_harness_dir: str  # ".claude" / ".opencode"; may hold `{plugin}`
-    project_temp_dir: str  # ".claude-temp" / ".opencode-temp"
     display_name: str  # "claude code" / "opencode"; the harness's name in prose, lowercase
     user_harness_dir: str  # "~/.claude" / "~/.config/opencode"
     mcp_tool_prefix: str  # this prefix + the tool's own name is its offered name; may hold `{plugin}`

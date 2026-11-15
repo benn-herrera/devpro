@@ -5,7 +5,7 @@ directory, and each implementation's reason must equal the table's.
 
 A case is a shell command (`command`) or a file-tool call (`tool`, named as Claude names it or, for a
 tool only opencode has, as opencode does, with `input` in that tool's argument names). In a case,
-`@scratch@` stands for the harness's scratch directory, `@harness@` for its harness directory and
+`@scratch@` stands for the one scratch directory, `@harness@` for its harness directory and
 `@root@` for the case's root, substituted in the command, the input, the files, the working directory
 and the expected reason. `files` are created. A case's optional `cwd` is the session's working
 directory, relative to the root and defaulting to it; claude receives it as the input `cwd` beside
@@ -26,6 +26,7 @@ from pathlib import Path
 
 import pytest
 
+from devpro import clauses
 from devpro.harness import Harness
 from devpro.harnesses.claude import HARNESS as CLAUDE
 from devpro.harnesses.opencode import HARNESS as OPENCODE
@@ -37,8 +38,7 @@ _PERL_HOOK = _RESOURCES / "claude/hooks/guardrail.pl"
 _TS_PLUGIN = _RESOURCES / "opencode/guardrail.ts"
 _TESTS = Path(__file__).parent
 _CASES = json.loads((_TESTS / "guardrail_cases.json").read_text(encoding="utf-8"))
-_PERL_SCRATCH = CLAUDE.project_temp_dir
-_TS_SCRATCH = OPENCODE.project_temp_dir
+_SCRATCH = clauses.PROJECT_TEMP_DIR
 _CASE_FIELDS = {"command", "tool", "input", "reason", "files", "cwd", "harness"}
 _INDEX_REASON_HEAD = "kb-root/.index/ holds kbase's records"
 
@@ -95,7 +95,7 @@ def _fill(text: str | None, harness: Harness, root: Path) -> str | None:
     if text is None:
         return None
     return (
-        text.replace("@scratch@", harness.project_temp_dir)
+        text.replace("@scratch@", _SCRATCH)
         .replace("@harness@", harness.project_harness_dir)
         .replace("@root@", str(root))
     )
@@ -207,19 +207,21 @@ def test_guardrail_matcher_names_exactly_the_claude_tools_the_case_table_covers(
 
 
 @pytest.mark.parametrize(
-    ("script", "harness_scratch", "scratch_list"),
+    ("script", "scratch_list"),
     [
-        (_PERL_HOOK, _PERL_SCRATCH, r"^my @scratch = \((.*)\);$"),
-        (_TS_PLUGIN, _TS_SCRATCH, r"^const scratch = \[(.*)\]$"),
+        (_PERL_HOOK, r"^my @scratch = \((.*)\);$"),
+        (_TS_PLUGIN, r"^const scratch = \[(.*)\]$"),
     ],
     ids=["pl", "ts"],
 )
-def test_guardrail_scratch_list_is_its_harness_temp_dir(script: Path, harness_scratch: str, scratch_list: str) -> None:
-    """Each script spells its scratch list itself, and it is exactly the harness's temp directory,
-    which the case table exempts as `@scratch@`."""
-    found = re.search(scratch_list, script.read_text(encoding="utf-8"), re.MULTILINE)
+def test_guardrail_scratch_list_is_the_one_scratch_directory(script: Path, scratch_list: str) -> None:
+    """Each script spells its scratch list itself, and it is exactly the one scratch directory,
+    which the case table exempts as `@scratch@`; the block message it gives names that directory too."""
+    text = script.read_text(encoding="utf-8")
+    found = re.search(scratch_list, text, re.MULTILINE)
     assert found is not None, scratch_list
-    assert re.findall(r"""["']([^"']*)["']""", found.group(1)) == [harness_scratch]
+    assert re.findall(r"""["']([^"']*)["']""", found.group(1)) == [_SCRATCH]
+    assert f"scratch belongs under {_SCRATCH}/." in text
 
 
 @pytest.mark.parametrize("index", _TS_INDEXES, ids=[_id(i) for i in _TS_INDEXES])
@@ -244,7 +246,7 @@ def test_guardrail_pl_gives_the_case_tables_reason(index: int, tmp_path: Path) -
 def test_guardrail_pl_takes_the_input_cwd_as_root_without_claude_project_dir(tmp_path: Path) -> None:
     """With no `CLAUDE_PROJECT_DIR`, the input `cwd` is the root: an absolute target inside that
     directory's scratch is let through, which it is only when scratch resolves against `cwd`."""
-    target = tmp_path / _PERL_SCRATCH / "out.txt"
+    target = tmp_path / _SCRATCH / "out.txt"
     done = _run_perl(_hook_input("Bash", {"command": f"echo hi > {target}"}, tmp_path))
     assert (done.returncode, done.stderr) == (0, "")
 
@@ -252,7 +254,7 @@ def test_guardrail_pl_takes_the_input_cwd_as_root_without_claude_project_dir(tmp
 def test_guardrail_pl_reads_claude_project_dir_literally_when_it_is_unset(tmp_path: Path) -> None:
     """The expansion reads only the environment variable, never the input `cwd` that stands in for
     it as the root: with the variable unset, a target spelled with it is judged as written."""
-    target = f"$CLAUDE_PROJECT_DIR/{_PERL_SCRATCH}/a.txt"
+    target = f"$CLAUDE_PROJECT_DIR/{_SCRATCH}/a.txt"
     done = _run_perl(_hook_input("Bash", {"command": f'echo x > "{target}"'}, tmp_path))
     assert done.returncode == 2, done.stderr
     assert _reason(done.stderr.rstrip("\n")) == f"a redirect that writes {target}"
