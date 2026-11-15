@@ -45,24 +45,29 @@ in just over 16K lines of runtime code, including vision tower support and an Op
 
 ## Quick Start Guide
 
+### Installation
+
+```sh
+brew tap benn-herrera/tap
+brew trust benn-herrera/tap
+brew install devpro
+```
+or
+```sh
+pipx install "git+https://github.com/benn-herrera/devpro@v0.17.3"
+```
+
+Author identity: <https://keyoxide.org/wkd/benn@bennherrera.dev>
+
 ### Claude Code and opencode
 
 Install devpro, then run its install from the project root:
 
 ```sh
-brew install benn-herrera/tap/devpro
 devpro install .
 ```
 
-Without Homebrew, install devpro with pipx from a release tag:
-
-```sh
-pipx install "git+https://github.com/benn-herrera/devpro@v0.17.3"
-```
-
-then `pipx ensurepath` and a new shell.
-
-The install takes the harness from the `.claude/` or `.opencode/` directory inside the target.
+The install command takes the harness from the `.claude/` or `.opencode/` directory inside the target.
 Where the project holds neither, or holds both, it refuses and writes nothing; `--harness=claude`
 or `--harness=opencode` on the install line settles either case.
 
@@ -76,8 +81,6 @@ Add the installed tree, the agent scratch space and the agents file's backup to 
 # the agents file's rolling backup
 backup.AGENTS.md
 ```
-
-Create the scratch directory as well, so your agents find it: `mkdir -p .devpro-temp`.
 
 For opencode, use `.opencode/` in place of `.claude/`.
 
@@ -97,7 +100,6 @@ into `AGENTS.md` is yours to do.
 Install devpro, then run its install into Mage's skills directory:
 
 ```sh
-brew install benn-herrera/tap/devpro
 mkdir -p ~/Mage/Skills
 devpro install ~/Mage/Skills --plugin=devpro --harness=mage
 ```
