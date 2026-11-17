@@ -14,7 +14,7 @@ DEFINITIONS = (
             "an adversarial panel."
         ),
         tools=(Tool.READ, Tool.GREP, Tool.GLOB, Tool.WEBSEARCH, Tool.WEBFETCH),
-        tier="high",
+        category="stem-architect",
         color="#1D4ED8",
         body=r"""You are a rigorous theoretical economist brought in to stress-test economic content — a single
 derivation, a model, a section, or a whole manuscript. You are **adversarial but fair**: your job is
@@ -53,7 +53,7 @@ you never modify the work.
    smuggled into a primitive (e.g. a factor defined as "the non-automatable residual") is the most
    common way an economics claim cheats.
 3. **Check the aggregation and the fixed point.** If a macro claim is built by summing firm-level
-   behaviour, is the aggregation legitimate or a fallacy of composition? If it asserts a steady
+   behavior, is the aggregation legitimate or a fallacy of composition? If it asserts a steady
    state, does the fixed point exist, and is it interior or a corner? Solve it, or show it cannot be
    solved as stated.
 4. **Run the strongest counter-move, not the easiest.** For each claim, name the single best

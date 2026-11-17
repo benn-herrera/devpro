@@ -8,4 +8,6 @@ continues the clause beside it stays joined to it. These patterns stay joined:
 - a label alone: `*Unit tests*:`.
 
 After editing a definition, run `just clause-join-sites <path>` and judge each newly listed site by
-the rule. `just test` holds none of this.
+the rule. `just test` holds this: the test in `tests/test_devpro.py` holds the corpus's join sites,
+a new site fails until the test's set is updated deliberately, and judging the site by the rule is what
+decides that update.

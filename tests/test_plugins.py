@@ -34,7 +34,7 @@ _PAIRS = [(plugin, harness) for plugin in _PLUGINS for harness in _HARNESSES]
 def test_every_plugin_renders_under_every_harness_with_nothing_left_unfilled(plugin: str, harness: str) -> None:
     """A plain reference outside the plugin refuses the render, so this is also the closure test of
     each plugin: one such reference fails it, naming the citing definition."""
-    ctx = build_render(harness=harness, plugin=plugin, family="claude", tier_spec=None, alias_spec=None)
+    ctx = build_render(harness=harness, plugin=plugin, family="claude")
     texts = [text for _, text in render_all(ctx)]
     texts.append(render_agents_file(harness_named(harness), plugin_named(plugin), scope="x"))
     leaks = [match for text in texts for match in re.findall(r"\{plugin\}|@![a-z0-9.-]+!@", text)]
@@ -45,7 +45,7 @@ def test_a_plugin_naming_an_undiscovered_definition_refuses_every_render(monkeyp
     misspelt = Plugin(name="probe", include=frozenset({"python-coder", "pyhton-coder"}))
     monkeypatch.setattr("devpro.context.plugins", lambda: {"devpro": DEVPRO, "probe": misspelt})
     with pytest.raises(InputError, match=re.escape("plugin 'probe' names no discovered definition: pyhton-coder")):
-        build_render(harness="claude", plugin="devpro", family="claude", tier_spec=None, alias_spec=None)
+        build_render(harness="claude", plugin="devpro", family="claude")
 
 
 @pytest.mark.parametrize(
@@ -73,7 +73,7 @@ def test_ships_reads_the_set_the_plugin_states(plugin: Plugin, shipped: str, uns
 
 
 def test_a_render_whose_plugin_is_replaced_binds_its_harness_to_the_new_plugin() -> None:
-    devpro = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+    devpro = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     assert (devpro.bound_harness.plugin_dir, devpro.bound_harness.reference_prefix) == ("skills/devpro", "devpro:")
     kbase = dataclasses.replace(devpro, plugin=KBASE)
     assert kbase.harness is CLAUDE
@@ -92,7 +92,7 @@ def test_binding_fills_the_guardrail_registration_marker_and_leaves_other_braces
 
 
 _PAIR = Plugin(name="pair", include=frozenset({"python-coder", "architect"}))
-_PAIR_RENDER = Render(harness=CLAUDE, plugin=_PAIR, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+_PAIR_RENDER = Render(harness=CLAUDE, plugin=_PAIR, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
 
 
 def test_a_plain_reference_outside_the_shipped_set_refuses_naming_the_site_and_the_referent() -> None:

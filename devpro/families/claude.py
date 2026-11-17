@@ -4,5 +4,12 @@ from devpro.family import Family
 
 FAMILY = Family(
     "claude",
-    {"highest": "fable", "high": "opus", "medium": "sonnet", "low": "haiku", "lowest": "haiku"},
+    {
+        "stem-architect": "fable",
+        "stem-expert": "opus",
+        "stem-mechanical": "sonnet",
+        "comm-architect": "sonnet",
+        "comm-expert": "sonnet",
+        "comm-mechanical": "haiku",
+    },
 )

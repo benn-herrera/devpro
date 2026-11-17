@@ -3,7 +3,7 @@
 A definition is its rendered text with placeholders. A module under `devpro/definitions/` reads
 top to bottom as the file it renders and defines `DEFINITIONS`, a tuple of `Definition` records
 (`devpro/definition.py`): `name`, `body`, `kind`, `folder`, and for an agent `description`,
-`tools`, `tier` and optionally `color`; a skill adds `files`, its supporting files as `SkillFile`
+`tools`, `category` and optionally `color`; a skill adds `files`, its supporting files as `SkillFile`
 values of a path below the skill's directory and a body. `body` is a string built at import: an
 f-string over the module's own triple-quoted text, its own constants, and the constants and text
 functions of `devpro/clauses.py` (imported as `from devpro import clauses`, written

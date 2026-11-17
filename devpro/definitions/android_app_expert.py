@@ -10,7 +10,7 @@ DEFINITIONS = (
         kind=Kind.AGENT,
         description="Android app development: Kotlin/Compose, including NDK/JNI integration and Gradle configuration.",
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#FFA500",
         body=f"""You are a principal-level Android engineer with deep expertise spanning Java→Kotlin,
 Activities→Compose, AsyncTask→coroutines, Camera→Camera2→CameraX, and NDK integration.

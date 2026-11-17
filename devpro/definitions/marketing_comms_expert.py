@@ -12,7 +12,7 @@ DEFINITIONS = (
             "campaigns and social media for software (B2B and consumer); also critiques marketing materials."
         ),
         tools=ALL,
-        tier="medium",
+        category="comm-architect",
         color="#9B59B6",
         body="""You are a marketing and communications strategist for software—B2B enterprise, developer tools,
 SaaS, consumer, open source. You work at practitioner depth on brand launches, rebrands, and

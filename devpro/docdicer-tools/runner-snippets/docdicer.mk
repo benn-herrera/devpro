@@ -28,20 +28,29 @@
 #
 # Targets:
 #   docdicer:         run docdicer with DOCDICER_ARGS: make docdicer DOCDICER_ARGS='dice-doc big.md out/'
+#   docdicer-check-roadmap: run docdicer's check for ROADMAP kanban format compliance
+#   docdicer-check-design: run docdicer's check for ACTIVE_DESIGN kanban format compliance
 #   docdicer-check-plan: run docdicer's check for ACTIVE_PLAN kanban format compliance
 #   docdicer-kanban:  run docdicer kanban board for this project (blocks with running http server)
 #   docdicer-help:    show help for docdicer targets
 
 DOCDICER_LAUNCHER := $(dir $(lastword $(MAKEFILE_LIST)))../docdicer
+DD_SNIPPET_FILE := $(lastword $(MAKEFILE_LIST))
 DOCDICER_ARGS ?=
 
 .PHONY: docdicer docdicer-check-plan docdicer-help docdicer-kanban
 
 docdicer-help:
-	@grep '^#   docdicer-' "$(lastword $(MAKEFILE_LIST))" | sed 's:^#: :'
+	@grep '^#   docdicer' "$(DD_SNIPPET_FILE)" | sed 's:^#: :'
 
 docdicer:
 	@"$(DOCDICER_LAUNCHER)" $(DOCDICER_ARGS)
+
+docdicer-check-roadmap:
+	@"$(DOCDICER_LAUNCHER)" check-roadmap
+
+docdicer-check-design:
+	@"$(DOCDICER_LAUNCHER)" check-design
 
 docdicer-check-plan:
 	@"$(DOCDICER_LAUNCHER)" check-plan

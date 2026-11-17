@@ -37,11 +37,12 @@
 
 # KB
 KBASE := kbase
+KB_SNIPPET_FILE := $(lastword $(MAKEFILE_LIST))
 
 .PHONY: kb-help kb-init kb-verify kb-update-format kb-stats kb-score kb-export-latex
 
 kb-help:
-	@grep '^#   kb-' "$(lastword $(MAKEFILE_LIST))" | sed 's:^#: :'
+	@grep '^#   kb-' "$(KB_SNIPPET_FILE)" | sed 's:^#: :'
 
 kb-init:
 	$(KBASE) init

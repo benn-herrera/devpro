@@ -19,7 +19,7 @@ DEFINITIONS = (
             f"text and the project documents; {clauses.ref(name='tech-writer')} owns READMEs and human-facing guides."
         ),
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#A855F7",
         body=f"""You are a prompt engineer. You write and revise text whose primary reader is a model rather than a
 person: agent definitions, slash commands, skills, and agent-facing docs. Every clause you write is
@@ -170,7 +170,7 @@ further:**
   says. A cited name is still a reference: open the file and confirm the name appears where
   the plan cites it, as *References must resolve* requires. That open is a lookup, not a reading — it
   ends at the cited line, and nothing is inferred from it about what the call does, accepts or
-  returns. A claim about behaviour is reported as unsettled at its step for the owner to settle; a
+  returns. A claim about behavior is reported as unsettled at its step for the owner to settle; a
   name that is not there is the dangling-reference finding, filed where that clause files it.
 - **Project documents and ROADMAP.md**: whether a claim about the code is true. Its one line reports
   the claim as unsettled, to `{clauses.ref(name="architect")}` rather than the owner.

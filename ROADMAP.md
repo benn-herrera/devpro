@@ -14,6 +14,14 @@ are unenforced; whether reviewers stay read-only is to be tried first. `AGENTS.m
 imports and a 32 KiB cap; agents, skills, hooks and MCP live in separate places, MCP in a shared
 `config.toml`; agent bodies are TOML strings; one provider per session, Responses API only.
 
+### opencode model price plugin
+
+Add a small hook plugin that modifies the TUI sidebar showing the current 'spent' figure
+to include a line below it showing the active model's $/M input/output tokens.
+The cost.input / cost.output rates are available via the model catalog and should be trivial
+plug in. If this turns into a side question instead of <= 100 lines of typescript re-evaluate.
+possible extension: have it show the prices of all models in use (subagents)
+
 ### Change-case analysis process
 
 A skill, or an addition to the `development` skill, that performs change-case analysis in the SAAM
@@ -51,6 +59,13 @@ Right now only code-facing changes are handled by the design->plan->burndown wor
 Doc-only changes for README or project docs are currently only handled by ad-hoc processes
 and are not well-represented in the current workflow definition.
 
+### The development skill lacks a rule for a review whose commit range moves under it
+
+A post-plan review cites a commit range; commits landing while the review runs move the range
+under it, and the review's scope line rots. The `development` skill's post-plan review section
+needs the rule for it: what a reviewer states when its range moves, and what the synthesis does
+with the moved part.
+
 ## Maintenance
 
 ### (STICKY) Periodic load-bearing-ness pruning pass
@@ -60,12 +75,6 @@ A pass over definition clauses, across model generations: apply strip-first-obse
 instrument. Byte-level instruments exist today — `just render-diff` between two render slots, and
 the render-property assertions in `tests/test_devpro.py` (ARCHITECTURE.md, Why There Is No
 Verification Verb); behavioral ones do not yet.
-
-### State the minimum Claude Code version that loads a plugin from a project's skills directory
-
-Under claude the set is a plugin at `.claude/skills/<plugin>/`. No document states the Claude Code
-version that loads one, and README.md's Requirements section names none; the version is not yet
-established from any source.
 
 ### Give the kbase router's not-offered branch the plugin reload remedy
 
@@ -84,34 +93,16 @@ runner, accept every name the hook receives, and add a case row for each (`guard
 
 ### The guardrails hard-code kbase's private record names
 
-The Grep/Glob judgement depends on `nodes.yaml`, `edges.yaml` and `format.yaml` (`guardrail.pl`
+The Grep/Glob judgment depends on `nodes.yaml`, `edges.yaml` and `format.yaml` (`guardrail.pl`
 `@kb_records`, `guardrail.ts` `kbRecords`), so a record file a later kbase adds passes silently.
 Passing a Grep/Glob rooted in `kb-root/` only when its filter's last segment ends in `.md` drops
-both lists; it is a behaviour change to both scripts and the case table together.
-
-### A plan with a post-plan burndown can never read as done
-
-`devpro/definitions/development.py`, *Post-plan review*: "the burndown's row keeps no state word",
-against *Plan status*'s "Set a state in the same turn as the act that changes it" and
-`PROJECT_DOCS/SPEC/plan-status-form.md`, which reads a plan as done only when its post-plan review
-row and its post-plan burndown row are `landed`. One of the two has to give.
-
-### The post-plan review sentence names the reviewers as the document's writers
-
-`devpro/definitions/development.py`, *Post-plan review*: "The post-plan review writes the reviewers'
-findings to the review document". A reviewer dispatched to review reports and changes nothing
-(`prompt_engineer.py` and `tech_writer.py`, each in *Output*), and the session writes the document.
+both lists; it is a behavior change to both scripts and the case table together.
 
 ### Mage has no guardrail
 
 `devpro/harnesses/mage.py` sets `guardrail=None` and SPEC `shipped-files.md` says mage ships none,
 so a mage install's `.index/` protection rests on kbase's prose instruction alone. Check whether
 mage's plugin format carries a hook; if it does not, record the gap in SPEC.
-
-### Placeholder spelling
-
-The `@!<namespace>-<key>!@` spelling (`devpro/vocabulary.py`, `hole`) dates from before definition
-bodies were plain Python strings. Reconsider whether a plainer spelling now serves.
 
 ### The cold-read script is unreliable under opencode
 
@@ -120,11 +111,6 @@ where opencode's background service has never run a session, models a provider p
 (`opencode-models-discovery`) are reported "Model unavailable", even after `opencode models` runs
 there; the run fails or falls back to opencode's free models. Whether the composed agent file's
 `"*": deny` blocks every tool is therefore unconfirmed by a live run.
-
-### Verify the opencode plugin entry against each opencode release
-
-`index.ts` is written for opencode v2.2.6 (SPEC `deployed-surfaces/shipped-files.md`) and tested
-only against a stub of that version's plugin API; nothing re-checks it when opencode changes.
 
 ## Testing
 
@@ -147,9 +133,3 @@ never type-checked: there is no `tsconfig` and no recipe. A recipe needs a decla
 ### No shell lint
 
 No recipe runs `shellcheck` over `devtools/scripts/*.sh` or `devpro/development-tools/cold-read.sh`.
-
-### `just test` does not hold the own-paragraph rule for module text beside a clause
-
-`PROJECT_DOCS/CONVENTIONS/adding-definitions/clause-paragraphs.md` says `just test` holds none of
-it; `devtools/clause_join_sites.py` (`just clause-join-sites`) reports join sites, but no test
-fails on a new one.

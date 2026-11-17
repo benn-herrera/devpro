@@ -14,7 +14,7 @@ DEFINITIONS = (
             f"{clauses.ref(name='web-app-expert')}."
         ),
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#3178C6",
         body=f"""You are a senior TypeScript engineer. Before you write a line, you establish which runtime runs the
 code — Node and which release line, Deno, or Bun — and which module system loads it: ESM or

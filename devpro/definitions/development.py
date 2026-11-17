@@ -81,12 +81,14 @@ binding replaces the default. A term marked — has no default.
 | Term | Default | What it is |
 | --- | --- | --- |
 | {CHECKPOINT_GATE_TERM} | — | the runner targets run before a checkpoint commit |
-| {STEP_DOWN_MODEL_TERM} | the model the sentence after this table names; — where none follows | the model a mechanical dispatch runs on |
+| {STEP_DOWN_MODEL_TERM} | the pair the sentence after this table names; — where none follows | the model a mechanical dispatch runs on |
 | {STEP_DOWN_APPLICATION_TERM} | — | how a mechanical dispatch gets the {STEP_DOWN_MODEL_TERM} where a dispatch cannot choose its model |
 | {PLAN_SIZE_LIMIT_TERM} | {clauses.PLAN_SIZE_LIMIT_DEFAULT} | the length past which a plan or design is diced |
 | {PERIODIC_REVIEW_INTERVAL_TERM} | {clauses.PERIODIC_REVIEW_INTERVAL_DEFAULT} | the number of landed plans between periodic reviews |
 
-Where CONVENTIONS.md binds no {STEP_DOWN_MODEL_TERM}, it is `{clauses.STEP_DOWN_MODEL}`.
+Where CONVENTIONS.md binds no {STEP_DOWN_MODEL_TERM}, it is `{clauses.STEP_DOWN_MODEL}` — both
+disciplines' mechanical members; a dispatch runs on the side its dispatched agent's `category=`
+line names.
 
 Before treating a bindable term as unbound, run `git grep -n -F '<term>:' -- '*CONVENTIONS*'` with
 the term's exact name; no hit, or a hit only in a `TODO:` note, means unbound. When a rule needs a
@@ -225,16 +227,26 @@ plan the same way.
   naming no package, such as a kickoff commit or a note, has an empty `Package` cell.
 - A `State` cell opens with its state word, `dispatchable`, `in progress` or `landed`; anything after
   the word is a note (`landed: inventory 49`). `dispatchable`: the package meets every condition in
-  *Dispatchability*. `in progress`: dispatched and not landed. `landed`: accepted and committed, set
-  in the commit that accepts it. A row with no state word is drafted.
+  *Dispatchability*. `in progress`: dispatched and not landed. `landed`: committed.
+  A row with no state word is drafted.
 - Each package's `Rating` cell opens with `mechanical` or `expert`, rated as *Dispatch* rates its
   dispatch; anything after the word is a note. *Purpose:* whoever reads the table sees which work runs on the
   {STEP_DOWN_MODEL_TERM}.
 - The post-plan review and the post-plan burndown (*Post-plan review*) are packages, each with its
   own ID and row; the review's title opens with `Post-plan review`, the burndown's with
   `Post-plan burndown`.
-- Set a state in the same turn as the act that changes it. *Purpose:* the table never trails the
-  work.
+- The table states each package's place at every moment, not only at a commit
+  boundary; a state is set in the turn the act that changes it happens, `in
+  progress` when the package is dispatched and `landed` when its work is
+  committed; a commit whose tree includes a package's work includes that
+  package's row, and work committed without its row is corrected in the commit
+  immediately after. *Purpose:* the table is a live update, not an audit trail;
+  a state set late is not stale, it is a false claim about the present, and a
+  row left behind deletes the only per-package record of the run.
+- A note states the condition that makes a row what it is, never the commit
+  expected to set it. *Purpose:* a note is judged against the tree wherever the
+  row is read; a forecast of a future commit is not, and a package under way
+  then reads as one that landed nothing.
 
 After each edit to a plan, run `check-plan` on it (on its `entry-point.md` where it is diced; the
 `{clauses.optional_ref(name="docdicer")}` skill) and fix what it reports.
@@ -264,8 +276,8 @@ A work package is dispatchable only when:
 - a change to a type, signature or test double lists every referencing file, with the
   {REFERENCE_SEARCH_TERM} and its answer. *Purpose:* no referencing file is found broken after the package
   reports done;
-- a package that changes a stated behaviour names the tests and fixtures pinning it, and updating
-  them is in scope; a test failing on behaviour the package does not state it changes is reported as
+- a package that changes a stated behavior names the tests and fixtures pinning it, and updating
+  them is in scope; a test failing on behavior the package does not state it changes is reported as
   a finding, never edited to pass. *Purpose:* an expectation moves only with its requirement, so an
   invariant test still stops wrong work;
 - its done-line names, from the project's runner targets, those that check what the package changes
@@ -279,6 +291,11 @@ A work package is dispatchable only when:
   never passed;
 - it has had `{clauses.ref(name="prompt-engineer")}` usability review, then `{clauses.ref(name="architect")}` revision. *Purpose:* the agent that
   executes it can act on it before it costs a dispatch.
+- One commit closes it — the commit that carries its work; a commit that
+  corrects a missing row is not a second closing commit. A package whose work
+  would need more than one commit is split into packages that each need one.
+  *Purpose:* the board turns a package's row `landed` in the commit that
+  carries its work, and work spanning several commits has none.
 
 A plan whose packages fail this is neither offered for approval nor dispatched. *Purpose:* what is
 approved can run as approved.
@@ -340,8 +357,10 @@ approved can run as approved.
 
 - The {CHECKPOINT_GATE_TERM} runs once, before a checkpoint commit, never between edits. *Purpose:*
   the {CHECKPOINT_GATE_TERM}'s cost is paid once.
-- A checkpoint is incomplete until every document describing the changed behaviour is updated, the
-  contract documents included. *Purpose:* what a checkpoint ships matches its documentation.
+- A checkpoint is incomplete until every document describing the changed behavior is updated, the
+  contract documents included, and the plan's status table is as *Plan status*
+  requires. *Purpose:* what a checkpoint ships matches its documentation, and
+  the board a human reads is current at the commit they review.
 
 ## Commits and pull requests
 
@@ -366,13 +385,15 @@ approved can run as approved.
   one, not the plan, and review the changes and their tests against the project's standards and
   fitness for purpose. *Purpose:* they judge what shipped, not how well it matches the plan's
   account of itself.
-- The post-plan review writes the reviewers' findings to the {REVIEW_DOCUMENT_TERM}, which is never
-  diced. The review's row is `landed` in the commit that adds the {REVIEW_DOCUMENT_TERM}.
-  *Purpose:* the burndown is drafted from one record of what was found.
+- Each reviewer writes their own review in the {SCRATCH_TERM}, independently, and the session
+  synthesizes the reviewers' reviews into the {REVIEW_DOCUMENT_TERM}, de-duplicating findings and
+  reconciling them into one account, without waiting for an approval between the last report and
+  the write-up. The {REVIEW_DOCUMENT_TERM} is never diced. The review's row is
+  `landed` in the commit that adds the {REVIEW_DOCUMENT_TERM}. *Purpose:* the
+  burndown is drafted from one record of what was found.
 - Until the review lands, the burndown's section holds only: "Drafted from `ACTIVE_PLAN_REVIEW.md`
   once the post-plan review lands." Then you draft the burndown's work list from the
-  {REVIEW_DOCUMENT_TERM}; it replaces that text where the section is, in the plan or in its leaf,
-  and the burndown's row keeps no state word.
+  {REVIEW_DOCUMENT_TERM}; it replaces that text where the section is, in the plan or in its leaf.
 - The burndown gets `{clauses.ref(name="prompt-engineer")}` usability review, then your revision, before it is
   `dispatchable`. *Purpose:* the agents that execute from it can act on each item without inventing
   what it leaves open.
@@ -456,7 +477,7 @@ one's answer feeds the next.
    THESIS.md by you with the user, from 3's breakdown; SPEC.md and ARCHITECTURE.md by
    `{clauses.ref(name="tech-writer")}` with the user; CONVENTIONS.md by you, from the choices made in 2. Where the
    project has code, `{clauses.ref(name="architect")}` produces its initial design, held to SPEC.md;
-   ARCHITECTURE.md is drafted from that initial design's invariants and skeleton. A behavioural
+   ARCHITECTURE.md is drafted from that initial design's invariants and skeleton. A behavioral
    acceptance criterion in the initial design (an outcome, not a mechanism) that SPEC.md does not already state is a
    SPEC.md gap raised with the user, not ARCHITECTURE.md content. `{clauses.ref(name="prompt-engineer")}` reviews
    each of the four drafts before the user accepts it, and authors and reviews their changes from
@@ -516,7 +537,7 @@ requirement means one thing only when its words do.
 
 Code symbols, internal layout, tools and checks are mechanism, never THESIS.md's or SPEC.md's. Each
 document opens by listing what it does not hold, in these words, the same across the set: no
-consumer-facing behaviours or outcomes (SPEC.md's), no mechanisms or code structure
+consumer-facing behaviors or outcomes (SPEC.md's), no mechanisms or code structure
 (ARCHITECTURE.md's), no project-specific process (CONVENTIONS.md's) — naming each that is not its
 own. *Purpose:* content drifting into the wrong document shows against its list.
 
@@ -535,7 +556,7 @@ thing THESIS.md names, or a line saying that kind has none yet:
   out something the system does, and never names something the system already uses.
 - For example: `| Storage | A local, internal tiered storage and retrieval scheme | A backup system
   or external tiered storage |`.
-- A row is plain, not thin: it names every job the piece does and states no behaviour of any of
+- A row is plain, not thin: it names every job the piece does and states no behavior of any of
   them. How a piece treats its inputs (verbatim, merged, replaced whole) is SPEC.md's; what it is
   built from is ARCHITECTURE.md's. Where a check is cut from THESIS.md as mechanism, the property it
   secured stays, stated as a property.
@@ -730,7 +751,7 @@ release it serves, and no release is promised for work not yet taken up.
 - A livable issue whose fix needs more change than the defect's own site is deferred: record it in
   `ROADMAP.md` and name it in the hardening plan's status. *Purpose:* the release ships a known issue
   rather than an unverified change of mechanism.
-- Each fix's report and commit message state what else it can affect: callers, data, behaviour
+- Each fix's report and commit message state what else it can affect: callers, data, behavior
   outside the defect's own path. Whether hardening is converging is the owner's judgment of those
   consequences, never a measure of the change's size. *Purpose:* the owner judges from what a fix
   can reach, which its size does not show.

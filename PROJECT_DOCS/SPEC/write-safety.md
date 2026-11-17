@@ -37,7 +37,7 @@ nothing: no file
 written, no mode or modification time changed, no package destination replaced and no `tools/.venv`
 removed. "Nothing" is judged on the result: every file the install would
 write is already byte-identical and mode-identical, and none would be created or removed. Changing
-`--harness`, `--family` or the tier map changes bytes, so that install proceeds. A different plugin
+`--harness`, `--family` or the category map changes bytes, so that install proceeds. A different plugin
 is a different install directory, not a change of bytes in one. A `.venv` directory is not install
 output and is outside the comparison, so its presence alone never makes an install proceed.
 

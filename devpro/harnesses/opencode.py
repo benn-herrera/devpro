@@ -35,7 +35,7 @@ def _mcp_entry(*, command: str) -> dict[str, str | list[str]]:
 
 def _agent_metadata(fields: AgentFields) -> dict[str, object]:
     """An agent's registry values: its description and `mode: subagent`; its model split into provider
-    and id where the tier renders one; its color where set; and, unless every tool is allowed, one
+    and id where the category renders one; its color where set; and, unless every tool is allowed, one
     `allow` or `deny` per governed key."""
     record: dict[str, object] = {"description": fields.description, "mode": "subagent"}
     if fields.model:
@@ -98,7 +98,7 @@ HARNESS = Harness(
     # the entry registers each definition under the plugin's prefix, which names it everywhere
     reference_prefix="{plugin}-",
     entry_resource="index.ts",
-    default_tier_spec="default",
+    default_category_spec="default",
     mcp_tool_prefix="kbase_",
     scratch_rule=scratch_rule(harness_dir=_PROJECT_HARNESS_DIR),
     memory_file=f"`{_USER_HARNESS_DIR}/{_AGENTS_FILE}`",
@@ -137,7 +137,7 @@ HARNESS = Harness(
     ),
     inherit_text="",
     inherit_synonyms=("default",),
-    bare_tier_spec_is_all=True,
+    bare_category_spec_is_all=True,
     definition_form=REGISTRY,
     # The plugin entry runs the guardrail.
     guardrail=None,

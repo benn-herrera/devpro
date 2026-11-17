@@ -269,7 +269,7 @@ Whether Codex still also reads `~/.codex/skills` (legacy) was not confirmed **[u
   - `--profile` stopped reading `[profiles.*]` at 0.134.0;
   - `wire_api = "chat"` and `ollama-chat` removed;
   - `approval_policy = "untrusted"` retired;
-  - the `multi_agent` flag deprecated in favour of `agents.enabled`;
+  - the `multi_agent` flag deprecated in favor of `agents.enabled`;
   - a v2 agent tool surface with different spawn arguments;
   - the docs moved to `learn.chatgpt.com`.
 - The surfaces devpro needs (role TOML, skills, hooks) are marked stable or default-on at 0.168.0.
@@ -307,6 +307,10 @@ The mapping is from `devpro/harness.py` fields as described in
 | `rendered_files` | the kbase MCP entry must be a **merge** into `.codex/config.toml`, not an owned file | conflicts with "an owned `HarnessFile`" |
 | `guardrail` | `GuardrailHook(script, registration=.codex/hooks.json)`, matcher `Bash\|apply_patch` | `hooks.json` is shared with the operator (needs a merge); activation needs the user's `/hooks` trust |
 | `plugin_parent_dir` | empty | |
+
+(The harness field names in this table predate the category change: `bare_tier_spec_is_all` is
+now `bare_category_spec_is_all`, `default_tier_spec` is now `default_category_spec`, the
+five-tier map is a six-category map, and the map flag is `--model-map`.)
 
 A different shape is possible: a Codex **plugin** (root `plugin.json`) carrying skills, the MCP
 entry and hooks, with the agents installed separately into `.codex/agents/{plugin}/`. The plugin

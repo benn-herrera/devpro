@@ -71,13 +71,43 @@ own project documentation. That project documentation exclusion is a list of fil
 `ARCHITECTURE.md`, `CONVENTIONS.md`, `THESIS.md`, `ROADMAP.md`, `AGENTS.md`, `CLAUDE.md`): none is
 installed at any depth under a package destination. No installed file refers its reader to one of
 this repository's own project documents. `README.md` is not in that exclusion: a shipped package's
-`README.md` is installed. The optional tuning arguments — `--family`, `--model-tier-map` and `--model-pin-tier-alias-map` — render the
-definitions under them (SPEC.md, Rendering). The optional harness argument names the supported
+`README.md` is installed. The optional tuning arguments — `--family`, and the entries in the
+devpro settings file `--config-file=<file>` names — render the definitions under them (SPEC.md,
+Rendering). The optional harness
+argument names the supported
 harness whose values the definitions are rendered with, and whose metadata they carry — in the
 frontmatter under claude and mage, in the registry under opencode: each
 field in the spelling that harness reads, and absent where that harness has no use for it; an
 unsupported name is refused before anything is written. `render` defaults it to `claude`; install
-has no default, and resolves its harness as this section's first paragraph states.
+has no default, and resolves its harness as this section's first paragraph states. The devpro
+settings file's `install` setting replaces that resolution where the file names the harness. The
+file names a harness when either of its sections exists; each named harness installs per its
+`install` setting.
+
+Per harness, the setting is one of `always`, `detect` and `never`: `always` installs for that
+harness whatever the target holds; `detect` installs where the harness's own harness directory is
+one the target holds, judged per harness; `never` installs nothing for it.
+
+`detect` is the setting's default where the file names the harness but sets no `install` key.
+
+With the file naming any harness, one invocation installs for every harness it names, in name
+order, each as its own install — the render built per harness from that harness's
+`[<harness>-model-map]` section, where the file has one — with this section's guarantees; a
+harness it does not name is not installed. The loop stops at the first refusal, naming the
+harness that refused, and earlier harnesses' installs stand. A target that is not an existing
+directory, and a `--subdir` outside it, are refused before the harnesses the file names are
+judged. `--harness` given installs for that harness only, whatever the file's `install` setting
+says, its section's model map still applying. Without the file, or with `--harness` given, the
+resolution is the one above. A file naming no harness installs nothing, and says so: the report
+names the settings file and the ways an install happens — pass `--harness=NAME`; or add the
+harness to the file, either section of it: `install = always` in `[<harness>]` installs whatever
+the target holds, and the `detect` default installs where the target holds the harness's own
+directory (create that directory where absent). The report is made on a dry run and on an
+up-to-date run as on a changing one. The refusal of a target that is not an existing directory,
+and of a `--subdir` outside it, precedes this report where both fire. The file is validated
+before anything is written (SPEC.md, Rendering); an `install` value outside the three is refused
+naming them, where the file selects the harnesses — `--harness` given, and `render`, do not judge
+it.
 
 An install directory may be any directory prepared to receive the install product. `--subdir`
 names a directory inside the target: an absolute path, or one that leaves the target, is refused

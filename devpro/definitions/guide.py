@@ -135,12 +135,25 @@ local into the set it generates: vendor the repository as a copy the user's orga
 edit the definitions there and install from it, owning that copy from then on; or fork it and open a
 pull request.
 
-## Rendering for another model family or tier map
+## Rendering for another model family or category map
 
-`--family` renders the set for another model family, `--model-tier-map` sets the model each tier is
-tuned for, and `--model-pin-tier-alias-map` renders an alias in place of each tier's model.
-`devpro install --help` gives their grammar. A changed family or map changes the rendered files, so
-that install proceeds where the set was otherwise up to date.
+`--family` renders the set for another model family, and the map the devpro settings file supplies sets
+the model each category is tuned for; `--config-file` names that file where it is not the default one.
+`devpro install --help` gives `--family`'s grammar. A changed family or settings file changes the
+rendered files, so that install proceeds where the set was otherwise up to date.
+
+- What a rendering pins by default: a claude install pins its family's members; an opencode or mage
+  install pins none — under opencode the definitions carry no model, under mage they carry
+  `model: inherit` — unless the devpro settings file carries entries for the harness.
+- The devpro settings file: `~/.config/devpro/devpro.cfg`, or the file `--config-file` names. Each
+  harness has a section named after it. `[<harness>]` holds that harness's settings: its `install`
+  value — `always`, `detect` or `never` — settles whether an install into a target installs for it:
+  `always` whatever the target holds, `detect` (the default) where the target holds that harness's
+  own harness directory, `never` not at all. Either of a harness's sections existing names it, and one
+  install then installs for every harness the file names; `--harness` installs for that one harness
+  alone. `[<harness>-model-map]` holds the harness's model map, one `<glob>=<model>` entry per line:
+  the `<model>` is assigned to every category the glob matches, later entries overwriting earlier
+  ones.
 
 ## Cold reads
 
@@ -257,7 +270,8 @@ checkpoint gate, the runner targets run before each commit of finished work: ans
 and CONVENTIONS.md gets `checkpoint gate: just test`. An unanswered one is written as
 `TODO: checkpoint gate:`, and the session asks again when it next needs it.
 
-The user may also set the step-down model (default `{clauses.STEP_DOWN_MODEL}`).
+The user may also set the step-down model (default `{clauses.STEP_DOWN_MODEL}` — both disciplines'
+mechanical members, from the family, or the devpro settings file's entries in force).
 
 The plan size limit (default {clauses.PLAN_SIZE_LIMIT_DEFAULT}) and the periodic review interval
 (default {clauses.PERIODIC_REVIEW_INTERVAL_DEFAULT}) are set the same way.

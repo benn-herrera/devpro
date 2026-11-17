@@ -2,14 +2,14 @@
 
 A harness is everything rendered output differs on between harnesses: the
 directory and file names prose spells, the tool spellings, the model shape it
-accepts and the words that render no model at all, whether a map flag's bare
+accepts and the words that render no model at all, whether a category spec's bare
 value names the whole map, where a definition's metadata goes — the frontmatter
 lines it reads, or the registry it reads them all from — the rule a dispatched
 agent follows when running recipes in its shell, the files it renders beside the
 definitions, the resource that registers the plugin where one does, the prefix a
 definition's name takes where other definition text names it, the path below its
 harness directory the set is written into, the guardrail hook it registers, where
-it has one. It holds no tier map, no family and no knowledge of any one
+it has one. It holds no category map, no family and no knowledge of any one
 definition. Its emitter only lays out lines; the renderer maps tools to spellings
 and computes the governed keys.
 
@@ -133,8 +133,7 @@ def scratch_rule(*, harness_dir: str) -> str:
     the project scratch directory sits beside."""
     return (
         f"All scratch —\nthrowaway builds, probe harnesses, captured output — goes in `{clauses.PROJECT_TEMP_DIR}/` under the\n"
-        f"active project root, beside `{harness_dir}/` and never inside it (writes there trip\n"
-        "the permission system's own-settings protections). If it doesn't exist, stop and say so; don't\n"
+        f"active project root. If it doesn't exist, stop and say so; don't\n"
         "improvise a location."
     )
 
@@ -181,16 +180,18 @@ class Harness:
     recipe_rule: str  # the rule a dispatched agent follows running recipes in its shell; "" where there is none
     kbase_project_rule: str  # how a kbase session locates its project where the server serves many; "" otherwise
     tools: Mapping[Tool, tuple[str, ...]]  # total over Tool, in Tool order, each non-empty
-    model_pattern: re.Pattern[str]  # every tier's rendered text must fullmatch it
+    model_pattern: re.Pattern[str]  # every category's rendered text must fullmatch it
     model_shape: str  # the pattern in words; the only form a refusal shows
-    inherit_text: str  # what a tier rendering "inherit" emits
+    inherit_text: str  # what a category rendering "inherit" emits
     inherit_synonyms: tuple[str, ...]  # further words emitting inherit_text; model_pattern accepts them
-    bare_tier_spec_is_all: bool  # a --model-tier-map value naming no tier is all=<value>
+    bare_category_spec_is_all: bool  # a non-empty category spec holding neither `=` nor `,` is *=<value>
     # where each definition's metadata goes: frontmatter in its own file, or one registry file beside them all
     definition_form: FrontmatterForm | HarnessFile
     guardrail: GuardrailHook | None  # the guardrail hook it registers; None where its own file registers itself
     rendered_files: tuple[HarnessFile, ...] = ()  # files it renders beside the definitions
-    default_tier_spec: str | None = None  # the --model-tier-map value used when none is given; None: the family's tiers
+    default_category_spec: str | None = (
+        None  # the category spec used when the settings file supplies none; None: the family's categories
+    )
     plugin_parent_dir: str = (
         ""  # a harness-directory plugin's: the trailing path of the directory its plugins sit in; "" otherwise
     )

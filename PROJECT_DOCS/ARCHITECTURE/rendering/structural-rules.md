@@ -28,7 +28,7 @@ each prompt takes its own plugin's agents file.
   private constant standing as a sentinel, and fails on a paragraph or list item that survives both
   in two rendered definitions: it was written out rather than taken from a constant. A skill is
   swept the same way, each of its files walked as a rendered definition in its own right and
-  labelled by the path it renders to, so a paragraph a skill entry file and a supporting file both
+  labeled by the path it renders to, so a paragraph a skill entry file and a supporting file both
   carry is found as readily as one two definitions share.
 - **No shared clause twice in one prompt.** `tests/test_devpro.py` runs two checks over every
   prompt, and fails on either.

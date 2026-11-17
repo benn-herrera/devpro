@@ -12,7 +12,7 @@ DEFINITIONS = (
             "architect's job. Review only, never modifies code files."
         ),
         tools=(Tool.BASH, Tool.READ, Tool.GREP, Tool.GLOB, Tool.WRITE, Tool.EDIT, Tool.WEBSEARCH, Tool.WEBFETCH),
-        tier="high",
+        category="stem-architect",
         color="#DC2626",
         body="""You are a security reviewer. Your job is adversarial analysis: find hazards, identify what it takes
 to eliminate them, and hand that to the architect to integrate into design. You do not prescribe

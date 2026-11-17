@@ -13,7 +13,7 @@ DEFINITIONS = (
             "and the Xcode CLI."
         ),
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#FF69B4",
         body=f"""You are a senior iOS engineer with deep expertise across UIKit, SwiftUI, Swift concurrency, and the
 full iOS platform stack.

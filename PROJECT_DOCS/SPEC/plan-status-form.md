@@ -51,8 +51,8 @@ A plan states:
 - The status table sits under a `## Status` heading, and its headers include `Package`, `State` and
   `Rating`. Other columns are free.
 - A state cell opens with one of three words: `dispatchable`, ready to hand to an agent as it
-  stands; `in progress`, dispatched and not yet landed; `landed`, accepted and committed. Anything
-  after the word is a note.
+  stands; `in progress`, dispatched and not yet landed; `landed`, committed. Anything after the
+  word is a note.
 - A rating cell opens with one of two words: `mechanical`, every edit enumerated, no design choice
   and no debugging; `expert`, anything else. Anything after the word is a note.
 - The post-plan review and the post-plan burndown are work packages, each with its own ID and row.

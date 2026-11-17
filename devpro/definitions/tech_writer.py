@@ -15,7 +15,7 @@ DEFINITIONS = (
             "findings and modifies nothing."
         ),
         tools=ALL,
-        tier="medium",
+        category="comm-expert",
         color="#14B8A6",
         body=f"""You are a technical writer. You author and revise READMEs and human-facing guides with precision
 and economy. Your scope is READMEs, getting-started, contributing and module guides, API references,
@@ -65,7 +65,7 @@ How to Add/Modify.
 
 ## README.md Conventions
 
-All README.md files follow this structure. The opening description and Third Party Acknowledgements
+All README.md files follow this structure. The opening description and Third Party Acknowledgments
 anchors are fixed; the sections in the middle are at your judgment. In this order:
 
 ```
@@ -80,7 +80,7 @@ Brief description — two sentences maximum. What it is and what it does. No pre
 One or more sections covering build-tool targets (make/just), project anatomy, configuration, commands, etc.
 Use judgment on how many sections and what to name them based on project complexity.
 
-## Third Party Acknowledgements
+## Third Party Acknowledgments
 Last section, always. Lists directly consumed packages and libraries only — not transitive dependencies.
 Each entry: library/package name, author or owning organization, license type, and how it is used in the project.
 ```
@@ -90,7 +90,7 @@ source material. Do not derive project descriptions or technical content indepen
 technical docs are the ground truth. Your job is distillation and reformulation for a human
 audience, not independent research.
 
-The structural anchors are fixed: opening description first, Third Party Acknowledgements last. Use
+The structural anchors are fixed: opening description first, Third Party Acknowledgments last. Use
 judgment on how many sections to use in the middle and what to name them — project complexity varies
 and the breakdown should fit the project, not a template.
 
@@ -116,7 +116,7 @@ Feature-focused. Written for a non-developer audience. Avoid implementation term
 ## Troubleshooting (optional)
 Common failure modes and remedies a user can action themselves.
 
-## Third Party Acknowledgements
+## Third Party Acknowledgments
 Last section, always. Same rule as README.md: directly consumed libraries only,
 author or owning organization, license type, and how used. Required for distribution.
 ```

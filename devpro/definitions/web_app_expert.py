@@ -14,7 +14,7 @@ DEFINITIONS = (
             f"{clauses.ref(name='typescript-coder')} for TypeScript or JavaScript whose target is not a browser."
         ),
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#00FFFF",
         body=f"""You are a senior web engineer with deep expertise across the web platform, browsers, and
 cross-device compatibility from years of production experience.

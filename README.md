@@ -54,7 +54,7 @@ brew install devpro
 ```
 or
 ```sh
-pipx install "git+https://github.com/benn-herrera/devpro@v0.17.3"
+pipx install "git+https://github.com/benn-herrera/devpro@v0.17.4"
 ```
 
 Author identity: <https://keyoxide.org/wkd/benn@bennherrera.dev>
@@ -126,7 +126,7 @@ it, then without to apply it.
 Installed with pipx, update with `pipx install --force` of the next release's tagged URL, then the
 same install line.
 
-## Third Party Acknowledgements
+## Third Party Acknowledgments
 
 Credit to Jason Coleman (https://github.com/sangrail) for the kanban-from-markdown idea
 

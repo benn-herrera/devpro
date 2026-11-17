@@ -33,7 +33,7 @@ A body of any kind may carry `@!plg-name!@` (`PluginText.NAME`, filled from `ctx
 the text must spell the plugin's name, such as the `devpro install --plugin=<plugin>` command.
 The agents file alone also carries `@!agf-<key>!@` for its scope name and the package version. A
 body of any kind may carry `@!tun-<key>!@` for a derived value, one computed from the `Render`'s
-tier map and harness rather than supplied by either: `TuningText`'s one member, `step_down_model`,
+category map and harness rather than supplied by either: `TuningText`'s one member, `step_down_model`,
 which is `Render.step_down_model` (Harnesses and Families). A body or description may carry
 `@!ref-<name>!@`, spelled by `vocabulary.reference` and written in definitions as
 `clauses.ref(name=…)`, for a reference to another definition. Its closed set is the shipped set,
@@ -59,12 +59,13 @@ description is filled in `agent_fields` and `_field_lines`). A placeholder-shape
 key, a reference to an undiscovered name included, is refused, naming the definition and the span.
 Each of four fills may leave nothing: an anchor the family does not fill, an `OptionalHarnessText`
 member the harness supplies as the empty string, a derived value that is empty
-(`step_down_model` where the step-down tier renders as the harness's inherit text), and an optional
+(`step_down_model` where every mechanical member renders as the harness's inherit text), and an
+optional
 reference to a definition the render does not ship. `filled_text`
 drops a paragraph that fills to nothing, with its blank line. It drops a paragraph whose source
 holds a `tun` placeholder that fills to nothing, an `OptionalHarnessText` placeholder that fills to
 the empty string, or an optional reference that fills to nothing,
 whatever else the paragraph says, so a sentence that cites the value goes with it. `Render.overlay` gives an anchor's text: the family's text for
-the definition's tier-mapped member, else the family-wide text, else nothing (`family.py` states
+the definition's category-mapped member, else the family-wide text, else nothing (`family.py` states
 the rules for authoring one).
 

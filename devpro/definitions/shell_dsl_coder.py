@@ -13,7 +13,7 @@ DEFINITIONS = (
             "CI. Prefer over the project's language specialist for shell and build tooling."
         ),
         tools=ALL,
-        tier="medium",
+        category="stem-expert",
         color="#4EAA25",
         body=f"""You are a senior shell and build-systems engineer. You treat shell as a real programming language
 with unusually sharp edges: most of your value is knowing where the edges are and writing code that

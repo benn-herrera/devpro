@@ -10,7 +10,7 @@ DEFINITIONS = (
         kind=Kind.AGENT,
         description="Rust implementation specialist.",
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#dea584",
         body=f"""You are a senior Rust engineer. You write idiomatic, minimal Rust. You let the type system and
 borrow checker do the work, and you recognize when fighting them signals a design problem rather

@@ -10,7 +10,9 @@ file the installing harness ships copied into ROOT as it stands,
 the harness's guardrail hook registered in a file of its own under ROOT where one install-time run of
 it succeeds; a harness-directory plugin installed below its project root also gets its agents file in its
 harness directory. Overwrites without ceremony only what carries this repository's banner, refusing
-over any other file at a path it writes: the consumer's git is the record of what an install changed."""
+over any other file at a path it writes: the consumer's git is the record of what an install changed.
+Where the devpro settings file names harnesses and `--harness` is not given, `install_selected` drives
+one install per harness it names, each rendered from that harness's settings-file map."""
 
 from __future__ import annotations
 
@@ -19,7 +21,7 @@ import os
 import re
 import shutil
 import subprocess
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from functools import partial
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
@@ -33,11 +35,17 @@ from devpro.agents_file import (
     write_agents_file,
     write_followed_agents_file,
 )
-from devpro.context import Render
+from devpro.context import HarnessSettings, MapSupply, Render, harness_named
 from devpro.errors import InputError
 from devpro.harness import KBASE_OWNER, GuardrailHook, Harness, HarnessFile
 from devpro.install_base import KB_TOOLS_DIR, PACKAGE_ROOT, VENV_DIR, report_left_alone
-from devpro.install_target import user_dir_harnesses
+from devpro.install_target import (
+    require_existing_target,
+    require_subdir_inside,
+    resolve_install_target,
+    target_holds_harness_dir,
+    user_dir_harnesses,
+)
 from devpro.preflight import run_preflighted
 from devpro.render import (
     GENERATED_MARK,
@@ -349,7 +357,7 @@ def _earlier_guardrail(root: Path, *, guardrail: GuardrailHook) -> list[Path]:
 
 
 def _lexical(path: Path) -> Path:
-    """`path` made absolute and normalised."""
+    """`path` made absolute and normalized."""
     return Path(os.path.normpath(path.absolute()))
 
 
@@ -639,3 +647,72 @@ def preflighted_install(
         target=harness_dir,
         report_root=project,
     )
+
+
+INSTALL_SETTINGS = ("always", "detect", "never")
+"""The devpro settings file's `install` setting, per harness: `always` installs for it whatever the target
+holds, `detect` where the target holds its own harness directory, `never` installs nothing for it."""
+DEFAULT_INSTALL_SETTING = "detect"
+"""The setting for a harness the file names without an `install` key."""
+
+
+def _install_setting(entry: HarnessSettings) -> str:
+    """The harness's setting: its `install` value as written, `detect` where the file sets none."""
+    return DEFAULT_INSTALL_SETTING if entry.install is None else entry.install
+
+
+def install_selected(
+    target: Path,
+    settings: Mapping[str, HarnessSettings],
+    *,
+    path: Path | None,
+    tuned: Callable[[str, MapSupply | None], Render],
+    plugin: str,
+    subdir: str | None,
+    verbose: bool,
+    dry_run: bool,
+    uncommitted: Callable[[], tuple[str, ...]],
+) -> None:
+    """Install for every harness the devpro settings file names, in name order, each as its own install:
+    the setting judged first — `never` skips, `detect` where the target holds the harness's own harness
+    directory — then the harness's target resolved and its render built by `tuned` from its map. The
+    target's existence and `--subdir`'s reach into it are refused before the file's harnesses are judged,
+    so the refusals hold whatever the settings say. A file naming no harness installs nothing, and
+    reports the file's path and the ways an install happens, on stderr, and returns without writing.
+    Every named harness's setting is judged against `INSTALL_SETTINGS` before anything is written. The
+    loop stops at the first refusal, naming the harness that refused; earlier harnesses' installs stand."""
+    require_existing_target(target)
+    if subdir is not None:
+        require_subdir_inside(subdir)
+    if not settings:
+        report_left_alone(
+            f"nothing installed: '{path}' names no harness — pass --harness=NAME; or add the harness to the "
+            f"file, either section of it: install = always in [<harness>] installs whatever the target holds, "
+            f"and the detect default installs where the target holds the harness's own directory (create that "
+            f"directory where absent)"
+        )
+        return
+    settings_by_harness = {name: _install_setting(entry) for name, entry in sorted(settings.items())}
+    for name, setting in settings_by_harness.items():
+        if setting not in INSTALL_SETTINGS:
+            raise InputError(
+                f"devpro settings file '{path}', section '[{name}]': install '{setting}' is not one of "
+                f"{', '.join(INSTALL_SETTINGS)}; nothing written"
+            )
+    for name, setting in settings_by_harness.items():
+        if setting == "never":
+            continue
+        if setting == "detect" and not target_holds_harness_dir(target, harness_named(name)):
+            continue
+        try:
+            resolved = resolve_install_target(target, harness=name, plugin=plugin, subdir=subdir)
+            preflighted_install(
+                resolved.harness_dir,
+                tuned(name, settings[name].supply),
+                verbose=verbose,
+                project_root=resolved.project_root,
+                uncommitted=uncommitted,
+                dry_run=dry_run,
+            )
+        except InputError as exc:
+            raise InputError(f"harness '{name}': {exc}") from exc

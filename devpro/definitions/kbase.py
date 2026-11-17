@@ -290,7 +290,7 @@ the plan and the endpoint; you do not.
   for you to fill.
 - **What the run costs.** Call `score` with `dry-run` true first, scoped as the run would be: it asks
   nothing. Give the user the count it returns.
-- **The trade, in their terms.** The judgement the KB's numbers get, against the wall clock of the
+- **The trade, in their terms.** The judgment the KB's numbers get, against the wall clock of the
   run and what each call costs on their plan. `kbase://model-hints` states what the scoring role
   wants — a default, written without knowledge of whose plan pays for it.
 - **Wait.** Start the run once they pick — `scoring-model` on that call where the pick is not the

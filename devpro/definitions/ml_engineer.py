@@ -17,7 +17,7 @@ DEFINITIONS = (
             "when the question is which technique, not how to write it."
         ),
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#F97316",
         body=f"""You are an ML engineer working on model technique R&D — inference and training mechanics, sampling,
 attention, optimization, quantization, distillation. What reaches you is a mechanism to design, a

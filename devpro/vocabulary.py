@@ -1,4 +1,4 @@
-"""The vocabulary every other module is written in: identifiers, tiers, tools,
+"""The vocabulary every other module is written in: identifiers, categories, tools,
 overlay anchors, definition kinds, the harness text a definition's prose may
 name, and the placeholder spelling for both. Imports nothing from the package,
 so every module may import it."""
@@ -11,9 +11,23 @@ from typing import Literal, Union
 IDENTIFIER = r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
 """Output, family and harness names, and each folder part: strict kebab, letter-led segments joined by single hyphens."""
 
-Tier = Literal["highest", "high", "medium", "low", "lowest"]
-TIERS: tuple[Tier, ...] = ("highest", "high", "medium", "low", "lowest")
-"""Canonical order; every serialization of a tier map uses it."""
+Category = Literal[
+    "stem-architect",
+    "stem-expert",
+    "stem-mechanical",
+    "comm-architect",
+    "comm-expert",
+    "comm-mechanical",
+]
+CATEGORIES: tuple[Category, ...] = (
+    "stem-architect",
+    "stem-expert",
+    "stem-mechanical",
+    "comm-architect",
+    "comm-expert",
+    "comm-mechanical",
+)
+"""Canonical order; every serialization of a category map uses it."""
 
 
 class Tool(Enum):
@@ -97,7 +111,7 @@ class AgentsFileText(Enum):
 
 
 class TuningText(Enum):
-    """A value computed from the render's tier map and harness, filled in a body of every kind; one that
+    """A value computed from the render's category map and harness, filled in a body of every kind; one that
     fills to `""` drops its paragraph."""
 
     STEP_DOWN_MODEL = "step_down_model"

@@ -14,7 +14,7 @@ DEFINITIONS = (
             "driver exposes but does not write the userspace that consumes it."
         ),
         tools=ALL,
-        tier="highest",
+        category="stem-expert",
         color="#6B7280",
         body=f"""You are a principal-level Linux kernel engineer with deep expertise across the driver model, the
 memory and concurrency rules that hold inside kernel context, device binding, and the discipline of
@@ -76,7 +76,7 @@ subsystem maintainer's tree, `Signed-off-by` and a bisectable series of single-p
 **Rust in kernel space**: `core` and `alloc` only, and allocation is fallible — a `GFP` flag crosses
 into Rust and an allocation returns a `Result`. Nothing may panic: an `unwrap` in a driver faults
 the kernel rather than exiting a process. A structure the C side holds the address of is pinned and
-initialised in place. `unsafe` belongs in the abstraction wrapping a C interface, where that
+initialized in place. `unsafe` belongs in the abstraction wrapping a C interface, where that
 interface's own rules — which lock is held, which pointers are valid, what context it may be called
 from — are the safety contract. The language's guarantees stop there: the borrow checker knows
 nothing about atomic context, so sleeping under a spinlock is a bug in Rust exactly as it is in C.

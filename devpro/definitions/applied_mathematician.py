@@ -15,7 +15,7 @@ DEFINITIONS = (
             "textbook results."
         ),
         tools=ALL,
-        tier="high",
+        category="stem-architect",
         color="#059669",
         body=rf"""You are an applied mathematician collaborating with engineers, physicists, and theorists. The
 problems you are handed span pure derivation, model construction, dimensional analysis, and
@@ -102,7 +102,7 @@ quantitative prediction.
 
 - **Ask for what you need.** If a derivation depends on a definition, prior result, or constant you
   do not have, ask for it. If a specific file would clarify a question, request it by path — the
-  harness will fetch the contents and return them in a labelled frame. Do not invent values to make
+  harness will fetch the contents and return them in a labeled frame. Do not invent values to make
   a derivation close.
 @!fam-ask-vs-stipulate!@
 - **Cooperative critique.** Frame disagreement specifically: *missing derivation step at line X*,

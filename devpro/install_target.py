@@ -6,10 +6,11 @@ harness.
 The harness is, in order: the one `--harness` names; the one whose harness directory sits inside the
 target — its project harness directory, or, in the home directory, its user harness directory; the
 one the target itself is a harness directory of, matched on the target's trailing path elements;
-otherwise none, and the install is refused. Every directory name is read from the harnesses' own
-values, so none is spelled here. The target is normalised lexically, for that matching and for the
-harness directory and project root built from it; it is resolved only where it is compared with the
-home directory, so two spellings of home compare equal.
+otherwise none, and the install is refused. Held to one harness, the same values answer whether a target
+holds its harness directory (`target_holds_harness_dir`), the `detect` install setting's judgment. Every
+directory name is read from the harnesses' own values, so none is spelled here. The target is normalized
+lexically, for that matching and for the harness directory and project root built from it; it is resolved
+only where it is compared with the home directory, so two spellings of home compare equal.
 """
 
 from __future__ import annotations
@@ -28,7 +29,7 @@ _HOME_PREFIX = "~/"
 @dataclass(frozen=True)
 class InstallTarget:
     """A resolved install: the harness's name; and the harness directory and the project root, each
-    built from the target normalised."""
+    built from the target normalized."""
 
     harness: str
     harness_dir: Path
@@ -60,11 +61,42 @@ def _own_dir_names(harness: Harness) -> tuple[str, ...]:
 
 
 def _is_own_dir(target: Path, harness: Harness) -> bool:
-    """Whether the normalised `target` ends in one of `harness`'s own directory names."""
+    """Whether the normalized `target` ends in one of `harness`'s own directory names."""
     return any(
         target.parts[-len(trailing) :] == trailing
         for trailing in (PurePosixPath(name).parts for name in _own_dir_names(harness))
     )
+
+
+def _lexical_target(target: Path) -> tuple[Path, bool]:
+    """`target` made absolute with `..` collapsed, and whether it is the home directory."""
+    normalized = Path(os.path.normpath(target.absolute()))
+    return normalized, normalized.resolve() == Path.home().resolve()
+
+
+def require_existing_target(target: Path) -> None:
+    """Refuse `target` where it is not an existing directory, naming an unexpanded `~` as the cause."""
+    if target.is_dir():
+        return
+    cause = "'~' was not expanded; pass an absolute path" if target.parts[:1] == ("~",) else "create the project first"
+    raise InputError(f"install target '{target}' is not an existing directory — {cause}")
+
+
+def require_subdir_inside(subdir: str) -> None:
+    """Refuse `subdir` where it is an absolute path or, normalized, climbs out of the target."""
+    normalized = os.path.normpath(subdir)
+    if os.path.isabs(subdir) or normalized == ".." or normalized.startswith("../"):
+        raise InputError(f"--subdir '{subdir}' must name a directory inside the target — nothing written")
+
+
+def target_holds_harness_dir(target: Path, harness: Harness) -> bool:
+    """Whether `target` holds `harness`'s own harness directory — its user harness directory in the home
+    directory, its project harness directory anywhere else — or is that directory itself. The `detect`
+    install setting's per-harness judgment: the same two predicates `_detected_harness` composes, read one
+    harness at a time, so a change to either belongs in both. The install's `--subdir` does not enter it."""
+    normalized, at_home = _lexical_target(target)
+    directory = _dir_inside(harness, at_home=at_home)
+    return (directory is not None and (normalized / directory).is_dir()) or _is_own_dir(normalized, harness)
 
 
 def _only(target: Path, matches: dict[str, str]) -> str | None:
@@ -76,6 +108,9 @@ def _only(target: Path, matches: dict[str, str]) -> str | None:
 
 
 def _detected_harness(target: Path, *, at_home: bool) -> str:
+    """The one harness `target` holds the harness directory of, or is the harness directory of;
+    `target_holds_harness_dir` is the same judgment read one harness at a time, so a change to either
+    belongs in both. None, or several, is refused."""
     known = harnesses()
     inside = {
         name: directory
@@ -101,21 +136,14 @@ def resolve_install_target(target: Path, *, harness: str | None, plugin: str, su
     a target that is itself the nested-plugin harness's directory is the harness directory, under its
     parent as the project root; any other target holds it at `<target>/<project harness directory>`. A
     target that is not an existing directory is refused."""
-    if not target.is_dir():
-        cause = (
-            "'~' was not expanded; pass an absolute path" if target.parts[:1] == ("~",) else "create the project first"
-        )
-        raise InputError(f"install target '{target}' is not an existing directory — {cause}")
-    target = Path(os.path.normpath(target.absolute()))
-    at_home = target.resolve() == Path.home().resolve()
+    require_existing_target(target)
+    target, at_home = _lexical_target(target)
     name = _detected_harness(target, at_home=at_home) if harness is None else harness
     selected = harness_named(name).bound(plugin)
     in_home = _user_dir_in_home(selected) if at_home else None
     project_root = target
     if subdir is not None:
-        normalized = os.path.normpath(subdir)
-        if os.path.isabs(subdir) or normalized == ".." or normalized.startswith("../"):
-            raise InputError(f"--subdir '{subdir}' must name a directory inside the target — nothing written")
+        require_subdir_inside(subdir)
         harness_dir = target / subdir
     elif in_home is not None:
         harness_dir = target / in_home

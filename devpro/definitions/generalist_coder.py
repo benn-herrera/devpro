@@ -14,7 +14,7 @@ DEFINITIONS = (
             "expert takes it instead."
         ),
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#22C55E",
         body=f"""You are a senior software engineer. You write minimal, correct, idiomatic code.
 

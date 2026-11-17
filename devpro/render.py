@@ -24,11 +24,11 @@ from devpro.vocabulary import (
     ALL,
     AgentsFileText,
     Anchor,
+    Category,
     HarnessText,
     Kind,
     OptionalHarnessText,
     PluginText,
-    Tier,
     TuningText,
     hole,
     optional_reference,
@@ -69,13 +69,13 @@ def definitions() -> tuple[tuple[str, Definition], ...]:
 
 def agent_fields(defn: Definition, ctx: Render) -> AgentFields:
     """Map an agent through ctx.harness: description filled as `filled_description` fills it; model via
-    ctx.model(defn.tier); tools to spellings (None for ALL); governed as the de-duplicated image of
+    ctx.model(defn.category); tools to spellings (None for ALL); governed as the de-duplicated image of
     ctx.harness.tools in table order."""
     table = ctx.harness.tools
     return AgentFields(
         name=defn.name,
         description=filled_description(defn, ctx),
-        model=ctx.model(defn.tier),
+        model=ctx.model(defn.category),
         color=defn.color,
         tools=None if defn.tools is ALL else tuple(spelling for tool in defn.tools for spelling in table[tool]),
         governed=tuple(dict.fromkeys(spelling for spellings in table.values() for spelling in spellings)),
@@ -94,23 +94,21 @@ def generated_line(module: str) -> str:
     return f"# {generated_text(module)}"
 
 
-def tuning_text(ctx: Render, *, tier: Tier | None) -> str:
-    """`!TUNING! family=… tier=… member=… tier-map=…`, then ` alias=…` only when the alias map is set,
-    then ` stock=…` (`none` when empty) and ` harness=…` last. A tiered definition renders its tier; one
-    declaring no tier renders `tier=none member=none`."""
-    member = "none" if tier is None else ctx.tier_map[tier]
-    aliases = "" if ctx.alias_map is None else f" alias={map_spec(ctx.alias_map)}"
+def tuning_text(ctx: Render, *, category: Category | None) -> str:
+    """`!TUNING! family=… category=… member=… category-map=… stock=… harness=…`. A definition declaring a
+    category renders it; one declaring none renders `category=none member=none`."""
+    member = "none" if category is None else ctx.category_map[category]
     return (
-        f"!TUNING! family={ctx.family.name} tier={tier or 'none'} member={member}"
-        f" tier-map={map_spec(ctx.tier_map)}{aliases}"
+        f"!TUNING! family={ctx.family.name} category={category or 'none'} member={member}"
+        f" category-map={map_spec(ctx.category_map)}"
         f" stock={','.join(ctx.stock) or 'none'}"
         f" harness={ctx.harness.name}"
     )
 
 
-def tuning_line(ctx: Render, *, tier: Tier | None) -> str:
+def tuning_line(ctx: Render, *, category: Category | None) -> str:
     """`# ` and the tuning payload: the frontmatter and copied-file carrier's second line."""
-    return f"# {tuning_text(ctx, tier=tier)}"
+    return f"# {tuning_text(ctx, category=category)}"
 
 
 def _field_lines(defn: Definition, ctx: Render, *, form: FrontmatterForm) -> tuple[str, ...]:
@@ -128,13 +126,13 @@ def _frontmatter(defn: Definition, ctx: Render, *, module: str, form: Frontmatte
     blank line before the body, which a command omits."""
     fields = "".join(line + "\n" for line in _field_lines(defn, ctx, form=form))
     gap = "" if defn.kind is Kind.COMMAND else "\n"
-    return f"---\n{generated_line(module)}\n{tuning_line(ctx, tier=defn.tier)}\n{fields}---\n{gap}"
+    return f"---\n{generated_line(module)}\n{tuning_line(ctx, category=defn.category)}\n{fields}---\n{gap}"
 
 
-def _comment_banner(ctx: Render, *, module: str, tier: Tier | None) -> str:
+def _comment_banner(ctx: Render, *, module: str, category: Category | None) -> str:
     """The two banner lines as HTML comments, then the blank line before the body: the carrier of a file
     holding no frontmatter."""
-    return f"<!-- {generated_text(module)} -->\n<!-- {tuning_text(ctx, tier=tier)} -->\n\n"
+    return f"<!-- {generated_text(module)} -->\n<!-- {tuning_text(ctx, category=category)} -->\n\n"
 
 
 @functools.cache
@@ -161,19 +159,20 @@ def _references(prefix: str, shipped: frozenset[str]) -> dict[str, str]:
 
 def filled_text(body: str, defn: Definition, ctx: Render, *, where: str) -> str:
     """`body` with every placeholder filled in one pass: a harness text from ctx.bound_harness, the
-    plugin's name from ctx.plugin, an anchor from ctx.overlay for the definition's tier ("" where the family
-    fills none), the step-down model from ctx.step_down_model for every kind, a reference to a definition
+    plugin's name from ctx.plugin, an anchor from ctx.overlay for the definition's category ("" where the
+    family fills none), the step-down model from the render seated at the definition's category for every
+    kind, a reference to a definition
     the render ships as ctx.bound_harness.reference_prefix and its name, and for the agents file alone its
     scope name and the package version. A paragraph that fills to nothing is dropped with its blank
     line, so an unfilled anchor standing as its own paragraph leaves no empty one. A paragraph whose
     source holds a tuning hole or an optional harness text that fills to "", or an optional reference
     to a definition the render does not ship, is dropped whole, whatever else it says. A plain reference to a definition the render does not ship is refused, naming `where` and the
     definition; so is a placeholder-shaped span naming no key. Filled text is not rescanned."""
-    seated = dataclasses.replace(ctx, tier=defn.tier)
+    seated = dataclasses.replace(ctx, category=defn.category)
     shipped = frozenset(name for name in _referents().values() if ctx.plugin.ships(name))
     values = {hole(part): ctx.bound_harness.text(part) for part in (*HarnessText, *OptionalHarnessText)}
     values.update({hole(anchor): seated.overlay(anchor) for anchor in Anchor})
-    values[hole(TuningText.STEP_DOWN_MODEL)] = ctx.step_down_model
+    values[hole(TuningText.STEP_DOWN_MODEL)] = seated.step_down_model
     values[hole(PluginText.NAME)] = ctx.plugin.name
     references = _references(ctx.bound_harness.reference_prefix, shipped)
     values.update(references)
@@ -218,7 +217,7 @@ def render_definition(defn: Definition, ctx: Render, *, module: str) -> str:
     if isinstance(form, FrontmatterForm):
         opening = _frontmatter(defn, ctx, module=module, form=form)
     else:
-        opening = _comment_banner(ctx, module=module, tier=defn.tier)
+        opening = _comment_banner(ctx, module=module, category=defn.category)
     return f"{opening}{filled_body(defn, ctx)}\n"
 
 
@@ -226,7 +225,7 @@ def render_skill_file(defn: Definition, file: SkillFile, ctx: Render, *, module:
     """A skill's supporting file: the comment banner, the filled body, and one final newline. Nothing about
     how the file reads depends on the banner."""
     where = str(defn.file_output_path(file))
-    return f"{_comment_banner(ctx, module=module, tier=defn.tier)}{filled_text(file.body, defn, ctx, where=where)}\n"
+    return f"{_comment_banner(ctx, module=module, category=defn.category)}{filled_text(file.body, defn, ctx, where=where)}\n"
 
 
 def rendered_definitions(ctx: Render) -> tuple[tuple[str, Definition], ...]:
@@ -286,11 +285,11 @@ def render_all(ctx: Render) -> tuple[tuple[PurePosixPath, str], ...]:
 
 def render_agents_file(harness: Harness, plugin: Plugin, *, scope: str) -> str:
     """The harness agents file as a fresh file holds it for `plugin`: the agents-file definition's body
-    filled for `harness` bound to `plugin` and for `scope`, under the default family's own tiers,
+    filled for `harness` bound to `plugin` and for `scope`, under the default family's own categories,
     whatever the invocation's tuning and with no harness model-shape check, then one final newline."""
     [defn] = [defn for _, entries in discover() for defn in entries if defn.kind is Kind.AGENTS_FILE]
     family = load("devpro.families", "FAMILY")[DEFAULT_FAMILY]
-    ctx = Render(harness=harness, plugin=plugin, family=family, tier_map=dict(family.tiers), scope=scope)
+    ctx = Render(harness=harness, plugin=plugin, family=family, category_map=dict(family.categories), scope=scope)
     return filled_body(defn, ctx) + "\n"
 
 

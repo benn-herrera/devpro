@@ -13,7 +13,7 @@ DEFINITIONS = (
             "installers (MSI/MSIX) and P/Invoke."
         ),
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#0078D4",
         body=f"""You are a principal-level Windows engineer with deep expertise across Win32, .NET, COM, and modern
 Windows platforms.

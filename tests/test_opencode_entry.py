@@ -28,7 +28,7 @@ _RUNNER = Path(__file__).parent / "opencode_entry_runner.ts"
 @functools.cache
 def _banner_lines() -> int:
     """How many lines the opencode render writes above a definition's body."""
-    ctx = build_render(harness=OPENCODE.name, plugin=KBASE.name, family=DEFAULT_FAMILY, tier_spec=None, alias_spec=None)
+    ctx = build_render(harness=OPENCODE.name, plugin=KBASE.name, family=DEFAULT_FAMILY)
     module, defn = rendered_definitions(ctx)[0]
     text = render_definition(defn, ctx, module=module)
     return text[: len(text) - len(filled_body(defn, ctx) + "\n")].count("\n")

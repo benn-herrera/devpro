@@ -5,7 +5,8 @@ The agents file is rendered from the agents-file definition
 the whole file as a fresh install holds it: the title carrying the scope-name placeholder, then the
 agents-file block from the begin marker line to the end marker line.
 `render.render_agents_file(harness, plugin, scope=...)` fills it for the harness bound to the plugin,
-under the default family's own tiers, with no model-shape check. The `development` bullet is an optional
+under the default family's own categories, with no model-shape check. The `development` bullet is an
+optional
 reference to `development` in its own paragraph, and both plugins ship it, so both blocks carry it.
 The scratch rule and the memory file's name are the harness's `scratch_rule` and `memory_file`
 (Rendering, Placeholders); the rule names the scratch directory
@@ -61,7 +62,7 @@ writes the plugin's block into `<plugin>/CLAUDE.md` in its own directory, so no 
 `devpro.__version__` for the agents file alone. `checked_agents_file` compares the existing block with
 the rendered one, marker lines excluded, and decides by `_release` (dot-separated digits, `None` for
 anything else). A kept block's report travels in `AgentsFileWrite.left`. The marker lines are
-recognised by their fixed ends, so a stamped, an unstamped and a non-version-stamped line all parse.
+recognized by their fixed ends, so a stamped, an unstamped and a non-version-stamped line all parse.
 
 The `install-agents-file` verb is reached through `agents_file.preflighted_agents_file_install`, the
 agents-file counterpart of the install preflight (Install, Renders and copies).

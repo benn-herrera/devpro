@@ -57,7 +57,8 @@ with no tools and none of the project's instruction files in context. The script
   says the agent did not load and passes on the available agents claude named.
 - Where the environment variable `DEVPRO_COLD_READ_MODEL` is set and not empty, the reader runs on
   that model (under claude a model name or alias, under opencode `provider/model`); otherwise on the
-  model the harness gives the agent. A model the harness rejects fails the run with no output.
+  model the harness gives the agent — under the unpinned defaults, the model the session runs.
+  A model the harness rejects fails the run with no output.
 - Under opencode a brief whose first character is `-` is refused.
 - It refuses where the calling session is the other harness's, naming both and saying to run the
   calling harness's own copy of the skill, and where it sits under no harness directory named

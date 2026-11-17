@@ -36,7 +36,7 @@ files). Each is rendered and neither a deployed surface nor a definition. It arr
 the one distribution channel. Install delivers one plugin, `devpro` or `kbase`, and no other. Its usage:
 
 ```sh
-devpro install TARGET [--plugin=NAME] [--harness=NAME] [--subdir=DIR] [--family=NAME] [--model-tier-map=SPEC] [--model-pin-tier-alias-map=SPEC] [--dry-run] [--verbose]
+devpro install TARGET [--plugin=NAME] [--harness=NAME] [--subdir=DIR] [--family=NAME] [--config-file=FILE] [--dry-run] [--verbose]
 ```
 
 Plugins states `--plugin`'s default. From a checkout of this repository the same command runs as

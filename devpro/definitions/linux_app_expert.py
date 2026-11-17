@@ -13,7 +13,7 @@ DEFINITIONS = (
             "and packaging (deb/rpm/AppImage/Flatpak/Snap)."
         ),
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#FCC624",
         body=f"""You are a principal-level Linux desktop engineer with deep expertise across UI toolkits, display
 servers, systemd, D-Bus, freedesktop.org standards, and cross-distro packaging.

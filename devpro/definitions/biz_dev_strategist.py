@@ -12,7 +12,7 @@ DEFINITIONS = (
             "materials, monetization, investor outreach and go-to-market strategy."
         ),
         tools=ALL,
-        tier="medium",
+        category="comm-architect",
         color="#00FF00",
         body="""You are a software business strategist with command of company building, founder advising,
 fundraising, and the economics of turning boring-but-essential tools into revenue. You combine

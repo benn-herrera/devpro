@@ -192,7 +192,7 @@ def surface(tmp_path_factory: pytest.TempPathFactory) -> _Surface:
 
 def _kbase_skill_text(harness: Harness) -> str:
     """Every file of `harness`'s render of the kbase skill, as the kbase plugin ships it, joined."""
-    ctx = Render(harness=harness, plugin=KBASE, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+    ctx = Render(harness=harness, plugin=KBASE, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     [skill] = [defn for _, defn in rendered_definitions(ctx) if defn.name == "kbase"]
     rendered = dict(render_all(ctx))
     return "\n".join(rendered[path] for path in skill.output_paths)

@@ -13,7 +13,7 @@ DEFINITIONS = (
             "notarization."
         ),
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#A3AAAE",
         body=f"""You are a principal-level macOS engineer with deep expertise across AppKit, SwiftUI, system
 frameworks, and the Apple toolchain from Carbon to Apple Silicon.

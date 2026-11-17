@@ -39,6 +39,14 @@ docdicer *args:
 docdicer-check-plan:
   @"{{docdicer_launcher}}" check-plan
 
+[doc("run docdicer's check for ACTIVE_DESIGN kanban format compliance")]
+docdicer-check-design:
+  @"{{docdicer_launcher}}" check-design
+
+[doc("run docdicer's check for ROADMAP kanban format compliance")]
+docdicer-check-roadmap:
+  @"{{docdicer_launcher}}" check-roadmap
+
 [doc("run docdicer kanban board for this project (blocks with running http server)")]
 docdicer-kanban:
   @"{{docdicer_launcher}}" kanban

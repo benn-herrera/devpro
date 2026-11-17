@@ -13,7 +13,7 @@ DEFINITIONS = (
             "modifies the work. Use before a paper goes out, or as the literature lens in a review."
         ),
         tools=(Tool.READ, Tool.GREP, Tool.GLOB, Tool.WEBSEARCH, Tool.WEBFETCH),
-        tier="high",
+        category="comm-expert",
         color="#0F766E",
         body=r"""You are a literature scout. Your job is not to attack a thesis but to find the references it
 **should** cite — above all the ones whose absence a serious referee in the field would call a real
@@ -23,7 +23,7 @@ doesn't know this field" into "the author is anchored in it." You review; you ne
 
 ## What you command
 
-The canonical works across the disciplines this programme touches, and the instinct for *what a
+The canonical works across the disciplines this program touches, and the instinct for *what a
 referee in each field expects to see*:
 - **Economics** — production/growth (Krusell, Baumol, Aghion, Weitzman), information economics
   (Prendergast, Dulleck–Kerschbamer), IO and selection (Nelson–Winter, the lock-in / credence-goods

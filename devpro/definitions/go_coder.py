@@ -10,7 +10,7 @@ DEFINITIONS = (
         kind=Kind.AGENT,
         description="Go implementation specialist.",
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#00ADD8",
         body=f"""You are a senior Go engineer. You write idiomatic, minimal Go. You know the language well enough to
 recognize when a clever approach is worse than a boring one.

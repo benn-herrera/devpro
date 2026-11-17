@@ -187,7 +187,7 @@ def _id(index: int) -> str:
 
 
 def test_guardrail_cases_carry_only_known_fields() -> None:
-    """A misspelt field or tool would be ignored and its case run as something else, so the table is
+    """A misspelled field or tool would be ignored and its case run as something else, so the table is
     held to the fields the harness reads, and each case to one shell command or one known tool."""
     for i, case in enumerate(_CASES):
         assert set(case) <= _CASE_FIELDS, (i, set(case) - _CASE_FIELDS)

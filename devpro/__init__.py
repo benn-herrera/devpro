@@ -8,7 +8,7 @@ render time are the placeholders `vocabulary.hole` spells for a harness string
 or a family overlay anchor, filled once by `render.filled_body`.
 
     errors.py        the one error, InputError, reported as exit 2
-    vocabulary.py    tiers, tools, anchors, kinds, harness texts and the placeholder spelling
+    vocabulary.py    categories, tools, anchors, kinds, harness texts and the placeholder spelling
     loading.py       the one loader of the instance packages below
     definition.py    the Definition and SkillFile values: kind, output paths, frontmatter values, text
     clauses.py       shared text: constants, and small functions for text with slots
@@ -18,7 +18,7 @@ or a family overlay anchor, filled once by `render.filled_body`.
     plugins/         one module per plugin, each defining PLUGIN
     family.py        the family dataclass and its overlays, and how to author one
     families/        one module per family, each defining FAMILY
-    context.py       Render, and the two map flags' grammar
+    context.py       Render, the devpro settings file and the map's grammar
     definitions/     one module per definition, each defining DEFINITIONS
     render.py        definition to file text, the banner, the writer, and the agents file's text
     install_target.py where an install lands: its harness, harness directory and project root, from the target
@@ -35,7 +35,7 @@ Usage, where `python3 -m devpro` is the same command as `devpro`; a checkout
 runs it from the repository root with that root on PYTHONPATH:
 
     devpro render --out DIR [--plugin NAME] [--harness NAME] [--family NAME]
-        [--model-tier-map SPEC] [--model-pin-tier-alias-map SPEC]
+        [--config-file=FILE]
     devpro install TARGET [--plugin NAME] [--subdir DIR] [--verbose]
         [--dry-run] [the same tuning flags]
     devpro install-agents-file DIR [--plugin NAME] [--harness NAME] [--dry-run]
@@ -44,7 +44,7 @@ runs it from the repository root with that root on PYTHONPATH:
 
 The plugin is the name of a module in `plugins/`, default `context.DEFAULT_PLUGIN`. The render is deterministic:
 the text of every file is a function of the definition, the plugin, the harness,
-the family and the two maps, and of nothing else.
+the family and the category map, and of nothing else.
 """
 
-__version__ = "0.17.3"
+__version__ = "0.17.4"

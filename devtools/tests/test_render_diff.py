@@ -11,12 +11,12 @@ OTHER_BANNER = b"---\n# !GENERATED! from x\n# !TUNING! z\nname: a\n---\ntext\n"
 BANNERED_BODY = b"---\n# !BANNER!\nname: a\n---\ntext\n"
 COMMENT_BANNER = (
     b"<!-- !GENERATED! from devpro/definitions/kbase.py \xe2\x80\x94 x -->\n"
-    b"<!-- !TUNING! family=claude tier=none member=none tier-map=a stock=b harness=claude -->\n"
+    b"<!-- !TUNING! family=claude category=none member=none category-map=a stock=b harness=claude -->\n"
     b"\n# Reading\n\nA paragraph.\n"
 )
 COMMENT_BANNER_OTHER = COMMENT_BANNER.replace(
-    b"<!-- !TUNING! family=claude tier=none member=none tier-map=a stock=b harness=claude -->",
-    b"<!-- !TUNING! family=gemma-4 tier=none member=none tier-map=c stock=none harness=opencode -->",
+    b"<!-- !TUNING! family=claude category=none member=none category-map=a stock=b harness=claude -->",
+    b"<!-- !TUNING! family=gemma-4 category=none member=none category-map=c stock=none harness=opencode -->",
 )
 
 

@@ -94,7 +94,7 @@ HARNESS = Harness(
     model_shape="a Claude alias (fable, opus, sonnet, haiku), a full model id such as claude-opus-4-1, or inherit",
     inherit_text="inherit",
     inherit_synonyms=(),
-    bare_tier_spec_is_all=False,
+    bare_category_spec_is_all=False,
     definition_form=FrontmatterForm(agent=agent_frontmatter, document=()),
     rendered_files=(PLUGIN_MANIFEST, mcp_json(_mcp_entry)),
     guardrail=GuardrailHook(

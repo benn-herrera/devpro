@@ -33,7 +33,7 @@ and refusal, tuning-text resolution, the line cap on every rendered definition b
 (Rendering). `tests/test_devpro_install.py` holds the install and agents-file cases.
 `tests/test_opencode_entry.py` runs the opencode plugin entry under `bun` against a stub plugin
 context, and `tests/test_plugins.py` holds the plugin membership and per-plugin content cases. The
-two guardrails are held to one behaviour by `tests/test_guardrail.py`, which runs every case of
+two guardrails are held to one behavior by `tests/test_guardrail.py`, which runs every case of
 `tests/guardrail_cases.json` through `guardrail.pl` under `perl` and through `guardrail.ts` under
 `bun`, but a case whose `harness` field (`claude` or `opencode`) names one implementation runs
 under that one alone (`tests/guardrail_ts_runner.ts` loads the opencode guardrail outside

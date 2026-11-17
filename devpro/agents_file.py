@@ -1,7 +1,7 @@
 """`python3 -m devpro install-agents-file DIR [--plugin NAME] [--harness NAME] [--dry-run]`: the harness agents
 file of one plugin installed by replacing its block and keeping every other byte of the live file.
 
-The block runs from the begin marker line through the end marker line. A marker line is recognised
+The block runs from the begin marker line through the end marker line. A marker line is recognized
 by its whitespace-stripped ends alone, so a block any earlier revision wrote is still found. A live
 file with one ordered marker pair has that span replaced; one with no marker line has the block
 appended after a blank line; an absent file is written whole; any other file is refused. In the

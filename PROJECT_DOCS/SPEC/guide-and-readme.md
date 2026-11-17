@@ -36,8 +36,14 @@ The skill carries two reference pages, which the session reads when its starting
   - the requirements: `just` 1.33.0 or later where the consuming project's runner is a justfile,
     for the runner include lines; `perl` with core `JSON::PP` for the claude guardrail;
   - what the operator sets up for a cold read: `DEVPRO_COLD_READ_DIR`;
-  - rendering for another model family or tier map: it names the flags and leaves their grammar to
-    `devpro install --help`;
+  - rendering for another model family: it names the flag and leaves its grammar to SPEC.md,
+    Rendering;
+  - what a rendering pins by default: a claude install pins its family's members; an opencode or
+    mage install pins none — under opencode the definitions carry no model, under mage they carry
+    `model: inherit` — unless the devpro settings file carries entries for the harness;
+  - the devpro settings file: its location (`~/.config/devpro/devpro.cfg`, `--config-file` to
+    name another), the `install` setting's three values in `[<harness>]`, and the entries in each
+    harness's `[<harness>-model-map]` section;
   - under claude, agents not offered after an install: run `/reload-plugins`. If a restart or
     `/reload-plugins` does not bring them, the plugin has not loaded. That happens when the session
     started away from the project root or before the trust dialog, when managed settings block it,
@@ -89,6 +95,6 @@ The repository's `README.md` holds these things:
     harness;
 - what to do next: ask your agent, which loads the `guide` skill, invoked as SPEC.md, Deployed
   Surfaces, Install destination spells it;
-- the third-party acknowledgements.
+- the third-party acknowledgments.
 
 No install delivers human-facing documentation.

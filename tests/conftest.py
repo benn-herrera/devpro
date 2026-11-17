@@ -1,4 +1,4 @@
-"""Fixtures every test runs under."""
+"""Fixtures every test runs under, and the helpers more than one test module shares."""
 
 from pathlib import Path
 
@@ -13,3 +13,10 @@ def _home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     home = tmp_path / "home"
     monkeypatch.setenv("HOME", str(home))
     return home
+
+
+def settings_file(tmp_path: Path, text: str) -> Path:
+    """A devpro settings file holding `text`, for the CLI to read with `--config-file`."""
+    path = tmp_path / "devpro.cfg"
+    path.write_text(text, encoding="utf-8")
+    return path

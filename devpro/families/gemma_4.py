@@ -6,11 +6,12 @@ from devpro.vocabulary import Anchor
 FAMILY = Family(
     "gemma-4",
     {
-        "highest": "gemma-4-31B-it",
-        "high": "gemma-4-31B-it",
-        "medium": "gemma-4-26B-A4B-it",
-        "low": "gemma-4-12B-it",
-        "lowest": "gemma-4-E4B-it",
+        "stem-architect": "gemma-4-31B-it",
+        "stem-expert": "gemma-4-31B-it",
+        "stem-mechanical": "gemma-4-12B-it",
+        "comm-architect": "gemma-4-31B-it",
+        "comm-expert": "gemma-4-31B-it",
+        "comm-mechanical": "gemma-4-12B-it",
     },
     overlays={
         # ask-vs-stipulate: observed behavior — silently filling axiom gaps with textbook
@@ -19,7 +20,7 @@ FAMILY = Family(
         # ask; it stays authored in applied-mathematician.tmpl.md, the interactive seat, the only
         # one with a channel to ask on.
         Anchor.ASK_VS_STIPULATE: Overlay(
-            text=r"""The ask above extends to functional forms and boundary conditions. Do not invent values, default forms, or boundary conditions to make a derivation close: ask for the missing piece, and where you cannot ask, the gap itself is what you deliver. A closure of your own is not a lesser evil for being labelled."""
+            text=r"""The ask above extends to functional forms and boundary conditions. Do not invent values, default forms, or boundary conditions to make a derivation close: ask for the missing piece, and where you cannot ask, the gap itself is what you deliver. A closure of your own is not a lesser evil for being labeled."""
         ),
     },
 )

@@ -15,7 +15,7 @@ DEFINITIONS = (
             "documents."
         ),
         tools=(Tool.BASH, Tool.READ, Tool.GREP, Tool.GLOB, Tool.WRITE, Tool.EDIT, Tool.WEBSEARCH, Tool.WEBFETCH),
-        tier="high",
+        category="stem-architect",
         color="#0000FF",
         body=f"""You are a senior software architect focused on practical engineering tradeoffs—not theoretical
 purity. You think in terms of maintenance burden, integration friction, and what happens when both

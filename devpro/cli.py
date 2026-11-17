@@ -13,20 +13,22 @@ from pathlib import Path
 from devpro import __version__
 from devpro.agents_file import preflighted_agents_file_install, scope_name
 from devpro.context import (
-    ALIAS_MAP_FLAG,
     DEFAULT_FAMILY,
     DEFAULT_HARNESS,
     DEFAULT_PLUGIN,
-    TIER_MAP_FLAG,
+    HarnessSettings,
+    MapSupply,
     Render,
     build_render,
+    families,
     harness_named,
     map_spec,
     plugin_named,
     plugins,
+    read_settings,
 )
 from devpro.errors import InputError
-from devpro.install import preflighted_install, uncommitted_sources
+from devpro.install import install_selected, preflighted_install, uncommitted_sources
 from devpro.install_target import agents_file_harness, resolve_install_target
 from devpro.render import render_agents_file, render_all, write_renders
 from devpro.vocabulary import HarnessText, key
@@ -36,14 +38,21 @@ _DRY_RUN_HELP = "print what the install would create, change and remove; write n
 
 def _add_tuning_flags(verb: argparse.ArgumentParser, *, harness_default: str | None, harness_help: str) -> None:
     verb.add_argument("--harness", default=harness_default, metavar="NAME", help=harness_help)
-    verb.add_argument("--family", default=DEFAULT_FAMILY, metavar="NAME", help="the model family to tune for")
     verb.add_argument(
-        TIER_MAP_FLAG,
-        dest="tier_spec",
-        metavar="SPEC",
-        help="each tier=member; all=<model>+exceptions; bare=all",
+        "--family",
+        default=DEFAULT_FAMILY,
+        metavar="NAME",
+        help=f"the model family to tune for: one of {', '.join(families())}; default %(default)s",
     )
-    verb.add_argument(ALIAS_MAP_FLAG, dest="alias_spec", metavar="SPEC", help="tier=alias for every tier, or all=")
+    verb.add_argument(
+        "--config-file",
+        metavar="FILE",
+        default=None,
+        help=(
+            "[<harness>] settings, install among them, and [<harness>-model-map] entries; read in place of "
+            "~/.config/devpro/devpro.cfg"
+        ),
+    )
 
 
 def _add_plugin(verb: argparse.ArgumentParser) -> None:
@@ -90,7 +99,10 @@ def build_parser() -> argparse.ArgumentParser:
     _add_tuning_flags(
         installing,
         harness_default=None,
-        harness_help="the harness to install for; detected from TARGET when not given",
+        harness_help=(
+            "the harness to install for; without it, every harness the devpro settings file names, else "
+            "detected from TARGET"
+        ),
     )
     agents_file = verbs.add_parser(
         "install-agents-file", help="install the plugin's agents file block", allow_abbrev=False
@@ -122,30 +134,50 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _tuned(args: argparse.Namespace, *, harness: str) -> Render:
-    ctx = build_render(
-        harness=harness, plugin=args.plugin, family=args.family, tier_spec=args.tier_spec, alias_spec=args.alias_spec
-    )
-    aliases = "" if ctx.alias_map is None else f" alias[{map_spec(ctx.alias_map)}]"
-    print(f"tuning: family={ctx.family.name} tier[{map_spec(ctx.tier_map)}]{aliases} harness={ctx.harness.name}")
+def _tuned(args: argparse.Namespace, *, harness: str, supply: MapSupply | None) -> Render:
+    ctx = build_render(harness=harness, plugin=args.plugin, family=args.family, supply=supply)
+    print(f"tuning: family={ctx.family.name} category[{map_spec(ctx.category_map)}] harness={ctx.harness.name}")
     return ctx
+
+
+def _supply(settings: dict[str, HarnessSettings] | None, harness: str) -> MapSupply | None:
+    """The devpro settings file's map for `harness`, where there is a file and it names that harness."""
+    entry = None if settings is None else settings.get(harness)
+    return None if entry is None else entry.supply
 
 
 def _run(args: argparse.Namespace) -> None:
     if args.verb == "render":
-        renders = render_all(_tuned(args, harness=args.harness))
+        settings, _ = read_settings(args.config_file)
+        renders = render_all(_tuned(args, harness=args.harness, supply=_supply(settings, args.harness)))
         for path in write_renders(args.out, renders):
             print(f"wrote {path}")
     elif args.verb == "install":
-        target = resolve_install_target(args.target, harness=args.harness, plugin=args.plugin, subdir=args.subdir)
-        preflighted_install(
-            target.harness_dir,
-            _tuned(args, harness=target.harness),
-            verbose=args.verbose,
-            project_root=target.project_root,
-            uncommitted=uncommitted_sources,
-            dry_run=args.dry_run,
-        )
+        settings, path = read_settings(args.config_file)
+        # One iteration of `install_selected`'s loop, minus the harness prefix: the two paths install the
+        # same way, so a change to either belongs in both.
+        if args.harness is not None or settings is None:
+            target = resolve_install_target(args.target, harness=args.harness, plugin=args.plugin, subdir=args.subdir)
+            preflighted_install(
+                target.harness_dir,
+                _tuned(args, harness=target.harness, supply=_supply(settings, target.harness)),
+                verbose=args.verbose,
+                project_root=target.project_root,
+                uncommitted=uncommitted_sources,
+                dry_run=args.dry_run,
+            )
+        else:
+            install_selected(
+                args.target,
+                settings,
+                path=path,
+                tuned=lambda harness, supply: _tuned(args, harness=harness, supply=supply),
+                plugin=args.plugin,
+                subdir=args.subdir,
+                verbose=args.verbose,
+                dry_run=args.dry_run,
+                uncommitted=uncommitted_sources,
+            )
     elif args.verb == "install-agents-file":
         harness = harness_named(agents_file_harness(args.directory, args.harness))
         preflighted_agents_file_install(

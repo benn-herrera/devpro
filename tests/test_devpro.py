@@ -1,15 +1,13 @@
-"""The devpro package's own logic, each case checked against values the
-renderer did not compute: the two map flags' grammar, the rendered model text,
-the CLI's Render refusals, the frontmatter of each kind — an agent's and a
-skill's against literal lines of the pre-1.0 render, a command's and a
-document's as bare fixtures pinned to their render's shape — every rendered
-definition extracting frontmatter-free, placeholder filling and refusal, overlay resolution
-and stock, Definition refusals, the loader's refusal, the description's one line
-and balanced code spans, the line cap, and the package's source invariants as
-walks of its syntax trees.
+"""The devpro package's own logic, each case checked against values the renderer did not compute: the
+map's grammar and the settings file that supplies one, the rendered model text, the three families'
+pins, the CLI's Render refusals, the frontmatter of each kind — an agent's and a skill's against
+literal lines of the pre-1.0 render, a command's and a document's as bare fixtures pinned to their
+render's shape — every rendered definition extracting frontmatter-free, placeholder filling and
+refusal, overlay resolution and stock, Definition refusals, the loader's refusal, the description's
+one line and balanced code spans, the line cap, and the package's source invariants as walks of its
+syntax trees.
 
-The package is imported from the repository root, which `just test` puts on
-PYTHONPATH.
+The package is imported from the repository root, which `just test` puts on PYTHONPATH.
 """
 
 from __future__ import annotations
@@ -34,17 +32,17 @@ import pytest
 import devpro
 import devpro.clauses
 from devpro.agents_file import is_marker_line
-from devpro.context import TIER_MAP_FLAG, Render, build_render, harnesses, parse_tier_map
+from devpro.context import MapSupply, Render, build_render, harnesses, parse_category_map, read_settings
 from devpro.definition import Definition, SkillFile
 from devpro.definitions import definitions_of, discover
 from devpro.errors import InputError
 from devpro.families.claude import FAMILY as CLAUDE_FAMILY
-from devpro.families.qwen3 import FAMILY as QWEN3_FAMILY
 from devpro.family import Family, Overlay
 from devpro.harness import AgentFields, FrontmatterForm, Harness, HarnessFile, ShippedDefinition
 from devpro.harnesses.claude import HARNESS as CLAUDE
 from devpro.harnesses.mage import HARNESS as MAGE
 from devpro.harnesses.opencode import HARNESS as OPENCODE
+from devpro.install import INSTALL_SETTINGS
 from devpro.loading import load
 from devpro.plugin import Plugin
 from devpro.plugins.devpro import PLUGIN as DEVPRO
@@ -63,7 +61,7 @@ from devpro.render import (
 )
 from devpro.vocabulary import (
     ALL,
-    TIERS,
+    CATEGORIES,
     AgentsFileText,
     Anchor,
     HarnessText,
@@ -76,7 +74,7 @@ from devpro.vocabulary import (
     optional_reference,
     reference,
 )
-from devtools import render_diff
+from devtools import clause_join_sites, render_diff
 from tests._structure import (
     ARGUMENT_RULE,
     ASSIGNMENT_RULE,
@@ -97,65 +95,219 @@ from tests._structure import (
     kbase_skill_output_paths,
     repeated_clause_reaches,
 )
+from tests.conftest import settings_file
 
-_ALL_INHERIT = dict.fromkeys(("highest", "high", "medium", "low", "lowest"), "inherit")
+_ALL_INHERIT = dict.fromkeys(CATEGORIES, "inherit")
 _PACKAGE = Path(devpro.__file__).parent
+_SUPPLIER = "--config-file /home/me/.config/devpro/devpro.cfg, section '[claude-model-map]'"
+"""A settings-file supply's provenance, as its section names it."""
 
 
 @pytest.mark.parametrize(
     "spec, expected",
     [
         (
-            "highest=a,high=b,medium=c,low=d,lowest=e",
-            {"highest": "a", "high": "b", "medium": "c", "low": "d", "lowest": "e"},
+            "stem-architect=a,stem-expert=b,stem-mechanical=c,comm-architect=d,comm-expert=e,comm-mechanical=f",
+            {
+                "stem-architect": "a",
+                "stem-expert": "b",
+                "stem-mechanical": "c",
+                "comm-architect": "d",
+                "comm-expert": "e",
+                "comm-mechanical": "f",
+            },
         ),
         (
-            "lowest=e,low=d,medium=c,high=b,highest=a",
-            {"highest": "a", "high": "b", "medium": "c", "low": "d", "lowest": "e"},
+            "comm-mechanical=f,comm-expert=e,comm-architect=d,stem-mechanical=c,stem-expert=b,stem-architect=a",
+            {
+                "stem-architect": "a",
+                "stem-expert": "b",
+                "stem-mechanical": "c",
+                "comm-architect": "d",
+                "comm-expert": "e",
+                "comm-mechanical": "f",
+            },
         ),
         (
-            "all=haiku,high=opus",
-            {"highest": "haiku", "high": "opus", "medium": "haiku", "low": "haiku", "lowest": "haiku"},
+            "*=haiku,stem-expert=opus",
+            {
+                "stem-architect": "haiku",
+                "stem-expert": "opus",
+                "stem-mechanical": "haiku",
+                "comm-architect": "haiku",
+                "comm-expert": "haiku",
+                "comm-mechanical": "haiku",
+            },
         ),
         (
-            "high=opus,all=haiku",
-            {"highest": "haiku", "high": "opus", "medium": "haiku", "low": "haiku", "lowest": "haiku"},
+            "stem-expert=opus,*=haiku",
+            dict.fromkeys(CATEGORIES, "haiku"),
         ),
     ],
 )
-def test_parse_tier_map_is_total_in_tier_order(spec: str, expected: dict[str, str]) -> None:
-    parsed = parse_tier_map(spec, flag=TIER_MAP_FLAG)
+def test_parse_category_map_is_total_in_category_order(spec: str, expected: dict[str, str]) -> None:
+    parsed = parse_category_map(spec, supplier=_SUPPLIER)
     assert parsed == expected
-    assert list(parsed) == ["highest", "high", "medium", "low", "lowest"]
+    assert list(parsed) == list(CATEGORIES)
 
 
 @pytest.mark.parametrize(
     "spec, message",
     [
-        ("high=opus", "names no value for highest, medium, low, lowest"),
-        ("all=x,middle=y", "'middle=y' names no tier"),
-        ("all=x,high=y,high=z", "duplicate key 'high'"),
-        ("all=x,high", "'high' is not a tier=value pair"),
-        ("all=x,high=a=b", "'high=a=b' is not a tier=value pair"),
-        ("all=x,high=two words", "contains whitespace inside a tier or a value"),
+        (
+            "stem-expert=opus",
+            "names no value for stem-architect, stem-mechanical, comm-architect, comm-expert, comm-mechanical",
+        ),
+        ("*=x,middle=y", "'middle=y' names no category"),
+        ("*-architect=y", "names no value for stem-expert, stem-mechanical, comm-expert, comm-mechanical"),
+        ("*=x,stem-expert", "'stem-expert' is not a <glob>=<model> entry"),
+        ("*=x,stem-expert=a=b", "'stem-expert=a=b' is not a <glob>=<model> entry"),
+        ("*=x,stem-expert=two words", "contains whitespace inside a glob or a model"),
+        ("*=x,", "'' is not a <glob>=<model> entry"),
     ],
 )
-def test_parse_tier_map_refusals(spec: str, message: str) -> None:
-    with pytest.raises(InputError, match=re.escape(f"{TIER_MAP_FLAG}: ")) as caught:
-        parse_tier_map(spec, flag=TIER_MAP_FLAG)
+def test_parse_category_map_refusals(spec: str, message: str) -> None:
+    with pytest.raises(InputError, match=re.escape(f"{_SUPPLIER}: ")) as caught:
+        parse_category_map(spec, supplier=_SUPPLIER)
     assert message in str(caught.value)
 
 
-def test_model_alias_wins_over_member() -> None:
-    ctx = Render(
-        harness=CLAUDE,
-        plugin=DEVPRO,
-        family=CLAUDE_FAMILY,
-        tier_map=dict(QWEN3_FAMILY.tiers),
-        alias_map={"highest": "fable", "high": "opus", "medium": "sonnet", "low": "haiku", "lowest": "inherit"},
+def test_the_settings_file_names_its_harnesses_in_name_order_with_their_install_and_map(tmp_path: Path) -> None:
+    """A section names its harness, either section; `install` arrives as written or absent; a map
+    section's entries join in file order, so a later entry overwrites an earlier one."""
+    path = settings_file(tmp_path, "[opencode]\ninstall = always\n\n[claude-model-map]\n*=haiku\nstem-expert=opus\n")
+    settings, _ = read_settings(str(path))
+    assert list(settings) == ["claude", "opencode"]
+    assert settings["opencode"].install == "always"
+    assert settings["opencode"].supply is None
+    assert settings["claude"].install is None
+    assert settings["claude"].supply == MapSupply(
+        category_map={**dict.fromkeys(CATEGORIES, "haiku"), "stem-expert": "opus"},
+        supplier=f"--config-file {path}, section '[claude-model-map]'",
     )
-    assert ctx.model("high") == "opus"
-    assert ctx.model("lowest") == "inherit"
+
+
+def test_a_settings_file_naming_no_harness_names_nothing_but_is_not_no_file(tmp_path: Path) -> None:
+    """A file that exists and names no harness reads as an empty mapping: the file is there, and it
+    names nothing. Only the absence of every file reads as None."""
+    settings, _ = read_settings(str(settings_file(tmp_path, "")))
+    assert settings == {}
+    assert settings is not None
+
+
+def test_a_missing_default_settings_file_is_no_config(_home: Path) -> None:
+    settings, path = read_settings(None)
+    assert settings is None and path is None
+
+
+def test_the_default_settings_file_is_read_from_the_home_directory(_home: Path) -> None:
+    """The default path is consulted with no flag given, under the home directory the environment names."""
+    path = _home / ".config/devpro/devpro.cfg"
+    path.parent.mkdir(parents=True)
+    path.write_text("[claude]\ninstall = never\n", encoding="utf-8")
+    settings, _ = read_settings(None)
+    assert settings["claude"].install == "never"
+
+
+@pytest.mark.parametrize("config_file", ["~/devpro.cfg", "devpro-absent.cfg"], ids=["tilde", "relative"])
+def test_a_named_settings_file_that_does_not_exist_is_refused_naming_the_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, config_file: str
+) -> None:
+    """The path is taken as given: no expansion, no search."""
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(InputError, match=re.escape(f"--config-file '{config_file}' names no file")):
+        read_settings(config_file)
+
+
+@pytest.mark.parametrize(
+    "section",
+    ["[claude-code]", "[nonesuch-model-map]", "[DEFAULT]\ninstall = always"],
+    ids=["settings", "map", "default"],
+)
+def test_a_settings_file_section_no_harness_names_is_refused(tmp_path: Path, section: str) -> None:
+    path = settings_file(tmp_path, f"{section}\n")
+    with pytest.raises(InputError) as caught:
+        read_settings(str(path))
+    message = str(caught.value)
+    assert section.split()[0] in message
+    assert "claude, mage, opencode" in message
+
+
+def test_a_settings_section_key_that_is_no_setting_is_refused_naming_the_map_section(tmp_path: Path) -> None:
+    path = settings_file(tmp_path, "[claude]\n*=haiku\n")
+    with pytest.raises(InputError) as caught:
+        read_settings(str(path))
+    message = str(caught.value)
+    assert "'*'" in message and "'[claude-model-map]'" in message
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["[claude]\nthis is not an entry\n", "[claude]\ninstall = always\ninstall = never\n"],
+    ids=["unparseable", "duplicate-key"],
+)
+def test_a_settings_file_that_does_not_parse_is_refused_naming_the_file_and_the_line(tmp_path: Path, text: str) -> None:
+    path = settings_file(tmp_path, text)
+    with pytest.raises(InputError) as caught:
+        read_settings(str(path))
+    message = str(caught.value)
+    assert str(path) in message and "line" in message
+
+
+def test_opencode_with_no_category_spec_uses_its_default() -> None:
+    ctx = build_render(plugin="devpro", harness="opencode", family="claude")
+    assert dict(ctx.category_map) == dict.fromkeys(CATEGORIES, "default")
+    assert ctx.model("stem-mechanical") == ""
+
+
+def test_mage_with_no_category_spec_pins_inherit() -> None:
+    ctx = build_render(plugin="devpro", harness="mage", family="claude")
+    assert dict(ctx.category_map) == dict.fromkeys(CATEGORIES, "inherit")
+    assert ctx.model("stem-mechanical") == "inherit"
+
+
+@pytest.mark.parametrize(
+    "harness, spec, message",
+    [
+        (CLAUDE, "default", "'default' is not a <glob>=<model> entry"),
+        (OPENCODE, "default,stem-expert=omlx/X", "'default' is not a <glob>=<model> entry"),
+        (OPENCODE, "", "'' is not a <glob>=<model> entry"),
+    ],
+    ids=["claude", "opencode-after-a-comma", "opencode-empty"],
+)
+def test_a_harness_default_that_names_no_category_is_refused_leading_with_the_harness(
+    harness: Harness, spec: str, message: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The remaining home of the bare value: a harness default the harness does not read as one."""
+    defaulted = dataclasses.replace(harness, default_category_spec=spec)
+    monkeypatch.setattr("devpro.context.harnesses", lambda: {**harnesses(), defaulted.name: defaulted})
+    with pytest.raises(InputError) as caught:
+        build_render(plugin="devpro", harness=defaulted.name, family="claude")
+    assert str(caught.value).startswith(f"the harness '{defaulted.name}' default category spec: ")
+    assert message in str(caught.value)
+
+
+@pytest.mark.parametrize(
+    "harness, family, supply, supplier",
+    [
+        ("claude", "gemma-4", None, "the family 'gemma-4' categories (--family)"),
+        (
+            "claude",
+            "claude",
+            MapSupply(category_map=dict.fromkeys(CATEGORIES, "gemma-4-31B-it"), supplier=_SUPPLIER),
+            _SUPPLIER,
+        ),
+    ],
+    ids=["family", "settings-file"],
+)
+def test_build_render_refuses_a_model_outside_the_harness_shape(
+    harness: str, family: str, supply: MapSupply | None, supplier: str
+) -> None:
+    with pytest.raises(InputError) as caught:
+        build_render(plugin="devpro", harness=harness, family=family, supply=supply)
+    message = str(caught.value)
+    assert "model 'gemma-4-31B-it' at category stem-architect" in message
+    assert f"supplied by {supplier}" in message
 
 
 @pytest.mark.parametrize(
@@ -163,48 +315,37 @@ def test_model_alias_wins_over_member() -> None:
     [(CLAUDE, "inherit", "inherit"), (OPENCODE, "inherit", ""), (OPENCODE, "default", "")],
 )
 def test_model_inherit_and_its_synonyms_render_the_harness_text(harness: Harness, text: str, expected: str) -> None:
-    ctx = Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=dict.fromkeys(_ALL_INHERIT, text))
-    assert ctx.model("medium") == expected
+    ctx = Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict.fromkeys(_ALL_INHERIT, text))
+    assert ctx.model("stem-mechanical") == expected
 
 
-def test_opencode_reads_a_bare_tier_spec_as_the_whole_map() -> None:
-    ctx = build_render(plugin="devpro", harness="opencode", family="claude", tier_spec="default", alias_spec=None)
-    assert dict(ctx.tier_map) == dict.fromkeys(TIERS, "default")
-    assert ctx.model("medium") == ""
-
-
-def test_opencode_with_no_tier_spec_uses_its_default() -> None:
-    ctx = build_render(plugin="devpro", harness="opencode", family="claude", tier_spec=None, alias_spec=None)
-    assert dict(ctx.tier_map) == dict.fromkeys(TIERS, "default")
-    assert ctx.model("medium") == ""
-
-
-@pytest.mark.parametrize(
-    "harness, spec, message",
-    [
-        ("claude", "default", "'default' is not a tier=value pair"),
-        ("opencode", "default,high=omlx/X", "'default' is not a tier=value pair"),
-        ("opencode", "", "'' is not a tier=value pair"),
-    ],
-)
-def test_a_tier_spec_no_harness_reads_bare_is_refused(harness: str, spec: str, message: str) -> None:
+def test_build_render_refuses_a_model_the_harness_default_supplies(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The third supplier the refusal names: no shipped harness's default spec names a model its own shape
+    refuses, so the harness loaded is claude with a default claude's shape does not accept."""
+    defaulted = dataclasses.replace(CLAUDE, default_category_spec="*=gpt-4")
+    monkeypatch.setattr("devpro.context.harnesses", lambda: {**harnesses(), defaulted.name: defaulted})
     with pytest.raises(InputError) as caught:
-        build_render(plugin="devpro", harness=harness, family="claude", tier_spec=spec, alias_spec=None)
-    assert message in str(caught.value)
-
-
-def test_build_render_refuses_a_model_outside_the_harness_shape() -> None:
-    with pytest.raises(InputError) as caught:
-        build_render(plugin="devpro", harness="claude", family="gemma-4", tier_spec=None, alias_spec=None)
+        build_render(plugin="devpro", harness=defaulted.name, family="claude")
     message = str(caught.value)
-    assert "model 'gemma-4-31B-it' at tier highest" in message
-    assert "--family" in message
+    assert "model 'gpt-4' at category stem-architect" in message
+    assert f"supplied by the harness '{defaulted.name}' default category spec" in message
+
+
+def test_render_refuses_a_category_outside_the_vocabulary() -> None:
+    with pytest.raises(InputError, match="category 'bogus' is not one of stem-architect"):
+        Render(
+            harness=CLAUDE,
+            plugin=DEVPRO,
+            family=CLAUDE_FAMILY,
+            category_map=dict(CLAUDE_FAMILY.categories),
+            category="bogus",
+        )
 
 
 @pytest.mark.parametrize("family", ["nonesuch", "templates/family/qwen3.toml", "qwen3.toml", "gemma_4"])
 def test_build_render_refuses_a_family_that_is_not_a_name(family: str) -> None:
     with pytest.raises(InputError, match=re.escape("claude, gemma-4, qwen3")):
-        build_render(plugin="devpro", harness="claude", family=family, tier_spec=None, alias_spec=None)
+        build_render(plugin="devpro", harness="claude", family=family)
 
 
 @pytest.mark.parametrize(
@@ -232,7 +373,7 @@ def _security_reviewer() -> Definition:
             "that is the architect's job. Review only, never modifies files."
         ),
         tools=(Tool.BASH, Tool.READ, Tool.GREP, Tool.GLOB, Tool.WRITE, Tool.EDIT, Tool.WEBSEARCH, Tool.WEBFETCH),
-        tier="high",
+        category="stem-architect",
         body="body",
         color="#DC2626",
     )
@@ -251,12 +392,12 @@ def _claude_frontmatter(fields: AgentFields) -> tuple[str, ...]:
     return form.agent(fields)
 
 
-def test_claude_frontmatter_matches_the_pre_1_0_render() -> None:
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+def test_claude_frontmatter_holds_the_field_order_and_spelling() -> None:
+    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     assert _claude_frontmatter(agent_fields(_security_reviewer(), ctx)) == (
         "name: security-reviewer",
         _SECURITY_REVIEWER_DESCRIPTION,
-        "model: opus",
+        "model: fable",
         'color: "#DC2626"',
         "tools: Bash, Read, Grep, Glob, Write, Edit, WebSearch, WebFetch",
     )
@@ -271,7 +412,7 @@ def _python_coder() -> Definition:
 
 
 def test_an_unrestricted_agent_frontmatter_matches_the_pre_1_0_render() -> None:
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     assert _claude_frontmatter(agent_fields(_python_coder(), ctx)) == (
         "name: python-coder",
         _PYTHON_CODER_DESCRIPTION,
@@ -308,7 +449,7 @@ _DOCUMENT = Definition(
 
 
 @pytest.mark.parametrize(
-    "defn, tier_map, expected",
+    "defn, category_map, expected",
     [
         (
             _security_reviewer(),
@@ -322,7 +463,7 @@ _DOCUMENT = Definition(
         ),
         (
             _python_coder(),
-            dict.fromkeys(TIERS, "omlx/Qwen3.8-Flash-Next"),
+            dict.fromkeys(CATEGORIES, "omlx/Qwen3.8-Flash-Next"),
             {
                 "description": "Python implementation specialist.",
                 "mode": "subagent",
@@ -335,12 +476,12 @@ _DOCUMENT = Definition(
     ids=["restricted-inherit", "unrestricted-pinned", "document"],
 )
 def test_an_opencode_agent_record_carries_the_pre_1_0_frontmatter_values(
-    defn: Definition, tier_map: dict[str, str], expected: dict[str, object]
+    defn: Definition, category_map: dict[str, str], expected: dict[str, object]
 ) -> None:
     """The registry record holds what opencode's frontmatter held before the plugin render: description,
     mode, the model split into provider and id where one renders, color, and a permission per governed key
     unless every tool is allowed. A document's record is a hidden subagent's."""
-    ctx = Render(harness=OPENCODE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=tier_map)
+    ctx = Render(harness=OPENCODE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=category_map)
     shipped = ShippedDefinition(
         name=defn.name,
         reference=f"devpro-{defn.name}",
@@ -373,11 +514,16 @@ def test_a_command_renders_its_banner_straight_into_a_body_naming_the_user_harne
     """A command carries no field lines, so its closing fence is the body's own first line: a blank
     line there opens the file with an empty paragraph. The body names the user harness directory the
     definition's placeholder stands for, filled as this harness spells it."""
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT)
+    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     lines = render_definition(_COMMAND, ctx, module="devpro.definitions.probe").split("\n")
     assert lines[0] == "---"
     assert lines[1].startswith("# !GENERATED! from devpro/definitions/probe.py — ")
-    assert " tier=none member=none tier-map=" in lines[2]
+    assert lines[2] == (
+        "# !TUNING! family=claude category=none member=none category-map=stem-architect=inherit,"
+        "stem-expert=inherit,stem-mechanical=inherit,comm-architect=inherit,comm-expert=inherit,"
+        "comm-mechanical=inherit stock=stem-architect,stem-expert,stem-mechanical,comm-architect,"
+        "comm-expert,comm-mechanical harness=claude"
+    )
     assert lines[3] == "---"
     body = "\n".join(lines[4:])
     assert not body.startswith("\n"), "a blank line after the closing fence opens the file with an empty paragraph"
@@ -388,11 +534,11 @@ def test_a_command_renders_its_banner_straight_into_a_body_naming_the_user_harne
 
 def test_a_document_renders_no_field_of_its_own() -> None:
     """A document declares no frontmatter value, so between the fences stands the banner alone."""
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT)
+    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     lines = render_definition(_DOCUMENT, ctx, module="devpro.definitions.probe").split("\n")
     assert lines[0] == "---"
     assert lines[1].startswith("# !GENERATED! from devpro/definitions/probe.py — ")
-    assert " tier=none member=none tier-map=" in lines[2]
+    assert " category=none member=none category-map=" in lines[2]
     assert lines[3] == "---"
 
 
@@ -400,7 +546,7 @@ def test_a_document_renders_no_field_of_its_own() -> None:
 def test_every_rendered_definition_extracts_frontmatter_free(tmp_path: Path) -> None:
     """The definitions' own extraction command, run over every rendered file under agents/: it exits
     0, leaves no banner, and the frontmatter block plus what it printed is the file byte for byte."""
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     write_renders(tmp_path, render_all(ctx))
     rendered = sorted((tmp_path / "agents").rglob("*.md"))
     assert len(rendered) > 20
@@ -426,7 +572,7 @@ def _skill(**changes: object) -> Definition:
 
 
 def test_a_skill_renders_a_directory_two_fields_and_a_comment_bannered_reference() -> None:
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     defn = _skill()
     assert defn.output_path == PurePosixPath("skills/probe/SKILL.md")
     assert defn.output_paths == (
@@ -436,7 +582,7 @@ def test_a_skill_renders_a_directory_two_fields_and_a_comment_bannered_reference
     lines = render_definition(defn, ctx, module="devpro.definitions.probe").split("\n")
     assert lines[0] == "---"
     assert lines[1].startswith("# !GENERATED! from devpro/definitions/probe.py — ")
-    assert " tier=none member=none " in lines[2]
+    assert " category=none member=none " in lines[2]
     assert lines[3:6] == [
         "name: probe",
         'description: "Use when the user asks about the knowledge base."',
@@ -451,7 +597,7 @@ def test_a_skill_renders_a_directory_two_fields_and_a_comment_bannered_reference
     assert reference[2:] == ["", "Read a claim before you cite it.", ""]
 
 
-_OPENCODE_RENDER = Render(harness=OPENCODE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT)
+_OPENCODE_RENDER = Render(harness=OPENCODE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
 
 
 @pytest.mark.parametrize(
@@ -487,7 +633,7 @@ def test_the_opencode_registry_matches_the_render(plugin: Plugin, servers: set[s
     """`registry.json`'s agent, command and skill records are exactly the definitions the render ships, each
     id the plugin's name, a hyphen and the definition's name, each file one the render writes; its MCP
     server is present only where kbase ships."""
-    ctx = Render(harness=OPENCODE, plugin=plugin, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT)
+    ctx = Render(harness=OPENCODE, plugin=plugin, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     renders = dict(render_all(ctx))
     registry = json.loads(renders[PurePosixPath("registry.json")])
     records = [*registry["agents"], *registry["commands"], *registry["skills"]]
@@ -509,7 +655,7 @@ def test_render_all_emits_every_file_of_a_shipped_skill_and_the_plugin_drops_a_w
 
 # mage's output is a Claude Code plugin directory: claude's vocabulary and one file of its own, the
 # manifest.
-_MAGE_RENDER = Render(harness=MAGE, plugin=KBASE, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+_MAGE_RENDER = Render(harness=MAGE, plugin=KBASE, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
 _MAGE_MANIFEST = PurePosixPath(".claude-plugin/plugin.json")
 
 
@@ -518,6 +664,16 @@ def test_a_mage_render_writes_the_plugin_tree_straight_into_the_root(tmp_path: P
     one grown under another directory is a tree Claude Code does not read."""
     written = {path.relative_to(tmp_path).as_posix() for path in write_renders(tmp_path, render_all(_MAGE_RENDER))}
     assert {"agents/python-coder.md", "skills/kbase/SKILL.md", str(_MAGE_MANIFEST)} <= written
+
+
+def test_a_mage_render_leaves_every_agent_on_the_session_model() -> None:
+    """mage's default category spec pins no model, and the one it renders for an unpinned category is the
+    inherit text the harness spells: every agent it renders carries `model: inherit`."""
+    ctx = build_render(plugin="devpro", harness="mage", family="claude")
+    agents = {path: text for path, text in render_all(ctx) if path.parts[0] == "agents"}
+    assert agents
+    for path, text in agents.items():
+        assert "model: inherit" in text.split("\n---\n", 1)[0].split("\n"), path
 
 
 def test_the_manifest_is_the_three_key_object_carrying_the_version() -> None:
@@ -545,7 +701,7 @@ def test_the_manifest_is_the_only_render_of_a_mage_plugin_carrying_the_version()
 )
 def test_the_kb_reading_reference_names_the_harness_mcp_tool(harness: Harness, tool_name: str) -> None:
     """The rendered instruction must name the callable the selected host actually exposes."""
-    ctx = Render(harness=harness, plugin=KBASE, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT)
+    ctx = Render(harness=harness, plugin=KBASE, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     reference = dict(render_all(ctx))[PurePosixPath("skills/kbase/references/reading.md")]
     assert f"`{tool_name}`" in reference
 
@@ -564,9 +720,18 @@ def _user_install_paths() -> set[str]:
 
 @pytest.mark.parametrize("harness", harnesses())
 def test_the_guide_names_every_harness_install_path_under_every_harness(harness: str) -> None:
-    ctx = build_render(plugin="devpro", harness=harness, family="claude", tier_spec=None, alias_spec=None)
+    ctx = build_render(plugin="devpro", harness=harness, family="claude")
     [text] = [text for path, text in render_all(ctx) if str(path).endswith("guide/references/installing.md")]
     assert [path for path in sorted(_user_install_paths()) if path not in text] == []
+
+
+@pytest.mark.parametrize("harness", harnesses())
+def test_the_installing_reference_names_every_install_setting(harness: str) -> None:
+    """The page's reader learns the setting's values from the page, and `install` accepts exactly the
+    values `INSTALL_SETTINGS` holds: one the page leaves out is one the operator cannot learn from it."""
+    ctx = build_render(plugin="devpro", harness=harness, family="claude")
+    [text] = [text for path, text in render_all(ctx) if str(path).endswith("guide/references/installing.md")]
+    assert [setting for setting in INSTALL_SETTINGS if setting not in text] == []
 
 
 @pytest.mark.parametrize("harness", [CLAUDE, MAGE, OPENCODE], ids=lambda harness: harness.name)
@@ -581,7 +746,9 @@ def test_no_rendering_names_a_retired_scratch_directory() -> None:
     texts = []
     for harness in (CLAUDE, MAGE, OPENCODE):
         for plugin in load("devpro.plugins", "PLUGIN").values():
-            ctx = Render(harness=harness, plugin=plugin, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+            ctx = Render(
+                harness=harness, plugin=plugin, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
+            )
             texts += [text for _, text in render_all(ctx)]
             texts.append(render_agents_file(harness, plugin, scope="x"))
     retired = [".claude-temp", ".opencode-temp", ".mage-temp"]
@@ -658,7 +825,7 @@ def test_a_harness_text_placeholder_fills_with_the_harness_string(
     part: HarnessText, harness: Harness, expected: str
 ) -> None:
     defn = Definition(name="probe", kind=Kind.COMMAND, body=f"see {hole(part)}/x")
-    ctx = Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT)
+    ctx = Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     assert filled_body(defn, ctx) == f"see {expected}/x"
 
 
@@ -672,7 +839,7 @@ def test_a_harness_display_name_that_is_not_lowercase_is_refused() -> None:
 )
 def test_an_unknown_placeholder_is_refused_at_render(placeholder: str) -> None:
     defn = Definition(name="probe", kind=Kind.COMMAND, body=f"before {placeholder} after")
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     with pytest.raises(InputError, match=re.escape(f"definition 'probe': unknown placeholder {placeholder}")):
         filled_body(defn, ctx)
 
@@ -698,14 +865,14 @@ _PREFIXED = [CLAUDE, dataclasses.replace(CLAUDE, reference_prefix="x:")]
 
 @pytest.mark.parametrize("harness", _PREFIXED, ids=["bare", "prefixed"])
 def test_a_reference_in_a_body_and_a_description_fills_with_the_prefix_and_name(harness: Harness) -> None:
-    ctx = Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT)
+    ctx = Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     named = f"{ctx.bound_harness.reference_prefix}python-coder"
     agent = Definition(
         name="probe",
         kind=Kind.AGENT,
         description=f"Prefer over {reference('python-coder')}.",
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         body=f"Hand it to `{reference('python-coder')}`.",
     )
     skill = _skill(description=f"Prefer over {reference('python-coder')}.")
@@ -719,9 +886,11 @@ def test_a_reference_in_a_body_and_a_description_fills_with_the_prefix_and_name(
 @pytest.mark.parametrize("field", ["body", "description"])
 def test_a_reference_to_an_undiscovered_name_is_refused_naming_the_definition(harness: Harness, field: str) -> None:
     hole_text = reference("nonesuch")
-    defn = Definition(name="probe", kind=Kind.AGENT, description="a probe", tools=ALL, tier="high", body="Own.")
+    defn = Definition(
+        name="probe", kind=Kind.AGENT, description="a probe", tools=ALL, category="stem-expert", body="Own."
+    )
     defn = dataclasses.replace(defn, **{field: f"see {hole_text}"})
-    ctx = Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT)
+    ctx = Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     with pytest.raises(InputError, match=re.escape("definition 'probe'")) as refused:
         render_definition(defn, ctx, module="m")
     assert f"unknown placeholder {hole_text}" in str(refused.value)
@@ -742,7 +911,7 @@ def test_a_reference_prefix_changes_nothing_but_the_reference_sites(harness: Har
     sites = tuple(f"{prefix}{defn.name}" for _, defn in definitions())
 
     def rendered(each: Harness) -> dict[PurePosixPath, str]:
-        ctx = Render(harness=each, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+        ctx = Render(harness=each, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
         return {**dict(render_all(ctx)), PurePosixPath("<agents file>"): render_agents_file(each, DEVPRO, scope="x")}
 
     # The agents-file marker lines spell the project's name, which can equal the plugin's and so hold the
@@ -769,37 +938,58 @@ def test_a_reference_prefix_changes_nothing_but_the_reference_sites(harness: Har
 
 
 _STEP_DOWN_BODY = f"before\n\nDefault: `{devpro.clauses.STEP_DOWN_MODEL}`, unless bound.\n\nafter"
+_OMLX_SUPPLY = MapSupply(category_map=dict.fromkeys(CATEGORIES, "omlx/Qwen3.8-Flash-Next"), supplier=_SUPPLIER)
+_INHERIT_SUPPLY = MapSupply(category_map=_ALL_INHERIT, supplier=_SUPPLIER)
 
 
 @pytest.mark.parametrize(
-    "harness, tier_spec, rendered",
+    "harness, supply, rendered",
     [
-        ("claude", None, "before\n\nDefault: `sonnet`, unless bound.\n\nafter"),
+        ("claude", None, "before\n\nDefault: `stem-mechanical=sonnet, comm-mechanical=haiku`, unless bound.\n\nafter"),
         ("opencode", None, "before\n\nafter"),
         (
             "opencode",
-            "all=omlx/Qwen3.8-Flash-Next",
-            "before\n\nDefault: `omlx/Qwen3.8-Flash-Next`, unless bound.\n\nafter",
+            _OMLX_SUPPLY,
+            "before\n\nDefault: `stem-mechanical=omlx/Qwen3.8-Flash-Next, comm-mechanical=omlx/Qwen3.8-Flash-Next`, "
+            "unless bound.\n\nafter",
         ),
-        ("mage", None, "before\n\nDefault: `sonnet`, unless bound.\n\nafter"),
-        ("claude", "all=inherit", "before\n\nafter"),
+        ("mage", None, "before\n\nafter"),
+        ("claude", _INHERIT_SUPPLY, "before\n\nafter"),
     ],
 )
-def test_the_step_down_paragraph_names_the_pinned_medium_model_or_drops_whole(
-    harness: str, tier_spec: str | None, rendered: str
+def test_the_step_down_paragraph_names_the_mechanical_pair_or_drops_whole(
+    harness: str, supply: MapSupply | None, rendered: str
 ) -> None:
-    """The paragraph renders exactly where the render pins a model for the step-down tier; where that
-    tier renders as inherit there is nothing to step down to, and the paragraph goes with its other text."""
-    ctx = build_render(plugin="devpro", harness=harness, family="claude", tier_spec=tier_spec, alias_spec=None)
+    """A skill declares no category, so the paragraph carries both disciplines' mechanical members; where
+    a member renders as the harness's inherit text there is nothing to step down to, and where both do
+    the paragraph goes with its other text."""
+    ctx = build_render(plugin="devpro", harness=harness, family="claude", supply=supply)
     assert filled_text(_STEP_DOWN_BODY, _skill(), ctx, where="skills/probe/SKILL.md") == rendered
+
+
+@pytest.mark.parametrize(
+    "category, rendered",
+    [
+        ("stem-architect", "before\n\nDefault: `sonnet`, unless bound.\n\nafter"),
+        ("comm-expert", "before\n\nDefault: `haiku`, unless bound.\n\nafter"),
+    ],
+    ids=["stem", "comm"],
+)
+def test_an_agent_steps_down_to_its_own_disciplines_mechanical_member(category: str, rendered: str) -> None:
+    """An agent's step-down model is its own discipline's mechanical member, not the pair."""
+    ctx = build_render(plugin="devpro", harness="claude", family="claude")
+    agent = Definition(
+        name="probe", kind=Kind.AGENT, description="a probe", tools=ALL, category=category, body=_STEP_DOWN_BODY
+    )
+    assert filled_text(_STEP_DOWN_BODY, agent, ctx, where="agents/probe.md") == rendered
 
 
 def test_the_step_down_model_fills_a_skill_supporting_file_as_it_fills_skill_md() -> None:
     line = f"Step down to {devpro.clauses.STEP_DOWN_MODEL}."
     defn = _skill(body=line, files=(SkillFile(path="references/reading.md", body=line),))
-    ctx = build_render(plugin="devpro", harness="claude", family="claude", tier_spec=None, alias_spec=None)
+    ctx = build_render(plugin="devpro", harness="claude", family="claude")
     rendered = render_skill_file(defn, defn.files[0], ctx, module="devpro.definitions.probe")
-    assert rendered.endswith("\n\nStep down to sonnet.\n")
+    assert rendered.endswith("\n\nStep down to stem-mechanical=sonnet, comm-mechanical=haiku.\n")
 
 
 # A paragraph a tuning hole stands in is dropped whole where the value fills to nothing; a list or table
@@ -830,10 +1020,10 @@ def test_a_coder_and_a_platform_expert_render_the_recipe_rule_under_claude_and_d
     _, coder = _found(discovered, path)
     paragraph = CLAUDE.recipe_rule
     under_claude = filled_body(
-        coder, Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+        coder, Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     )
     under_opencode = filled_body(
-        coder, Render(harness=OPENCODE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT)
+        coder, Render(harness=OPENCODE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     )
     assert OPENCODE.recipe_rule == ""
     assert f"\n\n{paragraph}\n\n" in under_claude
@@ -844,8 +1034,10 @@ def test_a_coder_and_a_platform_expert_render_the_recipe_rule_under_claude_and_d
 def test_the_kbase_project_rule_paragraph_renders_under_mage_and_drops_under_claude() -> None:
     body = f"before\n\n{hole(OptionalHarnessText.KBASE_PROJECT_RULE)}\n\nafter"
     defn = Definition(name="probe", kind=Kind.COMMAND, body=body)
-    under_mage = filled_body(defn, Render(harness=MAGE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT))
-    under_claude = filled_body(defn, Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT))
+    under_mage = filled_body(defn, Render(harness=MAGE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT))
+    under_claude = filled_body(
+        defn, Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+    )
     assert MAGE.kbase_project_rule
     assert under_mage == f"before\n\n{MAGE.kbase_project_rule}\n\nafter"
     assert under_claude == "before\n\nafter"
@@ -854,8 +1046,10 @@ def test_the_kbase_project_rule_paragraph_renders_under_mage_and_drops_under_cla
 def test_a_paragraph_holding_an_optional_harness_text_the_harness_supplies_nothing_for_drops_whole() -> None:
     body = f"before\n\nThe rule is: {hole(OptionalHarnessText.RELOAD_RULE)}\n\nafter"
     defn = Definition(name="probe", kind=Kind.COMMAND, body=body)
-    under_claude = filled_body(defn, Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT))
-    under_mage = filled_body(defn, Render(harness=MAGE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT))
+    under_claude = filled_body(
+        defn, Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+    )
+    under_mage = filled_body(defn, Render(harness=MAGE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT))
     assert MAGE.reload_rule == ""
     assert CLAUDE.reload_rule
     assert under_claude == f"before\n\nThe rule is: {CLAUDE.reload_rule}\n\nafter"
@@ -864,14 +1058,21 @@ def test_a_paragraph_holding_an_optional_harness_text_the_harness_supplies_nothi
 
 _TUNED = Family(
     "tuned",
-    {"highest": "big", "high": "big", "medium": "mid", "low": "small", "lowest": "small"},
+    {
+        "stem-architect": "big",
+        "stem-expert": "big",
+        "stem-mechanical": "mid",
+        "comm-architect": "big",
+        "comm-expert": "big",
+        "comm-mechanical": "mid",
+    },
     overlays={Anchor.ASK_VS_STIPULATE: Overlay(text="family-wide", members={"mid": "for mid"})},
 )
 
 
-def _with_family_text(*, family: Family, tier: str, body: str) -> str:
-    defn = Definition(name="probe", kind=Kind.AGENT, description="a probe", tools=ALL, tier=tier, body=body)
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=family, tier_map=dict(family.tiers))
+def _with_family_text(*, family: Family, category: str, body: str) -> str:
+    defn = Definition(name="probe", kind=Kind.AGENT, description="a probe", tools=ALL, category=category, body=body)
+    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=family, category_map=dict(family.categories))
     return render_definition(defn, ctx, module="devpro.definitions.probe").split("---\n\n", 1)[1]
 
 
@@ -879,19 +1080,19 @@ _OVERLAY = hole(Anchor.ASK_VS_STIPULATE)
 
 
 @pytest.mark.parametrize(
-    "family, tier, body, rendered",
+    "family, category, body, rendered",
     [
-        (_TUNED, "medium", f"before\n\n{_OVERLAY}\n\nafter", "before\n\nfor mid\n\nafter\n"),
-        (_TUNED, "high", f"before\n\n{_OVERLAY}\n\nafter", "before\n\nfamily-wide\n\nafter\n"),
-        (CLAUDE_FAMILY, "medium", f"before\n\n{_OVERLAY}\n\nafter", "before\n\nafter\n"),
-        (CLAUDE_FAMILY, "medium", f"{_OVERLAY}\n\nafter", "after\n"),
-        (CLAUDE_FAMILY, "medium", f"before\n\n{_OVERLAY}", "before\n"),
+        (_TUNED, "stem-mechanical", f"before\n\n{_OVERLAY}\n\nafter", "before\n\nfor mid\n\nafter\n"),
+        (_TUNED, "stem-expert", f"before\n\n{_OVERLAY}\n\nafter", "before\n\nfamily-wide\n\nafter\n"),
+        (CLAUDE_FAMILY, "stem-mechanical", f"before\n\n{_OVERLAY}\n\nafter", "before\n\nafter\n"),
+        (CLAUDE_FAMILY, "stem-mechanical", f"{_OVERLAY}\n\nafter", "after\n"),
+        (CLAUDE_FAMILY, "stem-mechanical", f"before\n\n{_OVERLAY}", "before\n"),
     ],
 )
 def test_family_text_renders_the_seats_overlay_or_leaves_no_empty_paragraph(
-    family: Family, tier: str, body: str, rendered: str
+    family: Family, category: str, body: str, rendered: str
 ) -> None:
-    assert _with_family_text(family=family, tier=tier, body=body) == rendered
+    assert _with_family_text(family=family, category=category, body=body) == rendered
 
 
 # Filled text is literal: what a fill puts into a body is never filled again. Each value below carries a
@@ -900,7 +1101,14 @@ def test_family_text_renders_the_seats_overlay_or_leaves_no_empty_paragraph(
 _BAIT = hole(HarnessText.AGENTS_FILE)
 _BAITED_FAMILY = Family(
     "baited",
-    {"highest": "big", "high": "big", "medium": f"mid{_BAIT}", "low": "small", "lowest": "small"},
+    {
+        "stem-architect": "big",
+        "stem-expert": "big",
+        "stem-mechanical": f"mid{_BAIT}",
+        "comm-architect": "big",
+        "comm-expert": "big",
+        "comm-mechanical": "small",
+    },
     overlays={Anchor.ASK_VS_STIPULATE: Overlay(text=f"overlay {_BAIT}")},
 )
 
@@ -911,7 +1119,7 @@ def _clause_with_a_baited_harness_value() -> tuple[Definition, Render, str]:
     clause = devpro.clauses.NEW_PROJECT_SETUP
     expected = clause.replace(hole(HarnessText.PROJECT_HARNESS_DIR), f"temp{_BAIT}")
     defn = Definition(name="probe", kind=Kind.COMMAND, body=clause)
-    return defn, Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT), expected
+    return defn, Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT), expected
 
 
 def _baited_harness_text() -> tuple[Definition, Render, str]:
@@ -919,7 +1127,7 @@ def _baited_harness_text() -> tuple[Definition, Render, str]:
     defn = Definition(name="probe", kind=Kind.COMMAND, body=f"see {hole(HarnessText.USER_HARNESS_DIR)}")
     return (
         defn,
-        Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT),
+        Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT),
         f"see ~/home{_BAIT}",
     )
 
@@ -927,12 +1135,18 @@ def _baited_harness_text() -> tuple[Definition, Render, str]:
 def _baited_optional_harness_text() -> tuple[Definition, Render, str]:
     harness = dataclasses.replace(CLAUDE, recipe_rule=f"rule {_BAIT}")
     defn = Definition(name="probe", kind=Kind.COMMAND, body=hole(OptionalHarnessText.RECIPE_RULE))
-    return defn, Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT), f"rule {_BAIT}"
+    return (
+        defn,
+        Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT),
+        f"rule {_BAIT}",
+    )
 
 
 def _baited_family_overlay() -> tuple[Definition, Render, str]:
-    defn = Definition(name="probe", kind=Kind.AGENT, description="a probe", tools=ALL, tier="high", body=_OVERLAY)
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=_BAITED_FAMILY, tier_map=dict(_BAITED_FAMILY.tiers))
+    defn = Definition(
+        name="probe", kind=Kind.AGENT, description="a probe", tools=ALL, category="stem-expert", body=_OVERLAY
+    )
+    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=_BAITED_FAMILY, category_map=dict(_BAITED_FAMILY.categories))
     return defn, ctx, f"overlay {_BAIT}"
 
 
@@ -940,16 +1154,16 @@ def _baited_scope_name() -> tuple[Definition, Render, str]:
     defn = Definition(name="probe", kind=Kind.AGENTS_FILE, body=f"# {hole(AgentsFileText.SCOPE_NAME)}")
     return (
         defn,
-        Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=_ALL_INHERIT, scope=f"s{_BAIT}"),
+        Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT, scope=f"s{_BAIT}"),
         f"# s{_BAIT}",
     )
 
 
 def _baited_step_down_model() -> tuple[Definition, Render, str]:
-    """The family member the step-down tier pins carries the hole."""
+    """The family member a mechanical side pins carries the hole."""
     defn = _skill(body=f"use {hole(TuningText.STEP_DOWN_MODEL)}")
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=_BAITED_FAMILY, tier_map=dict(_BAITED_FAMILY.tiers))
-    return defn, ctx, f"use mid{_BAIT}"
+    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=_BAITED_FAMILY, category_map=dict(_BAITED_FAMILY.categories))
+    return defn, ctx, f"use stem-mechanical=mid{_BAIT}, comm-mechanical=small"
 
 
 @pytest.mark.parametrize(
@@ -971,9 +1185,55 @@ def test_a_filled_value_carrying_a_hole_reaches_the_body_literally(case) -> None
     assert _BAIT in filled
 
 
-def test_stock_excludes_the_overridden_tier() -> None:
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=_TUNED, tier_map=dict(_TUNED.tiers))
-    assert ctx.stock == ("highest", "high", "low", "lowest")
+def test_stock_excludes_the_overridden_category() -> None:
+    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=_TUNED, category_map=dict(_TUNED.categories))
+    assert ctx.stock == ("stem-architect", "stem-expert", "comm-architect", "comm-expert")
+
+
+# The members each family ships. No harness's model shape accepts a gemma or qwen member, so a family
+# renders only behind a member override that replaces these, and no rendered file records them: this
+# table is their only record.
+@pytest.mark.parametrize(
+    "name, members",
+    [
+        (
+            "claude",
+            {
+                "stem-architect": "fable",
+                "stem-expert": "opus",
+                "stem-mechanical": "sonnet",
+                "comm-architect": "sonnet",
+                "comm-expert": "sonnet",
+                "comm-mechanical": "haiku",
+            },
+        ),
+        (
+            "qwen3",
+            {
+                "stem-architect": "Qwen3.8-Flash-Next",
+                "stem-expert": "Qwen3.8-Flash-Next",
+                "stem-mechanical": "Qwen3.8-27B",
+                "comm-architect": "Qwen3.8-Flash-Next",
+                "comm-expert": "Qwen3.8-Flash-Next",
+                "comm-mechanical": "Qwen3.8-27B",
+            },
+        ),
+        (
+            "gemma-4",
+            {
+                "stem-architect": "gemma-4-31B-it",
+                "stem-expert": "gemma-4-31B-it",
+                "stem-mechanical": "gemma-4-12B-it",
+                "comm-architect": "gemma-4-31B-it",
+                "comm-expert": "gemma-4-31B-it",
+                "comm-mechanical": "gemma-4-12B-it",
+            },
+        ),
+    ],
+    ids=["claude", "qwen3", "gemma-4"],
+)
+def test_each_family_pins_the_member_of_every_category(name: str, members: dict[str, str]) -> None:
+    assert dict(load("devpro.families", "FAMILY")[name].categories) == members
 
 
 _REFERENCE = SkillFile(path="references/reading.md", body="Read it.")
@@ -986,24 +1246,24 @@ _REFERENCE = SkillFile(path="references/reading.md", body="Read it.")
         ({"body": ""}, "body must be"),
         ({"body": "edge newline\n"}, "body must be"),
         ({"description": 'holds a "quote"'}, "description must be"),
-        ({"tier": None}, "an agent requires tier"),
-        ({"kind": Kind.DOCUMENT}, "a document takes no description, tools, tier"),
+        ({"category": None}, "an agent requires category"),
+        ({"kind": Kind.DOCUMENT}, "a document takes no description, tools, category"),
         (
-            {"kind": Kind.COMMAND, "description": None, "tools": None, "tier": None, "color": "#000000"},
+            {"kind": Kind.COMMAND, "description": None, "tools": None, "category": None, "color": "#000000"},
             "takes no color",
         ),
         ({"folder": "nested/Design"}, "folder 'nested/Design'"),
         ({"kind": Kind.SKILL, "description": None}, "a skill requires description"),
         (
-            {"kind": Kind.SKILL, "description": "a probe", "tools": ALL, "tier": None},
+            {"kind": Kind.SKILL, "description": "a probe", "tools": ALL, "category": None},
             "a skill takes no tools",
         ),
         (
-            {"kind": Kind.SKILL, "description": "a probe", "tools": None, "tier": None, "color": "#000000"},
+            {"kind": Kind.SKILL, "description": "a probe", "tools": None, "category": None, "color": "#000000"},
             "a skill takes no color",
         ),
         (
-            {"kind": Kind.SKILL, "description": "a probe", "tools": None, "tier": None, "folder": "sub"},
+            {"kind": Kind.SKILL, "description": "a probe", "tools": None, "category": None, "folder": "sub"},
             "a skill takes no folder",
         ),
         (
@@ -1011,19 +1271,26 @@ _REFERENCE = SkillFile(path="references/reading.md", body="Read it.")
                 "kind": Kind.SKILL,
                 "description": "a probe",
                 "tools": None,
-                "tier": None,
+                "category": None,
                 "files": (_REFERENCE, _REFERENCE),
             },
             "files names a path twice",
         ),
         (
-            {"kind": Kind.COMMAND, "description": None, "tools": None, "tier": None, "files": (_REFERENCE,)},
+            {"kind": Kind.COMMAND, "description": None, "tools": None, "category": None, "files": (_REFERENCE,)},
             "a command takes no files",
         ),
     ],
 )
 def test_definition_refusals(changes: dict, message: str) -> None:
-    fields = {"name": "probe", "kind": Kind.AGENT, "description": "a probe", "tools": ALL, "tier": "high", "body": "ok"}
+    fields = {
+        "name": "probe",
+        "kind": Kind.AGENT,
+        "description": "a probe",
+        "tools": ALL,
+        "category": "stem-expert",
+        "body": "ok",
+    }
     with pytest.raises(InputError, match="definition 'probe'") as caught:
         Definition(**{**fields, **changes})
     assert message in str(caught.value)
@@ -1173,6 +1440,78 @@ def test_development_bodies_spell_each_term_through_its_constant() -> None:
     assert found == [], "\n".join(found)
 
 
+_CORPUS_JOIN_SITES = (
+    "devpro/definitions/android_app_expert.py: clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/android_app_expert.py: clauses.PROJECT_SETUP_PLATFORM + clauses.STDLIB_FIRST_ALWAYS",
+    "devpro/definitions/architect.py: clauses.MACHINE_GUARANTEES",
+    "devpro/definitions/architect.py: clauses.PROVE_REPLACEMENT_RULE",
+    "devpro/definitions/architect.py: clauses.SEPARATION_OF_CONCERNS",
+    "devpro/definitions/c_coder.py: clauses.DATA_FORMATS_SCOPE",
+    "devpro/definitions/c_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
+    "devpro/definitions/c_coder.py: clauses.data_race_frame + clauses.TSAN_VISIBILITY",
+    "devpro/definitions/cpp_coder.py: clauses.DATA_FORMATS_SCOPE",
+    "devpro/definitions/cpp_coder.py: clauses.DEPENDENCIES_LEAD_PACKAGES + clauses.ISSUE_TRACKER_HEALTH + clauses.manual_over_large_dependency",
+    "devpro/definitions/cpp_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
+    "devpro/definitions/cpp_coder.py: clauses.data_race_frame + clauses.TSAN_VISIBILITY",
+    "devpro/definitions/generalist_coder.py: clauses.SHELL_HOUSE_STYLE",
+    "devpro/definitions/generalist_coder.py: clauses.heavy_logging_framework + clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/generalist_coder.py: clauses.unit_test_scope_coder + clauses.COVERAGE_METRIC + clauses.MOCKING_THRESHOLD_GENERAL",
+    "devpro/definitions/go_coder.py: clauses.build_system_lead",
+    "devpro/definitions/go_coder.py: clauses.heavy_logging_framework + clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/ios_app_expert.py: clauses.OSLOG_LOGGING_LEAD + clauses.logging_backend_seam + clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/kbase.py: clauses.kb_orientation_docs",
+    "devpro/definitions/linux_app_expert.py: clauses.PROJECT_SETUP_PLATFORM + clauses.STDLIB_FIRST_ALWAYS",
+    "devpro/definitions/linux_app_expert.py: clauses.logging_backend_seam + clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/linux_kernel_driver_expert.py: clauses.PROJECT_SETUP_PLATFORM + clauses.STDLIB_FIRST_ALWAYS",
+    "devpro/definitions/linux_kernel_driver_expert.py: clauses.logging_backend_seam + clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/lua_coder.py: clauses.DATA_FORMATS",
+    "devpro/definitions/lua_coder.py: clauses.DEPENDENCIES_LEAD_PACKAGES + clauses.ISSUE_TRACKER_HEALTH + clauses.manual_over_large_dependency",
+    "devpro/definitions/lua_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
+    "devpro/definitions/lua_coder.py: clauses.NEW_PROJECT_SETUP + clauses.new_project_runner_recipes",
+    "devpro/definitions/lua_coder.py: clauses.boundary_checks_lead + clauses.boundary_check_coder_body + clauses.BOUNDARY_CHECK_CONSUMERS_CODER",
+    "devpro/definitions/lua_coder.py: clauses.build_system_lead",
+    "devpro/definitions/macos_app_expert.py: clauses.OSLOG_LOGGING_LEAD + clauses.logging_backend_seam + clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/prompt_engineer.py: clauses.machine_guarantees",
+    "devpro/definitions/prompt_engineer.py: clauses.pe_declare_bullet",
+    "devpro/definitions/python_coder.py: clauses.CODE_PRINCIPLES_CODER",
+    "devpro/definitions/python_coder.py: clauses.DATA_FORMATS",
+    "devpro/definitions/rust_coder.py: clauses.DATA_FORMATS",
+    "devpro/definitions/rust_coder.py: clauses.DEPENDENCIES_LEAD_CRATES + clauses.ISSUE_TRACKER_HEALTH + clauses.manual_over_large_dependency",
+    "devpro/definitions/rust_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
+    "devpro/definitions/rust_coder.py: clauses.boundary_checks_lead + clauses.boundary_check_coder_body + clauses.BOUNDARY_CHECK_CONSUMERS_CODER",
+    "devpro/definitions/rust_coder.py: clauses.build_system_lead",
+    "devpro/definitions/shell_dsl_coder.py: clauses.CODE_PRINCIPLES_CODER",
+    "devpro/definitions/shell_dsl_coder.py: clauses.DEPENDENCIES_LEAD_PACKAGES + clauses.ISSUE_TRACKER_HEALTH + clauses.manual_over_large_dependency",
+    "devpro/definitions/shell_dsl_coder.py: clauses.boundary_checks_lead + clauses.CHEAP_OVER_THOROUGH + clauses.BOUNDARY_CHECK_CONSUMERS_CODER",
+    "devpro/definitions/shell_dsl_coder.py: clauses.unit_test_scope_coder + clauses.COVERAGE_METRIC + clauses.MOCKING_THRESHOLD_GENERAL",
+    "devpro/definitions/typescript_coder.py: clauses.DATA_FORMATS",
+    "devpro/definitions/typescript_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
+    "devpro/definitions/typescript_coder.py: clauses.NEW_PROJECT_SETUP + clauses.new_project_runner_recipes",
+    "devpro/definitions/typescript_coder.py: clauses.boundary_checks_lead + clauses.boundary_check_coder_body + clauses.BOUNDARY_CHECK_CONSUMERS_CODER",
+    "devpro/definitions/typescript_coder.py: clauses.build_system_lead",
+    "devpro/definitions/web_app_expert.py: clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/windows_app_expert.py: clauses.LOGGING_ABSTRACTION_NOTE",
+)
+
+
+def test_the_join_sites_are_the_ones_the_corpus_holds(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The clause-paragraph rule's judgment is manual, so the corpus's join sites are pinned: a new
+    site fails until the tuple is updated deliberately, and a moved line, whose site's line number
+    the key drops, does not."""
+    monkeypatch.chdir(_PACKAGE.parent)
+    clause_join_sites.main([])
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[-1].startswith("sites: ")
+    keys = []
+    for line in lines[:-1]:
+        match = re.fullmatch(r"(.+?):\d+: (.+)", line)
+        assert match is not None, f"not a join-site line: {line}"
+        keys.append(f"{match[1]}: {match[2]}")
+    assert sorted(keys) == sorted(_CORPUS_JOIN_SITES)
+
+
 _DEFINITION_HEAD = "from devpro import clauses\nfrom devpro.definition import Definition\n"
 
 
@@ -1259,10 +1598,12 @@ def test_check_structure_refuses_a_text_module_off_its_rules(source: str, rule: 
 
 # Shared text has one source: a paragraph two outputs carry is not written out in either.
 
-_CLAUDE_RENDER = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+_CLAUDE_RENDER = Render(
+    harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
+)
 # The sweeps below read each plugin as it ships: its definitions and its own agents file, under claude.
 _PLUGIN_RENDERS = tuple(
-    Render(harness=CLAUDE, plugin=plugin, family=CLAUDE_FAMILY, tier_map=dict(CLAUDE_FAMILY.tiers))
+    Render(harness=CLAUDE, plugin=plugin, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     for plugin in load("devpro.plugins", "PLUGIN").values()
 )
 RENDERED_DEFINITION_LINE_CAP = 500  # a runaway guard, not a target; the 100-column wrap makes lines a fair size
@@ -1344,7 +1685,7 @@ def _prose_units(body: str) -> set[bytes]:
 
 def _outputs(defn: Definition, sentinel: Definition) -> list[tuple[str, str, str]]:
     """(label, the definition's own text, its credited twin's) for every file it renders: its output
-    first, labelled by the path it renders to, then each supporting file."""
+    first, labeled by the path it renders to, then each supporting file."""
     if defn.kind is Kind.AGENTS_FILE:
         return [(defn.name, defn.body, sentinel.body)]
     pairs = [(str(defn.output_path), defn.body, sentinel.body)]
@@ -1573,7 +1914,7 @@ def test_a_paragraph_the_agents_file_and_an_agent_both_write_is_refused() -> Non
         f"{_FIXTURE_HEAD}from devpro.vocabulary import ALL\n"
         "DEFINITIONS = (\n"
         'Definition(name="f", kind=Kind.AGENTS_FILE, body="Written in both.\\n\\nOwn file text."),\n'
-        'Definition(name="a", kind=Kind.AGENT, description="an agent", tools=ALL, tier="high", '
+        'Definition(name="a", kind=Kind.AGENT, description="an agent", tools=ALL, category="stem-expert", '
         'body="Own agent text.\\n\\nWritten in both."),\n'
         ")\n"
     )
@@ -1656,7 +1997,7 @@ def test_a_command_repeating_a_clause_the_output_it_loads_carries_is_refused() -
     source = (
         f"{_FIXTURE_HEAD}from devpro.vocabulary import ALL\n"
         "DEFINITIONS = (\n"
-        'Definition(name="a", kind=Kind.AGENT, description="an agent", tools=ALL, tier="high", '
+        'Definition(name="a", kind=Kind.AGENT, description="an agent", tools=ALL, category="stem-expert", '
         'body=f"Own agent text.\\n\\n{clauses.DISSENT}"),\n'
         'Definition(name="c", kind=Kind.COMMAND, '
         'body=f"@{clauses.PROJECT_HARNESS_DIR}/agents/a.md\\n\\n{clauses.DISSENT}"),\n'

@@ -10,7 +10,7 @@ DEFINITIONS = (
         kind=Kind.AGENT,
         description="Python implementation specialist.",
         tools=ALL,
-        tier="high",
+        category="stem-expert",
         color="#3776AB",
         body=f"""You are a senior Python engineer. You write idiomatic, readable Python. You know when to reach for a
 clever solution and when the boring one is better — and you choose boring more often than not.

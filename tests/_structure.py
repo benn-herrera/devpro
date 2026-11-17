@@ -136,7 +136,7 @@ def body_roots(source: str, graph: dict[str, ClauseNode]) -> dict[tuple[str, str
 def repeated_clause_reaches(
     graph: dict[str, ClauseNode], rooted: list[tuple[str, tuple[ClauseRoot, ...]]], *, uncounted: frozenset[str]
 ) -> list[tuple[str, Reach, Reach]]:
-    """Each node a depth-first walk from the labelled roots reaches a second time, with the reach that
+    """Each node a depth-first walk from the labeled roots reaches a second time, with the reach that
     came first and the repeat. A node in `uncounted` is not walked; nothing below a repeat is walked,
     so a node is never reported under a parent already reported. A parameter's constant default is
     an edge only where the root's call does not pass that parameter."""

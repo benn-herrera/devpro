@@ -14,7 +14,7 @@ DEFINITIONS = (
             "commentary to them."
         ),
         tools=(Tool.READ, Tool.GREP, Tool.GLOB),
-        tier="medium",
+        category="comm-architect",
         color="#FF7F00",
         body="""# Role: Prose Architect
 

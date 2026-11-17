@@ -120,8 +120,8 @@ check-wheel python="/usr/bin/python3": build
 # file for --harness=NAME (default claude) into rendered/<slug>/<plugin>/harness/<NAME>/, or at
 # the slot project's root for a harness-directory plugin (`mage`). Refuses a slug starting with
 # reference. Every --* flag but --plugin (refused: every plugin is rendered), --harness included,
-# forwards verbatim to `python3 -m devpro install` via install (--family, --model-tier-map,
-# --model-pin-tier-alias-map, --harness, --verbose, ...).
+# forwards verbatim to `python3 -m devpro install` via install (--family, --config-file,
+# --harness, --verbose, ...).
 [doc("[dev] render every plugin to rendered/<slug>/")]
 render *args:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" RENDERED_DIR="{{RENDERED_DIR}}" ./devtools/scripts/render.sh "$@"
@@ -238,6 +238,7 @@ devpro/ devpro
 devpro/ wheel
 tests/ devpro
 devtools/render_diff.py devpro
+devtools/clause_join_sites.py devpro
 devtools/ dupe_sweep
 PROJECT_DOCS/ docs
 *.md docs
@@ -260,11 +261,17 @@ test-changed base="":
 clause-join-sites *paths:
     @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devtools.clause_join_sites "$@"
 
+# Emits hits, never verdicts: American spellings are the standard, and this lists the British forms
+# left in tracked text for a reader to judge. The justfile and the leaf that hold the pattern and the
+# survivor list, and the plan, design and review under way, are skipped because they must quote the
+# forms.
+[doc("[dev] list British spellings in tracked text")]
+spellings:
+    @git grep -n -i -E 'behaviour|colour|organis|recognis|analyse\b|analys(ed|ing)|centr(e|ing)|licenc|defence|favour|honour|labour|neighbour|travell|modell|cancell(ed|ing)|fulfil|enrolment|programme|dialogu(e|ing)|catalogu(e|ing)|grey|judgement|acknowledgement|practis|sceptic|manoeuvr(e|ing)|plough|whilst|amongst|learnt|spelt|towards|utilis|optimis|prioritis|normalis|serialis|initialis|finalis|minimis|maximis|customis|standardis|apologis|emphasis[ei]|summaris|categoris|parametris|misspelt|labell(ed|ing)' -- . ':!justfile' ':!PROJECT_DOCS/CONVENTIONS/american-english-spellings.md' ':!ACTIVE_*' || [[ $? -eq 1 ]]
+
 [doc("[dev] install this checkout's devpro here")]
 agents:
-    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m "{{GEN}}" install "{{PROJECT_ROOT}}" --harness=claude
-    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m "{{GEN}}" install "{{PROJECT_ROOT}}" --harness=opencode
-
+    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m "{{GEN}}" install "{{PROJECT_ROOT}}"
 
 # The tap clone's one source: its origin URL, which the clone and the remote
 # set-up both take, and the location its .gitignore entry names.

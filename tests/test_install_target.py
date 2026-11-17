@@ -13,7 +13,9 @@ import pytest
 from devpro import cli
 from devpro.errors import InputError
 from devpro.harnesses.claude import HARNESS as CLAUDE
+from devpro.harnesses.mage import HARNESS as MAGE
 from devpro.harnesses.opencode import HARNESS as OPENCODE
+from devpro.install_target import resolve_install_target, target_holds_harness_dir
 from devpro.plugins.devpro import PLUGIN as DEVPRO
 from devpro.render import render_agents_file
 
@@ -158,6 +160,56 @@ def test_a_nonexistent_target_is_refused(tmp_path: Path, capsys) -> None:
     target = tmp_path / "absent"
     assert "install target" in _refused(["install", str(target), "--harness=claude"], capsys)
     assert not target.exists()
+
+
+# The `detect` install setting's per-harness judgment: one harness's own harness directory against the
+# target, by the values the target resolver reads.
+
+
+def test_the_per_harness_test_reads_the_harness_directory_the_target_holds(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    (project / ".claude").mkdir(parents=True)
+    (project / ".opencode").mkdir()
+    assert target_holds_harness_dir(project, CLAUDE)
+    assert target_holds_harness_dir(project, OPENCODE)
+    assert not target_holds_harness_dir(project, MAGE)
+
+
+def test_the_per_harness_test_reads_a_target_that_is_the_harness_directory(tmp_path: Path) -> None:
+    own = tmp_path / "project/.claude"
+    own.mkdir(parents=True)
+    assert target_holds_harness_dir(own, CLAUDE)
+    assert not target_holds_harness_dir(own, OPENCODE)
+    skills = tmp_path / "Mage/Skills"
+    skills.mkdir(parents=True)
+    assert target_holds_harness_dir(skills, MAGE)
+
+
+def test_the_per_harness_test_reads_the_user_harness_directory_at_home(_home: Path) -> None:
+    _home.mkdir()
+    (_home / ".claude").mkdir()
+    (_home / ".config/opencode").mkdir(parents=True)
+    assert target_holds_harness_dir(_home, CLAUDE)
+    assert target_holds_harness_dir(_home, OPENCODE)
+    assert not target_holds_harness_dir(_home, MAGE)
+
+
+def test_the_per_harness_test_and_the_no_config_path_name_the_same_harness(tmp_path: Path, _home: Path) -> None:
+    """The `detect` setting's judgment and the no-config path's detection compose the same predicates,
+    so each target that holds one harness's directory answers it here and resolves it there."""
+    project = tmp_path / "project"
+    (project / ".claude").mkdir(parents=True)
+    own = tmp_path / "own/.claude"
+    own.mkdir(parents=True)
+    _home.mkdir()
+    (_home / ".config/opencode").mkdir(parents=True)
+    skills = tmp_path / "Mage/Skills"
+    skills.mkdir(parents=True)
+    for target, expected in [(project, CLAUDE), (own, CLAUDE), (_home, OPENCODE), (skills, MAGE)]:
+        held = [harness for harness in (CLAUDE, MAGE, OPENCODE) if target_holds_harness_dir(target, harness)]
+        assert held == [expected]
+        resolved = resolve_install_target(target, harness=None, plugin=DEVPRO.name, subdir=None)
+        assert resolved.harness == expected.name
 
 
 def test_a_refused_install_leaves_no_root_behind(tmp_path: Path, capsys) -> None:

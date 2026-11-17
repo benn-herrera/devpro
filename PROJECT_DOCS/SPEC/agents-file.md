@@ -2,7 +2,7 @@
 
 The repository publishes a recommended agents file as one agents-file definition, rendered per
 supported harness. Its content depends on the harness, the plugin and where it is installed, never on
-`--family` or a tier map. Its title names `Global` in a user harness directory, and otherwise the
+`--family` or a category map. Its title names `Global` in a user harness directory, and otherwise the
 name of the directory it is installed in.
 
 The installed content is one **agents-file block**, from a begin marker line
@@ -52,7 +52,7 @@ the operator's act, never the install's. On a project install this governs only 
 keeps the block in the project's `AGENTS.md`; the branch that keeps it in the global agents file never
 reads or writes the project's file of that other name.
 
-The installed file carries the repository's content as the agents-file block, recognised by the
+The installed file carries the repository's content as the agents-file block, recognized by the
 fixed ends of its marker lines, so a block any earlier revision with these markers wrote is still
 found. A marker line of a release before 0.17.0, which spells the generator's earlier name, is not
 a marker line: a file holding only those is a file with no marker line, and the block is appended

@@ -16,8 +16,9 @@ paragraph of that reference) and `cold_read_rule` (supplied under every harness:
 reliable there, and mage, whose copy of the script refuses to run, says to start the reader by
 hand);
 the tool spellings, the model shape it accepts, the text `inherit` renders as
-(`inherit_text`) with the further `inherit_synonyms` rendering that same text, whether a bare tier
-spec is the whole map (`bare_tier_spec_is_all`), and `definition_form`, where a definition's
+(`inherit_text`) with the further `inherit_synonyms` rendering that same text, whether a bare
+category spec is the whole map (`bare_category_spec_is_all`), and `definition_form`, where a
+definition's
 metadata goes. `definition_form` is exactly one of two values, so a harness with both or neither is
 not representable and nothing checks for one: a `FrontmatterForm`, the emitter of the agent
 fields and document fields between the frontmatter fences (claude, mage), or a `HarnessFile`, the
@@ -46,8 +47,9 @@ directory is the harness directory); `reference_prefix`, put before a definition
 definition text names it (`{plugin}:` under claude and mage, `{plugin}-` under opencode);
 `project_harness_dir` (`{plugin}` under mage); `entry_resource`, the resource that registers the plugin
 and is copied at user level too (opencode's `index.ts`; empty elsewhere); `user_plugin_shadows`,
-whether a user-level install's plugin loads in place of a project's of its name (claude alone); `default_tier_spec`, the default tier spec, used when `--model-tier-map`
-gives none (`None`: the family's tiers; opencode's is `default`, read by `build_render`); and
+whether a user-level install's plugin loads in place of a project's of its name (claude alone); `default_category_spec`, the default category spec, used when the devpro settings file
+supplies none (`None`: the family's map; opencode's is `default` and mage's is `*=inherit`, read by
+`build_render`); and
 `plugin_parent_dir`, a harness-directory plugin's trailing path of the directory its plugins sit in (`Mage/Skills`;
 empty otherwise), by which install target detection knows a target that is such a
 plugin's harness directory. Whether a harness is a harness-directory plugin is
@@ -63,10 +65,10 @@ and a reader that needs a bound value reads it there. Binding again starts from 
 bound harness never holds another plugin's values. Harness detection
 (`install_target._detected_harness`) reads only plugin-independent values, so it runs before
 binding. The manifest's `name`, both prefixes, the install directory and the MCP prefix are each derived from the
-plugin's name. `inherit_synonyms` and `bare_tier_spec_is_all` differ between claude and
+plugin's name. `inherit_synonyms` and `bare_category_spec_is_all` differ between claude and
 opencode, as the harness strings above do: opencode holds
 `("default",)` and `True`, with `inherit_text` empty; claude holds `()` and `False`,
-`inherit_text` `inherit`, and refuses a bare tier spec as no `tier=value` pair. Mage reads the shared
+`inherit_text` `inherit`, and refuses a bare category spec as no `<glob>=<model>` entry. Mage reads the shared
 frontmatter emitter (`agent_frontmatter`) and recipe rule (`FOREGROUND_RECIPE_RULE`) from
 `harness.py`, and holds claude's other assumed values (model pattern, aliases, tool spellings) as
 copies it may revise independently.
@@ -80,22 +82,34 @@ profile of its own. `plugin.py` imports no harness, render or definition: the de
 `vocabulary` ← `plugin` ← `context` → `harness`.
 
 A family is a
-`Family` dataclass (`devpro/family.py`) holding the tier map and the tuning text by anchor. An
+`Family` dataclass (`devpro/family.py`) holding the category map and the tuning text by anchor. An
 instance is one module, in `devpro/harnesses/`, `devpro/families/` or `devpro/plugins/`,
 defining `HARNESS`, `FAMILY` or `PLUGIN`, with no class in it. A harness, family or plugin is registered by its module existing, with no
 list to keep: a registry that could fall out of step with the modules is not representable.
 `loading.load` reads the modules of a package in name order and
 keys each by its module name with `_` read as `-` (`gemma_4.py` is `gemma-4`). The constructor is
-the validator: an instance missing a field, or a family not staffing exactly the five tiers, fails
-at import. The `Render` record (`devpro/context.py`) carries the harness, the plugin, the family and the
-invocation's tier map and alias map, and resolves a tier to its rendered model text and an anchor
-to its tuning text: a tier whose text is `inherit` or a synonym becomes `inherit_text`, and the
-`--model-tier-map` tier spec, alone, gains the bare-to-`all=` expansion before parsing.
+the validator: an instance missing a field, or a family not staffing exactly the six categories,
+fails at import. The `Render` record (`devpro/context.py`) carries the harness, the plugin, the family
+and the invocation's category map, and resolves a category to its rendered model text and an anchor
+to its tuning text: a category whose text is `inherit` or a synonym becomes `inherit_text`. The
+map's suppliers, in the order `build_render` applies them:
+
+1. the devpro settings file's `[<harness>-model-map]` section for the harness — its keys, one
+   entry per line under the grammar, joined for the parser; read and validated by
+   `devpro/context.py`.
+2. the harness's `default_category_spec` — the bare reading's remaining home (a non-empty value
+   holding neither `=` nor `,` is the whole map where the harness reads it so), where the harness
+   declares one.
+3. the family's own map.
+
 `Render.plugin` is the plugin, and `Render.bound_harness` binds the harness to it, so the bound
 values a render reads are always its own plugin's and no mismatch is representable. `build_render(…, plugin=)` loads
-the plugin and refuses one that names an undiscovered definition (`plugin_named`), because a misspelt
+the plugin and refuses one that names an undiscovered definition (`plugin_named`), because a misspelled
 member would otherwise drop out of the contents SPEC states for that plugin and nothing else would
 notice. `Plugin.ships(name)` is the one filter, called on the render's plugin.
-`Render.step_down_model` is the `medium` tier's rendered model (`context.STEP_DOWN_TIER`) where
-this render assigns one, and the empty string where that tier renders as `inherit_text`, as under
-opencode's default tier map. It is the one value behind the `tun` placeholder (Placeholders).
+`Render.step_down_model` is the step-down model text: for a definition that declares a category, its
+own discipline's mechanical member's rendered text — `stem-mechanical` for a category beginning
+`stem-`, `comm-mechanical` for one beginning `comm-`; for a definition that declares none, both
+disciplines' as `stem-mechanical=<text>, comm-mechanical=<text>`. A side whose member renders as the
+harness's `inherit_text` is omitted, and the value is empty — the placeholder's paragraph drops —
+where every side is. It is the one value behind the `tun` placeholder (Placeholders).

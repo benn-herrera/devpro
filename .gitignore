@@ -1,8 +1,4 @@
 .DS_Store
-.claude/
-.devpro-temp/
-.opencode/
-backup.*
 
 __pycache__/
 .pytest_*/
@@ -21,5 +17,7 @@ rendered/
 docdicer/
 homebrew-tap/
 
-# auto-made backups of regenerated files.
-*.bak
+.claude/
+.opencode/
+.devpro-temp/
+backup.*

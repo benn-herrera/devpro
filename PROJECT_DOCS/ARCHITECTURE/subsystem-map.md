@@ -93,7 +93,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   own, so an optional reference that fills to nothing drops that paragraph alone. The sentence
   naming the default step-down model is
   `clauses.STEP_DOWN_MODEL`, the `tun` placeholder (Rendering, Placeholders), so that sentence alone
-  renders only where the rendering assigns a model for the step-down tier. The entry body's
+  renders only where the rendering names a mechanical member to step down to. The entry body's
   `## Commits and pull requests` section gives the attribution line every commit message and
   pull-request description carries; it names the harness by `clauses.DISPLAY_NAME`, the
   harness's `display_name` (Rendering, Placeholders), and no model, and links the repository by

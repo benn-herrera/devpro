@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 
 from devpro.errors import InputError
-from devpro.vocabulary import ALL, IDENTIFIER, TIERS, Kind, Tier, Tool, Tools
+from devpro.vocabulary import ALL, CATEGORIES, IDENTIFIER, Category, Kind, Tool, Tools
 
 _COLOR = r"#[0-9A-Fa-f]{6}"
 _ROOTS = {Kind.AGENT: "agents", Kind.DOCUMENT: "agents", Kind.COMMAND: "commands", Kind.SKILL: "skills"}
@@ -59,7 +59,7 @@ class Definition:
     """One rendered definition: its kind and place, frontmatter values, and text.
 
     description is an agent's and a skill's, required for either and refused for any other kind; tools
-    and tier are an agent's, and so is color. files are a skill's, and its directory is its name."""
+    and category are an agent's, and so is color. files are a skill's, and its directory is its name."""
 
     name: str  # output name, IDENTIFIER
     body: str  # non-empty, no edge newline; its only holes are `vocabulary.hole` placeholders
@@ -67,7 +67,7 @@ class Definition:
     folder: str = ""  # the path below the output root: IDENTIFIER parts joined by "/", or ""
     description: str | None = None  # one line; emitted double-quoted; holds no '"' and no newline
     tools: Tools | None = None  # see Tools; an empty tuple and a repeated tool are refused
-    tier: Tier | None = None  # the family's tier map binds the model
+    category: Category | None = None  # the family's category map binds the model
     color: str | None = None  # "#RRGGBB"; emitted double-quoted
     files: tuple[SkillFile, ...] = ()  # a skill's supporting files; no other kind takes any
 
@@ -78,7 +78,7 @@ class Definition:
             raise InputError(f"{where}: name is not a strict-kebab identifier")
         if self.folder and not all(re.fullmatch(IDENTIFIER, part) for part in self.folder.split("/")):
             raise InputError(f"{where}: folder '{self.folder}' is not strict-kebab identifiers joined by '/'")
-        agent_fields = {"description": self.description, "tools": self.tools, "tier": self.tier}
+        agent_fields = {"description": self.description, "tools": self.tools, "category": self.category}
         if self.kind is Kind.SKILL:
             self._check_skill_fields(where)
         elif self.kind is Kind.AGENT:
@@ -101,8 +101,8 @@ class Definition:
                 raise InputError(f"{where}: tools must be ALL or a non-empty tuple of Tool")
             if len(set(self.tools)) != len(self.tools):
                 raise InputError(f"{where}: tools names a tool twice")
-        if self.tier not in TIERS:
-            raise InputError(f"{where}: tier '{self.tier}' is not one of {', '.join(TIERS)}")
+        if self.category not in CATEGORIES:
+            raise InputError(f"{where}: category '{self.category}' is not one of {', '.join(CATEGORIES)}")
         if self.color is not None and re.fullmatch(_COLOR, self.color) is None:
             raise InputError(f"{where}: color '{self.color}' is not #RRGGBB")
 
@@ -113,7 +113,7 @@ class Definition:
         _check_description(self.description, where)
         given = [
             field
-            for field, value in {"tools": self.tools, "tier": self.tier, "color": self.color}.items()
+            for field, value in {"tools": self.tools, "category": self.category, "color": self.color}.items()
             if value is not None
         ]
         if given:

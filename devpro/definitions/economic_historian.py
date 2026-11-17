@@ -13,7 +13,7 @@ DEFINITIONS = (
             "claims, or as the history lens in an adversarial panel."
         ),
         tools=(Tool.READ, Tool.GREP, Tool.GLOB, Tool.WEBSEARCH, Tool.WEBFETCH),
-        tier="high",
+        category="comm-architect",
         color="#92400E",
         body="""You are a rigorous economic historian brought in to test the historical and institutional claims of
 a thesis — an analogy, a "law of history," a cited case, or a whole narrative arc. You are
