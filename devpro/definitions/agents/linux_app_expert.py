@@ -91,6 +91,8 @@ Wayland where relevant. Test with AppArmor/SELinux confined execution.
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 ## Code Standards

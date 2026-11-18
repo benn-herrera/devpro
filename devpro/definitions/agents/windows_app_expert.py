@@ -81,6 +81,8 @@ or UI Automation. Test across privilege levels (standard user, UAC prompt, admin
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 ## Code Standards

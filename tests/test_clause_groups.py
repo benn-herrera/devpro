@@ -3,17 +3,15 @@ table lists, unless an exemption states why not."""
 
 import re
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import PurePosixPath
 
 import pytest
 
-import devpro
 from devpro import clauses
 from devpro.definitions import discover
+from devpro.install_base import PACKAGE_ROOT
 from devpro.vocabulary import Kind
-from tests._structure import carried_clauses
-
-_DEFINITIONS = Path(devpro.__file__).parent / "definitions"
+from tests._structure import carried_clauses, definition_paths
 
 
 @dataclass(frozen=True)
@@ -57,6 +55,7 @@ GROUPS = {
             "BOUNDARY_CHECK_CONSUMERS_CODER",
             "MOCKING_THRESHOLD_GENERAL",
             "TESTING_LAYERS_CODER",
+            "TEST_PRECONDITION",
             "WHEN_REVIEWING_SECTION",
             "boundary_check_coder_body",
             "integration_logging_signal",
@@ -100,6 +99,7 @@ GROUPS = {
             "PE_LEAD",
             "PE_SHARED_BULLETS",
             "PLATFORM_TESTING_LEAD",
+            "TEST_PRECONDITION",
             "PROJECT_SETUP_PLATFORM",
             "WHEN_REVIEWING_SECTION",
             "boundary_checks_lead",
@@ -259,26 +259,35 @@ def check_clause_groups(
 def check_exemption_quotes(exemptions: dict[tuple[str, str], str], sources: dict[str, str]) -> list[str]:
     """Every quote in an exemption reason, written `module.py ("a ... b")`, that its module does not
     carry, one message each, naming the definition, the clause and the module or fragment. `sources`
-    maps a module file name to its text; a fragment is the quote between ` ... ` markers, matched
-    with whitespace collapsed."""
+    maps a module's path to its text; a quoted name resolves to the one source whose last segment it
+    is, and a name none or two sources answer to is reported with them. A fragment is the quote
+    between ` ... ` markers, matched with whitespace collapsed."""
     messages = []
     collapsed = {module: " ".join(text.split()) for module, text in sources.items()}
+    by_name: dict[str, list[str]] = {}
+    for module in sources:
+        by_name.setdefault(PurePosixPath(module).name, []).append(module)
     for (definition, clause), reason in sorted(exemptions.items()):
-        for module, quote in re.findall(r'(\w+\.py) \("(.+?)"\)', reason):
-            if module not in collapsed:
+        for name, quote in re.findall(r'(\w+\.py) \("(.+?)"\)', reason):
+            matching = by_name.get(name, [])
+            if not matching:
+                messages.append(f"{definition}: exemption from {clause} quotes {name}, which no definition module is")
+                continue
+            if len(matching) > 1:
                 messages.append(
-                    f"{definition}: exemption from {clause} quotes {module}, which is not a definition module"
+                    f"{definition}: exemption from {clause} quotes {name}, which {len(matching)} definition modules "
+                    f"answer to: {', '.join(sorted(matching))}"
                 )
                 continue
             for fragment in quote.split(" ... "):
-                if fragment not in collapsed[module]:
-                    messages.append(f"{definition}: exemption from {clause} quotes {fragment!r}, absent from {module}")
+                if fragment not in collapsed[matching[0]]:
+                    messages.append(f"{definition}: exemption from {clause} quotes {fragment!r}, absent from {name}")
     return messages
 
 
 def _real_carried() -> dict[str, set[str]]:
     carried: dict[str, set[str]] = {}
-    for path in sorted(_DEFINITIONS.glob("*.py")):
+    for path in definition_paths():
         carried |= carried_clauses(path.read_text(encoding="utf-8"))
     return carried
 
@@ -377,7 +386,8 @@ def test_the_check_is_silent_on_agreement() -> None:
 
 
 def test_every_exemption_quote_occurs_in_its_definition_module() -> None:
-    sources = {path.name: path.read_text(encoding="utf-8") for path in _DEFINITIONS.glob("*.py")}
+    root = PACKAGE_ROOT / "definitions"
+    sources = {path.relative_to(root).as_posix(): path.read_text(encoding="utf-8") for path in definition_paths()}
     assert check_exemption_quotes(EXEMPTIONS, sources) == []
 
 
@@ -392,6 +402,14 @@ def test_an_exemption_quote_from_an_unknown_module_is_reported() -> None:
     messages = check_exemption_quotes({("d", "C"): 'gone.py ("x")'}, {"m.py": "x"})
     assert len(messages) == 1
     assert "gone.py" in messages[0]
+
+
+def test_an_exemption_quote_naming_two_modules_is_reported() -> None:
+    """A quoted name is resolved to the one source whose last segment it is, so a stem two modules
+    share is reported rather than silently checked against whichever came first."""
+    messages = check_exemption_quotes({("d", "C"): 'm.py ("x")'}, {"agents/m.py": "y", "skills/m.py": "x"})
+    assert len(messages) == 1
+    assert "agents/m.py" in messages[0] and "skills/m.py" in messages[0]
 
 
 def test_an_exemption_quote_spanning_a_line_break_is_found() -> None:

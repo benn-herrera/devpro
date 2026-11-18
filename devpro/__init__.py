@@ -19,7 +19,8 @@ or a family overlay anchor, filled once by `render.filled_body`.
     family.py        the family dataclass and its overlays, and how to author one
     families/        one module per family, each defining FAMILY
     context.py       Render, the devpro settings file and the map's grammar
-    definitions/     one module per definition, each defining DEFINITIONS
+    definitions/     one module per definition, each defining DEFINITIONS; the modules that render
+                     agents and skills sit in agents/ and skills/, the agents file's at the top
     render.py        definition to file text, the banner, the writer, and the agents file's text
     install_target.py where an install lands: its harness, harness directory and project root, from the target
     preflight.py     the install run into a scratch copy first: up to date, --dry-run, or the real run
@@ -47,4 +48,4 @@ the text of every file is a function of the definition, the plugin, the harness,
 the family and the category map, and of nothing else.
 """
 
-__version__ = "0.17.4"
+__version__ = "0.17.5"

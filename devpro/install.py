@@ -20,6 +20,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 from collections.abc import Callable, Iterable, Mapping
 from functools import partial
@@ -139,9 +140,10 @@ EXCLUDED_SUFFIX = ".bak"
 STAMPED_SUFFIXES = frozenset({".py", ".sh", ".mk", ".just"})
 STAMPED_NAMES = frozenset({"docdicer"})
 SURFACES = ("agents", "commands", "skills")
-# The generated-banner prefixes, built from the mark `render` writes above the payload, and the module
-# path a payload names: `devpro/definitions/<module>.py`. A file opening with one of these is one
-# this repository wrote; the bare mark followed by anything else is somebody else's file.
+# The generated-banner prefixes, built from the mark `render` writes above the payload, and the prefix
+# of the module path a payload names: `devpro/`, which every module path below `devpro/definitions/`
+# opens with. A file opening with one of these is one this repository wrote; the bare mark followed by
+# anything else is somebody else's file.
 _GENERATED = f"# {GENERATED_MARK}".encode("utf-8")
 _COMMENT_GENERATED = f"<!-- {GENERATED_MARK}".encode("utf-8")
 _PAYLOAD_PATH = f"{PACKAGE_ROOT.name}/".encode("utf-8")
@@ -414,6 +416,13 @@ def _clear_package_destination(destination: Path) -> None:
         destination.unlink(missing_ok=True)
 
 
+def _package_copy_mode(source: Path) -> int:
+    """The mode a package copy asks the OS for when it creates a file from `source`: a new file's, plus
+    `source`'s execute bits. Group and other bits are left to the process umask, which a `chmod` after
+    the write would ignore."""
+    return 0o666 | (stat.S_IMODE(source.stat().st_mode) & 0o111)
+
+
 def _report_shadowing(root: Path, *, harness: Harness, files: Iterable[HarnessFile], user_level: bool) -> None:
     """Report a plugin the harness loads in place of another of the same name, for a harness whose
     user-level plugin does so: a user-level install always shadows every project's; a project install
@@ -523,8 +532,10 @@ def install(
         if source.suffix in STAMPED_SUFFIXES or source.name in STAMPED_NAMES:
             data = stamped(data, origin=source.relative_to(PACKAGE_ROOT.parent).as_posix())
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(data)
-        shutil.copymode(source, target)
+        # Asked for at creation: a `chmod` after the write would ignore the umask.
+        descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, _package_copy_mode(source))
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(data)
     for source, target in resource_files:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, target)

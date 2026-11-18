@@ -3,6 +3,8 @@
 Future intent only. Not part of the contract doc set; not handed to coding dispatches.
 A finished item leaves nothing. Do not mark it as done and let it persist. Just remove it.
 
+## Bugs
+
 ## Features
 
 ### Codex CLI harness support
@@ -13,14 +15,6 @@ with a fixed model per agent. An agent cannot be denied editing or web search, s
 are unenforced; whether reviewers stay read-only is to be tried first. `AGENTS.md` has no `@`
 imports and a 32 KiB cap; agents, skills, hooks and MCP live in separate places, MCP in a shared
 `config.toml`; agent bodies are TOML strings; one provider per session, Responses API only.
-
-### opencode model price plugin
-
-Add a small hook plugin that modifies the TUI sidebar showing the current 'spent' figure
-to include a line below it showing the active model's $/M input/output tokens.
-The cost.input / cost.output rates are available via the model catalog and should be trivial
-plug in. If this turns into a side question instead of <= 100 lines of typescript re-evaluate.
-possible extension: have it show the prices of all models in use (subagents)
 
 ### Change-case analysis process
 
@@ -59,13 +53,6 @@ Right now only code-facing changes are handled by the design->plan->burndown wor
 Doc-only changes for README or project docs are currently only handled by ad-hoc processes
 and are not well-represented in the current workflow definition.
 
-### The development skill lacks a rule for a review whose commit range moves under it
-
-A post-plan review cites a commit range; commits landing while the review runs move the range
-under it, and the review's scope line rots. The `development` skill's post-plan review section
-needs the rule for it: what a reviewer states when its range moves, and what the synthesis does
-with the moved part.
-
 ## Maintenance
 
 ### (STICKY) Periodic load-bearing-ness pruning pass
@@ -76,34 +63,6 @@ instrument. Byte-level instruments exist today — `just render-diff` between tw
 the render-property assertions in `tests/test_devpro.py` (ARCHITECTURE.md, Why There Is No
 Verification Verb); behavioral ones do not yet.
 
-### Give the kbase router's not-offered branch the plugin reload remedy
-
-Under claude the plugin's `kbase` tools appear after a fresh install only once the plugins are
-reloaded. The "A path" branch of the router and `references/installing.md` (both in
-`devpro/definitions/kbase.py`) say only to restart or reconnect the server. The `reload_rule` hole
-names agents, not tools, so reusing it there would misdirect the model; the remedy needs a harness
-hole of its own.
-
-### Verify the opencode guardrail's tool names against the opencode runner
-
-Which tool names reach `execute.before` is unverified: only `patch` is matched, not `apply_patch`;
-a `list` tool taking `path` is not handled; the `shell` alias is accepted but never sent. Probe the
-runner, accept every name the hook receives, and add a case row for each (`guardrail.ts`
-`shellTools` and its tool `switch`; `tests/test_guardrail.py` `_OPENCODE_ONLY_TOOLS`).
-
-### The guardrails hard-code kbase's private record names
-
-The Grep/Glob judgment depends on `nodes.yaml`, `edges.yaml` and `format.yaml` (`guardrail.pl`
-`@kb_records`, `guardrail.ts` `kbRecords`), so a record file a later kbase adds passes silently.
-Passing a Grep/Glob rooted in `kb-root/` only when its filter's last segment ends in `.md` drops
-both lists; it is a behavior change to both scripts and the case table together.
-
-### Mage has no guardrail
-
-`devpro/harnesses/mage.py` sets `guardrail=None` and SPEC `shipped-files.md` says mage ships none,
-so a mage install's `.index/` protection rests on kbase's prose instruction alone. Check whether
-mage's plugin format carries a hook; if it does not, record the gap in SPEC.
-
 ### The cold-read script is unreliable under opencode
 
 `devpro/development-tools/cold-read.sh` runs each read in a fresh directory, and in a directory
@@ -111,6 +70,16 @@ where opencode's background service has never run a session, models a provider p
 (`opencode-models-discovery`) are reported "Model unavailable", even after `opencode models` runs
 there; the run fails or falls back to opencode's free models. Whether the composed agent file's
 `"*": deny` blocks every tool is therefore unconfirmed by a live run.
+
+### Agents-file block churns under alternating harness installs
+
+Installing one harness after another into the same project rewrites the agents-file block and its
+rolling backup on every run — each harness's block names its own reference spelling, global
+agents-file path and file-name examples — so the install never reports up to date and rewrites the
+whole rendered tree with it. Single-harness installs converge and are pinned by tests
+(`tests/test_devpro_install.py`). A fix would render the block byte-identical across harnesses
+(plugin references with a space separator, no harness-named paths) or scope the up-to-date decision
+per harness.
 
 ## Testing
 

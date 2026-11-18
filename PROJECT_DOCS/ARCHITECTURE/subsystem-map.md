@@ -9,7 +9,17 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   linux-kernel-driver-expert), architect, and — sharing the coding-review domain — security-reviewer
   and tech-writer, which is both the authoring and the reviewing agent for READMEs and human-facing guides.
   A *group* is narrower than this list and is the defined term: the definitions whose own
-  `Definition(...)` call names one membership clause (CONVENTIONS.md, Group membership).
+  `Definition(...)` call names one membership clause (CONVENTIONS.md, Group membership). The coder and
+  platform-expert groups carry the test-precondition clause, one constant in `clauses.py` beside
+  `clauses.TESTS_PROTECT_LOGIC`, which keeps defining the checksum the precondition forbids ordering:
+  a package that adds a test states the defect the test fails on before the change — the defect, and
+  the run that fails before the fix and passes after — and where the only failure the test can catch
+  is the artifact's own text or structure changing, the test is a checksum and is not written; a
+  property two renders are held to together is not such a pin.
+
+  `clauses.DISSENT`, which nineteen definitions carry, directs the dispute its closing sentence
+  names: an order whose result satisfies every stated requirement but whose only possible variation
+  is form.
 - **kbase plugin + kbase** — the `kbase` skill alone: the definition the devpro plugin excludes by name
   and the kbase plugin delivers with the others SPEC.md, Deployed Surfaces, Plugins lists
   (`devpro/plugins/kbase.py`). `kbase.py` owns a directory,
@@ -29,7 +39,10 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   skill entry file and `installing.md`. `clauses.KB_RUNNER_TARGETS` goes to the maintaining
   supporting file. The consuming project's runner targets are the `kb-`-prefixed recipes of this
   repository's `devpro/kb-tools/runner-snippets/kb.just` and `kb.mk`, prefixed so they cannot
-  collide with a consuming project's own targets.
+  collide with a consuming project's own targets. The skill entry file's not-offered branch and
+  `installing.md`'s restart section carry a harness-conditional paragraph, the `tools_reload_rule`
+  `OptionalHarnessText` hole beside the guide's `reload_rule`: where the harness reloads plugins, it
+  names that remedy for the `kbase` MCP server's tools; a harness without one drops the paragraph.
 - **Specialists** — applied-mathematician, biz-dev-strategist, economic-historian, literature-scout,
   marketing-comms-expert, ml-engineer, prompt-engineer, prose-architect, theoretical-economist:
   single-purpose, invoked directly rather than as part of a coding pipeline.
@@ -97,7 +110,8 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   `## Commits and pull requests` section gives the attribution line every commit message and
   pull-request description carries; it names the harness by `clauses.DISPLAY_NAME`, the
   harness's `display_name` (Rendering, Placeholders), and no model, and links the repository by
-  `clauses.REPOSITORY_URL`.
+  `clauses.REPOSITORY_URL`. The *Dispatchability* section requires what the coding seats' bullet
+  states: a package that adds a test names the defect it fails on.
 - **Install machinery** — the one entry not rendered from a definition: `install.py` renders, copies
   and prunes; `install_base.py` holds what the install modules share (the package and checkout
   paths, the kb-tools package paths, `VENV_DIR`, the path checks, UTF-8 text reading and the report of what an

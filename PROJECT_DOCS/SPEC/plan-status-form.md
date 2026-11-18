@@ -33,7 +33,7 @@ Terms:
   abandoned).
 - **work package** — one unit of a plan's work, with its own row in the plan's status table, named
   there by its ID.
-- **state** — a work package's progress as its plan's status table records it: drafted,
+- **state** — a work package's progress as its plan's status table records it: `drafted`,
   `dispatchable`, `in progress` or `landed`.
 - **rating** — a work package's rating as its plan's status table records it: `mechanical`,
   `expert`, or unrated.
@@ -50,9 +50,11 @@ A plan states:
   any separator.
 - The status table sits under a `## Status` heading, and its headers include `Package`, `State` and
   `Rating`. Other columns are free.
-- A state cell opens with one of three words: `dispatchable`, ready to hand to an agent as it
-  stands; `in progress`, dispatched and not yet landed; `landed`, committed. Anything after the
-  word is a note.
+- A state cell opens with one of four words: `drafted`, not yet ready to hand to an agent as it
+  stands; `dispatchable`, ready to hand to an agent as it stands; `in progress`, dispatched and not
+  yet landed; `landed`, accepted and committed. Anything after the word is a note. A state claims the row's
+  present: it is set in the turn the act or condition that makes it true happens, and not before — a
+  state set ahead of its condition is as false a claim about the present as one set after it.
 - A rating cell opens with one of two words: `mechanical`, every edit enumerated, no design choice
   and no debugging; `expert`, anything else. Anything after the word is a note.
 - The post-plan review and the post-plan burndown are work packages, each with its own ID and row.
@@ -69,7 +71,7 @@ A reader of plans:
 - Matches a heading to a row by the row's ID, and takes only the title from the heading.
 - Takes the first table under a `## Status` heading whose headers include `Package` and `State` as
   the status table.
-- Reads a row with no state word, or opening with any other word, as drafted.
+- Reads a row with no state word, or opening with any other word, as an error.
 - Reads a work package as unrated where the table has no `Rating` column, or its rating cell opens
   with neither rating word.
 - Reads a plan as done only when its post-plan review row and its post-plan burndown row, each

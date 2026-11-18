@@ -82,6 +82,8 @@ When a request matches a row below other than installing, and those tools are no
   restarts or reconnects it, in their harness. If a restart does not bring the tools back, open
   `references/installing.md`: it covers that case.
 
+- @!hrn-tools-reload-rule!@
+
 Outside that check, mention installing kbase only when the user asks about it. Run `kbase` itself or
 its `kb-` runner targets only when the user directs you to — what they named, and nothing more. A
 `wait` line a kbase tool's result hands you is that tool's own continuation: run it as the reference
@@ -503,6 +505,8 @@ The harness starts the `kbase` MCP server with the bare command `kbase`, found o
 when the server starts: a kbase installed or upgraded since is not the one serving this session. Ask
 the user to restart or reconnect the kbase MCP server in their harness. Its tools are offered once it
 is running, and every other route needs them.
+
+@!hrn-tools-reload-rule!@
 
 ## Tools still not offered after a restart
 

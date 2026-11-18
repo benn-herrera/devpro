@@ -3,7 +3,7 @@
 #
 # Claude Code PreToolUse hook for Bash and the file tools.
 # Prevents in-place edits using shell tools, redirects model to use the Edit and Write tools.
-# In the kbase plugin, also refuses a call that names a path in kb-root/.index/ or searches from kb-root/ without excluding it.
+# In the kbase plugin, also refuses a call that names a path in kb-root/.index/, a shell command that searches from kb-root/ without excluding it, or a Grep or Glob rooted there whose file filter's last segment does not end in .md.
 #
 # Exit 2 blocks the call; any other non-zero exit is reported as a hook error and does not block.
 # Perl's own exit on a failed `use` or an uncaught `die` can be 2, so every module is loaded with
@@ -19,10 +19,9 @@ my @scratch = ('.devpro-temp');
 # the project root or the working directory, which --subdir makes wrong.
 (my $kb_signal = $0) =~ s{[^/]*/[^/]*\z}{skills/kbase/SKILL.md};
 
-# kbase's records, in <root>/kb-root/.index/.
-my @kb_records = ('nodes.yaml', 'edges.yaml', 'format.yaml');
+# kbase's index, in <root>/kb-root/.index/.
 my $index_path = "kb-root/.index/ holds kbase's records: read them with kbase's `query` tool and change them with its `write` tool";
-my $index_search = "${index_path}; exclude .index from this search (grep: --exclude-dir=.index; rg: -g '!**/.index/**'; find: -path '*/.index' -prune; Grep: a glob (opencode: include) no .index file matches; Glob: a pattern no .index file matches)";
+my $index_search = "${index_path}; exclude .index from this search (grep: --exclude-dir=.index; rg: -g '!**/.index/**'; find: -path '*/.index' -prune; Grep: a glob (opencode: include) ending in `.md`; Glob: a pattern ending in `.md`)";
 my $excludes_index = qr/--exclude-dir[= ]['"]?\.index\b|(?:^|\s)(?:-g|--glob)[= ]['"]?!['"]?[^\s'"]*\.index|-(?:path|name)\s+['"]?[^\s'"]*\.index['"]?\s+-prune/;
 
 # Claude's file tools that name one path, and the argument holding it.
@@ -151,27 +150,6 @@ sub under {
   return $p eq $dir || index($p, "${dir}/") == 0;
 }
 
-# glob_re reads one path segment as a glob over *, ?, […] and {a,b}.
-sub glob_re {
-  my ($glob) = @_;
-  my ($re, $depth) = ('', 0);
-  for my $t ($glob =~ /\[[!^]?[^\]]+\]|[*?{},]|[^*?[{},]+|\[/g) {
-    if ($t eq '*') { $re .= '.*' }
-    elsif ($t eq '?') { $re .= '.' }
-    elsif ($t eq '{') { $re .= '(?:'; $depth++ }
-    elsif ($t eq '}' && $depth) { $re .= ')'; $depth-- }
-    elsif ($t eq ',' && $depth) { $re .= '|' }
-    elsif ($t =~ /^\[([!^]?)(.+)\]\z/s) {
-      my ($negated, $set) = ($1, $2);
-      $set =~ s/(?!(?<=.)-(?=.))(\W)/\\$1/gs;
-      $re .= '[' . ($negated ? '^' : '') . $set . ']';
-    }
-    else { $re .= quotemeta $t }
-  }
-  $re .= ')' x $depth;
-  return qr/^(?:${re})\z/s;
-}
-
 # glob_root is a glob's leading literal segments, those before the first holding a glob character.
 sub glob_root {
   my @lit;
@@ -183,15 +161,14 @@ sub glob_root {
 }
 
 # search_reason judges a search rooted at base whose file filter is a glob, or undef for none: one
-# rooted in kb-root/ is refused unless its filter cannot match a record.
+# rooted in kb-root/ is refused unless the filter's last segment ends .md, so the search cannot read
+# anything but a Markdown file.
 sub search_reason {
   my ($base, $filter, $kb, $subject) = @_;
   return $index_path if under($base, $subject);
   return undef if !under($base, $kb);
-  if (defined $filter && $filter ne '') {
-    my $re = eval { glob_re($filter =~ s{.*/}{}sr) };
-    return undef if !defined $re || !grep { $_ =~ $re } @kb_records;
-  }
+  (my $last = $filter // '') =~ s{.*/}{}s;
+  return undef if $last =~ /\.md\z/;
   return $index_search;
 }
 

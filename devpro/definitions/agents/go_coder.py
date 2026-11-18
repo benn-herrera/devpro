@@ -64,6 +64,8 @@ Use `testing.B` for benchmarks. Race detector (`-race`) on all test runs.
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 **Modules**: `go.mod` / `go.sum` discipline. Use `replace` directives sparingly (document why).

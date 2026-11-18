@@ -28,7 +28,7 @@ docdicer_launcher := source_directory() / ".." / "docdicer"
 
 [doc("show help on docdicer just recipes")]
 docdicer-help:
-    @just --justfile "{{justfile()}}" --list | grep -E '^[ \t]+docdicer-'
+    @just --justfile "{{justfile()}}" --list | grep -E '^[ \t]+docdicer'
 
 [doc("run docdicer with the given arguments: just docdicer dice-doc big.md out/")]
 [positional-arguments]

@@ -27,6 +27,12 @@ _RELOAD_RULE = (
     "If the new agents are not available after using `devpro install`, `/reload-plugins` rescans the agent list."
 )
 
+# The kbase MCP server's tools register the same way, so after an install its tools are not offered until
+# the plugin's servers are rescanned. Same remedy as _RELOAD_RULE, the kbase tools named instead of the agents.
+_TOOLS_RELOAD_RULE = (
+    "If the kbase tools are not offered after an install, `/reload-plugins` rescans the plugin's servers."
+)
+
 
 def _mcp_entry(*, command: str) -> dict[str, str | list[str]]:
     """A `command`/`args` entry."""
@@ -76,6 +82,7 @@ HARNESS = Harness(
     memory_file=f"`{_USER_HARNESS_DIR}/{_AGENTS_FILE}`",
     user_plugin_shadows=True,
     reload_rule=_RELOAD_RULE,
+    tools_reload_rule=_TOOLS_RELOAD_RULE,
     cold_read_rule=COLD_READ_SCRIPT_RULE,
     recipe_rule=FOREGROUND_RECIPE_RULE,
     kbase_project_rule="",

@@ -326,8 +326,9 @@ The plan size limit (default {clauses.PLAN_SIZE_LIMIT_DEFAULT}) and the periodic
 - **What the user sees:** before each dispatch the session states the agent count and model; a
   package rated `mechanical` runs on the step-down model, an `expert` one on the agent's own. The
   agent's report is checked against the diff, the checkpoint gate runs, and the session commits the
-  package with its Status row set to `landed`. A State cell reads `dispatchable`, then
-  `in progress`, then `landed`; a row with no state word is still drafted. Each commit message and
+  package with its Status row set to `landed`. A State cell reads `drafted`, then
+  `dispatchable`, then `in progress`, then `landed`; a row with no state word is an error, not a
+  drafted package. Each commit message and
   pull-request description carries a paragraph opening `ai assisted by [devpro]`, and no co-author
   trailer.
 - **When the session asks the user anything**, it is one of:

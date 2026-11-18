@@ -99,6 +99,7 @@ class OptionalHarnessText(Enum):
     RECIPE_RULE = "recipe_rule"
     KBASE_PROJECT_RULE = "kbase_project_rule"
     RELOAD_RULE = "reload_rule"
+    TOOLS_RELOAD_RULE = "tools_reload_rule"
     SIDE_BY_SIDE_RULE = "side_by_side_rule"
     COLD_READ_RULE = "cold_read_rule"
 

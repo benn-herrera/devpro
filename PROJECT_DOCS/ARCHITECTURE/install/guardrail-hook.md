@@ -37,7 +37,9 @@ Bash command — a shell redirection or `tee` destination, a `cp`/`mv` argument,
 spelling Shipped files states, reading the variable from `$ENV{CLAUDE_PROJECT_DIR}`, and otherwise
 is `path_of`.
 File-tool arguments go through `path_of` alone. `path_of` collapses `..` lexically, the
-`.index/` check's one resolution step.
+`.index/` check's one resolution step. That check's search rule is judged as Shipped files states
+it, by the file filter's last segment ending `.md`, and three edges are accepted with it: `*.MD` is
+blocked, a brace or set glob is judged by its suffix, and a Grep `type` is unread.
 
 Each script finds the kbase signal, the `kbase` skill's `SKILL.md`, from its own path, never
 from the root or the working directory, which `--subdir` would make wrong: `guardrail.pl` from

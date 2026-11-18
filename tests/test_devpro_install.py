@@ -2,8 +2,8 @@
 the code under test did not compute: the marker span, the bytes kept outside it, the refusals that
 write nothing, the redirects, the kb-tools package and its banner, the docdicer tools package replaced
 around its venv, the kb install path, the kbase
-`.mcp.json`, the runner include line, the harness resources a harness ships as they stand, the
-prune, the refusal to overwrite a file without this repository's banner, the claude guardrail hook's
+`.mcp.json`, the runner include line, the harness resources a harness ships as they stand, the umask a
+package copy lands under, the prune, the refusal to overwrite a file without this repository's banner, the claude guardrail hook's
 probe and registration, the removal of entries earlier installs registered, and the checkout premise with the checks that stand down outside one.
 
 The package is imported from the repository root, which `just test` puts on PYTHONPATH.
@@ -16,8 +16,10 @@ import dataclasses
 import json
 import os
 import re
+import shutil
+import stat
 import subprocess
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path, PurePosixPath
 
 import pytest
@@ -1424,6 +1426,41 @@ def test_a_mode_change_alone_is_a_difference(tmp_path: Path, capsys) -> None:
     _preflighted(root, project=project)
     assert _UP_TO_DATE not in capsys.readouterr().out
     assert os.access(script, os.X_OK)
+
+
+@pytest.fixture
+def _umask_002() -> Iterator[None]:
+    """The umask a group-writable project installs under, restored so no other case's mode assertions
+    see it."""
+    previous = os.umask(0o002)
+    try:
+        yield
+    finally:
+        os.umask(previous)
+
+
+def test_a_package_copy_lands_at_the_umasks_mode_and_a_resource_at_the_shipped_one(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, _umask_002: None
+) -> None:
+    """Under umask 002 a copied package file lands group-writable — 664 from a 644 source, 775 from a
+    755 one, the source's execute bits carried through the umask — where a harness resource keeps
+    exactly the mode its harness ships it at. The package tree is a copy with the source modes set, so
+    neither assertion rides on the modes this checkout happens to hold."""
+    package = tmp_path / "package"
+    shutil.copytree(PACKAGE_ROOT / "docdicer-tools", package / "docdicer-tools")
+    shutil.copytree(PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / "claude", package / HARNESS_RESOURCES_SOURCE / "claude")
+    (package / "docdicer-tools/docdicer").chmod(0o755)
+    (package / "docdicer-tools/.gitignore").chmod(0o644)
+    resource = package / HARNESS_RESOURCES_SOURCE / "claude" / _GUARDRAIL
+    resource.chmod(0o755)
+    monkeypatch.setattr("devpro.install.PACKAGE_ROOT", package)
+    root = tmp_path / ".claude"
+    root.mkdir()
+    _definition_install(root, project_root=tmp_path)
+    tools = root / _DOCDICER_TOOLS
+    assert stat.S_IMODE((tools / "docdicer").stat().st_mode) == 0o775
+    assert stat.S_IMODE((tools / ".gitignore").stat().st_mode) == 0o664
+    assert stat.S_IMODE((_claude_plugin(root) / _GUARDRAIL).stat().st_mode) == 0o755
 
 
 def test_a_user_level_install_ships_no_docdicer_tools(_home: Path) -> None:

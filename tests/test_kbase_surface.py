@@ -30,7 +30,7 @@ from typing import NoReturn
 import pytest
 
 from devpro.context import Render, harnesses
-from devpro.definitions.kbase import KBASE_MIN_VERSION
+from devpro.definitions.skills.kbase import KBASE_MIN_VERSION
 from devpro.families.claude import FAMILY as CLAUDE_FAMILY
 from devpro.harness import Harness
 from devpro.plugins.kbase import PLUGIN as KBASE

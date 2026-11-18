@@ -82,6 +82,8 @@ Python: readable over clever. JS/TS: strict types, explicit async.
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 **No over-engineering**: Three similar lines of code is better than a premature abstraction. Don't

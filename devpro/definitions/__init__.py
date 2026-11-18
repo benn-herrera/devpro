@@ -44,12 +44,28 @@ def definitions_of(module: str, found: object) -> tuple[Definition, ...]:
 
 
 def discover() -> tuple[tuple[str, tuple[Definition, ...]], ...]:
-    """(dotted module name, its DEFINITIONS) for every module in this package not starting with "_",
-    in name order."""
+    """(dotted module name, its DEFINITIONS) for every module in this package or one of its
+    subpackages with no "_"-prefixed segment below this package, in name order. A subpackage that
+    does not import raises: a shorter set is never reported."""
     discovered = []
-    names = sorted(info.name for info in pkgutil.iter_modules(__path__) if not info.name.startswith("_"))
-    for name in names:
-        module = f"{__name__}.{name}"
+    names = sorted(
+        name
+        for _, name, is_pkg in pkgutil.walk_packages(__path__, prefix=f"{__name__}.", onerror=_refuse)
+        if not is_pkg and not is_private(tuple(name.removeprefix(f"{__name__}.").split(".")))
+    )
+    for module in names:
         found = getattr(importlib.import_module(module), "DEFINITIONS", None)
         discovered.append((module, definitions_of(module, found)))
     return tuple(discovered)
+
+
+def is_private(parts: tuple[str, ...]) -> bool:
+    """Whether any of `parts` — a module's path segments below `devpro/definitions/` — starts with "_":
+    a module, or a subpackage with everything under it, that discovery passes over."""
+    return any(part.startswith("_") for part in parts)
+
+
+def _refuse(name: str) -> None:
+    """The `onerror` `walk_packages` calls for a subpackage it cannot import: raised, never swallowed,
+    so a definition set that shrank silently cannot reach an install's prune step."""
+    raise ImportError(f"definition subpackage '{name}' does not import")

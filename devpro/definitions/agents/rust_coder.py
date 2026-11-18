@@ -99,6 +99,8 @@ Benchmark with `criterion` (stable) rather than the nightly `#[bench]` harness.
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 **Modules and crates**: the module tree mirrors the file tree; control visibility deliberately with

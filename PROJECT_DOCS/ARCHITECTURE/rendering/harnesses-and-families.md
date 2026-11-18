@@ -6,11 +6,13 @@ them, `mcp__plugin_{plugin}_kbase__` under claude, `mcp_kbase_` under mage and `
 opencode, a server tool's offered name being that prefix plus the tool's own, `display_name`, the
 harness's name in prose, lowercase (`claude code`, `opencode`, `mage`) and refused otherwise, and
 `scratch_rule` and `memory_file`, the agents file's rule for where scratch goes and its name for the
-operator's own instructions file (Placeholders); the five
+operator's own instructions file (Placeholders); the six
 harness-specific paragraphs, typed `OptionalHarnessText` — `recipe_rule`, `kbase_project_rule`
 (supplied under mage alone, whose server is started `--project-dir-required`), `reload_rule`
 (supplied under claude alone: the sentence a claude install prints and the `guide` skill's
-installation reference carries), `side_by_side_rule` (supplied under opencode alone, in its own
+installation reference carries), `tools_reload_rule` (supplied under claude alone: the sentence the
+`kbase` skill entry file and installation reference carry),
+`side_by_side_rule` (supplied under opencode alone, in its own
 paragraph of that reference) and `cold_read_rule` (supplied under every harness: claude and opencode share
 `harness.COLD_READ_SCRIPT_RULE`, which runs `cold-read.sh`, opencode adding that the script is not yet
 reliable there, and mage, whose copy of the script refuses to run, says to start the reader by

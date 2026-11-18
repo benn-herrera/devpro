@@ -15,8 +15,9 @@ the text of a module constant passed to a clause function: `clauses.f(frame=_FRA
 what `f` writes around `_FRAME`. A literal argument stays clause text, a slot fill of the clause's
 own sentence.
 
-Paths name definition modules relative to the repository root. With none, every
-`devpro/definitions/*.py` whose name does not start with `_` is read, in sorted path order.
+Paths name definition modules relative to the repository root. With none, every `.py` file under
+`devpro/definitions/`, its subpackages walked, that `devpro.definitions.is_private` does not pass
+over is read, in sorted path order.
 """
 
 from __future__ import annotations
@@ -29,8 +30,11 @@ from pathlib import Path
 from typing import NamedTuple
 
 from devpro import clauses
+from devpro.definitions import is_private
 from devpro.render import PLACEHOLDER
 from devtools.render_diff import LIST_ITEM, line_kinds
+
+DEFINITIONS_ROOT = Path("devpro/definitions")
 
 
 class Clause(NamedTuple):
@@ -127,11 +131,19 @@ def join_sites(source: str, *, namespace: dict, path: str) -> list[str]:
     return sites
 
 
+def _definition_module_paths() -> list[Path]:
+    """Every definition module's path under the repository root, its subpackages walked, in sorted
+    path order."""
+    return sorted(
+        path for path in DEFINITIONS_ROOT.rglob("*.py") if not is_private(path.relative_to(DEFINITIONS_ROOT).parts)
+    )
+
+
 def main(paths: list[str]) -> int:
     total = 0
-    for path in paths or sorted(str(p) for p in Path("devpro/definitions").glob("[!_]*.py")):
-        module = importlib.import_module("devpro.definitions." + Path(path).stem)
-        sites = join_sites(Path(path).read_text(encoding="utf-8"), namespace=vars(module), path=path)
+    for path in [Path(path) for path in paths] or _definition_module_paths():
+        module = importlib.import_module(".".join(path.with_suffix("").parts))
+        sites = join_sites(path.read_text(encoding="utf-8"), namespace=vars(module), path=str(path))
         for site in sites:
             print(site)
         total += len(sites)

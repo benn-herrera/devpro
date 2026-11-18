@@ -29,8 +29,9 @@ generated banner, or is a directory, refuses the install.
 The copy exclusions are `_shipped`'s vocabulary, matched at any depth: a directory named `tests`,
 `__pycache__`, `.pytest_cache` or `.venv` in the path, a `.DS_Store`, a `.bak` suffix, or one of
 `SPEC.md`, `ARCHITECTURE.md`, `CONVENTIONS.md`, `THESIS.md`, `ROADMAP.md`, `AGENTS.md` and
-`CLAUDE.md`. Every copy skips what it excludes — the package copy, which copies each file's mode
-(`copymode`), and the harness resource copy, which borrows the same vocabulary (below) — and `prune`
+`CLAUDE.md`. Every copy skips what it excludes — the package copy, which writes each file with the mode the
+process umask gives a new file plus the source's execute bits, and the harness resource copy, which
+borrows the same vocabulary (below) — and `prune`
 removes nothing `_shipped` excludes, so a file outside it is never stale. A copied file takes the
 installed banner when its suffix is in `STAMPED_SUFFIXES` (`.py`, `.sh`, `.mk`, `.just`) or its name
 is in `STAMPED_NAMES` (`docdicer`, the one extensionless
@@ -44,7 +45,8 @@ directory differs by harness.
 
 The development scripts package, `devpro/development-tools/`, takes the same package copy and adds
 no code path: one row, `("development-tools", DEVELOPMENT_SCRIPTS_PACKAGE, "development")`, in
-`SHIPPED_PACKAGES`. Its one file, `cold-read.sh`, is stamped by suffix and keeps its mode, and the
+`SHIPPED_PACKAGES`. Its one file, `cold-read.sh`, is stamped by suffix and keeps its execute bits under the umask's mode,
+and the
 package is replaced whole and never pruned. It is one script for both harnesses, never rendered. It
 finds its harness by name, from the nearest ancestor of its own resolved path called `.claude` or
 `.opencode`. Under claude its run directory stays empty and the plugin loads by `--plugin-dir`, from

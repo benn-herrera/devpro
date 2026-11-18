@@ -124,7 +124,7 @@ change:
   `.index`
 - a file-tool call whose path lies there: Claude's Read, Write, Edit and NotebookEdit, opencode's
   read, write, edit and patch
-- a Grep or Glob rooted in `kb-root/` whose file filter could match an index record
+- a Grep or Glob rooted in `kb-root/` whose file filter's last segment does not end in `.md`
 
 A path reaches `kb-root/.index/` when it does so through `..` segments, relative to the call's
 working directory (for opencode's file-tool calls, the project root). A Glob reaches it when its

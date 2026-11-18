@@ -129,6 +129,8 @@ library whose public types carry logic tests them with `expectTypeOf`.
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 **Packages and the `exports` map**: a package's `exports` field is its public surface — a path it

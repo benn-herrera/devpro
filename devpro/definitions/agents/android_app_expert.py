@@ -105,6 +105,8 @@ OEM skins.
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 ## Code Standards

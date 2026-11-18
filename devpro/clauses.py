@@ -26,6 +26,7 @@ PLUGIN_NAME = "@!plg-name!@"
 RECIPE_RULE = "@!hrn-recipe-rule!@"
 KBASE_PROJECT_RULE = "@!hrn-kbase-project-rule!@"
 RELOAD_RULE = "@!hrn-reload-rule!@"
+TOOLS_RELOAD_RULE = "@!hrn-tools-reload-rule!@"
 SIDE_BY_SIDE_RULE = "@!hrn-side-by-side-rule!@"
 COLD_READ_RULE = "@!hrn-cold-read-rule!@"
 STEP_DOWN_MODEL = "@!tun-step-down-model!@"
@@ -97,7 +98,7 @@ SEPARATION_OF_CONCERNS = """**Keep units ignorant of each other's internals.** T
 
 NAMES_READ_WITHOUT_THE_TASK = """**Name what you add for its scope, not your task.** A name you introduce at file, module or package scope is read among everything else in that scope, by someone who has not seen your task: where the scope holds more than one concern, the name carries its own (`plan_claude_md_merge`, not `plan_integration`)."""
 
-DISSENT = """If you believe a directive would produce technically incorrect output, state the concern and your recommended alternative before proceeding — do not silently comply. A directive whose result would break an invariant the project states, where the directive does not itself say it changes that invariant, is not yours to settle: stop and report the collision, quoting both, and carry out neither side."""
+DISSENT = """If you believe a directive would produce technically incorrect output, state the concern and your recommended alternative before proceeding — do not silently comply. A directive whose result would break an invariant the project states, where the directive does not itself say it changes that invariant, is not yours to settle: stop and report the collision, quoting both, and carry out neither side. An order whose result satisfies every stated requirement but whose only possible variation is form is the case to dispute: state the concern and your recommended alternative before proceeding."""
 
 NO_PROCESS_LEFT_BEHIND = """**Nothing you start outlives your work.** No process you start is still running when you finish, and none waits on input nobody will give: a command reads the input you name or a closed stdin (`< /dev/null`), never a terminal, and one that can block runs under a timeout."""
 
@@ -165,6 +166,8 @@ CHEAP_OVER_THOROUGH = (
 
 
 TESTS_PROTECT_LOGIC = """Tests protect logic by checking its effect. A test that fails when only the code's form changes — wording, formatting, structure — is a checksum of the code: friction, not protection. Where the form is the contract — output another program parses, a file someone else consumes — pinning it is protection."""
+
+TEST_PRECONDITION = """**Test precondition.** A test a package adds is written only for a named defect: the package states the defect, and the run that fails under it, before the change. Where the only failure the test can catch is the artifact's own text or structure changing, the test is not written; a property two renders are held to together is not such a pin."""
 
 # The platform experts' Testing section opens with this, then a paragraph of boundary_checks_lead()
 # followed by platform_boundary_routing(...), then the per-seat unit-test prose.

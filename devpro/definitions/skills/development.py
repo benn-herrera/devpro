@@ -225,10 +225,12 @@ plan the same way.
 - Package status goes in one table under a `## Status` heading, with a `Package` column, a
   `State` column and a `Rating` column; other columns are free. Each package has one row. A row
   naming no package, such as a kickoff commit or a note, has an empty `Package` cell.
-- A `State` cell opens with its state word, `dispatchable`, `in progress` or `landed`; anything after
-  the word is a note (`landed: inventory 49`). `dispatchable`: the package meets every condition in
-  *Dispatchability*. `in progress`: dispatched and not landed. `landed`: committed.
-  A row with no state word is drafted.
+- A `State` cell opens with one of four words: `drafted`, `dispatchable`, `in progress` or `landed`; anything
+  after the word is a note (`landed: inventory 49`). `drafted`: not yet ready to hand to an agent as it
+  stands. `dispatchable`: the package meets every condition in
+  *Dispatchability* now — set in the turn the last condition holds, never at authoring time, however
+  settled the package's text looks. `in progress`: dispatched and not landed. `landed`: accepted and
+  committed.
 - Each package's `Rating` cell opens with `mechanical` or `expert`, rated as *Dispatch* rates its
   dispatch; anything after the word is a note. *Purpose:* whoever reads the table sees which work runs on the
   {STEP_DOWN_MODEL_TERM}.
@@ -236,9 +238,7 @@ plan the same way.
   own ID and row; the review's title opens with `Post-plan review`, the burndown's with
   `Post-plan burndown`.
 - The table states each package's place at every moment, not only at a commit
-  boundary; a state is set in the turn the act that changes it happens, `in
-  progress` when the package is dispatched and `landed` when its work is
-  committed; a commit whose tree includes a package's work includes that
+  boundary; a commit whose tree includes a package's work includes that
   package's row, and work committed without its row is corrected in the commit
   immediately after. *Purpose:* the table is a live update, not an audit trail;
   a state set late is not stale, it is a false claim about the present, and a
@@ -280,6 +280,10 @@ A work package is dispatchable only when:
   them is in scope; a test failing on behavior the package does not state it changes is reported as
   a finding, never edited to pass. *Purpose:* an expectation moves only with its requirement, so an
   invariant test still stops wrong work;
+- a package that adds a test names the defect the test fails on, by the test-precondition clause
+  (`clauses.TEST_PRECONDITION` in `devpro/clauses.py`), which the coder and platform-expert
+  definitions carry. *Purpose:* an order for a test with no named defect is refused before
+  a dispatch exists;
 - its done-line names, from the project's runner targets, those that check what the package changes
   (a package that changes only documents names only document checks, such as a link check), run
   once, at the package's end; the package is done when that run passes, or fails only where the plan
@@ -364,6 +368,7 @@ approved can run as approved.
 
 ## Commits and pull requests
 
+- A package's closing commit carries a body.
 - Every commit message and pull-request description you write carries this line, as its own
   paragraph, directly before the trailer block if there is one, otherwise last:
 

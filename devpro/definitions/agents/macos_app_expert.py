@@ -86,6 +86,8 @@ macOS-version-specific behaviors.
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 ## Code Standards

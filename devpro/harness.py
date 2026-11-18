@@ -200,6 +200,7 @@ class Harness:
     entry_resource: str = ""  # the resource that registers the plugin, copied at user level too; "" for none
     user_plugin_shadows: bool = False  # a user-level install's plugin loads in place of a project's of its name
     reload_rule: str = ""  # what to do when an install's agents are not offered; printed after one, "" for none
+    tools_reload_rule: str = ""  # what to do when an install's kbase tools are not offered; "" for none
     side_by_side_rule: str = ""  # what a session does where another harness's install also reaches it; "" for none
     cold_read_rule: str = ""  # the development skill's bullet on how a cold reader is run; "" for none
 

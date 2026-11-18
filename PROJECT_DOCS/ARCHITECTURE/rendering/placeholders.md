@@ -17,12 +17,14 @@ for the seven harness strings, the `HarnessText` members, which every harness su
 name, project harness directory, display name — the harness's name in prose, which the `development`
 skill's attribution postscript names — user harness directory, MCP tool prefix, `scratch_rule`, the
 agents file's rule for where scratch goes, and `memory_file`, the agents file's name for the
-operator's own instructions file), and for the five harness-specific
+operator's own instructions file), and for the six harness-specific
 paragraphs, the `OptionalHarnessText` members, each
 a whole rule: `recipe_rule` (the rule a dispatched agent follows running recipes),
 `kbase_project_rule` (how a kbase session locates its project where the server serves many),
 `reload_rule` (what to do when an install's agents are not offered, in its own paragraph of the
-`guide` skill's installation reference), `side_by_side_rule` (what to do where a claude install of any plugin the devpro project
+`guide` skill's installation reference), `tools_reload_rule` (what to do when an install's `kbase`
+tools are not offered, in its own paragraph of the `kbase` skill entry file and installation
+reference), `side_by_side_rule` (what to do where a claude install of any plugin the devpro project
 ships also reaches an opencode session, in its own paragraph of that reference) and `cold_read_rule` (how a cold
 reader is run, a whole bullet of the `development` skill's project-documents reference, naming
 the `development` skill's script), which a

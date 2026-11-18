@@ -90,6 +90,8 @@ Use `pytest` fixtures to manage test environment setup.
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 **Data classes and models**: `dataclasses.dataclass` for plain data containers. `pydantic` for

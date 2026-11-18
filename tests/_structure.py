@@ -1,8 +1,9 @@
 """The source rules a definition module and the clauses module are written to, checked over their
 syntax trees. Nothing here runs at render: the suite asserts `check_structure` empty over the
-package, and proves each rule on a fixture. `kbase_skill_output_paths` is the one reader of the
-definitions themselves: a test needing a definition's paths takes them from the definition rather than
-spelling them a second time.
+package, and proves each rule on a fixture. `definition_paths` is the one walk of the definition
+modules, subpackages included, and `kbase_skill_output_paths` the one reader of the definitions
+themselves: a test needing a definition's paths takes them from the definition rather than spelling
+them a second time.
 
 A definition module holds imports, string constants and `DEFINITIONS`. Its constants are string
 literals or f-strings over its own constants. Its only calls are `Definition(...)` as a
@@ -20,8 +21,8 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
-from devpro.definitions import discover
-from devpro.install_base import KBASE_SKILL_DIR
+from devpro.definitions import discover, is_private
+from devpro.install_base import KBASE_SKILL_DIR, PACKAGE_ROOT
 from devpro.vocabulary import Kind
 
 TEXT_MODULE = "clauses.py"
@@ -46,6 +47,14 @@ FUNCTION_RULE = (
 DEFINITION_TOP_RULE = "a definition module's top level holds only imports, string constants and DEFINITIONS"
 TEXT_TOP_RULE = "the text module's top level holds only string constants and text functions"
 IMPORT_RULE = "the clauses module is imported only as `from devpro import clauses`"
+FOLDER_KIND_RULE = "a module under agents/ declares Kind.AGENT, under skills/ Kind.SKILL, and one at the top neither"
+
+
+def definition_paths() -> tuple[Path, ...]:
+    """Every definition module's path, its subpackages walked, in path order; a module below a
+    "_"-prefixed segment is the subpackages' own and is not one."""
+    root = PACKAGE_ROOT / "definitions"
+    return tuple(sorted(path for path in root.rglob("*.py") if not is_private(path.relative_to(root).parts)))
 
 
 def kbase_skill_output_paths() -> tuple[PurePosixPath, ...]:
@@ -191,11 +200,39 @@ def _is_clause(node: ast.AST) -> bool:
 
 def check_structure(paths: list[Path]) -> list[str]:
     """Every violation in the given files, as `<path>:<line>: <rule>`; the file named `clauses.py`
-    is read as the clauses module, any other as a definition module."""
+    is read as the clauses module, any other as a definition module, and the folder a definition
+    module sits in fixes the kind its definitions declare."""
     violations = []
     for path in paths:
         source = path.read_text(encoding="utf-8")
-        violations += check_source(source, where=str(path), text_module=path.name == TEXT_MODULE)
+        text_module = path.name == TEXT_MODULE
+        violations += check_source(source, where=str(path), text_module=text_module)
+        if not text_module:
+            violations += [f"{path}:{line}: {rule}" for line, rule in _folder_kind_violations(source, path=path)]
+    return violations
+
+
+_FOLDER_KINDS = {"agents": Kind.AGENT, "skills": Kind.SKILL}
+
+
+def _folder_kind_violations(source: str, *, path: Path) -> list[tuple[int, str]]:
+    """Each `Definition(...)` in `source` whose declared kind disagrees with the folder its module sits
+    in: `agents/` an agent, `skills/` a skill, the package's top neither. A `kind=` that is not a
+    `Kind` member reads as no declared kind."""
+    expected = _FOLDER_KINDS.get(path.parent.name)
+    violations = []
+    for call in ast.walk(ast.parse(source)):
+        if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == "Definition"):
+            continue
+        kind = next((keyword.value for keyword in call.keywords if keyword.arg == "kind"), None)
+        named = isinstance(kind, ast.Attribute) and isinstance(kind.value, ast.Name) and kind.value.id == "Kind"
+        declared = Kind.__members__.get(kind.attr) if named else None
+        if expected is None:
+            disagrees = declared in (Kind.AGENT, Kind.SKILL)
+        else:
+            disagrees = declared is not expected
+        if disagrees:
+            violations.append((call.lineno, FOLDER_KIND_RULE))
     return violations
 
 

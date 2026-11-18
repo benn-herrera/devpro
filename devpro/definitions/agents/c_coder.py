@@ -110,6 +110,8 @@ of `(input, want)` cases — C has no parametrization, so the table is the patte
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 {clauses.build_system_lead(direct="the compiler")} {clauses.FULL_WARNING_SET} {clauses.SANITIZER_BUILD_TARGET}

@@ -2,7 +2,7 @@
 //
 // opencode v2.2.6 plugin module
 // Prevents in-place edits using shell tools, redirects model to use EditTool and WriteTool
-// In the kbase plugin, also refuses a call that names a path in kb-root/.index/ or searches from kb-root/ without excluding it.
+// In the kbase plugin, also refuses a call that names a path in kb-root/.index/, a shell command that searches from kb-root/ without excluding it, or a Grep or Glob rooted there whose file filter's last segment does not end in .md.
 
 import { Plugin } from "@opencode/plugin"
 import { existsSync, statSync } from "node:fs"
@@ -18,11 +18,10 @@ const scratch = [".devpro-temp"]
 // directory, which --subdir makes wrong.
 const kbSignal = fileURLToPath(new URL("./skills/kbase/SKILL.md", import.meta.url))
 
-// kbase's records, in <root>/kb-root/.index/.
-const kbRecords = ["nodes.yaml", "edges.yaml", "format.yaml"]
+// kbase's index, in <root>/kb-root/.index/.
 const indexPath =
   "kb-root/.index/ holds kbase's records: read them with kbase's `query` tool and change them with its `write` tool"
-const indexSearch = `${indexPath}; exclude .index from this search (grep: --exclude-dir=.index; rg: -g '!**/.index/**'; find: -path '*/.index' -prune; Grep: a glob (opencode: include) no .index file matches; Glob: a pattern no .index file matches)`
+const indexSearch = `${indexPath}; exclude .index from this search (grep: --exclude-dir=.index; rg: -g '!**/.index/**'; find: -path '*/.index' -prune; Grep: a glob (opencode: include) ending in \`.md\`; Glob: a pattern ending in \`.md\`)`
 const excludesIndex =
   /--exclude-dir[= ]['"]?\.index\b|(?:^|\s)(?:-g|--glob)[= ]['"]?!['"]?[^\s'"]*\.index|-(?:path|name)\s+['"]?[^\s'"]*\.index['"]?\s+-prune/
 const patchPath = /^\*\*\* (?:Add File|Delete File|Update File|Move to): (.+)$/gm
@@ -124,27 +123,6 @@ function under(p: string, dir: string): boolean {
   return p === dir || p.startsWith(dir + sep)
 }
 
-// globRegExp reads one path segment as a glob over *, ?, […] and {a,b}.
-function globRegExp(glob: string): RegExp {
-  let re = ""
-  let depth = 0
-  for (const [t] of glob.matchAll(/\[[!^]?[^\]]+\]|[*?{},]|[^*?[{},]+|\[/g)) {
-    const range = /^\[([!^]?)(.+)\]$/s.exec(t)
-    if (t === "*") re += ".*"
-    else if (t === "?") re += "."
-    else if (t === "{") {
-      re += "(?:"
-      depth++
-    } else if (t === "}" && depth) {
-      re += ")"
-      depth--
-    } else if (t === "," && depth) re += "|"
-    else if (range) re += `[${range[1] ? "^" : ""}${range[2].replace(/(?!(?<=.)-(?=.))\W/gs, "\\$&")}]`
-    else re += t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  }
-  return new RegExp(`^(?:${re}${")".repeat(depth)})$`, "s")
-}
-
 // globRoot is a glob's leading literal segments, those before the first holding a glob character.
 function globRoot(pattern: string): string {
   const segs = pattern.split("/")
@@ -153,19 +131,13 @@ function globRoot(pattern: string): string {
 }
 
 // searchReason judges a search rooted at base whose file filter is a glob, or undefined for none:
-// one rooted in kb-root/ is refused unless its filter cannot match a record.
+// one rooted in kb-root/ is refused unless the filter's last segment ends .md, so the search cannot
+// read anything but a Markdown file.
 function searchReason(base: string, filter: string | undefined, kb: string, subject: string): string | null {
   if (under(base, subject)) return indexPath
   if (!under(base, kb)) return null
-  if (filter) {
-    let re: RegExp
-    try {
-      re = globRegExp(filter.replace(/^.*\//s, ""))
-    } catch {
-      return null
-    }
-    if (!kbRecords.some((name) => re.test(name))) return null
-  }
+  const last = (filter ?? "").replace(/^.*\//s, "")
+  if (last.endsWith(".md")) return null
   return indexSearch
 }
 

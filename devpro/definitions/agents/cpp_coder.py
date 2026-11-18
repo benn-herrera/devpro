@@ -112,6 +112,8 @@ Parametrize over a table of cases rather than copying a test body.
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 {clauses.build_system_lead(direct="`cmake`, `make` or a compiler")} {clauses.FULL_WARNING_SET} {clauses.SANITIZER_BUILD_TARGET}

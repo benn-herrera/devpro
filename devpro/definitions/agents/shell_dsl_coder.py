@@ -134,6 +134,8 @@ A violated check writes to stderr and exits non-zero; it never warns and carries
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 {clauses.CODER_OUTPUT_FORMAT}

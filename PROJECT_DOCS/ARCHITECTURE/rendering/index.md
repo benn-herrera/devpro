@@ -9,7 +9,8 @@ f-string over the module's own triple-quoted text, its own constants, and the co
 functions of `devpro/clauses.py` (imported as `from devpro import clauses`, written
 `{clauses.NAME}`). A module with several definitions has a longer tuple, and one definition may own
 several output paths: a skill's own `SKILL.md`, then one per supporting file. A module is
-registered by existing in the package (`definitions.discover`); an output path produced by two
+registered by existing in the package or one of its subpackages (`definitions.discover` walks both);
+an output path produced by two
 modules — a supporting file's included — is refused, naming both, and one definition naming the
 same supporting-file path twice is refused. Where a module goes and what it is called are in
 CONVENTIONS.md, "Adding Definitions".

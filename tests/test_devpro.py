@@ -83,6 +83,7 @@ from tests._structure import (
     DEFINITION_CALL_RULE,
     DEFINITION_TOP_RULE,
     FILES_RULE,
+    FOLDER_KIND_RULE,
     FUNCTION_RULE,
     IMPORT_RULE,
     TEXT_TOP_RULE,
@@ -92,6 +93,7 @@ from tests._structure import (
     check_source,
     check_structure,
     clause_graph,
+    definition_paths,
     kbase_skill_output_paths,
     repeated_clause_reaches,
 )
@@ -755,6 +757,30 @@ def test_no_rendering_names_a_retired_scratch_directory() -> None:
     assert [(name, text) for name in retired for text in texts if name in text] == []
 
 
+def test_no_rendered_agent_body_names_a_clauses_symbol() -> None:
+    """An agent body is read by a seat with no `devpro` module in front of it, so a clauses constant
+    spelled there is a symbol nothing resolves: the body says in words what the clause means. A
+    skill's text may name one as the handle of a file an operator with the repository open reads."""
+    symbols = re.compile(
+        r"\bclauses\.[A-Za-z_]\w*"
+        rf"|\b(?:{'|'.join(sorted(name for name in vars(devpro.clauses) if name.upper() == name))})\b"
+    )
+    found = []
+    for harness in (CLAUDE, MAGE, OPENCODE):
+        for plugin in load("devpro.plugins", "PLUGIN").values():
+            ctx = Render(
+                harness=harness, plugin=plugin, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
+            )
+            for path, text in render_all(ctx):
+                if path.parts[0] == "agents":
+                    found += [
+                        f"{path}:{number}: {line.strip()}"
+                        for number, line in enumerate(text.split("\n"), start=1)
+                        if symbols.search(line)
+                    ]
+    assert found == [], "\n".join(found)
+
+
 def _routed_references(router: str) -> set[str]:
     """The reference paths the router's tables route to, read off the table cells themselves."""
     routed = set()
@@ -1056,6 +1082,27 @@ def test_a_paragraph_holding_an_optional_harness_text_the_harness_supplies_nothi
     assert under_mage == "before\n\nafter"
 
 
+def _kbase_skill_render(harness: Harness) -> dict[PurePosixPath, str]:
+    """Every file of `harness`'s render of the kbase skill, keyed by its output path."""
+    ctx = Render(harness=harness, plugin=KBASE, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+    return dict(render_all(ctx))
+
+
+def test_the_kbase_tools_reload_rule_renders_under_claude_at_both_fill_sites_and_drops_elsewhere() -> None:
+    """The router's not-offered branch and installing.md's restart section each carry the reload rule as a
+    harness-conditional paragraph: claude supplies the sentence at both, opencode and mage supply none, so
+    the paragraph drops whole at both there."""
+    router = PurePosixPath("skills/kbase/SKILL.md")
+    restart = PurePosixPath("skills/kbase/references/installing.md")
+    sentence = CLAUDE.tools_reload_rule
+    assert sentence in _kbase_skill_render(CLAUDE)[router]
+    assert sentence in _kbase_skill_render(CLAUDE)[restart]
+    for harness in (OPENCODE, MAGE):
+        assert harness.tools_reload_rule == ""
+        assert sentence not in _kbase_skill_render(harness)[router]
+        assert sentence not in _kbase_skill_render(harness)[restart]
+
+
 _TUNED = Family(
     "tuned",
     {
@@ -1316,16 +1363,44 @@ def test_discovery_refuses_a_module_without_definitions() -> None:
         definitions_of("devpro.definitions.probe", None)
 
 
+def test_discovery_raises_where_a_subpackage_does_not_import(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A subpackage that does not import takes every definition under it out of the set — silently,
+    since nothing else reads the folder — and an install then prunes their files. Discovery raises
+    the failure instead of reporting a shorter set."""
+    package = tmp_path / "planted"
+    package.mkdir()
+    (package / "__init__.py").write_text("raise ImportError('planted does not import')\n", encoding="utf-8")
+    (package / "child.py").write_text("X = 1\n", encoding="utf-8")
+    monkeypatch.setattr("devpro.definitions.__path__", [str(tmp_path)])
+    with pytest.raises(ImportError, match=re.escape("devpro.definitions.planted")):
+        discover()
+
+
 # Source invariants, over every module of the package.
+
+
+def _walked(root: Path) -> list[Path]:
+    """Each module under a root, a directory or one file, a hidden directory's files left out: a
+    launcher's `.venv` beside its tools is not package source."""
+    paths = [root] if root.is_file() else root.rglob("*.py")
+    return [path for path in paths if not any(part.startswith(".") for part in path.relative_to(root).parts)]
 
 
 def _modules(*subpaths: str) -> list[tuple[str, ast.Module]]:
     """Every module under each subpath of the package (a directory or one file), or the whole package."""
     roots = [_PACKAGE.joinpath(*sub.split("/")) for sub in subpaths] or [_PACKAGE]
-    files = sorted({path for root in roots for path in ([root] if root.is_file() else root.rglob("*.py"))})
+    files = sorted({path for root in roots for path in _walked(root)})
     return [
         (path.relative_to(_PACKAGE.parent).as_posix(), ast.parse(path.read_text(encoding="utf-8"))) for path in files
     ]
+
+
+def test_module_walk_skips_hidden_directories(tmp_path: Path) -> None:
+    hidden = tmp_path / ".venv"
+    hidden.mkdir()
+    (hidden / "planted.py").write_text("x = 1\n", encoding="utf-8")
+    (tmp_path / "mod.py").write_text("x = 1\n", encoding="utf-8")
+    assert {path.name for path in _walked(tmp_path)} == {"mod.py"}
 
 
 def _imported(tree: ast.Module) -> list[str]:
@@ -1404,18 +1479,15 @@ def test_every_import_is_stdlib_or_the_package() -> None:
     assert offenders == []
 
 
-_DEFINITION_PATHS = sorted(path for path in (_PACKAGE / "definitions").glob("*.py") if not path.stem.startswith("_"))
-
-
 def test_the_definition_modules_and_the_text_module_hold_their_structure() -> None:
-    violations = check_structure([*_DEFINITION_PATHS, _PACKAGE / "clauses.py"])
+    violations = check_structure([*definition_paths(), _PACKAGE / "clauses.py"])
     assert violations == [], "\n".join(violations)
 
 
 def test_development_bodies_spell_each_term_through_its_constant() -> None:
     """A project binds a term by its exact spelling, so a body writing one out literally drifts from the
     constant every other mention renders from."""
-    tree = ast.parse((_PACKAGE / "definitions" / "development.py").read_text(encoding="utf-8"))
+    tree = ast.parse((_PACKAGE / "definitions" / "skills" / "development.py").read_text(encoding="utf-8"))
     terms = {
         node.targets[0].id: node.value.value
         for node in tree.body
@@ -1441,56 +1513,56 @@ def test_development_bodies_spell_each_term_through_its_constant() -> None:
 
 
 _CORPUS_JOIN_SITES = (
-    "devpro/definitions/android_app_expert.py: clauses.LOGGING_ABSTRACTION_NOTE",
-    "devpro/definitions/android_app_expert.py: clauses.PROJECT_SETUP_PLATFORM + clauses.STDLIB_FIRST_ALWAYS",
-    "devpro/definitions/architect.py: clauses.MACHINE_GUARANTEES",
-    "devpro/definitions/architect.py: clauses.PROVE_REPLACEMENT_RULE",
-    "devpro/definitions/architect.py: clauses.SEPARATION_OF_CONCERNS",
-    "devpro/definitions/c_coder.py: clauses.DATA_FORMATS_SCOPE",
-    "devpro/definitions/c_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
-    "devpro/definitions/c_coder.py: clauses.data_race_frame + clauses.TSAN_VISIBILITY",
-    "devpro/definitions/cpp_coder.py: clauses.DATA_FORMATS_SCOPE",
-    "devpro/definitions/cpp_coder.py: clauses.DEPENDENCIES_LEAD_PACKAGES + clauses.ISSUE_TRACKER_HEALTH + clauses.manual_over_large_dependency",
-    "devpro/definitions/cpp_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
-    "devpro/definitions/cpp_coder.py: clauses.data_race_frame + clauses.TSAN_VISIBILITY",
-    "devpro/definitions/generalist_coder.py: clauses.SHELL_HOUSE_STYLE",
-    "devpro/definitions/generalist_coder.py: clauses.heavy_logging_framework + clauses.LOGGING_ABSTRACTION_NOTE",
-    "devpro/definitions/generalist_coder.py: clauses.unit_test_scope_coder + clauses.COVERAGE_METRIC + clauses.MOCKING_THRESHOLD_GENERAL",
-    "devpro/definitions/go_coder.py: clauses.build_system_lead",
-    "devpro/definitions/go_coder.py: clauses.heavy_logging_framework + clauses.LOGGING_ABSTRACTION_NOTE",
-    "devpro/definitions/ios_app_expert.py: clauses.OSLOG_LOGGING_LEAD + clauses.logging_backend_seam + clauses.LOGGING_ABSTRACTION_NOTE",
-    "devpro/definitions/kbase.py: clauses.kb_orientation_docs",
-    "devpro/definitions/linux_app_expert.py: clauses.PROJECT_SETUP_PLATFORM + clauses.STDLIB_FIRST_ALWAYS",
-    "devpro/definitions/linux_app_expert.py: clauses.logging_backend_seam + clauses.LOGGING_ABSTRACTION_NOTE",
-    "devpro/definitions/linux_kernel_driver_expert.py: clauses.PROJECT_SETUP_PLATFORM + clauses.STDLIB_FIRST_ALWAYS",
-    "devpro/definitions/linux_kernel_driver_expert.py: clauses.logging_backend_seam + clauses.LOGGING_ABSTRACTION_NOTE",
-    "devpro/definitions/lua_coder.py: clauses.DATA_FORMATS",
-    "devpro/definitions/lua_coder.py: clauses.DEPENDENCIES_LEAD_PACKAGES + clauses.ISSUE_TRACKER_HEALTH + clauses.manual_over_large_dependency",
-    "devpro/definitions/lua_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
-    "devpro/definitions/lua_coder.py: clauses.NEW_PROJECT_SETUP + clauses.new_project_runner_recipes",
-    "devpro/definitions/lua_coder.py: clauses.boundary_checks_lead + clauses.boundary_check_coder_body + clauses.BOUNDARY_CHECK_CONSUMERS_CODER",
-    "devpro/definitions/lua_coder.py: clauses.build_system_lead",
-    "devpro/definitions/macos_app_expert.py: clauses.OSLOG_LOGGING_LEAD + clauses.logging_backend_seam + clauses.LOGGING_ABSTRACTION_NOTE",
-    "devpro/definitions/prompt_engineer.py: clauses.machine_guarantees",
-    "devpro/definitions/prompt_engineer.py: clauses.pe_declare_bullet",
-    "devpro/definitions/python_coder.py: clauses.CODE_PRINCIPLES_CODER",
-    "devpro/definitions/python_coder.py: clauses.DATA_FORMATS",
-    "devpro/definitions/rust_coder.py: clauses.DATA_FORMATS",
-    "devpro/definitions/rust_coder.py: clauses.DEPENDENCIES_LEAD_CRATES + clauses.ISSUE_TRACKER_HEALTH + clauses.manual_over_large_dependency",
-    "devpro/definitions/rust_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
-    "devpro/definitions/rust_coder.py: clauses.boundary_checks_lead + clauses.boundary_check_coder_body + clauses.BOUNDARY_CHECK_CONSUMERS_CODER",
-    "devpro/definitions/rust_coder.py: clauses.build_system_lead",
-    "devpro/definitions/shell_dsl_coder.py: clauses.CODE_PRINCIPLES_CODER",
-    "devpro/definitions/shell_dsl_coder.py: clauses.DEPENDENCIES_LEAD_PACKAGES + clauses.ISSUE_TRACKER_HEALTH + clauses.manual_over_large_dependency",
-    "devpro/definitions/shell_dsl_coder.py: clauses.boundary_checks_lead + clauses.CHEAP_OVER_THOROUGH + clauses.BOUNDARY_CHECK_CONSUMERS_CODER",
-    "devpro/definitions/shell_dsl_coder.py: clauses.unit_test_scope_coder + clauses.COVERAGE_METRIC + clauses.MOCKING_THRESHOLD_GENERAL",
-    "devpro/definitions/typescript_coder.py: clauses.DATA_FORMATS",
-    "devpro/definitions/typescript_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
-    "devpro/definitions/typescript_coder.py: clauses.NEW_PROJECT_SETUP + clauses.new_project_runner_recipes",
-    "devpro/definitions/typescript_coder.py: clauses.boundary_checks_lead + clauses.boundary_check_coder_body + clauses.BOUNDARY_CHECK_CONSUMERS_CODER",
-    "devpro/definitions/typescript_coder.py: clauses.build_system_lead",
-    "devpro/definitions/web_app_expert.py: clauses.LOGGING_ABSTRACTION_NOTE",
-    "devpro/definitions/windows_app_expert.py: clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/agents/android_app_expert.py: clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/agents/android_app_expert.py: clauses.PROJECT_SETUP_PLATFORM + clauses.STDLIB_FIRST_ALWAYS",
+    "devpro/definitions/agents/architect.py: clauses.MACHINE_GUARANTEES",
+    "devpro/definitions/agents/architect.py: clauses.PROVE_REPLACEMENT_RULE",
+    "devpro/definitions/agents/architect.py: clauses.SEPARATION_OF_CONCERNS",
+    "devpro/definitions/agents/c_coder.py: clauses.DATA_FORMATS_SCOPE",
+    "devpro/definitions/agents/c_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
+    "devpro/definitions/agents/c_coder.py: clauses.data_race_frame + clauses.TSAN_VISIBILITY",
+    "devpro/definitions/agents/cpp_coder.py: clauses.DATA_FORMATS_SCOPE",
+    "devpro/definitions/agents/cpp_coder.py: clauses.DEPENDENCIES_LEAD_PACKAGES + clauses.ISSUE_TRACKER_HEALTH + clauses.manual_over_large_dependency",
+    "devpro/definitions/agents/cpp_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
+    "devpro/definitions/agents/cpp_coder.py: clauses.data_race_frame + clauses.TSAN_VISIBILITY",
+    "devpro/definitions/agents/generalist_coder.py: clauses.SHELL_HOUSE_STYLE",
+    "devpro/definitions/agents/generalist_coder.py: clauses.heavy_logging_framework + clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/agents/generalist_coder.py: clauses.unit_test_scope_coder + clauses.COVERAGE_METRIC + clauses.MOCKING_THRESHOLD_GENERAL",
+    "devpro/definitions/agents/go_coder.py: clauses.build_system_lead",
+    "devpro/definitions/agents/go_coder.py: clauses.heavy_logging_framework + clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/agents/ios_app_expert.py: clauses.OSLOG_LOGGING_LEAD + clauses.logging_backend_seam + clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/agents/linux_app_expert.py: clauses.PROJECT_SETUP_PLATFORM + clauses.STDLIB_FIRST_ALWAYS",
+    "devpro/definitions/agents/linux_app_expert.py: clauses.logging_backend_seam + clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/agents/linux_kernel_driver_expert.py: clauses.PROJECT_SETUP_PLATFORM + clauses.STDLIB_FIRST_ALWAYS",
+    "devpro/definitions/agents/linux_kernel_driver_expert.py: clauses.logging_backend_seam + clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/agents/lua_coder.py: clauses.DATA_FORMATS",
+    "devpro/definitions/agents/lua_coder.py: clauses.DEPENDENCIES_LEAD_PACKAGES + clauses.ISSUE_TRACKER_HEALTH + clauses.manual_over_large_dependency",
+    "devpro/definitions/agents/lua_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
+    "devpro/definitions/agents/lua_coder.py: clauses.NEW_PROJECT_SETUP + clauses.new_project_runner_recipes",
+    "devpro/definitions/agents/lua_coder.py: clauses.boundary_checks_lead + clauses.boundary_check_coder_body + clauses.BOUNDARY_CHECK_CONSUMERS_CODER",
+    "devpro/definitions/agents/lua_coder.py: clauses.build_system_lead",
+    "devpro/definitions/agents/macos_app_expert.py: clauses.OSLOG_LOGGING_LEAD + clauses.logging_backend_seam + clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/agents/prompt_engineer.py: clauses.machine_guarantees",
+    "devpro/definitions/agents/prompt_engineer.py: clauses.pe_declare_bullet",
+    "devpro/definitions/agents/python_coder.py: clauses.CODE_PRINCIPLES_CODER",
+    "devpro/definitions/agents/python_coder.py: clauses.DATA_FORMATS",
+    "devpro/definitions/agents/rust_coder.py: clauses.DATA_FORMATS",
+    "devpro/definitions/agents/rust_coder.py: clauses.DEPENDENCIES_LEAD_CRATES + clauses.ISSUE_TRACKER_HEALTH + clauses.manual_over_large_dependency",
+    "devpro/definitions/agents/rust_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
+    "devpro/definitions/agents/rust_coder.py: clauses.boundary_checks_lead + clauses.boundary_check_coder_body + clauses.BOUNDARY_CHECK_CONSUMERS_CODER",
+    "devpro/definitions/agents/rust_coder.py: clauses.build_system_lead",
+    "devpro/definitions/agents/shell_dsl_coder.py: clauses.CODE_PRINCIPLES_CODER",
+    "devpro/definitions/agents/shell_dsl_coder.py: clauses.DEPENDENCIES_LEAD_PACKAGES + clauses.ISSUE_TRACKER_HEALTH + clauses.manual_over_large_dependency",
+    "devpro/definitions/agents/shell_dsl_coder.py: clauses.boundary_checks_lead + clauses.CHEAP_OVER_THOROUGH + clauses.BOUNDARY_CHECK_CONSUMERS_CODER",
+    "devpro/definitions/agents/shell_dsl_coder.py: clauses.unit_test_scope_coder + clauses.COVERAGE_METRIC + clauses.MOCKING_THRESHOLD_GENERAL",
+    "devpro/definitions/agents/typescript_coder.py: clauses.DATA_FORMATS",
+    "devpro/definitions/agents/typescript_coder.py: clauses.LOGGING_ABSTRACTION_NOTE + clauses.LOGS_NOT_STDOUT",
+    "devpro/definitions/agents/typescript_coder.py: clauses.NEW_PROJECT_SETUP + clauses.new_project_runner_recipes",
+    "devpro/definitions/agents/typescript_coder.py: clauses.boundary_checks_lead + clauses.boundary_check_coder_body + clauses.BOUNDARY_CHECK_CONSUMERS_CODER",
+    "devpro/definitions/agents/typescript_coder.py: clauses.build_system_lead",
+    "devpro/definitions/agents/web_app_expert.py: clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/agents/windows_app_expert.py: clauses.LOGGING_ABSTRACTION_NOTE",
+    "devpro/definitions/skills/kbase.py: clauses.kb_orientation_docs",
 )
 
 
@@ -1594,6 +1666,32 @@ def test_check_structure_refuses_a_definition_module_off_its_rules(source: str, 
 def test_check_structure_refuses_a_text_module_off_its_rules(source: str, rule: str) -> None:
     expected = [f"clauses.py:1: {rule}"] if rule else []
     assert check_source(source, where="clauses.py", text_module=True) == expected
+
+
+@pytest.mark.parametrize(
+    ("folder", "kind", "violates"),
+    [
+        ("agents", "AGENT", False),
+        ("skills", "SKILL", False),
+        ("definitions", "AGENTS_FILE", False),
+        ("agents", "SKILL", True),
+        ("skills", "AGENT", True),
+        ("definitions", "AGENT", True),
+        ("definitions", "SKILL", True),
+    ],
+)
+def test_check_structure_holds_a_definition_module_to_its_folder(
+    tmp_path: Path, folder: str, kind: str, violates: bool
+) -> None:
+    """The folder a module sits in is the kind it renders: a module under `agents/` declares
+    Kind.AGENT, under `skills/` Kind.SKILL, and one at the package's top neither."""
+    directory = tmp_path / folder
+    directory.mkdir()
+    path = directory / "m.py"
+    path.write_text(
+        f'{_DEFINITION_HEAD}DEFINITIONS = (Definition(name="p", kind=Kind.{kind}, body="b"),)\n', encoding="utf-8"
+    )
+    assert check_structure([path]) == ([f"{path}:3: {FOLDER_KIND_RULE}"] if violates else [])
 
 
 # Shared text has one source: a paragraph two outputs carry is not written out in either.
@@ -1701,6 +1799,14 @@ def _in_plugin(defn: Definition, ctx: Render) -> bool:
     return defn.kind is Kind.AGENTS_FILE or ctx.plugin.ships(defn.name)
 
 
+def _definition_sources() -> dict[str, str]:
+    """Each definition module's dotted name, mapped to its source text."""
+    return {
+        ".".join(path.relative_to(_PACKAGE.parent).with_suffix("").parts): path.read_text(encoding="utf-8")
+        for path in definition_paths()
+    }
+
+
 def _uncredited_shared_paragraphs(sources: dict[str, str]) -> list[str]:
     """Every prose unit two or more outputs of one plugin write out rather than take from a constant, a
     slot constant or a text function: the unit survives each one's credited render unchanged."""
@@ -1729,7 +1835,7 @@ def _uncredited_shared_paragraphs(sources: dict[str, str]) -> list[str]:
 
 
 def test_a_paragraph_two_outputs_carry_has_one_source() -> None:
-    sources = {f"devpro.definitions.{path.stem}": path.read_text(encoding="utf-8") for path in _DEFINITION_PATHS}
+    sources = _definition_sources()
     found = _uncredited_shared_paragraphs(sources)
     assert found == [], "\n".join(found)
 
@@ -1903,7 +2009,7 @@ def _double_paragraphs(sources: dict[str, str]) -> list[str]:
 
 @pytest.mark.parametrize("check", [_double_clause_deliveries, _double_paragraphs])
 def test_no_prompt_delivers_a_span_twice(check: Callable[[dict[str, str]], list[str]]) -> None:
-    sources = {f"devpro.definitions.{path.stem}": path.read_text(encoding="utf-8") for path in _DEFINITION_PATHS}
+    sources = _definition_sources()
     assert sum(prompt[0].path is None for prompt in _prompts(sources)) == len(_PLUGIN_RENDERS)
     found = check(sources)
     assert found == [], "\n".join(found)

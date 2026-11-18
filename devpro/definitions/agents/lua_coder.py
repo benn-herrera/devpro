@@ -158,6 +158,8 @@ project's `plenary.nvim` or `mini.test` harness), since `vim` exists nowhere els
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 **Modules and `require`**: a module builds a `local M = {{}}` and ends `return M`. `require` runs a

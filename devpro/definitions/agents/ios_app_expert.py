@@ -95,6 +95,8 @@ memory pressure — use Debug → Simulate Memory Warning in Simulator. Test lif
 
 {clauses.INTEGRATION_ARTIFACT}
 
+{clauses.TEST_PRECONDITION}
+
 {clauses.verification_evidence()}
 
 ## Code Standards
