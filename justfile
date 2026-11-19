@@ -102,6 +102,22 @@ RENDERED_DIR := "rendered"
 tag:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" ./devtools/scripts/tag.sh
 
+[doc("bumps devpro __version__ string in __init__.py - M)ajor, m)inor, or p)atch")]
+bump-version dot:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  ver_file="./devpro/__init__.py"
+  ver=$(awk '/^__version__[ \t]*=/ { gsub(/\"/, ""); print $NF; }' "${ver_file}")
+  ver=(${ver//\./ })
+  M=${ver[0]}; m=${ver[1]}; p=${ver[2]}
+  case "{{dot}}" in
+    M*) M=$((M + 1)); m=0; p=0;;
+    m*) m=$((m + 1)); p=0;;
+    p*) p=$((p + 1));;
+    *) printf 'invalid arg "%s". valid args are M)ajor, m)inor, or p)atch.\n' "{{dot}}" >&2; exit 1;;
+  esac
+  sed -i "" "$(printf 's:^__version__.*:__version__ = "%s.%s.%s":g' "${M}" "${m}" "${p}")" "${ver_file}"
+
 # Builds the working tree with the venv's setuptools; makes no git check and fetches nothing.
 [doc("build the wheel and sdist into dist/")]
 build: _venv
@@ -292,16 +308,16 @@ agents:
 # set-up both take, and the location its .gitignore entry names.
 HOSTED_TAP_DIR := "homebrew-tap"
 TAP_FORMULA := "devpro"
-[doc("set up the sibling Homebrew tap clone at homebrew-tap/ - can't be used directly from here (chicken and egg")]
+[doc("set up the sibling Homebrew tap clone at homebrew-tap/")]
 tap-repo:
   @TAP_DIR="{{HOSTED_TAP_DIR}}" devtools/scripts/tap-repo.sh
 
-[doc("LIVE; NEEDS the tap clone, a pushed release: set the tap formula's v<version> tarball and sha256 and commit it there")]
-tap-update:
+[doc("LIVE; NEEDS a pub release: sets tap formula's v<version> and sha256 then commits with signature")]
+tap-update: tap-repo
   @just --justfile "{{HOSTED_TAP_DIR}}/scripts/justfile" TAP_FORMULA={{TAP_FORMULA}} tap-update
 
-[doc("LIVE; NEEDS brew and the tap clone; DESTRUCTIVE to this machine's brew install of devpro: reinstall it from a scratch formula over a tarball of the working tree's tracked files")]
-tap-local:
+[doc("DESTRUCTIVE; reinstalls global brew devpro from scratch tap of for this repo")]
+tap-local: tap-repo
   @just --justfile "{{HOSTED_TAP_DIR}}/scripts/justfile" TAP_FORMULA={{TAP_FORMULA}} tap-local
 
 [doc("clone the docdicer project as a hosted repo")]
