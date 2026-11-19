@@ -73,8 +73,8 @@ include line. The snippets run `kbase` from `PATH`. Every target the snippets de
 skill's directory is neither its skill entry file nor one of its supporting files, the development
 scripts package and the docdicer tools package included.
 
-A **harness resource** is a file a harness ships, such as a guardrail script or opencode's plugin entry,
-copied as it stands and never rendered. A harness also writes harness-rendered files into the
+A **harness resource** is a file a harness ships, such as a guardrail script, opencode's plugin
+entry or the plan-state reminder script, copied as it stands and never rendered. A harness also writes harness-rendered files into the
 install directory — the plugin manifest `.claude-plugin/plugin.json`, one value shared by claude and
 mage, version included, `.mcp.json` under claude and mage where `kbase` ships, rendered whole
 with the `kbase` server alone, `registry.json` under opencode, and under claude the guardrail
@@ -85,14 +85,17 @@ and permissions — and the `kbase` MCP server where `kbase` ships. An install c
 resources into the install directory, except a user-level install, which copies only opencode's
 entry, and save a file conditional on the install-time probe (below), so a resource lands at the
 path it holds below the install directory: opencode's at `<install-dir>/index.ts`, the plugin entry, and
-`<install-dir>/guardrail.ts`, and claude's at `<install-dir>/hooks/guardrail.pl` (mage ships none):
+`<install-dir>/guardrail.ts`, and claude's at `<install-dir>/hooks/guardrail.pl` and
+`<install-dir>/hooks/state-table-reminder.sh` (mage ships none):
 in the install directory, outside its three deployed surfaces. Each keeps its bytes and its mode:
 the install stamps nothing on them. Every such file carries an installed banner
 (`!INSTALLED! … devpro`) in its first ten lines — the guardrails' name this repository and forbid
 edits. A harness shipping none copies nothing, which is not an error.
 
 Opencode loads the plugin directory and registers its agents, skills, commands and, where
-`kbase` ships, the `kbase` MCP server under the registry's ids. A change to the install directory
+`kbase` ships, the `kbase` MCP server under the registry's ids, and injects a plan-state reminder
+into the parent session at agent dispatch and agent completion, gated by `ACTIVE_PLAN.md` or
+`ACTIVE_DESIGN.md` existing at the project root. A change to the install directory
 is picked up without restarting opencode, except a change to `guardrail.ts`, which the plugin entry
 imports when it loads, so a changed one takes effect at the next opencode start. The plugin entry is
 written for opencode v2.2.6 and is the
