@@ -17,5 +17,11 @@ case "${1}" in
   p*) p=$((p + 1));;
   *) printf 'invalid arg "%s". valid args are M)ajor, m)inor, or p)atch.\n' "{{dot}}" >&2; exit 1;;
 esac
-sed -i "" "$(printf 's:^__version__.*:__version__ = "%s.%s.%s":g' "${M}" "${m}" "${p}")" "${ver_file}"
+
+function sedi() {
+  [[ "$(uname)" == Darwin ]] && { sed -i "" "${@}"; return $?; }
+  sed -i "${@}"
+}
+
+sedi "$(printf 's:^__version__.*:__version__ = "%s.%s.%s":g' "${M}" "${m}" "${p}")" "${ver_file}"
 echo "version bumped: ${old_ver} -> ${M}.${m}.${p}"
