@@ -7,6 +7,14 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Features
 
+### harness-profiler plugins
+
+Vendored from ../harness-profiler/ with acknowledgement in README.md, possibly modified, and a
+port for opencode as a separate plugin file. Ships as its own plugin, automatically installed
+alongside both devpro and kbase installations — consumers quantify whether an agent-set update has
+a useful effect or is a regression. Open: the automatic-install spec delta; user-level installs;
+claude-on-web path; acknowledgement wording; vendored version stamping.
+
 ### Codex CLI harness support
 
 Add the ability to install as a codex plugin. Feasible with gaps
@@ -102,3 +110,16 @@ never type-checked: there is no `tsconfig` and no recipe. A recipe needs a decla
 ### No shell lint
 
 No recipe runs `shellcheck` over `devtools/scripts/*.sh` or `devpro/development-tools/cold-read.sh`.
+
+### harness-profiler plugins
+
+For opencode and claude. see ../harness-profiler/ for claude.
+We'll vendor it with acknowledgement in README.md, possibly modify it, and create a port
+of its functionality for opencode.
+
+Decision (user): ships to consuming projects as its own plugin (harness-profiler), automatically
+installed alongside both devpro and kbase installations — sessions record what the installed agent
+set actually does, so an update's effect is quantified, not judged by anecdote. The opencode port
+is a separate plugin file. Automatic replaces opt-in to start.
+Open: how the automatic install meets "Install delivers one plugin" (spec delta); user-level
+installs; claude-on-web path; acknowledgement wording; vendored version stamping.

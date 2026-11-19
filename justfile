@@ -261,6 +261,13 @@ test-changed base="":
 clause-join-sites *paths:
     @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devtools.clause_join_sites "$@"
 
+# Verifies a design's delta application: each `becomes` block of the design's `## ... delta`
+# sections must occur byte-exact in the leaf its `###` entry names. Exits non-zero naming each miss,
+# and each unparseable entry or missing leaf. <design> defaults to ACTIVE_DESIGN.md.
+[doc("[dev] verify design delta blocks are applied byte-exact")]
+check-deltas design="ACTIVE_DESIGN.md":
+    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devtools.check_deltas "{{design}}"
+
 # Emits hits, never verdicts: American spellings are the standard, and this lists the British forms
 # left in tracked text for a reader to judge. The justfile and the leaf that hold the pattern and the
 # survivor list, and the plan, design and review under way, are skipped because they must quote the
