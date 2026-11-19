@@ -5,8 +5,8 @@ reload its watcher triggers; a command reads its body when it runs; and its clea
 A project whose root holds a plan file or the diced `ACTIVE_PLAN/` tree has the
 plan-state reminder injected into the parent session when a subagent call completes and when that
 subagent's session goes idle with nothing running on it; a failed call, a session still holding
-background work and a session with no parent inject nothing, and the gate reads the project root
-above the directory the session opened at. The two resources inject one sentence, byte for byte. A
+background work, a session with no parent and a project holding only a design inject nothing. The
+two resources inject one sentence, byte for byte. A
 user-level install, which ships no guardrail beside the entry, registers the same way, and with no
 gate path at the project root it injects no reminder. A missing `bun` fails rather than skips, as in
 `tests/test_guardrail.py`.
@@ -195,49 +195,45 @@ def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_injects_no_remi
     assert registered["mcp"] == registry["mcp"] != {}
 
 
-def test_the_diced_plan_at_the_project_root_opens_the_gate(tmp_path: Path) -> None:
-    """The diced `ACTIVE_PLAN/` tree opens the gate: a project holding it still has the subagent's
-    dispatch and its completion injected into the parent, though the session opened below the root."""
+def test_the_gate_is_the_plan_file_or_tree_and_silent_for_a_design_or_nothing(tmp_path: Path) -> None:
+    """The entry's gate over one project and its four rows: a plan file or the diced `ACTIVE_PLAN/`
+    tree at the root injects the parent (here the session opened below it), a design alone or nothing
+    injects nothing. The design row is the differential — the same project that injected with the plan
+    file stands silent with only the design — which an always-off gate, and one that read a directory
+    named `ACTIVE_PLAN.md/` as a plan, would each fail to pin."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)
-    (project / "ACTIVE_PLAN").mkdir()
     opened = project / "nested"
     opened.mkdir()
 
-    out = _run_entry(
-        plugin,
-        directory=opened,
-        project=project,
-        writes=[],
-        command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
-    )
+    def run() -> dict:
+        return _run_entry(
+            plugin,
+            directory=opened,
+            project=project,
+            writes=[],
+            command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
+        )
 
-    assert [(injected["on"], injected["sessionID"]) for injected in out["synthetics"]] == [
-        ("execute.after", "ses_parent"),
-        ("experimental.idle", "ses_parent"),
-    ]
+    def injected(out: dict) -> list[tuple[str, str]]:
+        return [(i["on"], i["sessionID"]) for i in out["synthetics"]]
 
+    gate = [("execute.after", "ses_parent"), ("experimental.idle", "ses_parent")]
 
-def test_a_design_at_the_project_root_injects_no_reminder(tmp_path: Path) -> None:
-    """A design file alone opens no gate: the reminder's subject is the plan, so a project holding only
-    a design injects nothing into the parent, though the session opened below the root."""
-    project = tmp_path / "project"
-    project.mkdir()
-    plugin, command_path, banner = _probe_entry(project)
+    (project / "ACTIVE_PLAN.md").write_text("# Active plan\n", encoding="utf-8")
+    assert injected(run()) == gate
+    (project / "ACTIVE_PLAN.md").unlink()
+
     (project / "ACTIVE_DESIGN.md").write_text("# Active design\n", encoding="utf-8")
-    opened = project / "nested"
-    opened.mkdir()
+    assert injected(run()) == []
+    (project / "ACTIVE_DESIGN.md").unlink()
 
-    out = _run_entry(
-        plugin,
-        directory=opened,
-        project=project,
-        writes=[],
-        command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
-    )
+    (project / "ACTIVE_PLAN").mkdir()
+    assert injected(run()) == gate
+    (project / "ACTIVE_PLAN").rmdir()
 
-    assert out["synthetics"] == []
+    assert injected(run()) == []
 
 
 def test_both_harnesses_inject_one_sentence(tmp_path: Path) -> None:

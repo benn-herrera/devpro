@@ -20,10 +20,10 @@ at the registration's path is overwritten, not refused. The registration holds t
 `Bash|Read|Write|Edit|NotebookEdit|Grep|Glob` — where the install-time probe passes, plus one
 ungated plan-state reminder entry on every claude install, a `PostToolUse` matched on `Agent`,
 running `<install-dir>/hooks/state-table-reminder.sh`, which reads `ACTIVE_PLAN.md` — file or,
-where the plan was diced, the `ACTIVE_PLAN/` tree — at the project
-root and emits a one-sentence `hookSpecificOutput.additionalContext` reminder naming the status
-table's acts: `in progress` when a package is dispatched, `landed` when its work is accepted and
-committed. The entry fires at the `Agent` call's return — the subagent's completion where the call
+where the plan was diced, the `ACTIVE_PLAN/` tree — at the project root and emits a one-sentence
+`hookSpecificOutput.additionalContext` reminder naming the status table's acts: `in progress` when
+a package is dispatched, `landed` when its work is accepted and committed. The entry fires at the
+`Agent` call's return — the subagent's completion where the call
 ran in the foreground, the dispatch turn where it moved to the background — and a background
 subagent's completion injects nothing. A user-level claude install takes no guardrail, so it writes
 no registration and the reminder never registers there, where opencode's entry registers its hooks on

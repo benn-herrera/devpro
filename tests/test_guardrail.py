@@ -15,9 +15,9 @@ directory, relative to the root and defaulting to it; claude receives it as the 
 missing `bun` fails rather than skips, because a skip would hide drift between the two.
 
 The module also holds claude's plan-state reminder, `state-table-reminder.sh`, a second hook script
-that has no case table: it asserts which project roots open its gate, that a project holding none
-gets silence, and that the reminder JSON carries the event the input names and both acts of the
-status table.
+that has no case table: it asserts which project roots open its gate, that a project holding none of
+the gate paths or only a design gets silence, and that the reminder JSON carries the event the input
+names and both acts of the status table.
 """
 
 from __future__ import annotations
@@ -335,8 +335,7 @@ def test_the_reminder_speaks_where_a_plan_or_the_diced_tree_stands_at_the_projec
 
 def test_the_reminder_is_silent_where_the_project_holds_no_gate_path(tmp_path: Path) -> None:
     """A project with none of the gate paths has no plan state to remind anyone of, and a project hook
-    that spoke anyway would put the sentence in the context of every subagent a dispatch there
-    starts."""
+    that spoke anyway would put the sentence on the parent's next model request."""
     root = tmp_path / "project"
     root.mkdir()
     done = _run_reminder(json.dumps({"hook_event_name": "PostToolUse", "cwd": str(root)}), project_dir=root)
@@ -344,9 +343,7 @@ def test_the_reminder_is_silent_where_the_project_holds_no_gate_path(tmp_path: P
 
 
 def test_the_reminder_is_silent_where_the_project_holds_only_a_design(tmp_path: Path) -> None:
-    """A design file alone opens no gate: the reminder's subject is the plan, and nudging a project
-    holding only a design would put the sentence in the context of every subagent a dispatch there
-    starts."""
+    """A design file alone opens no gate: the reminder's subject is the plan."""
     root = tmp_path / "project"
     root.mkdir()
     (root / "ACTIVE_DESIGN.md").write_text("# Active design\n", encoding="utf-8")

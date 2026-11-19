@@ -67,6 +67,20 @@ Seat: typescript-coder (N3). `index.ts:99-101` says the sentence is held by
   one-text rule extended to a predicate two resources carry; the review-seat definition stating
   that the seat does not read the plan it reviews.
 
+### G8 — the two gates disagree on what kind a gate path is
+Seat: typescript-coder (second round, F2). `index.ts:96` gates on `existsSync` over both names, so a
+*directory* named `ACTIVE_PLAN.md/` opens opencode's gate while claude's `-f` (`:42`) does not —
+measured. Fix: a kind check in `planStanding` (the `.md` names gate on a file), or amend the
+contract statements to the looser fact.
+
+## Late findings, same seats
+The typescript seat's second round added G8 and one G5 facet (the module docstring's silence list
+omits the design-only case it now asserts), and measured G4 further: the banner marker is excluded
+from the install's identical-block branch, so an install never repairs it — `just install . --dry-run`
+reports `not downgraded … left as it stands`, and a replayed body-line change in a scratch copy is
+refused. The version question stays the owner's call, now with the fact that only a source edit
+converges it.
+
 ## Strengths to preserve
 Both harnesses agree on the gate and each design-only root is asserted silent; the flipped tests
 fail on the prior code (demonstrated by two seats); a doc-wide search found no statement still

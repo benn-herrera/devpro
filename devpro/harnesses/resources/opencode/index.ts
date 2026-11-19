@@ -14,7 +14,7 @@
 // dispatch moment.
 
 import { Plugin } from "@opencode/plugin"
-import { existsSync, readFileSync, watch } from "node:fs"
+import { existsSync, readFileSync, statSync, watch } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { basename, dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -90,14 +90,18 @@ function stripBanner(text: string): string {
   return text.replace(/^(?:<!--.*-->\n)+\n?/, "")
 }
 
-// planStanding reports whether the project root holds a plan — the file, or where the plan was
-// diced, the `ACTIVE_PLAN/` tree — the reminder's gate.
+// planStanding reports whether the project root holds a plan — the `ACTIVE_PLAN.md` file, or where
+// the plan was diced, the `ACTIVE_PLAN/` tree — the reminder's gate. Each is the kind claude's gate
+// reads it as: the `.md` name a file, not a directory of that name, the tree a directory.
 function planStanding(root: string): boolean {
-  return ["ACTIVE_PLAN.md", "ACTIVE_PLAN"].some((name) => existsSync(join(root, name)))
+  const file = join(root, "ACTIVE_PLAN.md")
+  const tree = join(root, "ACTIVE_PLAN")
+  return (existsSync(file) && statSync(file).isFile()) || (existsSync(tree) && statSync(tree).isDirectory())
 }
 
-// The reminder's sentence, byte for byte what claude's state-table-reminder.sh emits
-// (tests/test_opencode_entry.py holds the two together): a synthetic message is context, as a hook's
+// The reminder's sentence, byte for byte what claude's state-table-reminder.sh emits, and the gate
+// that opens it — the plan file or the diced tree, not a design or nothing — are both held to the
+// recorded injections in tests/test_opencode_entry.py. A synthetic message is context, as a hook's
 // additionalContext is, so it states the status table's two acts as what they are.
 const reminder =
   "Where the active plan carries a status table, a package is `in progress` when it is dispatched and `landed` when its work is accepted and committed."

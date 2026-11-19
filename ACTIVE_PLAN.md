@@ -18,7 +18,7 @@ Sequencing: P1 first; P2 after P1; P3 after P2.
 | --- | --- | --- | --- |
 | P1 | landed | mechanical | the gate reads the plan alone, in both resources, their tests, and the three contract statements |
 | P2 | landed | expert | Post-plan review |
-| P3 | drafted | expert | Post-plan burndown |
+| P3 | landed | expert | Post-plan burndown |
 
 ## P1 — The gate reads the plan alone
 
@@ -79,7 +79,50 @@ Done-line: `just check-links`. One commit carries the review document, and its r
 
 ## P3 — Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Drafted from `ACTIVE_PLAN_REVIEW.md`. One commit closes the package; the items cite their review
+IDs. G4 (the version banner against the version constant, and the stale deployed copies) is the
+owner's call, raised at the landing — not this package's work.
+
+1. **The gate's parity and differential pins** (G2, G3, G7, G8): a runner case holds the entry's gate
+   decision table — plan file, diced tree, design file, nothing — against the recorded injections
+   (`devpro/harnesses/resources/opencode/index.ts:96`); the table's design row and the plan rows are
+   one test's cases, and the design row's assertion is the differential — one project in two states:
+   with `ACTIVE_PLAN.md` (injected), with the design file alone (silent) — the entry's design case
+   is `tests/test_opencode_entry.py:222-240` and its boundary sibling `:170-195`, the defect being
+   that an always-off gate passes today's pin; `planStanding` checks the kind the gate names — a
+   file for the `.md` names — the defect being that a directory named `ACTIVE_PLAN.md/` opens
+   opencode's gate and not claude's; `index.ts`'s reminder comment (:99-101) states what holds the
+   sentence and the gate. G2's original defect claim (the suite stays green under the list's
+   deletion) is disputed by the review's second reading — the mutation run at acceptance settles
+   it: red, the pin holds; green, the table stays as consolidation and the comment states what
+   holds the gate.
+2. **The docstring and rewrap sweep** (G1, G5), item 3 first for the leaf it rewrites:
+   `tests/test_guardrail.py:347-349` and `:337-339`
+   state the parent's delivery; the module docstring (:17-20) names both silence cases;
+   `tests/test_opencode_entry.py` line 8's silence list gains "a project holding only a design" and
+   the stale sentence about where the session opened goes; the script header's gate sentence
+   (:4-6) rewraps whole; the three doc leaves the deletion left mid-phrase rewrap
+   paragraph-wide — `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:97-99`,
+   `PROJECT_DOCS/ARCHITECTURE/install/guardrail-hook.md:22-24`,
+   `PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md:8-9`, the blocks item 3 leaves; the
+   runner's stdin deliberately carries the opened directory beside the project root — the tests pin
+   that the entry reads only the project root — and its declaration states that fact.
+3. **The leaf cites its source** (G6): `PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md:6-9`
+   keeps one clause of the gate statement — gated by the active plan (`ACTIVE_PLAN.md` or the diced
+   `ACTIVE_PLAN/` tree; SPEC, Shipped files) — and cites
+   `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:95-99` for the rest, instead of restating
+   it sentence-for-sentence.
+4. **The one-text rule reaches predicates** (the review's second contract gap): a clause in
+   `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-sentence-two-resources-carry-is-one-text.md`
+   — a predicate two resources carry is one text, held by the gate test item 1 lands, as the
+   sentence is by its parity test.
+
+Deferred to the owner's direction, recorded here: a shellcheck target beside `lint` (the host has
+no shellcheck binary — a target that cannot pass locally is a ROADMAP question, not a burndown
+item); a review-seat definition line stating the seat does not read the plan it reviews.
+
+Done-line: `just test devpro`, then `just check-links`. One commit; the commit that lands the plan
+follows it, deleting `ACTIVE_PLAN.md` and the review document.
 
 Done-line: the checkpoint gate, then `just check-links`. One commit; the commit that lands the plan
 follows it, deleting `ACTIVE_PLAN.md` and the review document.

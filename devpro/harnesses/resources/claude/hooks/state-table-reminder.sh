@@ -2,8 +2,8 @@
 # !INSTALLED! from devpro/harnesses/resources/claude/hooks/state-table-reminder.sh — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
 #
 # Claude Code hook for the `Agent` tool's return: a project holding `ACTIVE_PLAN.md` or the diced
-# `ACTIVE_PLAN/` tree at its root gets one sentence of context, and a
-# project holding none of them, or a call naming no root, gets silence.
+# `ACTIVE_PLAN/` tree at its root gets one sentence of context, and a project holding none of them,
+# or a call naming no root, gets silence.
 #
 # The sentence reaches the parent on its next model request after the hook fires, which is the `Agent`
 # call's return: the subagent's completion where the call ran in the foreground, the dispatch turn
