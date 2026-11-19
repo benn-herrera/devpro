@@ -28,7 +28,7 @@ are its own. P5 after P4; P6 after P5.
 | --- | --- | --- | --- |
 | P0 | landed | mechanical | the `check-deltas` runner target and its conventions leaf |
 | P1 | landed | mechanical | SPEC delta's Shipped-files entry applied |
-| P2 | dispatchable | expert | board offer wording: SPEC delta's Guide-and-README entry, ARCH delta's Subsystem-Map entry, both skill definitions |
+| P2 | landed | expert | board offer wording: SPEC delta's Guide-and-README entry, ARCH delta's Subsystem-Map entry, both skill definitions |
 | P3 | dispatchable | expert | claude plan-state reminder: ARCH delta's Guardrail-hook entry, Code delta's Guardrail-hook entry, reminder script, registration, probe gate |
 | P4 | dispatchable | expert | opencode plan-state reminder: ARCH delta's Opencode-entry entry, Code delta's Opencode-entry entry, plugin entry, entry runner and test |
 | P5 | dispatchable | expert | Post-plan review |

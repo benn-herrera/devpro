@@ -451,9 +451,10 @@ The `{clauses.ref(name="docdicer")}` skill, *The script*.
 
 - A live board of the project's roadmap, design and plan. `tools/docdicer kanban --help` gives the
   details.
-- The user runs it; the session gives the command and does not run it: `just docdicer-kanban`, or
-  `make docdicer-kanban`, where a project install wrote the runner include line; otherwise
-  `tools/docdicer kanban` in that skill's directory. It serves until stopped.
+- The session offers to run it as a background process; the user who would rather run it gets the
+  command line: `just docdicer-kanban`, or `make docdicer-kanban`, where a project install wrote the
+  runner include line; otherwise `tools/docdicer kanban` in that skill's directory. It serves until
+  stopped.
 
 ## Where work stands
 

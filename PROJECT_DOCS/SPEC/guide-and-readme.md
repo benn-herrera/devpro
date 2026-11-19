@@ -75,7 +75,8 @@ The skill carries two reference pages, which the session reads when its starting
     leaves it;
   - lighter process: a step skipped at the user's direction, and work that goes straight to a
     plan;
-  - the board.
+  - the board: the session offers to run it in the background, or hands the command line, the
+    user choosing.
 
   It describes each step from the user's side: their decisions, their words, the files they see. It
   states no rule the session follows except as what the user observes, and names the `development`

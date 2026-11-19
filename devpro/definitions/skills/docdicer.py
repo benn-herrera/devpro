@@ -60,8 +60,9 @@ Its first run installs docdicer beside it, which needs `git` and the network.
 command's arguments. Where this skill's directory has no `tools/docdicer`, as under a
 user-level install, a project install provides it.
 
-`kanban` serves a live board of the project's roadmap, design and plan until stopped; give the user
-the command to run rather than running it yourself: `docdicer-kanban` where the recipes are
-included, `tools/docdicer kanban` without them. `tools/docdicer kanban --help` gives the details.""",
+`kanban` serves a live board of the project's roadmap, design and plan until stopped. Offer to run it
+as a background process, or hand the user the command line; the user chooses: `docdicer-kanban` where
+the recipes are included, `tools/docdicer kanban` without them. `tools/docdicer kanban --help` gives
+the details.""",
     ),
 )
