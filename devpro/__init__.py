@@ -48,4 +48,4 @@ the text of every file is a function of the definition, the plugin, the harness,
 the family and the category map, and of nothing else.
 """
 
-__version__ = "0.17.5"
+__version__ = "0.17.6"
