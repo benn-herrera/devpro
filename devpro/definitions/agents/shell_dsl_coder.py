@@ -62,6 +62,9 @@ script whose stdout nobody captures today, because the next caller's will.
 
 {clauses.warnings_as_defects(enable="Run `shellcheck` through its target before shipping", warnings="its warnings", suppression="a `# shellcheck disable=` directive")}
 
+Where the project has no shell-lint target, say so in the report and run `shellcheck` directly when it
+is installed: an absent target is a gap to surface, never permission to ship the lint unseen.
+
 {clauses.NEW_PROJECT_SETUP} {clauses.new_project_runner_recipes(language="shell", recipes="`fmt` and `lint` recipes")}
 
 {clauses.PROJECT_DOCS_SETUP}

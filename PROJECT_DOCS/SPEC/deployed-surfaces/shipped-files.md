@@ -95,10 +95,11 @@ edits. A harness shipping none copies nothing, which is not an error.
 Opencode loads the plugin directory and registers its agents, skills, commands and, where
 `kbase` ships, the `kbase` MCP server under the registry's ids, and injects a plan-state reminder
 into the parent session at agent dispatch and agent completion, gated by `ACTIVE_PLAN.md` or
-`ACTIVE_DESIGN.md` existing at the project root. A change to the install directory
+`ACTIVE_DESIGN.md` — file or, where the plan was diced, the `ACTIVE_PLAN/` tree — existing at the
+project root. A change to the install directory
 is picked up without restarting opencode, except a change to `guardrail.ts`, which the plugin entry
 imports when it loads, so a changed one takes effect at the next opencode start. The plugin entry is
-written for opencode v2.2.6 and is the
+written for opencode 2.3.2 (floor 2.3.0) and is the
 same file for both plugins; ARCHITECTURE.md, Install, Opencode entry holds how it works. A resource may be conditional on the probe: claude's guardrail is
 delivered only when one run of the script on the installing machine succeeds within a few seconds,
 and is otherwise skipped, with the reason reported and the rest of the install unaffected. The

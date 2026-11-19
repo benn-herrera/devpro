@@ -1,10 +1,17 @@
 // !INSTALLED! from devpro/harnesses/resources/opencode/index.ts — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
 //
-// opencode 2.3.2 plugin module (floor 2.2.6): the entry of one plugin the devpro project ships, the
+// Written for opencode 2.3.2 (floor 2.3.0): the entry of one plugin the devpro project ships, the
 // directory holding this file. Registers the plugin's agents, commands, skills and MCP servers from
 // registry.json and the Markdown bodies it lists, re-reads them whenever anything in this directory
 // changes, runs the guardrail beside it where one is installed, and reminds a parent session to
-// update the active plan's status table at a subagent's dispatch and at its completion.
+// update the active plan's status table when it dispatches a subagent and when that subagent's
+// session finishes.
+//
+// The floor is a behavioral one, not an API one: every API used here exists at 2.2.6, but there the
+// `subagent` tool defaults to the foreground, so `execute.after` fires at the child's completion,
+// behind the idle hook — a parent gets two completion nudges and none at the dispatch. From 2.3.0
+// the call returns at once and the child runs in the background, which makes the call's return the
+// dispatch moment.
 
 import { Plugin } from "@opencode/plugin"
 import { existsSync, readFileSync, watch } from "node:fs"
@@ -44,14 +51,17 @@ type AgentInfo = {
 }
 type Prompt = { text: string }
 type Invocation = { sessionID: string; prompt: Prompt; delivery: unknown }
-// A finished tool call, as `execute.after` reports one, and a session that has gone idle.
-type ToolCall = { tool: string; sessionID: string }
-type Idle = { sessionID: string }
+// A finished tool call, as `execute.after` reports one, and a session that has gone idle, with the
+// work still running on it.
+type ToolCall = { tool: string; sessionID: string; status: "completed" | "error" }
+type Idle = { sessionID: string; background: readonly unknown[] }
 type SessionInfo = { parentID?: string }
 type Hook<Event> = (callback: (event: Event) => Promise<void> | void) => Promise<unknown>
 type Domain<Editor> = { transform(callback: (editor: Editor) => void): Promise<unknown>; reload(): Promise<void> }
 type Context = {
-  location: { directory: string }
+  // The opened directory is not the project root: the plan stands at the checkout root, which is
+  // `project.directory`.
+  location: { project: { directory: string } }
   agent: Domain<{ update(id: string, update: (agent: AgentInfo) => void): void }>
   skill: Domain<{ add(skill: { id: string; name: string; description?: string; path: string; content: string }): void }>
   command: Domain<{
@@ -63,7 +73,7 @@ type Context = {
     prompt(input: Prompt & { sessionID: string; delivery: unknown }): Promise<unknown>
     hook(name: "experimental.idle", callback: Hook<Idle>): Promise<unknown>
     get(input: { sessionID: string }): Promise<SessionInfo>
-    synthetic(input: { sessionID: string; text: string }): Promise<unknown>
+    synthetic(input: { sessionID: string; text: string; delivery: "steer" | "queue" }): Promise<unknown>
   }
 }
 
@@ -80,10 +90,18 @@ function stripBanner(text: string): string {
   return text.replace(/^(?:<!--.*-->\n)+\n?/, "")
 }
 
-// planStanding reports whether the project root holds a plan or a design file, the reminder's gate.
-function planStanding(directory: string): boolean {
-  return ["ACTIVE_PLAN.md", "ACTIVE_DESIGN.md"].some((file) => existsSync(join(directory, file)))
+// planStanding reports whether the project root holds a plan or a design — the file, or where the
+// plan was diced, the `ACTIVE_PLAN/` tree — the reminder's gate.
+function planStanding(root: string): boolean {
+  return ["ACTIVE_PLAN.md", "ACTIVE_DESIGN.md", "ACTIVE_PLAN"].some((name) => existsSync(join(root, name)))
 }
+
+// The reminder's sentence, byte for byte what claude's state-table-reminder.sh emits
+// (tests/test_opencode_entry.py holds the two together): a synthetic message is context, as a hook's
+// additionalContext is, so it states the status table's two acts as what they are, and it asks
+// nothing of a status table a design-only project does not carry.
+const reminder =
+  "Where the active plan carries a status table, a package is `in progress` when it is dispatched and `landed` when its work is accepted and committed."
 
 async function readRegistry(): Promise<Registry | undefined> {
   try {
@@ -142,27 +160,34 @@ export default Plugin.define({
     // A user-level install ships no guardrail.
     if (existsSync(guardrailPath)) await (await import(guardrailPath)).default.setup(ctx)
 
-    // The reminder is registered on every install: the plan files at the project root are read when
-    // a hook fires, and a project holding neither pays nothing. An injection is one model call.
+    // The reminder is registered on every install: the gate paths at the project root are read when
+    // a hook fires, and a project holding none of them pays nothing. An injection is one model call.
     const injectReminder = async (sessionID: string) => {
-      if (!planStanding(ctx.location.directory)) return
+      if (!planStanding(ctx.location.project.directory)) return
       try {
         await ctx.session.synthetic({
           sessionID,
-          text: "Update the active plan's status table to match the tree as the work lands.",
+          text: reminder,
+          // A synthetic message steers by default: passed here because the reminder belongs to the
+          // execution that just ran, which is where the parent reads it.
+          delivery: "steer",
         })
       } catch (err) {
         log(`cannot remind the session ${sessionID}`, err)
       }
     }
-    // A subagent call returns as soon as its child session starts, so this is the dispatch moment,
-    // and the call's session is the parent that runs the work.
+    // A subagent call returns as soon as its child session starts — always, from 2.3.0 — so a
+    // completed one is the dispatch moment, and the call's session is the parent that holds the
+    // work; a failed or denied call dispatched nothing.
     await ctx.tool.hook("execute.after", (call) => {
-      if (call.tool !== "subagent") return
+      if (call.tool !== "subagent" || call.status !== "completed") return
       return injectReminder(call.sessionID)
     })
-    // A session that has gone idle is a subagent's completion; the parent is the one to remind.
+    // A session that has gone idle is a subagent's completion, and its parent is the one to remind —
+    // unless work still runs on it: a shell or a grandchild it launched wakes it and fires this hook
+    // again, and that later idle is the completion.
     await ctx.session.hook("experimental.idle", async (idle) => {
+      if (idle.background.length > 0) return
       const session = await ctx.session.get({ sessionID: idle.sessionID }).catch((err: unknown) => {
         log(`cannot read the session ${idle.sessionID}`, err)
         return undefined

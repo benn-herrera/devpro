@@ -27,6 +27,12 @@ pair you wrote for, and what established each. Where nothing does, write ESM for
 line under `module: "nodenext"`; the report names each runtime the tests ran under, and one they did
 not run under is unverified.
 
+Where the `.ts` file is a shipped resource a foreign host runtime loads — a plugin entry the host
+application imports — the host decides the module system and the APIs the file may call, and there is
+no `tsconfig` and no emit. The report names the host runtime and its version, the floor the file
+holds from, and the check that holds the declared API slice to the host, naming it a gap where none
+exists.
+
 ## Core Principles
 
 {clauses.KEY_GUIDELINE}

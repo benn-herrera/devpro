@@ -54,9 +54,9 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   does not restate. The skill carries no runner-snippet advice and no install step; its one
   runner instruction is that where the project's runner includes the docdicer snippet, docdicer is
   run through the recipes (`docdicer`, `docdicer-check-plan`, `docdicer-kanban`, `docdicer-help`).
-  Its `kanban` paragraph offers running the board as a background process or hands the command
-  line, letting the user choose. It names `check-design` and `check-roadmap` beside `check-plan`;
-  neither has a recipe of its
+  Its `kanban` paragraph has the session offer to run the board as a background process or hand
+  over the command line, the user choosing. It names `check-design` and `check-roadmap` beside
+  `check-plan`; neither has a recipe of its
   own, and each runs through `docdicer` (`just docdicer check-design <design>`,
   `just docdicer check-roadmap ROADMAP.md`).
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying

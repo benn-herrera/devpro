@@ -96,9 +96,7 @@ class Family:
         if re.fullmatch(IDENTIFIER, self.name) is None:
             raise InputError(f"family '{self.name}': name is not a strict-kebab identifier")
         if tuple(self.categories) != CATEGORIES:
-            raise InputError(
-                f"family '{self.name}': categories must be exactly {', '.join(CATEGORIES)}, in that order"
-            )
+            raise InputError(f"family '{self.name}': categories must be exactly {', '.join(CATEGORIES)}, in that order")
         for category, member in self.categories.items():
             if member.split() != [member]:
                 raise InputError(f"family '{self.name}': {category} must be a non-empty member name with no whitespace")

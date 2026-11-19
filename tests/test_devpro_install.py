@@ -364,7 +364,9 @@ def test_a_relative_user_directory_is_the_destination_itself(tmp_path: Path) -> 
 # where the kbase plugin is installed — the kb-tools package in the kbase skill's own directory, with
 # the `kbase` MCP entry and the runner include line.
 
-_CLAUDE_RENDER = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+_CLAUDE_RENDER = Render(
+    harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
+)
 _KBASE_CLAUDE_RENDER = dataclasses.replace(_CLAUDE_RENDER, plugin=KBASE)
 _MAGE_RENDER = Render(harness=MAGE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
 _OPENCODE_RENDER = build_render(
@@ -424,6 +426,7 @@ def _opencode_plugin(harness_dir: Path, plugin: Plugin = DEVPRO) -> Path:
 
 
 _REGISTRATION = "hooks/hooks.json"
+_GUARDRAIL_MATCHER = "Bash|Read|Write|Edit|NotebookEdit|Grep|Glob"
 
 
 def test_an_opencode_install_copies_the_harnesss_plugin_byte_verbatim(tmp_path: Path) -> None:
@@ -439,8 +442,8 @@ def test_an_opencode_install_copies_the_harnesss_plugin_byte_verbatim(tmp_path: 
 
 def test_a_fresh_claude_install_ships_the_guardrail_and_registers_it_in_the_plugin(tmp_path: Path) -> None:
     """Where the probe passes, the hook script lands byte-verbatim and executable under ROOT beside the
-    plugin's one registration, which holds the guardrail's entry before the two plan-state reminder
-    entries, and the project gains no settings file."""
+    plugin's one registration, which holds the guardrail's `PreToolUse` entry and the plan-state
+    reminder's `PostToolUse` entry, and the project gains no settings file."""
     root = tmp_path / ".claude"
     root.mkdir()
     _definition_install(root, project_root=tmp_path)
@@ -451,11 +454,8 @@ def test_a_fresh_claude_install_ships_the_guardrail_and_registers_it_in_the_plug
     registration = json.loads((_claude_plugin(root) / _REGISTRATION).read_text(encoding="utf-8"))
     assert list(registration) == ["hooks"]
     hooks = registration["hooks"]
-    assert [entry["matcher"] for entry in hooks["PreToolUse"]] == [
-        "Bash|Read|Write|Edit|NotebookEdit|Grep|Glob",
-        "Agent",
-    ]
-    assert [entry["matcher"] for entry in hooks["PostToolUse"]] == ["Agent|SubagentHandback"]
+    assert [entry["matcher"] for entry in hooks["PreToolUse"]] == [_GUARDRAIL_MATCHER]
+    assert [entry["matcher"] for entry in hooks["PostToolUse"]] == ["Agent"]
     assert not (tmp_path / _SETTINGS).exists()
 
 
@@ -1735,8 +1735,8 @@ def test_a_failed_probe_installs_everything_else_and_neither_ships_nor_registers
     assert not (_claude_plugin(root) / _GUARDRAIL).exists()
     assert (_claude_plugin(root) / _REMINDER).is_file()
     hooks = json.loads((_claude_plugin(root) / _REGISTRATION).read_text(encoding="utf-8"))["hooks"]
-    assert [entry["matcher"] for entry in hooks["PreToolUse"]] == ["Agent"]
-    assert [entry["matcher"] for entry in hooks["PostToolUse"]] == ["Agent|SubagentHandback"]
+    assert list(hooks) == ["PostToolUse"]
+    assert [entry["matcher"] for entry in hooks["PostToolUse"]] == ["Agent"]
     assert not (tmp_path / _SETTINGS).exists()
     [skipped] = [line for line in capsys.readouterr().err.splitlines() if line.startswith("guardrail hook skipped")]
     assert reason in skipped and "left in place" not in skipped
@@ -1762,7 +1762,7 @@ def test_a_failed_probe_leaves_the_earlier_script_in_place_and_names_it(
 def test_a_probe_that_fails_and_then_passes_registers_the_guardrail_again(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The registration a failed probe writes holds the reminder entries alone, and a later install has
+    """The registration a failed probe writes holds the reminder entry alone, and a later install has
     to read it as this repository's own before it may replace it: the marker it states is the phrase
     both commands' reports carry, so a marker only the guardrail's entry carries would refuse."""
     root = _claude_root(tmp_path)
@@ -1772,10 +1772,8 @@ def test_a_probe_that_fails_and_then_passes_registers_the_guardrail_again(
     monkeypatch.undo()
     _definition_install(root, project_root=tmp_path)
     hooks = json.loads((_claude_plugin(root) / _REGISTRATION).read_text(encoding="utf-8"))["hooks"]
-    assert [entry["matcher"] for entry in hooks["PreToolUse"]] == [
-        "Bash|Read|Write|Edit|NotebookEdit|Grep|Glob",
-        "Agent",
-    ]
+    assert [entry["matcher"] for entry in hooks["PreToolUse"]] == [_GUARDRAIL_MATCHER]
+    assert [entry["matcher"] for entry in hooks["PostToolUse"]] == ["Agent"]
 
 
 def test_an_opencode_install_writes_no_claude_settings_file(tmp_path: Path) -> None:
@@ -1795,8 +1793,8 @@ def test_the_registered_command_runs_the_script_the_install_wrote(tmp_path: Path
     root.mkdir(parents=True, exist_ok=True)
     _definition_install(root, project_root=tmp_path)
     assert (_claude_plugin(root) / _GUARDRAIL).is_file()
-    assert _run_registered_hook(_claude_plugin(root), project=tmp_path, command="sed -i x f").returncode == 2
-    assert _run_registered_hook(_claude_plugin(root), project=tmp_path, command="echo hi").returncode == 0
+    assert _guardrail_result(_claude_plugin(root), project=tmp_path, command="sed -i x f").returncode == 2
+    assert _guardrail_result(_claude_plugin(root), project=tmp_path, command="echo hi").returncode == 0
 
 
 def test_a_missing_script_does_not_block_and_names_the_path(tmp_path: Path) -> None:
@@ -1807,18 +1805,39 @@ def test_a_missing_script_does_not_block_and_names_the_path(tmp_path: Path) -> N
     _definition_install(root, project_root=tmp_path)
     script = _claude_plugin(root) / _GUARDRAIL
     script.unlink()
-    result = _run_registered_hook(_claude_plugin(root), project=tmp_path, command="sed -i x f")
+    result = _guardrail_result(_claude_plugin(root), project=tmp_path, command="sed -i x f")
     assert result.returncode == 1
     assert result.stderr.count("\n") == 1 and str(script) in result.stderr
 
 
-def _run_registered_hook(plugin: Path, *, project: Path, command: str) -> subprocess.CompletedProcess:
-    """The guardrail entry's one command, run under `sh -c` with `CLAUDE_PLUGIN_ROOT` and
-    `CLAUDE_PROJECT_DIR` set and a Bash payload for `command` on stdin."""
+def test_the_registered_reminder_runs_the_script_the_install_wrote(tmp_path: Path) -> None:
+    """The reminder entry's command, run as Claude Code runs it, reaches the installed script and
+    answers with the reminder JSON: a wrong script path or interpreter there would leave every install
+    answering `no readable script at …` on stderr, and the suite green."""
+    root = _claude_root(tmp_path)
+    _definition_install(root, project_root=tmp_path)
+    (tmp_path / "ACTIVE_PLAN.md").write_text("# under way\n", encoding="utf-8")
+    result = _run_registered_hook(
+        _claude_plugin(root),
+        project=tmp_path,
+        event="PostToolUse",
+        matcher="Agent",
+        payload={"hook_event_name": "PostToolUse", "tool_name": "Agent", "cwd": str(tmp_path)},
+    )
+    assert (result.returncode, result.stderr) == (0, "")
+    output = json.loads(result.stdout)["hookSpecificOutput"]
+    assert output["hookEventName"] == "PostToolUse"
+    assert "status table" in output["additionalContext"]
+
+
+def _run_registered_hook(
+    plugin: Path, *, project: Path, event: str, matcher: str, payload: dict[str, object]
+) -> subprocess.CompletedProcess:
+    """The one command the registration's `event` entry matched on `matcher` carries, run under `sh -c`
+    with `CLAUDE_PLUGIN_ROOT` and `CLAUDE_PROJECT_DIR` set and `payload` on stdin."""
     registration = json.loads((plugin / _REGISTRATION).read_text(encoding="utf-8"))
-    [entry] = [element for element in registration["hooks"]["PreToolUse"] if "Bash" in element["matcher"]]
+    [entry] = [element for element in registration["hooks"][event] if element["matcher"] == matcher]
     [hook] = entry["hooks"]
-    payload = {"tool_name": "Bash", "tool_input": {"command": command}, "cwd": str(project)}
     return subprocess.run(
         ["sh", "-c", hook["command"]],
         input=json.dumps(payload),
@@ -1826,6 +1845,17 @@ def _run_registered_hook(plugin: Path, *, project: Path, command: str) -> subpro
         encoding="utf-8",
         env={**os.environ, "CLAUDE_PLUGIN_ROOT": str(plugin), "CLAUDE_PROJECT_DIR": str(project)},
         check=False,
+    )
+
+
+def _guardrail_result(plugin: Path, *, project: Path, command: str) -> subprocess.CompletedProcess:
+    """The guardrail's entry, run on a Bash call for `command`."""
+    return _run_registered_hook(
+        plugin,
+        project=project,
+        event="PreToolUse",
+        matcher=_GUARDRAIL_MATCHER,
+        payload={"tool_name": "Bash", "tool_input": {"command": command}, "cwd": str(project)},
     )
 
 

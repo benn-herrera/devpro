@@ -205,6 +205,14 @@ FLAKE8_IGNORE := "E122,E201,E202,E203,E225,E226,E228,E261,E265,E302,E303,E501,E7
 format-python *paths: _venv
     @VENV_PYTHON={{VENV_PYTHON}} FLAKE8_IGNORE="{{FLAKE8_IGNORE}}" ./devtools/scripts/format-python.sh "$@"
 
+# The same three tools over the same paths as `format-python`, checking and writing nothing: a
+# reviewer runs this one, and `format-python` is what fixes what it reports.
+[doc("[dev] check the python is formatted and clean, writing nothing")]
+lint: _venv
+    @{{VENV_PYTHON}} -m black --check --line-length=120 tests devpro devtools
+    @{{VENV_PYTHON}} -m isort --profile black --check-only --line-length 120 tests devpro devtools
+    @{{VENV_PYTHON}} -m flake8 --ignore="{{FLAKE8_IGNORE}}" devpro devtools tests
+
 # Emits candidates, never verdicts, and exits zero with findings: whether two sites are one idea is
 # a judgment, and a gate here would be claiming it.
 # Sweeps the owned python trees (the corpus devtools/dupe_sweep/python_corpus.py names) for

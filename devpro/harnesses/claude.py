@@ -54,24 +54,27 @@ _MISSING_REMINDER_REPORT = "state-table reminder: no readable script at $s"
 
 def _hook_command(*, interpreter: str, script: str, report: str) -> str:
     """The command running `interpreter` on `script` under the plugin's root where that is a readable
-    file, and otherwise writing `report` to stderr and exiting 1."""
+    file, and otherwise writing `report` to stderr and exiting 1. `report` is shell source, not data:
+    the shell expands the path `$s` names in it."""
     return (
         f's="${{CLAUDE_PLUGIN_ROOT}}/{script}"; if [ -f "$s" ] && [ -r "$s" ]; then exec {interpreter} "$s"; fi; '
-        f'echo "{report}" >&2; exit 1'
+        f"printf '%s\\n' \"{report}\" >&2; exit 1"
     )
 
 
 _PLUGIN_GUARDRAIL_COMMAND = _hook_command(interpreter="perl", script=_GUARDRAIL_SCRIPT, report=_MISSING_SCRIPT_REPORT)
-_PLUGIN_REMINDER_COMMAND = _hook_command(interpreter="sh", script=_REMINDER_SCRIPT, report=_MISSING_REMINDER_REPORT)
+# The reminder is bash, as every other script in this repository is, so its command names bash rather
+# than the shell the command itself runs under.
+_PLUGIN_REMINDER_COMMAND = _hook_command(interpreter="bash", script=_REMINDER_SCRIPT, report=_MISSING_REMINDER_REPORT)
 # The registration's marker: the phrase both commands' reports write for a script they cannot open.
-# The reminder entries outlive a failed probe, so the file is written without the guardrail's report
+# The reminder entry outlives a failed probe, so the file is written without the guardrail's report
 # in it, and a later install still has to read it as this repository's own.
 _REGISTRATION_MARKER = "no readable script at"
 _GUARDRAIL_MATCHER = "Bash|Read|Write|Edit|NotebookEdit|Grep|Glob"
-# A subagent is dispatched by the `Agent` tool, named that since v2.1.63, and its report comes back
-# either as that call's result or through `SubagentHandback`'s own call.
-_DISPATCH_MATCHER = "Agent"
-_COMPLETION_MATCHER = "Agent|SubagentHandback"
+# A subagent is dispatched by the `Agent` tool, named that since v2.1.63. Its call's return is the one
+# parent-side moment: Claude Code names a `PostToolUse` hook on `Agent` as the way to inject context
+# into the parent session after a subagent returns.
+_AGENT_MATCHER = "Agent"
 
 
 def _hook_entry(*, matcher: str, command: str) -> dict[str, object]:
@@ -80,17 +83,20 @@ def _hook_entry(*, matcher: str, command: str) -> dict[str, object]:
 
 
 def _registration_hooks(*, with_guardrail: bool) -> dict[str, list[dict[str, object]]]:
-    """The registration's `hooks` object: the plan-state reminder on a subagent's dispatch and on its
-    completion, and the guardrail's entry on every Bash and file-tool call where `with_guardrail` says
-    the install-time probe leaves it."""
-    guardrail_entry = (
-        [_hook_entry(matcher=_GUARDRAIL_MATCHER, command=_PLUGIN_GUARDRAIL_COMMAND)] if with_guardrail else []
-    )
-    reminder = _hook_entry(matcher=_DISPATCH_MATCHER, command=_PLUGIN_REMINDER_COMMAND)
-    return {
-        "PreToolUse": [*guardrail_entry, reminder],
-        "PostToolUse": [_hook_entry(matcher=_COMPLETION_MATCHER, command=_PLUGIN_REMINDER_COMMAND)],
-    }
+    """The registration's `hooks` object: the guardrail's entry on every Bash and file-tool call
+    where `with_guardrail` says the install-time probe leaves it, and one plan-state reminder entry
+    on every install, at the `Agent` call's return.
+
+    That return is when the reminder is read: a foreground `Agent` call blocks its parent and Claude
+    Code hands a hook's context to the parent's next request, so the sentence arrives at the
+    subagent's completion; a call launched in the background returns at the dispatch turn, which is
+    where its sentence arrives. A background subagent's own completion fires no parent-side hook, so
+    it injects nothing."""
+    hooks: dict[str, list[dict[str, object]]] = {}
+    if with_guardrail:
+        hooks["PreToolUse"] = [_hook_entry(matcher=_GUARDRAIL_MATCHER, command=_PLUGIN_GUARDRAIL_COMMAND)]
+    hooks["PostToolUse"] = [_hook_entry(matcher=_AGENT_MATCHER, command=_PLUGIN_REMINDER_COMMAND)]
+    return hooks
 
 
 def _guardrail_registration(plugin: str, shipped: Sequence[ShippedDefinition]) -> str:

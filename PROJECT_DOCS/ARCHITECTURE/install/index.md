@@ -12,8 +12,9 @@ departs from a plain copy in four places.
   into a scratch copy and compared with the real paths: one code path, so the up-to-date check and
   `--dry-run` are trivial comparisons, the dry run cannot drift from the install, and there is less
   code than a separately computed plan of writes. Detail is in Renders and copies, Preflight.
-- It runs a harness's guardrail script once before registering it, and skips the script and its
-  registration where the run fails (Guardrail registration).
+- It runs a harness's guardrail script once before registering it, ships the script and registers
+  the guardrail's entry only where the run passes, and writes the registration either way (Guardrail
+  registration).
 - It selects by plugin membership: it renders and ships the definitions the plugin carries, and each
   package and harness-rendered file whose owning definition ships (Plugins).
 

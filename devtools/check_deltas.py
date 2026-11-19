@@ -6,13 +6,21 @@ target leaf in its markdown link, relative to the repository root. Within an ent
 block whose following non-blank line is `becomes` is a passage pair; the fenced block after the
 `becomes` line is the applied text, and this checks that block's content occurs byte-exact as a
 substring of the leaf. A trailing line boundary is not required: a replaced span often sits mid-line
-or ends mid-sentence in its leaf. The `## Code delta` entries carry no fenced blocks, so they parse
-as entries and contribute none.
+or ends mid-sentence in its leaf. Fences follow CommonMark, as `render_diff` pins them: an opener is
+three or more backticks with an info string holding no backtick, or three or more tildes, and the
+closer is the same character, at least as many, with nothing else on the line — so a passage's own
+fenced example stays inside the block rather than ending it. The `## Code delta` entries carry no
+fenced blocks, so they parse as entries and contribute none.
+
+A passage pair carrying a markdown link can never pass: the design's link resolves from the
+repository root and the leaf's from the leaf's own directory, so the applied text rebases the
+target and no longer occurs byte-exact. Nothing false-fails today — no passage pair in the current
+design holds a link inside its fenced block.
 
 Every becomes-block not found in its leaf is named — the design, the entry heading, the leaf, and
 the block — and an unparseable entry (a `becomes` with no following fenced block, a `###` heading
-with no link) or a missing leaf is named too; that detection is the point of the tool. Exits zero
-when every becomes-block occurs in its leaf, non-zero otherwise.
+with no link), a missing leaf or a missing design file is named too; that detection is the point of
+the tool. Exits zero when every becomes-block occurs in its leaf, non-zero otherwise.
 """
 
 from __future__ import annotations
@@ -26,6 +34,10 @@ SECTIONS = ("SPEC delta", "ARCHITECTURE delta", "Code delta")
 
 _HEADING = re.compile(r"^(#{1,6})\s")
 _LINK = re.compile(r"\]\(([^)]+)\)")
+# `render_diff`'s two fence patterns, over text: the opener's run of backticks with an info string
+# holding none, or its run of tildes; the closer the same character, at least as many, nothing else.
+_FENCE_OPEN = re.compile(r" {0,3}(?:(`{3,})[^`]*|(~{3,}).*)")
+_FENCE_CLOSE = re.compile(r" {0,3}(`{3,}|~{3,})[ \t]*")
 
 
 @dataclass(frozen=True)
@@ -43,16 +55,31 @@ def _heading_level(line: str) -> int | None:
     return len(m.group(1)) if m else None
 
 
-def _is_fence(line: str) -> bool:
-    stripped = line.strip()
-    return stripped.startswith("```") or stripped.startswith("~~~")
+def _fence_opener(line: str) -> str | None:
+    """The fence `line` opens, its run of backticks or tildes, or None where it opens none."""
+    m = _FENCE_OPEN.fullmatch(line)
+    if m is None:
+        return None
+    return m.group(1) or m.group(2)
+
+
+def _closes_fence(line: str, opener: str) -> bool:
+    """Whether `line` closes the fence `opener`: the same character, at least as many, nothing else."""
+    m = _FENCE_CLOSE.fullmatch(line)
+    if m is None:
+        return False
+    closer = m.group(1)
+    return closer[:1] == opener[:1] and len(closer) >= len(opener)
 
 
 def _read_fence(lines: list[str], i: int) -> tuple[list[str] | None, int | None]:
     """`lines[i]` opens a fenced block. Return its content lines and the index just past the closing
-    fence, or `(None, None)` if the block is never closed."""
+    fence, or `(None, None)` if no line closes it."""
+    opener = _fence_opener(lines[i])
+    if opener is None:
+        return None, None
     j = i + 1
-    while j < len(lines) and not _is_fence(lines[j]):
+    while j < len(lines) and not _closes_fence(lines[j], opener):
         j += 1
     if j >= len(lines):
         return None, None
@@ -85,7 +112,7 @@ def _parse_entries(lines: list[str]) -> list[Entry]:
     n = len(lines)
     section = None
     while i < n:
-        if _is_fence(lines[i]):
+        if _fence_opener(lines[i]) is not None:
             _, nxt = _read_fence(lines, i)
             i = n if nxt is None else nxt
             continue
@@ -99,7 +126,7 @@ def _parse_entries(lines: list[str]) -> list[Entry]:
             start = i
             j = i + 1
             while j < n:
-                if _is_fence(lines[j]):
+                if _fence_opener(lines[j]) is not None:
                     _, j2 = _read_fence(lines, j)
                     j = n if j2 is None else j2
                     continue
@@ -121,7 +148,7 @@ def _parse_pairs(lines: list[str], start: int, end: int) -> tuple[list[tuple[str
     problems: list[str] = []
     i = start
     while i < end:
-        if not _is_fence(lines[i]):
+        if _fence_opener(lines[i]) is None:
             i += 1
             continue
         content, nxt = _read_fence(lines, i)
@@ -133,7 +160,7 @@ def _parse_pairs(lines: list[str], start: int, end: int) -> tuple[list[tuple[str
             i = nxt
             continue
         k = becomes + 1
-        while k < end and not _is_fence(lines[k]):
+        while k < end and _fence_opener(lines[k]) is None:
             k += 1
         if k >= end:
             problems.append(f"`becomes` at line {becomes + 1} with no following fenced block")
@@ -151,6 +178,9 @@ def _parse_pairs(lines: list[str], start: int, end: int) -> tuple[list[tuple[str
 
 def main(argv: list[str]) -> int:
     design_path = Path(argv[0]) if argv else Path("ACTIVE_DESIGN.md")
+    if not design_path.is_file():
+        print(f"PROBLEM {design_path}: missing design")
+        return 1
     lines = design_path.read_text(encoding="utf-8").split("\n")
     checked = misses = problems = 0
     print(f"delta byte-check: {design_path}")
@@ -174,9 +204,7 @@ def main(argv: list[str]) -> int:
         pairs, problems_ = _parse_pairs(lines, entry.start, entry.end)
         for why in problems_:
             problems += 1
-            print(
-                f"  PROBLEM {design_path}:{entry.heading_line} [{entry.section}] {entry.heading}: {why}"
-            )
+            print(f"  PROBLEM {design_path}:{entry.heading_line} [{entry.section}] {entry.heading}: {why}")
         for applied, anchor in pairs:
             checked += 1
             if applied not in leaf_text:

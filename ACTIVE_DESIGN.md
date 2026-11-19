@@ -43,7 +43,8 @@ becomes
 Opencode loads the plugin directory and registers its agents, skills, commands and, where
 `kbase` ships, the `kbase` MCP server under the registry's ids, and injects a plan-state reminder
 into the parent session at agent dispatch and agent completion, gated by `ACTIVE_PLAN.md` or
-`ACTIVE_DESIGN.md` existing at the project root.
+`ACTIVE_DESIGN.md` — file or, where the plan was diced, the `ACTIVE_PLAN/` tree — existing at the
+project root.
 ```
 
 ### [SPEC.md, Guide and README](PROJECT_DOCS/SPEC/guide-and-readme.md)
@@ -75,11 +76,15 @@ install, as the text builder writes it.
 becomes
 ```
 The registration holds the guardrail's `PreToolUse` entry — matcher
-`Bash|Read|Write|Edit|NotebookEdit|Grep|Glob` — where the install-time probe passes, plus two
-ungated plan-state reminder entries on every claude install, each running
-`<install-dir>/hooks/state-table-reminder.sh`, which reads `ACTIVE_PLAN.md` or `ACTIVE_DESIGN.md`
-at the project root and emits a one-sentence `hookSpecificOutput.additionalContext` reminder to
-update the plan's status table.
+`Bash|Read|Write|Edit|NotebookEdit|Grep|Glob` — where the install-time probe passes, plus one
+ungated plan-state reminder entry on every claude install, a `PostToolUse` matched on `Agent`,
+running `<install-dir>/hooks/state-table-reminder.sh`, which reads `ACTIVE_PLAN.md` or
+`ACTIVE_DESIGN.md` — file or, where the plan was diced, the `ACTIVE_PLAN/` tree — at the project
+root and emits a one-sentence `hookSpecificOutput.additionalContext` reminder naming the status
+table's acts: `in progress` when a package is dispatched, `landed` when its work is accepted and
+committed. The entry fires at the `Agent` call's return — the subagent's completion where the call
+ran in the foreground, the dispatch turn where it moved to the background — and a background
+subagent's completion injects nothing.
 ```
 
 ### [ARCHITECTURE.md, Install, Opencode entry](PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md)
@@ -93,11 +98,12 @@ Surfaces, Shipped files). It is written for opencode v2.2.6 and is the same file
 becomes
 ```
 `devpro/harnesses/resources/opencode/index.ts` is opencode's plugin entry (SPEC.md, Deployed
-Surfaces, Shipped files). It is written for opencode 2.3.2 (floor 2.2.6) and is the same file for
+Surfaces, Shipped files). It is written for opencode 2.3.2 (floor 2.3.0) and is the same file for
 both plugins, and its setup registers `ctx.tool.hook("execute.after")` filtered to `subagent` and
 `ctx.session.hook("experimental.idle")` for a session whose `parentID` is set, injecting
 `ctx.session.synthetic` into the parent session at agent dispatch and agent completion, gated by
-`ACTIVE_PLAN.md` or `ACTIVE_DESIGN.md` existing at the project root.
+`ACTIVE_PLAN.md` or `ACTIVE_DESIGN.md` — file or, where the plan was diced, the `ACTIVE_PLAN/`
+tree — existing at the project root.
 ```
 
 ### [ARCHITECTURE.md, Subsystem Map](PROJECT_DOCS/ARCHITECTURE/subsystem-map.md)
@@ -107,9 +113,9 @@ both plugins, and its setup registers `ctx.tool.hook("execute.after")` filtered 
 ```
 becomes
 ```
-  Its `kanban` paragraph offers running the board as a background process or hands the command
-  line, letting the user choose. It names `check-design` and `check-roadmap` beside `check-plan`;
-  neither has a recipe of its
+  Its `kanban` paragraph has the session offer to run the board as a background process or hand
+  over the command line, the user choosing. It names `check-design` and `check-roadmap` beside
+  `check-plan`; neither has a recipe of its
 ```
 
 ## Code delta
@@ -117,8 +123,9 @@ becomes
 ### [ARCHITECTURE.md, Install, Guardrail hook](PROJECT_DOCS/ARCHITECTURE/install/guardrail-hook.md)
 
 `devpro/harnesses/resources/claude/hooks/state-table-reminder.sh` ships as a claude harness
-resource, and `devpro/harnesses/claude.py` writes the two reminder entries beside the guardrail's
-in its rendered `hooks/hooks.json`, both ungated, so a probe failure leaves them.
+resource, and `devpro/harnesses/claude.py` writes the one reminder entry — `PostToolUse` matched on
+`Agent` — beside the guardrail's in its rendered `hooks/hooks.json`, ungated, so a probe failure
+leaves it.
 
 ### [ARCHITECTURE.md, Install, Opencode entry](PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md)
 

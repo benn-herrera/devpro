@@ -30,7 +30,8 @@ the only one.
 
 No install writes `.claude/settings*`, `opencode.json` or `opencode.jsonc`. A guardrail skipped for a
 failed install-time probe leaves any script an earlier install wrote where it stands and rewrites
-the registration without its entry; the report names the script that is the install's own.
+the registration without its entry; the report names the earlier install's script, left where it
+stands.
 
 An up-to-date run reports `up to date: <harness-dir> — nothing written`, exits 0 and touches
 nothing: no file

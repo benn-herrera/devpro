@@ -13,6 +13,11 @@ directory, relative to the root and defaulting to it; claude receives it as the 
 `workdir`. A case's optional `harness`, `"claude"` or
 `"opencode"`, runs it under that implementation only. The TypeScript side runs under `bun`; a
 missing `bun` fails rather than skips, because a skip would hide drift between the two.
+
+The module also holds claude's plan-state reminder, `state-table-reminder.sh`, a second hook script
+that has no case table: it asserts which project roots open its gate, that a project holding none
+gets silence, and that the reminder JSON carries the event the input names and both acts of the
+status table.
 """
 
 from __future__ import annotations
@@ -143,7 +148,7 @@ def _run_reminder(stdin: str, *, project_dir: Path | None = None) -> subprocess.
     if project_dir is not None:
         env["CLAUDE_PROJECT_DIR"] = str(project_dir)
     return subprocess.run(
-        ["sh", str(_REMINDER_HOOK)],
+        ["bash", str(_REMINDER_HOOK)],
         input=stdin,
         capture_output=True,
         encoding="utf-8",
@@ -217,10 +222,9 @@ def test_guardrail_cases_carry_only_known_fields() -> None:
 
 def test_guardrail_matcher_names_exactly_the_claude_tools_the_case_table_covers() -> None:
     """A tool the matcher sends to the hook with no case is untested, and a case for a tool the
-    matcher omits tests a call the hook never sees. The registration's other `PreToolUse` entry is the
-    plan-state reminder's, matched on `Agent` alone."""
-    pre_tool_use = json.loads(CLAUDE.guardrail.registration.text("devpro", ()))["hooks"]["PreToolUse"]
-    [entry] = [element for element in pre_tool_use if "Bash" in element["matcher"]]
+    matcher omits tests a call the hook never sees. The registration's only `PreToolUse` entry is the
+    guardrail's; the plan-state reminder registers on `PostToolUse`, matched on `Agent` alone."""
+    [entry] = json.loads(CLAUDE.guardrail.registration.text("devpro", ()))["hooks"]["PreToolUse"]
     matcher = set(entry["matcher"].split("|"))
     assert matcher == {_tool(case) for case in _CASES if _tool(case) in _CLAUDE_TO_OPENCODE_TOOLS}
 
@@ -295,36 +299,44 @@ def test_guardrail_pl_fails_as_a_hook_error_never_as_a_block(tmp_path: Path) -> 
     assert rootless.returncode == 1 and rootless.stderr.startswith("guardrail: no project root")
 
 
-# The plan-state reminder: a second claude hook script, run on the events the registration names and
-# reading a plan or a design at the project root.
+# The plan-state reminder: a second claude hook script, run on the event the registration names and
+# reading a plan, a design or the diced plan tree at the project root.
 
 
-@pytest.mark.parametrize("gate", ["ACTIVE_PLAN.md", "ACTIVE_DESIGN.md"])
+@pytest.mark.parametrize("gate", ["ACTIVE_PLAN.md", "ACTIVE_DESIGN.md", "ACTIVE_PLAN"])
 @pytest.mark.parametrize("from_env", [True, False], ids=["claude-project-dir", "input-cwd"])
-def test_the_reminder_speaks_where_a_plan_or_design_stands_at_the_project_root(
+def test_the_reminder_speaks_where_a_plan_a_design_or_the_diced_tree_stands_at_the_project_root(
     tmp_path: Path, gate: str, from_env: bool
 ) -> None:
-    """Either file opens the gate, and either root the hook contract names finds it: `CLAUDE_PROJECT_DIR`
-    where the environment carries it, else the input's `cwd`. The answer is the event the input names,
-    which `hookSpecificOutput` must carry, and the one sentence naming the plan's status table."""
+    """Either file, or the diced plan's tree, opens the gate, and either root the hook contract names
+    finds it: `CLAUDE_PROJECT_DIR` where the environment carries it, else the input's `cwd`. The answer
+    is the event the input names, which `hookSpecificOutput` must carry, and one sentence naming both
+    acts the status table records."""
     root = tmp_path / "project"
     root.mkdir()
-    (root / gate).write_text("# under way\n", encoding="utf-8")
+    standing = root / gate
+    if gate == "ACTIVE_PLAN":
+        standing.mkdir()
+    else:
+        standing.write_text("# under way\n", encoding="utf-8")
     cwd = root
     if from_env:
         cwd = tmp_path / "elsewhere"
         cwd.mkdir()
-    payload = {"hook_event_name": "PreToolUse", "cwd": str(cwd), "tool_name": "Agent"}
+    payload = {"hook_event_name": "PostToolUse", "cwd": str(cwd), "tool_name": "Agent"}
     done = _run_reminder(json.dumps(payload), project_dir=root if from_env else None)
     assert (done.returncode, done.stderr) == (0, "")
     output = json.loads(done.stdout)["hookSpecificOutput"]
-    assert output["hookEventName"] == "PreToolUse"
-    assert "status table" in output["additionalContext"]
+    assert output["hookEventName"] == "PostToolUse"
+    sentence = output["additionalContext"]
+    assert "status table" in sentence
+    assert "in progress" in sentence and "landed" in sentence
 
 
-def test_the_reminder_is_silent_where_the_project_holds_neither_gate_file(tmp_path: Path) -> None:
-    """A project with neither file has no plan state to remind anyone of, and a project hook that spoke
-    anyway would put the sentence in the context of every subagent a dispatch there starts."""
+def test_the_reminder_is_silent_where_the_project_holds_no_gate_path(tmp_path: Path) -> None:
+    """A project with none of the gate paths has no plan state to remind anyone of, and a project hook
+    that spoke anyway would put the sentence in the context of every subagent a dispatch there
+    starts."""
     root = tmp_path / "project"
     root.mkdir()
     done = _run_reminder(json.dumps({"hook_event_name": "PostToolUse", "cwd": str(root)}), project_dir=root)

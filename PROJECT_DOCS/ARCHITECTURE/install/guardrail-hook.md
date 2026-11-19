@@ -11,17 +11,24 @@ loads it alone, and the entry imports it only where the file stands beside it, w
 install does not copy. Plugin discovery lists only the direct children of `plugins/`, so the file
 inside the plugin directory is not also loaded as an opencode plugin module of its own. The `GuardrailHook`
 names the `script` under `resources/<harness>/`, which is also its path under the install
-directory, and a `registration`, the
-`HarnessFile` for the plugin's `hooks/hooks.json`: a text builder, `_guardrail_registration`
-(`devpro/harnesses/claude.py`), and a `marker`, the phrase both hook commands' missing-script reports
-share (Shipped files), which
-only this repository writes. The registration holds the guardrail's `PreToolUse` entry — matcher
-`Bash|Read|Write|Edit|NotebookEdit|Grep|Glob` — where the install-time probe passes, plus two
-ungated plan-state reminder entries on every claude install, each running
-`<install-dir>/hooks/state-table-reminder.sh`, which reads `ACTIVE_PLAN.md` or `ACTIVE_DESIGN.md`
-at the project root and emits a one-sentence `hookSpecificOutput.additionalContext` reminder to
-update the plan's status table. Every claude install therefore runs the
-script on each file-tool call as well as each Bash call, and on an install of the devpro plugin the script finds
+directory; the `HarnessFile` for the plugin's `hooks/hooks.json` twice over — `registration`, built
+by `_guardrail_registration` (`devpro/harnesses/claude.py`), and `registration_without_hook`, built
+by `_reminder_registration`, the same file without the guardrail's entry; and a `marker`, the phrase
+both hook commands' missing-script reports share (Shipped files). The marker is a phrase of ordinary
+English, which is what narrowing it to the part both reports share costs: a foreign file carrying it
+at the registration's path is overwritten, not refused. The registration holds the guardrail's `PreToolUse` entry — matcher
+`Bash|Read|Write|Edit|NotebookEdit|Grep|Glob` — where the install-time probe passes, plus one
+ungated plan-state reminder entry on every claude install, a `PostToolUse` matched on `Agent`,
+running `<install-dir>/hooks/state-table-reminder.sh`, which reads `ACTIVE_PLAN.md` or
+`ACTIVE_DESIGN.md` — file or, where the plan was diced, the `ACTIVE_PLAN/` tree — at the project
+root and emits a one-sentence `hookSpecificOutput.additionalContext` reminder naming the status
+table's acts: `in progress` when a package is dispatched, `landed` when its work is accepted and
+committed. The entry fires at the `Agent` call's return — the subagent's completion where the call
+ran in the foreground, the dispatch turn where it moved to the background — and a background
+subagent's completion injects nothing. A user-level claude install takes no guardrail, so it writes
+no registration and the reminder never registers there, where opencode's entry registers its hooks on
+a user-level install as on a project one. Every claude install therefore runs the guardrail script
+on each file-tool call as well as each Bash call, and on an install of the devpro plugin the script finds
 the kbase signal absent and lets a file-tool call through. The entry's command is a short `sh` program that
 `exec`s `perl` on `${CLAUDE_PLUGIN_ROOT}/hooks/guardrail.pl` only when that is a readable file, and
 otherwise writes the missing-script report to stderr and exits 1. Claude Code gives a plugin's hook

@@ -1,10 +1,11 @@
 // Runs opencode's plugin entry, index.ts, under a stub plugin context, for tests/test_opencode_entry.py.
 //
 // Usage: bun tests/opencode_entry_runner.ts
-// Stdin: JSON {entry, directory, writes, command}: the installed entry; the project directory; files
-// ({path, text}) written one at a time, each awaited until a reload its watcher triggers changes what is
-// registered; and a command ({name, path, text, user}) executed with the user's text before and after
-// its body file is replaced by text.
+// Stdin: JSON {entry, directory, project, writes, command}: the installed entry; the directory the session
+// opened at and the project root above it, the reminder's gate reading the root rather than the opened
+// directory; files ({path, text}) written one at a time, each awaited until a reload its watcher triggers
+// changes what is registered; and a command ({name, path, text, user}) executed with the user's text before
+// and after its body file is replaced by text.
 // Stdout: JSON {id, hooks, sessionHooks, states, prompts, synthetics}: the plugin id, the tool and
 // session hooks it registered, what it had registered after setup and after each write, the text each
 // execute prompted, and every synthetic message a hook injected, naming the event that fired the hook
@@ -21,6 +22,7 @@ import { writeFileSync } from "node:fs"
 type Input = {
   entry: string
   directory: string
+  project: string
   writes: { path: string; text: string }[]
   command: { name: string; path: string; text: string; user: string }
 }
@@ -30,6 +32,8 @@ type Command = { name: string; description?: string; execute(input: unknown): Pr
 const PARENT = "ses_parent"
 const CHILD = "ses_child"
 type Call = { tool: string; sessionID: string; status: "completed" | "error" }
+// A session's idle event carries the work still running for it, one entry per running job.
+type Idle = { sessionID: string; background: unknown[] }
 
 // A domain as opencode's State keeps one: every registered transform re-runs against a fresh
 // value on each reload.
@@ -111,13 +115,13 @@ const sessionHooks: string[] = []
 const synthetics: { on: string; sessionID: string; text: string }[] = []
 const invocation = { sessionID: "ses_1", delivery: "queue" }
 let after: ((call: Call) => void | Promise<void>) | undefined
-let idle: ((event: { sessionID: string }) => void | Promise<void>) | undefined
+let idle: ((event: Idle) => void | Promise<void>) | undefined
 // The hook whose callback is running, named in the synthetic record it produces.
 let firing = ""
 
 const plugin = (await import(input.entry)).default
 const cleanup = await plugin.setup({
-  location: { directory: input.directory },
+  location: { directory: input.directory, project: { directory: input.project } },
   tool: {
     async hook(name: string, callback: (call: Call) => void | Promise<void>) {
       hooks.push(name)
@@ -165,22 +169,28 @@ await execute()
 writeFileSync(input.command.path, input.command.text)
 await execute()
 
-// Fire each registered reminder path: a subagent's dispatch and completion, and the two calls the
-// entry must ignore — a tool that is not a subagent, and a session with no parent of its own.
+// Fire each registered reminder path — a subagent's dispatch and its completion — and the calls the
+// entry must ignore: a tool that is not a subagent, a subagent call that failed, a session with no
+// parent of its own, and a session still holding work that runs.
 const fireTool = async (call: Call) => {
   if (!after) throw new Error("the entry registered no execute.after hook")
   firing = "execute.after"
   await after(call)
 }
-const fireIdle = async (event: { sessionID: string }) => {
+const fireIdle = async (event: Idle) => {
   if (!idle) throw new Error("the entry registered no experimental.idle hook")
   firing = "experimental.idle"
   await idle(event)
 }
 await fireTool({ tool: "subagent", sessionID: PARENT, status: "completed" })
 await fireTool({ tool: "shell", sessionID: PARENT, status: "completed" })
-await fireIdle({ sessionID: CHILD })
-await fireIdle({ sessionID: PARENT })
+await fireTool({ tool: "subagent", sessionID: PARENT, status: "error" })
+await fireIdle({ sessionID: CHILD, background: [] })
+await fireIdle({
+  sessionID: CHILD,
+  background: [{ kind: "shell", sessionID: CHILD, shellID: "sh_1", command: "sleep 60" }],
+})
+await fireIdle({ sessionID: PARENT, background: [] })
 
 await cleanup()
 console.log(JSON.stringify({ id: plugin.id, hooks, sessionHooks, states, prompts, synthetics }))

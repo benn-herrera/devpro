@@ -1,45 +1,54 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # !INSTALLED! from devpro/harnesses/resources/claude/hooks/state-table-reminder.sh — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
 #
-# Claude Code hook for the Agent tool, at a subagent's dispatch and at its completion: a project
-# holding `ACTIVE_PLAN.md` or `ACTIVE_DESIGN.md` at its root gets one sentence of context naming the
-# plan's status table, and a project holding neither, or a call naming no root, gets silence.
+# Claude Code hook for the `Agent` tool's return: a project holding `ACTIVE_PLAN.md`,
+# `ACTIVE_DESIGN.md` or the diced `ACTIVE_PLAN/` tree at its root gets one sentence of context, and a
+# project holding none of them, or a call naming no root, gets silence.
+#
+# The sentence reaches the parent on its next model request after the hook fires, which is the `Agent`
+# call's return: the subagent's completion where the call ran in the foreground, the dispatch turn
+# where it moved to the background. A background subagent's own completion fires no parent-side hook,
+# so nothing is injected then.
 #
 # Exit 0 with the JSON on stdout is the only answer: Claude Code reads a hook's stdout as its JSON
 # output, and `hookSpecificOutput` must name the event the input carries.
 
-set -u
+set -euo pipefail
 
-input=$(cat)
+input="$(cat)"
+# The event's own fields precede the tool's, so the scan below reads a top-level `cwd` or
+# `hook_event_name` alone: a tool input's own field of either name sits past this bound.
+input="${input%%'"tool_input"'*}"
 
-# The input's own top-level string field `name`, as Claude Code writes it: what follows the first
-# `"name"` up to its closing quote. A field the input does not carry prints nothing.
-field() {
-    rest=${input#*"\"$1\""}
-    if [ "$rest" = "$input" ]; then
-        return 0
-    fi
-    rest=${rest#*:}
-    rest=${rest#*\"}
-    printf '%s' "${rest%%\"*}"
+# The first field of the input named ${1}, as Claude Code writes it: what follows the first `"${1}"`
+# up to its closing quote. A field the input does not carry prints nothing.
+function field() {
+  local rest="${input#*\"${1}\"}"
+  if [[ "${rest}" == "${input}" ]]; then
+    return 0
+  fi
+  rest="${rest#*:}"
+  rest="${rest#*\"}"
+  printf '%s' "${rest%%\"*}"
 }
 
-root=${CLAUDE_PROJECT_DIR:-}
-if [ -z "$root" ]; then
-    root=$(field cwd)
+root="${CLAUDE_PROJECT_DIR:-}"
+if [[ -z "${root}" ]]; then
+  root="$(field cwd)"
 fi
-if [ -z "$root" ]; then
-    exit 0
+if [[ -z "${root}" ]]; then
+  exit 0
 fi
-if [ ! -f "$root/ACTIVE_PLAN.md" ] && [ ! -f "$root/ACTIVE_DESIGN.md" ]; then
-    exit 0
+if [[ ! -f "${root}/ACTIVE_PLAN.md" && ! -f "${root}/ACTIVE_DESIGN.md" && ! -d "${root}/ACTIVE_PLAN" ]]; then
+  exit 0
 fi
-event=$(field hook_event_name)
-if [ -z "$event" ]; then
-    exit 0
+event="$(field hook_event_name)"
+if [[ -z "${event}" ]]; then
+  exit 0
 fi
 
 # The one sentence. Claude Code reads hook context as project information rather than as an
-# out-of-band instruction, so it states the status table as what it is.
-printf '{"hookSpecificOutput": {"hookEventName": "%s", "additionalContext": "%s"}}\n' "$event" \
-    "The active plan records each package's state in a status table, which is expected to match the tree as the work lands."
+# out-of-band instruction, so it states the table's two acts as what they are; it is true where only
+# a design stands because it asks nothing of a status table that project does not carry.
+sentence='Where the active plan carries a status table, a package is `in progress` when it is dispatched and `landed` when its work is accepted and committed.'
+printf '{"hookSpecificOutput": {"hookEventName": "%s", "additionalContext": "%s"}}\n' "${event}" "${sentence}"

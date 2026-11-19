@@ -2,10 +2,14 @@
 install of `kbase`, whose registry gains a command record, a model and a permission map: what it
 registers is what the registry lists, with each body's banner stripped; an edited body and a dropped record take effect on the
 reload its watcher triggers; a command reads its body when it runs; and its cleanup closes the watcher.
-A project holding a plan file at its root has the plan-state reminder injected into the parent session
-at a subagent's dispatch and completion. A user-level install, which ships no guardrail beside the
-entry, registers the same way, and with no plan or design file at the project root it injects no
-reminder. A missing `bun` fails rather than skips, as in `tests/test_guardrail.py`.
+A project whose root holds a plan file, a design file or the diced `ACTIVE_PLAN/` tree has the
+plan-state reminder injected into the parent session when a subagent call completes and when that
+subagent's session goes idle with nothing running on it; a failed call, a session still holding
+background work and a session with no parent inject nothing, and the gate reads the project root
+above the directory the session opened at. The two resources inject one sentence, byte for byte. A
+user-level install, which ships no guardrail beside the entry, registers the same way, and with no
+gate path at the project root it injects no reminder. A missing `bun` fails rather than skips, as in
+`tests/test_guardrail.py`.
 """
 
 from __future__ import annotations
@@ -23,6 +27,7 @@ from devpro.context import DEFAULT_FAMILY, build_render
 from devpro.harnesses.opencode import HARNESS as OPENCODE
 from devpro.plugins.kbase import PLUGIN as KBASE
 from devpro.render import filled_body, render_definition, rendered_definitions
+from tests.test_guardrail import _run_reminder
 
 _RUNNER = Path(__file__).parent / "opencode_entry_runner.ts"
 
@@ -64,14 +69,26 @@ def _add_probe_command(plugin: Path, registry: dict, *, banner: str) -> Path:
     return command_path
 
 
-def _run_entry(plugin: Path, *, directory: Path, writes: list[dict], command: dict) -> dict:
-    """The runner's output for the entry installed in `plugin`."""
+def _probe_entry(target: Path) -> tuple[Path, Path, str]:
+    """An install of kbase into `target` with the probe command planted and its registry written back:
+    the plugin directory, the command body's path, and the banner the entry's files carry."""
+    plugin, registry = _installed(target, harness_dir=target / OPENCODE.project_harness_dir)
+    banner = _banner((plugin / registry["agents"][0]["file"]).read_text(encoding="utf-8"))
+    command_path = _add_probe_command(plugin, registry, banner=banner)
+    (plugin / "registry.json").write_text(json.dumps(registry), encoding="utf-8")
+    return plugin, command_path, banner
+
+
+def _run_entry(plugin: Path, *, directory: Path, project: Path, writes: list[dict], command: dict) -> dict:
+    """The runner's output for the entry installed in `plugin`, for a session opened at `directory` in
+    the project rooted at `project`."""
     done = subprocess.run(
         ["bun", str(_RUNNER)],
         input=json.dumps(
             {
                 "entry": str(plugin / OPENCODE.entry_resource),
                 "directory": str(directory),
+                "project": str(project),
                 "writes": writes,
                 "command": command,
             }
@@ -90,8 +107,11 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     project = tmp_path / "project"
     project.mkdir()
     plugin, registry = _installed(project, harness_dir=project / OPENCODE.project_harness_dir)
-    # The plan-state reminder's gate: the reminder fires where a plan file stands at the project root.
+    # The plan-state reminder's gate: the reminder fires where a plan file stands at the project root,
+    # here read from a session opened below it.
     (project / "ACTIVE_PLAN.md").write_text("# Active plan\n", encoding="utf-8")
+    opened = project / "nested"
+    opened.mkdir()
     registry_path = plugin / "registry.json"
     edited, removed, *_ = registry["agents"]
     banner = _banner((plugin / edited["file"]).read_text(encoding="utf-8"))
@@ -105,7 +125,8 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
 
     out = _run_entry(
         plugin,
-        directory=project,
+        directory=opened,
+        project=project,
         writes=[
             {"path": str(plugin / edited["file"]), "text": f"{banner}New body.\n"},
             {"path": str(registry_path), "text": json.dumps(without_removed)},
@@ -138,8 +159,8 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     assert set(after_removal["agents"]) == set(first["agents"]) - {removed["id"]}
     assert out["prompts"] == ["Old command.\n\ngo", "New command.\n\ngo"]
     # The gate holds, so the subagent's dispatch and its completion each inject once into the parent
-    # session; the runner also fires a call that is not a subagent and a session with no parent, and
-    # neither injects.
+    # session; the runner also fires a call that is not a subagent, a failed subagent call, a session
+    # with no parent and a session still holding running work, and none of them injects.
     assert [(injected["on"], injected["sessionID"]) for injected in out["synthetics"]] == [
         ("execute.after", "ses_parent"),
         ("experimental.idle", "ses_parent"),
@@ -159,6 +180,7 @@ def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_injects_no_remi
     out = _run_entry(
         plugin,
         directory=project,
+        project=project,
         writes=[],
         command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
     )
@@ -171,3 +193,54 @@ def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_injects_no_remi
     assert set(registered["skills"]) == {s["id"] for s in registry["skills"]}
     assert registered["commands"] == {"kbase-probe": "A probe"}
     assert registered["mcp"] == registry["mcp"] != {}
+
+
+@pytest.mark.parametrize("gate", ["ACTIVE_DESIGN.md", "ACTIVE_PLAN"])
+def test_a_design_or_the_diced_plan_at_the_project_root_opens_the_gate(tmp_path: Path, gate: str) -> None:
+    """The gate takes either file or the diced `ACTIVE_PLAN/` tree: a project holding only one of them
+    still has the subagent's dispatch and its completion injected into the parent, though the session
+    opened below the root."""
+    project = tmp_path / "project"
+    project.mkdir()
+    plugin, command_path, banner = _probe_entry(project)
+    if gate == "ACTIVE_PLAN":
+        (project / gate).mkdir()
+    else:
+        (project / gate).write_text("# Active design\n", encoding="utf-8")
+    opened = project / "nested"
+    opened.mkdir()
+
+    out = _run_entry(
+        plugin,
+        directory=opened,
+        project=project,
+        writes=[],
+        command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
+    )
+
+    assert [(injected["on"], injected["sessionID"]) for injected in out["synthetics"]] == [
+        ("execute.after", "ses_parent"),
+        ("experimental.idle", "ses_parent"),
+    ]
+
+
+def test_both_harnesses_inject_one_sentence(tmp_path: Path) -> None:
+    """The entry's injection is byte for byte the sentence claude's reminder script emits: one table,
+    one rule at one strength, held to it here rather than by a reader comparing the two resources."""
+    project = tmp_path / "project"
+    project.mkdir()
+    plugin, command_path, banner = _probe_entry(project)
+    (project / "ACTIVE_PLAN.md").write_text("# Active plan\n", encoding="utf-8")
+
+    out = _run_entry(
+        plugin,
+        directory=project,
+        project=project,
+        writes=[],
+        command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
+    )
+    claude = _run_reminder(json.dumps({"hook_event_name": "PostToolUse", "cwd": str(project)}), project_dir=project)
+    assert claude.returncode == 0, claude.stderr
+    sentence = json.loads(claude.stdout)["hookSpecificOutput"]["additionalContext"]
+
+    assert {injected["text"] for injected in out["synthetics"]} == {sentence}

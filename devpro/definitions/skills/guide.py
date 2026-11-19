@@ -453,8 +453,9 @@ The `{clauses.ref(name="docdicer")}` skill, *The script*.
   details.
 - The session offers to run it as a background process; the user who would rather run it gets the
   command line: `just docdicer-kanban`, or `make docdicer-kanban`, where a project install wrote the
-  runner include line; otherwise `tools/docdicer kanban` in that skill's directory. It serves until
-  stopped.
+  runner include line; otherwise `tools/docdicer kanban` in that skill's directory. It never
+  finishes, so a dispatched agent hands over the command line instead of running it. It serves until
+  the user asks for it to stop.
 
 ## Where work stands
 

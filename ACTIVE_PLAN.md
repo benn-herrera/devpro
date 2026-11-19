@@ -32,7 +32,7 @@ are its own. P5 after P4; P6 after P5.
 | P3 | landed | expert | claude plan-state reminder: ARCH delta's Guardrail-hook entry, Code delta's Guardrail-hook entry, reminder script, registration, probe gate |
 | P4 | landed | expert | opencode plan-state reminder: ARCH delta's Opencode-entry entry, Code delta's Opencode-entry entry, plugin entry, entry runner and test |
 | P5 | landed | expert | Post-plan review |
-| P6 | drafted | expert | Post-plan burndown |
+| P6 | landed | expert | Post-plan burndown |
 
 ## P0 — The delta byte-check target
 
@@ -258,4 +258,81 @@ Done-line: `just check-links`. One commit.
 
 ## P6 — Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Drafted from `ACTIVE_PLAN_REVIEW.md`, revised once after its usability review. One commit closes the
+package; the work groups by root cause, each item citing its review IDs. Items 1–3 apply their
+design blocks first; items 4–6 follow — item 5's edits to the leaves items 1–2 apply sit outside
+the applied passages, and item 5's version alignment supersedes P4's note about the SPEC sentence.
+The design blocks this package applies — the Guardrail-hook ARCH entry, the Opencode-entry ARCH
+entry, the Shipped-files opencode sentence, the Subsystem-Map kanban sentence — are unapplied until
+this package applies them (`just check-deltas` names them; that is the plan's named breakage until
+this package lands). The review's probes U1–U4 (the nudge's behavioral observations: recall at
+dispatch, one injection's cost in parent turns, recall at the landing commit, design-only-gate
+frequency) are not fixes this package carries; they run on the first real dispatches after the plan
+lands, and their findings route to the next design or ROADMAP.
+
+1. **The amended claude mechanism** (D1, D2, D5, D9's claude half, D14's `field()`, tests-home and
+   POSIX-style bullets): `devpro/harnesses/claude.py` — one reminder entry, `PostToolUse` matched on
+   `Agent`; the dispatch matcher and the `SubagentHandback` half go, and `_registration_hooks`'s
+   docstring states the actual delivery (the `Agent` call's return: completion in the foreground,
+   the dispatch turn in the background); `_hook_command` reports with `printf '%s\n'` and its
+   docstring names `report` as shell source. `state-table-reminder.sh` — the sentence names both
+   acts (`in progress` when a package is dispatched, `landed` when its work is accepted and
+   committed) and stays true where only `ACTIVE_DESIGN.md` stands; the header states the actual
+   delivery; the gate accepts `ACTIVE_PLAN.md`, `ACTIVE_DESIGN.md` or the diced `ACTIVE_PLAN/` tree;
+   the `field()` scan bounds itself before `tool_input` or its comment states the rule it follows;
+   the script conforms to the house shell style or states its POSIX need in its header. The
+   registration's entry-count and matcher tests update (the defects: two entries where the design
+   states one; the handback matcher's wrong audience); `_run_registered_hook`
+   (tests/test_devpro_install.py:1815) generalizes and one case runs the registered reminder
+   command; the reminder's tests state their home (docstring or move). Re-applies the Guardrail-hook
+   ARCH block to `PROJECT_DOCS/ARCHITECTURE/install/guardrail-hook.md`.
+2. **The opencode gate, root and completion guards** (D2, D8, D9's opencode half, D10, D11, D14):
+   `devpro/harnesses/resources/opencode/index.ts` — `planStanding` accepts `ACTIVE_PLAN.md`,
+   `ACTIVE_DESIGN.md` or the diced `ACTIVE_PLAN/` tree and reads `ctx.location.project.directory`;
+   the tool hook returns on `status !== "completed"`; the idle hook skips while `background` is
+   non-empty; `delivery` passed and commented; the injection text carries the same two acts as the
+   claude sentence — byte-equal across the two resources, or the mood split's rationale stated where
+   a maintainer looks; the header names floor 2.3.0 and the actual delivery.
+   `tests/opencode_entry_runner.ts` fires the new paths (error status, non-empty background, diced
+   tree, design-only gate); `tests/test_opencode_entry.py` carries them.
+   `PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md` — names the field that carries the project
+   root and states the behavioral floor. Re-applies the Opencode-entry ARCH block to that leaf and
+   the Shipped-files opencode sentence to `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md`.
+3. **The board wording's second-order fixes** (D12): `devpro/definitions/skills/guide.py` — who
+   stops a background board ("It serves until the user asks for it to stop.");
+   `devpro/definitions/skills/docdicer.py` — the colon; both — the `FOREGROUND_RECIPE_RULE`
+   reconciliation in the wording. Re-applies the Subsystem-Map block to
+   `PROJECT_DOCS/ARCHITECTURE/subsystem-map.md`.
+4. **`check_deltas.py`: the fence rule, a test, its boundary** (D3, D4, D14): the closer matches the
+   opener per the CommonMark rule `devtools/render_diff.py:43-44` pins; a missing design file is a
+   named `PROBLEM`, not a traceback; black-clean; `devtools/tests/test_check_deltas.py` over both
+   verdicts, an unparseable entry, a missing leaf and a missing design file, and the inner-fence
+   regression.
+5. **The doc sweep and version alignment** (D6, D7, D8, D13, D14): `guardrail-registration.md:8-9`
+   (the report names the script alone), `ARCHITECTURE/install/index.md:15-16`, `repo-layout.md`
+   (the new resource and `check_deltas.py`), `guardrail-hook.md` and `guardrail-registration.md`
+   naming the field `registration_without_hook` and the builders `_guardrail_registration` and
+   `_reminder_registration`, `GuardrailHook`'s docstring (`devpro/harness.py:160-164`) and
+   `Harness.__post_init__`'s (`:211-214`, message at `:239-242`) naming both registrations,
+   `write-safety.md:33` reworded, `a-delta-application-ends-verified.md` deduplicated to one
+   statement plus the target name, the marker-breadth price stated at `guardrail-hook.md:13-17`,
+   the user-level claude asymmetry sentence beside the applied block in `guardrail-hook.md`, and
+   one opencode version form — written for opencode 2.3.2 (floor 2.3.0) — across SPEC
+   `shipped-files.md:100-102` and both resource headers (`index.ts:3`, `guardrail.ts:3`), the form
+   the ARCH block states. `ROADMAP.md`: the `## Testing` harness-profiler ticket (lines 114-125)
+   deleted.
+6. **The conventions and definitions the run proved** (the review's contract gaps): new CONVENTIONS
+   leaves — a delta application ends by searching the doc set for the replaced behaviour's wording;
+   a `devtools/*.py` tool joins `devtools/tests/` with a test; a read-only `lint` recipe beside
+   `format-python`; a harness resource's floor is behavioral; harness hook contracts are read, not
+   assumed — each under `PROJECT_DOCS/CONVENTIONS/planning-and-execution/` or
+   `code-definitions-and-install/` as its subject fits, with the entry points updated; the
+   byte-check's fence contract joins `a-delta-application-ends-verified.md` (leaving room for item
+   5's dedupe); the definitions `devpro/definitions/agents/shell_dsl_coder.py` and
+   `typescript_coder.py` carry the review's wording; ROADMAP's "No shell lint" item names the hooks
+   tree.
+
+Done-line: the checkpoint gate, then `just check-deltas` (all amended blocks applied, exit 0), then
+`just check-links`, then `just check-wheel`. Re-takes the reference slots at its end. One commit;
+the commit that lands the plan follows it, deleting `ACTIVE_PLAN.md`, `ACTIVE_DESIGN.md` and this
+review's document.

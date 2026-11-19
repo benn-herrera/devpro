@@ -159,9 +159,9 @@ def mcp_json(entry: McpEntryBuilder) -> HarnessFile:
 class GuardrailHook:
     """The guardrail hook a harness ships and registers in a file of its own. `script` is the hook
     script's path under `resources/<harness>/`, which is also its path under ROOT; `registration` is
-    the file below ROOT registering it, written only where the script runs on the installing machine,
-    and `registration_without_hook` is that same file where it does not: what the file holds without
-    the hook, which the install writes in place of leaving none."""
+    the file below ROOT registering it, the one the install takes where the script runs on the
+    installing machine, and `registration_without_hook` is that same file where it does not: what the
+    file holds without the hook, which the install writes in place of leaving none."""
 
     script: str
     registration: HarnessFile
@@ -210,8 +210,8 @@ class Harness:
     def __post_init__(self) -> None:
         """Refuse a non-IDENTIFIER name, an empty HarnessText field or
         model_shape, a display_name that is not lowercase, an OptionalHarnessText field that is not a string, a tools table not total in
-        Tool order, or a guardrail hook lacking a script path or a registration path, builder and
-        marker.
+        Tool order, or a guardrail hook lacking a script path, or either of its two registrations'
+        path, builder and marker.
 
         An empty string is refused of the fields a body naming them always renders, since every
         harness supplies each HarnessText and a model shape. An OptionalHarnessText is a rule a
@@ -237,8 +237,8 @@ class Harness:
             )
         ):
             raise InputError(
-                f"harness '{self.name}': guardrail hook needs a script path, and a registration path, "
-                "builder and marker"
+                f"harness '{self.name}': guardrail hook needs a script path, and for each of its two "
+                "registrations a path, builder and marker"
             )
 
     def bound(self, plugin_name: str) -> Harness:

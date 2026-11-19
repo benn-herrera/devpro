@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Launcher for docdicer: on first use it builds a venv beside this script and installs the pinned
 # docdicer there, sending install output to stderr.
+# The final expansion is `"$@"`, unbraced: bash 3.2 reads the braced `${@}` as an unbound variable
+# under `set -u` when the launcher is given no argument.
+set -euo pipefail
 
 VERSION=0.11.2
 PACKAGE="git+https://github.com/benn-herrera/docdicer@v${VERSION}"
@@ -40,4 +43,4 @@ function remedy() {
 [[ -x "${venv_docdicer}" && "$("${venv_docdicer}" --version)" == "${VERSION}" ]] || \
   "${venv_python}" -m pip install "${PACKAGE}" >&2 || exit 1
 
-exec "${venv_docdicer}" "${@}"
+exec "${venv_docdicer}" "$@"

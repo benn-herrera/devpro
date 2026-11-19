@@ -16,12 +16,13 @@ devpro/                 the generator package, run as python3 -m devpro — defi
   preflight.py          the install preflight — the unchanged install run into a scratch copy of the paths it manages and compared with the real paths, behind the up-to-date report and `--dry-run` (Install, Renders and copies)
   docdicer-tools/       shipped package, owned by `docdicer` and so delivered by every project install of either plugin — the `docdicer` bash launcher, which builds and runs a docdicer venv beside itself on demand, a `.gitignore` holding `.venv/`, and the runner snippets (docdicer.just, docdicer.mk) a project install writes the consuming project's include line for; nothing importable; installed under <install-dir>/skills/docdicer/tools/, inside the docdicer skill's own directory (DOCDICER_TOOLS_PACKAGE, devpro/install.py)
   development-tools/    shipped package, owned by `development` and so delivered by every project install of either plugin — `cold-read.sh`, a bash script that runs one agent on one brief with no tools; nothing importable; installed under <install-dir>/skills/development/scripts/, inside the development skill's own directory (DEVELOPMENT_SCRIPTS_PACKAGE, devpro/install.py)
-  harnesses/resources/  one directory per harness, named for it — the harness resources that harness ships, copied into the plugin's install directory as they stand and never rendered (HARNESS_RESOURCES_SOURCE, devpro/install.py); `opencode/index.ts` (the plugin entry) and `opencode/guardrail.ts`, and `claude/hooks/guardrail.pl`, and no `__init__.py`, so `load` still reads one harness per module; mage ships none
+  harnesses/resources/  one directory per harness, named for it — the harness resources that harness ships, copied into the plugin's install directory as they stand and never rendered (HARNESS_RESOURCES_SOURCE, devpro/install.py); `opencode/index.ts` (the plugin entry) and `opencode/guardrail.ts`, and `claude/hooks/guardrail.pl` and `claude/hooks/state-table-reminder.sh`, and no `__init__.py`, so `load` still reads one harness per module; mage ships none
 devtools/               repository-maintenance tooling — never installed; imported from the devpro project root as `devtools.*`
   scripts/              the shell scripts behind the justfile recipes (justfile)
   reference-maps/       the two static devpro settings files `retake-reference` names with --config-file, one harness's model map each (justfile)
   render_diff.py        the text comparison of two rendered slots (justfile `render-diff`); reads rendered output only and never imports the generator
   clause_join_sites.py  the list of definition-body units that join a `clauses.*` interpolation to the module's own text (justfile `clause-join-sites`); splits units with `render_diff.py`'s line classification, `line_kinds`
+  check_deltas.py       the byte-check of a design's delta application, each `becomes` block against the leaf its entry names (justfile `check-deltas`; CONVENTIONS.md, A delta application ends verified)
   dupe_sweep/           the duplication sweep, run as `python3 -m devtools.dupe_sweep` — enumerates one-idea-two-places candidates over the owned python trees (justfile `sweep-python`)
     __init__.py         package docstring (what the sweep is for, its passes, candidates not verdicts)
     __main__.py         the `-m` entry
@@ -35,7 +36,7 @@ devtools/               repository-maintenance tooling — never installed; impo
     report.py           headers, candidate lists, the file-pair tally
     passes.py           the `python` pass and its defaults
     cli.py              argparse surface and dispatch
-  tests/                the devtools test suite — dupe_sweep (`test_dupe_sweep` and its import-structure test), clause_join_sites and render_diff — run as the `dupe_sweep` test surface (`just test dupe_sweep`)
+  tests/                the devtools test suite — dupe_sweep (`test_dupe_sweep` and its import-structure test), clause_join_sites, render_diff and check_deltas — run as the `dupe_sweep` test surface (`just test dupe_sweep`)
 tests/                  the root test suite, the `devpro` package's tests and the repository-wide checks, run as the `devpro` test surface (`just test devpro`) — never installed
 ```
 
