@@ -104,19 +104,7 @@ tag:
 
 [doc("bumps devpro __version__ string in __init__.py - M)ajor, m)inor, or p)atch")]
 bump-version dot:
-  #!/usr/bin/env bash
-  set -euo pipefail
-  ver_file="./devpro/__init__.py"
-  ver=$(awk '/^__version__[ \t]*=/ { gsub(/\"/, ""); print $NF; }' "${ver_file}")
-  ver=(${ver//\./ })
-  M=${ver[0]}; m=${ver[1]}; p=${ver[2]}
-  case "{{dot}}" in
-    M*) M=$((M + 1)); m=0; p=0;;
-    m*) m=$((m + 1)); p=0;;
-    p*) p=$((p + 1));;
-    *) printf 'invalid arg "%s". valid args are M)ajor, m)inor, or p)atch.\n' "{{dot}}" >&2; exit 1;;
-  esac
-  sed -i "" "$(printf 's:^__version__.*:__version__ = "%s.%s.%s":g' "${M}" "${m}" "${p}")" "${ver_file}"
+  @PROJECT_ROOT="{{PROJECT_ROOT}}" ./devtools/scripts/bump-version.sh "{{dot}}"
 
 # Builds the working tree with the venv's setuptools; makes no git check and fetches nothing.
 [doc("build the wheel and sdist into dist/")]
