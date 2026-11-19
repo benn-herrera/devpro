@@ -31,7 +31,7 @@ lines, as shipped: the install adds nothing to it. A harness-rendered file — t
 `.mcp.json` under claude and mage, `registry.json` under opencode, and under claude the guardrail
 registration — carries no banner; its **ownership marker**, a fixed string in its content, states
 its origin: `"name": "<plugin>"` in the plugin manifest, `"command": "kbase"` in `.mcp.json`,
-`"plugin": "<plugin>"` in `registry.json`, and `guardrail hook: no readable script at` in
+`"plugin": "<plugin>"` in `registry.json`, and `no readable script at` in
 `hooks/hooks.json`. No banner sits where it changes how
 the file is read. Every other copied file — `tools/.gitignore` among them — and every harness
 resource is installed byte-verbatim.

@@ -29,7 +29,7 @@ are its own. P5 after P4; P6 after P5.
 | P0 | landed | mechanical | the `check-deltas` runner target and its conventions leaf |
 | P1 | landed | mechanical | SPEC delta's Shipped-files entry applied |
 | P2 | landed | expert | board offer wording: SPEC delta's Guide-and-README entry, ARCH delta's Subsystem-Map entry, both skill definitions |
-| P3 | dispatchable | expert | claude plan-state reminder: ARCH delta's Guardrail-hook entry, Code delta's Guardrail-hook entry, reminder script, registration, probe gate |
+| P3 | landed | expert | claude plan-state reminder: ARCH delta's Guardrail-hook entry, Code delta's Guardrail-hook entry, reminder script, registration, probe gate |
 | P4 | dispatchable | expert | opencode plan-state reminder: ARCH delta's Opencode-entry entry, Code delta's Opencode-entry entry, plugin entry, entry runner and test |
 | P5 | dispatchable | expert | Post-plan review |
 | P6 | drafted | expert | Post-plan burndown |
@@ -72,7 +72,7 @@ Scope: that one leaf. Its three passage pairs land at, verified this session by 
   ends mid-line; the sentence after (`A change to the install directory …`) stays.
 
 The entry does not touch the sentence `The plugin entry is written for opencode v2.2.6 and is the
-same file for both plugins` at shipped-files.md:97–99; it stays (see P4's note).
+same file for both plugins` at shipped-files.md:100–102; it stays (see P4's note).
 
 Done-line: `just check-deltas`, then `just check-links`. One commit.
 
@@ -136,7 +136,7 @@ verified this session), and implements
   `else`). The reminder entries are ungated, so the registration renders on every claude install;
   the guardrail's entry stays probe-gated — on a probe failure the registration holds the two
   reminder entries only, and the guardrail script is neither shipped nor registered (unchanged
-  SPEC.md rule, shipped-files.md:137–138).
+  SPEC.md rule, shipped-files.md:102–104).
 
 Tests pinning the changed behavior, updated in scope (each fails on the current code — the entry
 count of one, and no registration under a failed probe — which is the defect the updates close):
@@ -222,7 +222,7 @@ packages/plugin/src/promise/session.ts:213; `parentID` at
 packages/schema/src/session-event.ts:47 (all run this session).
 
 Note, surfaced not blocking: SPEC's `written for opencode v2.2.6` sentence
-(shipped-files.md:97–99) stays as P1 leaves it, and stays true — every API the entry uses exists at
+(shipped-files.md:100–102) stays as P1 leaves it, and stays true — every API the entry uses exists at
 2.2.6, verified above; ARCHITECTURE.md's applied statement names the version developed against
 and the floor.
 

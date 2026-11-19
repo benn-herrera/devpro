@@ -7,10 +7,11 @@ directory, keeping any venv their launcher built there, the development scripts 
 development skill's, the kb-tools package inside the kbase skill's, with the `kbase` MCP entry — and,
 for each copied package carrying runner snippets, its include line in the consumer's runner file; each
 file the installing harness ships copied into ROOT as it stands,
-the harness's guardrail hook registered in a file of its own under ROOT where one install-time run of
-it succeeds; a harness-directory plugin installed below its project root also gets its agents file in its
-harness directory. Overwrites without ceremony only what carries this repository's banner, refusing
-over any other file at a path it writes: the consumer's git is the record of what an install changed.
+the harness's hooks registered in a file of their own under ROOT, its guardrail's entry only where one
+install-time run of the guardrail succeeds; a harness-directory plugin installed below its project root
+also gets its agents file in its harness directory. Overwrites without ceremony only what carries this
+repository's banner, refusing over any other file at a path it writes: the consumer's git is the record
+of what an install changed.
 Where the devpro settings file names harnesses and `--harness` is not given, `install_selected` drives
 one install per harness it names, each rendered from that harness's settings-file map."""
 
@@ -347,17 +348,6 @@ def _guardrail_probe(script: Path, *, project: Path) -> str | None:
     return f"'{' '.join(argv)}' exited {result.returncode}: {first}"
 
 
-def _earlier_guardrail(root: Path, *, guardrail: GuardrailHook) -> list[Path]:
-    """What an earlier install left registering the guardrail: its script under ROOT where it carries
-    the installed header, and its registration under ROOT where that carries its marker."""
-    script = root / guardrail.script
-    left = [script] if _is_our_resource(script) else []
-    registration = root / guardrail.registration.path
-    if _is_our_harness_file(registration, marker=guardrail.registration.marker):
-        left.append(registration)
-    return left
-
-
 def _lexical(path: Path) -> Path:
     """`path` made absolute and normalized."""
     return Path(os.path.normpath(path.absolute()))
@@ -488,10 +478,11 @@ def install(
         guardrail_skipped = _guardrail_probe(script, project=project)
         if guardrail_skipped is not None:
             resource_files = [(source, target) for source, target in resource_files if source != script]
-        else:
-            harness_files.append(guardrail.registration)
-            registration = harness_file_text(guardrail.registration, ctx)
-            renders = (*renders, (PurePosixPath(guardrail.registration.path), registration))
+        # The registration is written on every install, holding what the file holds without the hook
+        # where the probe fails: a render is replaced whole, so a later probe failure rewrites it.
+        registration = guardrail.registration if guardrail_skipped is None else guardrail.registration_without_hook
+        harness_files.append(registration)
+        renders = (*renders, (PurePosixPath(registration.path), harness_file_text(registration, ctx)))
     registers_guardrail = guardrail is not None and guardrail_skipped is None
     # The harness's own rendered files are a class of their own at the refusal: their ownership is the
     # marker each states, not a banner a JSON file has no way to carry.
@@ -556,9 +547,10 @@ def install(
     if writes_include_lines:
         install_include_lines(project, snippet_sets, harness_relpath=harness_relpath, real_project=real_project)
     if guardrail is not None and not registers_guardrail:
-        # Neither prune nor the one-way copy removes what an earlier install delivered, so it is named.
-        earlier = _earlier_guardrail(root, guardrail=guardrail)
-        left = f"; left in place from an earlier install: {', '.join(str(path) for path in earlier)}" if earlier else ""
+        # Neither prune nor the one-way copy removes what an earlier install delivered, so the script
+        # is named; the registration is written on every install, so it is never left.
+        earlier = root / guardrail.script
+        left = f"; left in place from an earlier install: {earlier}" if _is_our_resource(earlier) else ""
         report_left_alone(f"guardrail hook skipped, neither installed nor registered: {guardrail_skipped}{left}")
     _report_shadowing(root, harness=ctx.bound_harness, files=own_files, user_level=user_level)
     if ctx.harness.reload_rule:

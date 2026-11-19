@@ -35,6 +35,7 @@ from devpro.install_base import PACKAGE_ROOT
 
 _RESOURCES = PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE
 _PERL_HOOK = _RESOURCES / "claude/hooks/guardrail.pl"
+_REMINDER_HOOK = _RESOURCES / "claude/hooks/state-table-reminder.sh"
 _TS_PLUGIN = _RESOURCES / "opencode/guardrail.ts"
 _TESTS = Path(__file__).parent
 _CASES = json.loads((_TESTS / "guardrail_cases.json").read_text(encoding="utf-8"))
@@ -135,6 +136,22 @@ def _run_perl(
     )
 
 
+def _run_reminder(stdin: str, *, project_dir: Path | None = None) -> subprocess.CompletedProcess:
+    """`state-table-reminder.sh` run as Claude Code runs a plugin hook: the event's JSON on stdin, and
+    `CLAUDE_PROJECT_DIR` set to `project_dir` where one is given."""
+    env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
+    if project_dir is not None:
+        env["CLAUDE_PROJECT_DIR"] = str(project_dir)
+    return subprocess.run(
+        ["sh", str(_REMINDER_HOOK)],
+        input=stdin,
+        capture_output=True,
+        encoding="utf-8",
+        env=env,
+        check=False,
+    )
+
+
 def _hook_input(tool: str, tool_input: dict, cwd: Path | None) -> str:
     payload: dict = {"tool_name": tool, "tool_input": tool_input}
     if cwd is not None:
@@ -200,8 +217,10 @@ def test_guardrail_cases_carry_only_known_fields() -> None:
 
 def test_guardrail_matcher_names_exactly_the_claude_tools_the_case_table_covers() -> None:
     """A tool the matcher sends to the hook with no case is untested, and a case for a tool the
-    matcher omits tests a call the hook never sees."""
-    [entry] = json.loads(CLAUDE.guardrail.registration.text("devpro", ()))["hooks"]["PreToolUse"]
+    matcher omits tests a call the hook never sees. The registration's other `PreToolUse` entry is the
+    plan-state reminder's, matched on `Agent` alone."""
+    pre_tool_use = json.loads(CLAUDE.guardrail.registration.text("devpro", ()))["hooks"]["PreToolUse"]
+    [entry] = [element for element in pre_tool_use if "Bash" in element["matcher"]]
     matcher = set(entry["matcher"].split("|"))
     assert matcher == {_tool(case) for case in _CASES if _tool(case) in _CLAUDE_TO_OPENCODE_TOOLS}
 
@@ -274,3 +293,39 @@ def test_guardrail_pl_fails_as_a_hook_error_never_as_a_block(tmp_path: Path) -> 
     assert garbage.returncode == 1 and garbage.stderr.startswith("guardrail: ")
     assert unloadable.returncode == 1 and "unloadable" in unloadable.stderr
     assert rootless.returncode == 1 and rootless.stderr.startswith("guardrail: no project root")
+
+
+# The plan-state reminder: a second claude hook script, run on the events the registration names and
+# reading a plan or a design at the project root.
+
+
+@pytest.mark.parametrize("gate", ["ACTIVE_PLAN.md", "ACTIVE_DESIGN.md"])
+@pytest.mark.parametrize("from_env", [True, False], ids=["claude-project-dir", "input-cwd"])
+def test_the_reminder_speaks_where_a_plan_or_design_stands_at_the_project_root(
+    tmp_path: Path, gate: str, from_env: bool
+) -> None:
+    """Either file opens the gate, and either root the hook contract names finds it: `CLAUDE_PROJECT_DIR`
+    where the environment carries it, else the input's `cwd`. The answer is the event the input names,
+    which `hookSpecificOutput` must carry, and the one sentence naming the plan's status table."""
+    root = tmp_path / "project"
+    root.mkdir()
+    (root / gate).write_text("# under way\n", encoding="utf-8")
+    cwd = root
+    if from_env:
+        cwd = tmp_path / "elsewhere"
+        cwd.mkdir()
+    payload = {"hook_event_name": "PreToolUse", "cwd": str(cwd), "tool_name": "Agent"}
+    done = _run_reminder(json.dumps(payload), project_dir=root if from_env else None)
+    assert (done.returncode, done.stderr) == (0, "")
+    output = json.loads(done.stdout)["hookSpecificOutput"]
+    assert output["hookEventName"] == "PreToolUse"
+    assert "status table" in output["additionalContext"]
+
+
+def test_the_reminder_is_silent_where_the_project_holds_neither_gate_file(tmp_path: Path) -> None:
+    """A project with neither file has no plan state to remind anyone of, and a project hook that spoke
+    anyway would put the sentence in the context of every subagent a dispatch there starts."""
+    root = tmp_path / "project"
+    root.mkdir()
+    done = _run_reminder(json.dumps({"hook_event_name": "PostToolUse", "cwd": str(root)}), project_dir=root)
+    assert (done.returncode, done.stdout, done.stderr) == (0, "", "")

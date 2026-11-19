@@ -159,10 +159,13 @@ def mcp_json(entry: McpEntryBuilder) -> HarnessFile:
 class GuardrailHook:
     """The guardrail hook a harness ships and registers in a file of its own. `script` is the hook
     script's path under `resources/<harness>/`, which is also its path under ROOT; `registration` is
-    the file below ROOT registering it, written only where the script runs on the installing machine."""
+    the file below ROOT registering it, written only where the script runs on the installing machine,
+    and `registration_without_hook` is that same file where it does not: what the file holds without
+    the hook, which the install writes in place of leaving none."""
 
     script: str
     registration: HarnessFile
+    registration_without_hook: HarnessFile
 
 
 @dataclass(frozen=True)
@@ -228,9 +231,10 @@ class Harness:
         guardrail = self.guardrail
         if guardrail is not None and not (
             guardrail.script
-            and guardrail.registration.path
-            and callable(guardrail.registration.text)
-            and guardrail.registration.marker
+            and all(
+                file.path and callable(file.text) and file.marker
+                for file in (guardrail.registration, guardrail.registration_without_hook)
+            )
         ):
             raise InputError(
                 f"harness '{self.name}': guardrail hook needs a script path, and a registration path, "
@@ -261,7 +265,11 @@ class Harness:
             guardrail=(
                 None
                 if guardrail is None
-                else dataclasses.replace(guardrail, registration=marked(guardrail.registration))
+                else dataclasses.replace(
+                    guardrail,
+                    registration=marked(guardrail.registration),
+                    registration_without_hook=marked(guardrail.registration_without_hook),
+                )
             ),
         )
 

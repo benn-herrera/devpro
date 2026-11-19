@@ -64,7 +64,8 @@ The harness resource copy borrows `_shipped` and nothing else from the package p
 directory with `copyfile` and `copymode`, so it lands as the harness ships it — no suffix is
 stamped, whatever the file's type, and an installed banner a file already holds travels with it as
 the file's own text. A guardrail script is the exception to copying every file: it joins the
-copies, and its registration the rendered definitions, only when the probe below passes. A
+copies only when the probe below passes; its registration joins the rendered definitions on every
+install. A
 user-level install copies one resource only, the harness's entry (`Harness.entry_resource`,
 opencode's `index.ts`): the plugin cannot register without it, and the entry imports the guardrail
 only where `guardrail.ts` stands beside it. Before the

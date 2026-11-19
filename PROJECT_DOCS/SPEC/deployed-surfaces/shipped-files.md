@@ -137,8 +137,8 @@ block a shell command, the block reported is this check's.
 
 Claude's guardrail runs at session time and needs perl with core `JSON::PP`; an install also
 registers it as a `PreToolUse` entry for Bash and the file tools (Read, Write, Edit, NotebookEdit,
-Grep, Glob) in the plugin's own `hooks/hooks.json`, written beside the script and only where the
-install-time probe succeeds; no project settings file is written to register it. The entry runs the
+Grep, Glob) in the plugin's own `hooks/hooks.json`, written beside the script and holding the guardrail's
+entry only where the install-time probe succeeds; no project settings file is written to register it. The entry runs the
 script only where it stands readable: where it is missing, a call reports `guardrail hook: no readable script at <path>`
 on stderr and proceeds, and is not blocked. A claude guardrail that fails while running, through a
 missing module or an error in the script, reports on stderr and does not block the call.

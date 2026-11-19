@@ -40,28 +40,68 @@ def _mcp_entry(*, command: str) -> dict[str, str | list[str]]:
 
 
 _GUARDRAIL_SCRIPT = "hooks/guardrail.pl"
+_REMINDER_SCRIPT = "hooks/state-table-reminder.sh"
+_REGISTRATION = "hooks/hooks.json"
 # The hook command. Claude Code gives a plugin's hook processes the plugin's root, and runs a command
 # with no `args` through a shell, so the path is quoted. Claude Code reads exit 2 as a block, and that
-# is perl's status for a script it cannot open, so the command runs the script only where it stands
-# and otherwise names it on stderr and exits 1, which Claude Code reports without blocking. The
-# interpreter is `perl` on PATH, never an absolute path: the file registering it is often committed
-# and shared across machines. The report it makes is also the registration's marker: no file carries
-# it that this repository did not write.
+# is an interpreter's status for a script it cannot open, so the command runs the script only where it
+# stands and otherwise names it on stderr and exits 1, which Claude Code reports without blocking. The
+# interpreter is named on PATH, never by absolute path: the file registering it is often committed and
+# shared across machines.
 _MISSING_SCRIPT_REPORT = "guardrail hook: no readable script at $s"
-_PLUGIN_GUARDRAIL_COMMAND = (
-    f's="${{CLAUDE_PLUGIN_ROOT}}/{_GUARDRAIL_SCRIPT}"; if [ -f "$s" ] && [ -r "$s" ]; then exec perl "$s"; fi; '
-    f'echo "{_MISSING_SCRIPT_REPORT}" >&2; exit 1'
-)
+_MISSING_REMINDER_REPORT = "state-table reminder: no readable script at $s"
+
+
+def _hook_command(*, interpreter: str, script: str, report: str) -> str:
+    """The command running `interpreter` on `script` under the plugin's root where that is a readable
+    file, and otherwise writing `report` to stderr and exiting 1."""
+    return (
+        f's="${{CLAUDE_PLUGIN_ROOT}}/{script}"; if [ -f "$s" ] && [ -r "$s" ]; then exec {interpreter} "$s"; fi; '
+        f'echo "{report}" >&2; exit 1'
+    )
+
+
+_PLUGIN_GUARDRAIL_COMMAND = _hook_command(interpreter="perl", script=_GUARDRAIL_SCRIPT, report=_MISSING_SCRIPT_REPORT)
+_PLUGIN_REMINDER_COMMAND = _hook_command(interpreter="sh", script=_REMINDER_SCRIPT, report=_MISSING_REMINDER_REPORT)
+# The registration's marker: the phrase both commands' reports write for a script they cannot open.
+# The reminder entries outlive a failed probe, so the file is written without the guardrail's report
+# in it, and a later install still has to read it as this repository's own.
+_REGISTRATION_MARKER = "no readable script at"
+_GUARDRAIL_MATCHER = "Bash|Read|Write|Edit|NotebookEdit|Grep|Glob"
+# A subagent is dispatched by the `Agent` tool, named that since v2.1.63, and its report comes back
+# either as that call's result or through `SubagentHandback`'s own call.
+_DISPATCH_MATCHER = "Agent"
+_COMPLETION_MATCHER = "Agent|SubagentHandback"
+
+
+def _hook_entry(*, matcher: str, command: str) -> dict[str, object]:
+    """One matcher group: the matcher it fires on and the single command it runs."""
+    return {"matcher": matcher, "hooks": [{"type": "command", "command": command}]}
+
+
+def _registration_hooks(*, with_guardrail: bool) -> dict[str, list[dict[str, object]]]:
+    """The registration's `hooks` object: the plan-state reminder on a subagent's dispatch and on its
+    completion, and the guardrail's entry on every Bash and file-tool call where `with_guardrail` says
+    the install-time probe leaves it."""
+    guardrail_entry = (
+        [_hook_entry(matcher=_GUARDRAIL_MATCHER, command=_PLUGIN_GUARDRAIL_COMMAND)] if with_guardrail else []
+    )
+    reminder = _hook_entry(matcher=_DISPATCH_MATCHER, command=_PLUGIN_REMINDER_COMMAND)
+    return {
+        "PreToolUse": [*guardrail_entry, reminder],
+        "PostToolUse": [_hook_entry(matcher=_COMPLETION_MATCHER, command=_PLUGIN_REMINDER_COMMAND)],
+    }
 
 
 def _guardrail_registration(plugin: str, shipped: Sequence[ShippedDefinition]) -> str:
-    """The plugin's `hooks/hooks.json`: one PreToolUse entry running the guardrail on every Bash and
-    file-tool call, the same for every plugin."""
-    entry = {
-        "matcher": "Bash|Read|Write|Edit|NotebookEdit|Grep|Glob",
-        "hooks": [{"type": "command", "command": _PLUGIN_GUARDRAIL_COMMAND}],
-    }
-    return json.dumps({"hooks": {"PreToolUse": [entry]}}, indent=2) + "\n"
+    """The plugin's `hooks/hooks.json` where the install-time probe passes, the same for every plugin."""
+    return json.dumps({"hooks": _registration_hooks(with_guardrail=True)}, indent=2) + "\n"
+
+
+def _reminder_registration(plugin: str, shipped: Sequence[ShippedDefinition]) -> str:
+    """The same file where the probe does not pass: the plan-state reminder alone, the guardrail
+    neither registered nor shipped."""
+    return json.dumps({"hooks": _registration_hooks(with_guardrail=False)}, indent=2) + "\n"
 
 
 _AGENTS_FILE = "CLAUDE.md"
@@ -106,6 +146,9 @@ HARNESS = Harness(
     rendered_files=(PLUGIN_MANIFEST, mcp_json(_mcp_entry)),
     guardrail=GuardrailHook(
         script=_GUARDRAIL_SCRIPT,
-        registration=HarnessFile(path="hooks/hooks.json", text=_guardrail_registration, marker=_MISSING_SCRIPT_REPORT),
+        registration=HarnessFile(path=_REGISTRATION, text=_guardrail_registration, marker=_REGISTRATION_MARKER),
+        registration_without_hook=HarnessFile(
+            path=_REGISTRATION, text=_reminder_registration, marker=_REGISTRATION_MARKER
+        ),
     ),
 )

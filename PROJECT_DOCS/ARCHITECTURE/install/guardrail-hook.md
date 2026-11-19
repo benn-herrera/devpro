@@ -13,10 +13,14 @@ inside the plugin directory is not also loaded as an opencode plugin module of i
 names the `script` under `resources/<harness>/`, which is also its path under the install
 directory, and a `registration`, the
 `HarnessFile` for the plugin's `hooks/hooks.json`: a text builder, `_guardrail_registration`
-(`devpro/harnesses/claude.py`), and a `marker`, the missing-script report (Shipped files), which
-only this repository writes. The registration holds one `PreToolUse` entry, in Claude's settings
-shape under a top-level `hooks` key, whose matcher is `Bash|Read|Write|Edit|NotebookEdit|Grep|Glob`
-on every claude install, as the text builder writes it. Every claude install therefore runs the
+(`devpro/harnesses/claude.py`), and a `marker`, the phrase both hook commands' missing-script reports
+share (Shipped files), which
+only this repository writes. The registration holds the guardrail's `PreToolUse` entry — matcher
+`Bash|Read|Write|Edit|NotebookEdit|Grep|Glob` — where the install-time probe passes, plus two
+ungated plan-state reminder entries on every claude install, each running
+`<install-dir>/hooks/state-table-reminder.sh`, which reads `ACTIVE_PLAN.md` or `ACTIVE_DESIGN.md`
+at the project root and emits a one-sentence `hookSpecificOutput.additionalContext` reminder to
+update the plan's status table. Every claude install therefore runs the
 script on each file-tool call as well as each Bash call, and on an install of the devpro plugin the script finds
 the kbase signal absent and lets a file-tool call through. The entry's command is a short `sh` program that
 `exec`s `perl` on `${CLAUDE_PLUGIN_ROOT}/hooks/guardrail.pl` only when that is a readable file, and

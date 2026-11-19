@@ -30,8 +30,9 @@ frontmatter. A consuming project receives the install product — the three depl
 together with the shipped packages delivered alongside them, each at its package destination
 (Shipped files), the harness resources (Shipped files), and the harness-rendered files: under claude
 and mage `.claude-plugin/plugin.json`, the plugin manifest, and `.mcp.json` where `kbase` ships;
-under claude `hooks/hooks.json`, the guardrail registration, written only where one trial run of the
-guardrail at install time, the install-time probe, succeeds; under opencode `registry.json` (Shipped
+under claude `hooks/hooks.json`, the guardrail registration, written on every install with the
+guardrail's entry in it only where one trial run of the guardrail at install time, the install-time
+probe, succeeds; under opencode `registry.json` (Shipped
 files). Each is rendered and neither a deployed surface nor a definition. It arrives by **install**,
 the one distribution channel. Install delivers one plugin, `devpro` or `kbase`, and no other. Its usage:
 

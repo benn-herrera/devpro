@@ -29,8 +29,8 @@ backup of a file it overwrites or removes. The agents file's one rolling backup 
 the only one.
 
 No install writes `.claude/settings*`, `opencode.json` or `opencode.jsonc`. A guardrail skipped for a
-failed install-time probe leaves any script or registration an earlier install wrote where it
-stands; the report names those that are the install's own.
+failed install-time probe leaves any script an earlier install wrote where it stands and rewrites
+the registration without its entry; the report names the script that is the install's own.
 
 An up-to-date run reports `up to date: <harness-dir> — nothing written`, exits 0 and touches
 nothing: no file
