@@ -90,16 +90,15 @@ function stripBanner(text: string): string {
   return text.replace(/^(?:<!--.*-->\n)+\n?/, "")
 }
 
-// planStanding reports whether the project root holds a plan or a design — the file, or where the
-// plan was diced, the `ACTIVE_PLAN/` tree — the reminder's gate.
+// planStanding reports whether the project root holds a plan — the file, or where the plan was
+// diced, the `ACTIVE_PLAN/` tree — the reminder's gate.
 function planStanding(root: string): boolean {
-  return ["ACTIVE_PLAN.md", "ACTIVE_DESIGN.md", "ACTIVE_PLAN"].some((name) => existsSync(join(root, name)))
+  return ["ACTIVE_PLAN.md", "ACTIVE_PLAN"].some((name) => existsSync(join(root, name)))
 }
 
 // The reminder's sentence, byte for byte what claude's state-table-reminder.sh emits
 // (tests/test_opencode_entry.py holds the two together): a synthetic message is context, as a hook's
-// additionalContext is, so it states the status table's two acts as what they are, and it asks
-// nothing of a status table a design-only project does not carry.
+// additionalContext is, so it states the status table's two acts as what they are.
 const reminder =
   "Where the active plan carries a status table, a package is `in progress` when it is dispatched and `landed` when its work is accepted and committed."
 

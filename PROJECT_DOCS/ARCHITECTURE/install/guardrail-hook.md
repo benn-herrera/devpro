@@ -19,8 +19,8 @@ English, which is what narrowing it to the part both reports share costs: a fore
 at the registration's path is overwritten, not refused. The registration holds the guardrail's `PreToolUse` entry — matcher
 `Bash|Read|Write|Edit|NotebookEdit|Grep|Glob` — where the install-time probe passes, plus one
 ungated plan-state reminder entry on every claude install, a `PostToolUse` matched on `Agent`,
-running `<install-dir>/hooks/state-table-reminder.sh`, which reads `ACTIVE_PLAN.md` or
-`ACTIVE_DESIGN.md` — file or, where the plan was diced, the `ACTIVE_PLAN/` tree — at the project
+running `<install-dir>/hooks/state-table-reminder.sh`, which reads `ACTIVE_PLAN.md` — file or,
+where the plan was diced, the `ACTIVE_PLAN/` tree — at the project
 root and emits a one-sentence `hookSpecificOutput.additionalContext` reminder naming the status
 table's acts: `in progress` when a package is dispatched, `landed` when its work is accepted and
 committed. The entry fires at the `Agent` call's return — the subagent's completion where the call

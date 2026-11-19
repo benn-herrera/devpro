@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # !INSTALLED! from devpro/harnesses/resources/claude/hooks/state-table-reminder.sh — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
 #
-# Claude Code hook for the `Agent` tool's return: a project holding `ACTIVE_PLAN.md`,
-# `ACTIVE_DESIGN.md` or the diced `ACTIVE_PLAN/` tree at its root gets one sentence of context, and a
+# Claude Code hook for the `Agent` tool's return: a project holding `ACTIVE_PLAN.md` or the diced
+# `ACTIVE_PLAN/` tree at its root gets one sentence of context, and a
 # project holding none of them, or a call naming no root, gets silence.
 #
 # The sentence reaches the parent on its next model request after the hook fires, which is the `Agent`
@@ -39,7 +39,7 @@ fi
 if [[ -z "${root}" ]]; then
   exit 0
 fi
-if [[ ! -f "${root}/ACTIVE_PLAN.md" && ! -f "${root}/ACTIVE_DESIGN.md" && ! -d "${root}/ACTIVE_PLAN" ]]; then
+if [[ ! -f "${root}/ACTIVE_PLAN.md" && ! -d "${root}/ACTIVE_PLAN" ]]; then
   exit 0
 fi
 event="$(field hook_event_name)"
@@ -48,7 +48,6 @@ if [[ -z "${event}" ]]; then
 fi
 
 # The one sentence. Claude Code reads hook context as project information rather than as an
-# out-of-band instruction, so it states the table's two acts as what they are; it is true where only
-# a design stands because it asks nothing of a status table that project does not carry.
+# out-of-band instruction, so it states the table's two acts as what they are.
 sentence='Where the active plan carries a status table, a package is `in progress` when it is dispatched and `landed` when its work is accepted and committed.'
 printf '{"hookSpecificOutput": {"hookEventName": "%s", "additionalContext": "%s"}}\n' "${event}" "${sentence}"

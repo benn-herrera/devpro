@@ -5,8 +5,8 @@ Surfaces, Shipped files). It is written for opencode 2.3.2 (floor 2.3.0) and is 
 both plugins, and its setup registers `ctx.tool.hook("execute.after")` filtered to `subagent` and
 `ctx.session.hook("experimental.idle")` for a session whose `parentID` is set, injecting
 `ctx.session.synthetic` into the parent session at agent dispatch and agent completion, gated by
-`ACTIVE_PLAN.md` or `ACTIVE_DESIGN.md` — file or, where the plan was diced, the `ACTIVE_PLAN/`
-tree — existing at the project root. The install copies it, with
+`ACTIVE_PLAN.md` — file or, where the plan was diced, the `ACTIVE_PLAN/` tree — existing at the
+project root. The install copies it, with
 `guardrail.ts`, to the install directory as a harness resource (Renders and copies); a user-level
 install copies the entry alone.
 

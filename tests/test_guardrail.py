@@ -300,15 +300,15 @@ def test_guardrail_pl_fails_as_a_hook_error_never_as_a_block(tmp_path: Path) -> 
 
 
 # The plan-state reminder: a second claude hook script, run on the event the registration names and
-# reading a plan, a design or the diced plan tree at the project root.
+# reading a plan, or the diced plan tree, at the project root.
 
 
-@pytest.mark.parametrize("gate", ["ACTIVE_PLAN.md", "ACTIVE_DESIGN.md", "ACTIVE_PLAN"])
+@pytest.mark.parametrize("gate", ["ACTIVE_PLAN.md", "ACTIVE_PLAN"])
 @pytest.mark.parametrize("from_env", [True, False], ids=["claude-project-dir", "input-cwd"])
-def test_the_reminder_speaks_where_a_plan_a_design_or_the_diced_tree_stands_at_the_project_root(
+def test_the_reminder_speaks_where_a_plan_or_the_diced_tree_stands_at_the_project_root(
     tmp_path: Path, gate: str, from_env: bool
 ) -> None:
-    """Either file, or the diced plan's tree, opens the gate, and either root the hook contract names
+    """A plan file, or the diced plan's tree, opens the gate, and either root the hook contract names
     finds it: `CLAUDE_PROJECT_DIR` where the environment carries it, else the input's `cwd`. The answer
     is the event the input names, which `hookSpecificOutput` must carry, and one sentence naming both
     acts the status table records."""
@@ -339,5 +339,16 @@ def test_the_reminder_is_silent_where_the_project_holds_no_gate_path(tmp_path: P
     starts."""
     root = tmp_path / "project"
     root.mkdir()
+    done = _run_reminder(json.dumps({"hook_event_name": "PostToolUse", "cwd": str(root)}), project_dir=root)
+    assert (done.returncode, done.stdout, done.stderr) == (0, "", "")
+
+
+def test_the_reminder_is_silent_where_the_project_holds_only_a_design(tmp_path: Path) -> None:
+    """A design file alone opens no gate: the reminder's subject is the plan, and nudging a project
+    holding only a design would put the sentence in the context of every subagent a dispatch there
+    starts."""
+    root = tmp_path / "project"
+    root.mkdir()
+    (root / "ACTIVE_DESIGN.md").write_text("# Active design\n", encoding="utf-8")
     done = _run_reminder(json.dumps({"hook_event_name": "PostToolUse", "cwd": str(root)}), project_dir=root)
     assert (done.returncode, done.stdout, done.stderr) == (0, "", "")

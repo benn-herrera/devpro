@@ -2,7 +2,7 @@
 install of `kbase`, whose registry gains a command record, a model and a permission map: what it
 registers is what the registry lists, with each body's banner stripped; an edited body and a dropped record take effect on the
 reload its watcher triggers; a command reads its body when it runs; and its cleanup closes the watcher.
-A project whose root holds a plan file, a design file or the diced `ACTIVE_PLAN/` tree has the
+A project whose root holds a plan file or the diced `ACTIVE_PLAN/` tree has the
 plan-state reminder injected into the parent session when a subagent call completes and when that
 subagent's session goes idle with nothing running on it; a failed call, a session still holding
 background work and a session with no parent inject nothing, and the gate reads the project root
@@ -195,18 +195,13 @@ def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_injects_no_remi
     assert registered["mcp"] == registry["mcp"] != {}
 
 
-@pytest.mark.parametrize("gate", ["ACTIVE_DESIGN.md", "ACTIVE_PLAN"])
-def test_a_design_or_the_diced_plan_at_the_project_root_opens_the_gate(tmp_path: Path, gate: str) -> None:
-    """The gate takes either file or the diced `ACTIVE_PLAN/` tree: a project holding only one of them
-    still has the subagent's dispatch and its completion injected into the parent, though the session
-    opened below the root."""
+def test_the_diced_plan_at_the_project_root_opens_the_gate(tmp_path: Path) -> None:
+    """The diced `ACTIVE_PLAN/` tree opens the gate: a project holding it still has the subagent's
+    dispatch and its completion injected into the parent, though the session opened below the root."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)
-    if gate == "ACTIVE_PLAN":
-        (project / gate).mkdir()
-    else:
-        (project / gate).write_text("# Active design\n", encoding="utf-8")
+    (project / "ACTIVE_PLAN").mkdir()
     opened = project / "nested"
     opened.mkdir()
 
@@ -222,6 +217,27 @@ def test_a_design_or_the_diced_plan_at_the_project_root_opens_the_gate(tmp_path:
         ("execute.after", "ses_parent"),
         ("experimental.idle", "ses_parent"),
     ]
+
+
+def test_a_design_at_the_project_root_injects_no_reminder(tmp_path: Path) -> None:
+    """A design file alone opens no gate: the reminder's subject is the plan, so a project holding only
+    a design injects nothing into the parent, though the session opened below the root."""
+    project = tmp_path / "project"
+    project.mkdir()
+    plugin, command_path, banner = _probe_entry(project)
+    (project / "ACTIVE_DESIGN.md").write_text("# Active design\n", encoding="utf-8")
+    opened = project / "nested"
+    opened.mkdir()
+
+    out = _run_entry(
+        plugin,
+        directory=opened,
+        project=project,
+        writes=[],
+        command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
+    )
+
+    assert out["synthetics"] == []
 
 
 def test_both_harnesses_inject_one_sentence(tmp_path: Path) -> None:
