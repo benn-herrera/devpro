@@ -20,4 +20,5 @@ homebrew-tap/
 .claude/
 .opencode/
 .devpro-temp/
+.harness-profile/
 backup.*
