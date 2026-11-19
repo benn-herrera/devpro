@@ -1,19 +1,27 @@
 ### Opencode entry
 
 `devpro/harnesses/resources/opencode/index.ts` is opencode's plugin entry (SPEC.md, Deployed
-Surfaces, Shipped files). It is written for opencode v2.2.6 and is the same file for both plugins. The
-install copies it, with `guardrail.ts`, to the install directory as a harness resource (Renders and
-copies); a user-level install copies the entry alone.
+Surfaces, Shipped files). It is written for opencode 2.3.2 (floor 2.2.6) and is the same file for
+both plugins, and its setup registers `ctx.tool.hook("execute.after")` filtered to `subagent` and
+`ctx.session.hook("experimental.idle")` for a session whose `parentID` is set, injecting
+`ctx.session.synthetic` into the parent session at agent dispatch and agent completion, gated by
+`ACTIVE_PLAN.md` or `ACTIVE_DESIGN.md` existing at the project root. The install copies it, with
+`guardrail.ts`, to the install directory as a harness resource (Renders and copies); a user-level
+install copies the entry alone.
 
 **The opencode API it uses.** It imports `Plugin` from `@opencode/plugin` and exports
 `Plugin.define({ id, setup })`.
 
 - `id` is the registry's `plugin`, read synchronously from `registry.json` because opencode takes the id
   before `setup` runs; an unreadable registry falls back to the install directory's name.
-- `setup(ctx)` receives four domains, `ctx.agent`, `ctx.skill`, `ctx.command` and `ctx.mcp`. Each has
-  `transform(callback)`, which hands the callback an editor: `update(id, fn)` for agents, `add` for
-  skills and commands, `set(name, config)` for MCP servers. Each also has `reload()`, which makes
-  opencode run its transforms again. `ctx.session.prompt` delivers a command's text.
+- `setup(ctx)` receives four registration domains, `ctx.agent`, `ctx.skill`, `ctx.command` and
+  `ctx.mcp`. Each has `transform(callback)`, which hands the callback an editor: `update(id, fn)` for
+  agents, `add` for skills and commands, `set(name, config)` for MCP servers. Each also has
+  `reload()`, which makes opencode run its transforms again. `ctx.session.prompt` delivers a
+  command's text.
+- The reminder's surface is `ctx.location.directory`, the project root read for the gate,
+  `ctx.tool.hook` and `ctx.session.hook` for its two events, `ctx.session.get` for a session's
+  `parentID`, and `ctx.session.synthetic` for the injection.
 - `setup` returns an async cleanup, which opencode calls when the plugin module goes.
 
 The entry declares the slice of the context it reads as local types. Nothing checks them against

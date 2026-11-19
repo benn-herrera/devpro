@@ -2,8 +2,10 @@
 install of `kbase`, whose registry gains a command record, a model and a permission map: what it
 registers is what the registry lists, with each body's banner stripped; an edited body and a dropped record take effect on the
 reload its watcher triggers; a command reads its body when it runs; and its cleanup closes the watcher.
-A user-level install, which ships no guardrail beside the entry, registers the same way and hooks nothing.
-A missing `bun` fails rather than skips, as in `tests/test_guardrail.py`.
+A project holding a plan file at its root has the plan-state reminder injected into the parent session
+at a subagent's dispatch and completion. A user-level install, which ships no guardrail beside the
+entry, registers the same way, and with no plan or design file at the project root it injects no
+reminder. A missing `bun` fails rather than skips, as in `tests/test_guardrail.py`.
 """
 
 from __future__ import annotations
@@ -88,6 +90,8 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     project = tmp_path / "project"
     project.mkdir()
     plugin, registry = _installed(project, harness_dir=project / OPENCODE.project_harness_dir)
+    # The plan-state reminder's gate: the reminder fires where a plan file stands at the project root.
+    (project / "ACTIVE_PLAN.md").write_text("# Active plan\n", encoding="utf-8")
     registry_path = plugin / "registry.json"
     edited, removed, *_ = registry["agents"]
     banner = _banner((plugin / edited["file"]).read_text(encoding="utf-8"))
@@ -111,7 +115,8 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     first, after_edit, after_removal = out["states"]
 
     assert out["id"] == KBASE.name
-    assert out["hooks"] == ["execute.before"]
+    assert out["hooks"] == ["execute.before", "execute.after"]
+    assert out["sessionHooks"] == ["experimental.idle"]
     assert set(first["agents"]) == {a["id"] for a in registry["agents"]}
     assert set(first["skills"]) == {s["id"] for s in registry["skills"]}
     assert first["commands"] == {"kbase-probe": "A probe"}
@@ -132,9 +137,16 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     assert after_edit["agents"][edited["id"]]["system"] == "New body.\n"
     assert set(after_removal["agents"]) == set(first["agents"]) - {removed["id"]}
     assert out["prompts"] == ["Old command.\n\ngo", "New command.\n\ngo"]
+    # The gate holds, so the subagent's dispatch and its completion each inject once into the parent
+    # session; the runner also fires a call that is not a subagent and a session with no parent, and
+    # neither injects.
+    assert [(injected["on"], injected["sessionID"]) for injected in out["synthetics"]] == [
+        ("execute.after", "ses_parent"),
+        ("experimental.idle", "ses_parent"),
+    ]
 
 
-def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_registers_and_hooks_nothing(tmp_path: Path) -> None:
+def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_injects_no_reminder(tmp_path: Path) -> None:
     OPENCODE.user_dir.mkdir(parents=True)
     plugin, registry = _installed(OPENCODE.user_dir, harness_dir=OPENCODE.user_dir)
     assert not (plugin / "guardrail.ts").exists()
@@ -151,7 +163,9 @@ def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_registers_and_h
         command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
     )
 
-    assert out["hooks"] == []
+    assert out["hooks"] == ["execute.after"]
+    assert out["sessionHooks"] == ["experimental.idle"]
+    assert out["synthetics"] == []
     (registered,) = out["states"]
     assert set(registered["agents"]) == {a["id"] for a in registry["agents"]}
     assert set(registered["skills"]) == {s["id"] for s in registry["skills"]}

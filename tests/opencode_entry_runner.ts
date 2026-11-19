@@ -5,10 +5,13 @@
 // ({path, text}) written one at a time, each awaited until a reload its watcher triggers changes what is
 // registered; and a command ({name, path, text, user}) executed with the user's text before and after
 // its body file is replaced by text.
-// Stdout: JSON {id, hooks, states, prompts}: the plugin id, the tool hooks it registered, what it had
-// registered after setup and after each write, and the text each execute prompted.
-// The runner fails where an execute's prompt drops the invocation's session id or delivery. It exits
-// once the plugin's cleanup has run; a watcher the cleanup left open keeps it running.
+// Stdout: JSON {id, hooks, sessionHooks, states, prompts, synthetics}: the plugin id, the tool and
+// session hooks it registered, what it had registered after setup and after each write, the text each
+// execute prompted, and every synthetic message a hook injected, naming the event that fired the hook
+// and the session it went to.
+// The runner fails where an execute's prompt drops the invocation's session id or delivery, or where a
+// reminder hook the entry must register is missing. It exits once the plugin's cleanup has run; a
+// watcher the cleanup left open keeps it running.
 //
 // Run outside `bun test`: the "@opencode/plugin" stub must be registered before the entry loads.
 
@@ -22,6 +25,11 @@ type Input = {
   command: { name: string; path: string; text: string; user: string }
 }
 type Command = { name: string; description?: string; execute(input: unknown): Promise<void> }
+// The two sessions the reminder hooks see: a subagent's child, whose parent is the session that
+// dispatched it, and that parent, which has none.
+const PARENT = "ses_parent"
+const CHILD = "ses_child"
+type Call = { tool: string; sessionID: string; status: "completed" | "error" }
 
 // A domain as opencode's State keeps one: every registered transform re-runs against a fresh
 // value on each reload.
@@ -99,13 +107,21 @@ function state() {
 const input: Input = JSON.parse(await Bun.stdin.text())
 const prompts: string[] = []
 const hooks: string[] = []
+const sessionHooks: string[] = []
+const synthetics: { on: string; sessionID: string; text: string }[] = []
 const invocation = { sessionID: "ses_1", delivery: "queue" }
+let after: ((call: Call) => void | Promise<void>) | undefined
+let idle: ((event: { sessionID: string }) => void | Promise<void>) | undefined
+// The hook whose callback is running, named in the synthetic record it produces.
+let firing = ""
+
 const plugin = (await import(input.entry)).default
 const cleanup = await plugin.setup({
   location: { directory: input.directory },
   tool: {
-    async hook(name: string) {
+    async hook(name: string, callback: (call: Call) => void | Promise<void>) {
       hooks.push(name)
+      if (name === "execute.after") after = callback
     },
   },
   agent,
@@ -118,6 +134,16 @@ const cleanup = await plugin.setup({
         throw new Error(`the prompt did not pass the invocation through: ${JSON.stringify(p)}`)
       }
       prompts.push(p.text)
+    },
+    async hook(name: string, callback: (event: { sessionID: string }) => void | Promise<void>) {
+      sessionHooks.push(name)
+      if (name === "experimental.idle") idle = callback
+    },
+    async get({ sessionID }: { sessionID: string }) {
+      return sessionID === CHILD ? { parentID: PARENT } : {}
+    },
+    async synthetic({ sessionID, text }: { sessionID: string; text: string }) {
+      synthetics.push({ on: firing, sessionID, text })
     },
   },
 })
@@ -139,5 +165,22 @@ await execute()
 writeFileSync(input.command.path, input.command.text)
 await execute()
 
+// Fire each registered reminder path: a subagent's dispatch and completion, and the two calls the
+// entry must ignore — a tool that is not a subagent, and a session with no parent of its own.
+const fireTool = async (call: Call) => {
+  if (!after) throw new Error("the entry registered no execute.after hook")
+  firing = "execute.after"
+  await after(call)
+}
+const fireIdle = async (event: { sessionID: string }) => {
+  if (!idle) throw new Error("the entry registered no experimental.idle hook")
+  firing = "experimental.idle"
+  await idle(event)
+}
+await fireTool({ tool: "subagent", sessionID: PARENT, status: "completed" })
+await fireTool({ tool: "shell", sessionID: PARENT, status: "completed" })
+await fireIdle({ sessionID: CHILD })
+await fireIdle({ sessionID: PARENT })
+
 await cleanup()
-console.log(JSON.stringify({ id: plugin.id, hooks, states, prompts }))
+console.log(JSON.stringify({ id: plugin.id, hooks, sessionHooks, states, prompts, synthetics }))

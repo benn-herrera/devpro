@@ -1,9 +1,10 @@
 // !INSTALLED! from devpro/harnesses/resources/opencode/index.ts — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
 //
-// opencode v2.2.6 plugin module: the entry of one plugin the devpro project ships, the directory holding this file.
-// Registers the plugin's agents, commands, skills and MCP servers from registry.json and the Markdown
-// bodies it lists, re-reads them whenever anything in this directory changes, and runs the guardrail
-// beside it where one is installed.
+// opencode 2.3.2 plugin module (floor 2.2.6): the entry of one plugin the devpro project ships, the
+// directory holding this file. Registers the plugin's agents, commands, skills and MCP servers from
+// registry.json and the Markdown bodies it lists, re-reads them whenever anything in this directory
+// changes, runs the guardrail beside it where one is installed, and reminds a parent session to
+// update the active plan's status table at a subagent's dispatch and at its completion.
 
 import { Plugin } from "@opencode/plugin"
 import { existsSync, readFileSync, watch } from "node:fs"
@@ -43,15 +44,27 @@ type AgentInfo = {
 }
 type Prompt = { text: string }
 type Invocation = { sessionID: string; prompt: Prompt; delivery: unknown }
+// A finished tool call, as `execute.after` reports one, and a session that has gone idle.
+type ToolCall = { tool: string; sessionID: string }
+type Idle = { sessionID: string }
+type SessionInfo = { parentID?: string }
+type Hook<Event> = (callback: (event: Event) => Promise<void> | void) => Promise<unknown>
 type Domain<Editor> = { transform(callback: (editor: Editor) => void): Promise<unknown>; reload(): Promise<void> }
 type Context = {
+  location: { directory: string }
   agent: Domain<{ update(id: string, update: (agent: AgentInfo) => void): void }>
   skill: Domain<{ add(skill: { id: string; name: string; description?: string; path: string; content: string }): void }>
   command: Domain<{
     add(command: { name: string; description?: string; execute(input: Invocation): Promise<void> }): void
   }>
   mcp: Domain<{ set(name: string, config: unknown): void }>
-  session: { prompt(input: Prompt & { sessionID: string; delivery: unknown }): Promise<unknown> }
+  tool: { hook(name: "execute.after", callback: Hook<ToolCall>): Promise<unknown> }
+  session: {
+    prompt(input: Prompt & { sessionID: string; delivery: unknown }): Promise<unknown>
+    hook(name: "experimental.idle", callback: Hook<Idle>): Promise<unknown>
+    get(input: { sessionID: string }): Promise<SessionInfo>
+    synthetic(input: { sessionID: string; text: string }): Promise<unknown>
+  }
 }
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -65,6 +78,11 @@ function log(message: string, err: unknown): void {
 // stripBanner removes a body's leading comment lines and the blank line after them.
 function stripBanner(text: string): string {
   return text.replace(/^(?:<!--.*-->\n)+\n?/, "")
+}
+
+// planStanding reports whether the project root holds a plan or a design file, the reminder's gate.
+function planStanding(directory: string): boolean {
+  return ["ACTIVE_PLAN.md", "ACTIVE_DESIGN.md"].some((file) => existsSync(join(directory, file)))
 }
 
 async function readRegistry(): Promise<Registry | undefined> {
@@ -123,6 +141,35 @@ export default Plugin.define({
   async setup(ctx: Context) {
     // A user-level install ships no guardrail.
     if (existsSync(guardrailPath)) await (await import(guardrailPath)).default.setup(ctx)
+
+    // The reminder is registered on every install: the plan files at the project root are read when
+    // a hook fires, and a project holding neither pays nothing. An injection is one model call.
+    const injectReminder = async (sessionID: string) => {
+      if (!planStanding(ctx.location.directory)) return
+      try {
+        await ctx.session.synthetic({
+          sessionID,
+          text: "Update the active plan's status table to match the tree as the work lands.",
+        })
+      } catch (err) {
+        log(`cannot remind the session ${sessionID}`, err)
+      }
+    }
+    // A subagent call returns as soon as its child session starts, so this is the dispatch moment,
+    // and the call's session is the parent that runs the work.
+    await ctx.tool.hook("execute.after", (call) => {
+      if (call.tool !== "subagent") return
+      return injectReminder(call.sessionID)
+    })
+    // A session that has gone idle is a subagent's completion; the parent is the one to remind.
+    await ctx.session.hook("experimental.idle", async (idle) => {
+      const session = await ctx.session.get({ sessionID: idle.sessionID }).catch((err: unknown) => {
+        log(`cannot read the session ${idle.sessionID}`, err)
+        return undefined
+      })
+      if (session?.parentID === undefined) return
+      await injectReminder(session.parentID)
+    })
 
     // Every callback reads `held`, which only setup and the watcher replace: a callback that threw
     // would disable this plugin module's whole registration group.
