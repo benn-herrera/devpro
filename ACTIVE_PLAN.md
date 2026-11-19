@@ -17,7 +17,7 @@ Sequencing: P1 first; P2 after P1; P3 after P2.
 | Package | State | Rating | Changes |
 | --- | --- | --- | --- |
 | P1 | landed | mechanical | the gate reads the plan alone, in both resources, their tests, and the three contract statements |
-| P2 | dispatchable | expert | Post-plan review |
+| P2 | landed | expert | Post-plan review |
 | P3 | drafted | expert | Post-plan burndown |
 
 ## P1 — The gate reads the plan alone
