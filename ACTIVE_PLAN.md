@@ -18,7 +18,7 @@ route `just dev-check-links` covers the document checks meanwhile.
 
 | Package | State | Rating | Changes |
 | --- | --- | --- | --- |
-| P1 | drafted | mechanical | the two passage pairs applied verbatim: the skill's application bullet gains the byte-check, the Toolchain paragraph names its runner target |
+| P1 | in progress | mechanical | the two passage pairs applied verbatim: the skill's application bullet gains the byte-check, the Toolchain paragraph names its runner target |
 | P2 | drafted | expert | Post-plan review |
 | P3 | drafted | expert | Post-plan burndown |
 
