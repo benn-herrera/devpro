@@ -34,7 +34,7 @@ ARCHITECTURE delta block; from P4 the run reports `0 not applied, 0 problems` an
 | P1b | landed | expert | `check-deltas` reads the diced design tree; the design's monolith retires |
 | P1c | landed | expert | the diced-design lifecycle rule lands in the skill texts — development.py, guide.py, docdicer.py |
 | P1d | landed | mechanical | the state-table reminder's sentence reworded at both harness resources |
-| P2 | dispatchable | expert | the activity profiler payload vendored and wired, its leaf created, the README credit |
+| P2 | in progress | expert | the activity profiler payload vendored and wired, its leaf created, the README credit |
 | P3 | dispatchable | mechanical | the twelve SPEC delta entries applied to their leaves |
 | P4 | dispatchable | mechanical | the fourteen remaining ARCHITECTURE delta entries applied to their leaves |
 | P5 | drafted | expert | Post-plan review |
