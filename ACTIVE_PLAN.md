@@ -45,7 +45,7 @@ revision, and dispatches from there.
 | P2 | landed | mechanical | the payload's source directory renamed `resources/claude/libexec/` → `resources/claude/profiler/` (banners, `claude.py`'s `_PROFILER_SCRIPT`, the hook command, the finder candidate and the test references following); `harness_resource_copies`' opencode copy list gains the three payload files sourced from `resources/claude/profiler/`; the behavior pin updates |
 | P3 | landed | expert | `profiler.ts` — the capture in the plugin's TypeScript, wired from the entry; the trace store splits per harness (`hp.py`'s `TRACE_DIR`, `tree`'s `*-profiler` glob, the profiler test's trace path); the entry's registration pin updates |
 | P4 | landed | expert | Post-plan review — dispatchable when P3's commit lands |
-| P5 | drafted | expert | Post-plan burndown — dispatchable when P4's review document lands |
+| P5 | drafted | expert | the burndown's fixes from the review (B1–B11), and the landing commit: `ACTIVE_DESIGN.md`, `ACTIVE_PLAN_REVIEW.md` and this plan deleted |
 
 ## P1 — The eleven passage pairs applied
 
@@ -409,10 +409,84 @@ Done-line: `just dev-check-links`. The review document and P4's Status row land 
 
 ## P5 — Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `b3ac2ce`): 1 Critical, 4 High, 10 Medium, 8 Low —
+ten items, four declined, one folded. Each item names its surfaces and its verification.
 
-The burndown gets `devpro-prompt-engineer` usability review, then revision, before it is
-`dispatchable`.
+**B1 — the failed call keeps its record (`R1`).** `profiler.ts`: `error` is declared per the host's
+type (`Tool.Error`, a class carrying `.message`) — `firstLine` extracts `.message` where the value is
+an object, the string form where it is one, and no path throws through `silently()`. The defect the
+verification fails on: the seat's five-call probe (one call failing) writes four records today; it
+must write five, the failing one carrying the error's text.
+
+**B2 — the skill and its satellites read the split stores (`R2`, `R4`, `R12`).**
+`devpro/definitions/skills/show_profile.py`: the trace sentence names the per-harness stores —
+`.devpro-temp/claude-profiler/` under claude, `.devpro-temp/opencode-profiler/` under opencode —
+never the dead shared path; `init claude`/`doctor` are qualified claude-facing at `:31-33`/`:57-59`
+with one line saying what an opencode agent uses instead (`tree`); the rendered output's token
+columns are stated as claude-only (`:31-33` area). The satellites move identically:
+`devpro/harnesses/claude.py:70` and `README.md:45` name `claude-profiler`. Verify: `just render`,
+then the rendered skill walked against a scratch `opencode-profiler` store — no dead path, no
+claude-only instruction unqualified.
+
+**B3 — masking parity holds at non-ASCII (`R3`).** `profiler.ts`'s `SECRETS` patterns gain the
+Unicode-aware word class so `sk-abcéfghijklm` redacts identically to `hp.py`; the parity test
+extends with a non-ASCII credential case, both directions. Verify: the seat's probe re-run — both
+captures redact the same text.
+
+**B4 — the behavioral contract gains its pins (`R5`).** `tests/test_devpro_profiler.py` seeds two
+stores (`claude-profiler/` and `opencode-profiler/`) and asserts one `tree` renders both — the
+defect it fails on: a revert of the `*-profiler` glob loses the second store silently. The entry
+harness drives a full capture (before/after pair + a failing call per B1's fix) rather than
+registration counts; the user-level exclusion gains its assertion with a `claude/profiler` stub
+present. The defect each fails on, named per the test-precondition clause.
+
+**B5 — the enumerations complete (`R6`, `R11`).** `shipped-files.md:87-90`: claude's install dir
+gains `profiler/{hp.sh,hp.py,view.html}` beside its hook scripts. `repo-layout.md:18`:
+`opencode/profiler.ts` joins the listing. Verify: `git grep -n "profiler" PROJECT_DOCS` — every
+install-dir inventory names the profiler's files for the harnesses that ship them.
+
+**B6 — the three mechanism sentences (`R10`).** `shipped-files.md:115-117`'s restart exception
+names `profiler.ts`'s load-time import; `ARCHITECTURE/install/opencode-entry.md` states the entry
+imports and registers the capture; `renders-and-copies.md:62-64` states the copy list's
+cross-harness carve-out (opencode gains `claude/profiler`'s three files, delivered under
+`profiler/`). Verify: `just dev-check-links`, then each sentence read against the code it describes.
+
+**B7 — the record's field fidelity (`R7`, `R8`, `R15`).** `profiler.ts`: `nameOf`/`argsOf` map the
+host's fields (the subagent dispatch's own name, the skill invocation's name — `general-purpose` and
+`skill` are the host's *values*, not names); `result` records the host's text, not the JSON
+envelope; the start map drops its entry at `execute.after` whichever status arrives. Verify: the
+scratch capture re-run — a subagent dispatch records its name, `result` reads as text.
+
+**B8 — the paragraph break (`R9`).** The leaf's "The opencode capture." paragraph separates from
+"What does not exist." with a blank line, and the design's ARCHITECTURE becomes-block carries the
+identical break — the byte-pinned pair moves in the same commit. Verify:
+`just dev-check-design-deltas-applied` stays `landed: 11`.
+
+**B9 — the destination bound (`R13`, `R14`).** SPEC binds `<install-dir>` as the one term for the
+install directory and the leaf uses it (no second coined term); a pin asserts the opencode install's
+payload lands at `<plugin-dir>/profiler/` per the leaf's stated path, so the derivation and the
+statement cannot diverge silently.
+
+**B10 — the Lows (`R16`–`R22`).** `hp.py`: `doctor`'s traces line names the glob, not the mixed
+stores, and its claude-facing framing says so; `profiler.ts`: the dead `pluginId()` duplicate is
+deleted, `dropTornTail` gains its one-line comment stating hp.py lacks the repair, `clip` counts
+code points not UTF-16 units, the untyped entry seam carries the entry's declared type, the idle
+record's missing renderer is stated in its comment, `branch`'s null is stated, the false
+`child_agent_id` reason is corrected, the `todowrite` skip states its one-line reason.
+
+**B11 — the lint gate green (`R23`).** The formatter runs over `devpro/render.py`; `just lint`
+exits 0. No text changes — formatting only.
+
+Declined: **R19's renderer ask folded into B10**; no finding declined outright — the four earlier
+declines (agent_id, registration order, double redaction, the review's own arithmetic) stand as
+recorded in the seats.
+
+The burndown is expert: B2's wording and B3's pattern work compose; the rest apply verified sites.
+
+Done-line: `just test`, then `just sweep-python`, then `just lint`, then
+`just dev-check-design-deltas-applied` (landed: 11), then `just dev-check-links`, then
+`just dev-check-plan` — all before the landing acts; the landing commit's tree carries the gate
+passing.
 
 The landing acts, after the burndown's work:
 
@@ -420,10 +494,6 @@ The landing acts, after the burndown's work:
 2. The landing commit deletes `ACTIVE_PLAN_REVIEW.md`.
 3. The landing commit deletes this plan (`ACTIVE_PLAN.md`) — no next plan exists at that time. The
    deletion is P5's row resolution: no Status row is set, the row dies with the plan.
-
-Done-line: `just test`, then `just sweep-python`, then `just dev-check-design-deltas-applied`
-(landed: 11), then `just dev-check-links`, then `just dev-check-plan` — all before the landing
-acts; the landing commit's tree carries the gate passing.
 
 Every commit message and pull-request description carries the attribution line the development
 skill states:
