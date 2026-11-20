@@ -20,7 +20,10 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 
 SCHEMA_VERSION = 2
-TRACE_DIR = Path(".devpro-temp") / "harness-profile"
+# Each harness's capture owns one store, and `tree` reads them all: every `*-profiler` directory under
+# `.devpro-temp/`. This one is the claude capture's.
+TRACE_DIR = Path(".devpro-temp") / "claude-profiler"
+TRACE_GLOB = "*-profiler"
 TOOL_EVENTS = ("PostToolUse", "PostToolUseFailure")
 SESSION_EVENTS = ("PreCompact", "PostCompact", "SessionStart", "SubagentStop")
 LAUNCHED = "async_launched"
@@ -1071,14 +1074,16 @@ def render_html(session: dict) -> str:
 
 
 def list_sessions(directory: Path | str) -> list[dict]:
-    """Every session trace under `directory`, with its records and its first and last moments."""
-    traces = Path(directory) / TRACE_DIR
-    if not traces.is_dir():
-        return []
+    """Every session trace under `directory`, with its records and its first and last moments.
+
+    Every `*-profiler` store under `.devpro-temp/` is read, so both harnesses' sessions reach one tree,
+    and a session id is unique across them."""
+    traces: list[Path] = []
+    for store in sorted((Path(directory) / TRACE_DIR.parent).glob(TRACE_GLOB)):
+        if store.is_dir():
+            traces.extend(path for path in store.iterdir() if path.name.endswith(".jsonl"))
     sessions = []
-    for path in traces.iterdir():
-        if not path.name.endswith(".jsonl"):
-            continue
+    for path in traces:
         records = read_trace(path)
         starts: list[int] = []
         ends: list[int] = []
@@ -1132,7 +1137,10 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
     options = parse_tree_args(argv)
     sessions = list_sessions(directory)
     if not sessions:
-        raise UsageError(f"No traces in {Path(directory) / TRACE_DIR}. Run a session with the hook installed first.")
+        raise UsageError(
+            f"No traces in {Path(directory) / TRACE_DIR.parent / TRACE_GLOB}. "
+            "Run a session with the hook installed first."
+        )
     branch = options.get("branch")
     prefix = options.get("prefix")
     if branch:
@@ -1294,7 +1302,7 @@ def doctor(cwd: Path | str) -> str:
     )
     lines = [
         f"python:  {sys.executable} ({platform.python_version()})",
-        f"traces:  {Path(directory) / TRACE_DIR}",
+        f"traces:  {Path(directory) / TRACE_DIR.parent / TRACE_GLOB}",
         f"hook:    {installed}",
         f"update:  the committed hook {stale}; run harness-profiler init claude again and commit" if stale else None,
         f"newest:  {_iso(_utc(newest)) if newest is not None else 'no calls recorded yet'}",

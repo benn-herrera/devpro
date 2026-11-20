@@ -43,7 +43,7 @@ revision, and dispatches from there.
 | --- | --- | --- | --- |
 | P1 | landed | mechanical | the eleven passage pairs applied verbatim: SPEC's shipped-files paragraph, resources enumeration, trace-store sentence, profiler-resources names and installed-tree launcher sentence; ARCHITECTURE's harness-profiler leaf, payload-directory Resources paragraph, hook command, finder candidate, trace-store sentence; the repo-layout fragment |
 | P2 | landed | mechanical | the payload's source directory renamed `resources/claude/libexec/` → `resources/claude/profiler/` (banners, `claude.py`'s `_PROFILER_SCRIPT`, the hook command, the finder candidate and the test references following); `harness_resource_copies`' opencode copy list gains the three payload files sourced from `resources/claude/profiler/`; the behavior pin updates |
-| P3 | in progress | expert | `profiler.ts` — the capture in the plugin's TypeScript, wired from the entry; the trace store splits per harness (`hp.py`'s `TRACE_DIR`, `tree`'s `*-profiler` glob, the profiler test's trace path); the entry's registration pin updates |
+| P3 | landed | expert | `profiler.ts` — the capture in the plugin's TypeScript, wired from the entry; the trace store splits per harness (`hp.py`'s `TRACE_DIR`, `tree`'s `*-profiler` glob, the profiler test's trace path); the entry's registration pin updates |
 | P4 | drafted | expert | Post-plan review — dispatchable when P3's commit lands |
 | P5 | drafted | expert | Post-plan burndown — dispatchable when P4's review document lands |
 

@@ -136,8 +136,10 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     first, after_edit, after_removal = out["states"]
 
     assert out["id"] == NAME
-    assert out["hooks"] == ["execute.before", "execute.after"]
-    assert out["sessionHooks"] == ["experimental.idle"]
+    # Registration order follows the code: the guardrail's `execute.before`, the entry's reminder
+    # `execute.after`, then the capture's pair; and the entry's idle hook, then the capture's.
+    assert out["hooks"] == ["execute.before", "execute.before", "execute.after", "execute.after"]
+    assert out["sessionHooks"] == ["experimental.idle", "experimental.idle"]
     assert set(first["agents"]) == {a["id"] for a in registry["agents"]}
     assert set(first["skills"]) == {s["id"] for s in registry["skills"]}
     assert first["commands"] == {"kbase-probe": "A probe"}
@@ -185,6 +187,7 @@ def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_injects_no_remi
         command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
     )
 
+    # The user-level install copies no capture beside the entry, so it registers the reminder's pair.
     assert out["hooks"] == ["execute.after"]
     assert out["sessionHooks"] == ["experimental.idle"]
     assert out["synthetics"] == []

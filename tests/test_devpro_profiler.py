@@ -86,7 +86,7 @@ def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> N
     capture = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD)
     assert capture.returncode == 0, capture.stderr
     assert capture.stdout == "" and capture.stderr == ""
-    trace = project / ".devpro-temp" / "harness-profile" / "s-profiler.jsonl"
+    trace = project / ".devpro-temp" / "claude-profiler" / "s-profiler.jsonl"
     [record] = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
     assert record["v"] == 2
     assert _RECORD_FIELDS <= set(record), sorted(record)

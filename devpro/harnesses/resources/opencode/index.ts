@@ -80,6 +80,7 @@ type Context = {
 const here = dirname(fileURLToPath(import.meta.url))
 const registryPath = join(here, "registry.json")
 const guardrailPath = join(here, "guardrail.ts")
+const profilerPath = join(here, "profiler.ts")
 
 function log(message: string, err: unknown): void {
   console.error(`devpro: plugin ${basename(here)}: ${message}:`, err)
@@ -162,6 +163,8 @@ export default Plugin.define({
   async setup(ctx: Context) {
     // A user-level install ships no guardrail.
     if (existsSync(guardrailPath)) await (await import(guardrailPath)).default.setup(ctx)
+    // Nor does it ship the capture, which writes its records into the project's `.devpro-temp/`.
+    if (existsSync(profilerPath)) await (await import(profilerPath)).default.setup(ctx)
 
     // The reminder is registered on every install: the gate paths at the project root are read when
     // a hook fires, and a project holding none of them pays nothing. An injection is one model call.
