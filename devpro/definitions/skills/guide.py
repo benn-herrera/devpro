@@ -73,8 +73,6 @@ installs with.
   install writes include lines into it.
 - `perl` on `PATH` with core `JSON::PP`, for the claude guardrail hook. Without them a claude install
   skips the hook and its registration, says why in one line, and installs everything else.
-- `node` 18 or later, for the claude activity profiler: without it its captures stay silent and the
-  trace is empty.
 
 Installing or upgrading kbase itself, the program the `kbase` MCP server runs, is the
 `{clauses.optional_ref(name="kbase")}` skill's: follow its `references/installing.md`.

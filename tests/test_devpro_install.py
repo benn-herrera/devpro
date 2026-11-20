@@ -406,7 +406,7 @@ _CLAUDE_PLUGIN_RELPATH = f".claude/{CLAUDE.bound(NAME).plugin_dir}"
 # The activity profiler: the payload the claude install copies beside the hooks, the skill that finds
 # it, and the registration entries that feed it.
 _PROFILER = "libexec"
-_PROFILER_FILES = ("hp.js", "hp.sh", "view.html")
+_PROFILER_FILES = ("hp.py", "hp.sh", "view.html")
 _PROFILER_EVENTS = (
     "PostToolUse",
     "PostToolUseFailure",

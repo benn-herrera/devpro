@@ -13,7 +13,7 @@ _DESCRIPTION = (
 )
 
 _BODY = """Render this session's trace and put the page where the user can open it. The trace is the newest
-session recording in `.harness-profile/` at the repository root.
+session recording in `.devpro-temp/harness-profile/` at the repository root.
 
 ## Locate the profiler
 

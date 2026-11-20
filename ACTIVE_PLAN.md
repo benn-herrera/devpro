@@ -33,7 +33,7 @@ the plan's own links — the pass condition is `broken: 0`, exit 0. The clone is
 | Package | State | Rating | Changes |
 | --- | --- | --- | --- |
 | P1 | landed | mechanical | the four passage pairs applied verbatim: SPEC's profiler paragraph and guide-and-readme requirements bullet, ARCHITECTURE's harness-profiler leaf and repo-layout resources line |
-| P2 | in progress | expert | the port: `hp.py` replaces `hp.js`, `hp.sh` finds python3, the trace moves to `.devpro-temp/harness-profile/`, the skill text and tests follow |
+| P2 | landed | expert | the port: `hp.py` replaces `hp.js`, `hp.sh` finds python3, the trace moves to `.devpro-temp/harness-profile/`, the skill text and tests follow |
 | P3 | drafted | expert | Post-plan review |
 | P4 | drafted | expert | Post-plan burndown |
 
@@ -255,6 +255,10 @@ The landing acts, after the burndown's work:
 1. The landing commit deletes `ACTIVE_DESIGN.md` (not diced, so no tree).
 2. The landing commit deletes `ACTIVE_PLAN_REVIEW.md`.
 3. The landing commit deletes this plan (`ACTIVE_PLAN.md`) — no next plan exists at that time.
+4. The landing commit bumps the version: `__version__` in `devpro/__init__.py` to `"0.18.0"` — the
+   minor bump the profiler's new behavior rates (user decision) — and `README.md`'s pipx tag beside
+   it, per *Version has one home*; the three rendered carriers follow from the constant at the next
+   render. Committed before any `just tag`.
 
 Every commit message and pull-request description carries the attribution line the development
 skill states:
