@@ -7,6 +7,18 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Features
 
+### Profiler surfacing rework
+
+The profiler's render surface turns from file-out to serve-on-demand — `hp serve` binds loopback on
+a free port, prints the served URL on stdout, and its main page is the index of record files it can
+render, each session's page served from memory; a runner target wraps it and the show-profile skill
+goes serve-first. The design is parked at
+[ROADMAP_DESIGNS/PROFILER_SERVE_DESIGN.md](ROADMAP_DESIGNS/PROFILER_SERVE_DESIGN.md). Also in scope:
+the rendered page's default view for a session of nothing-but-tool-calls draws an empty call tree
+under the calls header (observed on this repository's first real traces) — the page should show the
+calls or state what it hides. Deferred behind the periodic review; the work returns as the active
+tasking on a clean surface once the review's plan lands.
+
 ### Codex CLI harness support
 
 Add the ability to install as a codex plugin. Feasible with gaps
