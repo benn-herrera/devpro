@@ -66,7 +66,7 @@ The rules use these terms.
 
 | Term | Fixed as | What it is |
 | --- | --- | --- |
-| {ACTIVE_DESIGN_TERM} | `ACTIVE_DESIGN.md` at the repository root | the one design under way, which feeds a plan |
+| {ACTIVE_DESIGN_TERM} | `ACTIVE_DESIGN.md` at the repository root, else the `ACTIVE_DESIGN/` tree there, read from its `entry-point.md` | the one design under way, which feeds a plan |
 | {ACTIVE_PLAN_TERM} | `ACTIVE_PLAN.md` at the repository root | the one plan under way |
 | {PARKED_DESIGNS_TERM} | `ROADMAP_DESIGNS/` at the repository root | where work set aside waits |
 | {ROADMAP_TERM} | `ROADMAP.md` at the repository root for its tickets, and the {PARKED_DESIGNS_TERM} for work set aside | intended work not yet taken up, at whatever stage of refinement |
@@ -200,6 +200,12 @@ bindable term that has no default and is unbound, ask the user for it then, thro
   (the `{clauses.optional_ref(name="docdicer")}` skill), and dispatches cite its leaves. A design is
   diced at its `##` and `###` headings only, so each entry and each ticket is one file. Once approved,
   a plan is diced only when the user asks. *Purpose:* each executor reads whole the part it acts on.
+
+- A diced design keeps no monolith beside its tree: the dice's passing exit — the leaves reassembling
+  the monolith, every link resolving — retires the monolith, and the tree is the design's one source
+  from then on. Edit a diced design leaf by leaf, or undice it to one working monolith, edit that and
+  re-dice the tree from it, leaving no monolith behind. *Purpose:* two copies diverge, and each
+  reader takes a different text as the design.
 
 - An approved plan runs to completion: blockers that need the user surface during planning.
   *Purpose:* the user approves once and is not called back mid-run for a question planning could

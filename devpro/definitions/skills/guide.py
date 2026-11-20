@@ -283,7 +283,8 @@ The plan size limit (default {clauses.PLAN_SIZE_LIMIT_DEFAULT}) and the periodic
 
 - **The user** states the change and asks for a design: "I want users to export the orders list as
   CSV. Start a design."
-- **Appearing:** `ACTIVE_DESIGN.md` at the root. While in progress it holds a `## Drafts` section:
+- **Appearing:** `ACTIVE_DESIGN.md` at the root, or the `ACTIVE_DESIGN/` tree that replaces it where
+  the design is longer than the plan size limit. While in progress it holds a `## Drafts` section:
   the requirements, decisions, constraints and open questions, one `###` ticket each. The session
   asks the user the open questions; each answer is the user's decision.
 - **When no question is open** the session puts it in final form, checks it with `check-design`,
@@ -340,14 +341,15 @@ The plan size limit (default {clauses.PLAN_SIZE_LIMIT_DEFAULT}) and the periodic
     definitions, the commit history. Answer with the decision.
   - a term the work needs that the project has not set (*Getting started*).
 - **A decision that changes the requirements**, an escalation's answer or the user's own, is entered
-  in `ACTIVE_DESIGN.md` as an entry recording it and checked again, and may add a package to the
-  plan; only the changed text is reviewed. Say it with its go: "Exports include refunds too. Update
-  the design and the plan."
+  in the design — `ACTIVE_DESIGN.md`, or a leaf of its tree where it is diced — as an entry recording
+  it and checked again, and may add a package to the plan; only the changed text is reviewed. Say it
+  with its go: "Exports include refunds too. Update the design and the plan."
 - **Setting the work aside** (*Plans*): "Set this work aside as orders-export." Every `ACTIVE_*` file
-  moves into `ROADMAP_DESIGNS/` as `<topic>_DESIGN.md`, `<topic>_PLAN.md` and so on, and the plan
-  drops its `Release:` line; the root is free for other work, and landed packages stay committed. It
-  returns under its `ACTIVE_` names once no `ACTIVE_*` file is at the root: "Bring back
-  orders-export." Dropped for good, it is abandoned and leaves `ROADMAP_DESIGNS/`.
+  or diced tree moves into `ROADMAP_DESIGNS/` as `<topic>_DESIGN.md` or `<topic>_DESIGN/`,
+  `<topic>_PLAN.md` and so on, and the plan drops its `Release:` line; the root is free for other
+  work, and landed packages stay committed. It returns under its `ACTIVE_` names once no `ACTIVE_*`
+  file or diced tree is at the root: "Bring back orders-export." Dropped for good, it is abandoned
+  and leaves `ROADMAP_DESIGNS/`.
 
 ## The post-plan review, the burndown and landing
 
@@ -364,9 +366,9 @@ The plan size limit (default {clauses.PLAN_SIZE_LIMIT_DEFAULT}) and the periodic
   package, has it reviewed, and runs it like any package. Every finding that cites a written rule is
   fixed, whatever its severity; one that needs a choice nothing written settles comes to the user.
 - **The user** may read `ACTIVE_PLAN_REVIEW.md` and answers what comes to them; nothing else.
-- **Landing:** one commit deletes `ACTIVE_PLAN.md` (or replaces it with the next plan),
-  `ACTIVE_DESIGN.md` and `ACTIVE_PLAN_REVIEW.md`; its message says it lands a plan. **Next:** a new
-  request or a roadmap ticket, or the periodic review where it is due.
+- **Landing:** one commit deletes `ACTIVE_PLAN.md` (or replaces it with the next plan), the design
+  (`ACTIVE_DESIGN.md` or its tree) and `ACTIVE_PLAN_REVIEW.md`; its message says it lands a plan.
+  **Next:** a new request or a roadmap ticket, or the periodic review where it is due.
 
 ## Lighter process
 
@@ -396,8 +398,8 @@ The plan size limit (default {clauses.PLAN_SIZE_LIMIT_DEFAULT}) and the periodic
 - `ROADMAP.md` is work intended and not yet taken up: `##` categories holding `###` tickets. "Add a
   roadmap ticket under Exports: PDF export." The session checks it with `check-roadmap` after each
   edit.
-- `ROADMAP_DESIGNS/` holds work set aside, as `<topic>_DESIGN.md`, `<topic>_PLAN.md` and so on, and
-  names no release.
+- `ROADMAP_DESIGNS/` holds work set aside, as `<topic>_DESIGN.md` or `<topic>_DESIGN/`,
+  `<topic>_PLAN.md` and so on, and names no release.
 - Work leaves the roadmap when it becomes the active design or plan, when other work accomplishes it,
   or when it is abandoned, superseded work included. "Start a design from the PDF export ticket."
 
@@ -462,9 +464,9 @@ The `{clauses.ref(name="docdicer")}` skill, *The script*.
 
 For a returning user, read the root and say what is next and what to say:
 
-- **No `ACTIVE_*` file:** nothing under way. Next: a request, a `ROADMAP.md` ticket or work in
-  `ROADMAP_DESIGNS/`, unless the periodic review is due (`git log`: plans landed since the last
-  periodic review).
+- **No `ACTIVE_*` file or diced tree:** nothing under way. Next: a request, a `ROADMAP.md` ticket or
+  work in `ROADMAP_DESIGNS/`, unless the periodic review is due (`git log`: plans landed since the
+  last periodic review).
 - **`ACTIVE_DESIGN.md` with `## Drafts`:** a design in progress; its open questions wait on the user.
 - **`ACTIVE_DESIGN.md` in final form, no `ACTIVE_PLAN.md`:** offered for acceptance, or accepted
   and the plan not yet written.
