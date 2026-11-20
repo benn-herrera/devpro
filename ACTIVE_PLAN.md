@@ -37,7 +37,7 @@ ARCHITECTURE delta block; from P4 the run reports `0 not applied, 0 problems` an
 | P2 | landed | expert | the activity profiler payload vendored and wired, its leaf created, the README credit |
 | P3 | landed | mechanical | the twelve SPEC delta entries applied to their leaves |
 | P4 | landed | mechanical | the fourteen remaining ARCHITECTURE delta entries applied to their leaves |
-| P5 | in progress | expert | Post-plan review |
+| P5 | landed | expert | Post-plan review |
 | P6 | drafted | expert | Post-plan burndown |
 
 ## P1 — The components selection replaces the plugin machinery
