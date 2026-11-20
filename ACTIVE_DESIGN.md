@@ -60,6 +60,40 @@ one line to the project's `.devpro-temp/harness-profile/<session-id>.jsonl`, and
 one line to the project's `.devpro-temp/claude-profiler/<session-id>.jsonl`, and a capture that
 ```
 
+### [Shipped files — the profiler resources](PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md)
+
+**As it stands:**
+
+```markdown
+the harness resources
+`libexec/hp.sh`, `libexec/hp.py` and `libexec/view.html`, copied as they stand, and the
+```
+
+**Becomes:**
+
+```markdown
+the harness resources
+`profiler/hp.sh`, `profiler/hp.py` and `profiler/view.html`, copied as they stand, and the
+```
+
+### [Installed tree](PROJECT_DOCS/SPEC/deployed-surfaces/installed-tree.md)
+
+**As it stands:**
+
+```markdown
+the
+profiler's launcher sits in the install directory's `libexec/` and is named relative to the skill's
+directory too (`../../libexec/hp.sh`). The
+```
+
+**Becomes:**
+
+```markdown
+the
+profiler's launcher sits in the install directory's `profiler/` and is named relative to the skill's
+directory too (`../../profiler/hp.sh`). The
+```
+
 ## ARCHITECTURE delta
 
 ### [Harness profiler](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)
@@ -94,13 +128,55 @@ records carry no token fields the hooks do not supply.
 **As it stands:**
 
 ```markdown
-Three files live in `devpro/harnesses/resources/claude/libexec/`
+**Resources.** Three files live in `devpro/harnesses/resources/claude/libexec/`: `hp.sh`, the
+POSIX-sh launcher that finds `python3` (`HP_PYTHON` overrides the search); `hp.py`, the whole tool —
+`capture`, `tree`, `init`, `doctor` — one file, Python 3 standard library only, no dependency; and
+`view.html`, the self-contained page template that loads nothing from the network. Each carries the
+`!INSTALLED! … devpro` banner within its first ten lines — the banner rule binds every harness
+resource. `harness_resource_copies` lands each at the path it holds below the install directory, so
+the install directory gains `libexec/`.
 ```
 
 **Becomes:**
 
 ```markdown
-Three files live in `devpro/harnesses/resources/claude/profiler/`
+**Resources.** Three files live in `devpro/harnesses/resources/claude/profiler/`: `hp.sh`, the
+POSIX-sh launcher that finds `python3` (`HP_PYTHON` overrides the search); `hp.py`, the whole tool —
+`capture`, `tree`, `init`, `doctor` — one file, Python 3 standard library only, no dependency; and
+`view.html`, the self-contained page template that loads nothing from the network. Each carries the
+`!INSTALLED! … devpro` banner within its first ten lines — the banner rule binds every harness
+resource. `harness_resource_copies` lands each at the path it holds below the install directory, so
+the install directory gains `profiler/`.
+```
+
+### [Harness profiler — the hook command](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)
+
+**As it stands:**
+
+```markdown
+running `sh "${CLAUDE_PLUGIN_ROOT}/libexec/hp.sh" capture claude`. The wiring is data in the harness
+```
+
+**Becomes:**
+
+```markdown
+running `sh "${CLAUDE_PLUGIN_ROOT}/profiler/hp.sh" capture claude`. The wiring is data in the harness
+```
+
+### [Harness profiler — the finder candidate](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)
+
+**As it stands:**
+
+```markdown
+Its finder's first candidate, `../../libexec/hp.sh` from the
+skill's directory, resolves to `<install-dir>/libexec/hp.sh` where the payload landed; its second,
+```
+
+**Becomes:**
+
+```markdown
+Its finder's first candidate, `../../profiler/hp.sh` from the
+skill's directory, resolves to `<install-dir>/profiler/hp.sh` where the payload landed; its second,
 ```
 
 ### [Harness profiler — the trace store](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)

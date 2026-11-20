@@ -1,22 +1,27 @@
 # Active plan — the opencode plugin records its sessions' activity into the profiler's trace store
 
-From the accepted design: [ACTIVE_DESIGN.md](ACTIVE_DESIGN.md) — six entries:
+From the accepted design: [ACTIVE_DESIGN.md](ACTIVE_DESIGN.md) — twelve entries:
 [the Shipped files entry](ACTIVE_DESIGN.md#shipped-files), [the resources-enumeration
-entry](ACTIVE_DESIGN.md#shipped-files--the-resources-enumeration) and [the trace-store
-entry](ACTIVE_DESIGN.md#shipped-files--the-trace-store) under SPEC delta, [the Harness profiler
+entry](ACTIVE_DESIGN.md#shipped-files--the-resources-enumeration), [the trace-store
+entry](ACTIVE_DESIGN.md#shipped-files--the-trace-store), [the profiler-resources
+entry](ACTIVE_DESIGN.md#shipped-files--the-profiler-resources) and [the Installed tree
+entry](ACTIVE_DESIGN.md#installed-tree) under SPEC delta, [the Harness profiler
 entry](ACTIVE_DESIGN.md#harness-profiler), [the payload-directory
-entry](ACTIVE_DESIGN.md#harness-profiler--the-payload-directory) and [the trace-store
-entry](ACTIVE_DESIGN.md#harness-profiler--the-trace-store) under ARCHITECTURE delta, and
-[the Repo layout entry](ACTIVE_DESIGN.md#repo-layout) — seven byte-pinned
+entry](ACTIVE_DESIGN.md#harness-profiler--the-payload-directory) (three pairs), [the hook-command
+entry](ACTIVE_DESIGN.md#harness-profiler--the-hook-command), [the finder-candidate
+entry](ACTIVE_DESIGN.md#harness-profiler--the-finder-candidate), [the trace-store
+entry](ACTIVE_DESIGN.md#harness-profiler--the-trace-store) and [the Repo layout
+entry](ACTIVE_DESIGN.md#repo-layout) under ARCHITECTURE delta — eleven byte-pinned
 passage pairs — and [the Harness profiler entry under Code
 delta](ACTIVE_DESIGN.md#harness-profiler-1) (prose, no pair; P3 composes the capture from it, and
 its first paragraph carries the settled home of the shipped payload). The design is not diced; it
-is under the plan size limit. It is final-form, PE-reviewed and revised at `af94c7d`.
+is under the plan size limit. It is final-form, PE-reviewed and revised at `af94c7d`, then amended
+by the rename review's findings.
 
 Every package's intended lifetime is **shipped** — the whole process — and one commit closes each
 package: the closing commit sets its Status row to `landed` as that commit lands its work.
 
-Sequencing: P1, then P2, then P3, then P4, then P5. P1 applies the seven passage pairs; P2 renames
+Sequencing: P1, then P2, then P3, then P4, then P5. P1 applies the eleven passage pairs; P2 renames
 the payload's source directory `resources/claude/libexec/` to `resources/claude/profiler/` and
 makes the install ship the payload to opencode; P3 writes the capture and lands the trace-store
 split; P4 and P5 are the post-plan
@@ -36,59 +41,81 @@ revision, and dispatches from there.
 
 | Package | State | Rating | Changes |
 | --- | --- | --- | --- |
-| P1 | dispatchable | mechanical | the seven passage pairs applied verbatim: SPEC's shipped-files paragraph, resources enumeration and trace-store sentence; ARCHITECTURE's harness-profiler leaf, payload-directory and trace-store sentences; the repo-layout fragment |
+| P1 | dispatchable | mechanical | the eleven passage pairs applied verbatim: SPEC's shipped-files paragraph, resources enumeration, trace-store sentence, profiler-resources names and installed-tree launcher sentence; ARCHITECTURE's harness-profiler leaf, payload-directory Resources paragraph, hook command, finder candidate, trace-store sentence; the repo-layout fragment |
 | P2 | dispatchable | mechanical | the payload's source directory renamed `resources/claude/libexec/` → `resources/claude/profiler/` (banners, `claude.py`'s `_PROFILER_SCRIPT`, the hook command, the finder candidate and the test references following); `harness_resource_copies`' opencode copy list gains the three payload files sourced from `resources/claude/profiler/`; the behavior pin updates |
 | P3 | dispatchable | expert | `profiler.ts` — the capture in the plugin's TypeScript, wired from the entry; the trace store splits per harness (`hp.py`'s `TRACE_DIR`, `tree`'s `*-profiler` glob, the profiler test's trace path); the entry's registration pin updates |
 | P4 | drafted | expert | Post-plan review — dispatchable when P3's commit lands |
 | P5 | drafted | expert | Post-plan burndown — dispatchable when P4's review document lands |
 
-## P1 — The seven passage pairs applied
+## P1 — The eleven passage pairs applied
 
 Implements [the Shipped files entry](ACTIVE_DESIGN.md#shipped-files), [the resources-enumeration
 entry](ACTIVE_DESIGN.md#shipped-files--the-resources-enumeration), [the trace-store
-entry](ACTIVE_DESIGN.md#shipped-files--the-trace-store), [the Harness profiler
+entry](ACTIVE_DESIGN.md#shipped-files--the-trace-store), [the profiler-resources
+entry](ACTIVE_DESIGN.md#shipped-files--the-profiler-resources), [the Installed tree
+entry](ACTIVE_DESIGN.md#installed-tree), [the Harness profiler
 entry](ACTIVE_DESIGN.md#harness-profiler), [the payload-directory
-entry](ACTIVE_DESIGN.md#harness-profiler--the-payload-directory), [the trace-store
+entry](ACTIVE_DESIGN.md#harness-profiler--the-payload-directory), [the hook-command
+entry](ACTIVE_DESIGN.md#harness-profiler--the-hook-command), [the finder-candidate
+entry](ACTIVE_DESIGN.md#harness-profiler--the-finder-candidate), [the trace-store
 entry](ACTIVE_DESIGN.md#harness-profiler--the-trace-store) and [the Repo layout
 entry](ACTIVE_DESIGN.md#repo-layout), each as accepted: its `becomes` block replaces its
 `as it stands` block, each run of whitespace read as one space, no composition; the labels the
 design's blocks carry (`**As it stands:**`, `**Becomes:**`) are not written into the target.
 
 Scope: `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md`,
+`PROJECT_DOCS/SPEC/deployed-surfaces/installed-tree.md`,
 `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`,
 `PROJECT_DOCS/ARCHITECTURE/repo-layout.md`.
 
 Facts, each re-run before acting on it:
 
-- The delta check today: `just dev-check-design-deltas-applied` → `pairs: 7, landed: 0, pending: 7,
-  drifted: 0, conflicting: 0, problems: 0`, exit 1. P1's application moves all seven to landed.
+- The delta check today: `just dev-check-design-deltas-applied` → `pairs: 11, landed: 0, pending:
+  11, drifted: 0, conflicting: 0, problems: 0`, exit 1. P1's application moves all eleven to landed.
 - The from-blocks sit in their targets, verified by a normalized-membership check of each design
-  pair against the target files: the Shipped files, resources-enumeration and trace-store pairs
-  match only in `shipped-files.md`; the Harness profiler, payload-directory and trace-store pairs
-  only in `harness-profiler.md` (the SPEC trace-store pair's from-block ends `, and a capture that`
-  to stay off the wiring sentence's similar run in `harness-profiler.md`); the Repo layout pair
-  only in `repo-layout.md`; and no `becomes` block is
-  already present. Their exact sites: the Shipped files pair's from-block is
+  pair against the target files: the Shipped files, resources-enumeration, trace-store and
+  profiler-resources pairs match only in `shipped-files.md`; the Installed tree pair only in
+  `installed-tree.md`; the Harness profiler, payload-directory, hook-command, finder-candidate and
+  trace-store pairs only in `harness-profiler.md` (the SPEC trace-store pair's from-block ends
+  `, and a capture that` to stay off the wiring sentence's similar run in `harness-profiler.md`,
+  and the hook-command pair's from-block ends `. The wiring is data in the harness` and the
+  finder-candidate pair's ends `; its second,` to anchor both on their following text); the Repo
+  layout pair only in `repo-layout.md`; and no `becomes` block is
+  already present. The line citations below name the untouched file: each application locates its
+  run by its from-text — the byte-check's uniqueness guarantee is what makes the relocation safe —
+  so a run's position may have shifted when its step runs. Their exact sites: the Shipped files
+  pair's from-block is
   `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:105` in full (`resources; no opencode or
   mage install ships the resources or the hook entries.`); the resources-enumeration pair's
   from-block is
   `shipped-files.md:87-88` (from `path it holds below the install directory: opencode's at` to
   `<install-dir>/hooks/guardrail.pl` and`; line 88's tail word `and` is the from-block's last
   word, so the replacement runs into line 89's `…(mage ships none):` mid-sentence — the
-  becomes-block is written so the sentence continues correctly); the SPEC trace-store pair's
+  becomes-block is written so the sentence continues correctly); the profiler-resources pair's
+  from-block spans `shipped-files.md:95-96` (from `the harness resources` through `copied as they
+  stand, and the`, its tail anchoring it off the resources-enumeration pair's run); the SPEC
+  trace-store pair's
   from-block is the mid-sentence run at `shipped-files.md:101` ending `, and a capture that`; the
+  Installed tree pair's from-block spans `installed-tree.md:41-42` (from the sentence-opening `the`
+  at line 40's tail through `(`../../libexec/hp.sh`). The`, its tail anchoring it mid-sentence into
+  the next sentence); the
   Harness profiler pair's from-block is a **mid-paragraph run**, not whole lines, spanning
   `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md:44-46` (the file is 47 lines): `sed -n
   '44,46p'` shows the one paragraph, the from-block opening mid-line after `--components` value. `
   (`No opencode or mage payload ships: the profiler's hooks are claude's, and an`) and closing
   mid-line with `reusing this code. ` — line 44's words before it and line 46's words after it
   (`Token counts come from claude's own transcripts under …`) survive the edit; the
-  payload-directory pair's from-block is the run at `harness-profiler.md:9` (`Three files live in
-  …resources/claude/libexec/``); the ARCHITECTURE trace-store pair's from-block is the mid-sentence
+  payload-directory pair's from-block is the **Resources paragraph whole**, `harness-profiler.md:9-15`
+  (`**Resources.** Three files live in …` through `the install directory gains `libexec/`.`), two
+  stale names in one block (`claude/libexec/` at line 9, `gains `libexec/`` at line 15); the
+  hook-command pair's from-block is the mid-sentence run at `harness-profiler.md:20` (`running
+  `sh "${CLAUDE_PLUGIN_ROOT}/libexec/hp.sh" capture claude`. The wiring is data in the harness`); the
+  ARCH trace-store pair's from-block is the mid-sentence
   run at `harness-profiler.md:21-22` (`A capture appends one line … — the project's scratch`); the
+  finder-candidate pair's from-block spans `harness-profiler.md:28-29` (from `Its finder's first
+  candidate, `../../libexec/hp.sh`` through `; its second,`); the
   Repo layout pair's from-block is the fragment at `repo-layout.md:18` (`` `claude/libexec/hp.sh`,
-  `claude/libexec/hp.py` and `claude/libexec/view.html` ``). The Harness profiler leaf's pairs apply
-  in document order — `:9` and `:21-22` before `:44-46` — so the later run's line numbers hold.
+  `claude/libexec/hp.py` and `claude/libexec/view.html` ``).
 - No passage carries a markdown link — the `(SPEC.md, Deployed Surfaces, Shipped files)` and
   similar mentions are parenthetical text — so nothing to rebase.
 - No test pins any passage's text: `git grep -n "no opencode or mage" -- tests/` → nothing;
@@ -99,18 +126,26 @@ Work:
 
 1. Apply the Shipped files pair's becomes-block over `shipped-files.md:105` verbatim.
 2. Apply the resources-enumeration pair's becomes-block over `shipped-files.md:87-88` verbatim.
-3. Apply the SPEC trace-store pair's becomes-block over its mid-sentence run at
-   `shipped-files.md:101` verbatim.
-4. Apply the payload-directory pair's becomes-block over its run at `harness-profiler.md:9`
+3. Apply the profiler-resources pair's becomes-block over its two-line run at `shipped-files.md:95-96`
    verbatim.
-5. Apply the ARCHITECTURE trace-store pair's becomes-block over its mid-sentence run at
+4. Apply the SPEC trace-store pair's becomes-block over its mid-sentence run at
+   `shipped-files.md:101` verbatim.
+5. Apply the payload-directory pair's becomes-block over the Resources paragraph at
+   `harness-profiler.md:9-15` verbatim.
+6. Apply the hook-command pair's becomes-block over its mid-sentence run at
+   `harness-profiler.md:20` verbatim.
+7. Apply the ARCHITECTURE trace-store pair's becomes-block over its mid-sentence run at
    `harness-profiler.md:21-22` verbatim.
-6. Apply the Repo layout pair's becomes-block over its fragment at `repo-layout.md:18` verbatim.
-7. Apply the Harness profiler pair's becomes-block over its mid-paragraph run at
-   `harness-profiler.md:44-46` verbatim — the whole-line model does not hold here: the surrounding words survive, line 44's
-   opening (`…`--components` value. `) and line 46's continuation (`Token counts come from …`)
-   staying in place around the inserted block, and the paragraph remains one paragraph.
-8. Run the delta check: it must report `landed: 7, pending: 0, problems: 0`, exit 0.
+8. Apply the finder-candidate pair's becomes-block over its run at `harness-profiler.md:28-29`
+   verbatim.
+9. Apply the Repo layout pair's becomes-block over its fragment at `repo-layout.md:18` verbatim.
+10. Apply the Installed tree pair's becomes-block over its run at `installed-tree.md:41-42`
+    verbatim.
+11. Apply the Harness profiler pair's becomes-block over its mid-paragraph run at
+    `harness-profiler.md:44-46` verbatim — the whole-line model does not hold here: the surrounding words survive, line 44's
+    opening (`…`--components` value. `) and line 46's continuation (`Token counts come from …`)
+    staying in place around the inserted block, and the paragraph remains one paragraph.
+12. Run the delta check: it must report `landed: 11, pending: 0, problems: 0`, exit 0.
 
 Done-line: `just dev-check-design-deltas-applied` (pending: 0), then `just dev-check-links`.
 
@@ -206,11 +241,11 @@ Work:
 4. Update `tests/test_devpro_install.py:1873-1886` as the pin fact states: the opencode leg asserts
    `profiler/` holds exactly the launcher, the tool and the page and that no registration is
    written; the mage leg stays as is; the docstring follows.
-5. Run the gate, then confirm the delta check still reports the seven pairs landed and the link
+5. Run the gate, then confirm the delta check still reports the eleven pairs landed and the link
    check passes.
 
 Done-line: `just test`, then `just sweep-python`, then `just dev-check-design-deltas-applied`
-(landed: 7), then `just dev-check-links`.
+(landed: 11), then `just dev-check-links`.
 
 ## P3 — The capture: profiler.ts beside the entry
 
@@ -298,14 +333,16 @@ Facts, each re-run before acting on it:
   the skill's own directory (`devpro/definitions/skills/show_profile.py:22`, renamed in P2) resolves
   `<plugin-dir>/profiler/hp.sh` where P2 lands the payload, so the skill works under opencode
   unchanged.
-- Three sentences go stale with this package and no accepted entry covers them; the plan leaves all
-  three to the post-plan review, whose findings route a design entry for the user to decide:
+- Five sentences go stale with this package and no accepted entry covers them; the plan leaves all
+  five to the post-plan review, whose findings route a design entry for the user to decide:
   `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:111-112` names only `guardrail.ts` as the
   change that needs an opencode restart, and P3 imports `profiler.ts` the same way;
   `PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md`'s account of the entry's registrations
   becomes incomplete when the entry registers the capture too; and
   `devpro/definitions/skills/show_profile.py:16`'s `session recording in
-  .devpro-temp/harness-profile/` goes stale with the per-harness split.
+  .devpro-temp/harness-profile/` goes stale with the per-harness split;
+  `devpro/harnesses/claude.py:70`'s comment names `.devpro-temp/harness-profile/` the same way; and
+  `README.md:45` names the shared store the split retires.
 - Failures raise nothing out of a hook — the capture's own callbacks swallow and stay silent, the
   shape `guardrail.ts` and the entry's reminder hooks already keep (`index.ts:178-180` logs rather
   than throws; the capture stays silent per the design, logging nothing).
@@ -347,7 +384,7 @@ Work:
 6. Run the gate, then the document checks.
 
 Done-line: `just test`, then `just sweep-python`, then `just dev-check-design-deltas-applied`
-(landed: 7), then `just dev-check-links`.
+(landed: 11), then `just dev-check-links`.
 
 ## P4 — Post-plan review
 
@@ -361,10 +398,11 @@ diced, de-duplicating findings and reconciling them into one account.
   standards and the hook contract;
 - `devpro-python-coder` — `install.py`'s carve-out, `hp.py`'s trace-store change and the updated
   pins (`test_devpro_install.py`, `test_devpro_profiler.py`);
-- `devpro-architect` — the landed leaves (SPEC's shipped-files, ARCHITECTURE's harness-profiler,
-  the repo-layout fragment) against the code, SPEC.md against ARCHITECTURE.md, and the three
+- `devpro-architect` — the landed leaves (SPEC's shipped-files and installed-tree,
+  ARCHITECTURE's harness-profiler, the repo-layout fragment) against the code, SPEC.md against
+  ARCHITECTURE.md, and the five
   stale sentences P3's facts name (`shipped-files.md:111-112`, `opencode-entry.md`,
-  `show_profile.py:16`);
+  `show_profile.py:16`, `claude.py:70`, `README.md:45`);
 - `devpro-prompt-engineer` — the project documents the pairs landed.
 
 Done-line: `just dev-check-links`. The review document and P4's Status row land in P4's commit.
@@ -384,7 +422,7 @@ The landing acts, after the burndown's work:
    deletion is P5's row resolution: no Status row is set, the row dies with the plan.
 
 Done-line: `just test`, then `just sweep-python`, then `just dev-check-design-deltas-applied`
-(landed: 7), then `just dev-check-links`, then `just dev-check-plan` — all before the landing
+(landed: 11), then `just dev-check-links`, then `just dev-check-plan` — all before the landing
 acts; the landing commit's tree carries the gate passing.
 
 Every commit message and pull-request description carries the attribution line the development
