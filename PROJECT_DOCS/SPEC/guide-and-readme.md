@@ -1,6 +1,6 @@
 ## Guide and README
 
-The `guide` skill is where a session starts or continues work with devpro. Both plugins ship it
+The `guide` skill is where a session starts or continues work with devpro. Every install carries it
 under every harness (SPEC.md, Deployed Surfaces, Plugins). It applies when the user wants to start
 a design, to learn how the development process runs or where their work stands, to see the
 consuming project's board, or to install, update, inspect or change the installed set. It also
@@ -31,10 +31,11 @@ The skill carries two reference pages, which the session reads when its starting
     shows whether the installed set differs from what it would write;
   - global setup: a user-level install, and `install-agents-file` for a user harness directory;
   - under mage: an install into Mage's skills directory, `~/Mage/Skills`, made first where absent,
-    which writes `~/Mage/Skills/<plugin>/`, and, for the kbase plugin, restarting Mage;
+    which writes `~/Mage/Skills/devpro/`, and, with the kbase component, restarting Mage;
   - the agents file: where an install keeps its block, and the `CLAUDE.md` redirect;
   - the requirements: `just` 1.33.0 or later where the consuming project's runner is a justfile,
-    for the runner include lines; `perl` with core `JSON::PP` for the claude guardrail;
+    for the runner include lines; `perl` with core `JSON::PP` for the claude guardrail; `node` 18 or
+    later for the claude activity profiler, whose captures stay silent without it;
   - what the operator sets up for a cold read: `DEVPRO_COLD_READ_DIR`;
   - rendering for another model family: it names the flag and leaves its grammar to SPEC.md,
     Rendering;

@@ -3,7 +3,8 @@
 The repository exposes exactly three deployed surfaces, `agents/`, `commands/` and `skills/`: the
 trees of rendered definitions, and one part of the install product (below). Every definition is
 produced to order into the output root an invocation names: `devpro render --out <dir>
-[--plugin=NAME]` renders the plugin's definitions (Plugins) and the harness-rendered files it writes
+[--components=CSV]` renders the plugin's definitions with the named components on (Plugins) and the
+harness-rendered files it writes
 (Shipped files) into `<dir>`, an existing directory, and `install` renders into its install
 directory (Install destination). `agents/` holds one file per agent and per
 **document**, a definition agents read but never dispatch; `commands/` holds one file per command.
@@ -34,12 +35,13 @@ under claude `hooks/hooks.json`, the guardrail registration, written on every in
 guardrail's entry in it only where one trial run of the guardrail at install time, the install-time
 probe, succeeds; under opencode `registry.json` (Shipped
 files). Each is rendered and neither a deployed surface nor a definition. It arrives by **install**,
-the one distribution channel. Install delivers one plugin, `devpro` or `kbase`, and no other. Its usage:
+the one distribution channel. Install delivers the devpro plugin's set, with the components the
+invocation names. Its usage:
 
 ```sh
-devpro install TARGET [--plugin=NAME] [--harness=NAME] [--subdir=DIR] [--family=NAME] [--config-file=FILE] [--dry-run] [--verbose]
+devpro install TARGET [--components=CSV] [--harness=NAME] [--subdir=DIR] [--family=NAME] [--config-file=FILE] [--dry-run] [--verbose]
 ```
 
-Plugins states `--plugin`'s default. From a checkout of this repository the same command runs as
+Plugins states the `--components` default. From a checkout of this repository the same command runs as
 `PYTHONPATH=<clone> python3 -m devpro install …`, with the same result (Package and Command).
 `--dry-run` previews an install without writing anything (SPEC.md, Write Safety).

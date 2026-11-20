@@ -1,6 +1,6 @@
 ## Plan Status Form
 
-Both plugins' `development` skill gives plans one form for package headings, status and release,
+The `development` skill gives plans one form for package headings, status and release,
 gives a design one final form and the roadmap's tickets one form, and gives one place for the
 roadmap's tickets, for the plan and design under way and for those set aside, so that a tool
 reading plans, designs and the roadmap finds each in the same place and reads it the same way.
@@ -24,7 +24,7 @@ once no `ACTIVE_*` file or diced tree is at the root.
 Terms:
 
 - **plan** — a tracked document, or a tree of them where the plan was diced, written under the
-  plugins' `development` skill, that lays out work as work packages and records their progress.
+  `development` skill, that lays out work as work packages and records their progress.
 - **design** — a tracked document a plan is written from. It holds no work packages, sequencing or
   status.
 - **roadmap** — intended work not yet taken up, at whatever stage of refinement: a ticket in
@@ -37,7 +37,7 @@ Terms:
   `dispatchable`, `in progress` or `landed`.
 - **rating** — a work package's rating as its plan's status table records it: `mechanical`,
   `expert`, or unrated.
-- **plan size limit** — the length past which the plugins' `development` skill dices a plan before
+- **plan size limit** — the length past which the `development` skill dices a plan before
   it is approved.
 
 The form:

@@ -4,11 +4,11 @@ A **shipped package** is plain code, never rendered and so never carrying a gene
 installed at its **package destination**, a fixed directory under the install directory. Its
 installed copy is stamped where Installed tree says: the installed banner, not the generated
 banner. A package ships with the definition it belongs to, and only where that definition ships
-(Plugins). Both plugins deliver the **docdicer tools package** at its package destination under
-the install directory, `skills/docdicer/tools/`: inside the `docdicer` skill's own directory. They
-also deliver the **development scripts package**, `skills/development/scripts/`, inside the
-`development` skill's own directory (below), under mage as under claude and opencode. The kbase
-plugin also delivers the kb-tools package (below). A user-level install delivers none (SPEC.md,
+(Plugins). Every install delivers the **docdicer tools package** at its package destination under
+the install directory, `skills/docdicer/tools/`: inside the `docdicer` skill's own directory. It
+also delivers the **development scripts package**, `skills/development/scripts/`, inside the
+`development` skill's own directory (below), under mage as under claude and opencode. An install
+with the kbase component also delivers the kb-tools package (below). A user-level install delivers none (SPEC.md,
 Deployed Surfaces, Install destination). The docdicer package holds four files:
 - `docdicer`, a `bash` script, executable, carrying the installed banner below its shebang
 - `.gitignore`, holding `.venv/` and carrying no banner
@@ -92,6 +92,18 @@ the install stamps nothing on them. Every such file carries an installed banner
 (`!INSTALLED! … devpro`) in its first ten lines — the guardrails' name this repository and forbid
 edits. A harness shipping none copies nothing, which is not an error.
 
+A claude project install also ships the **activity profiler** payload: the harness resources
+`libexec/hp.sh`, `libexec/hp.js` and `libexec/view.html`, copied as they stand, and the
+`show-profile` skill, which renders a session's recorded activity — its skill, agent and tool calls
+with timings and token costs — as text or as a self-contained HTML page. Six hook entries, one per
+event (`PostToolUse`, `PostToolUseFailure`, `PreCompact`, `PostCompact`, `SessionStart`,
+`SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each appends
+one line to the project's `.harness-profile/<session-id>.jsonl`, and a capture that fails, or finds
+no `node` to run under, exits 0 with no output. A claude session on the web loads no plugin's hooks
+and records nothing there; the skill names the tool's `init` for committing the hook where a session
+needs one. A user-level install renders the skill and copies none of the resources; no opencode or
+mage install ships the resources or the hook entries.
+
 Opencode loads the plugin directory and registers its agents, skills, commands and, where
 `kbase` ships, the `kbase` MCP server under the registry's ids, and injects a plan-state reminder
 into the parent session at agent dispatch and agent completion, gated by `ACTIVE_PLAN.md` — file
@@ -120,7 +132,8 @@ by every check, an interpreter's (`python3 -`, `perl`, `ruby`, `node`) only by t
 write check. Its own command line is read like any other. This check blocks with `Blocked: <reason>` and a pointer to the edit tools.
 
 Their `.index/` check is active only where the install directory holds the kbase skill's skill entry
-file, which they look for on every call, so an install of the devpro plugin is never blocked by it. It blocks a call
+file, which they look for on every call, so an install without the kbase component is never blocked
+by it. It blocks a call
 that reaches into `<project>/kb-root/.index/`, whose index records kbase's own tools read and
 change:
 - a shell command with a word naming a path there, existence checks (`stat`, and `test` or `[` with `-e`, `-d` or `-f`) excepted

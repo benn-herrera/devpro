@@ -16,7 +16,7 @@ definition; neither applies to a supporting file. For every definition and every
 
 - Under opencode a rendered definition carries its banner as the comment lines a supporting file
   opens with and has no frontmatter; its metadata is in the registry `registry.json`, a harness-rendered
-  file that carries its marker, `"plugin": "<plugin>"`, rather than a banner (Installed tree).
+  file that carries its marker, `"plugin": "devpro"`, rather than a banner (Installed tree).
 
 A definition that fails to render refuses the install with nothing written.
 

@@ -8,7 +8,7 @@ it. A Homebrew tap is a distribution channel for that release archive, not a pac
 The installed package provides the `devpro` command. `python3 -m devpro` is the same command:
 both print the same `--help`, and the same arguments install the same product, byte for byte.
 Every `devpro` command exits 0 on success and 2 on a refusal or an operating-system failure, printing `error: <message>` on
-stderr. Every command that takes a plugin takes it as `--plugin=NAME`, with the default
+stderr. Every command that takes components takes them as `--components=CSV`, with the default
 Deployed Surfaces, Plugins states.
 
 devpro also runs from a checkout of this repository, as `PYTHONPATH=<clone> python3 -m devpro
@@ -19,7 +19,7 @@ an editable install of a clone count as one. The devpro package installed into a
 environment does not, wherever the environment sits, including inside another project's repository.
 Run from an installed package:
 
-- A project install of either plugin writes its runner include lines for any project (Deployed
+- A project install writes its runner include lines for any project (Deployed
   Surfaces, Plugins).
 - Installing the agents file is not refused for uncommitted changes (Agents File).
 

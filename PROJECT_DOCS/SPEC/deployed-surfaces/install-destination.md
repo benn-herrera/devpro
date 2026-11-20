@@ -19,12 +19,12 @@ the project it installs into; a user-level install places nothing relative to a 
 | target | harness directory | project root |
 |---|---|---|
 | any, with `--subdir=<dir>` | `<target>/<dir>`; an empty `--subdir=` is the target itself | the target |
-| a harness directory (mage: `Mage/Skills`) | the target (mage: `<target>/<plugin>`) | the target's parent (mage: the target) |
+| a harness directory (mage: `Mage/Skills`) | the target (mage: `<target>/devpro`) | the target's parent (mage: the target) |
 | the user's home directory | the harness's user harness directory inside it | — (user-level) |
 | any other | `<target>/<project-harness-dir>` | the target |
 
-The project harness directory is `.claude/` by default, `.opencode/` for `opencode`, and `<plugin>/`
-for mage, so a `Mage/Skills` target gives `<target>/<plugin>`. A home-directory target with
+The project harness directory is `.claude/` by default, `.opencode/` for `opencode`, and `devpro/`
+for mage, so a `Mage/Skills` target gives `<target>/devpro`. A home-directory target with
 `--harness=mage` takes the last row, mage having no user harness directory.
 
 The install's **install directory** is where it writes the install product, a directory of the
@@ -42,14 +42,15 @@ opencode the install product is one plugin directory, and its definitions regist
 `<plugin>-<name>`. The install directory may be absent and is created once every check has passed.
 
 An install is **user-level** when its harness directory is the harness's user harness directory,
-however the target reached it, and is per plugin: `~/.claude/skills/<plugin>/` or
-`~/.config/opencode/plugins/<plugin>/`. A user-level install renders the definitions its plugin
-carries and the harness-rendered files (the plugin manifest and `.mcp.json` where `kbase` ships, or
+however the target reached it, and names the plugin's directory: `~/.claude/skills/devpro/` or
+`~/.config/opencode/plugins/devpro/`. A user-level install renders the definitions the install
+carries — the plugin's set with its components on — and the harness-rendered files (the plugin
+manifest and `.mcp.json` where `kbase` ships, or
 the registry `registry.json`), prunes as any install does, and writes nothing else but, under opencode,
 the plugin entry, a harness resource without which the plugin cannot register: no other harness resource, no
 install-time probe or guardrail registration (Shipped files), no shipped package (none of
-`kb-tools/`, the docdicer tools package and the development scripts package), no runner include line and no runner file. A user-level install of the kbase
-plugin under opencode registers the `kbase` MCP server through the registry ([Plugins](plugins.md)).
+`kb-tools/`, the docdicer tools package and the development scripts package), no runner include line and no runner file. A user-level install with the kbase
+component under opencode registers the `kbase` MCP server through the registry ([Plugins](plugins.md)).
 
 A user-level claude install and a project's of the same plugin share a name, and Claude Code loads the
 user-level one alone. A claude install reports this on stderr and never refuses over it: a

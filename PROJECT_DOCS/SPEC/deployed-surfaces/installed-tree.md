@@ -8,8 +8,8 @@ edit.
 
 An installed tree needs no devpro installation: removing the devpro package, or replacing it with
 another version, changes nothing any installed file does, and only the next `devpro install` needs
-the package. The devpro plugin adds no machine-level dependency: beyond the harness, it runs only
-what installing the devpro package already requires. What a plugin needs beyond that is the
+the package. The devpro set adds no machine-level dependency: beyond the harness, it runs only
+what installing the devpro package already requires. What a component needs beyond that is the
 operator's to install, as Plugins states for each.
 
 A rendered definition, a copied script or build file, and a harness resource each states its origin
@@ -30,19 +30,21 @@ rendered file lands with the mode the process umask gives a new file. A harness 
 lines, as shipped: the install adds nothing to it. A harness-rendered file — the plugin manifest and
 `.mcp.json` under claude and mage, `registry.json` under opencode, and under claude the guardrail
 registration — carries no banner; its **ownership marker**, a fixed string in its content, states
-its origin: `"name": "<plugin>"` in the plugin manifest, `"command": "kbase"` in `.mcp.json`,
-`"plugin": "<plugin>"` in `registry.json`, and `no readable script at` in
+its origin: `"name": "devpro"` in the plugin manifest, `"command": "kbase"` in `.mcp.json`,
+`"plugin": "devpro"` in `registry.json`, and `no readable script at` in
 `hooks/hooks.json`. No banner sits where it changes how
 the file is read. Every other copied file — `tools/.gitignore` among them — and every harness
 resource is installed byte-verbatim.
 
 A definition body names no installed path below the harness directory for a session to run or edit. A
-script inside a skill's own directory is named relative to that directory (`tools/docdicer`). The
+script inside a skill's own directory is named relative to that directory (`tools/docdicer`); the
+profiler's launcher sits in the install directory's `libexec/` and is named relative to the skill's
+directory too (`../../libexec/hp.sh`). The
 project's scratch directory is `.devpro-temp/` under the project root, the same name under every
 harness. A cross-definition reference renders
 with the plugin's namespace — under claude and mage `<plugin>:<name>` for an agent, a command or a
 skill, and under opencode `<plugin>-<name>`, the id the registry registers it under; a `kbase` MCP
-tool is named `mcp__plugin_kbase_kbase__<tool>` under claude, `mcp_kbase_<tool>` under mage and
+tool is named `mcp__plugin_devpro_kbase__<tool>` under claude, `mcp_kbase_<tool>` under mage and
 `kbase_<tool>` under opencode. A project's agents file is named `AGENTS.md` under claude and
 opencode, and `CLAUDE.md` under mage (SPEC.md, Agents File).
 

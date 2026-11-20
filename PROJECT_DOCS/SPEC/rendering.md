@@ -52,7 +52,8 @@ Every rendering of the definitions in the deployed surfaces has five observable 
   the path is taken as given — there is no search, the default path or the one named — and the
   default file's absence is no config at all, while an explicitly named file that does not exist
   is refused, naming the path. Its sections are named per harness: `[<harness>]` carries the
-  harness's settings, its `install` value among them (SPEC.md, Install destination);
+  harness's settings, its `install` (SPEC.md, Install destination) and `components` (SPEC.md,
+  Deployed Surfaces, Plugins) values among them;
   `[<harness>-model-map]` carries its model map. A section that is neither a supported harness's
   `[<harness>]` nor its `[<harness>-model-map]` — a `[DEFAULT]` section holding entries among
   them — is refused, naming the section and the supported harnesses; a key in a settings section
@@ -74,10 +75,11 @@ Every rendering of the definitions in the deployed surfaces has five observable 
 
 A cross-definition reference renders with the plugin's namespace under the harness: under claude and
 mage `<plugin>:<name>` for an agent, a command or a skill, and under opencode `<plugin>-<name>`.
-Apart from the plugin's name and the namespace it gives references, text differs between plugins only
+Apart from the namespace, text differs between installs only
 by an optional reference's paragraph being present or absent.
 
-References close within the shipped set, the definitions the render's plugin carries. A render in
+References close within the shipped set, the definitions the render carries — the plugin's set with
+its components on. A render in
 which a definition refers to one outside that set is refused,
 naming the definition that refers and the one it refers to, and nothing is written. An **optional
 reference** is the one exception: where its referent does not ship, the paragraph holding it is
