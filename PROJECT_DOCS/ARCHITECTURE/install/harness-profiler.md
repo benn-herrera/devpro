@@ -6,27 +6,26 @@ harness-profiler plugin by Aleksandr Furmanov (MIT, `github.com/afurmanov/harnes
 acknowledgement in README.md credits the source. devpro owns the ported code
 and carries no version stamp on it.
 
-**Resources.** Three files live in `devpro/harnesses/resources/claude/libexec/`: `hp.sh`, the
+**Resources.** Three files live in `devpro/harnesses/resources/claude/profiler/`: `hp.sh`, the
 POSIX-sh launcher that finds `python3` (`HP_PYTHON` overrides the search); `hp.py`, the whole tool —
 `capture`, `tree`, `init`, `doctor` — one file, Python 3 standard library only, no dependency; and
 `view.html`, the self-contained page template that loads nothing from the network. Each carries the
 `!INSTALLED! … devpro` banner within its first ten lines — the banner rule binds every harness
 resource. `harness_resource_copies` lands each at the path it holds below the install directory, so
-the install directory gains `libexec/`.
+the install directory gains `profiler/`.
 
 **Wiring.** `harnesses/claude.py`'s `_registration_hooks` carries the profiler's six hook entries
 beside the guardrail's and the reminder's: `PostToolUse`, `PostToolUseFailure`, `PreCompact`,
 `PostCompact`, `SessionStart` and `SubagentStop`, each `matcher "*"`, `async: true`, `timeout: 5`,
-running `sh "${CLAUDE_PLUGIN_ROOT}/libexec/hp.sh" capture claude`. The wiring is data in the harness
-module, not a new mechanism, and no entry is gated on the install-time probe. A capture appends one
-line to the project's `.devpro-temp/harness-profile/<session-id>.jsonl` — the project's scratch
+running `sh "${CLAUDE_PLUGIN_ROOT}/profiler/hp.sh" capture claude`. The wiring is data in the harness
+module, not a new mechanism, and no entry is gated on the install-time probe. A capture appends one line to the project's `.devpro-temp/claude-profiler/<session-id>.jsonl` — one of the per-harness stores under `.devpro-temp/`, every `*-profiler` directory of which `hp.py`'s `tree` renders — the project's scratch
 directory, which the project's own convention gitignores; a capture that fails, or finds no
 `python3`, exits 0 with no output.
 
 **The skill.** `show-profile` ships as a rendered skill definition under `devpro/definitions/skills/`,
 so it carries the generated banner and the harness's namespace (`devpro:show-profile` under claude)
-and renders under every harness. Its finder's first candidate, `../../libexec/hp.sh` from the
-skill's directory, resolves to `<install-dir>/libexec/hp.sh` where the payload landed; its second,
+and renders under every harness. Its finder's first candidate, `../../profiler/hp.sh` from the
+skill's directory, resolves to `<install-dir>/profiler/hp.sh` where the payload landed; its second,
 the committed `.claude/harness-profiler/hp.sh`, covers a repository where the hook was committed for
 claude-on-web; where neither stands, the skill says the tool is not installed. A user-level install
 renders the skill and copies no resource, so there it is the committed copy or the absence.
@@ -41,7 +40,16 @@ its `.claude/settings.json`.
 
 **What does not exist.** No companion-plugin mechanism is built: the profiler has no namespace of its
 own and no carrier but the devpro plugin. Should it become optional later, it becomes a
-`--components` value. No opencode or mage payload ships: the profiler's hooks are claude's, and an
-opencode capture, should one come, is recreated in the opencode plugin's TypeScript rather than
-reusing this code. Token counts come from claude's own transcripts under `~/.claude/projects/`, which
+`--components` value. **The opencode capture.** Under opencode the plugin itself records: `profiler.ts` beside the entry
+carries the capture, recreated in the plugin's TypeScript against the plugin's hook surface —
+`execute.before` and `execute.after` paired on the call's id time every tool call (the `tool`,
+`sessionID`, `status`, `input` and `result`/`error` the after-hook reports), the idle hook marks the
+session's lifecycle — and appends the records to its own
+`.devpro-temp/opencode-profiler/<session-id>.jsonl` store, `harness` `"opencode"`, that `hp.py`'s
+tree and page render beside the claude sessions' in `.devpro-temp/claude-profiler/` — the trace
+stores split per harness, no shared directory. A
+capture that fails raises nothing out of the hook. `init` and `doctor` stay claude-facing: opencode
+has no committed-hook concept, and the install ships the render payload at
+`<plugin-dir>/profiler/`, where the show-profile skill's first finder candidate resolves it. The
+records carry no token fields the hooks do not supply. Token counts come from claude's own transcripts under `~/.claude/projects/`, which
 is claude's data, not a source the install configures.

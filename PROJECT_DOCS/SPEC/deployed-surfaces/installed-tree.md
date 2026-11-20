@@ -38,8 +38,8 @@ resource is installed byte-verbatim.
 
 A definition body names no installed path below the harness directory for a session to run or edit. A
 script inside a skill's own directory is named relative to that directory (`tools/docdicer`); the
-profiler's launcher sits in the install directory's `libexec/` and is named relative to the skill's
-directory too (`../../libexec/hp.sh`). The
+profiler's launcher sits in the install directory's `profiler/` and is named relative to the skill's
+directory too (`../../profiler/hp.sh`). The
 project's scratch directory is `.devpro-temp/` under the project root, the same name under every
 harness. A cross-definition reference renders
 with the plugin's namespace — under claude and mage `<plugin>:<name>` for an agent, a command or a

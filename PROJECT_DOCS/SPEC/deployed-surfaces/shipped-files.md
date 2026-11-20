@@ -84,8 +84,10 @@ per agent, command and skill — id, body file, description, and for an agent it
 and permissions — and the `kbase` MCP server where `kbase` ships. An install copies the harness
 resources into the install directory, except a user-level install, which copies only opencode's
 entry, and save a file conditional on the install-time probe (below), so a resource lands at the
-path it holds below the install directory: opencode's at `<install-dir>/index.ts`, the plugin entry, and
-`<install-dir>/guardrail.ts`, and claude's at `<install-dir>/hooks/guardrail.pl` and
+path it holds below the install directory: opencode's at `<install-dir>/index.ts`, the plugin entry,
+`<install-dir>/guardrail.ts`, `<install-dir>/profiler.ts` and `<install-dir>/profiler/hp.sh`,
+`<install-dir>/profiler/hp.py`, `<install-dir>/profiler/view.html`, and claude's at
+`<install-dir>/hooks/guardrail.pl` and
 `<install-dir>/hooks/state-table-reminder.sh` (mage ships none):
 in the install directory, outside its three deployed surfaces. Each keeps its bytes and its mode:
 the install stamps nothing on them. Every such file carries an installed banner
@@ -93,16 +95,18 @@ the install stamps nothing on them. Every such file carries an installed banner
 edits. A harness shipping none copies nothing, which is not an error.
 
 A claude project install also ships the **activity profiler** payload: the harness resources
-`libexec/hp.sh`, `libexec/hp.py` and `libexec/view.html`, copied as they stand, and the
+`profiler/hp.sh`, `profiler/hp.py` and `profiler/view.html`, copied as they stand, and the
 `show-profile` skill, which renders a session's recorded activity — its skill, agent and tool calls
 with timings and token costs — as text or as a self-contained HTML page. Six hook entries, one per
 event (`PostToolUse`, `PostToolUseFailure`, `PreCompact`, `PostCompact`, `SessionStart`,
 `SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each appends
-one line to the project's `.devpro-temp/harness-profile/<session-id>.jsonl`, and a capture that
+one line to the project's `.devpro-temp/claude-profiler/<session-id>.jsonl`, and a capture that
 fails, or finds no `python3` to run under, exits 0 with no output. A claude session on the web loads
 no plugin's hooks and records nothing there; the skill names the tool's `init` for committing the
 hook where a session needs one. A user-level install renders the skill and copies none of the
-resources; no opencode or mage install ships the resources or the hook entries.
+resources. A project opencode install also ships the profiler's render payload — `profiler/hp.sh`,
+`profiler/hp.py` and `profiler/view.html` — and the capture `profiler.ts` beside the plugin entry, and
+registers no hook entries; a mage install ships none of them.
 
 Opencode loads the plugin directory and registers its agents, skills, commands and, where
 `kbase` ships, the `kbase` MCP server under the registry's ids, and injects a plan-state reminder
