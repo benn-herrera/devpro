@@ -25,7 +25,7 @@ commit adds the ROADMAP item that records the resolution: publish the docdicer `
 | Package | State | Rating | Changes |
 | --- | --- | --- | --- |
 | P1 | landed | mechanical | the two passage pairs applied verbatim: the skill's application bullet gains the byte-check, the Toolchain paragraph names its runner target |
-| P2 | in progress | expert | the review document `ACTIVE_PLAN_REVIEW.md`, and P2's Status row |
+| P2 | landed | expert | the review document `ACTIVE_PLAN_REVIEW.md`, and P2's Status row |
 | P3 | drafted | expert | the burndown's fixes from the review, and the landing commit: `ACTIVE_DESIGN.md`, `ACTIVE_PLAN_REVIEW.md` and this plan deleted, and the ROADMAP item added |
 
 ## P1 — The two passage pairs applied
