@@ -1,42 +1,43 @@
-# ACTIVE DESIGN
+# The delta application ends verified in the development skill, run by docdicer's check
 
-## Drafts
+The developers who work in a project devpro equips get mechanical confirmation that a design entry's
+delta was applied, from the skill that tells them to apply it rather than from each project's own
+conventions. The check reaches them in the runner snippets every install already writes, and devpro's
+own CONVENTIONS names the local rule and target beside the skill's.
 
-### The delta-application byte-check joins the development skill
+The preceding is a summary of the detailed design below. Summaries are unavoidably lossy. The summary text is not to be consistency checked. The design is authoritative.
 
-Decision (user): the byte-check policy is process, not a project idiosyncrasy — the development
-skill states it, and the mechanism ships in the docdicer package (`check-design --deltas-applied`;
-the RFE is under way in the docdicer session, which owns the tool side).
+## ARCHITECTURE delta
 
-Facts: the policy's home today is `PROJECT_DOCS/CONVENTIONS/planning-and-execution/a-delta-application-ends-verified.md`
-— devpro's own CONVENTIONS, not the shipped skill; the repo's local check,
-`devtools/check_deltas.py`, retired by the user's act (`a4e47c3`), its test and justfile recipe with
-it, so docdicer's `--deltas-applied` is the only mechanism from here on; the docdicer checks reach
-consumers through the installed runner snippets, which now carry the
-target — `docdicer-check-design-deltas-applied` ("check that ACTIVE_DESIGN pending project doc
-deltas were applied") — so the runner-target question closes on the snippets' name; the skill
-section closes too: the rule joins the Design section's application bullet, whose sentence already
-names the link check as the application's only mechanical confirmation; the previous plan landed the
-dice-lifecycle bullet in the development skill but not the byte-check rule — the gap this ticket
-closes.
+### [Recipes](PROJECT_DOCS/ARCHITECTURE/recipes.md)
 
-Open: the live probe of `--deltas-applied` — `just dev-check-design-deltas-applied` errored
-(`unrecognized arguments`), `dev-dd` running the local clone (`PYTHONPATH=<clone> python3 -m
-docdicer`) still at v0.11.2-1; the clone updates to the release in the docdicer session. The
-CONVENTIONS leaf's fate (cite the skill's rule, or keep the project instance beside it).
+```markdown
+(SPEC.md, Guide and README). That import is the install's own snippet,
+`.claude/skills/devpro/skills/docdicer/tools/runner-snippets/docdicer.just`, so this checkout needs
+one `just agents` run before its docdicer recipes exist: until it has run, the `docs` surface —
+`just check-links`, and so `just test` and `just test-changed` on any document — fails with
+`Does not contain recipe 'docdicer'`. The private `_venv` recipe creates `.venv`
+```
 
-### The docdicer pin bumps to the release carrying --deltas-applied
+```markdown
+(SPEC.md, Guide and README). That import is the install's own snippet,
+`.claude/skills/devpro/skills/docdicer/tools/runner-snippets/docdicer.just`, so this checkout needs
+one `just agents` run before its docdicer recipes exist: until it has run, the `docs` surface —
+`just check-links`, and so `just test` and `just test-changed` on any document — fails with
+`Does not contain recipe 'docdicer'`. The byte-check over a design's pending deltas, SPEC.md and
+ARCHITECTURE.md, is `check-design --deltas-applied`, which the snippet set exposes as
+`docdicer-check-design-deltas-applied`; this repository runs it through the private `dev-dd`, as
+`just dev-check-design-deltas-applied`, against the hosted clone. The private `_venv` recipe creates
+`.venv`
+```
 
-Decision (user): the flag is `--deltas-applied` — not `--check-deltas-applied`, not
-`--include-deltas`; the RFE is under way in the docdicer session.
+## Code delta
 
-Facts: the pin is `devpro/docdicer-tools/docdicer:8` — bumped, `VERSION=0.12.0`; the runner snippets
-(`docdicer.just`, `docdicer.mk`) carry the new target and help; the working tree's justfile sketch
-corrects to `--deltas-applied`. At the bump, the both-present enforcement the CONVENTIONS leaf
-defers to ("until then the rule above carries it") activates.
+### [devpro/definitions/skills/development.py](devpro/definitions/skills/development.py)
 
-Open: the live verification — `just dev-check-design-deltas-applied` errored (`docdicer:
-unrecognized arguments: --deltas-applied`), because `dev-dd` runs the local clone
-(`PYTHONPATH=<clone> python3 -m docdicer`), still at v0.11.2-1; the clone updates to the release in
-the docdicer session, and this ticket's verification follows it. The pin bump commits when the
-capability is verified live.
+The application bullet under *Design* names only the link check as what confirms an application
+("The project's link check, where it has one, confirms them"), so the shipped skill states no
+byte-check and an agent applying a delta reads its work as done once links resolve. The bullet gains
+the byte-check: each `becomes` block occurs byte-exact in its target, and where the becomes-text does
+not contain it, the from-text is gone, verified by `check-design --deltas-applied` where the project
+carries it — alongside the link sentence, not in a section of its own.
