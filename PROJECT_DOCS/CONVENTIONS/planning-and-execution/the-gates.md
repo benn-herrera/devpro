@@ -9,3 +9,8 @@ step-down application: the dispatch's `model` parameter
 `TEST_SURFACE_MAP`; a change to `PROJECT_DOCS/`, `images/` or a top-level `*.md` selects the `docs`
 surface, the link and tree check). Cross-surface coupling is removed, not paid for by running
 unrelated surfaces.
+
+`check-wheel` compares the wheel's package data with `git ls-files --cached --others --exclude-standard`
+(`devtools/scripts/check-wheel.sh:29-33`), so a package-data deletion cannot pass the wheel surface
+before it is staged — a tree whose package-data change is unstaged fails it, with the deletion on
+the index still expected and absent from the wheel.

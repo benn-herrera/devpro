@@ -2,12 +2,7 @@
 # !INSTALLED! from devpro/harnesses/resources/claude/libexec/hp.py — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
 """harness-profiler: records every tool call of a coding agent session and prints the calls as a tree.
 
-One file, Python 3 standard library only.
-
-  hp capture <harness>          hook entry point: reads one payload on stdin
-  hp tree [id-prefix] [--branch <name>] [--verbose] [--format text|html]
-  hp init claude                commits the hook into this repo (Claude Code on the web)
-  hp doctor                     says whether capture works here and why not
+One file, Python 3 standard library only. The command forms are the USAGE constant.
 """
 
 from __future__ import annotations
@@ -216,8 +211,7 @@ def branch_of(start: Path | str) -> str | None:
 
 
 def hook_env() -> dict[str, str | None]:
-    """The one variable the hook needs. The plugin directory's scan holds a plugin that hands the whole
-    environment around."""
+    """The one variable the hook needs."""
     return {"CLAUDE_PROJECT_DIR": os.environ.get("CLAUDE_PROJECT_DIR")}
 
 
@@ -362,7 +356,7 @@ def context_tokens_of(payload: dict) -> int | float | None:
         with file.open("rb") as handle:
             handle.seek(size - length)
             text = handle.read(length).decode("utf-8", "replace")
-    except OSError:
+    except (OSError, ValueError, TypeError):
         return None
     for line in reversed(text.split("\n")):
         if payload["tool_use_id"] not in line:
@@ -496,7 +490,7 @@ def _child_agent_type(payload: dict, response: dict, child_id: str | None) -> st
     return (payload.get("tool_input") or {}).get("subagent_type") if payload.get("tool_name") == "Agent" else None
 
 
-def build_record(payload: dict, harness: str, *, now: datetime | None = None) -> dict:
+def build_record(payload: dict, harness: str) -> dict:
     """One tool call's record, in schema order; absent values are left out."""
     response = payload.get("tool_response") or {}
     if not isinstance(response, dict):
@@ -512,7 +506,7 @@ def build_record(payload: dict, harness: str, *, now: datetime | None = None) ->
     record = {
         "v": SCHEMA_VERSION,
         "harness": harness,
-        "at": _iso(now or datetime.now(timezone.utc)),
+        "at": _iso(datetime.now(timezone.utc)),
         "session": payload.get("session_id"),
         "agent_id": payload.get("agent_id"),
         "agent_type": payload.get("agent_type"),
@@ -539,7 +533,7 @@ def serialize(record: dict) -> str:
     line = _json(record)
     fitted = dict(record)
     for key in ("result", "args"):
-        while len(line.encode("utf-8")) > LINE_LIMIT and fitted.get(key):
+        while len(line.encode("utf-8", "replace")) > LINE_LIMIT and fitted.get(key):
             shorter = len(fitted[key]) // 2
             if shorter < 1:
                 del fitted[key]
@@ -549,12 +543,12 @@ def serialize(record: dict) -> str:
     return line
 
 
-def build_event_record(payload: dict, harness: str, *, now: datetime | None = None) -> dict:
+def build_event_record(payload: dict, harness: str) -> dict:
     """A compaction or session start's record: a marker, not a call, so it carries no `tool`."""
     record = {
         "v": SCHEMA_VERSION,
         "harness": harness,
-        "at": _iso(now or datetime.now(timezone.utc)),
+        "at": _iso(datetime.now(timezone.utc)),
         "session": payload.get("session_id"),
         "agent_id": payload.get("agent_id"),
         "event": payload.get("hook_event_name"),
@@ -583,9 +577,7 @@ def session_file(directory: Path | str, session: object) -> Path:
     return Path(directory) / TRACE_DIR / f"{safe}.jsonl"
 
 
-def capture(
-    harness: str, text: str, *, env: dict[str, str | None] | None = None, now: datetime | None = None
-) -> Path | None:
+def capture(harness: str, text: str) -> Path | None:
     """Append one record for `text`, the hook payload, and return the file it landed in."""
     payload = json.loads(text)
     is_tool = payload.get("hook_event_name") in TOOL_EVENTS
@@ -593,12 +585,12 @@ def capture(
         return None
     if is_tool and not payload.get("tool_name"):
         return None
-    directory = project_dir(payload.get("cwd") or os.getcwd(), env)
+    directory = project_dir(payload.get("cwd") or os.getcwd())
     file = session_file(directory, payload["session_id"])
     file.parent.mkdir(parents=True, exist_ok=True)
-    record = build_record(payload, harness, now=now) if is_tool else build_event_record(payload, harness, now=now)
+    record = build_record(payload, harness) if is_tool else build_event_record(payload, harness)
     # One small append per record keeps concurrent hooks from interleaving.
-    with file.open("a", encoding="utf-8") as handle:
+    with file.open("a", encoding="utf-8", errors="replace") as handle:
         handle.write(serialize(record) + "\n")
     return file
 
@@ -1289,13 +1281,13 @@ def stale_hook(repo: Path) -> str | None:
     return " and ".join(gap for gap in gaps if gap) or None
 
 
-def doctor(cwd: Path | str, *, env: dict[str, str | None] | None = None, home: Path | str | None = None) -> str:
+def doctor(cwd: Path | str) -> str:
     """Whether capture works here, and why not."""
-    directory = project_dir(cwd, env=env)
+    directory = project_dir(cwd)
     sessions = list_sessions(directory)
     newest = max((session["last"] for session in sessions), default=None)
     repo = git_root(cwd) or Path(cwd)
-    sources = hook_sources(repo, Path(home) if home else Path.home())
+    sources = hook_sources(repo, Path.home())
     stale = stale_hook(repo)
     installed = (
         ", ".join(sources) if sources else "not installed (install the plugin, or run harness-profiler init claude)"
@@ -1327,13 +1319,14 @@ USAGE = """Usage:
 def read_stdin() -> str:
     """The hook payload on stdin, and nothing where it cannot be read."""
     try:
-        return sys.stdin.read()
-    except (OSError, UnicodeDecodeError):
+        return sys.stdin.buffer.read().decode("utf-8", "replace")
+    except OSError:
         return ""
 
 
 def main(argv: list[str]) -> int:
     """The subcommand's exit status."""
+    sys.stdout.reconfigure(encoding="utf-8")
     command = argv[0] if argv else None
     rest = argv[1:]
     if command == "capture":

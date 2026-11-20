@@ -42,6 +42,7 @@ in just over 16K lines of runtime code, including vision tower support and an Op
 - Homebrew (macOS or Linux), or pipx on a machine without it, to install devpro.
 - `just` 1.33.0 or later, where the project's runner is a justfile: the include line the install writes is an `import?`, which earlier `just` rejects, and no install checks your version.
 - `perl` with core `JSON::PP` for the claude guardrail: without them the install skips the hook, says so in one line, and installs everything else.
+- An activity profiler for Claude Code: each tool call of a session is recorded to `.devpro-temp/harness-profile/` at the project root, and the `show-profile` skill renders the trace as a page.
 
 ## Quick Start Guide
 

@@ -3,7 +3,7 @@
 Every claude project install ships the activity profiler as payload, not as a companion plugin
 (SPEC.md, Deployed Surfaces, Shipped files). The profiler is devpro's own code, ported from the
 harness-profiler plugin by Aleksandr Furmanov (MIT, `github.com/afurmanov/harness-profiler`); the
-acknowledgement in README.md credits the source of the idea and design. devpro owns the ported code
+acknowledgement in README.md credits the source. devpro owns the ported code
 and carries no version stamp on it.
 
 **Resources.** Three files live in `devpro/harnesses/resources/claude/libexec/`: `hp.sh`, the

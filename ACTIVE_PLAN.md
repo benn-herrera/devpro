@@ -32,7 +32,7 @@ a dirty clone.
 | P1 | landed | mechanical | the four passage pairs applied verbatim: SPEC's profiler paragraph and guide-and-readme requirements bullet, ARCHITECTURE's harness-profiler leaf and repo-layout resources line |
 | P2 | landed | expert | the port: `hp.py` replaces `hp.js`, `hp.sh` finds python3, the trace moves to `.devpro-temp/harness-profile/`, the skill text and tests follow |
 | P3 | landed | expert | Post-plan review |
-| P4 | in progress | expert | the burndown's fixes from the review, and the landing commit: `ACTIVE_DESIGN.md`, `ACTIVE_PLAN_REVIEW.md` and this plan deleted, and the `0.18.0` bump |
+| P4 | landed | expert | the burndown's fixes from the review, and the landing commit: `ACTIVE_DESIGN.md`, `ACTIVE_PLAN_REVIEW.md` and this plan deleted, and the `0.18.0` bump |
 
 ## P1 — The four passage pairs applied
 
@@ -318,7 +318,8 @@ the append's `open` at `:601`. A third site the executor's run surfaced: `serial
 fit check encodes the line strictly (`:536` area), so a lone surrogate in tool output raises before
 the replace-append saves the record — a record-loss path the JS source did not have. The fix: encode
 the line once with `errors="replace"` and run the fit check on the encoded bytes, so the measured
-length is the written length and a surrogate degrades to U+FFFD instead of losing the record.
+length is the written length and a surrogate degrades as CPython's encode-time `replace` emits —
+`?` (U+003F) — instead of losing the record.
 Deduplicate `USAGE`: the constant (`:1320-1324`) is the home; the
 four docstring lines at `:7-10` are cut. Fix the unparseable docstring sentence (`:219-221`). Delete
 the four injection seams (`:499`, `:552`, `:586-588`, `:1292`) — no justification exists after B4,

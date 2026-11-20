@@ -9,3 +9,7 @@ files being this repository's own, so a change adding a resource must not reuse 
 because the walk is already there: the suffix or name says nothing about what a file already holds,
 and a `.py` resource would gain a banner above its own. This tree is the master for what it ships — an installed copy is never edited,
 and no other repository's copy is a source.
+
+A harness resource written in Python is inside `just lint`'s paths (`justfile:214-216`) like any
+other module, so it must pass black, isort and flake8 as well as carrying its banner — adding or
+deleting one changes what the lint gate covers, not just what a consumer receives.
