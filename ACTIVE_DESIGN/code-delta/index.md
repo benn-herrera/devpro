@@ -11,3 +11,4 @@ Contents:
 - [ARCHITECTURE.md, Install, Harness profiler](architecture-md-install-harness-profiler.md)
 - [SPEC.md, Guide and README](spec-md-guide-and-readme.md)
 - [CONVENTIONS.md, Code definitions and install, A sentence two harness resources carry is one text](conventions-md-two-resources-one-text.md)
+- [CONVENTIONS.md, Planning and execution, A delta application ends verified](conventions-md-a-delta-application-ends-verified.md)
