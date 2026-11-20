@@ -66,6 +66,20 @@ _PLUGIN_GUARDRAIL_COMMAND = _hook_command(interpreter="perl", script=_GUARDRAIL_
 # The reminder is bash, as every other script in this repository is, so its command names bash rather
 # than the shell the command itself runs under.
 _PLUGIN_REMINDER_COMMAND = _hook_command(interpreter="bash", script=_REMINDER_SCRIPT, report=_MISSING_REMINDER_REPORT)
+# The activity profiler's capture: one hook payload on stdin, one record appended to the project's
+# `.harness-profile/`. It runs out of band and short, and its launcher exits 0 where it finds no node,
+# so neither a failed capture nor a missing toolchain blocks the call that fired it.
+_PROFILER_SCRIPT = "libexec/hp.sh"
+_PROFILER_COMMAND = f'sh "${{CLAUDE_PLUGIN_ROOT}}/{_PROFILER_SCRIPT}" capture claude'
+_PROFILER_TIMEOUT = 5
+_PROFILER_EVENTS = (
+    "PostToolUse",
+    "PostToolUseFailure",
+    "PreCompact",
+    "PostCompact",
+    "SessionStart",
+    "SubagentStop",
+)
 # The registration's marker: the phrase both commands' reports write for a script they cannot open.
 # The reminder entry outlives a failed probe, so the file is written without the guardrail's report
 # in it, and a later install still has to read it as this repository's own.
@@ -82,10 +96,19 @@ def _hook_entry(*, matcher: str, command: str) -> dict[str, object]:
     return {"matcher": matcher, "hooks": [{"type": "command", "command": command}]}
 
 
+def _profiler_entry(*, command: str) -> dict[str, object]:
+    """One profiler matcher group: every firing of its event, the capture run out of band and bounded."""
+    return {
+        "matcher": "*",
+        "hooks": [{"type": "command", "command": command, "async": True, "timeout": _PROFILER_TIMEOUT}],
+    }
+
+
 def _registration_hooks(*, with_guardrail: bool) -> dict[str, list[dict[str, object]]]:
     """The registration's `hooks` object: the guardrail's entry on every Bash and file-tool call
-    where `with_guardrail` says the install-time probe leaves it, and one plan-state reminder entry
-    on every install, at the `Agent` call's return.
+    where `with_guardrail` says the install-time probe leaves it, one plan-state reminder entry
+    on every install, at the `Agent` call's return, and the profiler's entry on each event it
+    captures.
 
     That return is when the reminder is read: a foreground `Agent` call blocks its parent and Claude
     Code hands a hook's context to the parent's next request, so the sentence arrives at the
@@ -96,6 +119,8 @@ def _registration_hooks(*, with_guardrail: bool) -> dict[str, list[dict[str, obj
     if with_guardrail:
         hooks["PreToolUse"] = [_hook_entry(matcher=_GUARDRAIL_MATCHER, command=_PLUGIN_GUARDRAIL_COMMAND)]
     hooks["PostToolUse"] = [_hook_entry(matcher=_AGENT_MATCHER, command=_PLUGIN_REMINDER_COMMAND)]
+    for event in _PROFILER_EVENTS:
+        hooks.setdefault(event, []).append(_profiler_entry(command=_PROFILER_COMMAND))
     return hooks
 
 

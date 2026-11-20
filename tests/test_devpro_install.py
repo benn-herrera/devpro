@@ -403,6 +403,20 @@ _REMINDER = "hooks/state-table-reminder.sh"
 _SETTINGS = ".claude/settings.json"
 # A claude install writes its set into its plugin directory, below the harness directory it is given.
 _CLAUDE_PLUGIN_RELPATH = f".claude/{CLAUDE.bound(NAME).plugin_dir}"
+# The activity profiler: the payload the claude install copies beside the hooks, the skill that finds
+# it, and the registration entries that feed it.
+_PROFILER = "libexec"
+_PROFILER_FILES = ("hp.js", "hp.sh", "view.html")
+_PROFILER_EVENTS = (
+    "PostToolUse",
+    "PostToolUseFailure",
+    "PreCompact",
+    "PostCompact",
+    "SessionStart",
+    "SubagentStop",
+)
+_PROFILER_COMMAND = 'sh "${CLAUDE_PLUGIN_ROOT}/libexec/hp.sh" capture claude'
+_SHOW_PROFILE = "skills/show-profile/SKILL.md"
 
 
 def _claude_plugin(harness_dir: Path) -> Path:
@@ -443,8 +457,42 @@ def test_a_fresh_claude_install_ships_the_guardrail_and_registers_it_in_the_plug
     assert list(registration) == ["hooks"]
     hooks = registration["hooks"]
     assert [entry["matcher"] for entry in hooks["PreToolUse"]] == [_GUARDRAIL_MATCHER]
-    assert [entry["matcher"] for entry in hooks["PostToolUse"]] == ["Agent"]
+    assert "Agent" in [entry["matcher"] for entry in hooks["PostToolUse"]]
     assert not (tmp_path / _SETTINGS).exists()
+
+
+def test_the_profiler_resources_land_under_the_install_directorys_libexec(tmp_path: Path) -> None:
+    """The payload is a harness resource like the hooks beside it: each vendored file lands at
+    the path it holds below `resources/claude/`, so the plugin directory gains `libexec/` holding exactly
+    the launcher, the tool and the page, the launcher executable."""
+    root = tmp_path / ".claude"
+    root.mkdir()
+    _definition_install(root, project_root=tmp_path)
+    libexec = _claude_plugin(root) / _PROFILER
+    assert sorted(path.name for path in libexec.iterdir()) == sorted(_PROFILER_FILES)
+    assert os.access(libexec / "hp.sh", os.X_OK)
+
+
+def test_the_claude_registration_carries_the_profiler_on_every_event_it_captures(tmp_path: Path) -> None:
+    """A hooks file missing an entry ships a claude install that records no activity of that kind: each
+    of the profiler's six events carries one matcher group on every call, running the capture out of
+    band and short, beside the guardrail's and the reminder's entries."""
+    root = tmp_path / ".claude"
+    root.mkdir()
+    _definition_install(root, project_root=tmp_path)
+    hooks = json.loads((_claude_plugin(root) / _REGISTRATION).read_text(encoding="utf-8"))["hooks"]
+    for event in _PROFILER_EVENTS:
+        [profiler] = [entry for entry in hooks[event] if entry["matcher"] == "*"]
+        [hook] = profiler["hooks"]
+        assert hook == {"type": "command", "command": _PROFILER_COMMAND, "async": True, "timeout": 5}, event
+    assert [entry["matcher"] for entry in hooks["PreToolUse"]] == [_GUARDRAIL_MATCHER]
+
+
+def test_the_profile_skill_renders_under_every_harness() -> None:
+    """The skill is a rendered definition, not a claude payload: a harness that ships no profiler still
+    renders it, so its committed-copy fallback can be reached there."""
+    for ctx in (_CLAUDE_RENDER, _OPENCODE_RENDER, _MAGE_RENDER):
+        assert PurePosixPath(_SHOW_PROFILE) in dict(render_all(ctx)), ctx.harness.name
 
 
 def test_a_second_install_leaves_the_copied_plugin_standing_and_prunes_only_the_stale_render(
@@ -1348,6 +1396,18 @@ def test_a_direct_install_into_the_user_directory_is_user_level(_home: Path) -> 
     assert not (_claude_plugin(root) / "hooks").exists() and not (root / "settings.json").exists()
 
 
+def test_a_user_level_claude_install_renders_the_profile_skill_and_copies_no_resource(_home: Path) -> None:
+    """A user-level install renders every definition, so the skill is there to say the profiler is
+    absent; it copies no resource, so neither the payload nor a registration reaches `~/.claude`."""
+    root = _home / ".claude"
+    root.mkdir(parents=True)
+    install(root, _CLAUDE_RENDER, verbose=False, project_root=_home, uncommitted=_committed)
+    plugin = _claude_plugin(root)
+    assert (plugin / _SHOW_PROFILE).is_file()
+    assert not (plugin / _PROFILER).exists()
+    assert not (plugin / _REGISTRATION).exists()
+
+
 def test_a_user_level_opencode_install_copies_the_entry_and_no_guardrail(
     _home: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1743,8 +1803,8 @@ def test_a_failed_probe_installs_everything_else_and_neither_ships_nor_registers
     assert not (_claude_plugin(root) / _GUARDRAIL).exists()
     assert (_claude_plugin(root) / _REMINDER).is_file()
     hooks = json.loads((_claude_plugin(root) / _REGISTRATION).read_text(encoding="utf-8"))["hooks"]
-    assert list(hooks) == ["PostToolUse"]
-    assert [entry["matcher"] for entry in hooks["PostToolUse"]] == ["Agent"]
+    assert "PreToolUse" not in hooks
+    assert "Agent" in [entry["matcher"] for entry in hooks["PostToolUse"]]
     assert not (tmp_path / _SETTINGS).exists()
     [skipped] = [line for line in capsys.readouterr().err.splitlines() if line.startswith("guardrail hook skipped")]
     assert reason in skipped and "left in place" not in skipped
@@ -1781,7 +1841,7 @@ def test_a_probe_that_fails_and_then_passes_registers_the_guardrail_again(
     _definition_install(root, project_root=tmp_path)
     hooks = json.loads((_claude_plugin(root) / _REGISTRATION).read_text(encoding="utf-8"))["hooks"]
     assert [entry["matcher"] for entry in hooks["PreToolUse"]] == [_GUARDRAIL_MATCHER]
-    assert [entry["matcher"] for entry in hooks["PostToolUse"]] == ["Agent"]
+    assert "Agent" in [entry["matcher"] for entry in hooks["PostToolUse"]]
 
 
 def test_an_opencode_install_writes_no_claude_settings_file(tmp_path: Path) -> None:
@@ -1790,6 +1850,21 @@ def test_an_opencode_install_writes_no_claude_settings_file(tmp_path: Path) -> N
     _definition_install(root, _OPENCODE_RENDER, project_root=tmp_path)
     assert not (tmp_path / ".claude").exists()
     assert not (root / _GUARDRAIL).exists()
+
+
+def test_no_opencode_or_mage_install_copies_the_profiler_payload_or_registers_it(tmp_path: Path) -> None:
+    """The profiler's hooks are claude's, and its payload lands only where a harness ships it: another
+    harness's install holds neither `libexec/` nor a registration, however its definitions render."""
+    opencode = tmp_path / "opencode"
+    (opencode / ".opencode").mkdir(parents=True)
+    _definition_install(opencode / ".opencode", _OPENCODE_RENDER, project_root=opencode)
+    mage = tmp_path / "mage"
+    (mage / "plugins/devpro").mkdir(parents=True)
+    _definition_install(mage / "plugins/devpro", _MAGE_RENDER, project_root=mage)
+    for root in (_opencode_plugin(opencode / ".opencode"), mage / "plugins/devpro"):
+        assert not (root / _PROFILER).exists()
+        assert not (root / _REGISTRATION).exists()
+        assert (root / _SHOW_PROFILE).is_file()
 
 
 @pytest.mark.parametrize("subdir", ["tools/agents", ".", 'a"b $c'], ids=["subdir", "project-root", "shell-syntax"])

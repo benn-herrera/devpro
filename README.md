@@ -130,6 +130,8 @@ same install line.
 
 Credit to Jason Coleman (https://github.com/sangrail) for the kanban-from-markdown idea
 
+Credit to Aleksandr Furmanov for his [harness-profiler](https://github.com/afurmanov/harness-profiler) Claude Code plugin, whose source was adapted for our own activity profiler.
+
 - **pytest** (the pytest developers, MIT): Python test runner
 - **black** (Łukasz Langa and contributors, MIT): Python formatter
 - **isort** (Timothy Crosley and contributors, MIT): Python import sorter

@@ -1,4 +1,4 @@
-### ARCHITECTURE.md, Install, Harness profiler
+### [ARCHITECTURE.md, Install, Harness profiler](../../PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)
 
 A new leaf, carrying the vendored payload's statements whole:
 

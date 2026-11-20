@@ -1,4 +1,4 @@
-### ARCHITECTURE.md, Install, Harness profiler
+### [ARCHITECTURE.md, Install, Harness profiler](../../PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)
 
 The three resource files land at `devpro/harnesses/resources/claude/libexec/` (`hp.sh`, `hp.js`,
 `view.html`), each gaining the `!INSTALLED! … devpro` banner line within its first ten lines at
