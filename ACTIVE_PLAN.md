@@ -29,9 +29,9 @@ The plan is written to `dispatchable` and handed back: the main session dispatch
 
 | Package | State | Rating | Changes |
 | --- | --- | --- | --- |
-| P1 | dispatchable | mechanical | the three passage pairs applied verbatim: SPEC's shipped-files paragraph, SPEC's resources enumeration, ARCHITECTURE's harness-profiler leaf |
-| P2 | dispatchable | mechanical | `harness_resource_copies`' opencode copy list gains the three payload files sourced from `resources/claude/libexec/`; the behavior pin updates |
-| P3 | dispatchable | expert | `profiler.ts` — the capture in the plugin's TypeScript, wired from the entry; the entry's registration pin updates |
+| P1 | drafted | mechanical | the three passage pairs applied verbatim: SPEC's shipped-files paragraph, SPEC's resources enumeration, ARCHITECTURE's harness-profiler leaf |
+| P2 | drafted | mechanical | `harness_resource_copies`' opencode copy list gains the three payload files sourced from `resources/claude/libexec/`; the behavior pin updates |
+| P3 | drafted | expert | `profiler.ts` — the capture in the plugin's TypeScript, wired from the entry; the entry's registration pin updates |
 | P4 | drafted | expert | Post-plan review — dispatchable when P3's commit lands |
 | P5 | drafted | expert | Post-plan burndown — dispatchable when P4's review document lands |
 
