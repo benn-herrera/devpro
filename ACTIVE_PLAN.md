@@ -30,7 +30,7 @@ ARCHITECTURE delta block; from P4 the run reports `0 not applied, 0 problems` an
 | Package | State | Rating | Changes |
 | --- | --- | --- | --- |
 | P1 | landed | expert | the components selection replaces the plugin machinery — code, CLI callers, README, every pin |
-| P1a | in progress | expert | the six two-plugin CONVENTIONS leaves re-anchored to the one-plugin-plus-components reality |
+| P1a | landed | expert | the six two-plugin CONVENTIONS leaves re-anchored to the one-plugin-plus-components reality |
 | P1b | landed | expert | `check-deltas` reads the diced design tree; the design's monolith retires |
 | P1c | dispatchable | expert | the diced-design lifecycle rule lands in the skill texts — development.py, guide.py, docdicer.py |
 | P1d | dispatchable | mechanical | the state-table reminder's sentence reworded at both harness resources |
