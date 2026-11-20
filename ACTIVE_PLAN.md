@@ -15,18 +15,15 @@ Sequencing: P1, then P2, then P3, then P4. P1 applies the four passage pairs; P2
 from the Code delta prose; P3 and P4 are the post-plan review and burndown.
 
 The bound checkpoint gate is `just test`, then `just sweep-python`
-(`PROJECT_DOCS/CONVENTIONS/planning-and-execution/the-gates.md:4-5`). Its `docs` surface fails for a
-reason outside this work: the installed launcher pins docdicer `v0.12.0`
-(`devpro/docdicer-tools/docdicer:8`, `VERSION=0.12.0`) and the tag is not published, so
-`just check-links`'s pip build fails `git checkout -q v0.12.0` (observed run: `error: recipe
-'docdicer' failed on line 37`, exit 1). The ROADMAP item
-(`ROADMAP.md:58-62`, "The docdicer `v0.12.0` tag is unpublished") resolves it; the item leaves
-ROADMAP when the tag is published. A package's gate therefore passes on every surface but `docs`,
-and each package's done-line names the checks that do pass rather than the gate as if green. The
-hosted-clone route `just dev-check-links` covers the document checks meanwhile (observed run:
-`links checked: 171, broken: 0`, `documents checked: 88, problems: 0`, exit 0; the count moves with
-the plan's own links — the pass condition is `broken: 0`, exit 0. The clone is dirty and left at
-`v0.11.2`, reported, not reset — `devtools/scripts/docdicer-repo.sh` exits 0 on a dirty clone).
+(`PROJECT_DOCS/CONVENTIONS/planning-and-execution/the-gates.md:4-5`). The gate's `docs` surface was
+red while the plan ran: the installed launcher pins docdicer `v0.12.0`
+(`devpro/docdicer-tools/docdicer:8`, `VERSION=0.12.0`) and the tag was unpublished, so
+`just check-links`'s pip build failed `git checkout -q v0.12.0`. The tag shipped mid-run (merged,
+tagged, pushed), and the surface is green: `just check-links` → `links checked: 171, broken: 0`,
+`documents checked: 88, problems: 0`. The full gate passes on the tree; the hosted-clone route
+`just dev-check-links` remains equivalent, its pass condition `broken: 0`, exit 0. The hosted clone
+is dirty and left at `v0.11.2`, reported, not reset — `devtools/scripts/docdicer-repo.sh` exits 0 on
+a dirty clone.
 
 ## Status
 
@@ -247,8 +244,8 @@ drafting instruction until then; the landing acts below are settled now.
 Done-line: `just test devpro`, then `just sweep-python`, then
 `just dev-check-design-deltas-applied` (all four pairs landed), then `just dev-check-links`, then
 `just dev-check-plan` — all before the landing acts, which delete the plan the last check reads;
-the landing commit's own proof is that run repeated on the tree it leaves. `just test`'s `docs`
-surface fails as the header states; every other surface passes.
+the landing commit's own proof is that run repeated on the tree it leaves. The full gate passes:
+the `docs` surface is green since the docdicer tag shipped (the header states it).
 
 The landing acts, after the burndown's work:
 
