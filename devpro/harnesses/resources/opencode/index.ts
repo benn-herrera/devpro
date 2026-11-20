@@ -104,7 +104,7 @@ function planStanding(root: string): boolean {
 // recorded injections in tests/test_opencode_entry.py. A synthetic message is context, as a hook's
 // additionalContext is, so it states the status table's two acts as what they are.
 const reminder =
-  "Where the active plan carries a status table, a package is `in progress` when it is dispatched and `landed` when its work is accepted and committed."
+  "A package in the active plan's status table is `in progress` when dispatched, `landed` when accepted and committed."
 
 async function readRegistry(): Promise<Registry | undefined> {
   try {
