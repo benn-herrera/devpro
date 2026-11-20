@@ -32,7 +32,7 @@ the plan's own links — the pass condition is `broken: 0`, exit 0. The clone is
 
 | Package | State | Rating | Changes |
 | --- | --- | --- | --- |
-| P1 | in progress | mechanical | the four passage pairs applied verbatim: SPEC's profiler paragraph and guide-and-readme requirements bullet, ARCHITECTURE's harness-profiler leaf and repo-layout resources line |
+| P1 | landed | mechanical | the four passage pairs applied verbatim: SPEC's profiler paragraph and guide-and-readme requirements bullet, ARCHITECTURE's harness-profiler leaf and repo-layout resources line |
 | P2 | drafted | expert | the port: `hp.py` replaces `hp.js`, `hp.sh` finds python3, the trace moves to `.devpro-temp/harness-profile/`, the skill text and tests follow |
 | P3 | drafted | expert | Post-plan review |
 | P4 | drafted | expert | Post-plan burndown |

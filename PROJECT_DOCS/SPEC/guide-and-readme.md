@@ -34,8 +34,7 @@ The skill carries two reference pages, which the session reads when its starting
     which writes `~/Mage/Skills/devpro/`, and, with the kbase component, restarting Mage;
   - the agents file: where an install keeps its block, and the `CLAUDE.md` redirect;
   - the requirements: `just` 1.33.0 or later where the consuming project's runner is a justfile,
-    for the runner include lines; `perl` with core `JSON::PP` for the claude guardrail; `node` 18 or
-    later for the claude activity profiler, whose captures stay silent without it;
+    for the runner include lines; `perl` with core `JSON::PP` for the claude guardrail;
   - what the operator sets up for a cold read: `DEVPRO_COLD_READ_DIR`;
   - rendering for another model family: it names the flag and leaves its grammar to SPEC.md,
     Rendering;
