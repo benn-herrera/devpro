@@ -307,9 +307,7 @@ tap-local: tap-repo
 
 [doc("clone the docdicer project as a hosted repo")]
 docdicer-repo:
-    @[[ -d docdicer ]] || git clone git@github.com:benn-herrera/docdicer
-    @cd docdicer && { [[ -d .claude ]] || ln -vs ../.claude .; }
-    @cd docdicer && { [[ -d .opencode ]] || ln -vs ../.opencode .; }
+    @DOCDICER_PIN="v$(sed -n 's/^VERSION=//p' devpro/docdicer-tools/docdicer)" devtools/scripts/docdicer-repo.sh
 
 [doc("use hosted docdicer to perform a task")]
 dev-dd *args: docdicer-repo

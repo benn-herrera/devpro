@@ -147,10 +147,13 @@ bindable term that has no default and is unbound, ask the user for it then, thro
   under `{SPEC_DELTA_TERM}` or `{ARCHITECTURE_DELTA_TERM}` applies it to its target verbatim except
   its relative links: those are written relative to the file the entry is in, and each move rebases
   them where the destination is in another directory. The project's link check, where it has one,
-  confirms them; its delta check (`check-design --deltas-applied`, where the project carries it)
-  confirms each `becomes` block occurs byte-exact in its target and, where the becomes-text does not
-  contain it, that the from-text is gone. *Purpose:* the text the user accepted reaches the contract
-  documents as accepted, its links still resolving, with nothing left unapplied.
+  confirms them. Where the project's runner carries a delta check
+  (`docdicer-check-design-deltas-applied`), its run confirms each pair's `becomes` block occurs in
+  its target with each run of whitespace read as one space, and the from-text is gone where the
+  becomes-text does not contain it; the application is done when that run reports every pair landed.
+  An entry that states a whole leaf or a removal has no pair for it to confirm.
+  *Purpose:* the text the user accepted reaches the contract documents as accepted, its links still
+  resolving.
 - The {ACTIVE_DESIGN_TERM} stays from before its plan is written until that plan is done, and is
   deleted, with its tree if it was diced, in the commit that lands the plan. A requirement or
   structural decision found while the plan runs is entered in the design, as an entry under its
@@ -293,9 +296,10 @@ A work package is dispatchable only when:
   definitions carry. *Purpose:* an order for a test with no named defect is refused before
   a dispatch exists;
 - its done-line names, from the project's runner targets, those that check what the package changes
-  (a package that changes only documents names only document checks, such as a link check), run
-  once, at the package's end; the package is done when that run passes, or fails only where the plan
-  names the breakage the package leaves and the later package or `ROADMAP.md` item that resolves it.
+  (a package that changes only documents names only document checks, such as a link check or a delta
+  check), run once, at the package's end; the package is done when that run passes, or fails only
+  where the plan names the breakage the package leaves and the later package or `ROADMAP.md` item
+  that resolves it.
   *Purpose:* done is a run anyone can repeat, not a judgment, and no package hands on a breakage the
   plan does not account for;
 - a before/after measurement done-line carries a passing run on the base commit, taken during
@@ -509,7 +513,7 @@ one's answer feeds the next.
 6. Go to `references/project-setup.md` to bind the terms.
 
 A project with no code has runner targets too: its done-lines and its {CHECKPOINT_GATE_TERM} may
-name a link check or a document build.""",
+name a link check, a delta check or a document build.""",
             ),
             SkillFile(
                 path="references/project-documents.md",
@@ -793,7 +797,8 @@ release it serves, and no release is promised for work not yet taken up.
     to the section's `#anchor` where the section exists, plain text where the change creates it.
   - The body, in that document's voice, is exactly one of: one or more pairs of a passage of the
     target and its replacement; the whole text of a new leaf or section; a statement that the leaf
-    or section is removed. Each passage, each replacement and each whole text is a fenced block.
+    or section is removed. Each passage, each replacement and each whole text is a fenced block, a
+    pair's passage marked `**As it stands:**` and its replacement `**Becomes:**`.
 
   *Purpose:* an entry is applied to its target as written, with nothing left to interpret, and the
   headings and tables it carries are never read as the design's or the plan's own.

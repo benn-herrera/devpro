@@ -46,7 +46,7 @@ Contents:
   - [Reference retakes follow acceptance](planning-and-execution/reference-retakes-follow-acceptance.md)
   - [Scratch `HOME` for tests and recipes](planning-and-execution/scratch-home-for-tests-and-recipes.md)
   - [A delta application ends verified](planning-and-execution/a-delta-application-ends-verified.md)
-  - [A delta application ends by searching the doc set](planning-and-execution/a-delta-application-ends-by-searching-the-doc-set.md)
+  - [A delta application is followed by a search of the doc set](planning-and-execution/a-delta-application-ends-by-searching-the-doc-set.md)
 - [Adding Definitions](adding-definitions/index.md)
   - [Where it goes](adding-definitions/where-it-goes.md)
   - [What it is called](adding-definitions/what-it-is-called.md)
