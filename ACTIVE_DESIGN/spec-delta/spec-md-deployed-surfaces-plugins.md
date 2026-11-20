@@ -16,9 +16,9 @@ becomes
 An install delivers one **plugin**, the devpro plugin, and the optional **components** the
 invocation names: `devpro install TARGET` or `devpro install TARGET --components=kbase`. Every
 command that takes components takes them as `--components=CSV`, a comma-separated list of optional
-components, `kbase` the only one today; the default is none. A name that is neither an optional
-component nor part of what every install carries is refused, naming the optional components, and a
-required component — `development`, `docdicer` — is not a legal value. The first positional is the
+components, `kbase` the only one today; the default is none. A name that is not an optional
+component is refused, naming the optional components; a required definition's name — `development`,
+`docdicer` — is among them and so is not a legal value. The first positional is the
 target, so a component name there is read as a target directory (a lone `devpro install kbase` is
 refused where no directory `kbase` exists: "install target 'kbase' is not an existing directory"),
 and a second positional is refused before anything is written. Every harness carries every

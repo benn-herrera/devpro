@@ -26,7 +26,7 @@ from devpro.context import (
     read_settings,
 )
 from devpro.errors import InputError
-from devpro.install import install_selected, preflighted_install, uncommitted_sources
+from devpro.install import components_value, install_selected, preflighted_install, uncommitted_sources
 from devpro.install_target import agents_file_harness, resolve_install_target
 from devpro.render import render_agents_file, render_all, write_renders
 from devpro.vocabulary import HarnessText, key
@@ -124,15 +124,6 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _components_value(args: argparse.Namespace, settings: dict[str, HarnessSettings] | None, harness: str) -> str:
-    """The component list the install or render for `harness` takes: `--components` given, else the devpro
-    settings file's value for that harness, else none."""
-    if args.components is not None:
-        return args.components
-    entry = None if settings is None else settings.get(harness)
-    return "" if entry is None or entry.components is None else entry.components
-
-
 def _tuned(args: argparse.Namespace, *, harness: str, supply: MapSupply | None, components: str) -> Render:
     ctx = build_render(harness=harness, components=components, family=args.family, supply=supply)
     print(f"tuning: family={ctx.family.name} category[{map_spec(ctx.category_map)}] harness={ctx.harness.name}")
@@ -148,7 +139,7 @@ def _supply(settings: dict[str, HarnessSettings] | None, harness: str) -> MapSup
 def _run(args: argparse.Namespace) -> None:
     if args.verb == "render":
         settings, _ = read_settings(args.config_file)
-        components = _components_value(args, settings, args.harness)
+        components = args.components or ""
         renders = render_all(
             _tuned(args, harness=args.harness, supply=_supply(settings, args.harness), components=components)
         )
@@ -166,7 +157,7 @@ def _run(args: argparse.Namespace) -> None:
                     args,
                     harness=target.harness,
                     supply=_supply(settings, target.harness),
-                    components=_components_value(args, settings, target.harness),
+                    components=components_value(args.components, settings, target.harness),
                 ),
                 verbose=args.verbose,
                 project_root=target.project_root,

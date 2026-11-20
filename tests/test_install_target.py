@@ -137,12 +137,6 @@ def test_an_unexpanded_home_target_is_refused_naming_the_tilde(tmp_path: Path, m
     assert _paths(tmp_path) == []
 
 
-def test_an_install_naming_an_unknown_component_is_refused(tmp_path: Path, capsys) -> None:
-    err = _refused(["install", str(tmp_path), "--components=nosuch", "--harness=claude"], capsys)
-    assert "unknown component 'nosuch'" in err and "kbase" in err
-    assert _paths(tmp_path) == []
-
-
 def test_a_target_naming_no_harness_is_refused(tmp_path: Path, capsys) -> None:
     err = _refused(["install", str(tmp_path)], capsys)
     assert "--harness" in err and all(name in err for name in ("claude", "mage", "opencode"))

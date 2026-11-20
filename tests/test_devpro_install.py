@@ -679,6 +679,24 @@ def test_an_operating_system_failure_is_reported_as_an_error_and_exits_2(tmp_pat
     assert not out.parent.exists()
 
 
+def test_the_agents_file_script_ignores_a_third_argument(tmp_path: Path) -> None:
+    """A stable interface across revisions: a newer caller of an older copy passes no third argument,
+    and an older caller of a newer copy passes PLUGIN, which the body accepts and ignores. Both call
+    shapes write identical bytes."""
+    two = tmp_path / "two.md"
+    three = tmp_path / "three.md"
+    script = REPO_ROOT / "devtools/scripts/render-agents-file.sh"
+    env = {
+        "PATH": os.environ["PATH"],
+        "PROJECT_ROOT": str(REPO_ROOT),
+        "PYTHONPATH": str(REPO_ROOT),
+        "GEN": "devpro",
+    }
+    for argv in (["claude", str(two)], ["claude", str(three), "kbase"]):
+        subprocess.run(["bash", str(script), *argv], env=env, check=True, capture_output=True, text=True)
+    assert two.read_bytes() == three.read_bytes()
+
+
 def test_the_help_usage_line_lists_every_verb_but_the_hidden_one(capsys) -> None:
     with pytest.raises(SystemExit):
         main(["--help"])

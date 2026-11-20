@@ -18,8 +18,6 @@ NAME = "devpro"
 COMPONENTS: Mapping[str, frozenset[str]] = {"kbase": frozenset({"kbase"})}
 """Each optional component, by name, and the definitions turning it on adds to the required set."""
 
-_OPTIONAL_MEMBERS = frozenset().union(*COMPONENTS.values())
-
 
 @dataclass(frozen=True)
 class Components:
@@ -46,7 +44,7 @@ class Components:
     def ships(self, name: str) -> bool:
         """Whether the definition `name` ships: every definition no component names, and each turned-on
         component's members."""
-        return name in self.members or name not in _OPTIONAL_MEMBERS
+        return name in self.members or name not in frozenset().union(*COMPONENTS.values())
 
 
 def selection(spec: str) -> Components:

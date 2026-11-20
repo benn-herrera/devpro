@@ -62,6 +62,6 @@ for each category, and may add text at anchors but never replace or remove a def
 
 Volumes:
 
-- [SPEC](SPEC/entry-point.md): The devpro project renders agent, command and skill definitions to order, for any supported harness and model family, from one source in which shared text is written once; the two plugins it ships, consumed by other projects, are its flagship renderings.
+- [SPEC](SPEC/entry-point.md): The devpro project renders agent, command and skill definitions to order, for any supported harness and model family, from one source in which shared text is written once; the one plugin it ships, consumed by other projects, is its flagship rendering.
 - [ARCHITECTURE](ARCHITECTURE/entry-point.md): How the generation system, and the agent and skill set it ships, are built to satisfy SPEC.md.
 - [CONVENTIONS](CONVENTIONS/entry-point.md): House rules and project-specific traps only.

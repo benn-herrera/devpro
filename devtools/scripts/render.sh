@@ -27,13 +27,14 @@
 # The slot is removed and rebuilt on every render. A slug starting with `reference` is refused with
 # nothing touched: those slots are the pre-1.0 oracle until stage 6 re-renders them.
 #
-# Every `--*` flag is forwarded to the install.
+# Every `--*` flag but `--components` is forwarded to the install; `--components` or
+# `--components=…` is refused, since the slot is rendered with its one fixed selection.
 #
 # The one slot project is rendered with the kbase component on, so a `render-diff` compares the whole
 # set: it carries the kb-tools package and, under a harness that renders one, the MCP entry (a
-# claude slot project's at <slot>/devpro/skills/devpro/.mcp.json), and the runner include lines —
-# docdicer's and kb's. A harness-directory install's slot project (`mage`) carries no runner include
-# line and no `Makefile`, its harness writing neither.
+# claude slot project's at <slot>/devpro/skills/devpro/.mcp.json), and, where the harness writes a
+# runner file, the runner include lines — docdicer's and kb's. A harness-directory install's slot
+# project (`mage`) carries no runner include line and no `Makefile`, its harness writing neither.
 set -euo pipefail
 : "${PROJECT_ROOT:?PROJECT_ROOT is empty or unset — run this script through its justfile recipe}"
 
@@ -41,6 +42,10 @@ slug="latest"
 args=()
 have_slug=""
 for arg in "$@"; do
+    if [[ "${arg}" == --components || "${arg}" == --components=* ]]; then
+        printf '%s\n' "error: render renders the slot with the kbase component on; --components is not accepted" >&2
+        exit 1
+    fi
     if [[ -z "${have_slug}" && "${arg}" != --* ]]; then
         slug="${arg}"
         have_slug=1

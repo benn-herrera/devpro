@@ -73,6 +73,8 @@ installs with.
   install writes include lines into it.
 - `perl` on `PATH` with core `JSON::PP`, for the claude guardrail hook. Without them a claude install
   skips the hook and its registration, says why in one line, and installs everything else.
+- `node` 18 or later, for the claude activity profiler: without it its captures stay silent and the
+  trace is empty.
 
 Installing or upgrading kbase itself, the program the `kbase` MCP server runs, is the
 `{clauses.optional_ref(name="kbase")}` skill's: follow its `references/installing.md`.
@@ -310,8 +312,8 @@ The plan size limit (default {clauses.PLAN_SIZE_LIMIT_DEFAULT}) and the periodic
   columns; then each package under a heading opening with its ID (`P1`). Each package states its
   scope in files and its done-line: the runner targets whose passing run shows it done. A plan with
   shipped work ends in two more packages, *Post-plan review* and *Post-plan burndown*. A plan longer
-  than the plan size limit is split into an `ACTIVE_PLAN/` directory read from its
-  `entry-point.md`.
+  than the plan size limit may be the `ACTIVE_PLAN/` tree read from its `entry-point.md`; the plan
+  under way is that tree or the document `ACTIVE_PLAN.md`.
 - **Lifetime**, stated per package: **shipped**, the whole process (the default); **exploratory**,
   its done-line and the checkpoint gate, no post-plan review; **throwaway**, in the scratch directory
   only and never committed.

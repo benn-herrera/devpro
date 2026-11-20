@@ -67,7 +67,7 @@ The rules use these terms.
 | Term | Fixed as | What it is |
 | --- | --- | --- |
 | {ACTIVE_DESIGN_TERM} | `ACTIVE_DESIGN.md` at the repository root, else the `ACTIVE_DESIGN/` tree there, read from its `entry-point.md` | the one design under way, which feeds a plan |
-| {ACTIVE_PLAN_TERM} | `ACTIVE_PLAN.md` at the repository root | the one plan under way |
+| {ACTIVE_PLAN_TERM} | `ACTIVE_PLAN.md` at the repository root, or the `ACTIVE_PLAN/` tree there, read from its `entry-point.md` | the one plan under way |
 | {PARKED_DESIGNS_TERM} | `ROADMAP_DESIGNS/` at the repository root | where work set aside waits |
 | {ROADMAP_TERM} | `ROADMAP.md` at the repository root for its tickets, and the {PARKED_DESIGNS_TERM} for work set aside | intended work not yet taken up, at whatever stage of refinement |
 | {SCRATCH_TERM} | `{clauses.PROJECT_TEMP_DIR}/` at the repository root | untracked working files |

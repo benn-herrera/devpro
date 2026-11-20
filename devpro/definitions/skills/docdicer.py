@@ -34,10 +34,10 @@ DEFINITIONS = (
   file, which would move the path. A changed tree shape is never the accepted cost of an undice,
   because other documents cite the tree's paths and a split moves them.
 - **Check a design** with `check-design`; a diced design is checked through its `entry-point.md`.
-- After each operation, both versions remain, apart from the active design's own monolith: a dice
-  retires it, because the design lives in its tree from then on (the `{clauses.ref(name="development")}`
-  skill, *Plans*). Removing any other one(s) no longer wanted is a separate step, taken at the user's
-  direction.
+- After each operation, both versions remain, apart from the active design's own monolith: the dice's
+  passing exit retires it, because the design lives in its tree from then on (the
+  `{clauses.ref(name="development")}` skill, *Plans*). Removing any other one(s) no longer wanted is
+  a separate step, taken at the user's direction.
 
 `kb-root/` and everything under it belongs to the `{clauses.optional_ref(name="kbase")}` skill: do not
 dice, undice or link-check any of it unless the user directs that for it specifically.

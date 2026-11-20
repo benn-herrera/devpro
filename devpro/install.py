@@ -666,6 +666,15 @@ def _install_setting(entry: HarnessSettings) -> str:
     return DEFAULT_INSTALL_SETTING if entry.install is None else entry.install
 
 
+def components_value(components: str | None, settings: Mapping[str, HarnessSettings] | None, harness: str) -> str:
+    """The component list the install for `harness` takes: `--components` given, else the devpro settings
+    file's value for that harness, else none."""
+    if components is not None:
+        return components
+    entry = None if settings is None else settings.get(harness)
+    return "" if entry is None or entry.components is None else entry.components
+
+
 def install_selected(
     target: Path,
     settings: Mapping[str, HarnessSettings],
@@ -711,7 +720,7 @@ def install_selected(
         if setting == "detect" and not target_holds_harness_dir(target, harness_named(name)):
             continue
         entry = settings[name]
-        chosen = components if components is not None else (entry.components or "")
+        chosen = components_value(components, settings, name)
         try:
             resolved = resolve_install_target(target, harness=name, plugin=NAME, subdir=subdir)
             preflighted_install(

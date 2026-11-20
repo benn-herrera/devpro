@@ -32,6 +32,7 @@ import pytest
 import devpro
 import devpro.clauses
 from devpro.agents_file import is_marker_line
+from devpro.cli import main
 from devpro.components import Components
 from devpro.context import MapSupply, Render, build_render, harnesses, parse_category_map, read_settings
 from devpro.definition import Definition, SkillFile
@@ -194,6 +195,20 @@ def test_a_settings_file_naming_no_harness_names_nothing_but_is_not_no_file(tmp_
     settings, _ = read_settings(str(settings_file(tmp_path, "")))
     assert settings == {}
     assert settings is not None
+
+
+def test_a_render_takes_its_components_from_the_flag_alone(tmp_path: Path) -> None:
+    """`components` is the install's selection: a flagless render that read the file's value turned the
+    component on and made the flag's "default none" help false wherever a settings file existed."""
+    settings = settings_file(tmp_path, "[claude]\ncomponents = kbase\n")
+    from_file = tmp_path / "from-file"
+    from_file.mkdir()
+    main(["render", "--out", str(from_file), "--harness=claude", f"--config-file={settings}"])
+    assert not (from_file / "skills/kbase/SKILL.md").exists()
+    from_flag = tmp_path / "from-flag"
+    from_flag.mkdir()
+    main(["render", "--out", str(from_flag), "--components=kbase", "--harness=claude"])
+    assert (from_flag / "skills/kbase/SKILL.md").is_file()
 
 
 def test_a_missing_default_settings_file_is_no_config(_home: Path) -> None:

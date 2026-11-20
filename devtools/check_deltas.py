@@ -8,11 +8,13 @@ and `code-delta/` directories hold one entry per `.md` leaf, every `index.md` as
 read wherever a same-stem directory carrying `entry-point.md` sits beside the design path, and the
 document otherwise; where neither is there, the design is missing.
 
-Each entry's `###` heading names a target leaf in its markdown link: relative to the repository root
-in a document, relative to the leaf's own directory in a tree, whose links are leaf-relative — which
-is why a document reader cannot read the tree verbatim. Within an entry a fenced code block whose
-following non-blank line is `becomes` is a passage pair; the fenced block after the `becomes` line is
-the applied text, and this checks that block's content occurs byte-exact as a substring of the leaf.
+Each entry's `###` heading names a target leaf in its markdown link: relative to the link base in a
+document — the second argument, the invocation directory when it is not given; the recipe passes
+the repository root — and relative to the leaf's own directory in a tree, whose links are
+leaf-relative, which is why a document reader cannot read the tree verbatim. Within an entry a
+fenced code block whose following non-blank line is `becomes` is a passage pair; the fenced block
+after the `becomes` line is the applied text, and this checks that block's content occurs byte-exact
+as a substring of the leaf.
 A trailing line boundary is not required: a replaced span often sits mid-line or ends mid-sentence in
 its leaf. Fences follow CommonMark, as `render_diff` pins them: an opener is three or more backticks
 with an info string holding no backtick, or three or more tildes, and the closer is the same
@@ -20,15 +22,23 @@ character, at least as many, with nothing else on the line — so a passage's ow
 inside the block rather than ending it. Code delta entries carry no passage pair, so they parse as
 entries and contribute none.
 
+The block before `becomes` is the from-text: where the becomes-text does not contain it, it must be
+gone, because a leaf still holding it while its becomes-text is present reads as applied while the
+replacement never happened — a deletion whose becomes-text pre-existed. Both present is a MISS
+naming the leaf. A becomes-text that contains its from-text is an addition, so the from-text's
+survival there is the applied state.
+
 A passage pair carrying a markdown link can never pass: the design's link resolves from the
 repository root, or from the entry's own directory in a tree, and the target leaf's from the leaf's
 own directory, so the applied text rebases the target and no longer occurs byte-exact. Nothing
 false-fails today — no passage pair in the current design holds a link inside its fenced block.
 
 Every becomes-block not found in its leaf is named — the file holding the entry, the entry heading,
-the leaf, and the block — and an unparseable entry (a `becomes` with no following fenced block, a
-`###` heading with no link), a missing leaf or a missing design file is named too; that detection is
-the point of the tool. Exits zero when every becomes-block occurs in its leaf, non-zero otherwise.
+the leaf, and the block — and a section leaf yielding no entry (a heading that is not `###`, no
+heading at all), an unparseable entry (a `becomes` with no following fenced block, a `###` heading
+with no link), a missing leaf or a missing design file is named too; that detection is the point of
+the tool. Exits zero when every becomes-block occurs in its leaf and no from-text survives, non-zero
+otherwise.
 """
 
 from __future__ import annotations
@@ -166,18 +176,18 @@ def _parse_entries(lines: list[str], *, section: str | None = None) -> list[Entr
     return entries
 
 
-def _parse_pairs(lines: list[str], start: int, end: int) -> tuple[list[tuple[str, int]], list[str]]:
-    """Within `lines[start:end]`, the `(applied text, design line of its opening fence)` of each
-    passage pair, and a list of malformation descriptions."""
-    pairs: list[tuple[str, int]] = []
+def _parse_pairs(lines: list[str], start: int, end: int) -> tuple[list[tuple[str, str, int]], list[str]]:
+    """Within `lines[start:end]`, the `(from text, applied text, design line of the applied block's
+    opening fence)` of each passage pair, and a list of malformation descriptions."""
+    pairs: list[tuple[str, str, int]] = []
     problems: list[str] = []
     i = start
     while i < end:
         if _fence_opener(lines[i]) is None:
             i += 1
             continue
-        content, nxt = _read_fence(lines, i)
-        if content is None:
+        from_lines, nxt = _read_fence(lines, i)
+        if from_lines is None:
             problems.append(f"unclosed fenced block at line {i + 1}")
             break
         becomes = _becomes_index(lines, nxt, end)
@@ -196,7 +206,7 @@ def _parse_pairs(lines: list[str], start: int, end: int) -> tuple[list[tuple[str
             problems.append(f"unclosed applied fenced block at line {k + 1}")
             i = k + 1
             continue
-        pairs.append(("\n".join(applied_lines), k + 1))
+        pairs.append(("\n".join(from_lines), "\n".join(applied_lines), k + 1))
         i = nxt2
     return pairs, problems
 
@@ -215,21 +225,23 @@ def _tree_sources(tree: Path) -> list[EntrySource]:
     return sources
 
 
-def _design_sources(design: Path) -> tuple[Path, list[EntrySource]] | None:
+def _design_sources(design: Path, link_base: Path) -> tuple[Path, list[EntrySource]] | None:
     """The design's one source, as the path to report and its entry sources: the diced tree beside
-    `design` where one sits there, else `design` itself; None where neither is present."""
+    `design` where one sits there, else `design` itself, whose links resolve from `link_base`; None
+    where neither is present."""
     tree = design.with_suffix("")
     if (tree / "entry-point.md").is_file():
         return tree, _tree_sources(tree)
     if design.is_file():
         lines = design.read_text(encoding="utf-8").split("\n")
-        return design, [EntrySource(design, Path.cwd(), lines, _parse_entries(lines))]
+        return design, [EntrySource(design, link_base, lines, _parse_entries(lines))]
     return None
 
 
 def main(argv: list[str]) -> int:
     design_path = Path(argv[0]) if argv else Path("ACTIVE_DESIGN.md")
-    resolved = _design_sources(design_path)
+    link_base = Path(argv[1]) if len(argv) > 1 else Path.cwd()
+    resolved = _design_sources(design_path, link_base)
     if resolved is None:
         print(f"PROBLEM {design_path}: missing design")
         return 1
@@ -237,6 +249,9 @@ def main(argv: list[str]) -> int:
     checked = misses = problems = 0
     print(f"delta byte-check: {source_path}")
     for source in sources:
+        if not source.entries:
+            problems += 1
+            print(f"PROBLEM {source.path}: no entry")
         for entry in source.entries:
             where = f"{source.path}:{entry.heading_line} [{entry.section}] {entry.heading}"
             if entry.link is None:
@@ -253,13 +268,19 @@ def main(argv: list[str]) -> int:
             for why in problems_:
                 problems += 1
                 print(f"  PROBLEM {where}: {why}")
-            for applied, anchor in pairs:
+            for from_text, applied, anchor in pairs:
                 checked += 1
                 if applied not in leaf_text:
                     misses += 1
                     print(f"  MISS {source.path}:{anchor} [{entry.section}] {entry.heading}")
                     print(f"    leaf: {entry.link}")
                     for block_line in applied.split("\n"):
+                        print(f"    {block_line}")
+                elif from_text and from_text not in applied and from_text in leaf_text:
+                    misses += 1
+                    print(f"  MISS {source.path}:{anchor} [{entry.section}] {entry.heading}")
+                    print(f"    leaf: {entry.link} still holds the from-text")
+                    for block_line in from_text.split("\n"):
                         print(f"    {block_line}")
 
     print()

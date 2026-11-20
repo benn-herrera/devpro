@@ -47,6 +47,23 @@ def test_a_passage_its_leaf_does_not_hold_is_a_miss_naming_the_block(tmp_path: P
     assert "1 not applied, 0 problems, 1 becomes-blocks checked" in out
 
 
+def test_a_passage_whose_from_text_survives_is_a_miss_naming_the_leaf(tmp_path: Path, capsys) -> None:
+    """A leaf holding both blocks reads as applied while the replacement never happened: the deletion
+    block whose becomes-text pre-existed passed before the from-side check existed."""
+    design = _passage(tmp_path, "The new sentence.", leaf=f"Lead. {_REPLACED} The new sentence. Tail.\n")
+    assert main([str(design)]) == 1
+    out = capsys.readouterr().out
+    assert "MISS" in out and "still holds the from-text" in out
+    assert "1 not applied, 0 problems, 1 becomes-blocks checked" in out
+
+
+def test_an_addition_whose_becomes_contains_its_from_text_passes(tmp_path: Path) -> None:
+    """An entry that appends keeps its anchor sentence: the from-text inside the becomes-text is the
+    applied state, not a survival."""
+    applied = f"{_REPLACED}\n\nA second sentence."
+    assert main([str(_passage(tmp_path, applied, leaf=f"Lead. {applied} Tail.\n"))]) == 0
+
+
 def test_a_passage_with_its_fenced_example_applied_whole_passes(tmp_path: Path) -> None:
     """A design that wants the example's own fence kept opens the passage with a longer run, which only
     that character at that length closes: the leaf holds the whole passage."""
@@ -148,6 +165,34 @@ def test_index_and_entry_point_are_not_entries(tmp_path: Path, capsys) -> None:
     (tree / "code-delta" / "index.md").write_text(decoy, encoding="utf-8")
     (tree / "entry-point.md").write_text(decoy, encoding="utf-8")
     assert main([str(design)]) == 0
+    assert "all 1 becomes-blocks occur byte-exact in their leaves" in capsys.readouterr().out
+
+
+def test_a_tree_leaf_yielding_no_entry_is_a_problem_naming_the_leaf(tmp_path: Path, capsys) -> None:
+    """A section leaf holding no `###` entry was dropped silently, so a leaf the parser could not read
+    passed as `all 0 becomes-blocks`. One PROBLEM names the leaf."""
+    design = _tree(tmp_path)
+    (design.with_suffix("") / "code-delta" / "entryless.md").write_text("A paragraph, no entry.\n", encoding="utf-8")
+    assert main([str(design)]) == 1
+    out = capsys.readouterr().out
+    assert "PROBLEM" in out and "entryless.md: no entry" in out
+
+
+def test_a_documents_links_resolve_from_the_link_base_given(tmp_path: Path, capsys, monkeypatch) -> None:
+    """Document-mode links resolve from the repository root, not the invocation directory: a call from
+    a subdirectory passes the root as the second argument, where the cwd base named a phantom leaf."""
+    (tmp_path / "leaf.md").write_text("Lead. The new sentence. Tail.\n", encoding="utf-8")
+    design = tmp_path / "design.md"
+    design.write_text(
+        "## ARCHITECTURE delta\n\n"
+        "### [ARCHITECTURE.md, Install, Guardrail hook](leaf.md)\n\n"
+        f"```\n{_REPLACED}\n```\nbecomes\n```\nThe new sentence.\n```\n",
+        encoding="utf-8",
+    )
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+    assert main([str(design), str(tmp_path)]) == 0
     assert "all 1 becomes-blocks occur byte-exact in their leaves" in capsys.readouterr().out
 
 

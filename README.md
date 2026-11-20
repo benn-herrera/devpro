@@ -42,6 +42,7 @@ in just over 16K lines of runtime code, including vision tower support and an Op
 - Homebrew (macOS or Linux), or pipx on a machine without it, to install devpro.
 - `just` 1.33.0 or later, where the project's runner is a justfile: the include line the install writes is an `import?`, which earlier `just` rejects, and no install checks your version.
 - `perl` with core `JSON::PP` for the claude guardrail: without them the install skips the hook, says so in one line, and installs everything else.
+- `node` 18 or later, for the claude activity profiler: without it its captures stay silent and the trace is empty.
 
 ## Quick Start Guide
 
@@ -101,13 +102,15 @@ Install devpro, then run its install into Mage's skills directory:
 
 ```sh
 mkdir -p ~/Mage/Skills
-devpro install ~/Mage/Skills --components=kbase --harness=mage
+devpro install ~/Mage/Skills --harness=mage
 ```
 
-This writes `~/Mage/Skills/devpro/`. The install runs the `kbase` executable only with the kbase
-component on (`--components=kbase`), and no devpro install provides or checks it: on macOS and
-Linux, install it with `brew install benn-herrera/tap/kbase` (0.11.1 or later); native Windows is
-unsupported for the component. Restart Mage after installing it.
+This writes `~/Mage/Skills/devpro/`. The kbase component is optional: `--components=kbase` adds the
+`kbase` skill and the `.mcp.json` entry Mage starts the `kbase` executable from. No devpro install
+provides, runs or checks that executable: on macOS and Linux, install it with
+`brew install benn-herrera/tap/kbase` (0.11.1 or later); native Windows is unsupported for the
+component. Restart Mage after an install with the component on, or after installing or upgrading
+kbase, so it starts the server.
 
 ## Next: ask your agent
 
@@ -122,6 +125,12 @@ installs, updates, inspects or changes what you just installed.
 
 To update, run `brew upgrade devpro`, then the same install line with `--dry-run` added to preview
 it, then without to apply it.
+
+Under Mage, an install from before the kbase component wrote a second plugin directory,
+`~/Mage/Skills/kbase/`, holding its own duplicate skills, agents file and `.mcp.json`. The current
+install writes only `~/Mage/Skills/devpro/` and leaves that directory alone, so remove
+`~/Mage/Skills/kbase/` once, before or after the install: Mage otherwise loads two sets of skills,
+agents and `kbase` MCP servers side by side.
 
 Installed with pipx, update with `pipx install --force` of the next release's tagged URL, then the
 same install line.

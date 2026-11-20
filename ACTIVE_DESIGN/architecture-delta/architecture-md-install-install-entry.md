@@ -13,7 +13,7 @@ becomes
 ```
 The verb takes TARGET, its one positional
 argument, and `--components=CSV`, the optional components the invocation turns on, default none
-(`cli._add_plugin`); a second positional is an argument argparse does not
+(`cli._add_components`); a second positional is an argument argparse does not
 recognize, refused with exit 2 before anything is written.
 ```
 

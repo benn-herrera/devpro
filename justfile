@@ -122,9 +122,9 @@ check-wheel python="/usr/bin/python3": build
 # component on (slug defaults to latest; the first non-flag argument, in any position, is the
 # slug), plus its agents file for --harness=NAME (default claude) into
 # rendered/<slug>/devpro/harness/<NAME>/, or at the slot project's root for a harness-directory
-# install (`mage`). Refuses a slug starting with reference. Every --* flag, --harness included,
-# forwards verbatim to `python3 -m devpro install` via install (--family, --config-file,
-# --harness, --verbose, ...).
+# install (`mage`). Refuses a slug starting with reference, and refuses --components: the slot
+# renders with the kbase component on. Every other --* flag, --harness included, forwards verbatim
+# to `python3 -m devpro install` via install (--family, --config-file, --harness, --verbose, ...).
 [doc("[dev] render devpro to rendered/<slug>/")]
 render *args:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" RENDERED_DIR="{{RENDERED_DIR}}" ./devtools/scripts/render.sh "$@"
@@ -185,7 +185,7 @@ check-links:
 # `<!-- !GENERATED! ... -->` and `<!-- !TUNING! ... -->` from its first line. Then,
 # outside fenced code, whitespace inside a paragraph collapses to one space, while
 # headings, thematic breaks, table rows, list items, fenced blocks and frontmatter stay exact
-# (devtools/render_diff.py states the rules). A copied file's `!INSTALLED!` banner
+# (devtools/render_diff.py states the rules). A copied file's `#`-comment `!INSTALLED!` banner
 # is replaced the same way. Two files are the same when that text is identical. The
 # output keeps `diff -rq`'s two line forms.
 [doc("[dev] diff two rendered slots by text")]
@@ -276,11 +276,12 @@ clause-join-sites *paths:
 # byte-exact in the leaf its `###` entry heading names. The entries come from the design's one
 # source — the tree beside <design>, one entry per section leaf, where a same-stem directory
 # carrying entry-point.md is diced there, the document otherwise — and a tree's links resolve from
-# the entry's own directory where a document's resolve from the repository root. Exits non-zero
-# naming each miss, and each unparseable entry or missing leaf. <design> defaults to ACTIVE_DESIGN.md.
+# the entry's own directory where a document's resolve from the repository root, passed as the
+# second argument. Exits non-zero naming each miss, and each unparseable entry or missing leaf.
+# <design> defaults to ACTIVE_DESIGN.md.
 [doc("[dev] verify design delta blocks are applied byte-exact")]
 check-deltas design="ACTIVE_DESIGN.md":
-    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devtools.check_deltas "{{design}}"
+    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devtools.check_deltas "{{design}}" "{{PROJECT_ROOT}}"
 
 # Emits hits, never verdicts: American spellings are the standard, and this lists the British forms
 # left in tracked text for a reader to judge. The justfile and the leaf that hold the pattern and the

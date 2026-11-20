@@ -48,11 +48,10 @@ profile of its own. `plugin.py` imports no harness, render or definition: the de
 becomes
 ```
 **Plugins.** The selection is one module, `devpro/components.py`: the member lists of the optional
-components and the required set — every discovered definition no component names — with `ships(name)`,
-validated at import against `discover()`, as a family is against its categories. It is imported by
-`context` beside `harness.py` and `family.py`. The selection is a selection of definitions and no
-profile of its own. `components.py` imports no harness, render or definition: the dependency
-direction is `vocabulary` ← `components` ← `context` → `harness`.
+components and the required set — every discovered definition no component names — with `ships(name)`.
+`selection()` validates a list against `discover()`, as a family is against its categories, and
+`build_render` calls it for every render. It is imported by `context` beside `harness.py` and
+`family.py`. The selection is a selection of definitions and no profile of its own.
 ```
 
 ```

@@ -3,7 +3,7 @@
 `just install target *args` is a one-line recipe over `python3 -m devpro install "$@"`; the
 installed `devpro install` is the same verb (Packaging). The verb takes TARGET, its one positional
 argument, and `--components=CSV`, the optional components the invocation turns on, default none
-(`cli._add_plugin`); a second positional is an argument argparse does not
+(`cli._add_components`); a second positional is an argument argparse does not
 recognize, refused with exit 2 before anything is written.
 `devpro/install_target.py` resolves the target, writing nothing: `resolve_install_target`
 normalizes the target lexically — made absolute, `..` collapsed — detects the harness from values

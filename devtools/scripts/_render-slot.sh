@@ -39,8 +39,8 @@ user_harness_dir="$("${PROJECT_ROOT}/devtools/scripts/_harness-value.sh" "${harn
 out="${PROJECT_ROOT}/${RENDERED_DIR}/${slug}"
 rm -rf "${out}"
 mkdir -p "${out}"
-if [[ "$#" -gt 0 ]]; then
-    printf '%s\n' "$@" > "${out}/RENDER-FLAGS.txt"
+if [[ "${#args[@]}" -gt 0 ]]; then
+    printf '%s\n' "${args[@]}" > "${out}/RENDER-FLAGS.txt"
 else
     : > "${out}/RENDER-FLAGS.txt"
 fi

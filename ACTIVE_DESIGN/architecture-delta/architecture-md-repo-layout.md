@@ -49,9 +49,6 @@ and `claude/hooks/guardrail.pl` and `claude/hooks/state-table-reminder.sh`, and 
 ```
 becomes
 ```
-and `claude/hooks/guardrail.pl` and `claude/hooks/state-table-reminder.sh`, and
-`claude/libexec/hp.sh`, `claude/libexec/hp.js` and `claude/libexec/view.html` (the activity
-profiler, Install, Harness profiler), and no `__init__.py`, so `load` still reads one harness per
-module; mage ships none
+and `claude/hooks/guardrail.pl` and `claude/hooks/state-table-reminder.sh`, and `claude/libexec/hp.sh`, `claude/libexec/hp.js` and `claude/libexec/view.html` (the activity profiler, Install, Harness profiler), and no `__init__.py`, so `load` still reads one harness per module; mage ships none
 ```
 
