@@ -1,6 +1,7 @@
 ### Plugin membership has one home
 
-A plugin's members are decided in one place in code, its module in `devpro/plugins/`, per definition
-name: the devpro plugin by exclusion, kbase by enumeration. No harness, install step, render or test holds a
-list of a plugin's members; each reads `Plugin.ships(name)`. A change to a plugin module changes
+The definitions that ship are decided in one place in code, the member lists in
+`devpro/components.py`: the required set is every discovered definition no component names, the
+optional components' lists enumerate their members. No harness, install step, render or test holds
+a list of members; each reads the selection's `ships(name)`. A change to a member list changes
 SPEC.md, Deployed Surfaces, Plugins with it.
