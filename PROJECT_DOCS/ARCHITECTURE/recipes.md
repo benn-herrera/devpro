@@ -40,7 +40,11 @@ release's, and the `[doc]` recipe attribute it also uses arrived in 1.27.0. It r
 `.claude/skills/devpro/skills/docdicer/tools/runner-snippets/docdicer.just`, so this checkout needs
 one `just agents` run before its docdicer recipes exist: until it has run, the `docs` surface —
 `just check-links`, and so `just test` and `just test-changed` on any document — fails with
-`Does not contain recipe 'docdicer'`. The private `_venv` recipe creates `.venv`
+`Does not contain recipe 'docdicer'`. The byte-check over a design's pending deltas, SPEC.md and
+ARCHITECTURE.md, is `check-design --deltas-applied`, which the snippet set exposes as
+`docdicer-check-design-deltas-applied`; this repository runs it through the private `dev-dd`, as
+`just dev-check-design-deltas-applied`, against the hosted clone. The private `_venv` recipe creates
+`.venv`
 where its python is absent. On macOS it makes it from `/usr/bin/python3` where present, the Xcode
 command-line tools' Python 3.9.6, so the suite there runs on the Python 3.9 floor. It installs the
 pinned tools with pip, so the first run needs the network. The suite needs `bun`, `perl` and

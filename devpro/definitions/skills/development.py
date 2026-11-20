@@ -147,8 +147,10 @@ bindable term that has no default and is unbound, ask the user for it then, thro
   under `{SPEC_DELTA_TERM}` or `{ARCHITECTURE_DELTA_TERM}` applies it to its target verbatim except
   its relative links: those are written relative to the file the entry is in, and each move rebases
   them where the destination is in another directory. The project's link check, where it has one,
-  confirms them. *Purpose:* the text the user accepted reaches the contract documents as accepted,
-  its links still resolving.
+  confirms them; its delta check (`check-design --deltas-applied`, where the project carries it)
+  confirms each `becomes` block occurs byte-exact in its target and, where the becomes-text does not
+  contain it, that the from-text is gone. *Purpose:* the text the user accepted reaches the contract
+  documents as accepted, its links still resolving, with nothing left unapplied.
 - The {ACTIVE_DESIGN_TERM} stays from before its plan is written until that plan is done, and is
   deleted, with its tree if it was diced, in the commit that lands the plan. A requirement or
   structural decision found while the plan runs is entered in the design, as an entry under its
