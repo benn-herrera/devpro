@@ -238,86 +238,131 @@ Done-line: `just dev-check-links`. The review document and P3's Status row land 
 
 ## P4 — Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `da25a3a`): 2 High, 8 Medium, 13 Low — seven items,
-the rest declined with reasons. Each item names its surfaces and its verification.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `da25a3a`): 2 High, 8 Medium, 13 Low — 23 findings.
+Seven items below; the declined list accounts for the rest, every finding named: 18 in the items
+(B1: R1, R19; B2: R2, R5, R6, R7, R20; B3: R3; B4: R4, R17; B5: R9, R10; B6: R11, R13, R14, R15,
+R16; B7: R21), five declined (R8, R12, R18, R22, R23), plus the sanitization note (architect N3)
+declined with them. Each item names its surfaces and its verification.
 
-**B1 — the capture's silence restored (`R1`, `R19`).** `devpro/harnesses/resources/claude/libexec/hp.sh`:
-every pre-interpreter failure path drains stdin and exits 0 with no output — a `PATH` python3 that
-cannot run `hp.py` (too old), `HP_PYTHON` set but not an executable file, `hp.py` missing beside the
-launcher — matching the no-interpreter path's shape (`hp.sh:46-51`), which already drains. Where
-output is allowed (non-capture subcommands), the not-found message distinguishes a bad `HP_PYTHON`
-from an absent interpreter. Verify: the coder seat's five-case probe repeated — each failure case
-exits 0, stdout empty, `tree` still reports.
+**B1 — the capture's silence restored (`R1`, `R19`).** `devpro/harnesses/resources/claude/libexec/hp.sh`
+(27 lines): every pre-interpreter `capture` failure path drains stdin and exits 0 with no output —
+stdout and stderr both empty. The failure cases, named: (a) a PATH python3 older than 3.9 that
+cannot run `hp.py` — the finder verifies the interpreter it found can run the payload before exec'ing
+it, and treats one that cannot as not-found (the check is the executor's call: cheap, stdlib-only,
+silent); (b) `HP_PYTHON` set to a directory — the finder tests it with `[ -f ]` as well as `[ -x ]`
+(`hp.sh:13`), so a directory falls through to the PATH search; (c) `hp.py` missing beside the
+launcher; (d) no interpreter at all — the shape already correct (`hp.sh:20-26`; the drain at `:23`,
+`capture) cat >/dev/null 2>&1; exit 0 ;;`); (e) a broken-JSON payload. Where output is allowed
+(non-capture subcommands), the not-found message distinguishes a bad `HP_PYTHON` from an absent
+interpreter: the finder remembers `HP_PYTHON` was set but unusable, and the message names it.
+Verify, by hand in a scratch project — not the coder seat's probe — running each case against the
+ported launcher `devpro/harnesses/resources/claude/libexec/hp.sh`: every capture failure case exits
+0 with stdout and stderr both empty; `tree` with no interpreter still exits 1 with its message on
+stderr; `HP_PYTHON=/nonexistent sh hp.sh tree` on a PATH with no python3 prints a line naming
+`HP_PYTHON`, distinct from the no-interpreter line.
 
 **B2 — the show-profile skill reads the ported tool whole (`R2`, `R5`, `R6`, `R7`, `R20`).**
-`devpro/definitions/skills/show_profile.py`: the "no calls recorded" branch and its count read from
-`tree --verbose` (which draws every call), never from the default tree; the dead `mkdir -p
-.devpro-temp` block (`:38,43`) is deleted — a successful `tree` proves the directory; `init`'s
-clause states write-and-print-`git add`, not commit (`:30`); the failure path stops relaying
-`doctor`'s "hook: not installed" line unchecked (`:45`) — the skill says what `doctor` said and that
-its plugin-record check cannot see the payload copy; the finder's candidate-1 gloss holds for
-project installs and states the user-level case (`:22`). Verify: `just render`, then the rendered
-skill's instructions walked against a scratch trace holding only Bash calls — the count is nonzero
-and no "nothing recorded" branch fires.
+`devpro/definitions/skills/show_profile.py`: the "no calls recorded" branch's test is that the
+verbose tree prints the header alone (`render_tree` returns the header joined to the drawn rows,
+`hp.py:1042-1044`; `visible()` draws every node under `--verbose`, `hp.py:880-883`), replacing
+`:45`'s attribution to a `tree` report `tree` never makes; the count comes from the trace file's
+line count, `--verbose` only deciding the empty case; the dead `mkdir -p .devpro-temp` block
+(`:38,43`) is deleted — a successful `tree` proves the directory; `init`'s clause states
+write-and-print-`git add`, not commit (`:30`); the failure path stops relaying `doctor`'s
+"hook: not installed" line unchecked (`:45`) — the skill says what `doctor` said and that its
+plugin-record check cannot see the payload copy; the finder's candidate-1 gloss holds for project
+installs and states the user-level case (`:22`). Verify: `just render`, then the rendered skill's
+instructions walked against a scratch trace holding only Bash calls — the count is nonzero and no
+"nothing recorded" branch fires.
 
-**B3 — the credit clause reconciled (`R3`).** The leaf's clause "credits the source of the idea and
+**B3 — the credit clause reconciled (`R3`).** The leaf
+`PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`'s clause "credits the source of the idea and
 design" becomes "credits the source" — the README's verbatim line is the acknowledgement, and the
-leaf stops characterizing it beyond what it says. The design's ARCHITECTURE becomes-block carries
-the identical clause change in the same commit, so the byte-pinned pair stays landed. Verify:
+leaf stops characterizing it beyond what it says. The design's ARCHITECTURE becomes-block carries the
+identical clause change in the same commit, so the byte-pinned pair stays landed. Verify:
 `just dev-check-design-deltas-applied` still reports `landed: 4`.
 
-**B4 — one regression pin for the port's contract (`R4`).** A test under `tests/` runs the installed
-launcher's `capture` with a synthetic `PostToolUse` payload in a scratch project and asserts the
-record line's schema (`v: 2`, the field names) and that `tree --format html`'s page data carries the
-keys `view.html` parses. The defect it fails on, named per the test-precondition clause: the
-record/D-payload contract has no mechanical check, so a field rename or drop ships green and renders
-an empty page. `just test devpro` runs it.
+**B4 — one regression pin for the port's contract (`R4`, `R17`).** `tests/test_devpro_profiler.py`
+runs the installed launcher's `capture` with a synthetic `PostToolUse` payload in a scratch project
+and asserts the record line's schema (`v: 2`, the field names) and that `tree --format html`'s page
+data carries the keys `view.html` parses. The payload is the four keys `fix.sh:9` sends —
+`hook_event_name`, `session_id`, `tool_name`, `tool_input`; the install route is
+`_definition_install(root, project_root=tmp_path)` (`tests/test_devpro_install.py:470-473`); the
+interpreter is pinned with `HP_PYTHON=sys.executable`, so the test asserts against the harness
+host's own interpreter, not whatever PATH holds. The defect it fails on, named per the
+test-precondition clause (`devpro/clauses.py:170`): a port that renames or drops a record field the
+page data carries — a field rename or drop ships green and renders an empty page. The planted
+mutation, with its red run: drop `ctxTokens` from the payload `hp.py`'s `capture` builds, or bump
+`SCHEMA_VERSION` to 3 — the page-data assertion fails red while every current check stays green;
+observe the failure, revert, and quote it. The byte pin (`R17`): one line asserts the installed
+launcher's bytes equal the source resource's — `read_bytes()` equality against
+`devpro/harnesses/resources/claude/libexec/hp.py` — so a stamp or reflow landing in `hp.py` through
+`packages.find` is caught. Scope: B4 pins the record/D-payload contract half of R4; the
+capture-outcome half is covered by B1's five-case probe. `just test devpro` runs it.
 
 **B5 — the two contract facts stated (`R9`, `R10`).**
 `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/harness-resources-are-copied-verbatim.md`
-gains: a harness resource written in Python is inside `just lint`'s paths like any other module, so
-it must pass black, isort and flake8 as well as carrying its banner — adding or deleting one changes
-what the lint gate covers, not just what a consumer receives.
+gains: a harness resource written in Python is inside `just lint`'s paths (`justfile:214-216`) like
+any other module, so it must pass black, isort and flake8 as well as carrying its banner — adding or
+deleting one changes what the lint gate covers, not just what a consumer receives.
 `PROJECT_DOCS/CONVENTIONS/planning-and-execution/the-gates.md` gains: `check-wheel` compares the
-wheel's package data with `git ls-files --cached --others --exclude-standard`, so a package-data
-deletion cannot pass the wheel surface before it is staged — a bare working tree fails it for that
-reason alone.
+wheel's package data with `git ls-files --cached --others --exclude-standard`
+(`devtools/scripts/check-wheel.sh:29-33`), so a package-data deletion cannot pass the wheel surface
+before it is staged — a tree whose package-data change is unstaged fails it, with the deletion on
+the index still expected and absent from the wheel.
 
-**B6 — hp.py fidelity and hygiene (`R11`, `R13`, `R14`, `R15`, `R16`).** Restore the JS record-keeping
-for the two payload shapes `hp.py:352-366` and `:601` drop; deduplicate `USAGE` (`:1320-1324`
-against `:7-10`); fix the unparseable docstring sentence (`:219-221`); delete or justify the four
-injection seams (`:499`, `:552`, `:586-588`, `:1292`); pin stdin/stdout to UTF-8 at the entry points
-(`:1330`, `:1349`, `:1352`, `:1355`). Verify: the differential payload replay from the coder seat's
-review — the two shapes now keep their records.
+**B6 — hp.py fidelity and hygiene (`R11`, `R13`, `R14`, `R15`, `R16`).** Restore the JS
+record-keeping for the two payload shapes `hp.py:352-366` and `:601` drop — the two edits, named:
+`except OSError` → `except (OSError, ValueError, TypeError)` at `:365`, and `errors="replace"` on
+the append's `open` at `:601`. Deduplicate `USAGE`: the constant (`:1320-1324`) is the home; the
+four docstring lines at `:7-10` are cut. Fix the unparseable docstring sentence (`:219-221`). Delete
+the four injection seams (`:499`, `:552`, `:586-588`, `:1292`) — no justification exists after B4,
+which tests through the launcher and calls none of them. Pin stdin/stdout to UTF-8 at the entry
+points (`:1330`, `:1349`, `:1352`, `:1355`). Verify: the differential payload replay from the coder
+seat's review — the two shapes now keep their records.
 
-**B7 — the README's profiler sentence (`R21`, `R22`).** README.md: one sentence naming the activity
+**B7 — the README's profiler sentence (`R21`).** README.md: one sentence naming the activity
 profiler — what it records, that the trace lands in `.devpro-temp/harness-profile/`, rendered by the
-show-profile skill — beside the requirements list; the credit line gains "(MIT)" without any other
-word moving.
+show-profile skill — as a bullet after `README.md:44`, the requirements list's last bullet. No
+interpreter floor and no "(MIT)": the credit line is frozen verbatim by user ruling, and the floor
+is a SPEC requirement the user decides.
 
 Declined: **R8** — resolved by landing act 4 (the pipx tag is the hand edit beside the bump);
-**R12** — cleanup of user-owned directories is a design question, and `doctor` already reports the
-staleness; **R17** — B4's behavioral pin supersedes a byte pin; **R18** — the design states the
-mkdir ("the capture's mkdir already creates the scratch directory when missing"); **R20** — folded
-into B2; **architect N3** — no reachable consequence.
+**R12** — no shipped command reports or cleans the stale copy: `hp.js` appears nowhere in `hp.py`
+and `HOOK_FILES = (LAUNCHER, "hp.py", VIEW_TEMPLATE)` (`hp.py:71`) excludes it — `stale_hook`
+(`:1283`) compares only those names, so a leftover committed `hp.js` is invisible to `doctor` —
+so fixing it means `init` deleting user-owned files or `doctor` growing an inventory, design
+questions; input to the next design, whose opencode profiler work touches the same surface;
+**R18** — the capture creating the scratch directory is the graceful act for a hook that cannot
+stop-and-say-so; the agents-file invariant binds sessions, not hooks (the design states no sentence
+about the mkdir — `ACTIVE_DESIGN.md` has no `mkdir` occurrence — so the decline rests on the
+behavior, not a quotation); **R22** — the credit line is frozen verbatim by user ruling; naming a
+license on it edits frozen text, and the README's acknowledgements list names licenses per
+dependency already; **R23** — a stated interpreter floor is a SPEC requirement and needs a user
+decision; B1's silence makes the missing statement safe — an old interpreter no-ops silently, the
+never-block behavior the design states — so no floor wording in B7; **architect N3** — the
+sanitization note; no reachable consequence.
 
-B1, B3, B5, B7 are mechanical; B2, B4, B6 are expert. The package runs expert.
+Done-line: `just test` (the full gate, all four surfaces), then `just lint`, then
+`just sweep-python`, then `just dev-check-design-deltas-applied` (all four pairs landed), then
+`just dev-check-links`, then `just dev-check-plan` — all before the landing acts.
 
-Done-line: `just test devpro`, then `just sweep-python`, then
-`just dev-check-design-deltas-applied` (all four pairs landed), then `just dev-check-links`, then
-`just dev-check-plan` — all before the landing acts, which delete the plan the last check reads;
-the landing commit's own proof is that run repeated on the tree it leaves. The full gate passes:
-the `docs` surface is green since the docdicer tag shipped (the header states it).
+The landing proof: the landing commit's tree carries `just test` (full gate, all four surfaces) and
+`just sweep-python` passing. The document checks (`dev-check-design-deltas-applied`,
+`dev-check-links`, `dev-check-plan`) run before the deletions, on the pre-landing tree — the landing
+commit deletes the plan and review document those checks read, so the pre-landing run is their
+proof, not the landing commit's.
 
 The landing acts, after the burndown's work:
 
 1. The landing commit deletes `ACTIVE_DESIGN.md` (not diced, so no tree).
 2. The landing commit deletes `ACTIVE_PLAN_REVIEW.md`.
-3. The landing commit deletes this plan (`ACTIVE_PLAN.md`) — no next plan exists at that time.
+3. The landing commit deletes this plan (`ACTIVE_PLAN.md`) — no next plan exists at that time. The
+   deletion is P4's row resolution: no Status row is set, the row dies with the plan.
 4. The landing commit bumps the version: `__version__` in `devpro/__init__.py` to `"0.18.0"` — the
-   minor bump the profiler's new behavior rates (user decision) — and `README.md`'s pipx tag beside
-   it, per *Version has one home*; the three rendered carriers follow from the constant at the next
-   render. Committed before any `just tag`.
+   minor bump the profiler's new behavior rates; the plan's approval covers the value and the edit —
+   and `README.md`'s pipx tag beside it, per *Version has one home*; the three rendered carriers
+   follow from the constant at the next render. Committed before any `just tag`.
 
 Every commit message and pull-request description carries the attribution line the development
 skill states:
