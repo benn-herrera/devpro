@@ -102,7 +102,7 @@ function planStanding(root: string): boolean {
 // The reminder's sentence, byte for byte what claude's state-table-reminder.sh emits, and the gate
 // that opens it — the plan file or the diced tree, not a design or nothing — are both held to the
 // recorded injections in tests/test_opencode_entry.py. A synthetic message is context, as a hook's
-// additionalContext is, so it states the status table's two acts as what they are.
+// additionalContext is, so it states the reminder as what it is.
 const reminder =
   "Reminder: keep the ACTIVE_PLAN state table up to date."
 

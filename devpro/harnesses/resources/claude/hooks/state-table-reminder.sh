@@ -49,5 +49,5 @@ fi
 
 # The one sentence. Claude Code reads hook context as project information rather than as an
 # out-of-band instruction, so it states the table's two acts as what they are.
-sentence='Reminder: keep the ACTIVE_PLAN state table up to date.'
-printf '{"hookSpecificOutput": {"hookEventName": "%s", "additionalContext": "%s"}}\n' "${event}" "${sentence}"
+reminder='Reminder: keep the ACTIVE_PLAN state table up to date.'
+printf '{"hookSpecificOutput": {"hookEventName": "%s", "additionalContext": "%s"}}\n' "${event}" "${reminder}"

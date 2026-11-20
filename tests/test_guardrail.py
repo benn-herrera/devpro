@@ -17,7 +17,7 @@ missing `bun` fails rather than skips, because a skip would hide drift between t
 The module also holds claude's plan-state reminder, `state-table-reminder.sh`, a second hook script
 that has no case table: it asserts which project roots open its gate, that a project holding none of
 the gate paths or only a design gets silence, and that the reminder JSON carries the event the input
-names and both acts of the status table.
+names and the sentence naming the table and its upkeep.
 """
 
 from __future__ import annotations
@@ -310,8 +310,8 @@ def test_the_reminder_speaks_where_a_plan_or_the_diced_tree_stands_at_the_projec
 ) -> None:
     """A plan file, or the diced plan's tree, opens the gate, and either root the hook contract names
     finds it: `CLAUDE_PROJECT_DIR` where the environment carries it, else the input's `cwd`. The answer
-    is the event the input names, which `hookSpecificOutput` must carry, and one sentence naming both
-    acts the status table records."""
+    is the event the input names, which `hookSpecificOutput` must carry, and one sentence naming the
+    table and its upkeep."""
     root = tmp_path / "project"
     root.mkdir()
     standing = root / gate
@@ -329,8 +329,8 @@ def test_the_reminder_speaks_where_a_plan_or_the_diced_tree_stands_at_the_projec
     output = json.loads(done.stdout)["hookSpecificOutput"]
     assert output["hookEventName"] == "PostToolUse"
     sentence = output["additionalContext"]
-    assert "status table" in sentence
-    assert "in progress" in sentence and "landed" in sentence
+    assert "state table" in sentence
+    assert "up to date" in sentence
 
 
 def test_the_reminder_is_silent_where_the_project_holds_no_gate_path(tmp_path: Path) -> None:

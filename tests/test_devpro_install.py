@@ -1928,7 +1928,7 @@ def test_the_registered_reminder_runs_the_script_the_install_wrote(tmp_path: Pat
     assert (result.returncode, result.stderr) == (0, "")
     output = json.loads(result.stdout)["hookSpecificOutput"]
     assert output["hookEventName"] == "PostToolUse"
-    assert "status table" in output["additionalContext"]
+    assert "state table" in output["additionalContext"]
 
 
 def _run_registered_hook(
