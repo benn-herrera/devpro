@@ -1,5 +1,13 @@
 # agents task recipes.
 
+# No recipe run writes bytecode into the source tree: an import of a shipped
+# resource (hp.py lives under the resources dir the wheel grafts wholesale)
+# drops a `__pycache__` beside it, and the next `check-wheel` packages that
+# cache into the wheel — a wheel carrying bytecode for an interpreter the
+# consumer never chose. The env var stops the cache at the source; nothing
+# in the tree needs it.
+export PYTHONDONTWRITEBYTECODE := "1"
+
 # Recipe bodies are bash, not just's default `sh`. Stating it makes the
 # contract explicit rather than inherited from whatever /bin/sh happens to be
 # on the host. `-u` (just's own default, kept) makes an unset variable a
