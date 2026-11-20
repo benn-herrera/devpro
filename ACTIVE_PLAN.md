@@ -2,14 +2,15 @@
 
 From the accepted design, diced: [ACTIVE_DESIGN/entry-point.md](ACTIVE_DESIGN/entry-point.md) — 38
 entries under `spec-delta/`, `architecture-delta/` and `code-delta/`, the tree being the design's one
-source and the delta byte-check's (P1b lands the entry that retires the monolith `ACTIVE_DESIGN.md`).
+source and the delta byte-check's (P1b retired the monolith `ACTIVE_DESIGN.md`).
 Every package is **shipped**: the whole
 process, one commit closing each package; the landing commit that deletes the plan (P6) stands
 outside the package commits, so "one commit closing each package" and P6's landing sentence describe
 two different commits, not one.
 
-Sequencing: P1b, then P1, then P1a, then P2, then P3, then P4, then P5, then P6. Each package leaves the tree
-green. P1b runs first so the design's dual source dissolves at the run's start. P1 carries every CLI
+Sequencing: P1b, then P1, then P1a, then P1c, then P1d, then P2, then P3, then P4, then P5, then
+P6. Each package leaves the tree green; P1b is landed, its work done before the run proper. P1
+carries every CLI
 caller and every test pin the components flip breaks; P1a re-anchors the
 six CONVENTIONS leaves P1 falsifies. From P1 until P4 lands, the SPEC and ARCHITECTURE leaves still
 describe the two-plugin world while the code runs one-plugin-plus-components —
@@ -30,7 +31,9 @@ ARCHITECTURE delta block; from P4 the run reports `0 not applied, 0 problems` an
 | --- | --- | --- | --- |
 | P1 | drafted | expert | the components selection replaces the plugin machinery — code, CLI callers, README, every pin |
 | P1a | drafted | expert | the six two-plugin CONVENTIONS leaves re-anchored to the one-plugin-plus-components reality |
-| P1b | drafted | expert | `check-deltas` reads the diced design tree; the design's monolith retires |
+| P1b | landed | expert | `check-deltas` reads the diced design tree; the design's monolith retires |
+| P1c | drafted | expert | the diced-design lifecycle rule lands in the skill texts — development.py, guide.py, docdicer.py |
+| P1d | drafted | mechanical | the state-table reminder's sentence reworded at both harness resources |
 | P2 | drafted | expert | the activity profiler payload vendored and wired, its leaf created, the README credit |
 | P3 | drafted | mechanical | the twelve SPEC delta entries applied to their leaves |
 | P4 | drafted | mechanical | the fourteen remaining ARCHITECTURE delta entries applied to their leaves |
@@ -361,6 +364,221 @@ Scope: those six leaves, nothing else.
 
 Done-line: `just check-links`. One commit.
 
+## P1b — The delta byte-check reads the design's one source
+
+Landed: `devtools/check_deltas.py` resolves a same-stem directory carrying `entry-point.md` beside
+the design path and reads the tree in place of the document — each leaf one entry, its heading's
+link resolved from the leaf's own directory — and the design's monolith (`ACTIVE_DESIGN.md`) retired
+with it, the equivalence gate holding (88/2/89, the document read's counts). The design entry is
+[CONVENTIONS.md, Planning and execution, A delta application ends verified](ACTIVE_DESIGN/code-delta/conventions-md-planning-and-execution-a-delta-application-ends-verified.md).
+
+## P1c — The diced-design lifecycle rule lands in the skill texts
+
+The design's decision — a diced design keeps no monolith beside its tree: the dice's passing exit
+retires the monolith, and the tree is the design's one source from then on, both copies present
+reported as a problem by `check-design` and `check-plan` — is recorded in
+[CONVENTIONS.md, Planning and execution, A delta application ends verified](ACTIVE_DESIGN/code-delta/conventions-md-planning-and-execution-a-delta-application-ends-verified.md).
+The skill and guide texts state the rule in pieces that do not agree today — the dicer's own skill
+says both versions remain — so this package applies the drafted pairs to the definitions, making
+every text that reaches a session state one rule. Process text is the plan's to carry, so the pairs
+below are the package's scope.
+
+Scope: `devpro/definitions/skills/development.py`, `devpro/definitions/skills/guide.py`,
+`devpro/definitions/skills/docdicer.py`. No test fixture pins these sentences (the standing-text
+search over `tests/` returns only incidental hits; the definitions' own guards — the spelling rule
+of `test_cross_references`, the router at `test_devpro.py:801` — were checked against the added text
+and pass). Rendered slots follow by regeneration (`just render`). Each pair was verified to match
+its site exactly once; the executor re-runs the match on the live files before applying. P1's
+guide.py edits (the `--plugin` phrases) do not touch these sites, so the pairs survive P1. Three
+constraints the application keeps: the added text names no skill outside a clause hole (the
+cross-reference guard); `optional_ref` keeps its own paragraph, so no optional reference joins D1's
+bullet; D1's bullet sits between the dice rule and the approved-plan rule, in that order.
+
+**D1 — `development.py`, the bullet after the dice rule**
+
+```
+- A plan or design longer than the {PLAN_SIZE_LIMIT_TERM} when it is offered for approval is diced
+  (the `{clauses.optional_ref(name="docdicer")}` skill), and dispatches cite its leaves. A design is
+  diced at its `##` and `###` headings only, so each entry and each ticket is one file. Once approved,
+  a plan is diced only when the user asks. *Purpose:* each executor reads whole the part it acts on.
+
+- An approved plan runs to completion: blockers that need the user surface during planning.
+```
+
+becomes
+
+```
+- A plan or design longer than the {PLAN_SIZE_LIMIT_TERM} when it is offered for approval is diced
+  (the `{clauses.optional_ref(name="docdicer")}` skill), and dispatches cite its leaves. A design is
+  diced at its `##` and `###` headings only, so each entry and each ticket is one file. Once approved,
+  a plan is diced only when the user asks. *Purpose:* each executor reads whole the part it acts on.
+
+- A diced design keeps no monolith beside its tree: the dice's passing exit — the leaves reassembling
+  the monolith, every link resolving — retires the monolith, and the tree is the design's one source
+  from then on. Edit a diced design leaf by leaf, or undice it to one working monolith, edit that and
+  re-dice the tree from it, leaving no monolith behind. *Purpose:* two copies diverge, and each
+  reader takes a different text as the design.
+
+- An approved plan runs to completion: blockers that need the user surface during planning.
+```
+
+**D2 — `development.py`, the {ACTIVE_DESIGN_TERM} row**
+
+```
+| {ACTIVE_DESIGN_TERM} | `ACTIVE_DESIGN.md` at the repository root | the one design under way, which feeds a plan |
+```
+
+becomes
+
+```
+| {ACTIVE_DESIGN_TERM} | `ACTIVE_DESIGN.md` at the repository root, else the `ACTIVE_DESIGN/` tree there, read from its `entry-point.md` | the one design under way, which feeds a plan |
+```
+
+**D3 — `guide.py`, the design's Appearing bullet**
+
+```
+- **Appearing:** `ACTIVE_DESIGN.md` at the root. While in progress it holds a `## Drafts` section:
+  the requirements, decisions, constraints and open questions, one `###` ticket each. The session
+  asks the user the open questions; each answer is the user's decision.
+```
+
+becomes
+
+```
+- **Appearing:** `ACTIVE_DESIGN.md` at the root, or the `ACTIVE_DESIGN/` tree that replaces it where
+  the design is longer than the plan size limit. While in progress it holds a `## Drafts` section:
+  the requirements, decisions, constraints and open questions, one `###` ticket each. The session
+  asks the user the open questions; each answer is the user's decision.
+```
+
+**D4 — `guide.py`, a decision that changes the requirements**
+
+```
+- **A decision that changes the requirements**, an escalation's answer or the user's own, is entered
+  in `ACTIVE_DESIGN.md` as an entry recording it and checked again, and may add a package to the
+  plan; only the changed text is reviewed. Say it with its go: "Exports include refunds too. Update
+  the design and the plan."
+```
+
+becomes
+
+```
+- **A decision that changes the requirements**, an escalation's answer or the user's own, is entered
+  in the design — `ACTIVE_DESIGN.md`, or a leaf of its tree where it is diced — as an entry recording
+  it and checked again, and may add a package to the plan; only the changed text is reviewed. Say it
+  with its go: "Exports include refunds too. Update the design and the plan."
+```
+
+**D5 — `guide.py`, landing**
+
+```
+- **Landing:** one commit deletes `ACTIVE_PLAN.md` (or replaces it with the next plan),
+  `ACTIVE_DESIGN.md` and `ACTIVE_PLAN_REVIEW.md`; its message says it lands a plan. **Next:** a new
+  request or a roadmap ticket, or the periodic review where it is due.
+```
+
+becomes
+
+```
+- **Landing:** one commit deletes `ACTIVE_PLAN.md` (or replaces it with the next plan), the design
+  (`ACTIVE_DESIGN.md` or its tree) and `ACTIVE_PLAN_REVIEW.md`; its message says it lands a plan.
+  **Next:** a new request or a roadmap ticket, or the periodic review where it is due.
+```
+
+**G4 — `guide.py`, nothing under way**
+
+```
+- **No `ACTIVE_*` file:** nothing under way. Next: a request, a `ROADMAP.md` ticket or work in
+  `ROADMAP_DESIGNS/`, unless the periodic review is due (`git log`: plans landed since the last
+  periodic review).
+```
+
+becomes
+
+```
+- **No `ACTIVE_*` file or diced tree:** nothing under way. Next: a request, a `ROADMAP.md` ticket or
+  work in `ROADMAP_DESIGNS/`, unless the periodic review is due (`git log`: plans landed since the
+  last periodic review).
+```
+
+**G5 — `guide.py`, setting the work aside**
+
+```
+- **Setting the work aside** (*Plans*): "Set this work aside as orders-export." Every `ACTIVE_*` file
+  moves into `ROADMAP_DESIGNS/` as `<topic>_DESIGN.md`, `<topic>_PLAN.md` and so on, and the plan
+  drops its `Release:` line; the root is free for other work, and landed packages stay committed. It
+  returns under its `ACTIVE_` names once no `ACTIVE_*` file is at the root: "Bring back
+  orders-export." Dropped for good, it is abandoned and leaves `ROADMAP_DESIGNS/`.
+```
+
+becomes
+
+```
+- **Setting the work aside** (*Plans*): "Set this work aside as orders-export." Every `ACTIVE_*` file
+  or diced tree moves into `ROADMAP_DESIGNS/` as `<topic>_DESIGN.md` or `<topic>_DESIGN/`,
+  `<topic>_PLAN.md` and so on, and the plan drops its `Release:` line; the root is free for other
+  work, and landed packages stay committed. It returns under its `ACTIVE_` names once no `ACTIVE_*`
+  file or diced tree is at the root: "Bring back orders-export." Dropped for good, it is abandoned
+  and leaves `ROADMAP_DESIGNS/`.
+```
+
+**G6 — `guide.py`, the roadmap's set-aside forms**
+
+```
+- `ROADMAP_DESIGNS/` holds work set aside, as `<topic>_DESIGN.md`, `<topic>_PLAN.md` and so on, and
+  names no release.
+```
+
+becomes
+
+```
+- `ROADMAP_DESIGNS/` holds work set aside, as `<topic>_DESIGN.md` or `<topic>_DESIGN/`,
+  `<topic>_PLAN.md` and so on, and names no release.
+```
+
+**B1 — `docdicer.py`, the dicer skill's own text.** The file is this repository's skill definition,
+not the docdicer package: the fix rides this package so every text agrees, and the docdicer session's
+work stays the tool-side check and the pin bump (the RFE names them).
+
+```
+- After each operation, both versions remain. Removing the one(s) no longer wanted is a separate step,
+  taken at the user's direction.
+```
+
+becomes
+
+```
+- After each operation, both versions remain, apart from the active design's own monolith: a dice
+  retires it, because the design lives in its tree from then on (the `{clauses.ref(name="development")}`
+  skill, *Plans*). Removing any other one(s) no longer wanted is a separate step, taken at the user's
+  direction.
+```
+
+Done-line: `just render` then `just test`. One commit.
+
+## P1d — The state-table reminder's sentence, one text in two resources
+
+Implements [the reminder sentence](ACTIVE_DESIGN/code-delta/conventions-md-code-definitions-and-install-a-sentence-two-harness-resources-carry-is-one-text.md):
+the sentence is one text in two harness resources and both sites change together. Current state,
+verified — both sites carry the longer form, unchanged since the entry landed:
+
+> Where the active plan carries a status table, a package is `in progress` when it is dispatched
+> and `landed` when its work is accepted and committed.
+
+The entry's shorter form replaces it:
+
+> A package in the active plan's status table is `in progress` when dispatched, `landed` when
+> accepted and committed.
+
+— the shorter form chosen for brevity and so the injection does not elicit a reply from the session
+it pokes. The tokens the tests hold (`status table`, `in progress`, `landed`) survive unchanged, so
+no test edits; rendered and installed copies follow by regeneration (`just render`).
+
+Scope: `devpro/harnesses/resources/claude/hooks/state-table-reminder.sh` (the sentence, `:52`) and
+`devpro/harnesses/resources/opencode/index.ts` (the sentence, `:107`), nothing else.
+
+Done-line: `just render` then `just test`. One commit.
+
 ## P2 — The activity profiler ships as payload
 
 Implements [the profiler payload](ACTIVE_DESIGN/code-delta/architecture-md-install-harness-profiler.md),
@@ -415,17 +633,14 @@ installing-this-repository lines, per the entry — three edits, one commit. The
 rule: `check-tree` makes a document's parent its directory's `index.md`
 (`docdicer/…/treecheck.py:53-62`), so an unlinked new leaf fails `just check-links` via `check-tree`.
 
-**The links.** The two `### ARCHITECTURE.md, Install, Harness profiler` headings
-(`ACTIVE_DESIGN.md:1191` and `:1307`, quoted above) gain the leaf link —
-`(PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)` in the monolith,
-`(../../PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)` in the tree leaves
-`ACTIVE_DESIGN/architecture-delta/architecture-md-install-harness-profiler.md` and
-`ACTIVE_DESIGN/code-delta/architecture-md-install-harness-profiler.md` — so `check-deltas` resolves
-the entries and the 2 PROBLEMs leave. The link changes no accepted wording; both sides are edited so
-the monolith and its tree stay one document. This is an edit to the accepted design that changes no
-accepted wording — the design's own final form permits plain text where the change creates it, and a
-link is that form's default; the alternative, relaxing `check_deltas` to tolerate linkless entries
-for an entry that creates its leaf, was not taken.
+**The links.** The two `### ARCHITECTURE.md, Install, Harness profiler` headings — in the tree
+leaves `ACTIVE_DESIGN/architecture-delta/architecture-md-install-harness-profiler.md` and
+`ACTIVE_DESIGN/code-delta/architecture-md-install-harness-profiler.md`, quoted above — gain the leaf
+link `(../../PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)`, so `check-deltas` resolves the
+entries and the 2 PROBLEMs leave. The link changes no accepted wording. This is an edit to the
+accepted design that changes no accepted wording — the design's own final form permits plain text
+where the change creates it, and a link is that form's default; the alternative, relaxing
+`check_deltas` to tolerate linkless entries for an entry that creates its leaf, was not taken.
 
 **The credit.** README.md's Third Party Acknowledgments section gains exactly the design's credit
 line ([the README credit] entry above) and nothing else records the origin — no version stamping
