@@ -23,7 +23,8 @@ the dispatch's `model` parameter (`the-gates.md:5`); CONVENTIONS binds no step-d
 development skill's default pair applies — the mechanical packages P1 and P2 run on
 `stem-mechanical=reaper/Ornith-1.5-122B` through the `model` parameter.
 
-The plan is written to `dispatchable` and handed back: the main session dispatches.
+The plan's packages go out `drafted`: the session sets `dispatchable` after accepting this
+revision, and dispatches from there.
 
 ## Status
 
@@ -50,8 +51,8 @@ Facts, each re-run before acting on it:
 
 - The delta check today: `just dev-check-design-deltas-applied` → `pairs: 3, landed: 0, pending: 3,
   drifted: 0, conflicting: 0, problems: 0`, exit 1. P1's application moves all three to landed.
-- The from-blocks sit in their targets, every run of whitespace read as one space, verified by a
-  normalized-membership check of each design pair against both target files: pair 1 and pair 2
+- The from-blocks sit in their targets, verified by a normalized-membership check of each design
+  pair against both target files: pair 1 and pair 2
   match only in `shipped-files.md`, pair 3 only in `harness-profiler.md`, and no `becomes` block is
   already present. Their exact sites: pair 1's from-block is
   `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:105` in full (`resources; no opencode or
@@ -59,9 +60,13 @@ Facts, each re-run before acting on it:
   `shipped-files.md:87-88` (from `path it holds below the install directory: opencode's at` to
   `<install-dir>/hooks/guardrail.pl` and`; line 88's tail word `and` is the from-block's last
   word, so the replacement runs into line 89's `…(mage ships none):` mid-sentence — the
-  becomes-block is written so the sentence continues correctly); pair 3's from-block is
-  `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md:56-58` (the leaf's last paragraph, first
-  line `No opencode or mage payload ships: the profiler's hooks are claude's, and an`).
+  becomes-block is written so the sentence continues correctly); pair 3's from-block is a
+  **mid-paragraph run**, not whole lines, spanning
+  `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md:44-46` (the file is 47 lines): `sed -n
+  '44,46p'` shows the one paragraph, the from-block opening mid-line after `--components` value. `
+  (`No opencode or mage payload ships: the profiler's hooks are claude's, and an`) and closing
+  mid-line with `reusing this code. ` — line 44's words before it and line 46's words after it
+  (`Token counts come from claude's own transcripts under …`) survive the edit.
 - No passage carries a markdown link — the `(SPEC.md, Deployed Surfaces, Shipped files)` and
   similar mentions are parenthetical text — so nothing to rebase.
 - No test pins any passage's text: `git grep -n "no opencode or mage" -- tests/` → nothing;
@@ -72,18 +77,19 @@ Work:
 
 1. Apply pair 1's becomes-block over `shipped-files.md:105` verbatim.
 2. Apply pair 2's becomes-block over `shipped-files.md:87-88` verbatim.
-3. Apply pair 3's becomes-block over `harness-profiler.md:56-58` verbatim.
+3. Apply pair 3's becomes-block over its mid-paragraph run at `harness-profiler.md:44-46`
+   verbatim — the whole-line model does not hold here: the surrounding words survive, line 44's
+   opening (`…`--components` value. `) and line 46's continuation (`Token counts come from …`)
+   staying in place around the inserted block, and the paragraph remains one paragraph.
 4. Run the delta check: it must report `landed: 3, pending: 0, problems: 0`, exit 0.
 
-Done-line: `just dev-check-design-deltas-applied` (pending: 0), then `just dev-check-links`. One
-commit closes the package.
+Done-line: `just dev-check-design-deltas-applied` (pending: 0), then `just dev-check-links`.
 
 ## P2 — The install ships the payload to opencode
 
 Implements [the Harness profiler entry under Code delta](ACTIVE_DESIGN.md#harness-profiler-1) in
 its settled-home sentence: the payload keeps its one home, `resources/claude/libexec/`, and
-opencode's copy list gains the three files sourced from there — no second copy of the payload in
-the repository.
+opencode's copy list gains the three files sourced from there.
 
 Scope: `devpro/install.py` (`harness_resource_copies`, its docstring included),
 `tests/test_devpro_install.py:1873-1886` (the behavior pin).
@@ -102,10 +108,10 @@ Facts, each re-run before acting on it:
 - The docstring's invariant gains the carve-out: `install.py:185-193` states "These files are the
   harness's own"; the sentence gains that opencode's list additionally carries the render payload
   sourced from `resources/claude/libexec/`, the payload being harness-neutral.
-- The user-level filter needs no change: `install.py:384-391` (`_resource_copies`) keeps, on a
-  user-level install, only the target equal to the entry resource, so the payload never reaches a
-  user-level opencode install; the design's "a mage install ships none of them" holds because
-  mage's mapping entry does not exist.
+- The user-level filter needs no change: `install.py:384-392` (`_resource_copies`) keeps, on a
+  user-level install, only the target equal to the entry resource (`:392`), so the payload never
+  reaches a user-level opencode install; the design's "a mage install ships none of them" holds
+  because mage's mapping entry does not exist.
 - `Path.rglob` on a missing directory yields nothing and raises nothing:
   `python3 -c "from pathlib import Path; print(list(Path('/nonexistent').rglob('*')))"` → `[]`.
   The tests that build a synthetic `PACKAGE_ROOT` without `resources/claude/`
@@ -147,7 +153,7 @@ Work:
    check passes.
 
 Done-line: `just test`, then `just sweep-python`, then `just dev-check-design-deltas-applied`
-(landed: 3), then `just dev-check-links`. One commit closes the package.
+(landed: 3), then `just dev-check-links`.
 
 ## P3 — The capture: profiler.ts beside the entry
 
@@ -155,9 +161,10 @@ Implements [the Harness profiler entry under Code delta](ACTIVE_DESIGN.md#harnes
 composing the capture from its prose.
 
 Scope: `devpro/harnesses/resources/opencode/profiler.ts` (new),
-`devpro/harnesses/resources/opencode/index.ts` (the import and the registration, nothing else),
-`tests/test_opencode_entry.py:140-141` (the registration pin). The scratch driver this package
-observes the capture with is throwaway and lives under `.devpro-temp/`, never committed.
+`devpro/harnesses/resources/opencode/index.ts` (one path constant and one guarded registration,
+nothing else), `tests/test_opencode_entry.py:140-141` (the registration pin). The scratch driver
+this package observes the capture with is throwaway and lives under `.devpro-temp/`, never
+committed.
 
 Facts, each re-run before acting on it:
 
@@ -241,7 +248,10 @@ Work:
 
 1. Write `profiler.ts`: TypeScript, standard-library imports only (`node:fs`, `node:path`,
    `node:url` as the entry already uses), `export default Plugin.define({ id, async setup(ctx) … })`
-   with the id namespacing the entry's convention uses. It registers `execute.before` and
+   with the id following the entry's own convention — `pluginId()` reads the registry's plugin
+   name (`devpro/harnesses/resources/opencode/index.ts:118`, used at `:161`); `guardrail.ts:190`
+   instead states a literal (`id: "guardrail-plugin"`), and either precedent is the executor's
+   call. It registers `execute.before` and
    `execute.after`, pairs each call's `id` to the time the before-hook took, and on the after-hook
    appends one record per completed or errored call to the session's trace file — the fields above,
    `harness` `"opencode"`, `at` ISO-8601, `duration_ms` from the paired times, `ok` from `status`,
@@ -256,13 +266,17 @@ Work:
    a throwaway bun driver that stubs `@opencode/plugin` the way
    `tests/opencode_plugin_stub.ts` does, loads the installed `profiler.ts`, and drives one
    synthetic before/after pair and one idle event per the payload contract above; then
-   `sh <plugin-dir>/libexec/hp.sh tree` and `tree --format html` render the records — the tree
-   shows the call with its duration and outcome and the page's data carries the keys `view.html`
-   parses, proving the record shape `tree` and the page read survived the TypeScript capture.
+   `sh <plugin-dir>/libexec/hp.sh tree` and `tree --format html` render the records. The
+   page-data leg has an executable statement of the contract already:
+   `tests/test_devpro_profiler.py` asserts, for the claude capture through the same launcher and
+   render path, that the page data carries the keys `view.html` parses (its docstring names it)
+   — read it and hold the driver's page to that assertion rather than recomposing the keys from
+   the prose above; the tree leg adds the opencode-specific check, the call shown with its
+   duration and outcome.
 5. Run the gate, then the document checks.
 
 Done-line: `just test`, then `just sweep-python`, then `just dev-check-design-deltas-applied`
-(landed: 3), then `just dev-check-links`. One commit closes the package.
+(landed: 3), then `just dev-check-links`.
 
 ## P4 — Post-plan review
 
