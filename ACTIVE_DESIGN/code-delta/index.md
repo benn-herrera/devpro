@@ -10,3 +10,4 @@ Contents:
 - [ARCHITECTURE.md, Why There Is No Verification Verb](architecture-md-why-there-is-no-verification-verb.md)
 - [ARCHITECTURE.md, Install, Harness profiler](architecture-md-install-harness-profiler.md)
 - [SPEC.md, Guide and README](spec-md-guide-and-readme.md)
+- [CONVENTIONS.md, Code definitions and install, A sentence two harness resources carry is one text](conventions-md-two-resources-one-text.md)
