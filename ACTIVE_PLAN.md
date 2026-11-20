@@ -32,8 +32,8 @@ ARCHITECTURE delta block; from P4 the run reports `0 not applied, 0 problems` an
 | P1 | drafted | expert | the components selection replaces the plugin machinery — code, CLI callers, README, every pin |
 | P1a | drafted | expert | the six two-plugin CONVENTIONS leaves re-anchored to the one-plugin-plus-components reality |
 | P1b | landed | expert | `check-deltas` reads the diced design tree; the design's monolith retires |
-| P1c | drafted | expert | the diced-design lifecycle rule lands in the skill texts — development.py, guide.py, docdicer.py |
-| P1d | drafted | mechanical | the state-table reminder's sentence reworded at both harness resources |
+| P1c | dispatchable | expert | the diced-design lifecycle rule lands in the skill texts — development.py, guide.py, docdicer.py |
+| P1d | dispatchable | mechanical | the state-table reminder's sentence reworded at both harness resources |
 | P2 | drafted | expert | the activity profiler payload vendored and wired, its leaf created, the README credit |
 | P3 | drafted | mechanical | the twelve SPEC delta entries applied to their leaves |
 | P4 | drafted | mechanical | the fourteen remaining ARCHITECTURE delta entries applied to their leaves |
@@ -262,9 +262,8 @@ prose under the accepted one-plugin-plus-components statements —
 [components and render](ACTIVE_DESIGN/code-delta/architecture-md-rendering-harnesses-and-families.md)
 and the entries it names — not enumerated byte-edits. Each leaf keeps its heading and its links: the
 applied Repo Layout text P4 lands cites the plugin-membership rule by name
-(`ACTIVE_DESIGN.md:672,676` — the entry [Repo Layout](ACTIVE_DESIGN/architecture-delta/architecture-md-repo-layout.md)),
-so the rule's home survives with the components form. P1b having retired the monolith, the tree leaf
-is the citation that stands.
+(`ACTIVE_DESIGN/architecture-delta/architecture-md-repo-layout.md:16,20`),
+so the rule's home survives with the components form.
 
 Each site, quoted as it stands and restated as it becomes:
 
@@ -379,17 +378,24 @@ retires the monolith, and the tree is the design's one source from then on, both
 reported as a problem by `check-design` and `check-plan` — is recorded in
 [CONVENTIONS.md, Planning and execution, A delta application ends verified](ACTIVE_DESIGN/code-delta/conventions-md-planning-and-execution-a-delta-application-ends-verified.md).
 The skill and guide texts state the rule in pieces that do not agree today — the dicer's own skill
-says both versions remain — so this package applies the drafted pairs to the definitions, making
-every text that reaches a session state one rule. Process text is the plan's to carry, so the pairs
-below are the package's scope.
+says both versions remain — so this package applies the drafted pairs to the definitions: the sentences the pairs change state
+one rule. The docdicer skill's two undice bullets (`docdicer.py:23-35`) stay as written — they state
+the tool's conversion machinery for any document (undice to a monolith, re-dice back, a failed
+undice's monolith kept until the user directs removal), while D1's bullet governs the design's end
+state and itself routes a revision through one working monolith, "leaving no monolith behind".
+Process text is the plan's to carry, so the pairs below are the package's scope.
 
 Scope: `devpro/definitions/skills/development.py`, `devpro/definitions/skills/guide.py`,
 `devpro/definitions/skills/docdicer.py`. No test fixture pins these sentences (the standing-text
 search over `tests/` returns only incidental hits; the definitions' own guards — the spelling rule
 of `test_cross_references`, the router at `test_devpro.py:801` — were checked against the added text
-and pass). Rendered slots follow by regeneration (`just render`). Each pair was verified to match
-its site exactly once; the executor re-runs the match on the live files before applying. P1's
-guide.py edits (the `--plugin` phrases) do not touch these sites, so the pairs survive P1. Three
+and pass). Rendered slots follow by regeneration — `just render` for every slot but the four
+reference slots (its slug rule refuses `reference*`, `justfile:125-126`), `just retake-reference`
+for those four (`justfile:141`). Each pair was verified to match its site exactly once; the
+executor re-runs the match on the live files before applying — a scratch script under
+`.devpro-temp/` counting whole-text occurrences of each pair's first fenced block in its target
+file, exactly one required (`grep -c` counts lines, not blocks). P1's guide.py edits (the
+`--plugin` phrases) do not touch these sites, so the pairs survive P1. Three
 constraints the application keeps: the added text names no skill outside a clause hole (the
 cross-reference guard); `optional_ref` keeps its own paragraph, so no optional reference joins D1's
 bullet; D1's bullet sits between the dice rule and the approved-plan rule, in that order.
@@ -554,7 +560,7 @@ becomes
   direction.
 ```
 
-Done-line: `just render` then `just test`. One commit.
+Done-line: `just render`, then `just retake-reference`, then `just test`. One commit.
 
 ## P1d — The state-table reminder's sentence, one text in two resources
 
@@ -572,12 +578,14 @@ The entry's shorter form replaces it:
 
 — the shorter form chosen for brevity and so the injection does not elicit a reply from the session
 it pokes. The tokens the tests hold (`status table`, `in progress`, `landed`) survive unchanged, so
-no test edits; rendered and installed copies follow by regeneration (`just render`).
+no test edits; rendered and installed copies follow by regeneration — `just render` for every slot
+but the four reference slots (its slug rule refuses `reference*`, `justfile:125-126`),
+`just retake-reference` for those four (`justfile:141`).
 
 Scope: `devpro/harnesses/resources/claude/hooks/state-table-reminder.sh` (the sentence, `:52`) and
 `devpro/harnesses/resources/opencode/index.ts` (the sentence, `:107`), nothing else.
 
-Done-line: `just render` then `just test`. One commit.
+Done-line: `just render`, then `just retake-reference`, then `just test`. One commit.
 
 ## P2 — The activity profiler ships as payload
 
@@ -591,8 +599,10 @@ Scope: `devpro/harnesses/resources/claude/libexec/hp.sh`, `hp.js`, `view.html` (
 gains the `show-profile` definition; `README.md` (the credit line only);
 `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md` (new leaf);
 `PROJECT_DOCS/ARCHITECTURE/install/index.md` (its parent link line for the new leaf);
-`PROJECT_DOCS/ARCHITECTURE/entry-point.md`; the two profiler entries' headings in `ACTIVE_DESIGN.md`
-and their two tree leaves; the pins land in `tests/test_devpro_install.py`, the file that already
+`PROJECT_DOCS/ARCHITECTURE/entry-point.md`; the two profiler entries' headings in their tree
+leaves (`ACTIVE_DESIGN/architecture-delta/architecture-md-install-harness-profiler.md` and
+`ACTIVE_DESIGN/code-delta/architecture-md-install-harness-profiler.md`); the pins land in
+`tests/test_devpro_install.py`, the file that already
 pins hooks.json, the harness resource copies and their banner.
 
 **The resources.** Vendored from the harness-profiler source (upstream
@@ -757,4 +767,4 @@ package; the items cite their review IDs, grouped by root cause.
 
 Done-line: the checkpoint gate (`just test`, then `just sweep-python`), then `just check-links`. One
 commit; the commit that lands the plan follows it, deleting `ACTIVE_PLAN.md`,
-`ACTIVE_PLAN_REVIEW.md`, `ACTIVE_DESIGN.md` and the `ACTIVE_DESIGN/` tree.
+`ACTIVE_PLAN_REVIEW.md` and the `ACTIVE_DESIGN/` tree.
