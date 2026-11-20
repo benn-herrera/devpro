@@ -1,5 +1,6 @@
-"""`check_deltas` over designs written for the case: both verdicts, each failure the tool names, and
-the fence rule that keeps a passage's own fenced example from ending the block it belongs to."""
+"""`check_deltas` over designs written for the case — an undiced document and a diced tree: both
+verdicts, each failure the tool names, and the fence rule that keeps a passage's own fenced example
+from ending the block it belongs to."""
 
 from __future__ import annotations
 
@@ -90,3 +91,70 @@ def test_a_missing_design_file_is_named_rather_than_raised(tmp_path: Path, capsy
     missing = tmp_path / "nope.md"
     assert main([str(missing)]) == 1
     assert capsys.readouterr().out == f"PROBLEM {missing}: missing design\n"
+
+
+_TARGET = "PROJECT_DOCS/ARCHITECTURE/agents-file.md"
+# A tree's links are leaf-relative: from a section directory the target sits two levels up.
+_TREE_LINK = f"../../{_TARGET}"
+
+
+def _tree(tmp_path: Path, *, stem: str = "design", applied: str = "The new sentence.", leaf: str | None = None) -> Path:
+    """A diced design at `tmp_path/stem/`, its one code-delta leaf linking `_TARGET`, and that target
+    beside the tree holding `leaf` or the applied text between a lead and a tail. Returns the design
+    path to check — the monolith's, retired."""
+    tree = tmp_path / stem
+    entry = tree / "code-delta" / "entry.md"
+    entry.parent.mkdir(parents=True, exist_ok=True)
+    (tree / "entry-point.md").write_text("# design\n", encoding="utf-8")
+    target = tmp_path / _TARGET
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(leaf if leaf is not None else f"Lead. {applied} Tail.\n", encoding="utf-8")
+    entry.write_text(
+        f"{_ENTRY.format(leaf=_TREE_LINK)}\n\n```\n{_REPLACED}\n```\nbecomes\n```\n{applied}\n```\n",
+        encoding="utf-8",
+    )
+    return tmp_path / f"{stem}.md"
+
+
+def test_a_trees_entries_are_read_from_its_leaves(tmp_path: Path, capsys) -> None:
+    """Tree mode reads each section leaf as one entry: a reader that opens the named path as a
+    document finds no monolith beside the tree, reports `missing design`, and so never passes an
+    applied pair or names a miss."""
+    assert main([str(_tree(tmp_path / "applied"))]) == 0
+    assert "all 1 becomes-blocks occur byte-exact in their leaves" in capsys.readouterr().out
+    assert main([str(_tree(tmp_path / "missed", leaf=f"Lead. {_REPLACED} Tail.\n"))]) == 1
+    out = capsys.readouterr().out
+    assert "MISS" in out
+    assert "1 not applied, 0 problems, 1 becomes-blocks checked" in out
+
+
+def test_a_trees_link_resolves_from_the_leafs_own_directory(tmp_path: Path, capsys, monkeypatch) -> None:
+    """A tree's links are leaf-relative where a document's are repository-relative: resolved from the
+    invocation directory, the entry names a leaf that is not there."""
+    design = _tree(tmp_path)
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+    assert main([str(design)]) == 0
+    assert "all 1 becomes-blocks occur byte-exact in their leaves" in capsys.readouterr().out
+
+
+def test_index_and_entry_point_are_not_entries(tmp_path: Path, capsys) -> None:
+    """Only a section directory's leaves are entries: an `index.md` and the tree's `entry-point.md`
+    carrying entry-shaped text would otherwise each report a missing leaf and count a block."""
+    design = _tree(tmp_path)
+    tree = design.with_suffix("")
+    decoy = "### [ARCHITECTURE.md, Decoy](nowhere.md)\n\n```\nx\n```\nbecomes\n```\ny\n```\n"
+    (tree / "code-delta" / "index.md").write_text(decoy, encoding="utf-8")
+    (tree / "entry-point.md").write_text(decoy, encoding="utf-8")
+    assert main([str(design)]) == 0
+    assert "all 1 becomes-blocks occur byte-exact in their leaves" in capsys.readouterr().out
+
+
+def test_the_tree_beside_the_named_design_path_is_the_source(tmp_path: Path, capsys, monkeypatch) -> None:
+    """The default invocation resolves `ACTIVE_DESIGN.md` beside `ACTIVE_DESIGN/`: with the monolith
+    retired, a reader that opens the named path reports `missing design`."""
+    monkeypatch.chdir(tmp_path)
+    _tree(tmp_path, stem="ACTIVE_DESIGN")
+    assert main([]) == 0
+    assert "all 1 becomes-blocks occur byte-exact in their leaves" in capsys.readouterr().out
