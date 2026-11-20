@@ -79,7 +79,9 @@ records carry no token fields the hooks do not supply.
 
 The capture's shape, held to the amended leaf: `profiler.ts` beside `index.ts` in
 `devpro/harnesses/resources/opencode/`, TypeScript, imported and registered from the entry the way
-`guardrail.ts` is wired. It hooks `execute.before` and `execute.after`, correlating each call's id
+`guardrail.ts` is wired. The shipped render payload keeps its one home,
+`devpro/harnesses/resources/claude/libexec/`, and opencode's copy list in `harness_resource_copies`
+gains the three files sourced from there, so the repository holds no second copy of the payload. It hooks `execute.before` and `execute.after`, correlating each call's id
 to time it; on completion it appends one record per call to
 `.devpro-temp/harness-profile/<session-id>.jsonl` under the project root — `v` 2, `harness`
 `"opencode"`, `at` ISO-8601, `session`, `tool`, `duration_ms`, `ok`, and the argument and result
