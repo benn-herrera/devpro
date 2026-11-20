@@ -238,8 +238,70 @@ Done-line: `just dev-check-links`. The review document and P3's Status row land 
 
 ## P4 — Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands. This section holds the
-drafting instruction until then; the landing acts below are settled now.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `da25a3a`): 2 High, 8 Medium, 13 Low — seven items,
+the rest declined with reasons. Each item names its surfaces and its verification.
+
+**B1 — the capture's silence restored (`R1`, `R19`).** `devpro/harnesses/resources/claude/libexec/hp.sh`:
+every pre-interpreter failure path drains stdin and exits 0 with no output — a `PATH` python3 that
+cannot run `hp.py` (too old), `HP_PYTHON` set but not an executable file, `hp.py` missing beside the
+launcher — matching the no-interpreter path's shape (`hp.sh:46-51`), which already drains. Where
+output is allowed (non-capture subcommands), the not-found message distinguishes a bad `HP_PYTHON`
+from an absent interpreter. Verify: the coder seat's five-case probe repeated — each failure case
+exits 0, stdout empty, `tree` still reports.
+
+**B2 — the show-profile skill reads the ported tool whole (`R2`, `R5`, `R6`, `R7`, `R20`).**
+`devpro/definitions/skills/show_profile.py`: the "no calls recorded" branch and its count read from
+`tree --verbose` (which draws every call), never from the default tree; the dead `mkdir -p
+.devpro-temp` block (`:38,43`) is deleted — a successful `tree` proves the directory; `init`'s
+clause states write-and-print-`git add`, not commit (`:30`); the failure path stops relaying
+`doctor`'s "hook: not installed" line unchecked (`:45`) — the skill says what `doctor` said and that
+its plugin-record check cannot see the payload copy; the finder's candidate-1 gloss holds for
+project installs and states the user-level case (`:22`). Verify: `just render`, then the rendered
+skill's instructions walked against a scratch trace holding only Bash calls — the count is nonzero
+and no "nothing recorded" branch fires.
+
+**B3 — the credit clause reconciled (`R3`).** The leaf's clause "credits the source of the idea and
+design" becomes "credits the source" — the README's verbatim line is the acknowledgement, and the
+leaf stops characterizing it beyond what it says. The design's ARCHITECTURE becomes-block carries
+the identical clause change in the same commit, so the byte-pinned pair stays landed. Verify:
+`just dev-check-design-deltas-applied` still reports `landed: 4`.
+
+**B4 — one regression pin for the port's contract (`R4`).** A test under `tests/` runs the installed
+launcher's `capture` with a synthetic `PostToolUse` payload in a scratch project and asserts the
+record line's schema (`v: 2`, the field names) and that `tree --format html`'s page data carries the
+keys `view.html` parses. The defect it fails on, named per the test-precondition clause: the
+record/D-payload contract has no mechanical check, so a field rename or drop ships green and renders
+an empty page. `just test devpro` runs it.
+
+**B5 — the two contract facts stated (`R9`, `R10`).**
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/harness-resources-are-copied-verbatim.md`
+gains: a harness resource written in Python is inside `just lint`'s paths like any other module, so
+it must pass black, isort and flake8 as well as carrying its banner — adding or deleting one changes
+what the lint gate covers, not just what a consumer receives.
+`PROJECT_DOCS/CONVENTIONS/planning-and-execution/the-gates.md` gains: `check-wheel` compares the
+wheel's package data with `git ls-files --cached --others --exclude-standard`, so a package-data
+deletion cannot pass the wheel surface before it is staged — a bare working tree fails it for that
+reason alone.
+
+**B6 — hp.py fidelity and hygiene (`R11`, `R13`, `R14`, `R15`, `R16`).** Restore the JS record-keeping
+for the two payload shapes `hp.py:352-366` and `:601` drop; deduplicate `USAGE` (`:1320-1324`
+against `:7-10`); fix the unparseable docstring sentence (`:219-221`); delete or justify the four
+injection seams (`:499`, `:552`, `:586-588`, `:1292`); pin stdin/stdout to UTF-8 at the entry points
+(`:1330`, `:1349`, `:1352`, `:1355`). Verify: the differential payload replay from the coder seat's
+review — the two shapes now keep their records.
+
+**B7 — the README's profiler sentence (`R21`, `R22`).** README.md: one sentence naming the activity
+profiler — what it records, that the trace lands in `.devpro-temp/harness-profile/`, rendered by the
+show-profile skill — beside the requirements list; the credit line gains "(MIT)" without any other
+word moving.
+
+Declined: **R8** — resolved by landing act 4 (the pipx tag is the hand edit beside the bump);
+**R12** — cleanup of user-owned directories is a design question, and `doctor` already reports the
+staleness; **R17** — B4's behavioral pin supersedes a byte pin; **R18** — the design states the
+mkdir ("the capture's mkdir already creates the scratch directory when missing"); **R20** — folded
+into B2; **architect N3** — no reachable consequence.
+
+B1, B3, B5, B7 are mechanical; B2, B4, B6 are expert. The package runs expert.
 
 Done-line: `just test devpro`, then `just sweep-python`, then
 `just dev-check-design-deltas-applied` (all four pairs landed), then `just dev-check-links`, then
