@@ -40,16 +40,21 @@ its `.claude/settings.json`.
 
 **What does not exist.** No companion-plugin mechanism is built: the profiler has no namespace of its
 own and no carrier but the devpro plugin. Should it become optional later, it becomes a
-`--components` value. **The opencode capture.** Under opencode the plugin itself records: `profiler.ts` beside the entry
+`--components` value.
+
+**The opencode capture.** Under opencode the plugin itself records: `profiler.ts` beside the entry
 carries the capture, recreated in the plugin's TypeScript against the plugin's hook surface —
 `execute.before` and `execute.after` paired on the call's id time every tool call (the `tool`,
-`sessionID`, `status`, `input` and `result`/`error` the after-hook reports), the idle hook marks the
-session's lifecycle — and appends the records to its own
-`.devpro-temp/opencode-profiler/<session-id>.jsonl` store, `harness` `"opencode"`, that `hp.py`'s
-tree and page render beside the claude sessions' in `.devpro-temp/claude-profiler/` — the trace
-stores split per harness, no shared directory. A
-capture that fails raises nothing out of the hook. `init` and `doctor` stay claude-facing: opencode
-has no committed-hook concept, and the install ships the render payload at
-`<plugin-dir>/profiler/`, where the show-profile skill's first finder candidate resolves it. The
-records carry no token fields the hooks do not supply. Token counts come from claude's own transcripts under `~/.claude/projects/`, which
-is claude's data, not a source the install configures.
+`sessionID`, `status`, `input` and `result`/`error` the after-hook reports), and the idle hook appends
+a lifecycle record the tree does not draw — writing them to its own
+`.devpro-temp/opencode-profiler/<session-id>.jsonl` store, `harness` `"opencode"`, which `hp.py`'s
+tree and page render beside the claude sessions', each record read from its own `*-profiler` store.
+The model's own `todowrite` notes are not recorded: they are not activity, so the store holds one
+record per tool call that did something. A capture that fails raises nothing out of the hook. `init`
+and `doctor` stay claude-facing: opencode has no committed-hook concept, and the install ships the
+render payload at `<install-dir>/profiler/`, where the show-profile skill's first finder candidate
+resolves it. An opencode record carries no token counts, so the tree's token columns are blank for
+its sessions; claude's counts come from its own transcripts under `~/.claude/projects/`, which is
+claude's data, not a source the install configures. An opencode record's `branch` is empty on its own
+account: the capture runs in the host's process, and the hooks report no branch, so `tree --branch`
+selects no opencode session.

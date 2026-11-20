@@ -1096,6 +1096,7 @@ def list_sessions(directory: Path | str) -> list[dict]:
         sessions.append(
             {
                 "id": path.name[: -len(".jsonl")],
+                "path": path,
                 "records": records,
                 "first": min(starts, default=math.inf),
                 "last": max(ends, default=-math.inf),
@@ -1292,8 +1293,11 @@ def stale_hook(repo: Path) -> str | None:
 def doctor(cwd: Path | str) -> str:
     """Whether capture works here, and why not."""
     directory = project_dir(cwd)
-    sessions = list_sessions(directory)
-    newest = max((session["last"] for session in sessions), default=None)
+    # doctor is claude-facing: every other line reads claude's hook and this directory's claude sessions,
+    # so `newest` is claude's store alone, and the `traces` line names it beside what `tree` reads.
+    claude_store = Path(directory) / TRACE_DIR
+    claude_sessions = [session for session in list_sessions(directory) if session["path"].parent == claude_store]
+    newest = max((session["last"] for session in claude_sessions), default=None)
     repo = git_root(cwd) or Path(cwd)
     sources = hook_sources(repo, Path.home())
     stale = stale_hook(repo)
@@ -1302,7 +1306,7 @@ def doctor(cwd: Path | str) -> str:
     )
     lines = [
         f"python:  {sys.executable} ({platform.python_version()})",
-        f"traces:  {Path(directory) / TRACE_DIR.parent / TRACE_GLOB}",
+        f"traces:  {claude_store} (tree reads {Path(directory) / TRACE_DIR.parent / TRACE_GLOB})",
         f"hook:    {installed}",
         f"update:  the committed hook {stale}; run harness-profiler init claude again and commit" if stale else None,
         f"newest:  {_iso(_utc(newest)) if newest is not None else 'no calls recorded yet'}",

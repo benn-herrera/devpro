@@ -60,7 +60,9 @@ directory names and the instruction names; `tests/test_cold_read_tools.py` holds
 file too, since `development` ships there, and there it refuses.
 
 The harness resource copy borrows `_shipped` and nothing else from the package path:
-`harness_resource_copies` reads `resources/<harness>/` and writes each file into the install
+`harness_resource_copies` reads `resources/<harness>/` — and, for opencode, the render payload's
+source `resources/claude/profiler/` beside it, landed under `profiler/` (Install, Harness profiler) —
+and writes each file into the install
 directory with `copyfile` and `copymode`, so it lands as the harness ships it — no suffix is
 stamped, whatever the file's type, and an installed banner a file already holds travels with it as
 the file's own text. A guardrail script is the exception to copying every file: it joins the

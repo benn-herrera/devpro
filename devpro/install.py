@@ -125,11 +125,13 @@ SHIPPED_PACKAGES: tuple[ShippedPackage, ...] = (
 # rendered. The directory below this one in the source is the harness's own
 # name, and the destination is ROOT itself — both stated, neither derived from a directory listing.
 HARNESS_RESOURCES_SOURCE = "harnesses/resources"
-# The render payload is harness-neutral, so opencode's copy list additionally carries the profiler
-# files, sourced from claude's resource directory so there is one copy of the payload, not two. Maps a
-# harness to the extra source roots, below HARNESS_RESOURCES_SOURCE, its list also walks; a harness with
-# no entry gains nothing beyond its own directory.
-_CROSS_HARNESS_SOURCES = {"opencode": ("claude/profiler",)}
+# The render payload ships to the harnesses SPEC names, and this map is that list: opencode's copy
+# list additionally carries the profiler files, sourced from claude's resource directory so there is
+# one copy of the payload, not two. Maps a harness to (source directory, destination) pairs, both below
+# HARNESS_RESOURCES_SOURCE and ROOT as the table above states them — never derived from the source's
+# name, since the destination is a consumer contract; the destination is another harness's directory,
+# as the harness's own is walked already.
+_CROSS_HARNESS_SOURCES = {"opencode": (("claude/profiler", "profiler"),)}
 # The interpreter the install-time probe runs a guardrail hook script under, found on PATH, and how long
 # that run may take before it counts as failed.
 GUARDRAIL_INTERPRETER = "perl"
@@ -195,17 +197,17 @@ def harness_resource_copies(root: Path, *, harness: str) -> list[tuple[Path, Pat
     must carry its own `!INSTALLED! … devpro` header in its first ten lines: that header is how a
     later install knows the target is one it wrote, and a target without it refuses the install. A
     harness shipping no resources directory copies nothing, which is not an error. The render payload
-    is harness-neutral, so opencode's list additionally carries the profiler files from
-    `resources/claude/profiler/`, delivered under `profiler/` beside its own resources; no other
-    harness's list gains them.
+    ships to the harnesses `_CROSS_HARNESS_SOURCES` names — opencode — whose list additionally carries
+    the profiler files from `resources/claude/profiler/`, delivered under the `profiler/` the map
+    states beside them; no other harness's list gains them.
 
     The copy is one-way and is not a mirror: a resource file this repository drops is not removed from
     a consumer, because `prune` owns the three rendered surfaces and nothing outside them. What lands
     here stays until the consuming project removes it."""
     sources = [(PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / harness, None)]
     sources.extend(
-        (PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / extra, PurePosixPath(extra).name)
-        for extra in _CROSS_HARNESS_SOURCES.get(harness, ())
+        (PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / extra, destination)
+        for extra, destination in _CROSS_HARNESS_SOURCES.get(harness, ())
     )
     return [pair for source, prefix in sources for pair in _harness_resource_pairs(source, root, prefix)]
 

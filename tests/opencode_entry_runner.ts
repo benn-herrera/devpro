@@ -9,7 +9,8 @@
 // Stdout: JSON {id, hooks, sessionHooks, states, prompts, synthetics}: the plugin id, the tool and
 // session hooks it registered, what it had registered after setup and after each write, the text each
 // execute prompted, and every synthetic message a hook injected, naming the event that fired the hook
-// and the session it went to.
+// and the session it went to. Every callback registered for an event fires, so a hook name the
+// entry registers twice reaches both registrations.
 // The runner fails where an execute's prompt drops the invocation's session id or delivery, or where a
 // reminder hook the entry must register is missing. It exits once the plugin's cleanup has run; a
 // watcher the cleanup left open keeps it running.
@@ -114,8 +115,10 @@ const hooks: string[] = []
 const sessionHooks: string[] = []
 const synthetics: { on: string; sessionID: string; text: string }[] = []
 const invocation = { sessionID: "ses_1", delivery: "queue" }
-let after: ((call: Call) => void | Promise<void>) | undefined
-let idle: ((event: Idle) => void | Promise<void>) | undefined
+// Every callback registered for an event, in registration order: one plugin registers the entry's own
+// reminder and the capture's, and each is fired.
+const after: ((call: Call) => void | Promise<void>)[] = []
+const idles: ((event: Idle) => void | Promise<void>)[] = []
 // The hook whose callback is running, named in the synthetic record it produces.
 let firing = ""
 
@@ -125,7 +128,7 @@ const cleanup = await plugin.setup({
   tool: {
     async hook(name: string, callback: (call: Call) => void | Promise<void>) {
       hooks.push(name)
-      if (name === "execute.after") after = callback
+      if (name === "execute.after") after.push(callback)
     },
   },
   agent,
@@ -141,7 +144,7 @@ const cleanup = await plugin.setup({
     },
     async hook(name: string, callback: (event: { sessionID: string }) => void | Promise<void>) {
       sessionHooks.push(name)
-      if (name === "experimental.idle") idle = callback
+      if (name === "experimental.idle") idles.push(callback)
     },
     async get({ sessionID }: { sessionID: string }) {
       return sessionID === CHILD ? { parentID: PARENT } : {}
@@ -171,16 +174,18 @@ await execute()
 
 // Fire each registered reminder path — a subagent's dispatch and its completion — and the calls the
 // entry must ignore: a tool that is not a subagent, a subagent call that failed, a session with no
-// parent of its own, and a session still holding work that runs.
+// parent of its own, and a session still holding work that runs. Every callback registered for the
+// event fires, the capture's included; it appends internally whatever the payload, so these calls
+// put no record in a store.
 const fireTool = async (call: Call) => {
-  if (!after) throw new Error("the entry registered no execute.after hook")
+  if (after.length === 0) throw new Error("the entry registered no execute.after hook")
   firing = "execute.after"
-  await after(call)
+  for (const callback of after) await callback(call)
 }
 const fireIdle = async (event: Idle) => {
-  if (!idle) throw new Error("the entry registered no experimental.idle hook")
+  if (idles.length === 0) throw new Error("the entry registered no experimental.idle hook")
   firing = "experimental.idle"
-  await idle(event)
+  for (const callback of idles) await callback(event)
 }
 await fireTool({ tool: "subagent", sessionID: PARENT, status: "completed" })
 await fireTool({ tool: "shell", sessionID: PARENT, status: "completed" })

@@ -13,7 +13,8 @@ _DESCRIPTION = (
 )
 
 _BODY = """Render this session's trace and put the page where the user can open it. The trace is the newest
-session recording in `.devpro-temp/harness-profile/` at the repository root.
+session recording under `.devpro-temp/` at the repository root: `.devpro-temp/claude-profiler/` under
+claude, `.devpro-temp/opencode-profiler/` under opencode. `sh HP tree` reads both stores.
 
 ## Locate the profiler
 
@@ -28,9 +29,10 @@ Use the first launcher that exists:
 Where neither stands, the profiler is not installed here: say so and stop. A repository can carry
 both, and the committed copy can be older than the installed one, so the installed one goes first.
 
-Where the hook is not installed and the session cannot install it, `sh HP init claude` writes it
-into this repository's `.claude/` and prints the `git add` line to commit; run it only when the
-user asks for profiling there.
+Under claude, where the hook is not installed and the session cannot install it, `sh HP init claude`
+writes it into this repository's `.claude/` and prints the `git add` line to commit; run it only when
+the user asks for profiling there. `init` and `doctor` are claude's alone: opencode's plugin records
+every call itself, so an opencode session needs neither.
 
 Call the launcher `HP` below and run it with `sh`.
 
@@ -50,13 +52,15 @@ the harness offers one, and otherwise give them the path.
 ## Answer
 
 In two or three lines: how many calls and contexts the trace holds — count the lines of that
-recording — and the three most expensive contexts by duration with their tokens, read from
-`sh HP tree --verbose`: the plain tree draws only the skills, agents and compactions, so a session
-of plain tool calls prints the column header alone. Then the page's path. Do not paste the tree.
+recording — and, for a claude session, the three most expensive contexts by duration with their
+tokens, read from `sh HP tree --verbose`: the plain tree draws only the skills, agents and
+compactions, so a session of plain tool calls prints the column header alone. An opencode session
+records no token counts, so say so where those columns are blank. Then the page's path. Do not paste
+the tree.
 
-Where the verbose tree prints the column header alone, nothing was recorded: say so, run
-`sh HP doctor`, report what it printed about the traces and the newest session, and that its
-plugin-record check cannot see the payload copy, and stop. Where `tree` instead says
+Where the verbose tree prints the column header alone, nothing was recorded: say so, and, under
+claude, run `sh HP doctor`, report what it printed about the traces and the newest session, and that
+its plugin-record check cannot see the payload copy, and stop. Where `tree` instead says
 `No traces in …`, the repository holds no recording at all: say so and stop."""
 
 DEFINITIONS = (

@@ -36,9 +36,7 @@ from devpro.vocabulary import (
 )
 
 GENERATED_MARK = "!GENERATED! from "
-GENERATED_NOTICE = (
-    "do not edit here: request changes to devpro."
-)
+GENERATED_NOTICE = "do not edit here: request changes to devpro."
 PLACEHOLDER = re.compile(r"@![a-z0-9.-]+!@")
 
 

@@ -41,9 +41,9 @@ path it holds below the install directory: opencode's at `<install-dir>/index.ts
 
 ```markdown
 path it holds below the install directory: opencode's at `<install-dir>/index.ts`, the plugin entry,
-`<install-dir>/guardrail.ts`, `<install-dir>/profiler.ts` and `<install-dir>/profiler/hp.sh`,
-`<install-dir>/profiler/hp.py`, `<install-dir>/profiler/view.html`, and claude's at
-`<install-dir>/hooks/guardrail.pl` and
+`<install-dir>/guardrail.ts` and `<install-dir>/profiler.ts`, and, for claude and opencode alike,
+`<install-dir>/profiler/hp.sh`, `<install-dir>/profiler/hp.py` and `<install-dir>/profiler/view.html`;
+claude's at `<install-dir>/hooks/guardrail.pl` and
 ```
 
 ### [Shipped files — the trace store](PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md)
@@ -112,15 +112,17 @@ reusing this code.
 **The opencode capture.** Under opencode the plugin itself records: `profiler.ts` beside the entry
 carries the capture, recreated in the plugin's TypeScript against the plugin's hook surface —
 `execute.before` and `execute.after` paired on the call's id time every tool call (the `tool`,
-`sessionID`, `status`, `input` and `result`/`error` the after-hook reports), the idle hook marks the
-session's lifecycle — and appends the records to its own
-`.devpro-temp/opencode-profiler/<session-id>.jsonl` store, `harness` `"opencode"`, that `hp.py`'s
-tree and page render beside the claude sessions' in `.devpro-temp/claude-profiler/` — the trace
-stores split per harness, no shared directory. A
-capture that fails raises nothing out of the hook. `init` and `doctor` stay claude-facing: opencode
-has no committed-hook concept, and the install ships the render payload at
-`<plugin-dir>/profiler/`, where the show-profile skill's first finder candidate resolves it. The
-records carry no token fields the hooks do not supply.
+`sessionID`, `status`, `input` and `result`/`error` the after-hook reports), and the idle hook appends
+a lifecycle record the tree does not draw — writing them to its own
+`.devpro-temp/opencode-profiler/<session-id>.jsonl` store, `harness` `"opencode"`, which `hp.py`'s
+tree and page render beside the claude sessions', each record read from its own `*-profiler` store.
+The model's own `todowrite` notes are not recorded: they are not activity, so the store holds one
+record per tool call that did something. A capture that fails raises nothing out of the hook. `init`
+and `doctor` stay claude-facing: opencode has no committed-hook concept, and the install ships the
+render payload at `<install-dir>/profiler/`, where the show-profile skill's first finder candidate
+resolves it. An opencode record carries no token counts, so the tree's token columns are blank for
+its sessions; claude's counts come from its own transcripts under `~/.claude/projects/`, which is
+claude's data, not a source the install configures.
 ```
 
 ### [Harness profiler — the payload directory](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)

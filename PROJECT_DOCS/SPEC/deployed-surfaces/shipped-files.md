@@ -85,9 +85,9 @@ and permissions — and the `kbase` MCP server where `kbase` ships. An install c
 resources into the install directory, except a user-level install, which copies only opencode's
 entry, and save a file conditional on the install-time probe (below), so a resource lands at the
 path it holds below the install directory: opencode's at `<install-dir>/index.ts`, the plugin entry,
-`<install-dir>/guardrail.ts`, `<install-dir>/profiler.ts` and `<install-dir>/profiler/hp.sh`,
-`<install-dir>/profiler/hp.py`, `<install-dir>/profiler/view.html`, and claude's at
-`<install-dir>/hooks/guardrail.pl` and
+`<install-dir>/guardrail.ts` and `<install-dir>/profiler.ts`, and, for claude and opencode alike,
+`<install-dir>/profiler/hp.sh`, `<install-dir>/profiler/hp.py` and `<install-dir>/profiler/view.html`;
+claude's at `<install-dir>/hooks/guardrail.pl` and
 `<install-dir>/hooks/state-table-reminder.sh` (mage ships none):
 in the install directory, outside its three deployed surfaces. Each keeps its bytes and its mode:
 the install stamps nothing on them. Every such file carries an installed banner
@@ -112,10 +112,11 @@ Opencode loads the plugin directory and registers its agents, skills, commands a
 `kbase` ships, the `kbase` MCP server under the registry's ids, and injects a plan-state reminder
 into the parent session at agent dispatch and agent completion, gated by `ACTIVE_PLAN.md` — file
 or, where the plan was diced, the `ACTIVE_PLAN/` tree — existing at the project root. A change to
-the install directory is picked up without restarting opencode, except a change to `guardrail.ts`,
-which the plugin entry imports when it loads, so a changed one takes effect at the next opencode
-start. The plugin entry is written for opencode 2.3.2 (floor 2.3.0) and is the same file for both
-plugins; ARCHITECTURE.md, Install, Opencode entry holds how it works. A resource may be conditional
+the install directory is picked up without restarting opencode, except a change to `guardrail.ts` or
+`profiler.ts`, either of which the plugin entry imports when it loads, so a changed one takes effect
+at the next opencode start. The plugin entry is written for opencode 2.3.2 (floor 2.3.0) and is the
+same file for both plugins; ARCHITECTURE.md, Install, Opencode entry holds how it works. A resource
+may be conditional
 on the probe: claude's guardrail is
 delivered only when one run of the script on the installing machine succeeds within a few seconds,
 and is otherwise skipped, with the reason reported and the rest of the install unaffected. The

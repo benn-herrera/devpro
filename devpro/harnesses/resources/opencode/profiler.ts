@@ -18,21 +18,20 @@ import {
   fstatSync,
   mkdirSync,
   openSync,
-  readFileSync,
   readSync,
   renameSync,
   truncateSync,
 } from "node:fs"
 import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
 
 // The slice of the plugin context this module uses, declared as the entry declares its own.
 type ToolInput = { [arg: string]: unknown }
 // The call's pairing key: `execute.before` reports it and `execute.after` repeats it.
 type Pairing = { tool: string; sessionID: string; agent?: string; messageID?: string; id: string; input: ToolInput }
-// `execute.before` carries no result and no status; `execute.after` carries one or the other.
+// `execute.before` carries no result and no status; `execute.after` carries one or the other, and
+// on a failed call its `error` is the host's `Tool.Error` object rather than a string.
 type Started = Pairing
-type Finished = Pairing & { status: "completed" | "error"; result?: unknown; error?: string }
+type Finished = Pairing & { status: "completed" | "error"; result?: unknown; error?: unknown }
 type Idle = { sessionID: string; background: readonly unknown[] }
 
 // The callback's type is written literally at each `hook`, not through a generic alias: TypeScript
@@ -49,18 +48,9 @@ type Context = {
     hook(name: "experimental.idle", callback: (event: Idle) => Promise<void> | void): Promise<unknown>
   }
 }
-const here = dirname(fileURLToPath(import.meta.url))
 
-function pluginId(): string {
-  try {
-    return (JSON.parse(readFileSync(join(here, "registry.json"), "utf8")) as { plugin: string }).plugin
-  } catch {
-    // The registry is written by the install beside this file; a user-level install, which copies no
-    // capture, never loads this module. The literal keeps a plugin id well-formed where it is missing.
-    return "profiler-plugin"
-  }
-}
-
+// The module's id, as `guardrail.ts` carries its literal; the entry's own id is the host's.
+const PLUGIN_ID = "profiler-plugin"
 // hp.py's limits and spellings, so a record from either harness renders the same way.
 const SCHEMA_VERSION = 2
 const TRACE_DIR = join(".devpro-temp", "opencode-profiler")
@@ -71,17 +61,23 @@ const LINE_LIMIT = 4096
 const ELLIPSIS = "…"
 const NEWLINE = " ⏎ "
 const DEFAULT_AGENT = "general-purpose"
+// A start whose `execute.after` never fires — a denied or interrupted call — is dropped once its
+// session has gone idle, and at the latest once this many starts are held.
+const MAX_STARTED = 1024
 
 // ---------- hp.py's text helpers ----------
 
 const SECRETS: [RegExp, string][] = [
-  [/\b(Bearer|Basic|token)\s+[\w.~+/=-]{8,}/gi, "$1 [redacted]"],
+  [/\b(Bearer|Basic|token)\s+[\p{L}\p{N}_.~+/=-]{8,}/giu, "$1 [redacted]"],
   [
-    /\b((?:api[_-]?key|access[_-]?token|token|secret|password|passwd|authorization)["']?\s*[:=]\s*["']?)[^\s"'&]+/gi,
+    /\b((?:api[_-]?key|access[_-]?token|token|secret|password|passwd|authorization)["']?\s*[:=]\s*["']?)[^\s"'&]+/giu,
     "$1[redacted]",
   ],
-  [/\b(?:gh[pousr]_|github_pat_|sk-|xox[abp]-)[\w-]{10,}/g, "[redacted]"],
+  [/(?<![\p{L}\p{N}_])(?:gh[pousr]_|github_pat_|sk-|xox[abp]-)[\p{L}\p{N}_-]{10,}/gu, "[redacted]"],
 ]
+// hp.py states the same three as `[\w]` with Unicode semantics; JavaScript's `\w` is ASCII, and the
+// `\p{L}\p{N}` classes above are what make a credential holding a non-ASCII letter mask alike.
+// `test_devpro_profiler.py` holds the two implementations to one sample list.
 const SECRET_KEY = /token|secret|password|api_?key|authorization|credential/i
 // JSON.stringify escapes the line terminators JSON leaves raw; this does not, so a record carrying
 // one stays one line and python reads it back as the same JSON.
@@ -101,9 +97,11 @@ function mask(text: string): string {
   return SECRETS.reduce((masked, [pattern, replacement]) => masked.replace(pattern, replacement), text)
 }
 
-// clip is text cut to limit characters, its last one an ellipsis.
+// clip is text cut to limit code points, its last one an ellipsis: hp.py's limit is a count of
+// characters, and a UTF-16 index would cut an astral character in half.
 function clip(text: string, limit: number): string {
-  return text.length <= limit ? text : text.slice(0, Math.max(limit - 1, 0)) + ELLIPSIS
+  const points = [...text]
+  return points.length <= limit ? text : points.slice(0, Math.max(limit - 1, 0)).join("") + ELLIPSIS
 }
 
 // oneLine is text's non-blank lines, trimmed and joined so a record stays on one line.
@@ -128,19 +126,25 @@ function valueText(value: unknown): string {
   return compact(value)
 }
 
+// errorText is a failed call's reason: the host reports a `Tool.Error` object carrying `.message`
+// where a string spelling of it would be expected.
+function errorText(error: unknown): string {
+  if (typeof error === "string") return error
+  return isRecord(error) ? textFrom(error.message) : ""
+}
+
 // ---------- the record's values ----------
 
 // Remarks the model writes to itself, which opencode reports as tool calls: they carry no result and
 // are not activity, so they are not recorded.
-const REMARKS = new Set(["todowrite", "todoread"])
+const REMARKS = new Set(["todowrite"])
 // The tools that start a subagent context, and the tool hp.py records them as: the tree draws claude's
-// `Agent` call by default, so opencode's `task` must carry that name to be drawn at all.
-const SUBAGENT_TOOLS: Record<string, string> = { task: "Agent", subagent: "Agent" }
+// `Agent` call by default, so opencode's `subagent` must carry that name to be drawn at all.
+const SUBAGENT_TOOLS: Record<string, string> = { subagent: "Agent" }
 const KIND_ARGS: Record<string, string[]> = {
-  task: ["subagent_type", "agent"],
   subagent: ["subagent_type", "agent"],
 }
-// hp.py's `Skill`: the name the tree draws by default, its arguments taken from `args`.
+// hp.py's `Skill`: the name the tree draws by default, its name the host's skill id.
 const SKILL = "Skill"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -152,16 +156,17 @@ function textFrom(value: unknown): string {
   return typeof value === "string" ? value : ""
 }
 
-// nameOf, argsOf and resultOf are hp.py's three, over opencode's tools: a skill's name and args, a
-// subagent's kind and brief, a shell command's head and its text. Any other tool's name is its own
-// (hp's MCP suffix rule apart), its args its input as JSON.
+// nameOf, argsOf and resultOf are hp.py's three, over opencode's tools: a skill's name, a subagent's
+// kind and brief, a shell command's head and its text. The host names a subagent dispatch by its
+// `agent` and a skill call by its `id`; neither is a tool name, so neither falls through to the tool
+// itself. Any other tool's name is its own (hp's MCP suffix rule apart), its args its input as JSON.
 function nameOf(tool: string, input: Record<string, unknown>): string | undefined {
   const name =
     tool in SUBAGENT_TOOLS
-      ? textFrom(input.subagent_type) || DEFAULT_AGENT
+      ? textFrom(input.agent) || textFrom(input.subagent_type) || DEFAULT_AGENT
       : tool === "bash" || tool === "shell"
         ? firstLine(textFrom(input.command)).replace(/^cd\s+("[^"]*"|'[^']*'|\S+)\s+&&\s+/, "")
-        : textFrom(tool === "skill" ? input.args : undefined) || tool.split("__").pop() || tool
+        : textFrom(tool === "skill" ? input.id : undefined) || tool.split("__").pop() || tool
   return clip(mask(name), NAME_LIMIT) || undefined
 }
 
@@ -171,7 +176,8 @@ function argsOf(tool: string, input: Record<string, unknown>): string | undefine
     const brief = [textFrom(input.description), firstLine(textFrom(input.prompt))].filter(Boolean).join(": ")
     return clip(mask(oneLine(brief)), ARGS_LIMIT) || undefined
   }
-  const given = tool === "bash" || tool === "shell" ? input.command : tool === "skill" ? input.args : undefined
+  // A skill call is given nothing: its `id` is its name.
+  const given = tool === "bash" || tool === "shell" ? input.command : undefined
   const safe =
     given === undefined || given === null
       ? Object.keys(input).length
@@ -185,6 +191,21 @@ function argsOf(tool: string, input: Record<string, unknown>): string | undefine
   return clip(mask(oneLine(safe)), ARGS_LIMIT) || undefined
 }
 
+// resultText is a completed call's text: hp.py's `response_text` unwrapping — the `content` parts'
+// text, then a string `output`, then `stdout` and `stderr` — and, where the result carries none of
+// those, its `metadata` as JSON.
+function resultText(result: unknown): string {
+  if (!isRecord(result)) return valueText(result)
+  const { content, output } = result
+  if (Array.isArray(content)) {
+    return content.map((part) => (isRecord(part) ? textFrom(part.text) : "")).join("\n")
+  }
+  if (typeof output === "string") return output
+  const streams = [result.stdout, result.stderr].filter((value) => typeof value === "string")
+  if (streams.length) return streams.join("\n")
+  return result.metadata === undefined || result.metadata === null ? "" : valueText(result.metadata)
+}
+
 // resultOf is what the call returned, or, on a failed call, why: hp.py's result is the error's text
 // where the response carries none.
 function resultOf(call: Finished): string | undefined {
@@ -192,13 +213,13 @@ function resultOf(call: Finished): string | undefined {
     call.status === "completed"
       ? call.result === undefined || call.result === null
         ? ""
-        : valueText(call.result)
-      : (call.error ?? "")
+        : resultText(call.result)
+      : errorText(call.error)
   return clip(mask(firstLine(textOf)), RESULT_LIMIT) || undefined
 }
 
 // childAgentTypeOf is the kind of subagent a parent call started: hp.py's `Agent` call names its own
-// input's subagent type, opencode's `task` names its `agent`.
+// input's subagent type, opencode's `subagent` names its `agent`.
 function childAgentTypeOf(tool: string, input: Record<string, unknown>): string | undefined {
   for (const arg of KIND_ARGS[tool] ?? []) {
     const value = input[arg]
@@ -253,14 +274,17 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
     name: nameOf(raw, input) ?? (subagent ? DEFAULT_AGENT : tool),
     duration_ms: end - start,
     ok: call.status === "completed",
-    // A subagent call starts its child's context; opencode names no id for the call, so the store holds
-    // none to key that context by.
+    // A subagent call starts its child's context. opencode's result does name the child's session, but
+    // each opencode session owns its own trace file: a child id here would send hp.py's context walk
+    // after the child's calls in this, the parent's, file, where they never are.
     child_agent_id: null,
     child_agent_type: subagent ? (childAgentTypeOf(raw, input) ?? DEFAULT_AGENT) : null,
     background: false,
     child_spend: null,
     tokens: null,
     context_tokens: null,
+    // A branch is the checkout's, which hp.py reads beside the capture it runs; the capture here runs
+    // in the host's process, and opencode's hooks report no branch.
     branch: null,
     args: argsOf(raw, input) ?? null,
     result: resultOf(call) ?? null,
@@ -308,10 +332,20 @@ function sessionFile(root: string, session: string): string {
 
 // The start of every call in flight, by its pairing key. One plugin module serves one session's
 // hooks per opencode process, but a key is only unique within a call, so the session id joins it.
+// A call whose `execute.after` never fires — denied, interrupted, or a plugin's failing before-hook —
+// leaves its key behind, so the map is bounded: a session's keys go at its idle, and the oldest goes
+// once MAX_STARTED is held.
 const started = new Map<string, number>()
 
 function keyOf(call: Started): string {
   return `${String(call.sessionID)}.${String(call.id)}`
+}
+
+function boundStarted(): void {
+  for (const key of started.keys()) {
+    if (started.size <= MAX_STARTED) return
+    started.delete(key)
+  }
 }
 
 // TORN_TAIL_BYTES bounds the read that finds a torn tail: a record is at most LINE_LIMIT bytes, so a
@@ -321,7 +355,8 @@ const TORN_TAIL_BYTES = 64 * 1024
 // dropTornTail refuses to append onto a line a killed process left unusable, which would fuse two
 // records and lose both. The file is read from its tail, not whole: an append happens on every call.
 // The torn line moves aside and the file keeps the lines before it, or nothing at all happens where the
-// file ends clean.
+// file ends clean. hp.py has no such repair — it tolerates a torn line on read, and nothing repairs a
+// claude store on write.
 function dropTornTail(file: string): void {
   let handle: number
   try {
@@ -365,15 +400,14 @@ function silently(step: () => void): void {
 }
 
 export default Plugin.define({
-  // The entry's own mechanism: the registry's plugin name where the registry is readable beside this
-  // file, and this module's literal name where it is not.
-  id: pluginId(),
+  id: PLUGIN_ID,
   async setup(ctx: Context) {
     const root = ctx.location.project.directory
     await ctx.tool.hook("execute.before", (call) => {
       silently(() => {
         if (REMARKS.has(call.tool)) return
         started.set(keyOf(call), Date.now())
+        boundStarted()
       })
     })
     await ctx.tool.hook("execute.after", (call) => {
@@ -389,7 +423,13 @@ export default Plugin.define({
       })
     })
     await ctx.session.hook("experimental.idle", (idle) => {
-      silently(() => append(root, idle.sessionID, eventRecord(idle.sessionID, "experimental.idle", Date.now())))
+      silently(() => {
+        const prefix = `${String(idle.sessionID)}.`
+        for (const key of started.keys()) {
+          if (key.startsWith(prefix)) started.delete(key)
+        }
+        append(root, idle.sessionID, eventRecord(idle.sessionID, "experimental.idle", Date.now()))
+      })
     })
   },
 })

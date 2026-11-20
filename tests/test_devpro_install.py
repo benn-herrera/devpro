@@ -1430,11 +1430,17 @@ def test_a_user_level_opencode_install_copies_the_entry_and_no_guardrail(
     _home: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A user-level install delivers no guardrail, but the plugin registers only through its entry, so
-    the entry is the one harness resource it copies."""
+    the entry is the one harness resource it copies. The payload a project install reaches across from
+    claude's resources stays behind too: the carve-out admits a project install's copy list, not this
+    one."""
     resources = tmp_path / "repo" / HARNESS_RESOURCES_SOURCE / "opencode"
     resources.mkdir(parents=True)
     for name in ("index.ts", _TS_GUARDRAIL):
         (resources / name).write_text(f"{_RESOURCE_HEADER}export const probe = 1\n", encoding="utf-8")
+    profiler = tmp_path / "repo" / HARNESS_RESOURCES_SOURCE / "claude" / _PROFILER
+    profiler.mkdir(parents=True)
+    for name in _PROFILER_FILES:
+        (profiler / name).write_text(f"{_RESOURCE_HEADER}payload {name}\n", encoding="utf-8")
     monkeypatch.setattr("devpro.install.PACKAGE_ROOT", tmp_path / "repo")
     root = _home / ".config/opencode"
     root.mkdir(parents=True)
@@ -1442,6 +1448,7 @@ def test_a_user_level_opencode_install_copies_the_entry_and_no_guardrail(
     plugin = _opencode_plugin(root)
     assert (plugin / "index.ts").read_bytes() == (resources / "index.ts").read_bytes()
     assert not (plugin / _TS_GUARDRAIL).exists()
+    assert not (plugin / _PROFILER).exists()
 
 
 # The docdicer tools package: copied into the docdicer skill's own directory, its launcher stamped by
