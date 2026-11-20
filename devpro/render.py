@@ -37,7 +37,7 @@ from devpro.vocabulary import (
 
 GENERATED_MARK = "!GENERATED! from "
 GENERATED_NOTICE = (
-    "do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md."
+    "do not edit here: request changes to devpro."
 )
 PLACEHOLDER = re.compile(r"@![a-z0-9.-]+!@")
 

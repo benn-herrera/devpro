@@ -154,6 +154,7 @@ _PAYLOAD_PATH = f"{PACKAGE_ROOT.name}/".encode("utf-8")
 # carries as its own text beside the repository's name on one of its first lines, in whatever comment
 # syntax its format takes, so no format's syntax is parsed.
 _INSTALLED_MARK = "!INSTALLED!"
+_INSTALLED_NOTICE = GENERATED_NOTICE
 _RESOURCE_BANNER = re.compile(re.escape(_INSTALLED_MARK).encode("utf-8") + rb" .* devpro")
 _RESOURCE_BANNER_LINES = 10
 
@@ -205,7 +206,7 @@ def harness_resource_copies(root: Path, *, harness: str) -> list[tuple[Path, Pat
 
 def stamped(data: bytes, *, origin: str) -> bytes:
     """`data` with the one-line installed banner on top, or below its shebang line."""
-    banner = f"# {_INSTALLED_MARK} from {origin} — {GENERATED_NOTICE}\n".encode("utf-8")
+    banner = f"# {_INSTALLED_MARK} from {origin} — {_INSTALLED_NOTICE}\n".encode("utf-8")
     if not data.startswith(b"#!"):
         return banner + data
     shebang, _, rest = data.partition(b"\n")
