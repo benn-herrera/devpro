@@ -38,7 +38,7 @@ ARCHITECTURE delta block; from P4 the run reports `0 not applied, 0 problems` an
 | P3 | landed | mechanical | the twelve SPEC delta entries applied to their leaves |
 | P4 | landed | mechanical | the fourteen remaining ARCHITECTURE delta entries applied to their leaves |
 | P5 | landed | expert | Post-plan review |
-| P6 | in progress | expert | Post-plan burndown |
+| P6 | landed | expert | Post-plan burndown |
 
 ## P1 — The components selection replaces the plugin machinery
 
