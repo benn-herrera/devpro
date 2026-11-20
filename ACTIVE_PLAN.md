@@ -29,14 +29,14 @@ ARCHITECTURE delta block; from P4 the run reports `0 not applied, 0 problems` an
 
 | Package | State | Rating | Changes |
 | --- | --- | --- | --- |
-| P1 | drafted | expert | the components selection replaces the plugin machinery — code, CLI callers, README, every pin |
-| P1a | drafted | expert | the six two-plugin CONVENTIONS leaves re-anchored to the one-plugin-plus-components reality |
+| P1 | in progress | expert | the components selection replaces the plugin machinery — code, CLI callers, README, every pin |
+| P1a | dispatchable | expert | the six two-plugin CONVENTIONS leaves re-anchored to the one-plugin-plus-components reality |
 | P1b | landed | expert | `check-deltas` reads the diced design tree; the design's monolith retires |
 | P1c | dispatchable | expert | the diced-design lifecycle rule lands in the skill texts — development.py, guide.py, docdicer.py |
 | P1d | dispatchable | mechanical | the state-table reminder's sentence reworded at both harness resources |
-| P2 | drafted | expert | the activity profiler payload vendored and wired, its leaf created, the README credit |
-| P3 | drafted | mechanical | the twelve SPEC delta entries applied to their leaves |
-| P4 | drafted | mechanical | the fourteen remaining ARCHITECTURE delta entries applied to their leaves |
+| P2 | dispatchable | expert | the activity profiler payload vendored and wired, its leaf created, the README credit |
+| P3 | dispatchable | mechanical | the twelve SPEC delta entries applied to their leaves |
+| P4 | dispatchable | mechanical | the fourteen remaining ARCHITECTURE delta entries applied to their leaves |
 | P5 | drafted | expert | Post-plan review |
 | P6 | drafted | expert | Post-plan burndown |
 
