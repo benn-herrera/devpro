@@ -55,7 +55,7 @@ brew install devpro
 ```
 or
 ```sh
-pipx install "git+https://github.com/benn-herrera/devpro"
+pipx install "git+https://github.com/benn-herrera/devpro@v0.18.0"
 ```
 
 Author identity: <https://keyoxide.org/wkd/benn@bennherrera.dev>
