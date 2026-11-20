@@ -27,12 +27,13 @@
 # and unquoted, so it splits on spaces.
 #
 # Targets:
-#   docdicer:         run docdicer with DOCDICER_ARGS: make docdicer DOCDICER_ARGS='dice-doc big.md out/'
-#   docdicer-check-roadmap: run docdicer's check for ROADMAP kanban format compliance
-#   docdicer-check-design: run docdicer's check for ACTIVE_DESIGN kanban format compliance
-#   docdicer-check-plan: run docdicer's check for ACTIVE_PLAN kanban format compliance
-#   docdicer-kanban:  run docdicer kanban board for this project (blocks with running http server)
-#   docdicer-help:    show help for docdicer targets
+#   docdicer:                             run docdicer with DOCDICER_ARGS: make docdicer DOCDICER_ARGS='dice-doc big.md out/'
+#   docdicer-check-roadmap:               check ROADMAP for kanban format compliance
+#   docdicer-check-design:                check ACTIVE_DESIGN for kanban format compliance
+#   docdicer-check-design-deltas-applied: check that ACTIVE_DESIGN pending project doc deltas were applied
+#   docdicer-check-plan:                  check ACTIVE_PLAN for kanban format compliance
+#   docdicer-kanban:                      run kanban board server for this project (blocks with running http server)
+#   docdicer-help:                        show help for docdicer targets
 
 DOCDICER_LAUNCHER := $(dir $(lastword $(MAKEFILE_LIST)))../docdicer
 DD_SNIPPET_FILE := $(lastword $(MAKEFILE_LIST))
@@ -51,6 +52,9 @@ docdicer-check-roadmap:
 
 docdicer-check-design:
 	@"$(DOCDICER_LAUNCHER)" check-design
+
+docdicer-check-design-deltas-applied:
+	@"$(DOCDICER_LAUNCHER)" check-design --deltas-applied
 
 docdicer-check-plan:
 	@"$(DOCDICER_LAUNCHER)" check-plan

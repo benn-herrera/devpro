@@ -26,7 +26,7 @@
 
 docdicer_launcher := source_directory() / ".." / "docdicer"
 
-[doc("show help on docdicer just recipes")]
+[doc("show help on docdicer recipes")]
 docdicer-help:
     @just --justfile "{{justfile()}}" --list | grep -E '^[ \t]+docdicer'
 
@@ -35,18 +35,22 @@ docdicer-help:
 docdicer *args:
     @"{{docdicer_launcher}}" "${@}"
 
-[doc("run docdicer's check for ACTIVE_PLAN kanban format compliance")]
+[doc("check ACTIVE_PLAN for kanban format compliance")]
 docdicer-check-plan:
   @"{{docdicer_launcher}}" check-plan
 
-[doc("run docdicer's check for ACTIVE_DESIGN kanban format compliance")]
+[doc("check ACTIVE_DESIGN for kanban format compliance")]
 docdicer-check-design:
   @"{{docdicer_launcher}}" check-design
 
-[doc("run docdicer's check for ROADMAP kanban format compliance")]
+[doc("check that ACTIVE_DESIGN pending project doc deltas were applied")]
+docdicer-check-design-deltas-applied:
+  @"{{docdicer_launcher}}" check-design --deltas-applied
+
+[doc("check ROADMAP for kanban format compliance")]
 docdicer-check-roadmap:
   @"{{docdicer_launcher}}" check-roadmap
 
-[doc("run docdicer kanban board for this project (blocks with running http server)")]
+[doc("run kanban server for this project (blocks with running http server)")]
 docdicer-kanban:
   @"{{docdicer_launcher}}" kanban

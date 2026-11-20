@@ -5,7 +5,7 @@
 # under `set -u` when the launcher is given no argument.
 set -euo pipefail
 
-VERSION=0.11.2
+VERSION=0.12.0
 PACKAGE="git+https://github.com/benn-herrera/docdicer@v${VERSION}"
 
 case "${0}" in

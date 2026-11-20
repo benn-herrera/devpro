@@ -333,6 +333,10 @@ dev-check-plan:
 dev-check-design:
   @just dev-dd check-design
 
+[doc("run check that ACTIVE_DESIGN deltas have been applied to project docs using hosted docdicer")]
+dev-check-design-deltas-applied:
+  @just dev-dd check-design --deltas-applied
+
 [doc("run ROADMAP format compliance check using hosted docdicer")]
 dev-check-roadmap:
   @just dev-dd check-roadmap

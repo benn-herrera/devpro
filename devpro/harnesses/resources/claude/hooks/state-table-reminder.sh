@@ -49,5 +49,5 @@ fi
 
 # The one sentence. Claude Code reads hook context as project information rather than as an
 # out-of-band instruction, so it states the table's two acts as what they are.
-sentence='A package in the active plan'\''s status table is `in progress` when dispatched, `landed` when accepted and committed.'
+sentence='Reminder: keep the ACTIVE_PLAN state table up to date.'
 printf '{"hookSpecificOutput": {"hookEventName": "%s", "additionalContext": "%s"}}\n' "${event}" "${sentence}"
