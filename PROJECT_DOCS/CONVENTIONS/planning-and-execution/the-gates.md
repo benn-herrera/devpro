@@ -3,6 +3,7 @@
 ```
 checkpoint gate: `just test`, then `just sweep-python` (A checkpoint includes the sweep)
 step-down application: the dispatch's `model` parameter
+periodic review interval: 5
 ```
 
 `just test-changed [base]` is a target a package's done-line may name. It runs only the test surfaces the change touches (the mapping lives in the justfile's
