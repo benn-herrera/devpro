@@ -405,7 +405,7 @@ _SETTINGS = ".claude/settings.json"
 _CLAUDE_PLUGIN_RELPATH = f".claude/{CLAUDE.bound(NAME).plugin_dir}"
 # The activity profiler: the payload the claude install copies beside the hooks, the skill that finds
 # it, and the registration entries that feed it.
-_PROFILER = "libexec"
+_PROFILER = "profiler"
 _PROFILER_FILES = ("hp.py", "hp.sh", "view.html")
 _PROFILER_EVENTS = (
     "PostToolUse",
@@ -415,7 +415,7 @@ _PROFILER_EVENTS = (
     "SessionStart",
     "SubagentStop",
 )
-_PROFILER_COMMAND = 'sh "${CLAUDE_PLUGIN_ROOT}/libexec/hp.sh" capture claude'
+_PROFILER_COMMAND = 'sh "${CLAUDE_PLUGIN_ROOT}/profiler/hp.sh" capture claude'
 _SHOW_PROFILE = "skills/show-profile/SKILL.md"
 
 
@@ -461,16 +461,16 @@ def test_a_fresh_claude_install_ships_the_guardrail_and_registers_it_in_the_plug
     assert not (tmp_path / _SETTINGS).exists()
 
 
-def test_the_profiler_resources_land_under_the_install_directorys_libexec(tmp_path: Path) -> None:
+def test_the_profiler_resources_land_under_the_install_directorys_profiler(tmp_path: Path) -> None:
     """The payload is a harness resource like the hooks beside it: each vendored file lands at
-    the path it holds below `resources/claude/`, so the plugin directory gains `libexec/` holding exactly
+    the path it holds below `resources/claude/`, so the plugin directory gains `profiler/` holding exactly
     the launcher, the tool and the page, the launcher executable."""
     root = tmp_path / ".claude"
     root.mkdir()
     _definition_install(root, project_root=tmp_path)
-    libexec = _claude_plugin(root) / _PROFILER
-    assert sorted(path.name for path in libexec.iterdir()) == sorted(_PROFILER_FILES)
-    assert os.access(libexec / "hp.sh", os.X_OK)
+    profiler = _claude_plugin(root) / _PROFILER
+    assert sorted(path.name for path in profiler.iterdir()) == sorted(_PROFILER_FILES)
+    assert os.access(profiler / "hp.sh", os.X_OK)
 
 
 def test_the_claude_registration_carries_the_profiler_on_every_event_it_captures(tmp_path: Path) -> None:
@@ -1870,19 +1870,25 @@ def test_an_opencode_install_writes_no_claude_settings_file(tmp_path: Path) -> N
     assert not (root / _GUARDRAIL).exists()
 
 
-def test_no_opencode_or_mage_install_copies_the_profiler_payload_or_registers_it(tmp_path: Path) -> None:
-    """The profiler's hooks are claude's, and its payload lands only where a harness ships it: another
-    harness's install holds neither `libexec/` nor a registration, however its definitions render."""
+def test_an_opencode_install_copies_the_profiler_payload_while_a_mage_one_does_not(tmp_path: Path) -> None:
+    """The profiler's hooks are claude's, but its render payload is harness-neutral, so opencode's copy
+    list carries it: opencode's project install holds `profiler/` with exactly the launcher, the tool and
+    the page and registers nothing, while mage's copy list gains nothing and so its install holds neither
+    the payload nor a registration. Both carry the show-profile skill that finds the payload."""
     opencode = tmp_path / "opencode"
     (opencode / ".opencode").mkdir(parents=True)
     _definition_install(opencode / ".opencode", _OPENCODE_RENDER, project_root=opencode)
+    opencode_plugin = _opencode_plugin(opencode / ".opencode")
+    profiler = opencode_plugin / _PROFILER
+    assert sorted(path.name for path in profiler.iterdir()) == sorted(_PROFILER_FILES)
     mage = tmp_path / "mage"
     (mage / "plugins/devpro").mkdir(parents=True)
     _definition_install(mage / "plugins/devpro", _MAGE_RENDER, project_root=mage)
-    for root in (_opencode_plugin(opencode / ".opencode"), mage / "plugins/devpro"):
-        assert not (root / _PROFILER).exists()
-        assert not (root / _REGISTRATION).exists()
-        assert (root / _SHOW_PROFILE).is_file()
+    mage_plugin = mage / "plugins/devpro"
+    assert not (mage_plugin / _PROFILER).exists()
+    for plugin in (opencode_plugin, mage_plugin):
+        assert not (plugin / _REGISTRATION).exists()
+        assert (plugin / _SHOW_PROFILE).is_file()
 
 
 @pytest.mark.parametrize("subdir", ["tools/agents", ".", 'a"b $c'], ids=["subdir", "project-root", "shell-syntax"])

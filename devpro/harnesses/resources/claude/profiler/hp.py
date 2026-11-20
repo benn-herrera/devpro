@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# !INSTALLED! from devpro/harnesses/resources/claude/libexec/hp.py — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
+# !INSTALLED! from devpro/harnesses/resources/claude/profiler/hp.py — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
 """harness-profiler: records every tool call of a coding agent session and prints the calls as a tree.
 
 One file, Python 3 standard library only. The command forms are the USAGE constant.

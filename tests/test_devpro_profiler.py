@@ -107,5 +107,5 @@ def test_the_installed_profiler_is_the_sources_bytes(tmp_path: Path) -> None:
     """The copy that ships is the copy the repository holds: no stamp or reflow lands in `hp.py` on
     its way through the package data."""
     launcher = _launcher(tmp_path)
-    source = PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / "claude" / "libexec" / "hp.py"
+    source = PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / "claude" / "profiler" / "hp.py"
     assert (launcher.parent / "hp.py").read_bytes() == source.read_bytes()

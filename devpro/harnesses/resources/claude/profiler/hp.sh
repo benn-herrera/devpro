@@ -1,5 +1,5 @@
 #!/bin/sh
-# !INSTALLED! from devpro/harnesses/resources/claude/libexec/hp.sh — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
+# !INSTALLED! from devpro/harnesses/resources/claude/profiler/hp.sh — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
 # POSIX sh, not bash: the hook entries invoke it as `sh`, and a hook may run
 # with a `PATH` where `bash` is not found.
 # Finds python3 and runs hp.py beside this script. Hooks may run with a bare

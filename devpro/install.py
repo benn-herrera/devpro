@@ -125,6 +125,11 @@ SHIPPED_PACKAGES: tuple[ShippedPackage, ...] = (
 # rendered. The directory below this one in the source is the harness's own
 # name, and the destination is ROOT itself — both stated, neither derived from a directory listing.
 HARNESS_RESOURCES_SOURCE = "harnesses/resources"
+# The render payload is harness-neutral, so opencode's copy list additionally carries the profiler
+# files, sourced from claude's resource directory so there is one copy of the payload, not two. Maps a
+# harness to the extra source roots, below HARNESS_RESOURCES_SOURCE, its list also walks; a harness with
+# no entry gains nothing beyond its own directory.
+_CROSS_HARNESS_SOURCES = {"opencode": ("claude/profiler",)}
 # The interpreter the install-time probe runs a guardrail hook script under, found on PATH, and how long
 # that run may take before it counts as failed.
 GUARDRAIL_INTERPRETER = "perl"
@@ -189,16 +194,32 @@ def harness_resource_copies(root: Path, *, harness: str) -> list[tuple[Path, Pat
     byte-verbatim with its mode preserved and nothing else — no `!INSTALLED!` banner, no stamping. Each
     must carry its own `!INSTALLED! … devpro` header in its first ten lines: that header is how a
     later install knows the target is one it wrote, and a target without it refuses the install. A
-    harness shipping no resources directory copies nothing, which is not an error.
+    harness shipping no resources directory copies nothing, which is not an error. The render payload
+    is harness-neutral, so opencode's list additionally carries the profiler files from
+    `resources/claude/profiler/`, delivered under `profiler/` beside its own resources; no other
+    harness's list gains them.
 
     The copy is one-way and is not a mirror: a resource file this repository drops is not removed from
     a consumer, because `prune` owns the three rendered surfaces and nothing outside them. What lands
     here stays until the consuming project removes it."""
-    source = PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / harness
+    sources = [(PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / harness, None)]
+    sources.extend(
+        (PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / extra, PurePosixPath(extra).name)
+        for extra in _CROSS_HARNESS_SOURCES.get(harness, ())
+    )
+    return [pair for source, prefix in sources for pair in _harness_resource_pairs(source, root, prefix)]
+
+
+def _harness_resource_pairs(source: Path, root: Path, prefix: str | None) -> list[tuple[Path, Path]]:
+    """(source file, target under `root`) for every shippable file below `source`, each landing at its
+    path relative to `source`. A `prefix` under `root` receives an extra source's files so the payload
+    keeps its own directory — `resources/claude/profiler/` lands at `<ROOT>/profiler/`, not at `ROOT`.
+    Nothing where `source` is absent, which is not an error."""
     if not source.is_dir():
         return []
+    target_root = root / prefix if prefix else root
     return [
-        (path, root / path.relative_to(source))
+        (path, target_root / path.relative_to(source))
         for path in sorted(source.rglob("*"))
         if path.is_file() and _shipped(path.relative_to(source))
     ]

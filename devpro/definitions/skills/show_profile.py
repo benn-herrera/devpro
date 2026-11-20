@@ -19,7 +19,7 @@ session recording in `.devpro-temp/harness-profile/` at the repository root.
 
 Use the first launcher that exists:
 
-1. `../../libexec/hp.sh`, from this skill's own directory: the installed copy, present where a
+1. `../../profiler/hp.sh`, from this skill's own directory: the installed copy, present where a
    project install delivered it beside the skill; a user-level install copies no resource, so the
    file does not exist there.
 2. `.claude/harness-profiler/hp.sh` at the repository root: the copy a committed hook runs, which is
