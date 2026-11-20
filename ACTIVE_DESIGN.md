@@ -11,6 +11,8 @@ The preceding is a summary of the detailed design below. Summaries are unavoidab
 
 ### [Recipes](PROJECT_DOCS/ARCHITECTURE/recipes.md)
 
+**As it stands:**
+
 ```markdown
 (SPEC.md, Guide and README). That import is the install's own snippet,
 `.claude/skills/devpro/skills/docdicer/tools/runner-snippets/docdicer.just`, so this checkout needs
@@ -18,6 +20,8 @@ one `just agents` run before its docdicer recipes exist: until it has run, the `
 `just check-links`, and so `just test` and `just test-changed` on any document — fails with
 `Does not contain recipe 'docdicer'`. The private `_venv` recipe creates `.venv`
 ```
+
+**Becomes:**
 
 ```markdown
 (SPEC.md, Guide and README). That import is the install's own snippet,
@@ -35,9 +39,24 @@ ARCHITECTURE.md, is `check-design --deltas-applied`, which the snippet set expos
 
 ### [devpro/definitions/skills/development.py](devpro/definitions/skills/development.py)
 
-The application bullet under *Design* names only the link check as what confirms an application
-("The project's link check, where it has one, confirms them"), so the shipped skill states no
-byte-check and an agent applying a delta reads its work as done once links resolve. The bullet gains
-the byte-check: each `becomes` block occurs byte-exact in its target, and where the becomes-text does
-not contain it, the from-text is gone, verified by `check-design --deltas-applied` where the project
-carries it — alongside the link sentence, not in a section of its own.
+The application bullet under *Design* names only the link check as what confirms an application, so
+the shipped skill states no byte-check and an agent applying a delta reads its work as done once
+links resolve. The bullet's confirming sentence names the byte-check alongside the link check.
+
+**As it stands:**
+
+```markdown
+  them where the destination is in another directory. The project's link check, where it has one,
+  confirms them. *Purpose:* the text the user accepted reaches the contract documents as accepted,
+  its links still resolving.
+```
+
+**Becomes:**
+
+```markdown
+  them where the destination is in another directory. The project's link check, where it has one,
+  confirms them; its delta check (`check-design --deltas-applied`, where the project carries it)
+  confirms each `becomes` block occurs byte-exact in its target and, where the becomes-text does not
+  contain it, that the from-text is gone. *Purpose:* the text the user accepted reaches the contract
+  documents as accepted, its links still resolving, with nothing left unapplied.
+```
