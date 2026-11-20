@@ -55,3 +55,5 @@ Contents:
   - [ARCHITECTURE.md, Why There Is No Verification Verb](code-delta/architecture-md-why-there-is-no-verification-verb.md)
   - [ARCHITECTURE.md, Install, Harness profiler](code-delta/architecture-md-install-harness-profiler.md)
   - [SPEC.md, Guide and README](code-delta/spec-md-guide-and-readme.md)
+  - [CONVENTIONS.md, Code definitions and install, A sentence two harness resources carry is one text](code-delta/conventions-md-code-definitions-and-install-a-sentence-two-harness-resources-carry-is-one-text.md)
+  - [CONVENTIONS.md, Planning and execution, A delta application ends verified](code-delta/conventions-md-planning-and-execution-a-delta-application-ends-verified.md)
