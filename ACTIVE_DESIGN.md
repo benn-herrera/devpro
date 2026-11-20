@@ -48,6 +48,23 @@ hook where a session needs one. A user-level install renders the skill and copie
 resources; no opencode or mage install ships the resources or the hook entries.
 ```
 
+### [Guide and README](PROJECT_DOCS/SPEC/guide-and-readme.md)
+
+**As it stands:**
+
+```markdown
+    for the runner include lines; `perl` with core `JSON::PP` for the claude guardrail; `node` 18 or
+    later for the claude activity profiler, whose captures stay silent without it;
+  - what the operator sets up for a cold read: `DEVPRO_COLD_READ_DIR`;
+```
+
+**Becomes:**
+
+```markdown
+    for the runner include lines; `perl` with core `JSON::PP` for the claude guardrail;
+  - what the operator sets up for a cold read: `DEVPRO_COLD_READ_DIR`;
+```
+
 ## ARCHITECTURE delta
 
 ### [Harness profiler](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)
@@ -149,6 +166,20 @@ own and no carrier but the devpro plugin. Should it become optional later, it be
 opencode capture, should one come, is recreated in the opencode plugin's TypeScript rather than
 reusing this code. Token counts come from claude's own transcripts under `~/.claude/projects/`, which
 is claude's data, not a source the install configures.
+```
+
+### [Repo layout](PROJECT_DOCS/ARCHITECTURE/repo-layout.md)
+
+**As it stands:**
+
+```markdown
+`claude/libexec/hp.sh`, `claude/libexec/hp.js` and `claude/libexec/view.html` (the activity profiler, Install, Harness profiler)
+```
+
+**Becomes:**
+
+```markdown
+`claude/libexec/hp.sh`, `claude/libexec/hp.py` and `claude/libexec/view.html` (the activity profiler, Install, Harness profiler)
 ```
 
 ## Code delta
