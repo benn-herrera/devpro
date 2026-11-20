@@ -1,4 +1,4 @@
-"""The renderer: every definition a render's plugin ships to its file text, its banner, the
+"""The renderer: every definition a render ships to its file text, its banner, the
 files a harness renders beside them, and the writer. Holds no prose, knows no
 individual definition, fills a body's placeholders in one pass and never rescans
 what it filled, and writes the rendered definitions and harness files."""
@@ -13,13 +13,13 @@ from pathlib import Path, PurePosixPath
 from typing import cast
 
 from devpro import __version__
+from devpro.components import Components
 from devpro.context import DEFAULT_FAMILY, Render, map_spec
 from devpro.definition import Definition, SkillFile
 from devpro.definitions import discover
 from devpro.errors import InputError
 from devpro.harness import AgentFields, FrontmatterForm, Harness, HarnessFile, ShippedDefinition, quoted
 from devpro.loading import load
-from devpro.plugin import Plugin
 from devpro.vocabulary import (
     ALL,
     AgentsFileText,
@@ -60,8 +60,8 @@ def keyed_by_path(
 
 def definitions() -> tuple[tuple[str, Definition], ...]:
     """Every discovered definition but the agents file, which has no output path, as keyed_by_path gives
-    it. The duplicate check runs over all of them, so a collision a definition outside a render's plugin
-    takes part in is refused by every render rather than only by one that ships it."""
+    it. The duplicate check runs over all of them, so a collision a definition outside a render's shipped
+    set takes part in is refused by every render rather than only by one that ships it."""
     return keyed_by_path(
         (module, tuple(defn for defn in entries if defn.kind is not Kind.AGENTS_FILE)) for module, entries in discover()
     )
@@ -229,8 +229,8 @@ def render_skill_file(defn: Definition, file: SkillFile, ctx: Render, *, module:
 
 
 def rendered_definitions(ctx: Render) -> tuple[tuple[str, Definition], ...]:
-    """The definitions `render_all` renders, as `definitions` gives them: those `ctx.plugin` ships: its
-    plugin's members."""
+    """The definitions `render_all` renders, as `definitions` gives them: those `ctx.plugin` ships, the
+    selection's members and every definition no component names."""
     return tuple(entry for entry in definitions() if ctx.plugin.ships(entry[1].name))
 
 
@@ -283,10 +283,11 @@ def render_all(ctx: Render) -> tuple[tuple[PurePosixPath, str], ...]:
     return tuple(sorted(rendered))
 
 
-def render_agents_file(harness: Harness, plugin: Plugin, *, scope: str) -> str:
-    """The harness agents file as a fresh file holds it for `plugin`: the agents-file definition's body
-    filled for `harness` bound to `plugin` and for `scope`, under the default family's own categories,
-    whatever the invocation's tuning and with no harness model-shape check, then one final newline."""
+def render_agents_file(harness: Harness, plugin: Components, *, scope: str) -> str:
+    """The harness agents file as a fresh file holds it for the selection `plugin`: the agents-file
+    definition's body filled for `harness` bound to the selection's name and for `scope`, under the
+    default family's own categories, whatever the invocation's tuning and with no harness model-shape
+    check, then one final newline."""
     [defn] = [defn for _, entries in discover() for defn in entries if defn.kind is Kind.AGENTS_FILE]
     family = load("devpro.families", "FAMILY")[DEFAULT_FAMILY]
     ctx = Render(harness=harness, plugin=plugin, family=family, category_map=dict(family.categories), scope=scope)

@@ -1,4 +1,4 @@
-"""`Render`, the one parameter a render receives, the plugin and the devpro settings file that
+"""`Render`, the one parameter a render receives, the selection and the devpro settings file that
 build it, and the settings file's reader, its validation and the map's parse. Composes no text."""
 
 from __future__ import annotations
@@ -11,25 +11,24 @@ from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import cast
 
-from devpro.definitions import discover
+from devpro.components import Components, selection
 from devpro.errors import InputError
 from devpro.family import Family
 from devpro.harness import Harness
 from devpro.loading import load
-from devpro.plugin import Plugin
 from devpro.vocabulary import CATEGORIES, Anchor, Category
 
 CategoryMap = Mapping[Category, str]
 INHERIT_MODEL = "inherit"
 DEFAULT_HARNESS = "claude"
 DEFAULT_FAMILY = "claude"
-DEFAULT_PLUGIN = "devpro"
 SETTINGS_FILE = Path(".config/devpro/devpro.cfg")
 """The devpro settings file, below the home directory, where `--config-file` names none."""
 MODEL_MAP_SECTION_SUFFIX = "-model-map"
 """A harness's map section is named for it: `[<harness>-model-map]`."""
 INSTALL_KEY = "install"
-"""The one key a harness's `[<harness>]` section carries."""
+COMPONENTS_KEY = "components"
+"""The two keys a harness's `[<harness>]` section carries."""
 
 
 def parse_category_map(spec: str, *, supplier: str) -> dict[Category, str]:
@@ -72,12 +71,13 @@ def map_spec(mapping: CategoryMap) -> str:
 
 @dataclass(frozen=True)
 class Render:
-    """The one parameter a render receives: harness, plugin, family, the invocation's category map, and
-    the category of the definition being rendered. `harness` is the harness as given; `bound_harness` is
-    it bound to the plugin, for every value a `{plugin}` template fills."""
+    """The one parameter a render receives: harness, selection, family, the invocation's category map,
+    and the category of the definition being rendered. `harness` is the harness as given;
+    `bound_harness` is it bound to the selection's one name, for every value a `{plugin}` template
+    fills."""
 
     harness: Harness
-    plugin: Plugin
+    plugin: Components
     family: Family
     category_map: CategoryMap  # effective category -> member; total
     category: Category | None = None  # render_definition binds it
@@ -101,7 +101,7 @@ class Render:
 
     @functools.cached_property
     def bound_harness(self) -> Harness:
-        """The harness bound to this render's plugin (`Harness.bound`)."""
+        """The harness bound to this render's one name (`Harness.bound`)."""
         return self.harness.bound(self.plugin.name)
 
     def model(self, category: Category) -> str:
@@ -159,29 +159,9 @@ def harness_named(name: str) -> Harness:
     return known[name]
 
 
-def plugins() -> dict[str, Plugin]:
-    """Every plugin this installation knows, by name, in name order."""
-    return cast(dict[str, Plugin], load("devpro.plugins", "PLUGIN"))
-
-
 def families() -> dict[str, Family]:
     """Every model family this installation knows, by name, in name order."""
     return cast(dict[str, Family], load("devpro.families", "FAMILY"))
-
-
-def plugin_named(name: str) -> Plugin:
-    """The plugin `name` loads as. An unknown name is refused, listing the names there are, and so is any
-    plugin stating a definition name discovery does not find, naming the plugin and the names: a misspelled
-    member would otherwise drop out of its plugin unnoticed."""
-    known = plugins()
-    discovered = {defn.name for _, entries in discover() for defn in entries}
-    for plugin in known.values():
-        undiscovered = sorted(plugin.named - discovered)
-        if undiscovered:
-            raise InputError(f"plugin '{plugin.name}' names no discovered definition: {', '.join(undiscovered)}")
-    if name not in known:
-        raise InputError(f"unknown plugin '{name}' — plugins are {', '.join(known)}")
-    return known[name]
 
 
 def _bare_category_spec_expanded(harness: Harness, spec: str) -> str:
@@ -202,27 +182,28 @@ class MapSupply:
 
 @dataclass(frozen=True)
 class HarnessSettings:
-    """One harness the devpro settings file names: its `install` value as written, None where the file
-    sets none, and its map, where it has a map section."""
+    """One harness the devpro settings file names: its `install` and `components` values as written, each
+    None where the file sets none, and its map, where it has a map section."""
 
     install: str | None
     supply: MapSupply | None
+    components: str | None
 
 
 def read_settings(config_file: str | None) -> tuple[dict[str, HarnessSettings] | None, Path | None]:
     """`(settings, path)`: the harnesses the devpro settings file names, in name order, each with its
-    `install` value as written and its map parsed. `settings` is an empty mapping where the file is there
-    and names no harness, and None where no file is there to read at all; `path` is the file's path as this
-    read took it, or None beside a None `settings`. The file is the one `config_file` names, taken as
-    given, or the default under the home directory where no file is named: a missing default file is no
-    config, an explicitly named file that does not exist is refused, naming the path.
+    `install` and `components` values as written and its map parsed. `settings` is an empty mapping where
+    the file is there and names no harness, and None where no file is there to read at all; `path` is the
+    file's path as this read took it, or None beside a None `settings`. The file is the one `config_file`
+    names, taken as given, or the default under the home directory where no file is named: a missing
+    default file is no config, an explicitly named file that does not exist is refused, naming the path.
 
     The file's shape is validated here, so both render and install refuse on it: a section that is no
     supported harness's settings or map section is refused, naming the section and the harnesses, and so
     is a key in a settings section that is no setting of it, naming the map section it belongs in. A map
     section's entries join, one per line in file order, into the category spec `parse_category_map`
-    parses, its refusals leading with the section they came from. The install value is not judged here;
-    `devpro.install` judges it where it consumes it.
+    parses, its refusals leading with the section they came from. Neither setting value is judged here;
+    `devpro.install` judges `install` where it consumes it, and `build_render` the component list.
     """
     path = _settings_file(config_file)
     if path is None:
@@ -247,8 +228,8 @@ def read_settings(config_file: str | None) -> tuple[dict[str, HarnessSettings] |
             supplier = f"--config-file {path}, section '[{map_section}]'"
             spec = ",".join(f"{entry}={value}" for entry, value in parser.items(map_section))
             supply = MapSupply(category_map=parse_category_map(spec, supplier=supplier), supplier=supplier)
-        install = _install_value(parser, path=path, name=name) if settings_section else None
-        settings[name] = HarnessSettings(install=install, supply=supply)
+        install, components = _settings_values(parser, path=path, name=name) if settings_section else (None, None)
+        settings[name] = HarnessSettings(install=install, supply=supply, components=components)
     return settings, path
 
 
@@ -295,28 +276,31 @@ def _harness_of(section: str, known: Mapping[str, Harness]) -> str | None:
     return name if name in known else None
 
 
-def _install_value(parser: configparser.ConfigParser, *, path: Path, name: str) -> str | None:
-    """`[<name>]`'s `install` value as written, None where it sets none; a key that is no setting of the
-    harness is refused, naming the map section it belongs in."""
+def _settings_values(parser: configparser.ConfigParser, *, path: Path, name: str) -> tuple[str | None, str | None]:
+    """`[<name>]`'s `install` and `components` values as written, each None where it sets none; a key that
+    is no setting of the harness is refused, naming the keys a harness's section takes and the map section
+    the other keys belong in."""
+    legal = (INSTALL_KEY, COMPONENTS_KEY)
     for option in parser.options(name):
-        if option != INSTALL_KEY:
+        if option not in legal:
             raise InputError(
                 f"devpro settings file '{path}', section '[{name}]': '{option}' is no setting of it — a "
-                f"harness's setting is 'install', and map entries belong in '[{name}{MODEL_MAP_SECTION_SUFFIX}]'"
+                f"harness's settings are {', '.join(legal)}, and map entries belong in "
+                f"'[{name}{MODEL_MAP_SECTION_SUFFIX}]'"
             )
-    return parser.get(name, INSTALL_KEY, fallback=None)
+    return parser.get(name, INSTALL_KEY, fallback=None), parser.get(name, COMPONENTS_KEY, fallback=None)
 
 
-def build_render(*, harness: str, plugin: str, family: str, supply: MapSupply | None = None) -> Render:
-    """The CLI's Render. Unknown harness/plugin/family names are refused,
-    listing the names there are (a path-shaped --family included), and so is a plugin naming an
-    undiscovered definition (`plugin_named`). The map comes from `supply`, the devpro settings file's
-    for this harness, where the read gave one; otherwise from the harness's `default_category_spec` — a
-    bare value read as `*=<value>` where the harness reads it so — and otherwise from the family. Then
-    every category's model text is checked against harness.model_pattern, refusing with category, value,
-    supplier and model_shape."""
+def build_render(*, harness: str, components: str, family: str, supply: MapSupply | None = None) -> Render:
+    """The CLI's Render. Unknown harness/family names are refused, listing the names there are (a
+    path-shaped --family included), and so is a component list naming no optional component, or a
+    component whose member list names a definition discovery does not find (`components.selection`). The
+    map comes from `supply`, the devpro settings file's for this harness, where the read gave one;
+    otherwise from the harness's `default_category_spec` — a bare value read as `*=<value>` where the
+    harness reads it so — and otherwise from the family. Then every category's model text is checked
+    against harness.model_pattern, refusing with category, value, supplier and model_shape."""
     loaded_harness = harness_named(harness)
-    loaded_plugin = plugin_named(plugin)
+    loaded_components = selection(components)
     known_families = families()
     if family not in known_families:
         raise InputError(f"--family '{family}' names no family — families are {', '.join(known_families)}")
@@ -329,7 +313,7 @@ def build_render(*, harness: str, plugin: str, family: str, supply: MapSupply | 
         category_map = parse_category_map(defaulted, supplier=supplier)
     else:
         category_map, supplier = dict(loaded.categories), f"the family '{family}' categories (--family)"
-    render = Render(harness=loaded_harness, plugin=loaded_plugin, family=loaded, category_map=category_map)
+    render = Render(harness=loaded_harness, plugin=loaded_components, family=loaded, category_map=category_map)
     for category, text in category_map.items():
         if render.harness.model_pattern.fullmatch(text) is None:
             raise InputError(

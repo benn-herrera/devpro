@@ -14,8 +14,7 @@ or a family overlay anchor, filled once by `render.filled_body`.
     clauses.py       shared text: constants, and small functions for text with slots
     harness.py       the harness dataclass, its `{plugin}` templates and their binding
     harnesses/       one module per harness, each defining HARNESS
-    plugin.py        the plugin dataclass: a name and the definitions it ships
-    plugins/         one module per plugin, each defining PLUGIN
+    components.py    the one name every install takes and each optional component's member list
     family.py        the family dataclass and its overlays, and how to author one
     families/        one module per family, each defining FAMILY
     context.py       Render, the devpro settings file and the map's grammar
@@ -35,16 +34,17 @@ or a family overlay anchor, filled once by `render.filled_body`.
 Usage, where `python3 -m devpro` is the same command as `devpro`; a checkout
 runs it from the repository root with that root on PYTHONPATH:
 
-    devpro render --out DIR [--plugin NAME] [--harness NAME] [--family NAME]
+    devpro render --out DIR [--components=CSV] [--harness NAME] [--family NAME]
         [--config-file=FILE]
-    devpro install TARGET [--plugin NAME] [--subdir DIR] [--verbose]
+    devpro install TARGET [--components=CSV] [--subdir DIR] [--verbose]
         [--dry-run] [the same tuning flags]
-    devpro install-agents-file DIR [--plugin NAME] [--harness NAME] [--dry-run]
-    devpro render-agents-file HARNESS OUT [--plugin NAME]
+    devpro install-agents-file DIR [--harness NAME] [--dry-run]
+    devpro render-agents-file HARNESS OUT [--components=CSV]
     devpro --version
 
-The plugin is the name of a module in `plugins/`, default `context.DEFAULT_PLUGIN`. The render is deterministic:
-the text of every file is a function of the definition, the plugin, the harness,
+The one name is `components.NAME`: every install writes it, and every `{plugin}` template fills it.
+`--components` turns optional components on, comma-separated. The render is deterministic:
+the text of every file is a function of the definition, the components, the harness,
 the family and the category map, and of nothing else.
 """
 

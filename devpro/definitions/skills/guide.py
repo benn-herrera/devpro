@@ -60,11 +60,12 @@ refuse it as `externally-managed-environment`, and Apple's `/usr/bin/python3` pu
 `~/Library/Python/3.9/bin`, which is not on `PATH`. Every later `devpro` command runs as the `devpro`
 of that install: `devpro` on `PATH` for Homebrew and pipx, `<dir>/bin/devpro` for a venv.
 
-`devpro install TARGET --plugin={clauses.PLUGIN_NAME}` installs into the existing directory TARGET,
-with `--harness=claude`, `opencode` or `mage` where TARGET does not settle the harness. A claude or
-opencode project install runs from the project root: `devpro install . --plugin={clauses.PLUGIN_NAME}`.
-Every later `devpro install` for this project, a preview or an update, takes the target and flags it
-already installs with.
+`devpro install TARGET` installs into the existing directory TARGET, with `--harness=claude`,
+`opencode` or `mage` where TARGET does not settle the harness. A claude or opencode project install
+runs from the project root: `devpro install .`. `--components=kbase` turns the optional kbase
+component on: the knowledge-base skill, its kb-tools package and the `kbase` MCP server. Every later
+`devpro install` for this project, a preview or an update, takes the target and flags it already
+installs with.
 
 ## Requirements
 
@@ -80,9 +81,9 @@ Installing or upgrading kbase itself, the program the `kbase` MCP server runs, i
 
 With devpro installed by any route *Running devpro* gives, the target under mage is Mage's skills
 directory, made first where absent: `mkdir -p ~/Mage/Skills`, then
-`devpro install ~/Mage/Skills --plugin={clauses.PLUGIN_NAME} --harness=mage`, which writes
-`~/Mage/Skills/{clauses.PLUGIN_NAME}/`. After installing the kbase plugin, restart Mage, so it starts
-the `kbase` MCP server; restart it again after installing or upgrading kbase.
+`devpro install ~/Mage/Skills --harness=mage`, which writes `~/Mage/Skills/{clauses.PLUGIN_NAME}/`.
+After installing with the kbase component on, restart Mage, so it starts the `kbase` MCP server;
+restart it again after installing or upgrading kbase.
 
 ## Updating
 
@@ -101,13 +102,12 @@ to date, and writes nothing.
 
 ## Global setup
 
-A user-level install renders the plugin into a harness's user directory:
-`devpro install ~ --plugin={clauses.PLUGIN_NAME} --harness=claude` writes
-`~/.claude/skills/<plugin>/`, and `--harness=opencode` writes `~/.config/opencode/plugins/<plugin>/`.
-It installs the definitions and no tools: no guardrail, no docdicer or cold-read script, no include
-line. `devpro install-agents-file --plugin={clauses.PLUGIN_NAME} <dir>` installs the agents file into
-`<dir>`: a user harness directory (`~/.claude`, `~/.config/opencode`), whose harness it infers, or a
-project root, given `--harness`. Both verbs take `--dry-run`.
+A user-level install renders the set into a harness's user directory:
+`devpro install ~ --harness=claude` writes `~/.claude/skills/<plugin>/`, and `--harness=opencode`
+writes `~/.config/opencode/plugins/<plugin>/`. It installs the definitions and no tools: no
+guardrail, no docdicer or cold-read script, no include line. `devpro install-agents-file <dir>`
+installs the agents file into `<dir>`: a user harness directory (`~/.claude`, `~/.config/opencode`),
+whose harness it infers, or a project root, given `--harness`. Both verbs take `--dry-run`.
 
 ## The agents file
 
@@ -179,10 +179,10 @@ An install that refuses writes nothing and names each path at fault.
 - A write of the global agents file, run from a checkout of the devpro repository whose sources
   have uncommitted changes, or whose commit state cannot be read: commit the changes, or install
   from a released devpro.
-- A plugin given as a positional: the first positional is the target, so a lone
+- A component given as a positional: the first positional is the target, so a lone
   `devpro install kbase` is refused where no directory `kbase` exists, and a second positional is
-  refused. Name the plugin as `--plugin=NAME`.
-- A plugin naming a definition that does not exist refuses every render: a defect in that devpro
+  refused. Name the component as `--components=NAME`.
+- A component naming a definition that does not exist refuses every render: a defect in that devpro
   release, to report on `<repository>`'s issues.
 
 ## Agents missing or doubled
@@ -196,7 +196,8 @@ load. By cause:
   accepted: restart it at the project root and accept the dialog.
 - Managed settings stop plugins loading from a skills directory: the administrator can allow it;
   no install changes it.
-- The kbase plugin's `kbase` MCP server is unapproved: approve it when Claude Code asks.
+- The `kbase` MCP server the kbase component installs is unapproved: approve it when Claude Code
+  asks.
 - Any other load error: `/plugin`'s Errors tab names it.
 
 Under claude, a user-level plugin shadows a project's plugin of the same name: the user-level one

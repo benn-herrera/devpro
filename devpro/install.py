@@ -1,19 +1,20 @@
-"""`python3 -m devpro install TARGET [--plugin NAME]`, once `devpro.install_target` has resolved the harness
-directory and the project root from TARGET. The plugin is written into ROOT, the harness's `plugin_dir`
-below the harness directory — the harness directory itself where that is empty: every definition the
-plugin ships rendered into ROOT's agents/, commands/ and skills/, each shipped package whose owning
-definition rendered copied to its stated destination — the docdicer tools inside the docdicer skill's
-directory, keeping any venv their launcher built there, the development scripts inside the
-development skill's, the kb-tools package inside the kbase skill's, with the `kbase` MCP entry — and,
-for each copied package carrying runner snippets, its include line in the consumer's runner file; each
-file the installing harness ships copied into ROOT as it stands,
+"""`python3 -m devpro install TARGET [--components CSV]`, once `devpro.install_target` has resolved the
+harness directory and the project root from TARGET. The set is written into ROOT, the harness's
+`plugin_dir` below the harness directory — the harness directory itself where that is empty: every
+definition the selection ships rendered into ROOT's agents/, commands/ and skills/, each shipped
+package whose owning definition rendered copied to its stated destination — the docdicer tools inside
+the docdicer skill's directory, keeping any venv their launcher built there, the development scripts
+inside the development skill's, the kb-tools package inside the kbase skill's, with the `kbase` MCP
+entry — and, for each copied package carrying runner snippets, its include line in the consumer's
+runner file; each file the installing harness ships copied into ROOT as it stands,
 the harness's hooks registered in a file of their own under ROOT, its guardrail's entry only where one
-install-time run of the guardrail succeeds; a harness-directory plugin installed below its project root
+install-time run of the guardrail succeeds; a harness-directory install below its project root
 also gets its agents file in its harness directory. Overwrites without ceremony only what carries this
 repository's banner, refusing over any other file at a path it writes: the consumer's git is the record
 of what an install changed.
 Where the devpro settings file names harnesses and `--harness` is not given, `install_selected` drives
-one install per harness it names, each rendered from that harness's settings-file map."""
+one install per harness it names, each rendered from that harness's settings-file map and component
+list."""
 
 from __future__ import annotations
 
@@ -37,6 +38,7 @@ from devpro.agents_file import (
     write_agents_file,
     write_followed_agents_file,
 )
+from devpro.components import NAME
 from devpro.context import HarnessSettings, MapSupply, Render, harness_named
 from devpro.errors import InputError
 from devpro.harness import KBASE_OWNER, GuardrailHook, Harness, HarnessFile
@@ -444,7 +446,7 @@ def install(
     real_project: Path | None = None,
     global_dir: Path | None = None,
 ) -> None:
-    """Install the plugin `ctx` renders into ROOT, `harness_dir / ctx.bound_harness.plugin_dir`. Every
+    """Install the set `ctx` renders into ROOT, `harness_dir / ctx.bound_harness.plugin_dir`. Every
     check runs first, so a refusal writes nothing; then the writes; then the removals.
 
     `verbose` prints each file written. `project_root` is the project the harness directory belongs to,
@@ -570,7 +572,7 @@ def _install_managed_paths(
     the install writes by, never a listing of a directory, which in a user harness directory holds the
     operator's own trees. Each decision the install takes on what only its run knows — the guardrail
     probe — is taken here as though it went the way that writes more, and every package destination
-    and harness-rendered file is named whichever definitions the plugin ships."""
+    and harness-rendered file is named whichever definitions the selection ships."""
     harness, bound = ctx.harness, ctx.bound_harness
     root = harness_dir / bound.plugin_dir
     under_harness_dir: list[str] = []
@@ -669,8 +671,8 @@ def install_selected(
     settings: Mapping[str, HarnessSettings],
     *,
     path: Path | None,
-    tuned: Callable[[str, MapSupply | None], Render],
-    plugin: str,
+    tuned: Callable[[str, MapSupply | None, str], Render],
+    components: str | None,
     subdir: str | None,
     verbose: bool,
     dry_run: bool,
@@ -678,12 +680,13 @@ def install_selected(
 ) -> None:
     """Install for every harness the devpro settings file names, in name order, each as its own install:
     the setting judged first — `never` skips, `detect` where the target holds the harness's own harness
-    directory — then the harness's target resolved and its render built by `tuned` from its map. The
-    target's existence and `--subdir`'s reach into it are refused before the file's harnesses are judged,
-    so the refusals hold whatever the settings say. A file naming no harness installs nothing, and
-    reports the file's path and the ways an install happens, on stderr, and returns without writing.
-    Every named harness's setting is judged against `INSTALL_SETTINGS` before anything is written. The
-    loop stops at the first refusal, naming the harness that refused; earlier harnesses' installs stand."""
+    directory — then the harness's target resolved and its render built by `tuned` from its map and its
+    component list, `components` replacing the file's wherever it is given. The target's existence and
+    `--subdir`'s reach into it are refused before the file's harnesses are judged, so the refusals hold
+    whatever the settings say. A file naming no harness installs nothing, and reports the file's path and
+    the ways an install happens, on stderr, and returns without writing. Every named harness's setting is
+    judged against `INSTALL_SETTINGS` before anything is written. The loop stops at the first refusal,
+    naming the harness that refused; earlier harnesses' installs stand."""
     require_existing_target(target)
     if subdir is not None:
         require_subdir_inside(subdir)
@@ -707,11 +710,13 @@ def install_selected(
             continue
         if setting == "detect" and not target_holds_harness_dir(target, harness_named(name)):
             continue
+        entry = settings[name]
+        chosen = components if components is not None else (entry.components or "")
         try:
-            resolved = resolve_install_target(target, harness=name, plugin=plugin, subdir=subdir)
+            resolved = resolve_install_target(target, harness=name, plugin=NAME, subdir=subdir)
             preflighted_install(
                 resolved.harness_dir,
-                tuned(name, settings[name].supply),
+                tuned(name, entry.supply, chosen),
                 verbose=verbose,
                 project_root=resolved.project_root,
                 uncommitted=uncommitted,

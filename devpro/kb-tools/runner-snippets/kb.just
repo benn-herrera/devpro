@@ -1,7 +1,7 @@
 # KB maintenance recipes. This file is installed at
 # <harness-relpath>/skills/kbase/kb-tools/runner-snippets/ — <harness-relpath>
-# being the kbase plugin's install directory relative to the project root:
-# .claude/skills/kbase under claude, .opencode/plugins/kbase under opencode — and is
+# being the install directory relative to the project root:
+# .claude/skills/devpro under claude, .opencode/plugins/devpro under opencode — and is
 # imported from the consuming project's justfile by one installed line (never
 # copied into it):
 #
@@ -10,11 +10,9 @@
 # A consumer running make instead gets the `-include` line pointing at
 # `<harness-relpath>/skills/kbase/kb-tools/runner-snippets/kb.mk`.
 #
-# The line is written by `devpro install . --plugin=kbase`, run from the consumer root — not
-# by anything in this tree. `import?` requires just >= 1.33; the optional form
-# is deliberate: if the installed tree is absent — not yet installed, or
-# removed — the consumer's justfile keeps working and only these KB recipes
-# go missing.
+# `import?` requires just >= 1.33; the optional form is deliberate: if the
+# installed tree is absent — not yet installed, or removed — the consumer's
+# justfile keeps working and only these KB recipes go missing.
 #
 # Assumed consumer layout: the repo root (where just runs) contains kb-root/.
 # kbase finds the KB from the working directory, so these recipes run from

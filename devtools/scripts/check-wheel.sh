@@ -17,8 +17,6 @@ function fail() {
   exit 1
 }
 
-# Plugin names are single words, so the unquoted expansions below split on lines as intended.
-plugin_names="$("${PROJECT_ROOT}/devtools/scripts/_plugin-names.sh")"
 ver="$(PYTHONPATH="${PROJECT_ROOT}" python3 -m "${GEN}" --version)"
 wheel="${PROJECT_ROOT}/dist/${GEN}-${ver}-py3-none-any.whl"
 sdist="${PROJECT_ROOT}/dist/${GEN}-${ver}.tar.gz"
@@ -59,21 +57,17 @@ module_help="$(from_wheel "${venv}/${PYBIN}/python${EXE}" -I -m devpro --help)"
 [[ "${script_help}" == "${module_help}" ]] || fail "devpro --help differs from python -m devpro --help"
 
 # Each project is named `project`: its AGENTS.md is titled with the project directory's name. One
-# project per plugin on each side, so each plugin's install is compared.
-for plugin in ${plugin_names}; do
-  for side in from-wheel from-checkout; do
-    mkdir -p "${side}/${plugin}/project/.claude"
-    : > "${side}/${plugin}/project/justfile"
-  done
-  from_wheel "${venv}/${PYBIN}/devpro${EXE}" install "${scratch}/from-wheel/${plugin}/project" --plugin="${plugin}" > /dev/null
-  PYTHONPATH="${PROJECT_ROOT}" python3 -m "${GEN}" install "${scratch}/from-checkout/${plugin}/project" --plugin="${plugin}" > /dev/null
+# project on each side, each installed with the kbase component on, so the whole install is compared.
+for side in from-wheel from-checkout; do
+  mkdir -p "${side}/project/.claude"
+  : > "${side}/project/justfile"
 done
+from_wheel "${venv}/${PYBIN}/devpro${EXE}" install "${scratch}/from-wheel/project" --components=kbase > /dev/null
+PYTHONPATH="${PROJECT_ROOT}" python3 -m "${GEN}" install "${scratch}/from-checkout/project" --components=kbase > /dev/null
 diff -r from-wheel from-checkout || fail "the wheel's install differs from the checkout's"
 
 mkdir plugins
-for plugin in ${plugin_names}; do
-  from_wheel "${venv}/${PYBIN}/devpro${EXE}" install "${scratch}/plugins" --plugin="${plugin}" --harness=mage > /dev/null
-  [[ -f "plugins/${plugin}/CLAUDE.md" ]] || fail "the mage install wrote no plugins/${plugin}/CLAUDE.md"
-done
+from_wheel "${venv}/${PYBIN}/devpro${EXE}" install "${scratch}/plugins" --components=kbase --harness=mage > /dev/null
+[[ -f "plugins/devpro/CLAUDE.md" ]] || fail "the mage install wrote no plugins/devpro/CLAUDE.md"
 
 printf 'check-wheel: Python %s, %s\n' "$("${venv}/${PYBIN}/python${EXE}" -c 'import platform; print(platform.python_version())')" "${wheel}"

@@ -1,8 +1,15 @@
-"""Fixtures every test runs under, and the helpers more than one test module shares."""
+"""Fixtures every test runs under, and the helpers and values more than one test module shares."""
 
 from pathlib import Path
 
 import pytest
+
+from devpro.components import Components
+
+PLAIN = Components()
+"""The selection with no optional component on."""
+WITH_KBASE = Components(on=frozenset({"kbase"}))
+"""The selection with the kbase component on."""
 
 
 @pytest.fixture(autouse=True)

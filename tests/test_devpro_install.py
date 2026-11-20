@@ -27,6 +27,7 @@ import pytest
 from devpro import __version__
 from devpro.agents_file import install_agents_file, marker_span, scope_name
 from devpro.cli import build_parser, main
+from devpro.components import NAME, Components
 from devpro.context import MapSupply, Render, build_render
 from devpro.definition import Definition
 from devpro.errors import InputError
@@ -48,9 +49,6 @@ from devpro.install import (
 )
 from devpro.install_base import PACKAGE_ROOT, REPO_ROOT, checkout_root
 from devpro.loading import load
-from devpro.plugin import Plugin
-from devpro.plugins.devpro import PLUGIN as DEVPRO
-from devpro.plugins.kbase import PLUGIN as KBASE
 from devpro.render import (
     filled_body,
     render_agents_file,
@@ -60,7 +58,7 @@ from devpro.render import (
 from devpro.runner_file import _named_harnesses, include_line, install_include_lines
 from devpro.vocabulary import CATEGORIES, Kind
 from tests._structure import kbase_skill_output_paths
-from tests.conftest import settings_file
+from tests.conftest import PLAIN, WITH_KBASE, settings_file
 
 _SNIPPET_SETS = {
     package.source: snippets for package in SHIPPED_PACKAGES if (snippets := package.installed_snippets()) is not None
@@ -74,7 +72,7 @@ _END = " <!-- ^^^-devpro do not edit at or between marker lines. devpro-^^^ -->"
 
 
 def _block(harness: Harness) -> list[str]:
-    lines, begin, end = marker_span(render_agents_file(harness, DEVPRO, scope="x"), where="render")
+    lines, begin, end = marker_span(render_agents_file(harness, PLAIN, scope="x"), where="render")
     return lines[begin : end + 1]
 
 
@@ -88,7 +86,7 @@ def _files(root: Path) -> dict[str, bytes]:
 
 def test_the_fresh_render_holds_the_title_and_one_marker_span() -> None:
     user_dir = Path(CLAUDE.user_harness_dir).expanduser()
-    text = render_agents_file(CLAUDE, DEVPRO, scope=scope_name(CLAUDE, user_dir))
+    text = render_agents_file(CLAUDE, PLAIN, scope=scope_name(CLAUDE, user_dir))
     lines, begin, end = marker_span(text, where="render")
     assert (lines[0], lines[begin], lines[end]) == ("# Global info and directives", _STAMPED_BEGIN, _END)
     assert text.endswith(_END + "\n")
@@ -96,7 +94,7 @@ def test_the_fresh_render_holds_the_title_and_one_marker_span() -> None:
 
 def test_an_agents_file_hole_in_any_other_kind_is_an_unknown_placeholder() -> None:
     defn = Definition(name="probe", kind=Kind.COMMAND, body="for @!agf-scope-name!@")
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     with pytest.raises(InputError, match=re.escape("definition 'probe': unknown placeholder @!agf-scope-name!@")):
         filled_body(defn, ctx)
 
@@ -105,7 +103,7 @@ def test_an_agents_file_hole_in_any_other_kind_is_an_unknown_placeholder() -> No
 
 
 def _install(directory: Path, harness: Harness = OPENCODE, uncommitted: tuple[str, ...] = ()) -> None:
-    install_agents_file(directory, harness, DEVPRO, uncommitted=lambda: uncommitted)
+    install_agents_file(directory, harness, PLAIN, uncommitted=lambda: uncommitted)
 
 
 def test_install_replaces_only_the_span_and_keeps_every_other_byte(tmp_path: Path, capsys) -> None:
@@ -246,7 +244,7 @@ def test_an_unsafe_destination_is_refused_with_nothing_written(
 def test_uncommitted_sources_refuse_no_install_into_a_project_directory(tmp_path: Path) -> None:
     _install(tmp_path, uncommitted=("?? devpro/x.py",))
     assert (tmp_path / "AGENTS.md").read_text(encoding="utf-8") == render_agents_file(
-        OPENCODE, DEVPRO, scope=tmp_path.name
+        OPENCODE, PLAIN, scope=tmp_path.name
     )
 
 
@@ -301,12 +299,10 @@ def test_outside_a_checkout_a_project_at_site_packages_gets_its_include_line(_si
 def test_a_project_directory_under_claude_writes_agents_md_and_the_redirect(tmp_path: Path) -> None:
     _install(tmp_path, CLAUDE)
     assert _files(tmp_path) == {
-        "AGENTS.md": render_agents_file(CLAUDE, DEVPRO, scope=tmp_path.name).encode(),
+        "AGENTS.md": render_agents_file(CLAUDE, PLAIN, scope=tmp_path.name).encode(),
         "CLAUDE.md": b"@AGENTS.md\n",
     }
-    assert render_agents_file(CLAUDE, DEVPRO, scope=tmp_path.name).startswith(
-        f"# {tmp_path.name} info and directives\n"
-    )
+    assert render_agents_file(CLAUDE, PLAIN, scope=tmp_path.name).startswith(f"# {tmp_path.name} info and directives\n")
 
 
 def test_a_claude_redirect_is_followed_and_the_text_around_the_block_kept(tmp_path: Path) -> None:
@@ -336,48 +332,48 @@ def test_a_destination_redirect_is_followed_one_hop_into_its_target(tmp_path: Pa
     _install(tmp_path)
     assert _files(tmp_path) == {
         "AGENTS.md": b"@docs/rules.md\n",
-        "docs/rules.md": render_agents_file(OPENCODE, DEVPRO, scope=tmp_path.name).encode(),
+        "docs/rules.md": render_agents_file(OPENCODE, PLAIN, scope=tmp_path.name).encode(),
     }
 
 
 def test_the_user_directory_writes_the_native_file_and_no_redirect(tmp_path: Path) -> None:
     harness = dataclasses.replace(CLAUDE, user_harness_dir=str(tmp_path))
     _install(tmp_path, harness)
-    assert _files(tmp_path) == {"CLAUDE.md": render_agents_file(harness, DEVPRO, scope="Global").encode()}
+    assert _files(tmp_path) == {"CLAUDE.md": render_agents_file(harness, PLAIN, scope="Global").encode()}
 
 
 def test_a_relative_user_directory_is_the_destination_itself(tmp_path: Path) -> None:
     """Mage's `.` names the directory being installed into — the native file, no `AGENTS.md`
     redirect — and leaves a harness whose user directory is absolute writing `AGENTS.md` elsewhere."""
     _install(tmp_path, MAGE)
-    assert _files(tmp_path) == {"CLAUDE.md": render_agents_file(MAGE, DEVPRO, scope="Global").encode()}
+    assert _files(tmp_path) == {"CLAUDE.md": render_agents_file(MAGE, PLAIN, scope="Global").encode()}
     project = tmp_path / "project"
     project.mkdir()
     _install(project, CLAUDE)
     assert _files(project) == {
-        "AGENTS.md": render_agents_file(CLAUDE, DEVPRO, scope=project.name).encode(),
+        "AGENTS.md": render_agents_file(CLAUDE, PLAIN, scope=project.name).encode(),
         "CLAUDE.md": b"@AGENTS.md\n",
     }
 
 
-# The definition install. A consumer project receives its plugin under its harness directory, and —
-# where the kbase plugin is installed — the kb-tools package in the kbase skill's own directory, with
-# the `kbase` MCP entry and the runner include line.
+# The definition install. A consumer project receives its set under its harness directory, and — with
+# the kbase component on — the kb-tools package in the kbase skill's own directory, with the `kbase`
+# MCP entry and the runner include line.
 
-_CLAUDE_RENDER = Render(
-    harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
-)
-_KBASE_CLAUDE_RENDER = dataclasses.replace(_CLAUDE_RENDER, plugin=KBASE)
-_MAGE_RENDER = Render(harness=MAGE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+_CLAUDE_RENDER = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+_KBASE_CLAUDE_RENDER = dataclasses.replace(_CLAUDE_RENDER, plugin=WITH_KBASE)
+_MAGE_RENDER = Render(harness=MAGE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+_KBASE_MAGE_RENDER = dataclasses.replace(_MAGE_RENDER, plugin=WITH_KBASE)
 _OPENCODE_RENDER = build_render(
     harness="opencode",
-    plugin="devpro",
+    components="",
     family="claude",
     supply=MapSupply(
         category_map=dict.fromkeys(CATEGORIES, "inherit"),
         supplier="--config-file devtools/reference-maps/opencode.cfg, section '[opencode-model-map]'",
     ),
 )
+_KBASE_OPENCODE_RENDER = dataclasses.replace(_OPENCODE_RENDER, plugin=WITH_KBASE)
 _NEW_BANNER = "---\n# !GENERATED! from devpro/definitions/gone.py — x\n# !TUNING! y\n---\n\nbody\n"
 # A skill's supporting file: no frontmatter, so its banner rides on two HTML comment lines.
 _COMMENT_BANNER = "<!-- !GENERATED! from devpro/definitions/kbase.py — x -->\n<!-- !TUNING! y -->"
@@ -387,17 +383,10 @@ def _definition_install(
     root: Path,
     ctx: Render = _CLAUDE_RENDER,
     *,
-    plugin: Plugin = DEVPRO,
     project_root: Path | None = None,
 ) -> None:
-    """`install` of `plugin` into the harness directory `root`, rendered as `ctx` with its plugin replaced."""
-    install(
-        root,
-        dataclasses.replace(ctx, plugin=plugin),
-        verbose=False,
-        project_root=project_root,
-        uncommitted=_committed,
-    )
+    """`install` of `ctx`, its selection included, into the harness directory `root`."""
+    install(root, ctx, verbose=False, project_root=project_root, uncommitted=_committed)
 
 
 def _committed() -> tuple[str, ...]:
@@ -412,17 +401,16 @@ _TS_GUARDRAIL = "guardrail.ts"
 _GUARDRAIL = "hooks/guardrail.pl"
 _REMINDER = "hooks/state-table-reminder.sh"
 _SETTINGS = ".claude/settings.json"
-# A claude install writes its plugin into its plugin, below the harness directory it is given.
-_CLAUDE_PLUGIN_RELPATH = f".claude/{CLAUDE.bound(DEVPRO.name).plugin_dir}"
-_CLAUDE_KBASE_RELPATH = f".claude/{CLAUDE.bound(KBASE.name).plugin_dir}"
+# A claude install writes its set into its plugin directory, below the harness directory it is given.
+_CLAUDE_PLUGIN_RELPATH = f".claude/{CLAUDE.bound(NAME).plugin_dir}"
 
 
-def _claude_plugin(harness_dir: Path, plugin: Plugin = DEVPRO) -> Path:
-    return harness_dir / CLAUDE.bound(plugin.name).plugin_dir
+def _claude_plugin(harness_dir: Path) -> Path:
+    return harness_dir / CLAUDE.bound(NAME).plugin_dir
 
 
-def _opencode_plugin(harness_dir: Path, plugin: Plugin = DEVPRO) -> Path:
-    return harness_dir / OPENCODE.bound(plugin.name).plugin_dir
+def _opencode_plugin(harness_dir: Path) -> Path:
+    return harness_dir / OPENCODE.bound(NAME).plugin_dir
 
 
 _REGISTRATION = "hooks/hooks.json"
@@ -505,17 +493,18 @@ def test_the_resources_tree_is_not_read_as_a_harness_module() -> None:
     assert (PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / "opencode").is_dir()
 
 
-def test_a_duplicate_output_is_refused_even_when_the_plugin_ships_neither_definition(
+def test_a_duplicate_output_is_refused_even_when_the_selection_ships_neither_definition(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The duplicate check runs over what discovery found, before the plugin filter: a plugin shipping
-    neither definition would otherwise render past a collision another plugin refuses."""
-    first = Definition(name="probe", kind=Kind.COMMAND, body="one")
-    second = Definition(name="probe", kind=Kind.COMMAND, body="two")
+    """The duplicate check runs over what discovery found, before the selection filter: a selection
+    shipping neither definition — here the kbase component's member, with the component off — would
+    otherwise render past a collision another selection refuses."""
+    first = Definition(name="kbase", kind=Kind.COMMAND, body="one")
+    second = Definition(name="kbase", kind=Kind.COMMAND, body="two")
     monkeypatch.setattr("devpro.render.discover", lambda: [("m.a", (first,)), ("m.b", (second,))])
-    assert not KBASE.ships("probe")
-    with pytest.raises(InputError, match=re.escape("'commands/probe.md' is produced by both m.a and m.b")):
-        render_all(dataclasses.replace(_CLAUDE_RENDER, plugin=KBASE))
+    assert not PLAIN.ships("kbase")
+    with pytest.raises(InputError, match=re.escape("'commands/kbase.md' is produced by both m.a and m.b")):
+        render_all(_CLAUDE_RENDER)
 
 
 _DOCDICER_PACKAGE = "skills/docdicer/tools/docdicer"
@@ -534,27 +523,29 @@ def _delivers_the_kbase_server(project: Path, root: Path) -> bool:
 
 
 @pytest.mark.parametrize(
-    "harness, plugin_dir_of",
+    "harness, root_of",
     [
-        ("claude", lambda project, plugin: _claude_plugin(project / ".claude", plugin)),
-        ("opencode", lambda project, plugin: _opencode_plugin(project / ".opencode", plugin)),
+        ("claude", lambda project: _claude_plugin(project / ".claude")),
+        ("opencode", lambda project: _opencode_plugin(project / ".opencode")),
     ],
     ids=["claude", "opencode"],
 )
-@pytest.mark.parametrize("plugin", [DEVPRO, KBASE], ids=lambda plugin: plugin.name)
+@pytest.mark.parametrize(
+    "components, flag", [(PLAIN, []), (WITH_KBASE, ["--components=kbase"])], ids=["plain", "with-kbase"]
+)
 def test_supporting_artifacts_ship_with_the_definition_that_owns_them(
-    tmp_path: Path, harness: str, plugin_dir_of: Callable[[Path, Plugin], Path], plugin: Plugin
+    tmp_path: Path, harness: str, root_of: Callable[[Path], Path], components: Components, flag: list[str]
 ) -> None:
-    """Both plugins carry the development scripts. Both carry the docdicer tools; devpro carries none of the
-    kbase toolchain; kbase carries the kb-tools package, the kbase MCP entry and the kb runner include
-    line. Both write the docdicer include line, kbase beside the kb one in the same runner file. No
-    install writes a project's opencode settings file."""
+    """Both selections carry the development scripts and the docdicer tools; only with the kbase component
+    on does the install carry the kbase toolchain: the kb-tools package, the kbase MCP entry and the kb
+    runner include line, beside the docdicer line in the same runner file. No install writes a project's
+    opencode settings file."""
     project = tmp_path / "project"
     project.mkdir()
     (project / "justfile").write_text("# mine\n", encoding="utf-8")
-    main(["install", str(project), f"--plugin={plugin.name}", f"--harness={harness}"])
-    root = plugin_dir_of(project, plugin)
-    kbase = plugin is KBASE
+    main(["install", str(project), *flag, f"--harness={harness}"])
+    root = root_of(project)
+    kbase = components is WITH_KBASE
     assert (root / _DEVELOPMENT_SCRIPTS).is_file()
     assert (root / _DOCDICER_PACKAGE).is_file()
     assert (root / _KBASE_PACKAGE).is_file() is kbase
@@ -567,19 +558,20 @@ def test_supporting_artifacts_ship_with_the_definition_that_owns_them(
 
 
 def test_an_install_changes_nothing_outside_its_own_install_directory(tmp_path: Path) -> None:
-    """Another plugin's install directory sits beside this one inside the harness directory's `skills/`,
-    and so may an earlier layout's: a devpro install leaves every file of both as it found them."""
+    """An install directory of another tool, or of an earlier layout, sits beside this one inside the
+    harness directory's `skills/`: a devpro install leaves its every file as it found them, its own
+    ROOT's files beside it being the only ones it writes or prunes."""
     project = tmp_path / "project"
     project.mkdir()
-    main(["install", str(project), "--plugin=kbase", "--harness=claude"])
+    main(["install", str(project), "--harness=claude"])
     _plant(project / ".claude/skills/earlier-layout/agents/python-coder.md", _NEW_BANNER)
     others = {
         relative: data
         for relative, data in _files(project).items()
-        if relative.startswith((f"{_CLAUDE_KBASE_RELPATH}/", ".claude/skills/earlier-layout/"))
+        if relative.startswith(".claude/skills/earlier-layout/")
     }
-    assert any(relative.startswith(_CLAUDE_KBASE_RELPATH) for relative in others)
-    main(["install", str(project), "--harness=claude"])
+    assert others
+    main(["install", str(project), "--components=kbase", "--harness=claude"])
     after = _files(project)
     assert {relative: after.get(relative) for relative in others} == others
     assert (project / _CLAUDE_PLUGIN_RELPATH / "agents/python-coder.md").is_file()
@@ -592,8 +584,8 @@ def test_a_kbase_install_writes_the_kbase_skill_the_package_the_mcp_entry_and_th
     root = project / ".claude"
     root.mkdir()
     (project / "justfile").write_text("# mine\n", encoding="utf-8")
-    _definition_install(root, plugin=KBASE, project_root=project)
-    plugin = _claude_plugin(root, KBASE)
+    _definition_install(root, _KBASE_CLAUDE_RENDER, project_root=project)
+    plugin = _claude_plugin(root)
     for relative in kbase_skill_output_paths():
         assert (plugin / relative).is_file()
     kb_just = (plugin / "skills/kbase/kb-tools/runner-snippets/kb.just").read_text(encoding="utf-8").split("\n")
@@ -639,69 +631,85 @@ def test_an_operating_system_failure_is_reported_as_an_error_and_exits_2(tmp_pat
     assert not out.parent.exists()
 
 
-def test_the_help_usage_line_lists_every_verb_but_the_hidden_ones(capsys) -> None:
+def test_the_help_usage_line_lists_every_verb_but_the_hidden_one(capsys) -> None:
     with pytest.raises(SystemExit):
         main(["--help"])
     usage = capsys.readouterr().out.split("\n\n")[0]
     listed = re.search(r"\{([^}]*)\}", usage)
     assert listed is not None
     verbs = next(action for action in build_parser()._actions if isinstance(action, argparse._SubParsersAction))
-    assert listed.group(1).split(",") == [name for name in verbs.choices if name not in {"harness", "plugins"}]
+    assert listed.group(1).split(",") == [name for name in verbs.choices if name != "harness"]
 
 
-def test_the_plugins_verb_prints_each_plugin_name_one_per_line(capsys) -> None:
-    main(["plugins"])
-    assert capsys.readouterr().out.splitlines() == sorted(load("devpro.plugins", "PLUGIN"))
+def _renders_the_kbase_skill(out: Path) -> bool:
+    return (out / "skills/kbase/SKILL.md").is_file()
 
 
-def _rendered_plugin(out: Path, stdout: str) -> str:
-    return KBASE.name if (out / "skills/kbase/SKILL.md").is_file() else DEVPRO.name
-
-
-def _installed_plugin(out: Path, stdout: str) -> str:
-    (plugin,) = (plugin.name for plugin in (DEVPRO, KBASE) if _claude_plugin(out / ".claude", plugin).is_dir())
-    return plugin
-
-
-def _agents_file_plugin(out: Path, stdout: str) -> str:
-    text = (out / "AGENTS.md").read_text(encoding="utf-8")
-    scope = scope_name(CLAUDE, out)
-    (plugin,) = (plugin.name for plugin in (DEVPRO, KBASE) if text == render_agents_file(CLAUDE, plugin, scope=scope))
-    return plugin
-
-
-def _harness_plugin(out: Path, stdout: str) -> str:
-    return stdout.strip()
+def _installs_the_kbase_skill(out: Path) -> bool:
+    return (_claude_plugin(out / ".claude") / "skills/kbase/SKILL.md").is_file()
 
 
 @pytest.mark.parametrize(
-    ("verb", "args", "plugin_used"),
+    ("verb", "args", "ships"),
     [
-        ("render", ["--out", "{out}"], _rendered_plugin),
-        ("install", ["{out}", "--harness=claude"], _installed_plugin),
-        ("install-agents-file", ["{out}", "--harness=claude"], _agents_file_plugin),
-        ("render-agents-file", ["claude", "{out}/AGENTS.md"], _agents_file_plugin),
-        ("harness", ["mage", "project-harness-dir"], _harness_plugin),
+        ("render", ["--out", "{out}"], _renders_the_kbase_skill),
+        ("install", ["{out}", "--harness=claude"], _installs_the_kbase_skill),
     ],
-    ids=["render", "install", "install-agents-file", "render-agents-file", "harness"],
+    ids=["render", "install"],
 )
-def test_a_plugin_verb_takes_the_plugin_as_a_flag_defaulting_to_devpro(
-    tmp_path: Path, capsys, verb: str, args: list[str], plugin_used: Callable[[Path, str], str]
+def test_the_components_flag_turns_the_component_on(
+    tmp_path: Path, verb: str, args: list[str], ships: Callable[[Path], bool]
 ) -> None:
-    def run(name: str, *plugin_flag: str) -> str:
+    """`--components=kbase` is the whole of turning the kbase skill on: before the flag existed argparse
+    refused it as unknown and no render or install could carry the component."""
+    for name, flag in (("with-kbase", ["--components=kbase"]), ("plain", [])):
         out = tmp_path / name
         out.mkdir()
-        main([verb, *plugin_flag, *(arg.format(out=out) for arg in args)])
-        return plugin_used(out, capsys.readouterr().out)
+        main([verb, *flag, *(arg.format(out=out) for arg in args)])
+        assert ships(out) is bool(flag), name
 
-    assert run("default") == "devpro"
-    assert run("flagged", "--plugin=kbase") == "kbase"
-    positional = tmp_path / "positional"
-    positional.mkdir()
+
+@pytest.mark.parametrize("name", ["nosuch", "development"])
+def test_a_component_name_that_is_no_optional_component_is_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], name: str
+) -> None:
+    """The components are the optional ones alone, so a required definition is no legal value either;
+    before the flag existed no validation existed. Nothing is written."""
+    project = tmp_path / "project"
+    project.mkdir()
     with pytest.raises(SystemExit) as exited:
-        main([verb, "kbase", *(arg.format(out=positional) for arg in args)])
+        main(["install", str(project), f"--components={name}", "--harness=claude"])
     assert exited.value.code == 2
-    assert not any(positional.iterdir())
+    err = capsys.readouterr().err
+    assert f"unknown component '{name}'" in err and "optional components are kbase" in err
+    assert _files(project) == {}
+
+
+def test_a_component_given_as_a_positional_names_no_component(tmp_path: Path, capsys, monkeypatch) -> None:
+    """The first positional is the target, so a lone `devpro install kbase` is refused where no such
+    directory exists; nothing is written."""
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(SystemExit) as exited:
+        main(["install", "kbase", "--harness=claude"])
+    assert exited.value.code == 2
+    assert "install target 'kbase'" in capsys.readouterr().err
+    assert not (tmp_path / "kbase").exists()
+
+
+@pytest.mark.usefixtures("_no_uncommitted")
+def test_a_settings_files_components_value_drives_its_harness_install_and_the_flag_overrides_it(
+    tmp_path: Path,
+) -> None:
+    """`[<harness>]`'s `components` is that harness's install selection, and `--components` given replaces
+    it."""
+    settings = settings_file(tmp_path, "[claude]\ncomponents = kbase\n")
+    for name, flag, ships_kbase in (("from-settings", [], True), ("overridden", ["--components="], False)):
+        project = tmp_path / name
+        (project / ".claude").mkdir(parents=True)
+        main(["install", str(project), *flag, f"--config-file={settings}"])
+        root = _claude_plugin(project / ".claude")
+        assert (root / "skills/kbase/SKILL.md").is_file() is ships_kbase, name
+        assert _delivers_the_kbase_server(project, root) is ships_kbase, name
 
 
 def test_the_cli_plugin_argument_installs_the_kbase_skill_files_and_the_skill_kb_tools_destination(
@@ -711,8 +719,8 @@ def test_the_cli_plugin_argument_installs_the_kbase_skill_files_and_the_skill_kb
     the kbase skill's files and the runner snippets — is what appears under the plugin's ROOT."""
     root = tmp_path / ".claude"
     root.mkdir()
-    main(["install", str(root), "--plugin=kbase", "--harness=claude"])
-    plugin = _claude_plugin(root, KBASE)
+    main(["install", str(root), "--components=kbase", "--harness=claude"])
+    plugin = _claude_plugin(root)
     assert all((plugin / relative).is_file() for relative in kbase_skill_output_paths())
     snippets = plugin / "skills/kbase/kb-tools/runner-snippets"
     assert (snippets / "kb.just").is_file() and (snippets / "kb.mk").is_file()
@@ -907,7 +915,7 @@ def test_a_run_prunes_a_stale_definition_of_ours_its_plugin_does_not_ship(tmp_pa
 def test_a_kbase_install_prunes_a_stale_reference_and_keeps_a_user_file(tmp_path: Path, capsys) -> None:
     """A supporting file is ours by its own first line, so prune needs no rule keyed on the skill."""
     root = tmp_path / ".claude"
-    plugin = _claude_plugin(root, KBASE)
+    plugin = _claude_plugin(root)
     references = plugin / "skills/kbase/references"
     references.mkdir(parents=True)
     stale = references / "gone.md"
@@ -915,7 +923,7 @@ def test_a_kbase_install_prunes_a_stale_reference_and_keeps_a_user_file(tmp_path
     mine = plugin / "skills/kbase/notes.md"
     mine.write_text("---\nmine\n---\n", encoding="utf-8")
     capsys.readouterr()
-    _definition_install(root, plugin=KBASE, project_root=tmp_path)
+    _definition_install(root, _KBASE_CLAUDE_RENDER, project_root=tmp_path)
     assert not stale.exists()
     assert mine.read_text(encoding="utf-8") == "---\nmine\n---\n"
     assert all((plugin / relative).is_file() for relative in kbase_skill_output_paths())
@@ -989,28 +997,28 @@ def test_an_opencode_kb_install_registers_the_server_in_its_registry_and_leaves_
     discovered = root / "opencode.json"
     prior = json.dumps({"theme": "omlx", "mcp": {"servers": {"other": {"type": "local"}}}})
     discovered.write_text(prior, encoding="utf-8")
-    _definition_install(root, _OPENCODE_RENDER, plugin=KBASE, project_root=project)
+    _definition_install(root, _KBASE_OPENCODE_RENDER, project_root=project)
     assert discovered.read_text(encoding="utf-8") == prior
     assert not (root / "opencode.jsonc").exists() and not (project / "opencode.json").exists()
-    registry = json.loads((_opencode_plugin(root, KBASE) / "registry.json").read_text(encoding="utf-8"))
+    registry = json.loads((_opencode_plugin(root) / "registry.json").read_text(encoding="utf-8"))
     assert registry["mcp"] == {"kbase": {"type": "local", "command": ["kbase", "mcp"]}}
 
 
 # mage's `.mcp.json` is the plugin's own, at ROOT rather than at the project the plugin is installed under.
 
 
-def test_a_mage_kbase_install_renders_its_mcp_json_whole_beside_the_plugin_at_root(tmp_path: Path) -> None:
-    """ROOT is the plugin's own, so `.mcp.json` there is rendered whole: a prior one of ours is replaced,
+def test_a_mage_kbase_install_renders_its_mcp_json_whole_beside_the_set_at_root(tmp_path: Path) -> None:
+    """ROOT is the install's own, so `.mcp.json` there is rendered whole: a prior one of ours is replaced,
     a server beside the entry included, and the project root holds no `.mcp.json` at all. The manifest
     is still the three-key one carrying `__version__`. No runner include line is written and no
-    `Makefile` created at either root: a plugin is not a repo project."""
+    `Makefile` created at either root: an install directory is not a repo project."""
     project = tmp_path
-    root = project / "plugins/kbase"
+    root = project / "plugins/devpro"
     root.mkdir(parents=True)
     entry = {"command": "kbase", "args": ["mcp", "--project-dir-required"]}
     prior = {"mcpServers": {"kbase": {"command": "kbase", "args": ["mcp"]}, "other": {"command": "x"}}}
     (root / ".mcp.json").write_text(json.dumps(prior), encoding="utf-8")
-    _definition_install(root, _MAGE_RENDER, plugin=KBASE, project_root=project)
+    _definition_install(root, _KBASE_MAGE_RENDER, project_root=project)
     settings = json.loads((root / ".mcp.json").read_text(encoding="utf-8"))
     assert settings == {"mcpServers": {"kbase": entry}}
     assert not (project / ".mcp.json").exists()
@@ -1022,8 +1030,8 @@ def test_a_mage_kbase_install_renders_its_mcp_json_whole_beside_the_plugin_at_ro
 
 
 def test_a_mage_devpro_install_ships_no_part_of_the_kbase_toolchain(tmp_path: Path) -> None:
-    """Under mage too the plugin decides: a devpro plugin holds no kbase skill, no kb-tools package and
-    no MCP settings file."""
+    """Under mage too the selection decides: the plain install holds no kbase skill, no kb-tools package
+    and no MCP settings file."""
     project = tmp_path
     root = project / "plugins/devpro"
     root.mkdir(parents=True)
@@ -1034,11 +1042,11 @@ def test_a_mage_devpro_install_ships_no_part_of_the_kbase_toolchain(tmp_path: Pa
 
 
 def test_a_mage_kbase_install_ships_the_kbase_toolchain(tmp_path: Path) -> None:
-    """Under mage the kbase plugin carries its kbase skill and the kb-tools package."""
+    """Under mage the kbase component carries its kbase skill and the kb-tools package."""
     project = tmp_path
-    root = project / "plugins/kbase"
+    root = project / "plugins/devpro"
     root.mkdir(parents=True)
-    _definition_install(root, _MAGE_RENDER, plugin=KBASE, project_root=project)
+    _definition_install(root, _KBASE_MAGE_RENDER, project_root=project)
     assert (root / _KBASE_PACKAGE).is_file()
     assert (root / "skills/kbase").is_dir()
 
@@ -1056,7 +1064,7 @@ def test_a_mage_install_names_no_absolute_path_and_no_home_directory(tmp_path: P
     project = tmp_path
     root = project / "plugins/devpro"
     root.mkdir(parents=True)
-    _definition_install(root, _MAGE_RENDER, plugin=KBASE, project_root=project)
+    _definition_install(root, _KBASE_MAGE_RENDER, project_root=project)
     files = _files(root)
     ours = (_MAGE_MANIFEST, ".mcp.json")
     assert set(ours) <= set(files)
@@ -1118,10 +1126,10 @@ def test_the_include_line_is_appended_to_an_existing_justfile(tmp_path: Path) ->
     root = tmp_path / ".claude"
     root.mkdir()
     (tmp_path / "justfile").write_text("default:\n  @echo hi\n", encoding="utf-8")
-    _definition_install(root, plugin=KBASE, project_root=tmp_path)
+    _definition_install(root, _KBASE_CLAUDE_RENDER, project_root=tmp_path)
     assert (tmp_path / "justfile").read_text(encoding="utf-8") == (
-        f"default:\n  @echo hi\n\nimport? '{_CLAUDE_KBASE_RELPATH}/skills/docdicer/tools/runner-snippets/docdicer.just'\n"
-        f"\nimport? '{_CLAUDE_KBASE_RELPATH}/skills/kbase/kb-tools/runner-snippets/kb.just'\n"
+        f"default:\n  @echo hi\n\nimport? '{_CLAUDE_PLUGIN_RELPATH}/skills/docdicer/tools/runner-snippets/docdicer.just'\n"
+        f"\nimport? '{_CLAUDE_PLUGIN_RELPATH}/skills/kbase/kb-tools/runner-snippets/kb.just'\n"
     )
 
 
@@ -1129,12 +1137,12 @@ def test_a_makefile_is_created_when_the_project_has_neither_runner_file(tmp_path
     """Created once, holding every set's line in `SHIPPED_PACKAGES` order."""
     root = tmp_path / ".opencode"
     root.mkdir()
-    _definition_install(root, _OPENCODE_RENDER, plugin=KBASE, project_root=tmp_path)
+    _definition_install(root, _KBASE_OPENCODE_RENDER, project_root=tmp_path)
     text = (tmp_path / "Makefile").read_text(encoding="utf-8")
     assert text.startswith("# Makefile — created by the devpro installer.\n")
     assert text.endswith(
-        "\n-include .opencode/plugins/kbase/skills/docdicer/tools/runner-snippets/docdicer.mk\n"
-        "-include .opencode/plugins/kbase/skills/kbase/kb-tools/runner-snippets/kb.mk\n"
+        "\n-include .opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.mk\n"
+        "-include .opencode/plugins/devpro/skills/kbase/kb-tools/runner-snippets/kb.mk\n"
     )
     assert not (tmp_path / "justfile").exists()
 
@@ -1144,12 +1152,12 @@ def test_a_second_harness_writes_no_include_line_and_reports_the_first(tmp_path:
     first = project / ".claude"
     first.mkdir()
     (project / "justfile").write_text("# mine\n", encoding="utf-8")
-    _definition_install(first, plugin=KBASE, project_root=project)
+    _definition_install(first, _KBASE_CLAUDE_RENDER, project_root=project)
     before = (project / "justfile").read_bytes()
     second = project / ".opencode"
     second.mkdir()
     capsys.readouterr()
-    _definition_install(second, _OPENCODE_RENDER, plugin=KBASE, project_root=project)
+    _definition_install(second, _KBASE_OPENCODE_RENDER, project_root=project)
     assert (project / "justfile").read_bytes() == before
     err = capsys.readouterr().err
     assert "no include line written" in err and "'claude'" in err
@@ -1173,10 +1181,10 @@ def test_an_include_line_for_this_harness_under_any_tree_is_rewritten_in_place(
     root = project / ".claude"
     root.mkdir()
     (project / "justfile").write_text(f"default:\n  @echo hi\n\nimport? '.claude/{snippets_path}/kb.just'\n")
-    _definition_install(root, plugin=KBASE, project_root=project)
+    _definition_install(root, _KBASE_CLAUDE_RENDER, project_root=project)
     text = (project / "justfile").read_text(encoding="utf-8")
-    expected = f"import? '{_CLAUDE_KBASE_RELPATH}/skills/kbase/kb-tools/runner-snippets/kb.just'"
-    docdicer = f"import? '{_CLAUDE_KBASE_RELPATH}/skills/docdicer/tools/runner-snippets/docdicer.just'"
+    expected = f"import? '{_CLAUDE_PLUGIN_RELPATH}/skills/kbase/kb-tools/runner-snippets/kb.just'"
+    docdicer = f"import? '{_CLAUDE_PLUGIN_RELPATH}/skills/docdicer/tools/runner-snippets/docdicer.just'"
     assert text == f"default:\n  @echo hi\n\n{expected}\n\n{docdicer}\n"
     assert text.count("runner-snippets/kb.just") == 1
 
@@ -1186,12 +1194,12 @@ def test_an_include_line_for_this_harness_under_any_tree_is_rewritten_in_place(
     [
         (
             "import? '.claude/skills/kbase/skills/docdicer/tools/runner-snippets/docdicer.just'",
-            "import? '.opencode/plugins/kbase/skills/kbase/kb-tools/runner-snippets/kb.just'",
+            "import? '.opencode/plugins/devpro/skills/kbase/kb-tools/runner-snippets/kb.just'",
             "docdicer",
         ),
         (
             "import? '.claude/skills/kbase/skills/kbase/kb-tools/runner-snippets/kb.just'",
-            "import? '.opencode/plugins/kbase/skills/docdicer/tools/runner-snippets/docdicer.just'",
+            "import? '.opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.just'",
             "kb",
         ),
     ],
@@ -1205,7 +1213,7 @@ def test_each_snippet_set_is_judged_alone(tmp_path: Path, capsys, present: str, 
     root.mkdir()
     (project / "justfile").write_text(f"{present}\n", encoding="utf-8")
     capsys.readouterr()
-    _definition_install(root, _OPENCODE_RENDER, plugin=KBASE, project_root=project)
+    _definition_install(root, _KBASE_OPENCODE_RENDER, project_root=project)
     assert (project / "justfile").read_text(encoding="utf-8") == f"{present}\n\n{appended}\n"
     err = capsys.readouterr().err
     assert err.count("no include line written") == 1
@@ -1286,7 +1294,7 @@ def test_a_non_utf8_runner_file_is_refused_before_the_first_write(tmp_path: Path
     (tmp_path / "justfile").write_bytes(b"\xff\xfe default:\n")
     before = _files(tmp_path)
     with pytest.raises(InputError, match="justfile"):
-        _definition_install(root, plugin=KBASE, project_root=tmp_path)
+        _definition_install(root, _KBASE_CLAUDE_RENDER, project_root=tmp_path)
     assert _files(tmp_path) == before
 
 
@@ -1362,7 +1370,7 @@ def test_a_user_level_opencode_install_copies_the_entry_and_no_guardrail(
 # name, keeping any venv its launcher built there.
 
 # Below a claude harness directory: the plugin's own docdicer tools destination.
-_DOCDICER_TOOLS = f"{CLAUDE.bound(DEVPRO.name).plugin_dir}/skills/docdicer/tools"
+_DOCDICER_TOOLS = f"{CLAUDE.bound(NAME).plugin_dir}/skills/docdicer/tools"
 _DOCDICER_SOURCE = PACKAGE_ROOT / "docdicer-tools"
 
 
@@ -1551,7 +1559,7 @@ def installed(tmp_path_factory: pytest.TempPathFactory) -> Path:
             project_root=project,
             uncommitted=_committed,
         )
-    return _claude_plugin(root, KBASE)
+    return _claude_plugin(root)
 
 
 def test_install_writes_every_render_and_stamps_the_packages_once(installed: Path) -> None:
@@ -1643,13 +1651,13 @@ def test_a_reinstall_overwrites_its_own_renders_kb_skill_files_included(tmp_path
     file's comment carrier each pass, and the render replaces the edit."""
     root = tmp_path / ".claude"
     root.mkdir()
-    _definition_install(root, plugin=KBASE, project_root=tmp_path)
-    plugin = _claude_plugin(root, KBASE)
+    _definition_install(root, _KBASE_CLAUDE_RENDER, project_root=tmp_path)
+    plugin = _claude_plugin(root)
     edited = ("agents/python-coder.md", "skills/kbase/references/reading.md")
     for relative in edited:
         with (plugin / relative).open("a", encoding="utf-8") as handle:
             handle.write("a local edit\n")
-    _definition_install(root, plugin=KBASE, project_root=tmp_path)
+    _definition_install(root, _KBASE_CLAUDE_RENDER, project_root=tmp_path)
     for relative in edited:
         assert (plugin / relative).read_text(encoding="utf-8") == _rendered(_KBASE_CLAUDE_RENDER, relative)
 
@@ -1979,7 +1987,7 @@ def _kb_install_with_a_runner_file(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     project = tmp_path / "project"
     project.mkdir()
     (project / "justfile").write_text("# mine\n", encoding="utf-8")
-    return ["install", str(project), "--plugin=kbase", "--harness=claude"], project
+    return ["install", str(project), "--components=kbase", "--harness=claude"], project
 
 
 def _agents_file_in_a_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[list[str], Path]:
@@ -1997,14 +2005,14 @@ def _the_repository_as_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     project.mkdir()
     (project / "justfile").write_text("# generator\n", encoding="utf-8")
     monkeypatch.setattr("devpro.install_base.REPO_ROOT", project.resolve())
-    return ["install", str(project), "--plugin=kbase", "--harness=claude"], project
+    return ["install", str(project), "--components=kbase", "--harness=claude"], project
 
 
 def _mage_below_its_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[list[str], Path]:
     """The plugin's own `.mcp.json` and agents file at ROOT."""
     project = tmp_path / "project"
     project.mkdir()
-    return ["install", str(project), "--plugin=kbase", "--harness=mage", "--subdir=plugins/devpro"], project
+    return ["install", str(project), "--components=kbase", "--harness=mage", "--subdir=plugins/devpro"], project
 
 
 @pytest.mark.usefixtures("_no_uncommitted")
@@ -2032,39 +2040,39 @@ def test_a_second_identical_run_whose_decisions_read_the_real_location_is_up_to_
     assert _state(base) == state
 
 
-def test_a_changed_plugin_installs(tmp_path: Path, capsys) -> None:
+def test_a_changed_component_installs(tmp_path: Path, capsys) -> None:
     project = tmp_path / "project"
     project.mkdir()
     argv = [str(project), "--harness=claude"]
     main(["install", *argv])
     files = _files(project)
     capsys.readouterr()
-    main(["install", *argv, "--plugin=kbase"])
+    main(["install", *argv, "--components=kbase"])
     assert _UP_TO_DATE not in capsys.readouterr().out
     assert _files(project) != files
 
 
 @pytest.mark.usefixtures("_no_uncommitted")
-@pytest.mark.parametrize("plugin", ["devpro", "kbase"])
+@pytest.mark.parametrize("components", ["", "kbase"], ids=["plain", "with-kbase"])
 @pytest.mark.parametrize(
     "harness_args",
     [
         ["--harness=claude"],
         ["--harness=opencode"],
-        ["--harness=mage", "--subdir=plugins/plugin"],
+        ["--harness=mage", "--subdir=plugins/devpro"],
     ],
     ids=["claude", "opencode", "mage-subdir"],
 )
 def test_a_dry_run_on_a_fresh_target_lists_as_created_what_the_install_creates(
-    tmp_path: Path, capsys, harness_args: list[str], plugin: str
+    tmp_path: Path, capsys, harness_args: list[str], components: str
 ) -> None:
-    """The project's runner file is in play too: under a kbase install it gains the include line, so it
-    is listed as changed."""
+    """The project's runner file is in play too: with the kbase component on it gains the kb include line
+    beside the docdicer one, so it is listed as changed."""
     project = tmp_path / "project"
     project.mkdir()
     (project / "justfile").write_text("# mine\n", encoding="utf-8")
     groups = _assert_dry_run_predicts(
-        ["install", str(project), f"--plugin={plugin}", *harness_args], project=project, capsys=capsys
+        ["install", str(project), f"--components={components}", *harness_args], project=project, capsys=capsys
     )
     assert groups["created"]
 
@@ -2082,7 +2090,7 @@ def test_a_dry_run_of_a_user_level_kbase_install_predicts_the_install(
     plugin's manifest; opencode carries the entry in its registry instead."""
     home = tmp_path / "home"
     harness.user_dir.mkdir(parents=True)
-    argv = ["install", str(home), "--plugin=kbase", f"--harness={harness.name}"]
+    argv = ["install", str(home), "--components=kbase", f"--harness={harness.name}"]
     groups = _assert_dry_run_predicts(argv, project=home, capsys=capsys)
     assert any(PurePosixPath(path).name == ".mcp.json" for path in groups["created"]) is ships_kbase
 
@@ -2245,7 +2253,7 @@ def test_without_a_global_block_a_project_install_keeps_it_in_the_projects_agent
     project = tmp_path / "project"
     project.mkdir()
     main(["install", str(project), f"--harness={name}"])
-    rendered = render_agents_file(harness, DEVPRO, scope=project.name).encode()
+    rendered = render_agents_file(harness, PLAIN, scope=project.name).encode()
     top = {path: data for path, data in _files(project).items() if "/" not in path and path != "Makefile"}
     assert top == {"AGENTS.md": rendered, **({"CLAUDE.md": b"@AGENTS.md\n"} if redirect else {})}
     assert _global_agents_file(tmp_path / "home", harness).read_text(encoding="utf-8") == "# my global rules\n"
@@ -2323,17 +2331,19 @@ def test_once_the_global_file_holds_the_block_every_project_install_keeps_it_the
 
 
 @pytest.mark.usefixtures("_no_uncommitted")
-def test_a_global_block_is_kept_current_as_the_plugin_its_marker_names(tmp_path: Path) -> None:
-    """A devpro project install under a global kbase block keeps kbase's block there, and writes no
-    project block."""
+def test_a_legacy_kbase_stamped_global_block_is_replaced_as_a_block_of_no_plugin(tmp_path: Path) -> None:
+    """A global block an earlier release stamped with the retired kbase plugin's name is a block of no
+    plugin: the project install keeps the block where it is and replaces it, stamp and all, writing no
+    project block. Before `_block_plugin` read the one name, it held the block as the kbase plugin's and
+    left it there."""
     kbase_begin = " <!-- vvv-devpro kbase 0.0.1 do not edit at or between marker lines. devpro-vvv -->"
     global_file = _plant(_global_agents_file(tmp_path / "home", CLAUDE), f"{kbase_begin}\nold\n{_END}\n")
     project = tmp_path / "project"
     project.mkdir()
     main(["install", str(project), "--harness=claude"])
-    lines, begin, end = marker_span(render_agents_file(CLAUDE, KBASE, scope="x"), where="render")
+    lines, begin, end = marker_span(render_agents_file(CLAUDE, PLAIN, scope="x"), where="render")
     assert global_file.read_text(encoding="utf-8") == "\n".join([*lines[begin : end + 1], ""])
-    assert f"vvv-devpro kbase {__version__} " in lines[begin]
+    assert f"vvv-devpro devpro {__version__} " in lines[begin]
     assert not (project / "AGENTS.md").exists() and not (project / "CLAUDE.md").exists()
 
 
@@ -2381,21 +2391,21 @@ def _run_outcome(argv: list[str], capsys, *, planted: Path) -> tuple[object, lis
 
 
 @pytest.mark.parametrize(
-    "plugin, harness_args, planted",
+    "components, harness_args, planted",
     [
-        ("devpro", ["--harness=claude"], f"{_CLAUDE_PLUGIN_RELPATH}/agents"),
-        ("kbase", ["--harness=opencode", "--subdir=tools"], "tools/plugins/kbase/registry.json"),
-        ("devpro", ["--harness=claude"], _CLAUDE_PLUGIN_RELPATH),
+        ("", ["--harness=claude"], f"{_CLAUDE_PLUGIN_RELPATH}/agents"),
+        ("kbase", ["--harness=opencode", "--subdir=tools"], "tools/plugins/devpro/registry.json"),
+        ("", ["--harness=claude"], _CLAUDE_PLUGIN_RELPATH),
     ],
     ids=["render-target", "registry-target", "install-directory"],
 )
 def test_a_dry_run_foresees_a_file_on_the_way(
-    tmp_path: Path, capsys, plugin: str, harness_args: list[str], planted: str
+    tmp_path: Path, capsys, components: str, harness_args: list[str], planted: str
 ) -> None:
     project = tmp_path / "project"
     (project / "tools").mkdir(parents=True)
     path = _plant(project / planted, "mine\n")
-    argv = ["install", str(project), f"--plugin={plugin}", *harness_args]
+    argv = ["install", str(project), f"--components={components}", *harness_args]
     files, directories = _files(project), _directories(project)
     dry_code, dry_lines, groups = _run_outcome([*argv, "--dry-run"], capsys, planted=path)
     real_code, real_lines, _ = _run_outcome(argv, capsys, planted=path)

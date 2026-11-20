@@ -3,14 +3,14 @@
 # and rebuilt from the flags given, which are recorded in it. `--harness=NAME` is read here as well
 # as forwarded.
 #
-# Each plugin is rendered into its own slot project below the slot, <slot>/<plugin>/, which is also
-# the install's harness directory (`--subdir=`), so a claude slot project holds its plugin at
-# <slot>/<plugin>/skills/<plugin>/.
+# The one slot project is rendered below the slot, <slot>/devpro/, which is also the install's
+# harness directory (`--subdir=`), so a claude slot project holds the install at
+# <slot>/devpro/skills/devpro/. The kbase component is on, so the slot project carries the whole
+# optional set as well as the required one.
 #
-# Each plugin's agents file lands in one of two shapes: at the slot project's root as
-# `<agents-file>`, for a harness whose own files sit at its root (`user-harness-dir` `.` — a
-# harness-directory plugin, whose `.mcp.json` is written beside it), otherwise under
-# `<plugin>/harness/<name>/<agents-file>`.
+# The agents file lands in one of two shapes: at the slot project's root as `<agents-file>`, for a
+# harness whose own files sit at its root (`user-harness-dir` `.` — a harness-directory install,
+# whose `.mcp.json` is written beside it), otherwise under `<slot>/devpro/harness/<name>/<agents-file>`.
 #
 # HOME is a fresh, empty scratch home for the whole render, removed on exit, so nothing the render
 # runs reads or writes the operator's real one.
@@ -19,9 +19,6 @@ set -euo pipefail
 : "${RENDERED_DIR:?RENDERED_DIR is empty or unset — run this script through its justfile recipe}"
 : "${GEN:?GEN is empty or unset — run this script through its justfile recipe}"
 
-plugin_names="$("${PROJECT_ROOT}/devtools/scripts/_plugin-names.sh")"
-plugins=()
-while IFS= read -r name; do plugins+=("${name}"); done <<<"${plugin_names}"
 slug="${1}"
 shift
 scratch_home="${PROJECT_ROOT}/.devpro-temp/render-home/${slug}"
@@ -37,8 +34,8 @@ for arg in "${args[@]+"${args[@]}"}"; do
     fi
 done
 [[ -z "${harness}" ]] && { harness="claude" && args+=("--harness=${harness}"); } || true
-agents_file="$("${PROJECT_ROOT}/devtools/scripts/_harness-value.sh" "${plugins[0]}" "${harness}" agents-file)"
-user_harness_dir="$("${PROJECT_ROOT}/devtools/scripts/_harness-value.sh" "${plugins[0]}" "${harness}" user-harness-dir)"
+agents_file="$("${PROJECT_ROOT}/devtools/scripts/_harness-value.sh" "${harness}" agents-file)"
+user_harness_dir="$("${PROJECT_ROOT}/devtools/scripts/_harness-value.sh" "${harness}" user-harness-dir)"
 out="${PROJECT_ROOT}/${RENDERED_DIR}/${slug}"
 rm -rf "${out}"
 mkdir -p "${out}"
@@ -47,13 +44,11 @@ if [[ "$#" -gt 0 ]]; then
 else
     : > "${out}/RENDER-FLAGS.txt"
 fi
-for plugin in "${plugins[@]}"; do
-    if [[ "${user_harness_dir}" == "." ]]; then
-        agents_target="${out}/${plugin}/${agents_file}"
-    else
-        agents_target="${out}/${plugin}/harness/${harness}/${agents_file}"
-    fi
-    mkdir -p "$(dirname "${agents_target}")"
-    "${PROJECT_ROOT}/devtools/scripts/render-agents-file.sh" "${harness}" "${agents_target}" "${plugin}"
-    PYTHONPATH="${PROJECT_ROOT}" python3 -m "${GEN}" install "${out}/${plugin}" --plugin="${plugin}" --subdir= "${args[@]}"
-done
+if [[ "${user_harness_dir}" == "." ]]; then
+    agents_target="${out}/devpro/${agents_file}"
+else
+    agents_target="${out}/devpro/harness/${harness}/${agents_file}"
+fi
+mkdir -p "$(dirname "${agents_target}")"
+"${PROJECT_ROOT}/devtools/scripts/render-agents-file.sh" "${harness}" "${agents_target}"
+PYTHONPATH="${PROJECT_ROOT}" python3 -m "${GEN}" install "${out}/devpro" --components=kbase --subdir= "${args[@]+"${args[@]}"}"

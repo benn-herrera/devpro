@@ -69,7 +69,7 @@ def _place(tmp_path: Path, copy: Path) -> Path:
 
 def _rendered_body(name: str) -> str:
     """The text the opencode render of devpro writes below the banner of the definition `name`."""
-    ctx = build_render(harness="opencode", plugin="devpro", family=DEFAULT_FAMILY)
+    ctx = build_render(harness="opencode", components="", family=DEFAULT_FAMILY)
     defn = next(defn for _, defn in rendered_definitions(ctx) if defn.name == name)
     return filled_body(defn, ctx) + "\n"
 

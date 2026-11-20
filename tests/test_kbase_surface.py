@@ -29,12 +29,13 @@ from typing import NoReturn
 
 import pytest
 
+from devpro.components import NAME
 from devpro.context import Render, harnesses
 from devpro.definitions.skills.kbase import KBASE_MIN_VERSION
 from devpro.families.claude import FAMILY as CLAUDE_FAMILY
 from devpro.harness import Harness
-from devpro.plugins.kbase import PLUGIN as KBASE
 from devpro.render import render_all, rendered_definitions
+from tests.conftest import WITH_KBASE
 
 _READ_TIMEOUT_S = 10
 _HELP = "kbase://help/"
@@ -191,15 +192,15 @@ def surface(tmp_path_factory: pytest.TempPathFactory) -> _Surface:
 
 
 def _kbase_skill_text(harness: Harness) -> str:
-    """Every file of `harness`'s render of the kbase skill, as the kbase plugin ships it, joined."""
-    ctx = Render(harness=harness, plugin=KBASE, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+    """Every file of `harness`'s render of the kbase skill, with the kbase component on, joined."""
+    ctx = Render(harness=harness, plugin=WITH_KBASE, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     [skill] = [defn for _, defn in rendered_definitions(ctx) if defn.name == "kbase"]
     rendered = dict(render_all(ctx))
     return "\n".join(rendered[path] for path in skill.output_paths)
 
 
 def _cited(harness: Harness) -> set[str]:
-    prefix = re.escape(harness.bound(KBASE.name).mcp_tool_prefix)
+    prefix = re.escape(harness.bound(NAME).mcp_tool_prefix)
     return set(re.findall(rf"`(?:{prefix})?({_KEBAB})`", _kbase_skill_text(harness)))
 
 

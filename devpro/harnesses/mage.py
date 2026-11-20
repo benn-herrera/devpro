@@ -31,8 +31,8 @@ HARNESS = Harness(
     name="mage",
     # no redirect to AGENTS.md, used directly. file installed with agent set, not separately.
     agents_file="CLAUDE.md",
-    # the plugin directory under the install target
-    project_harness_dir="{plugin}",
+    # the install directory under the target: the one name every install takes
+    project_harness_dir="devpro",
     display_name="mage",
     # the harness's own directory: CLAUDE.md sits beside .mcp.json, at the plugin's root
     user_harness_dir=".",

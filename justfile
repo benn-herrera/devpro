@@ -22,22 +22,21 @@ GEN := "devpro"
 default:
     @just --list
 
-# Flags: [--plugin=NAME] [--harness=NAME] [--subdir=DIR] [--dry-run] [tuning flags]. An up-to-date
+# Flags: [--components=CSV] [--harness=NAME] [--subdir=DIR] [--dry-run] [tuning flags]. An up-to-date
 # target is left untouched; --dry-run prints what would be created, changed and removed and writes
 # nothing. SPEC.md, Install destination has the rules.
-[doc("install a plugin into an existing target")]
+[doc("install devpro into an existing target")]
 install target *args:
     @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m "{{GEN}}" install "$@"
 
-# Takes [--plugin=NAME]. Replaces only the devpro block and keeps everything outside it: replaces
-# the block in a file holding one ordered marker pair, appends it to a file with no marker line,
-# writes an absent file whole, and refuses any other file. <dir> is ~/.claude,
-# ~/.config/opencode, or a project root. [--harness NAME] (claude, opencode — the two whose
-# user-harness-dir is absolute) is inferred when <dir> is that harness's user directory and
-# required otherwise; a relative user-harness-dir, as mage's is, is never an inference basis. An
-# up-to-date file is left untouched; [--dry-run] prints whether the agents file and any redirect
-# would be created or changed and writes nothing.
-[doc("install a plugin's agents file into <dir>")]
+# Replaces only the devpro block and keeps everything outside it: replaces the block in a file holding
+# one ordered marker pair, appends it to a file with no marker line, writes an absent file whole, and
+# refuses any other file. <dir> is ~/.claude, ~/.config/opencode, or a project root. [--harness NAME]
+# (claude, opencode — the two whose user-harness-dir is absolute) is inferred when <dir> is that
+# harness's user directory and required otherwise; a relative user-harness-dir, as mage's is, is never
+# an inference basis. An up-to-date file is left untouched; [--dry-run] prints whether the agents file
+# and any redirect would be created or changed and writes nothing.
+[doc("install the devpro agents file into <dir>")]
 install-agents-file dir *args:
     @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m "{{GEN}}" install-agents-file "$@"
 
@@ -114,19 +113,19 @@ build: _venv
 # Proves the wheel's package data equals the non-.py files under devpro/ that git tracks or would
 # track, and that, installed into a throwaway venv made from <python> (default /usr/bin/python3),
 # it imports from that venv, runs as the devpro console script, installs byte-identically to the
-# checkout, and writes the mage plugin's agents file outside a checkout.
+# checkout, and writes the mage install's agents file outside a checkout.
 [doc("[dev] build, then prove the wheel")]
 check-wheel python="/usr/bin/python3": build
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" PYBIN="{{PYBIN}}" EXE="{{EXE}}" ./devtools/scripts/check-wheel.sh "$@"
 
-# Renders each plugin's install product at its own slot project rendered/<slug>/<plugin>/ (slug
-# defaults to latest; the first non-flag argument, in any position, is the slug), plus its agents
-# file for --harness=NAME (default claude) into rendered/<slug>/<plugin>/harness/<NAME>/, or at
-# the slot project's root for a harness-directory plugin (`mage`). Refuses a slug starting with
-# reference. Every --* flag but --plugin (refused: every plugin is rendered), --harness included,
+# Renders the install product at its one slot project rendered/<slug>/devpro/, with the kbase
+# component on (slug defaults to latest; the first non-flag argument, in any position, is the
+# slug), plus its agents file for --harness=NAME (default claude) into
+# rendered/<slug>/devpro/harness/<NAME>/, or at the slot project's root for a harness-directory
+# install (`mage`). Refuses a slug starting with reference. Every --* flag, --harness included,
 # forwards verbatim to `python3 -m devpro install` via install (--family, --config-file,
 # --harness, --verbose, ...).
-[doc("[dev] render every plugin to rendered/<slug>/")]
+[doc("[dev] render devpro to rendered/<slug>/")]
 render *args:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" RENDERED_DIR="{{RENDERED_DIR}}" ./devtools/scripts/render.sh "$@"
 
@@ -142,11 +141,11 @@ retake-reference:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" RENDERED_DIR="{{RENDERED_DIR}}" ./devtools/scripts/retake-reference.sh
 
 [private]
-render-agents-file harness out plugin="":
+render-agents-file harness out:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" ./devtools/scripts/render-agents-file.sh "$@"
 
 [private]
-_harness-value plugin harness key:
+_harness-value harness key:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" ./devtools/scripts/_harness-value.sh "$@"
 
 # Splits by heading level, with an optional link map TSV, then checks the leaves reassemble the

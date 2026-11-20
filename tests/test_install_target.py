@@ -1,5 +1,5 @@
 """The install verb's target, driven through `main([...])`: which harness an install selects, where
-ROOT and the project root land, the refusals that leave nothing behind, a plugin's agents file, and
+ROOT and the project root land, the refusals that leave nothing behind, the agents file, and
 the agents-file verb's harness inference.
 
 The package is imported from the repository root, which `just test` puts on PYTHONPATH.
@@ -11,13 +11,14 @@ from pathlib import Path
 import pytest
 
 from devpro import cli
+from devpro.components import NAME
 from devpro.errors import InputError
 from devpro.harnesses.claude import HARNESS as CLAUDE
 from devpro.harnesses.mage import HARNESS as MAGE
 from devpro.harnesses.opencode import HARNESS as OPENCODE
 from devpro.install_target import resolve_install_target, target_holds_harness_dir
-from devpro.plugins.devpro import PLUGIN as DEVPRO
 from devpro.render import render_agents_file
+from tests.conftest import PLAIN
 
 _UNCOMMITTED = ("?? devpro/x.py",)
 
@@ -42,14 +43,14 @@ def _paths(root: Path) -> list[str]:
     return sorted(path.relative_to(root).as_posix() for path in root.rglob("*"))
 
 
-def _claude_plugin(harness_dir: Path, plugin: str = "devpro") -> Path:
-    """Where a claude install of `plugin` into `harness_dir` writes it."""
-    return harness_dir / CLAUDE.bound(plugin).plugin_dir
+def _claude_plugin(harness_dir: Path) -> Path:
+    """Where a claude install into `harness_dir` writes its set."""
+    return harness_dir / CLAUDE.bound(NAME).plugin_dir
 
 
-def _opencode_plugin(harness_dir: Path, plugin: str = "devpro") -> Path:
-    """Where an opencode install of `plugin` into `harness_dir` writes it."""
-    return harness_dir / OPENCODE.bound(plugin).plugin_dir
+def _opencode_plugin(harness_dir: Path) -> Path:
+    """Where an opencode install into `harness_dir` writes its set."""
+    return harness_dir / OPENCODE.bound(NAME).plugin_dir
 
 
 def test_the_suite_runs_under_a_scratch_home(_home: Path) -> None:
@@ -88,8 +89,8 @@ def test_a_harness_directory_target_is_the_harness_directory_under_its_parent_as
     inside it, and the set and its MCP entry land in the plugin below it."""
     harness_dir = tmp_path / ".claude"
     harness_dir.mkdir()
-    cli.main(["install", str(harness_dir), "--plugin=kbase"])
-    plugin = _claude_plugin(harness_dir, "kbase")
+    cli.main(["install", str(harness_dir), "--components=kbase"])
+    plugin = _claude_plugin(harness_dir)
     assert (plugin / "agents").is_dir() and (plugin / ".mcp.json").is_file()
     assert not (harness_dir / ".claude").exists()
     assert (tmp_path / "Makefile").is_file()
@@ -136,9 +137,9 @@ def test_an_unexpanded_home_target_is_refused_naming_the_tilde(tmp_path: Path, m
     assert _paths(tmp_path) == []
 
 
-def test_an_install_naming_an_unknown_plugin_is_refused(tmp_path: Path, capsys) -> None:
-    err = _refused(["install", str(tmp_path), "--plugin=nosuch", "--harness=claude"], capsys)
-    assert "invalid choice" in err and "devpro" in err and "kbase" in err
+def test_an_install_naming_an_unknown_component_is_refused(tmp_path: Path, capsys) -> None:
+    err = _refused(["install", str(tmp_path), "--components=nosuch", "--harness=claude"], capsys)
+    assert "unknown component 'nosuch'" in err and "kbase" in err
     assert _paths(tmp_path) == []
 
 
@@ -208,13 +209,13 @@ def test_the_per_harness_test_and_the_no_config_path_name_the_same_harness(tmp_p
     for target, expected in [(project, CLAUDE), (own, CLAUDE), (_home, OPENCODE), (skills, MAGE)]:
         held = [harness for harness in (CLAUDE, MAGE, OPENCODE) if target_holds_harness_dir(target, harness)]
         assert held == [expected]
-        resolved = resolve_install_target(target, harness=None, plugin=DEVPRO.name, subdir=None)
+        resolved = resolve_install_target(target, harness=None, plugin=NAME, subdir=None)
         assert resolved.harness == expected.name
 
 
 def test_a_refused_install_leaves_no_root_behind(tmp_path: Path, capsys) -> None:
     (tmp_path / "justfile").write_bytes(b"\xff\n")
-    err = _refused(["install", str(tmp_path), "--plugin=kbase", "--harness=claude", "--subdir=nested/root"], capsys)
+    err = _refused(["install", str(tmp_path), "--components=kbase", "--harness=claude", "--subdir=nested/root"], capsys)
     assert "not readable UTF-8" in err
     assert _paths(tmp_path) == ["justfile"]
 
@@ -248,7 +249,7 @@ def test_the_agents_file_harness_is_inferred_from_a_user_directory(
     user_dir = tmp_path / ".claude"
     user_dir.mkdir()
     cli.main(["install-agents-file", str(user_dir), *harness])
-    assert (user_dir / "CLAUDE.md").read_text(encoding="utf-8") == render_agents_file(CLAUDE, DEVPRO, scope="Global")
+    assert (user_dir / "CLAUDE.md").read_text(encoding="utf-8") == render_agents_file(CLAUDE, PLAIN, scope="Global")
 
 
 def test_an_agents_file_harness_given_as_a_positional_is_refused(tmp_path: Path, monkeypatch, capsys) -> None:
@@ -312,8 +313,8 @@ def test_a_claude_user_level_kb_install_writes_the_definitions_and_the_plugins_m
     else beside the definitions, and no user settings file."""
     root = _home / ".claude"
     root.mkdir(parents=True)
-    cli.main(["install", str(root), "--plugin=kbase"])
-    plugin = _claude_plugin(root, "kbase")
+    cli.main(["install", str(root), "--components=kbase"])
+    plugin = _claude_plugin(root)
     assert (plugin / "agents").is_dir() and (plugin / "skills/kbase/SKILL.md").is_file()
     assert (plugin / ".mcp.json").is_file()
     absent = [
@@ -329,8 +330,8 @@ def test_a_claude_user_level_kb_install_writes_the_definitions_and_the_plugins_m
 def test_an_opencode_user_level_kb_install_writes_no_guardrail_or_settings(_home: Path) -> None:
     root = _home / ".config/opencode"
     root.mkdir(parents=True)
-    cli.main(["install", str(root), "--plugin=kbase"])
-    plugin = _opencode_plugin(root, "kbase")
+    cli.main(["install", str(root), "--components=kbase"])
+    plugin = _opencode_plugin(root)
     assert (plugin / "skills/kbase/SKILL.md").is_file()
     assert not (plugin / "guardrail.ts").exists()
     assert not [path for path in _paths(_home) if Path(path).name in ("opencode.json", "opencode.jsonc")]

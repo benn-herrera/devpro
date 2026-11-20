@@ -32,6 +32,7 @@ import pytest
 import devpro
 import devpro.clauses
 from devpro.agents_file import is_marker_line
+from devpro.components import Components
 from devpro.context import MapSupply, Render, build_render, harnesses, parse_category_map, read_settings
 from devpro.definition import Definition, SkillFile
 from devpro.definitions import definitions_of, discover
@@ -44,9 +45,6 @@ from devpro.harnesses.mage import HARNESS as MAGE
 from devpro.harnesses.opencode import HARNESS as OPENCODE
 from devpro.install import INSTALL_SETTINGS
 from devpro.loading import load
-from devpro.plugin import Plugin
-from devpro.plugins.devpro import PLUGIN as DEVPRO
-from devpro.plugins.kbase import PLUGIN as KBASE
 from devpro.render import (
     agent_fields,
     definitions,
@@ -97,9 +95,10 @@ from tests._structure import (
     kbase_skill_output_paths,
     repeated_clause_reaches,
 )
-from tests.conftest import settings_file
+from tests.conftest import PLAIN, WITH_KBASE, settings_file
 
 _ALL_INHERIT = dict.fromkeys(CATEGORIES, "inherit")
+_SELECTIONS = (PLAIN, WITH_KBASE)
 _PACKAGE = Path(devpro.__file__).parent
 _SUPPLIER = "--config-file /home/me/.config/devpro/devpro.cfg, section '[claude-model-map]'"
 """A settings-file supply's provenance, as its section names it."""
@@ -235,6 +234,19 @@ def test_a_settings_file_section_no_harness_names_is_refused(tmp_path: Path, sec
     assert "claude, mage, opencode" in message
 
 
+def test_a_settings_sections_components_key_is_read_and_its_unknown_keys_name_both_keys(tmp_path: Path) -> None:
+    """`components` is a harness's second setting, read beside `install`; before it existed the key was
+    refused as unknown. A key that is no setting still names both keys it could be."""
+    path = settings_file(tmp_path, "[claude]\ninstall = always\ncomponents = kbase\n")
+    settings, _ = read_settings(str(path))
+    assert settings["claude"].components == "kbase"
+    path = settings_file(tmp_path, "[claude]\ncomponents = kbase\nbogus = 1\n")
+    with pytest.raises(InputError) as caught:
+        read_settings(str(path))
+    message = str(caught.value)
+    assert "'bogus'" in message and "install, components" in message and "'[claude-model-map]'" in message
+
+
 def test_a_settings_section_key_that_is_no_setting_is_refused_naming_the_map_section(tmp_path: Path) -> None:
     path = settings_file(tmp_path, "[claude]\n*=haiku\n")
     with pytest.raises(InputError) as caught:
@@ -257,13 +269,13 @@ def test_a_settings_file_that_does_not_parse_is_refused_naming_the_file_and_the_
 
 
 def test_opencode_with_no_category_spec_uses_its_default() -> None:
-    ctx = build_render(plugin="devpro", harness="opencode", family="claude")
+    ctx = build_render(components="", harness="opencode", family="claude")
     assert dict(ctx.category_map) == dict.fromkeys(CATEGORIES, "default")
     assert ctx.model("stem-mechanical") == ""
 
 
 def test_mage_with_no_category_spec_pins_inherit() -> None:
-    ctx = build_render(plugin="devpro", harness="mage", family="claude")
+    ctx = build_render(components="", harness="mage", family="claude")
     assert dict(ctx.category_map) == dict.fromkeys(CATEGORIES, "inherit")
     assert ctx.model("stem-mechanical") == "inherit"
 
@@ -284,7 +296,7 @@ def test_a_harness_default_that_names_no_category_is_refused_leading_with_the_ha
     defaulted = dataclasses.replace(harness, default_category_spec=spec)
     monkeypatch.setattr("devpro.context.harnesses", lambda: {**harnesses(), defaulted.name: defaulted})
     with pytest.raises(InputError) as caught:
-        build_render(plugin="devpro", harness=defaulted.name, family="claude")
+        build_render(components="", harness=defaulted.name, family="claude")
     assert str(caught.value).startswith(f"the harness '{defaulted.name}' default category spec: ")
     assert message in str(caught.value)
 
@@ -306,7 +318,7 @@ def test_build_render_refuses_a_model_outside_the_harness_shape(
     harness: str, family: str, supply: MapSupply | None, supplier: str
 ) -> None:
     with pytest.raises(InputError) as caught:
-        build_render(plugin="devpro", harness=harness, family=family, supply=supply)
+        build_render(components="", harness=harness, family=family, supply=supply)
     message = str(caught.value)
     assert "model 'gemma-4-31B-it' at category stem-architect" in message
     assert f"supplied by {supplier}" in message
@@ -317,7 +329,7 @@ def test_build_render_refuses_a_model_outside_the_harness_shape(
     [(CLAUDE, "inherit", "inherit"), (OPENCODE, "inherit", ""), (OPENCODE, "default", "")],
 )
 def test_model_inherit_and_its_synonyms_render_the_harness_text(harness: Harness, text: str, expected: str) -> None:
-    ctx = Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict.fromkeys(_ALL_INHERIT, text))
+    ctx = Render(harness=harness, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict.fromkeys(_ALL_INHERIT, text))
     assert ctx.model("stem-mechanical") == expected
 
 
@@ -327,7 +339,7 @@ def test_build_render_refuses_a_model_the_harness_default_supplies(monkeypatch: 
     defaulted = dataclasses.replace(CLAUDE, default_category_spec="*=gpt-4")
     monkeypatch.setattr("devpro.context.harnesses", lambda: {**harnesses(), defaulted.name: defaulted})
     with pytest.raises(InputError) as caught:
-        build_render(plugin="devpro", harness=defaulted.name, family="claude")
+        build_render(components="", harness=defaulted.name, family="claude")
     message = str(caught.value)
     assert "model 'gpt-4' at category stem-architect" in message
     assert f"supplied by the harness '{defaulted.name}' default category spec" in message
@@ -337,7 +349,7 @@ def test_render_refuses_a_category_outside_the_vocabulary() -> None:
     with pytest.raises(InputError, match="category 'bogus' is not one of stem-architect"):
         Render(
             harness=CLAUDE,
-            plugin=DEVPRO,
+            plugin=PLAIN,
             family=CLAUDE_FAMILY,
             category_map=dict(CLAUDE_FAMILY.categories),
             category="bogus",
@@ -347,12 +359,12 @@ def test_render_refuses_a_category_outside_the_vocabulary() -> None:
 @pytest.mark.parametrize("family", ["nonesuch", "templates/family/qwen3.toml", "qwen3.toml", "gemma_4"])
 def test_build_render_refuses_a_family_that_is_not_a_name(family: str) -> None:
     with pytest.raises(InputError, match=re.escape("claude, gemma-4, qwen3")):
-        build_render(plugin="devpro", harness="claude", family=family)
+        build_render(components="", harness="claude", family=family)
 
 
 @pytest.mark.parametrize(
     "package, attribute",
-    [("devpro.harnesses", "HARNESS"), ("devpro.families", "FAMILY"), ("devpro.plugins", "PLUGIN")],
+    [("devpro.harnesses", "HARNESS"), ("devpro.families", "FAMILY")],
 )
 def test_each_instance_is_named_as_its_module_loads(package: str, attribute: str) -> None:
     loaded = load(package, attribute)
@@ -395,7 +407,7 @@ def _claude_frontmatter(fields: AgentFields) -> tuple[str, ...]:
 
 
 def test_claude_frontmatter_holds_the_field_order_and_spelling() -> None:
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     assert _claude_frontmatter(agent_fields(_security_reviewer(), ctx)) == (
         "name: security-reviewer",
         _SECURITY_REVIEWER_DESCRIPTION,
@@ -414,7 +426,7 @@ def _python_coder() -> Definition:
 
 
 def test_an_unrestricted_agent_frontmatter_matches_the_pre_1_0_render() -> None:
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     assert _claude_frontmatter(agent_fields(_python_coder(), ctx)) == (
         "name: python-coder",
         _PYTHON_CODER_DESCRIPTION,
@@ -483,7 +495,7 @@ def test_an_opencode_agent_record_carries_the_pre_1_0_frontmatter_values(
     """The registry record holds what opencode's frontmatter held before the plugin render: description,
     mode, the model split into provider and id where one renders, color, and a permission per governed key
     unless every tool is allowed. A document's record is a hidden subagent's."""
-    ctx = Render(harness=OPENCODE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=category_map)
+    ctx = Render(harness=OPENCODE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=category_map)
     shipped = ShippedDefinition(
         name=defn.name,
         reference=f"devpro-{defn.name}",
@@ -516,7 +528,7 @@ def test_a_command_renders_its_banner_straight_into_a_body_naming_the_user_harne
     """A command carries no field lines, so its closing fence is the body's own first line: a blank
     line there opens the file with an empty paragraph. The body names the user harness directory the
     definition's placeholder stands for, filled as this harness spells it."""
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     lines = render_definition(_COMMAND, ctx, module="devpro.definitions.probe").split("\n")
     assert lines[0] == "---"
     assert lines[1].startswith("# !GENERATED! from devpro/definitions/probe.py — ")
@@ -536,7 +548,7 @@ def test_a_command_renders_its_banner_straight_into_a_body_naming_the_user_harne
 
 def test_a_document_renders_no_field_of_its_own() -> None:
     """A document declares no frontmatter value, so between the fences stands the banner alone."""
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     lines = render_definition(_DOCUMENT, ctx, module="devpro.definitions.probe").split("\n")
     assert lines[0] == "---"
     assert lines[1].startswith("# !GENERATED! from devpro/definitions/probe.py — ")
@@ -548,7 +560,7 @@ def test_a_document_renders_no_field_of_its_own() -> None:
 def test_every_rendered_definition_extracts_frontmatter_free(tmp_path: Path) -> None:
     """The definitions' own extraction command, run over every rendered file under agents/: it exits
     0, leaves no banner, and the frontmatter block plus what it printed is the file byte for byte."""
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     write_renders(tmp_path, render_all(ctx))
     rendered = sorted((tmp_path / "agents").rglob("*.md"))
     assert len(rendered) > 20
@@ -574,7 +586,7 @@ def _skill(**changes: object) -> Definition:
 
 
 def test_a_skill_renders_a_directory_two_fields_and_a_comment_bannered_reference() -> None:
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     defn = _skill()
     assert defn.output_path == PurePosixPath("skills/probe/SKILL.md")
     assert defn.output_paths == (
@@ -599,7 +611,7 @@ def test_a_skill_renders_a_directory_two_fields_and_a_comment_bannered_reference
     assert reference[2:] == ["", "Read a claim before you cite it.", ""]
 
 
-_OPENCODE_RENDER = Render(harness=OPENCODE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+_OPENCODE_RENDER = Render(harness=OPENCODE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
 
 
 @pytest.mark.parametrize(
@@ -630,26 +642,26 @@ def test_every_opencode_output_but_the_registry_holds_the_comment_banner_and_the
         assert blank == "" and not body.startswith("---\n") and "<!-- !GENERATED!" not in body, path
 
 
-@pytest.mark.parametrize("plugin, servers", [(DEVPRO, set()), (KBASE, {"kbase"})], ids=["devpro", "kbase"])
-def test_the_opencode_registry_matches_the_render(plugin: Plugin, servers: set[str]) -> None:
+@pytest.mark.parametrize("components, servers", [(PLAIN, set()), (WITH_KBASE, {"kbase"})], ids=["plain", "with-kbase"])
+def test_the_opencode_registry_matches_the_render(components: Components, servers: set[str]) -> None:
     """`registry.json`'s agent, command and skill records are exactly the definitions the render ships, each
-    id the plugin's name, a hyphen and the definition's name, each file one the render writes; its MCP
-    server is present only where kbase ships."""
-    ctx = Render(harness=OPENCODE, plugin=plugin, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+    id the one name, a hyphen and the definition's name, each file one the render writes; its MCP server is
+    present only where kbase ships."""
+    ctx = Render(harness=OPENCODE, plugin=components, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     renders = dict(render_all(ctx))
     registry = json.loads(renders[PurePosixPath("registry.json")])
     records = [*registry["agents"], *registry["commands"], *registry["skills"]]
-    shipped = {defn.name: str(defn.output_path) for _, defn in definitions() if plugin.ships(defn.name)}
+    shipped = {defn.name: str(defn.output_path) for _, defn in definitions() if components.ships(defn.name)}
     assert sorted((record["id"], record["file"]) for record in records) == sorted(
-        (f"{plugin.name}-{name}", path) for name, path in shipped.items()
+        (f"{components.name}-{name}", path) for name, path in shipped.items()
     )
     assert all(PurePosixPath(record["file"]) in renders for record in records)
-    assert registry["plugin"] == plugin.name and registry["version"] == devpro.__version__
+    assert registry["plugin"] == components.name and registry["version"] == devpro.__version__
     assert set(registry["mcp"]) == servers
 
 
-def test_render_all_emits_every_file_of_a_shipped_skill_and_the_plugin_drops_a_whole_definition() -> None:
-    shipping = {path for path, _ in render_all(dataclasses.replace(_CLAUDE_RENDER, plugin=KBASE))}
+def test_render_all_emits_every_file_of_a_shipped_skill_and_the_selection_drops_a_whole_definition() -> None:
+    shipping = {path for path, _ in render_all(dataclasses.replace(_CLAUDE_RENDER, plugin=WITH_KBASE))}
     without = {path for path, _ in render_all(_CLAUDE_RENDER)}
     assert set(kbase_skill_output_paths()) <= shipping
     assert not any(path.parts[:2] == ("skills", "kbase") for path in without)
@@ -657,7 +669,9 @@ def test_render_all_emits_every_file_of_a_shipped_skill_and_the_plugin_drops_a_w
 
 # mage's output is a Claude Code plugin directory: claude's vocabulary and one file of its own, the
 # manifest.
-_MAGE_RENDER = Render(harness=MAGE, plugin=KBASE, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+_MAGE_RENDER = Render(
+    harness=MAGE, plugin=WITH_KBASE, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
+)
 _MAGE_MANIFEST = PurePosixPath(".claude-plugin/plugin.json")
 
 
@@ -671,7 +685,7 @@ def test_a_mage_render_writes_the_plugin_tree_straight_into_the_root(tmp_path: P
 def test_a_mage_render_leaves_every_agent_on_the_session_model() -> None:
     """mage's default category spec pins no model, and the one it renders for an unpinned category is the
     inherit text the harness spells: every agent it renders carries `model: inherit`."""
-    ctx = build_render(plugin="devpro", harness="mage", family="claude")
+    ctx = build_render(components="", harness="mage", family="claude")
     agents = {path: text for path, text in render_all(ctx) if path.parts[0] == "agents"}
     assert agents
     for path, text in agents.items():
@@ -682,7 +696,7 @@ def test_the_manifest_is_the_three_key_object_carrying_the_version() -> None:
     """The marketplace reads these three keys and nothing else, its version being the release's."""
     parsed = json.loads(dict(render_all(_MAGE_RENDER))[_MAGE_MANIFEST])
     assert parsed == {
-        "name": "kbase",
+        "name": "devpro",
         "version": devpro.__version__,
         "description": "Skills, agents, and MCP tools from the devpro project",
     }
@@ -699,11 +713,11 @@ def test_the_manifest_is_the_only_render_of_a_mage_plugin_carrying_the_version()
 
 @pytest.mark.parametrize(
     "harness, tool_name",
-    [(CLAUDE, "mcp__plugin_kbase_kbase__query"), (MAGE, "mcp_kbase_query"), (OPENCODE, "kbase_query")],
+    [(CLAUDE, "mcp__plugin_devpro_kbase__query"), (MAGE, "mcp_kbase_query"), (OPENCODE, "kbase_query")],
 )
 def test_the_kb_reading_reference_names_the_harness_mcp_tool(harness: Harness, tool_name: str) -> None:
     """The rendered instruction must name the callable the selected host actually exposes."""
-    ctx = Render(harness=harness, plugin=KBASE, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+    ctx = Render(harness=harness, plugin=WITH_KBASE, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     reference = dict(render_all(ctx))[PurePosixPath("skills/kbase/references/reading.md")]
     assert f"`{tool_name}`" in reference
 
@@ -722,7 +736,7 @@ def _user_install_paths() -> set[str]:
 
 @pytest.mark.parametrize("harness", harnesses())
 def test_the_guide_names_every_harness_install_path_under_every_harness(harness: str) -> None:
-    ctx = build_render(plugin="devpro", harness=harness, family="claude")
+    ctx = build_render(components="", harness=harness, family="claude")
     [text] = [text for path, text in render_all(ctx) if str(path).endswith("guide/references/installing.md")]
     assert [path for path in sorted(_user_install_paths()) if path not in text] == []
 
@@ -731,7 +745,7 @@ def test_the_guide_names_every_harness_install_path_under_every_harness(harness:
 def test_the_installing_reference_names_every_install_setting(harness: str) -> None:
     """The page's reader learns the setting's values from the page, and `install` accepts exactly the
     values `INSTALL_SETTINGS` holds: one the page leaves out is one the operator cannot learn from it."""
-    ctx = build_render(plugin="devpro", harness=harness, family="claude")
+    ctx = build_render(components="", harness=harness, family="claude")
     [text] = [text for path, text in render_all(ctx) if str(path).endswith("guide/references/installing.md")]
     assert [setting for setting in INSTALL_SETTINGS if setting not in text] == []
 
@@ -747,12 +761,12 @@ def test_no_rendering_names_a_retired_scratch_directory() -> None:
     carries that name and no retired one."""
     texts = []
     for harness in (CLAUDE, MAGE, OPENCODE):
-        for plugin in load("devpro.plugins", "PLUGIN").values():
+        for components in _SELECTIONS:
             ctx = Render(
-                harness=harness, plugin=plugin, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
+                harness=harness, plugin=components, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
             )
             texts += [text for _, text in render_all(ctx)]
-            texts.append(render_agents_file(harness, plugin, scope="x"))
+            texts.append(render_agents_file(harness, components, scope="x"))
     retired = [".claude-temp", ".opencode-temp", ".mage-temp"]
     assert [(name, text) for name in retired for text in texts if name in text] == []
 
@@ -767,9 +781,9 @@ def test_no_rendered_agent_body_names_a_clauses_symbol() -> None:
     )
     found = []
     for harness in (CLAUDE, MAGE, OPENCODE):
-        for plugin in load("devpro.plugins", "PLUGIN").values():
+        for components in _SELECTIONS:
             ctx = Render(
-                harness=harness, plugin=plugin, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
+                harness=harness, plugin=components, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
             )
             for path, text in render_all(ctx):
                 if path.parts[0] == "agents":
@@ -851,7 +865,7 @@ def test_a_harness_text_placeholder_fills_with_the_harness_string(
     part: HarnessText, harness: Harness, expected: str
 ) -> None:
     defn = Definition(name="probe", kind=Kind.COMMAND, body=f"see {hole(part)}/x")
-    ctx = Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+    ctx = Render(harness=harness, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     assert filled_body(defn, ctx) == f"see {expected}/x"
 
 
@@ -865,7 +879,7 @@ def test_a_harness_display_name_that_is_not_lowercase_is_refused() -> None:
 )
 def test_an_unknown_placeholder_is_refused_at_render(placeholder: str) -> None:
     defn = Definition(name="probe", kind=Kind.COMMAND, body=f"before {placeholder} after")
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     with pytest.raises(InputError, match=re.escape(f"definition 'probe': unknown placeholder {placeholder}")):
         filled_body(defn, ctx)
 
@@ -891,7 +905,7 @@ _PREFIXED = [CLAUDE, dataclasses.replace(CLAUDE, reference_prefix="x:")]
 
 @pytest.mark.parametrize("harness", _PREFIXED, ids=["bare", "prefixed"])
 def test_a_reference_in_a_body_and_a_description_fills_with_the_prefix_and_name(harness: Harness) -> None:
-    ctx = Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+    ctx = Render(harness=harness, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     named = f"{ctx.bound_harness.reference_prefix}python-coder"
     agent = Definition(
         name="probe",
@@ -916,7 +930,7 @@ def test_a_reference_to_an_undiscovered_name_is_refused_naming_the_definition(ha
         name="probe", kind=Kind.AGENT, description="a probe", tools=ALL, category="stem-expert", body="Own."
     )
     defn = dataclasses.replace(defn, **{field: f"see {hole_text}"})
-    ctx = Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+    ctx = Render(harness=harness, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     with pytest.raises(InputError, match=re.escape("definition 'probe'")) as refused:
         render_definition(defn, ctx, module="m")
     assert f"unknown placeholder {hole_text}" in str(refused.value)
@@ -933,12 +947,12 @@ def test_a_reference_prefix_changes_nothing_but_the_reference_sites(harness: Har
     definition's name; the prefix is not searched for on its own, since text that names no definition
     may hold it (`devpro-` within `.devpro-temp`)."""
     bare = dataclasses.replace(harness, reference_prefix="")
-    prefix = harness.bound(DEVPRO.name).reference_prefix
+    prefix = harness.bound(PLAIN.name).reference_prefix
     sites = tuple(f"{prefix}{defn.name}" for _, defn in definitions())
 
     def rendered(each: Harness) -> dict[PurePosixPath, str]:
-        ctx = Render(harness=each, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
-        return {**dict(render_all(ctx)), PurePosixPath("<agents file>"): render_agents_file(each, DEVPRO, scope="x")}
+        ctx = Render(harness=each, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+        return {**dict(render_all(ctx)), PurePosixPath("<agents file>"): render_agents_file(each, PLAIN, scope="x")}
 
     # The agents-file marker lines spell the project's name, which can equal the plugin's and so hold the
     # prefix without being a reference site.
@@ -989,7 +1003,7 @@ def test_the_step_down_paragraph_names_the_mechanical_pair_or_drops_whole(
     """A skill declares no category, so the paragraph carries both disciplines' mechanical members; where
     a member renders as the harness's inherit text there is nothing to step down to, and where both do
     the paragraph goes with its other text."""
-    ctx = build_render(plugin="devpro", harness=harness, family="claude", supply=supply)
+    ctx = build_render(components="", harness=harness, family="claude", supply=supply)
     assert filled_text(_STEP_DOWN_BODY, _skill(), ctx, where="skills/probe/SKILL.md") == rendered
 
 
@@ -1003,7 +1017,7 @@ def test_the_step_down_paragraph_names_the_mechanical_pair_or_drops_whole(
 )
 def test_an_agent_steps_down_to_its_own_disciplines_mechanical_member(category: str, rendered: str) -> None:
     """An agent's step-down model is its own discipline's mechanical member, not the pair."""
-    ctx = build_render(plugin="devpro", harness="claude", family="claude")
+    ctx = build_render(components="", harness="claude", family="claude")
     agent = Definition(
         name="probe", kind=Kind.AGENT, description="a probe", tools=ALL, category=category, body=_STEP_DOWN_BODY
     )
@@ -1013,7 +1027,7 @@ def test_an_agent_steps_down_to_its_own_disciplines_mechanical_member(category: 
 def test_the_step_down_model_fills_a_skill_supporting_file_as_it_fills_skill_md() -> None:
     line = f"Step down to {devpro.clauses.STEP_DOWN_MODEL}."
     defn = _skill(body=line, files=(SkillFile(path="references/reading.md", body=line),))
-    ctx = build_render(plugin="devpro", harness="claude", family="claude")
+    ctx = build_render(components="", harness="claude", family="claude")
     rendered = render_skill_file(defn, defn.files[0], ctx, module="devpro.definitions.probe")
     assert rendered.endswith("\n\nStep down to stem-mechanical=sonnet, comm-mechanical=haiku.\n")
 
@@ -1046,10 +1060,10 @@ def test_a_coder_and_a_platform_expert_render_the_recipe_rule_under_claude_and_d
     _, coder = _found(discovered, path)
     paragraph = CLAUDE.recipe_rule
     under_claude = filled_body(
-        coder, Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+        coder, Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     )
     under_opencode = filled_body(
-        coder, Render(harness=OPENCODE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+        coder, Render(harness=OPENCODE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     )
     assert OPENCODE.recipe_rule == ""
     assert f"\n\n{paragraph}\n\n" in under_claude
@@ -1060,9 +1074,9 @@ def test_a_coder_and_a_platform_expert_render_the_recipe_rule_under_claude_and_d
 def test_the_kbase_project_rule_paragraph_renders_under_mage_and_drops_under_claude() -> None:
     body = f"before\n\n{hole(OptionalHarnessText.KBASE_PROJECT_RULE)}\n\nafter"
     defn = Definition(name="probe", kind=Kind.COMMAND, body=body)
-    under_mage = filled_body(defn, Render(harness=MAGE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT))
+    under_mage = filled_body(defn, Render(harness=MAGE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT))
     under_claude = filled_body(
-        defn, Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+        defn, Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     )
     assert MAGE.kbase_project_rule
     assert under_mage == f"before\n\n{MAGE.kbase_project_rule}\n\nafter"
@@ -1073,9 +1087,9 @@ def test_a_paragraph_holding_an_optional_harness_text_the_harness_supplies_nothi
     body = f"before\n\nThe rule is: {hole(OptionalHarnessText.RELOAD_RULE)}\n\nafter"
     defn = Definition(name="probe", kind=Kind.COMMAND, body=body)
     under_claude = filled_body(
-        defn, Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+        defn, Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     )
-    under_mage = filled_body(defn, Render(harness=MAGE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT))
+    under_mage = filled_body(defn, Render(harness=MAGE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT))
     assert MAGE.reload_rule == ""
     assert CLAUDE.reload_rule
     assert under_claude == f"before\n\nThe rule is: {CLAUDE.reload_rule}\n\nafter"
@@ -1084,7 +1098,7 @@ def test_a_paragraph_holding_an_optional_harness_text_the_harness_supplies_nothi
 
 def _kbase_skill_render(harness: Harness) -> dict[PurePosixPath, str]:
     """Every file of `harness`'s render of the kbase skill, keyed by its output path."""
-    ctx = Render(harness=harness, plugin=KBASE, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+    ctx = Render(harness=harness, plugin=WITH_KBASE, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     return dict(render_all(ctx))
 
 
@@ -1119,7 +1133,7 @@ _TUNED = Family(
 
 def _with_family_text(*, family: Family, category: str, body: str) -> str:
     defn = Definition(name="probe", kind=Kind.AGENT, description="a probe", tools=ALL, category=category, body=body)
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=family, category_map=dict(family.categories))
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=family, category_map=dict(family.categories))
     return render_definition(defn, ctx, module="devpro.definitions.probe").split("---\n\n", 1)[1]
 
 
@@ -1166,7 +1180,7 @@ def _clause_with_a_baited_harness_value() -> tuple[Definition, Render, str]:
     clause = devpro.clauses.NEW_PROJECT_SETUP
     expected = clause.replace(hole(HarnessText.PROJECT_HARNESS_DIR), f"temp{_BAIT}")
     defn = Definition(name="probe", kind=Kind.COMMAND, body=clause)
-    return defn, Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT), expected
+    return defn, Render(harness=harness, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT), expected
 
 
 def _baited_harness_text() -> tuple[Definition, Render, str]:
@@ -1174,7 +1188,7 @@ def _baited_harness_text() -> tuple[Definition, Render, str]:
     defn = Definition(name="probe", kind=Kind.COMMAND, body=f"see {hole(HarnessText.USER_HARNESS_DIR)}")
     return (
         defn,
-        Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT),
+        Render(harness=harness, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT),
         f"see ~/home{_BAIT}",
     )
 
@@ -1184,7 +1198,7 @@ def _baited_optional_harness_text() -> tuple[Definition, Render, str]:
     defn = Definition(name="probe", kind=Kind.COMMAND, body=hole(OptionalHarnessText.RECIPE_RULE))
     return (
         defn,
-        Render(harness=harness, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT),
+        Render(harness=harness, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT),
         f"rule {_BAIT}",
     )
 
@@ -1193,7 +1207,7 @@ def _baited_family_overlay() -> tuple[Definition, Render, str]:
     defn = Definition(
         name="probe", kind=Kind.AGENT, description="a probe", tools=ALL, category="stem-expert", body=_OVERLAY
     )
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=_BAITED_FAMILY, category_map=dict(_BAITED_FAMILY.categories))
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=_BAITED_FAMILY, category_map=dict(_BAITED_FAMILY.categories))
     return defn, ctx, f"overlay {_BAIT}"
 
 
@@ -1201,7 +1215,7 @@ def _baited_scope_name() -> tuple[Definition, Render, str]:
     defn = Definition(name="probe", kind=Kind.AGENTS_FILE, body=f"# {hole(AgentsFileText.SCOPE_NAME)}")
     return (
         defn,
-        Render(harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT, scope=f"s{_BAIT}"),
+        Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT, scope=f"s{_BAIT}"),
         f"# s{_BAIT}",
     )
 
@@ -1209,7 +1223,7 @@ def _baited_scope_name() -> tuple[Definition, Render, str]:
 def _baited_step_down_model() -> tuple[Definition, Render, str]:
     """The family member a mechanical side pins carries the hole."""
     defn = _skill(body=f"use {hole(TuningText.STEP_DOWN_MODEL)}")
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=_BAITED_FAMILY, category_map=dict(_BAITED_FAMILY.categories))
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=_BAITED_FAMILY, category_map=dict(_BAITED_FAMILY.categories))
     return defn, ctx, f"use stem-mechanical=mid{_BAIT}, comm-mechanical=small"
 
 
@@ -1233,7 +1247,7 @@ def test_a_filled_value_carrying_a_hole_reaches_the_body_literally(case) -> None
 
 
 def test_stock_excludes_the_overridden_category() -> None:
-    ctx = Render(harness=CLAUDE, plugin=DEVPRO, family=_TUNED, category_map=dict(_TUNED.categories))
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=_TUNED, category_map=dict(_TUNED.categories))
     assert ctx.stock == ("stem-architect", "stem-expert", "comm-architect", "comm-expert")
 
 
@@ -1696,13 +1710,11 @@ def test_check_structure_holds_a_definition_module_to_its_folder(
 
 # Shared text has one source: a paragraph two outputs carry is not written out in either.
 
-_CLAUDE_RENDER = Render(
-    harness=CLAUDE, plugin=DEVPRO, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
-)
-# The sweeps below read each plugin as it ships: its definitions and its own agents file, under claude.
-_PLUGIN_RENDERS = tuple(
-    Render(harness=CLAUDE, plugin=plugin, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
-    for plugin in load("devpro.plugins", "PLUGIN").values()
+_CLAUDE_RENDER = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+# The sweeps below read each selection as it ships: its definitions and its agents file, under claude.
+_SELECTION_RENDERS = tuple(
+    Render(harness=CLAUDE, plugin=components, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
+    for components in _SELECTIONS
 )
 RENDERED_DEFINITION_LINE_CAP = 500  # a runaway guard, not a target; the 100-column wrap makes lines a fair size
 
@@ -1794,8 +1806,9 @@ def _outputs(defn: Definition, sentinel: Definition) -> list[tuple[str, str, str
     return pairs
 
 
-def _in_plugin(defn: Definition, ctx: Render) -> bool:
-    """Whether `ctx`'s plugin carries `defn`: a definition it ships, or the agents file every plugin has."""
+def _in_selection(defn: Definition, ctx: Render) -> bool:
+    """Whether `ctx`'s selection carries `defn`: a definition it ships, or the agents file every selection
+    has."""
     return defn.kind is Kind.AGENTS_FILE or ctx.plugin.ships(defn.name)
 
 
@@ -1811,14 +1824,14 @@ def _uncredited_shared_paragraphs(sources: dict[str, str]) -> list[str]:
     """Every prose unit two or more outputs of one plugin write out rather than take from a constant, a
     slot constant or a text function: the unit survives each one's credited render unchanged."""
     found: dict[str, None] = {}
-    for ctx in _PLUGIN_RENDERS:
+    for ctx in _SELECTION_RENDERS:
         written: dict[bytes, list[str]] = {}
         for module, source in sources.items():
             rendered = _source_definitions(source, module=module, credited=False)
             credited = _source_definitions(source, module=module, credited=True)
             assert len(rendered) == len(credited)
             for defn, sentinel in zip(rendered, credited):
-                if not _in_plugin(defn, ctx):
+                if not _in_selection(defn, ctx):
                     continue
                 for label, literal_body, credited_body in _outputs(defn, sentinel):
                     literal = _prose_units(filled_text(literal_body, defn, ctx, where=label)) & _prose_units(
@@ -1936,12 +1949,12 @@ def _prompts(sources: dict[str, str]) -> list[list[_PromptOutput]]:
     or skill body each output of the plugin an `@` line of it names, transitively; the agents file's own
     output is a prompt alone."""
     prompts = []
-    for ctx in _PLUGIN_RENDERS:
+    for ctx in _SELECTION_RENDERS:
         outputs = []
         for module, source in sources.items():
             roots = body_roots(source, _CLAUSE_GRAPH)
             for defn in _source_definitions(source, module=module, credited=False):
-                if not _in_plugin(defn, ctx):
+                if not _in_selection(defn, ctx):
                     continue
                 keys = (None, *(file.path for file in defn.files))
                 defn_outputs = _outputs(defn, defn)
@@ -1986,31 +1999,33 @@ def _loaded(output: _PromptOutput, outputs: list[_PromptOutput]) -> list[_Prompt
 
 
 def _double_clause_deliveries(sources: dict[str, str]) -> list[str]:
-    """Each clause a prompt reaches twice, named with the prompt and both chains that reach it."""
+    """Each clause a prompt reaches twice, named with the prompt and both chains that reach it, each finding
+    once however many selections deliver the prompt."""
     found = []
     for prompt in _prompts(sources):
         rooted = [(output.label, output.roots) for output in prompt]
         for node, *reaches in repeated_clause_reaches(_CLAUSE_GRAPH, rooted, uncounted=_SENTENCE_HOLES):
             paths = " | ".join(f"{label}: {' → '.join(chain)}" for label, chain in reaches)
             found.append(f"{prompt[0].label}: {node} reached twice — {paths}")
-    return found
+    return list(dict.fromkeys(found))
 
 
 def _double_paragraphs(sources: dict[str, str]) -> list[str]:
-    """Each prose unit a prompt carries twice, named with the prompt."""
+    """Each prose unit a prompt carries twice, named with the prompt, each finding once however many
+    selections deliver the prompt."""
     found = []
     for prompt in _prompts(sources):
         counts = Counter(unit for output in prompt for unit in _prose_unit_list(output.text))
         found += [
             f"{prompt[0].label}: written twice: {unit.decode()[:120]}" for unit, count in counts.items() if count > 1
         ]
-    return found
+    return list(dict.fromkeys(found))
 
 
 @pytest.mark.parametrize("check", [_double_clause_deliveries, _double_paragraphs])
 def test_no_prompt_delivers_a_span_twice(check: Callable[[dict[str, str]], list[str]]) -> None:
     sources = _definition_sources()
-    assert sum(prompt[0].path is None for prompt in _prompts(sources)) == len(_PLUGIN_RENDERS)
+    assert sum(prompt[0].path is None for prompt in _prompts(sources)) == len(_SELECTION_RENDERS)
     found = check(sources)
     assert found == [], "\n".join(found)
 

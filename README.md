@@ -101,22 +101,22 @@ Install devpro, then run its install into Mage's skills directory:
 
 ```sh
 mkdir -p ~/Mage/Skills
-devpro install ~/Mage/Skills --plugin=devpro --harness=mage
+devpro install ~/Mage/Skills --components=kbase --harness=mage
 ```
 
-This writes `~/Mage/Skills/devpro/`. `--plugin=kbase` writes `~/Mage/Skills/kbase/`, the
-knowledge-base plugin. That plugin drives the `kbase` executable, which no devpro install provides
-or checks: on macOS and Linux, install it with `brew install benn-herrera/tap/kbase` (0.11.1 or
-later); native Windows is unsupported for the plugin. Restart Mage after installing it.
+This writes `~/Mage/Skills/devpro/`. The install runs the `kbase` executable only with the kbase
+component on (`--components=kbase`), and no devpro install provides or checks it: on macOS and
+Linux, install it with `brew install benn-herrera/tap/kbase` (0.11.1 or later); native Windows is
+unsupported for the component. Restart Mage after installing it.
 
 ## Next: ask your agent
 
 Start your coding harness, or, if a session was already open during the install, reload it: run
-`/reload-plugins` or restart under Claude Code, restart under opencode, and, after installing the
-kbase plugin, restart Mage. Then ask the session agent to load the `guide` skill: `devpro:guide` under
-claude and mage, `devpro-guide` under opencode. It starts a design, explains how the development
-process runs, tells you where your work stands, and shows the board. It also installs, updates,
-inspects or changes what you just installed.
+`/reload-plugins` or restart under Claude Code, restart under opencode, and, after installing with
+the kbase component on, restart Mage. Then ask the session agent to load the `guide` skill:
+`devpro:guide` under claude and mage, `devpro-guide` under opencode. It starts a design, explains how
+the development process runs, tells you where your work stands, and shows the board. It also
+installs, updates, inspects or changes what you just installed.
 
 ## Updating
 
@@ -135,4 +135,4 @@ Credit to Jason Coleman (https://github.com/sangrail) for the kanban-from-markdo
 - **isort** (Timothy Crosley and contributors, MIT): Python import sorter
 - **flake8** (Tarek Ziadé and contributors, Python Code Quality Authority, MIT): Python linter
 - **docdicer** (Benn Herrera, MIT): context-saving reformatter and kanban server
-- **kbase** (Benn Herrera, MIT): the knowledge-base program and MCP server the `kbase` plugin drives
+- **kbase** (Benn Herrera, MIT): the knowledge-base program and MCP server the kbase component drives

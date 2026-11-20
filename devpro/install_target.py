@@ -129,12 +129,12 @@ def _detected_harness(target: Path, *, at_home: bool) -> str:
 
 
 def resolve_install_target(target: Path, *, harness: str | None, plugin: str, subdir: str | None) -> InstallTarget:
-    """The harness, harness directory and project root for installing the plugin `plugin` into `target`.
-    The harness is detected from values no plugin changes; the directories are then resolved with it
-    bound to `plugin`. With `subdir` given, the harness directory is `<target>/<subdir>` (`""`: the
-    target itself). Otherwise, in the home directory, it is the harness's user harness directory there;
-    a target that is itself the nested-plugin harness's directory is the harness directory, under its
-    parent as the project root; any other target holds it at `<target>/<project harness directory>`. A
+    """The harness, harness directory and project root for installing the set under the one name `plugin`
+    into `target`. The harness is detected from values no selection changes; the directories are then
+    resolved with it bound to `plugin`. With `subdir` given, the harness directory is `<target>/<subdir>`
+    (`""`: the target itself). Otherwise, in the home directory, it is the harness's user harness directory
+    there; a target that is itself the nested-plugin harness's directory is the harness directory, under
+    its parent as the project root; any other target holds it at `<target>/<project harness directory>`. A
     target that is not an existing directory is refused."""
     require_existing_target(target)
     target, at_home = _lexical_target(target)

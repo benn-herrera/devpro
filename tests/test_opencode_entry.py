@@ -23,9 +23,9 @@ from pathlib import Path
 import pytest
 
 from devpro import cli
+from devpro.components import NAME
 from devpro.context import DEFAULT_FAMILY, build_render
 from devpro.harnesses.opencode import HARNESS as OPENCODE
-from devpro.plugins.kbase import PLUGIN as KBASE
 from devpro.render import filled_body, render_definition, rendered_definitions
 from tests.test_guardrail import _run_reminder
 
@@ -35,7 +35,7 @@ _RUNNER = Path(__file__).parent / "opencode_entry_runner.ts"
 @functools.cache
 def _banner_lines() -> int:
     """How many lines the opencode render writes above a definition's body."""
-    ctx = build_render(harness=OPENCODE.name, plugin=KBASE.name, family=DEFAULT_FAMILY)
+    ctx = build_render(harness=OPENCODE.name, components="kbase", family=DEFAULT_FAMILY)
     module, defn = rendered_definitions(ctx)[0]
     text = render_definition(defn, ctx, module=module)
     return text[: len(text) - len(filled_body(defn, ctx) + "\n")].count("\n")
@@ -51,12 +51,12 @@ def _body(path: Path) -> str:
 
 
 def _installed(target: Path, *, harness_dir: Path) -> tuple[Path, dict]:
-    """A real opencode install of kbase into `target`, whose harness directory is `harness_dir`: its
-    plugin directory and its registry."""
+    """A real opencode install with the kbase component on into `target`, whose harness directory is
+    `harness_dir`: its install directory and its registry."""
     if shutil.which("bun") is None:
         pytest.fail("bun is not on PATH: the opencode entry cannot run without it")
-    cli.main(["install", str(target), f"--plugin={KBASE.name}", "--harness=opencode"])
-    plugin = harness_dir / OPENCODE.bound(KBASE.name).plugin_dir
+    cli.main(["install", str(target), "--components=kbase", "--harness=opencode"])
+    plugin = harness_dir / OPENCODE.bound(NAME).plugin_dir
     return plugin, json.loads((plugin / "registry.json").read_text(encoding="utf-8"))
 
 
@@ -135,7 +135,7 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     )
     first, after_edit, after_removal = out["states"]
 
-    assert out["id"] == KBASE.name
+    assert out["id"] == NAME
     assert out["hooks"] == ["execute.before", "execute.after"]
     assert out["sessionHooks"] == ["experimental.idle"]
     assert set(first["agents"]) == {a["id"] for a in registry["agents"]}
