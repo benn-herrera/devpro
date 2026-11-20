@@ -37,8 +37,9 @@ python3 is present by definition in every devpro install, so the launcher simpli
 finder; `guide.py:76` carries the node warning, which retires with the port. The claude-centric
 parts port as-is: capture's payload vocabulary, the six events, token counts from claude's
 transcripts under `~/.claude/projects/`, `init`'s `.claude/settings.json` merge, `doctor`'s plugin
-records. `view.html` is a self-contained template, not runtime code — it ports unchanged. The
-record schema (JSONL) stays harness-clean so a future opencode capture could share it.
+records. `view.html` is a self-contained template, not runtime code — it ports unchanged. Any
+future opencode capture is recreated to fit the opencode plugin's TypeScript rather than preserving
+the hp.js surface — no reuse attempt, no schema-cleanliness constraint carried forward.
 
 Costs, stated: the vendoring ends — `ARCHITECTURE/install/harness-profiler.md`'s one-way copy rule
 and no-version-stamping describe copied code, and a port makes us owner of all four subcommands and
