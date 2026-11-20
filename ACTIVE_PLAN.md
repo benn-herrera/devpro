@@ -160,24 +160,79 @@ Done-line: `just dev-check-links` — the review document's links must resolve
 
 ## P4 — Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands. Until then this section
-holds only that.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `4a0025b`): 6 Critical, 11 Medium/High, 8 Low —
+ten items by root cause, plus two user-decision items held out. Each item names its surfaces and
+verification; the seat files in `.devpro-temp/` carry the per-finding detail.
 
-When drafted: the burndown's work list cites the review IDs and **groups the findings by root
-cause** — not one item per finding — and sequences the fixes by the full review's order
-(vocabulary, then novelty language, then contradictions — each checked against the code before the
-user decides — then undefined terms and requirements sent to another document, then mechanism in
-the wrong document, then a piece pushed past its "is not", where the user decides whether the
-document or THESIS.md moves). The fixes are outside any release's hardening.
+**B1 — README's install/update/mage surface returns to SPEC (F1, F2, F3, F11, F12, F13).** The
+broken mage escape, the install-paragraph contradictions, the Updating self-contradiction, the
+pipx `ensurepath` steps, the gitignore guidance, and the mage migration paragraph's SPEC absence —
+one README pass reading each section against its SPEC leaf, plus the SPEC-side sentence the mage
+paragraph needs. Verify: each corrected section read against the SPEC leaf it answers to; the mage
+command copied and run in a scratch project.
+
+**B2 — the profiler's user-facing line and its discovery (F4, F10).** `README.md:45` states what
+actually records per harness (claude's six events; claude-on-web's `init` requirement; mage ships
+none) and the Next section routes to the show-profile skill; the guide's Route gains the same
+routing. Verify: README read against `shipped-files.md`; the Route names the skill.
+
+**B3 — the two-acts reminder description moves to the shipped sentence (F5).**
+`opencode-entry.md:63-66` and `guardrail-hook.md:24-25` describe the reminder as injected —
+"keep the ACTIVE_PLAN state table up to date." — the sentence both harnesses actually carry.
+
+**B4 — opencode-entry's capture shipping claims align with the code (F6).** The user-level
+exclusion stated as `install.py`'s filter and `renders-and-copies.md` state it.
+
+**B5 — the rendered carriers refresh (F7).** `just render` re-runs; the installed set carries the
+interval default 5 and the current step-down rendering. The recurrence is noted: a version bump's
+landing re-renders — the mechanism question (auto-render at bump) is a design candidate, not a fix.
+
+**B6 — the docdicer skill's script section states the shipped recipes (F8).** `check-design` and
+`check-roadmap` recipes exist; the deltas-applied recipe is named where the development skill and
+the CONVENTIONS leaf point at it.
+
+**B7 — the guide's Getting-started and SPEC agree on the scratch step (F9).**
+
+**B8 — SPEC gains the claude reminder sentence and the opencode store (F14, F28 part).**
+`shipped-files.md` mirrors `guardrail-hook.md`'s claude entry; the opencode-profiler store joins the
+claude one.
+
+**B9 — structural-rules and test_plugins lose the second-plugin premise (F15).** The sweeps' scope
+reads as the one-plugin reality; the test file's companion claim matches.
+
+**B10 — recipes.md's agents paragraph (F16) and the version wording (F24).** The one-line `agents`
+recipe stated; `version-has-one-home.md` names `bump-version.sh`; the leaked `{{dot}}` placeholder
+in its diagnostic fixed.
+
+**B11 — profiler.ts's floor and field fidelity (F17, F19); the module id documented (F18).**
+`SUBAGENT_TOOLS` covers the 2.3.0-era spelling or the floor statement moves; `childAgentTypeOf`
+reads `agentType`; the module `id`'s one rule lands in `opencode-entry.md` and the modules follow it.
+
+**B12 — the scratch-HOME and encode-policy conformances (F20, F23).** `check-wheel.sh` honors the
+scratch rule; `hp.py`'s fit-check and write policies named and aligned.
+
+**B13 — the guardrail's scratch-redirect false positive (F21).** The case file gains the
+`.devpro-temp/` redirect pattern; the guardrail stops blocking it.
+
+**B14 — the stale citations and the Lows (F28, F29, F30).** `placeholders.md`'s `--plugin=`; the
+subsystem map's `show-profile` entry; the torn-tail/LINE_LIMIT contract sentences; the seat files'
+Notes tiers as listed.
+
+**Held for user decision (not executed by this package):**
+- **F25/F26** — THESIS's building-block table gains the component kind, and the Installed-resources
+  row's wording widens past "scripts". Proposed wordings ride the burndown's review; they land only
+  with the user's word.
+- **F27** — THESIS's adopter-audience sentence and `USER_README.md`'s status: decisions, not fixes.
+
+The burndown is expert.
 
 The drafted burndown gets its `devpro-prompt-engineer` usability review, then a revision here,
-before its row is `dispatchable`. Execution closes the package in one commit — if the findings'
-scope would need more, the session splits the package before dispatch and updates the status table.
+before its row is `dispatchable`. Execution closes the package in one commit.
 
-Scope: the burndown's fixes, named per item when this section is drafted (likely `PROJECT_DOCS/**`,
-the definitions and skills text, and the code the findings name). Each item lists the
-types/signatures it changes with the reference search and its answer, and names the tests and
-fixtures pinning any behavior it moves.
+Done-line: `just test`, then `just sweep-python`, then `just lint`, then
+`just dev-check-design-deltas-applied` (landed: 11), then `just dev-check-links`, then
+`just dev-check-plan` — all before the landing acts; the landing commit's tree carries the gate
+passing.
 
 Done-line: the checkpoint gate — `just test`, then `just sweep-python` — and
 `just dev-check-links` for the document fixes, run once, at the package's end.
