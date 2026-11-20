@@ -55,6 +55,12 @@ and are not well-represented in the current workflow definition.
 
 ## Maintenance
 
+### The docdicer `v0.12.0` tag is unpublished
+
+`devpro/docdicer-tools/docdicer` pins `VERSION=0.12.0`, and the tag does not exist at the remote, so
+the launcher's venv build fails `git checkout -q v0.12.0` and the `docs` surface (`just check-links`,
+and `just test` on any document) is red. Publish the tag; the item leaves ROADMAP then.
+
 ### (STICKY) Periodic load-bearing-ness pruning pass
 
 A pass over definition clauses, across model generations: apply strip-first-observe-patch
