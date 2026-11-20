@@ -12,9 +12,9 @@ run did not write, that `_shipped` admits, and that is ours by its own carrier: 
 `!GENERATED!` line, or a comment line opening with it, which is how a skill's supporting file holds
 its banner. `prune` walks the three surfaces (`_files_below`) of the install directory and nothing
 else, and the upward walk visits only a stale file's ancestors and stops at the install directory.
-What moves between plugins is the install directory: under claude another plugin's install directory
-(`.claude/skills/kbase/`) sits inside the harness directory's `skills/`, so a walk wider than the
-install directory would delete a different plugin. That walk needs no carve-out for a package
+The walk is one install directory's: under claude the install directory
+(`.claude/skills/devpro/`) sits inside the harness directory's `skills/` beside what the project
+keeps there, so a walk wider than the install directory would delete a neighbor's. That walk needs no carve-out for a package
 destination: the three `SHIPPED_PACKAGES` rows, the docdicer tools package, the development scripts
 package and the kb-tools package, all sit inside the install directory's `skills/` —
 `skills/docdicer/tools/`, `skills/development/scripts/` and `skills/kbase/kb-tools/`, each in its

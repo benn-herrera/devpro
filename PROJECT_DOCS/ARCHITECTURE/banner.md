@@ -11,6 +11,6 @@ removal (`_is_ours`). Under opencode every rendered file takes that comment carr
 (`render._comment_banner`), a definition's own included, because the body file holds no
 frontmatter; the entry strips the leading comment lines and the blank line after them when it
 registers the body. A harness-rendered file carries no banner: `registry.json` carries its marker,
-`"plugin": "<plugin>"`, as the plugin manifest carries `"name": "<plugin>"` and `.mcp.json` the command
+`"plugin": "devpro"`, as the plugin manifest carries `"name": "devpro"` and `.mcp.json` the command
 `"command": "kbase"`; `index.ts` and `guardrail.ts` carry their own `!INSTALLED!` header.
 

@@ -9,12 +9,13 @@ The comparison is `just render-diff`, which reads rendered output only. It repla
 block with one constant line and collapses whitespace inside a paragraph outside fenced code;
 headings, thematic breaks, list items, table rows, fenced blocks and frontmatter stay exact
 (`devtools/render_diff.py` states the rules). `just render <slug>` renders into `rendered/<slug>/`
-and refuses a slug starting with `reference`. A slot holds one slot project per plugin
-(`rendered/<slug>/devpro/`, `rendered/<slug>/kbase/`), each an install of its plugin with itself as
-project root, so beside the definitions the kbase slot project holds the kb-tools package, the harness's
-MCP entry and the runner include lines (the docdicer line for either plugin, the kb line for kbase; none in the mage slot, a harness-directory plugin), and each slot project
-holds, where the harness ships them, its own harness resources — the whole install product of both
-plugins, which is what makes a `render-diff` a comparison of both. A nested plugin's install also
+and refuses a slug starting with `reference`. A slot holds one slot project
+(`rendered/<slug>/devpro/`), an install of the devpro set with the kbase component on, with itself
+as project root, so beside the definitions it holds the kb-tools package, the harness's
+MCP entry and the runner include lines (the docdicer line always, the kb line with the component
+on; none in the mage slot, a harness-directory plugin), and it
+holds, where the harness ships them, its own harness resources — the whole install product, which is
+what makes a `render-diff` a comparison of installs. A nested plugin's install also
 writes the project's `AGENTS.md` at its slot project's root, and the `CLAUDE.md` redirect beside it
 under claude, because the render's scratch home holds no global block (Agents File, Placement).
 A slot holds the claude hook script only where `perl` passes the probe on that machine, so a

@@ -32,9 +32,8 @@ devpro project root is the whole build configuration.
   `.devpro-temp/` made from `python` (default `/usr/bin/python3`, the Python 3.9 floor on macOS only). With `PYTHONPATH` unset and
   `GIT_CEILING_DIRECTORIES` at that scratch directory, it checks that `devpro` imports from the
   venv, that the console script and `python -m devpro` print the same `--help` and the checkout's
-  version, that an install of each plugin into a scratch project equals the checkout's
-  byte for byte (each exercises packages the other lacks), and that a mage install of each plugin
-  writes `<plugin>/CLAUDE.md`. It is the `wheel` test surface:
+  version, that an install with the kbase component on into a scratch project equals the checkout's
+  byte for byte, and that a mage install writes `devpro/CLAUDE.md`. It is the `wheel` test surface:
   `just test wheel`, and the last step of an unscoped `just test`. A change to `pyproject.toml` or
   under `devpro/` selects it in `just test-changed`.
 
@@ -46,7 +45,7 @@ surrounding project. `PACKAGE_ROOT` and `REPO_ROOT` are defined in `install_base
 
 | check | in a checkout | outside |
 |---|---|---|
-| `install_include_lines`: no include lines for the repository itself, written by a project install of either plugin | skips that project | stands down: writes the lines for any project |
+| `install_include_lines`: no include lines for the repository itself, written by a project install | skips that project | stands down: writes the lines for any project |
 | `uncommitted_sources`, before an agents-file write into a user harness directory | refuses on uncommitted sources; a failed `git status` refuses with `InputError` | returns `()` without running git |
 
 Only a missing premise stands a check down: in a checkout nothing changes.

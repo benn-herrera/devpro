@@ -20,9 +20,9 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   `clauses.DISSENT`, which nineteen definitions carry, directs the dispute its closing sentence
   names: an order whose result satisfies every stated requirement but whose only possible variation
   is form.
-- **kbase plugin + kbase** — the `kbase` skill alone: the definition the devpro plugin excludes by name
-  and the kbase plugin delivers with the others SPEC.md, Deployed Surfaces, Plugins lists
-  (`devpro/plugins/kbase.py`). `kbase.py` owns a directory,
+- **kbase component + kbase** — the `kbase` skill alone: the definition the kbase component adds to
+  the devpro set, named among the component's contents in SPEC.md, Deployed Surfaces, Plugins
+  (`devpro/components.py`). `kbase.py` owns a directory,
   `skills/kbase/SKILL.md` routing by request and `skills/kbase/references/reading.md`,
   `building.md`, `maintaining.md`, `scoring.md`, `scoring-system.md` and `installing.md` carrying
   what each route needs; the skill entry file is the only text every session pays for, and the rule
@@ -32,7 +32,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   goes to the two supporting files that work a KB the build has finished with — reading, which
   reports, and maintaining, which modifies; `building.md` and `scoring.md` carry what their own job
   needs. The skill and its supporting files are project-portable — per-project facts live in the
-  consuming project's `kb-root/AGENTS.md`, under every harness. The kbase plugin reaches kbase, the
+  consuming project's `kb-root/AGENTS.md`, under every harness. The kbase component reaches kbase, the
   executable the operator installs (no install writes it), only through the harness's `kbase` MCP
   server, offered under that harness's `mcp_tool_prefix`. The minimum version and the formula are
   written once, as `KBASE_MIN_VERSION` and `KBASE_TAP_FORMULA` in `kbase.py`, and filled into the
@@ -48,7 +48,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   single-purpose, invoked directly rather than as part of a coding pipeline.
   applied-mathematician carries the `fam-ask-vs-stipulate` anchor.
 - **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered with its
-  tools package by both plugins.
+  tools package by every install.
   `docdicer.py` names its script `tools/docdicer`, relative to the skill's directory, and says its
   first run installs docdicer beside it; the script's `--help` is the command list, which the skill
   does not restate. The skill carries no runner-snippet advice and no install step; its one
@@ -64,12 +64,12 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   renders only where kbase ships. The docdicer version the script
   installs is written once, as `VERSION` in `devpro/docdicer-tools/docdicer`.
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
-  `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered by both
-  plugins under every harness. The description names the uses SPEC.md, Guide and README lists, and
+  `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
+  under every harness. The description names the uses SPEC.md, Guide and README lists, and
   says it is not for a change to the consuming project's own code. `SKILL.md` is a route, as the
   `development` skill's *Route* table is: one row per starting place SPEC.md, Guide and README
   lists, under the never-edit rule it states. The `development` and `docdicer` rows name their skill
-  by a plain reference (`clauses.ref`), safe because both plugins ship both.
+  by a plain reference (`clauses.ref`), safe because every install carries both.
   `references/installing.md` carries everything else about the installed set. That includes three
   paragraphs of its own, each dropped where its value is empty:
   - the `reload_rule` placeholder (Rendering, Placeholders), which says to run `/reload-plugins`
@@ -77,13 +77,13 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   - the `side_by_side_rule` placeholder, which says how to stop opencode loading a claude
     install's skills. It is kept under opencode alone;
   - an optional reference to `kbase` (`clauses.optional_ref`), which hands installing kbase itself
-    to that skill. It is kept in the kbase plugin alone.
+    to that skill. It is kept where the kbase component is on.
 
   The plugin is named through `clauses.PLUGIN_NAME`, and the repository through
   `clauses.REPOSITORY_URL`.
 - **Development skill** — `development` (`definitions/development.py`): one `SKILL.md` and six
   supporting files (`references/new-project.md`, `project-documents.md`, `project-setup.md`,
-  `adopting.md`, `release.md`, `design.md`), carried as `SkillFile`s, delivered by both plugins under every
+  `adopting.md`, `release.md`, `design.md`), carried as `SkillFile`s, delivered under every
   harness, mage included. Beside them in the skill's directory sits the development scripts
   package, `scripts/cold-read.sh`, owned by `development`: a shipped package, not one of the
   `SkillFile`s (Install, Renders and copies). The skill states one development process for the main
@@ -103,8 +103,8 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   where a term's value is written literally in a body string, so no two mentions can name a term
   differently. Its
   `docdicer` references are optional references (Rendering, Placeholders), and `docdicer` ships
-  with both plugins, so each fills. The *Plan status* and *Roadmap tickets* sections render whole
-  under every plugin; each one's `check-plan` or `check-roadmap` instruction is a paragraph of its
+  with every install, so each fills. The *Plan status* and *Roadmap tickets* sections render whole
+  under every install; each one's `check-plan` or `check-roadmap` instruction is a paragraph of its
   own, so an optional reference that fills to nothing drops that paragraph alone. The sentence
   naming the default step-down model is
   `clauses.STEP_DOWN_MODEL`, the `tun` placeholder (Rendering, Placeholders), so that sentence alone

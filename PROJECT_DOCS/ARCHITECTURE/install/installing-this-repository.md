@@ -9,5 +9,5 @@ a marker line and else in this repository's `AGENTS.md`. Under claude the instal
 plugin, `.claude/skills/devpro/`, and under opencode in `.opencode/plugins/devpro/`.
 `install_include_lines` returns without writing when the project is
 `REPO_ROOT`, which is set only in a checkout (Packaging). Nor are any written for a harness-directory plugin
-(mage, whose `project_harness_dir` is `{plugin}` and whose `user_harness_dir` is `.`): the install
-skips that call there, so a mage install of either plugin writes no include line and creates no `Makefile`.
+(mage, whose `project_harness_dir` is `devpro` and whose `user_harness_dir` is `.`): the install
+skips that call there, so a mage install writes no include line and creates no `Makefile`.

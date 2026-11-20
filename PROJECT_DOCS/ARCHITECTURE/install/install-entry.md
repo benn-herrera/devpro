@@ -2,12 +2,12 @@
 
 `just install target *args` is a one-line recipe over `python3 -m devpro install "$@"`; the
 installed `devpro install` is the same verb (Packaging). The verb takes TARGET, its one positional
-argument, and `--plugin=NAME`, a choice among the plugins `devpro/plugins/` holds, default
-`context.DEFAULT_PLUGIN` (`cli._add_plugin`); a second positional is an argument argparse does not
+argument, and `--components=CSV`, the optional components the invocation turns on, default none
+(`cli._add_plugin`); a second positional is an argument argparse does not
 recognize, refused with exit 2 before anything is written.
 `devpro/install_target.py` resolves the target, writing nothing: `resolve_install_target`
 normalizes the target lexically — made absolute, `..` collapsed — detects the harness from values
-no plugin changes (`_detected_harness`), binds that harness to the plugin, and returns the harness,
+no component changes (`_detected_harness`), binds that harness to the plugin, and returns the harness,
 the harness directory (`InstallTarget.harness_dir`) and the project root (`InstallTarget.project_root`),
 each built from that lexical path.
 
@@ -16,8 +16,7 @@ naming rule and the settings' semantics are SPEC.md, Install destination. `insta
 provides the per-harness directory judgment the `detect` setting needs;
 `_detected_harness`'s single-harness resolution stays the no-config path's. Without the file, or
 with `--harness` given, the resolution is the one above. One read of the file serves the
-selection and every harness's render. Only mage's harness directory depends on the plugin, its
-`project_harness_dir` being `{plugin}`. `install` uses the project root as spelled, and resolves it
+selection and every harness's render. `install` uses the project root as spelled, and resolves it
 only to compare it with this checkout (`REPO_ROOT`, `runner_file.install_include_lines`), so
 two spellings of the checkout compare equal. The install directory's path relative to it
 (`_harness_relpath`) is taken as both are spelled. The harness and harness directory follow
