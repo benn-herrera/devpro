@@ -45,7 +45,7 @@ revision, and dispatches from there.
 | P2 | landed | mechanical | the payload's source directory renamed `resources/claude/libexec/` → `resources/claude/profiler/` (banners, `claude.py`'s `_PROFILER_SCRIPT`, the hook command, the finder candidate and the test references following); `harness_resource_copies`' opencode copy list gains the three payload files sourced from `resources/claude/profiler/`; the behavior pin updates |
 | P3 | landed | expert | `profiler.ts` — the capture in the plugin's TypeScript, wired from the entry; the trace store splits per harness (`hp.py`'s `TRACE_DIR`, `tree`'s `*-profiler` glob, the profiler test's trace path); the entry's registration pin updates |
 | P4 | landed | expert | Post-plan review — dispatchable when P3's commit lands |
-| P5 | drafted | expert | the burndown's fixes from the review (B1–B11), and the landing commit: `ACTIVE_DESIGN.md`, `ACTIVE_PLAN_REVIEW.md` and this plan deleted |
+| P5 | in progress | expert | the burndown's fixes from the review (B1–B11), and the landing commit: `ACTIVE_DESIGN.md`, `ACTIVE_PLAN_REVIEW.md` and this plan deleted |
 
 ## P1 — The eleven passage pairs applied
 
