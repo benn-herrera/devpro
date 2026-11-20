@@ -762,8 +762,69 @@ Done-line: `just check-links`. One commit carries the review document, and its r
 
 ## P6 — Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands. One commit closes the
-package; the items cite their review IDs, grouped by root cause.
+Drafted from `ACTIVE_PLAN_REVIEW.md` — the work list below; the items cite their review IDs, grouped
+by root cause. One commit closes the package.
+
+**The selection's source (R1, R25).** `devpro/cli.py`'s render branch takes
+`components = args.components or ""` — `_components_value` stays with the install paths — and the
+pin is added whose failure states it: a settings file naming `kbase` plus `main(["render", …])`
+renders no `skills/kbase/SKILL.md` (fails today: the fallback turns it on). The slot's selection is
+not a tunable: `devtools/scripts/render.sh` drops `--components` from the forwarded set (the deleted
+`--plugin` refusal's shape returns for it), `_render-slot.sh`'s fixed `--components=kbase` stays.
+`devtools/scripts/_harness-value.sh` passes `--components=kbase`, matching every real install.
+`devtools/scripts/check-wheel.sh`'s mage-manifest assertion moves to the path the manifest lands at.
+
+**The from-side blindspot (R2, R11).** `PROJECT_DOCS/SPEC/deployed-surfaces/plugins.md` loses
+"Installing both plugins in one place gives duplicate agents under different names." — the delta's
+end state (`ACTIVE_DESIGN/spec-delta/spec-md-deployed-surfaces-plugins.md` prescribes it). And
+`devtools/check_deltas.py` gains the from-side absence check: a design block whose from-text
+survives in its target leaf while its becomes-text is present is a MISS naming the leaf, with the
+test whose failure states it (the P3 skip's shape — a deletion block whose becomes pre-existed).
+
+**The show-profile skill (R7, R8).** `devpro/definitions/skills/show_profile.py`: the write target
+becomes `.devpro-temp/harness-profile.html`, and the delivery ladder ends at "give them the path" —
+the branch-commit fallback is deleted.
+
+**The mage surface (R19, R20, R21, R22).** `README.md`: the Updating section gains the migration
+step — remove a pre-component `~/Mage/Skills/kbase/`, the previous install's duplicate set; "runs
+`kbase`" takes the `.mcp.json` truth; the mage quick start names the component optional; the
+requirements gain node 18+. `devpro/definitions/skills/guide.py`'s requirements gain node 18+ too
+(R18's alignment — the SPEC sentence then stays true).
+
+**The vendored launcher (R6, R10).** `devpro/harnesses/resources/claude/libexec/hp.sh`: the nvm
+candidates order by version (or the found node is run-checked) so `newest` delivers, and the header
+gains the POSIX-sh clause — the hook entries invoke it as `sh`, and a hook PATH may lack bash.
+
+**`check_deltas`' verification gaps (R12, R13).** A tree leaf yielding no entry is one PROBLEM
+naming the leaf (the docstring's claim made true); document mode's link base becomes the recipe's
+`PROJECT_ROOT`, passed as the argument — or the two texts name the cwd; the executor picks one and
+states it.
+
+**The lifecycle rule's reach (R14, R15, R16).** The plan side takes the both-forms statement — the
+draft's B2 candidate pair (`ACTIVE_PLAN.md` at the repository root, **or** the `ACTIVE_PLAN/` tree
+there; "or", no retirement rule invented) — and `guide.py`'s plan bullets and `docdicer.py`'s
+removal/undice wordings align to it and to D1's actor: the session removes the design's monolith at
+the dice; every other document at the user's direction.
+
+**The contract-text mismatches (R5, R6, R17, R3, R4).** `SPEC/deployed-surfaces/plugins.md:5-8`'s
+component-refusal self-contradiction resolved; `PROJECT_DOCS/entry-point.md:65` takes the
+one-plugin form; `SPEC/deployed-surfaces/shipped-files.md:102-104`'s init claim and the skill's text
+align (the executor reads both sides against the design leaf and states the direction);
+`ARCHITECTURE/rendering/harnesses-and-families.md:80-82` states the actual mechanism
+(`selection()`, called by `build_render`) and drops the false dependency-chain clause;
+`ARCHITECTURE/install/install-entry.md:6` names `_add_components`.
+
+**The scripts' and docs' notes (R24, R26, R27, R28, R29, R30).**
+`render-agents-file.sh`'s header rewords to `HARNESS OUT` and refuses a third argument. The note
+clusters are each evaluated — fixed where the fix is mechanical (the precedence rule's second home,
+`_OPTIONAL_MEMBERS` derived live, `repo-layout.md`'s listing structure, the `_check_body` clause in
+`CONVENTIONS/adding-definitions/`, the banner-mask claim narrowed), accepted with a one-line reason
+where the note costs more than it buys (the plugin-named fields the `{plugin}` templates carry; the
+pre-existing `--harness NAME` and bare `rm -rf` shapes).
+
+**Declined, with reasons.** R23 (the credit's licence) — the design mandates the credit line
+verbatim and the licence lives in the design leaf; the line stands. R14 as a new plan-side
+retirement rule — no rule is invented; the both-forms alignment above is the fix.
 
 Done-line: the checkpoint gate (`just test`, then `just sweep-python`), then `just check-links`. One
 commit; the commit that lands the plan follows it, deleting `ACTIVE_PLAN.md`,
