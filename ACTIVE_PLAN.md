@@ -93,11 +93,53 @@ Done-line: `just dev-check-links`. The review document and P2's Status row land 
 
 ## P3 — Post-plan burndown and landing
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands; the burndown's fixes go to
-their surfaces as the review names them. P3's commit is the landing commit, and its acts are stated
-here so no executor decides them unassisted. The burndown's work list is drafted from the review
-document, which must exist until that work is done — so the deletions are the landing commit's
-acts, after the burndown, not before it:
+Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `c253777`): 1 High, 6 Medium, 4 Low, one item per
+root cause. Each item names the surfaces it changes and the command that shows it. P3's commit is the
+landing commit, and its acts are stated here so no executor decides them unassisted.
+
+**B1 — the skill's application bullet and `references/design.md`.** Apply the design's corrected Code
+delta entry verbatim to `devpro/definitions/skills/development.py`, replacing its `**As it stands:**`
+block at `149-152` with its `**Becomes:**` block (`just dev-check-design` passes on the design;
+`just dev-check-design-deltas-applied` reports `pending: 2`). It answers H1, M1, M3, M4, M6, M7. In
+`references/design.md`'s entry-body bullet, add a clause naming `**As it stands:**` and `**Becomes:**`
+as what marks a pair's from and becomes (M8). No test pins the sentence
+(`git grep -n "confirms them" -- tests/` → nothing); the two structural tests at
+`tests/test_devpro.py:1511` and `:1516` must stay green.
+
+**B2 — `PROJECT_DOCS/ARCHITECTURE/recipes.md` and the CONVENTIONS leaf.** Apply the design's corrected
+Recipes entry verbatim to `recipes.md`, replacing its `**As it stands:**` block at `43-47` with its
+`**Becomes:**` block (M2, M9, L1). In
+`PROJECT_DOCS/CONVENTIONS/planning-and-execution/a-delta-application-ends-verified.md`, replace
+"byte-exact in its target leaf" with the whitespace-run statement the check applies, and state the
+routes the code has — `just dev-check-design-deltas-applied` runs `dev-dd check-design
+--deltas-applied` against the hosted clone, and the shipped target is the snippet set's (M3, L2).
+
+**B3 — the two sites where a done-line is written.** `devpro/definitions/skills/development.py:295`
+"such as a link check" gains "or a delta check"; `development.py:511-512` "a link check or a document
+build" gains "a delta check" (M5). No test pins either phrase (`git grep -n "document build" --
+tests/` → nothing).
+
+**B4 — one CONVENTIONS rule defines how an application ends.**
+`PROJECT_DOCS/CONVENTIONS/planning-and-execution/a-delta-application-ends-by-searching-the-doc-set.md`
+takes the title "A delta application is followed by a search of the doc set" and opens with that act;
+update its entry in `PROJECT_DOCS/CONVENTIONS/planning-and-execution/index.md` (L4).
+
+**B5 — the hosted clone holds the pinned version.** `docdicer-repo` clones once and never brings the
+clone to the pin: the clone's newest tag is `v0.11.2` (`cd docdicer && git describe --tags
+--abbrev=0`) while `devpro/docdicer-tools/docdicer:8` pins `VERSION=0.12.0`, so `dev-dd` runs a
+different docdicer than the routes name (L3). Add a step to `docdicer-repo` that brings an existing
+clone to the pinned tag without discarding local work, and a test under `devtools/tests/` that fails
+on the recipe as it stands — the defect is a clone whose HEAD is not the pinned tag with no step that
+corrects it. `just test dupe_sweep` runs that suite.
+
+Declined: M8's vocabulary beyond the reference clause (the bullet and `references/design.md` would
+state one fact twice), and the prompt-engineer's "Unverified" note (whether a model skips the check
+is not a change to this text).
+
+The burndown's work is mechanical where an item applies text already written (B1, B2), and expert
+where it composes (B3, B4, B5): a package holding both runs expert.
+
+The landing acts, after the burndown's work:
 
 1. The landing commit deletes `ACTIVE_DESIGN.md` (not diced, so no tree).
 2. The landing commit deletes `ACTIVE_PLAN_REVIEW.md`.
@@ -105,6 +147,3 @@ acts, after the burndown, not before it:
 4. The landing commit adds the ROADMAP item recording the `docs` surface's resolution: publish the
    docdicer `v0.12.0` tag the pin at `devpro/docdicer-tools/docdicer:8` names. The item leaves
    ROADMAP when the tag is published.
-
-The landing acts are mechanical; the burndown's rating is set when its work list is drafted from
-the review.
