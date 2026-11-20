@@ -36,7 +36,7 @@ reopens nothing settled.
   surface is 101 files, of which `find devpro -name '*.py' | wc -l` → 65 live in `devpro/` (the
   rest are tests and devtools). The TypeScript surface is three files,
   `devpro/harnesses/resources/opencode/{guardrail.ts,index.ts,profiler.ts}`, with no type check —
-  `grep -n 'No TypeScript type check' ROADMAP.md` → `96:### No TypeScript type check` (the known
+  `grep -n 'No TypeScript type check' ROADMAP.md` → `108:### No TypeScript type check` (the known
   gap, not reopened here).
 - **The profiler is shipped and in use.** `ls .devpro-temp/opencode-profiler` → live session JSONL
   captures. `.devpro-temp/claude-profiler/` does not exist (`ls` → No such file or directory): the
@@ -44,12 +44,15 @@ reopens nothing settled.
   (`devpro/harnesses/resources/claude/profiler/hp.py:25` — `TRACE_DIR =
   Path(".devpro-temp") / "claude-profiler"`), and no claude session has captured here. The review
   treats the opencode profiler as live and the claude path as shipped.
-- **The routing facts (per the session's standing provider directive: wafer).** The brief routes
-  the architect and prompt-engineer seats to `wafer.ai/GLM-5.3-Flash` and the coder seats to
-  `wafer.ai/DeepSeek-V4.1-Flash-1017`; the tech-writer is unnamed there, so its category map
-  decides — `tech_writer.py:18` is `category="comm-expert"`, and the rendered banner's map gives
-  `comm-expert=wafer/DeepSeek-V4.1-Flash-1017`. Both models are on the wafer provider, so the
-  local-inference concurrency limit does not apply to this fan-out.
+- **The routing facts.** Source: the session's standing directive — cloud dispatches route via the
+  wafer provider; coder seats `wafer.ai/DeepSeek-V4.1-Flash-1017`, architect and prompt-engineer
+  seats `wafer.ai/GLM-5.3-Flash`. By that directive the architect and prompt-engineer seats route
+  to GLM and the coder seats to DeepSeek. The tech-writer is unnamed in it; its rendered definition
+  carries `member=wafer/DeepSeek-V4.1-Flash-1017` (rendered from
+  `devpro/definitions/agents/tech_writer.py:18` — `category="comm-expert"`; banner at
+  `.opencode/plugins/devpro/agents/tech-writer.md:2`), so the tech-writer seat routes to DeepSeek
+  under the same directive. Both models are on the wafer provider, so the local-inference
+  concurrency limit does not apply to this fan-out.
 
 ## Bound terms
 
@@ -73,10 +76,10 @@ seat per agent.
 | prompt-engineer / conformance | `devpro-prompt-engineer` | same, for the model-facing text it reviews | `wafer.ai/GLM-5.3-Flash` |
 | tech-writer / conformance | `devpro-tech-writer` | same, for README.md and the human-facing guides | `wafer.ai/DeepSeek-V4.1-Flash-1017` |
 | coder / conformance | `devpro-python-coder` | same, for the code | `wafer.ai/DeepSeek-V4.1-Flash-1017` |
-| prompt-engineer / consistency | `devpro-prompt-engineer` | THESIS.md against SPEC.md | `wafer.ai/GLM-5.3-Flash` |
-| architect / consistency | `devpro-architect` | SPEC.md against ARCHITECTURE.md | `wafer.ai/GLM-5.3-Flash` |
-| tech-writer / consistency | `devpro-tech-writer` | SPEC.md's coverage of README.md and the human-facing guides against those texts | `wafer.ai/DeepSeek-V4.1-Flash-1017` |
-| coder / consistency | `devpro-python-coder` | ARCHITECTURE.md against the code, and each CONVENTIONS.md rule against how the repository behaves | `wafer.ai/DeepSeek-V4.1-Flash-1017` |
+| prompt-engineer / consistency | `devpro-prompt-engineer` | — its pair is named in P2 | `wafer.ai/GLM-5.3-Flash` |
+| architect / consistency | `devpro-architect` | — its pair is named in P2 | `wafer.ai/GLM-5.3-Flash` |
+| tech-writer / consistency | `devpro-tech-writer` | — its pair is named in P2 | `wafer.ai/DeepSeek-V4.1-Flash-1017` |
+| coder / consistency | `devpro-python-coder` | — its pair is named in P2 | `wafer.ai/DeepSeek-V4.1-Flash-1017` |
 
 **The language split — stated call: one seat naming both.** The project's coder agent is
 `devpro-python-coder` (the primary language; 65 of the lint surface's files), and both coder
@@ -106,9 +109,8 @@ landed; P4's row is set from the review document's landing, per the placeholder 
 ## P1 — Panel: the four conformance seats
 
 Dispatches four expert agents, one per seat type, each with the project documents and the facts
-above, judging only the changes since `69eed3e` (the seven landings, weighted toward
-`7016420` and `cec0a46`), reporting every departure from THESIS.md, SPEC.md, ARCHITECTURE.md or
-CONVENTIONS.md its own review criteria surface, and reopening nothing settled.
+above (the seven landings weighted toward `7016420` and `cec0a46`), reporting every departure from
+THESIS.md, SPEC.md, ARCHITECTURE.md or CONVENTIONS.md its own review criteria surface.
 
 - `devpro-architect` — scope: the changed structure — `devpro/harnesses/resources/claude/profiler/`,
   `devpro/harnesses/resources/opencode/`, `devpro/definitions/`, the justfile's new targets — read
