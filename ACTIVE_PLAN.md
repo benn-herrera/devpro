@@ -311,10 +311,15 @@ wheel's package data with `git ls-files --cached --others --exclude-standard`
 before it is staged — a tree whose package-data change is unstaged fails it, with the deletion on
 the index still expected and absent from the wheel.
 
-**B6 — hp.py fidelity and hygiene (`R11`, `R13`, `R14`, `R15`, `R16`).** Restore the JS
+**B6 — hp.py fidelity and hygiene (`R11`, `R13`, `R14`, `R15`, `R16`; extended in execution).** Restore the JS
 record-keeping for the two payload shapes `hp.py:352-366` and `:601` drop — the two edits, named:
 `except OSError` → `except (OSError, ValueError, TypeError)` at `:365`, and `errors="replace"` on
-the append's `open` at `:601`. Deduplicate `USAGE`: the constant (`:1320-1324`) is the home; the
+the append's `open` at `:601`. A third site the executor's run surfaced: `serialize`'s LINE_LIMIT
+fit check encodes the line strictly (`:536` area), so a lone surrogate in tool output raises before
+the replace-append saves the record — a record-loss path the JS source did not have. The fix: encode
+the line once with `errors="replace"` and run the fit check on the encoded bytes, so the measured
+length is the written length and a surrogate degrades to U+FFFD instead of losing the record.
+Deduplicate `USAGE`: the constant (`:1320-1324`) is the home; the
 four docstring lines at `:7-10` are cut. Fix the unparseable docstring sentence (`:219-221`). Delete
 the four injection seams (`:499`, `:552`, `:586-588`, `:1292`) — no justification exists after B4,
 which tests through the launcher and calls none of them. Pin stdin/stdout to UTF-8 at the entry
