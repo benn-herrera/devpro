@@ -34,7 +34,7 @@ devtools/               repository-maintenance tooling — never installed; impo
     report.py           headers, candidate lists, the file-pair tally
     passes.py           the `python` pass and its defaults
     cli.py              argparse surface and dispatch
-  tests/                the devtools test suite — dupe_sweep (`test_dupe_sweep` and its import-structure test), clause_join_sites, render_diff and check_deltas — run as the `dupe_sweep` test surface (`just test dupe_sweep`)
+  tests/                the devtools test suite — dupe_sweep (`test_dupe_sweep` and its import-structure test), clause_join_sites and render_diff — run as the `dupe_sweep` test surface (`just test dupe_sweep`)
 tests/                  the root test suite, the `devpro` package's tests and the repository-wide checks, run as the `devpro` test surface (`just test devpro`) — never installed
 ```
 

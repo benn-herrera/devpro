@@ -272,16 +272,10 @@ test-changed base="":
 clause-join-sites *paths:
     @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devtools.clause_join_sites "$@"
 
-# Verifies a design's delta application: each `becomes` block of the design's entries must occur
-# byte-exact in the leaf its `###` entry heading names. The entries come from the design's one
-# source — the tree beside <design>, one entry per section leaf, where a same-stem directory
-# carrying entry-point.md is diced there, the document otherwise — and a tree's links resolve from
-# the entry's own directory where a document's resolve from the repository root, passed as the
-# second argument. Exits non-zero naming each miss, and each unparseable entry or missing leaf.
-# <design> defaults to ACTIVE_DESIGN.md.
-[doc("[dev] verify design delta blocks are applied byte-exact")]
-check-deltas design="ACTIVE_DESIGN.md":
-    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devtools.check_deltas "{{design}}" "{{PROJECT_ROOT}}"
+# The delta byte-check is docdicer's: `docdicer-check-design-deltas-applied` (the installed runner
+# snippet) verifies a design's delta application, and `dev-check-design-deltas-applied` runs it
+# through the hosted tool. The devpro-local tool retired with devtools/check_deltas.py's removal;
+# the capability it carried ships with the docdicer release the pin names.
 
 # Emits hits, never verdicts: American spellings are the standard, and this lists the British forms
 # left in tracked text for a reader to judge. The justfile and the leaf that hold the pattern and the

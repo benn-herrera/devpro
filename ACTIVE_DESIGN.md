@@ -9,9 +9,10 @@ skill states it, and the mechanism ships in the docdicer package (`check-design 
 the RFE is under way in the docdicer session, which owns the tool side).
 
 Facts: the policy's home today is `PROJECT_DOCS/CONVENTIONS/planning-and-execution/a-delta-application-ends-verified.md`
-— devpro's own CONVENTIONS, not the shipped skill; the check's devpro-local implementation is
-`devtools/check_deltas.py` (tree-read and from-side absence checks, landed with the previous plan);
-the docdicer checks reach consumers through the installed runner snippets, which now carry the
+— devpro's own CONVENTIONS, not the shipped skill; the repo's local check,
+`devtools/check_deltas.py`, retired by the user's act (`a4e47c3`), its test and justfile recipe with
+it, so docdicer's `--deltas-applied` is the only mechanism from here on; the docdicer checks reach
+consumers through the installed runner snippets, which now carry the
 target — `docdicer-check-design-deltas-applied` ("check that ACTIVE_DESIGN pending project doc
 deltas were applied") — so the runner-target question closes on the snippets' name; the skill
 section closes too: the rule joins the Design section's application bullet, whose sentence already
@@ -19,10 +20,10 @@ names the link check as the application's only mechanical confirmation; the prev
 dice-lifecycle bullet in the development skill but not the byte-check rule — the gap this ticket
 closes.
 
-Open: whether `devtools/check_deltas.py` retires at docdicer parity or stays as the dev harness —
-parity awaits a live probe of docdicer 0.12.0's `--deltas-applied`, which errored on the local clone
-(`dev-dd` runs `PYTHONPATH=<clone> python3 -m docdicer`; the clone is v0.11.2-1 and lacks the flag);
-the CONVENTIONS leaf's fate (cite the skill's rule, or keep the project instance beside it).
+Open: the live probe of `--deltas-applied` — `just dev-check-design-deltas-applied` errored
+(`unrecognized arguments`), `dev-dd` running the local clone (`PYTHONPATH=<clone> python3 -m
+docdicer`) still at v0.11.2-1; the clone updates to the release in the docdicer session. The
+CONVENTIONS leaf's fate (cite the skill's rule, or keep the project instance beside it).
 
 ### The docdicer pin bumps to the release carrying --deltas-applied
 
