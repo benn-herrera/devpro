@@ -31,7 +31,7 @@ a dirty clone.
 | --- | --- | --- | --- |
 | P1 | landed | mechanical | the four passage pairs applied verbatim: SPEC's profiler paragraph and guide-and-readme requirements bullet, ARCHITECTURE's harness-profiler leaf and repo-layout resources line |
 | P2 | landed | expert | the port: `hp.py` replaces `hp.js`, `hp.sh` finds python3, the trace moves to `.devpro-temp/harness-profile/`, the skill text and tests follow |
-| P3 | in progress | expert | Post-plan review |
+| P3 | landed | expert | Post-plan review |
 | P4 | drafted | expert | Post-plan burndown |
 
 ## P1 — The four passage pairs applied
