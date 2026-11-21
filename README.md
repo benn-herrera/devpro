@@ -106,14 +106,14 @@ mkdir -p ~/Mage/Skills
 devpro install ~/Mage/Skills --harness=mage
 ```
 
-This writes `~/Mage/Skills/devpro/` and that plugin's `CLAUDE.md`, holding the agents file. A mage
-install writes nothing into the project: no `.gitignore` line, runner include line or `Makefile`.
-The kbase component is optional: `--components=kbase` adds the
-`kbase` skill and the `.mcp.json` entry Mage starts the `kbase` executable from. No devpro install
-provides, runs or checks that executable: on macOS and Linux, install it with
-`brew install benn-herrera/tap/kbase` (0.11.1 or later); native Windows is unsupported for the
-component. Restart Mage after an install with the component on, or after installing or upgrading
-kbase, so it starts the server.
+This writes `~/Mage/Skills/devpro/` and that plugin's `CLAUDE.md`, holding the agents file. It
+reaches no project: a mage session works with the skills where Mage opens it. To run the process in
+a project, install into that project as above, under claude or opencode. The kbase component is
+optional: `--components=kbase` adds the `kbase` skill and the `.mcp.json` entry Mage starts the
+`kbase` executable from. No devpro install provides, runs or checks that executable: on macOS and
+Linux, install it with `brew install benn-herrera/tap/kbase` (0.11.1 or later); native Windows is
+unsupported for the component. Restart Mage after installing or upgrading kbase, so it starts the
+server.
 
 ## Next: ask your agent
 
@@ -126,6 +126,11 @@ installs, updates, inspects or changes what you just installed. To see what the 
 profile, trace or call tree — ask for the `show-profile` skill: `devpro:show-profile` under claude and
 mage, `devpro-show-profile` under opencode.
 
+Where the guide's setup step covers a project with nothing yet, it creates that project's documents
+in the directory the session runs in. A mage install reaches no project, so after one, install into
+the project the work runs in as the claude and opencode section above shows, and ask for the guide
+in a session started there.
+
 ## Updating
 
 To update, run `brew upgrade devpro`, then the same install line with `--dry-run` added to preview
@@ -135,10 +140,10 @@ Installed with pipx, update with `pipx install --force` of the next release's ta
 ensurepath` and a new shell, then the same install line.
 
 Under Mage, an install from before the kbase component wrote a second plugin directory,
-`~/Mage/Skills/kbase/`, holding its own duplicate skills, agents file and `.mcp.json`. The current
-install writes only `~/Mage/Skills/devpro/`, so Mage keeps loading both directories — two sets of
-skills and agents, and two `kbase` MCP servers — until you remove `~/Mage/Skills/kbase/` once,
-before or after the install.
+`~/Mage/Skills/kbase/`, holding its own duplicate skills, agents file and `.mcp.json`. No install
+writes there or removes it, and Mage loads it beside `~/Mage/Skills/devpro/` — two sets of skills
+and agents, and, with the kbase component on, a `kbase` MCP server from each `.mcp.json` — until
+you remove `~/Mage/Skills/kbase/` once, before or after the install, which stops the second load.
 
 ## Third Party Acknowledgments
 

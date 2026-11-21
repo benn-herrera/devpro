@@ -77,7 +77,14 @@ definitions and the `kbase` MCP entry, `.mcp.json` under claude and the registry
 opencode. It writes no package, no runner include line and no runner file (Write Safety states
 which settings files no install writes).
 
-No install reads, rewrites or removes a file outside its own managed set.
+No install reads, rewrites or removes a file outside its own managed set. Under mage that leaves a
+legacy plugin directory where one exists: an install from a release before the kbase component was
+one wrote `~/Mage/Skills/kbase/`, holding its own skills, `CLAUDE.md` and `.mcp.json`, and no
+install writes there or removes it. Mage loads the plugin directories below `~/Mage/Skills`, so it
+loads both until the operator removes `~/Mage/Skills/kbase/` once: two sets of skills and agents,
+and, where the install carries the kbase component, the `kbase` MCP server from both `.mcp.json`
+files, the current install's rendered only with that component on. Removing the legacy directory,
+before or after the install, stops the second load.
 
 No install writes, copies, verifies or locates a `kbase` executable. The operator installs kbase
 themselves, as the `kbase` skill's `references/installing.md` walks a session through, and every harness's `kbase` MCP entry names the

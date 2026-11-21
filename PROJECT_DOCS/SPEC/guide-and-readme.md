@@ -36,7 +36,9 @@ The skill carries two reference pages, which the session reads when its starting
     beside the current one, so it is removed once;
   - the agents file: where an install keeps its block, and the `CLAUDE.md` redirect;
   - the requirements: `just` 1.33.0 or later where the consuming project's runner is a justfile,
-    for the runner include lines; `perl` with core `JSON::PP` for the claude guardrail;
+    for the runner include lines; `perl` with core `JSON::PP` for the claude guardrail; and the
+    `show-profile` skill's recording of a claude or opencode project install, which needs no more
+    than what delivers it (Shipped files, the activity profiler), and ships nothing under mage;
   - what the operator sets up for a cold read: `DEVPRO_COLD_READ_DIR`;
   - rendering for another model family: it names the flag and leaves its grammar to SPEC.md,
     Rendering;
@@ -100,9 +102,13 @@ The repository's `README.md` holds these things:
   - for claude and opencode: the command that installs into the consuming project, and the lines
     to add to `.gitignore`, each harness's own;
   - for mage: making `~/Mage/Skills` first where absent, and the install into it for the mage
-    harness;
+    harness; then, for the project the development process runs in, the claude or opencode install
+    this path gives — the mage install alone installing into no project;
 - what to do next: ask your agent, which loads the `guide` skill, invoked as SPEC.md, Deployed
-  Surfaces, Install destination spells it, or the `show-profile` skill for a session's profile;
+  Surfaces, Install destination spells it, or the `show-profile` skill for a session's profile; and,
+  after a mage install alone, the claude or opencode install into the project first: the guide's
+  getting-started step for a project with nothing yet creates the project documents in the directory
+  the session runs in, and a mage session starts outside any project the install reached;
 - the third-party acknowledgments, a list of the packages the build runs, with the ideas and the
   ported source the project credits named above it.
 

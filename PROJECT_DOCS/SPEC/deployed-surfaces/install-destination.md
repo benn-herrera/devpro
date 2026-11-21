@@ -20,12 +20,15 @@ the project it installs into; a user-level install places nothing relative to a 
 |---|---|---|
 | any, with `--subdir=<dir>` | `<target>/<dir>`; an empty `--subdir=` is the target itself | the target |
 | a harness directory (mage: `Mage/Skills`) | the target (mage: `<target>/devpro`) | the target's parent (mage: the target) |
-| the user's home directory | the harness's user harness directory inside it | — (user-level) |
+| the user's home directory, for a harness whose user harness directory is inside it | the harness's user harness directory inside it | — (user-level) |
 | any other | `<target>/<project-harness-dir>` | the target |
 
 The project harness directory is `.claude/` by default, `.opencode/` for `opencode`, and `devpro/`
 for mage, so a `Mage/Skills` target gives `<target>/devpro`. A home-directory target with
-`--harness=mage` takes the last row, mage having no user harness directory.
+`--harness=mage` takes the last row, mage having no user harness directory: it is a project install
+with the project root `~`, the plugin at `~/devpro/`, every package shipped, and the agents file in
+`~/devpro/CLAUDE.md` titled `Global`, as a user harness directory's is. Mage loads nothing at
+`~/devpro/`; under mage the target is `~/Mage/Skills`.
 
 The install's **install directory** is where it writes the install product, a directory of the
 plugin's own below the harness directory:
