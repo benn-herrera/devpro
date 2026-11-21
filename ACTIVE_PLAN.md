@@ -76,15 +76,16 @@ Facts, each re-run before acting on it:
   (`:1306`) keep today's behavior, and `list_sessions` itself is unchanged.
 - The index row's fields: harness, session id, record count, first and last moments. `first`,
   `last`, `records` come from `list_sessions`; `harness` is read from a record's own field —
-  `build_record` writes it (`hp.py:523`), `build_event_record` too (`:560`); every record in one
+  `build_record` writes it (`hp.py:515`), `build_event_record` too (`:560`); every record in one
   session's trace carries the same one.
 - The page: `/page/<session-id>` is the bytes `render_html(session)` returns (`hp.py:1049-1080`),
   which is exactly what `tree --format html` prints for one session (`:1173`, `return
   render_html(chosen[0])`).
 - The free-port precedent, in the repository's tree but a separate project — pattern evidence,
-  not a dependency: docdicer's kanban server binds `ThreadingHTTPServer((HOST, 0))`
-  (`docdicer/docdicer/kanban/server.py:95`), exposes the URL (`:98-100`), prints it on stdout
-  (`:341`) and serves until `KeyboardInterrupt` (`:343-348`). `hp.py`'s serve is its own stdlib
+  not a dependency: docdicer's kanban server binds `super().__init__((HOST, 0), _Handler)`
+  (`docdicer/docdicer/kanban/server.py:104`), exposes the URL through its `url` property
+  (`:114-115`), prints it on stdout flushed (`:341`) and serves until `KeyboardInterrupt`
+  (`:342-348`). `hp.py`'s serve is its own stdlib
   implementation of the pattern; `ThreadingHTTPServer` appears nowhere in `devpro/` or `tests/`
   today (`git grep -n ThreadingHTTPServer -- devpro/ tests/ devtools/` → nothing).
 - The verb's wiring: `USAGE` (`hp.py:1331-1335`) gains the serve line; `main`'s verb dispatch
@@ -104,24 +105,38 @@ Facts, each re-run before acting on it:
   `view.html` parses through `tree --format html` — unchanged by P1; the served page must satisfy
   the same keys, which the new /page test pins through the server. `USAGE`'s text is unpinned:
   `git grep -n "USAGE" -- tests/` → nothing.
+- The serve tests' harness, stated so none is invented: a `Popen` variant of the suite's launcher
+  pattern — the subprocess started the same way `_run` starts it (`tests/test_devpro_profiler.py:
+  77-86`), but its stdout read incrementally until the URL line appears, each read bounded by a
+  timeout, before any connecting step runs. The suite's own `_run` is `subprocess.run` and blocks;
+  `serve` never exits, so a serve test that ran `_run` would hang. The launcher is the harness, not
+  an in-process `main` call: `main`'s serve branch never returns, so an in-process test never
+  reaches its own assertion.
 - The new tests, each named by the test-precondition clause (`clauses.TEST_PRECONDITION` in
   `devpro/clauses.py`), one defect each:
-  - the index test — starts `serve`, connects to the URL it printed, asserts one row per recorded
+  - the index test — runs `serve` through the harness above, connects to the URL it read, asserts
+    one row per recorded
     session with harness, session id, record count, first and last moments, each linking to its
     `/page/<session-id>` — fails on the defect that the index omits a session the stores hold or
     renders a row that misstates what the store holds;
-  - the unreadable-store test — makes a `*-profiler` store unreadable (mode `0o000`, the tests run
-    unprivileged), connects to the printed URL, asserts the response is 2xx with the index naming
-    that store unreadable and the other sessions rendered — fails on the defect that one bad
-    directory blanks the index or raises out of the handler;
+  - the unreadable-store test — makes one `*-profiler` store unreadable (mode `0o000`, the tests
+    run unprivileged as `agent-user`; `store.is_dir()` needs only the parent's execute bit, so the
+    failure surfaces at `store.iterdir()`, `hp.py:1091`) and constructs a second, readable store,
+    connects to the URL it read, and asserts the response is 2xx with the index naming the
+    unreadable store as such and the readable store's sessions rendered — fails on the defect that
+    one bad directory blanks the index or raises out of the handler. The test restores the mode
+    before returning: `tmp_path`'s teardown cannot unlink a `0o000` directory's contents and
+    errors after the test has passed;
   - the page test — asserts `/page/<id>`'s bytes equal `tree --format html`'s output for the same
-    session — fails on the defect that the served page diverges from the page the file-redirect
-    flow produces.
+    session modulo the one trailing newline `print` adds (`hp.py:1361` passes `tree`'s output
+    through `print`; the served bytes are `render_html`'s return) — fails on the defect that the
+    served page diverges from the page the file-redirect flow produces.
 
 Work:
 
 1. Write the serve verb: the `USAGE` line, the `main` branch, and the handler — bind, print the
-   URL once on stdout, serve until interrupted; `/` the index inline from `list_sessions` with
+   URL once on stdout, flushed, before the serve loop (the precedent prints with `flush=True`,
+   `server.py:341`), serve until interrupted; `/` the index inline from `list_sessions` with
    unreadable stores as stated rows; `/page/<session-id>` from `render_html`, no file written.
 2. Add the three tests above to `tests/test_devpro_profiler.py`, docstring naming each defect.
 3. Run the gate, then lint.
@@ -190,19 +205,23 @@ Facts, each re-run before acting on it:
 - The body today renders to a file and hands over a path — quoted, `show_profile.py:41-43`:
   `sh HP tree` and `sh HP tree --format html > .devpro-temp/harness-profile.html`, then
   `show_profile.py:46-50`'s deliver-the-page section: `open`, `xdg-open`, `start`, or an artifact.
-  These are the instructions that become serve-first: run the launcher's `serve`, hand the user
-  the printed URL, with the file redirect demoted to a one-line mention for one-off exports.
-- The sections the design does not name stand: Locate (`show_profile.py:19-37`), the init
-  paragraph (`:32-35`), the Answer section (`:52-64`). Where the serve-first flow reorders them,
-  the wording moves, the rules do not change; the Answer's counts still come from the tree's
-  text.
+  The serve-first rewrite replaces both: run the launcher's `serve`, hand the user the printed
+  URL, with the file redirect demoted to a one-line mention for one-off exports. The
+  deliver-the-page section's fate is the rewrite's, not left open: serve-first writes no file, so
+  its opener instructions — `open`, `xdg-open`, `start`, the artifact attachment — are removed by
+  the rewrite and nothing of them survives inside the one-line mention, which names the redirect
+  alone.
 - What pins what: `test_the_profile_skill_renders_under_every_harness`
-  (`tests/test_devpro_install.py:1863-1871`) pins that the skill renders under every harness —
+  (`tests/test_devpro_install.py:491-495`) pins that the skill renders under every harness —
   unaffected by a body rewrite; no test pins the body's text (`git grep -n "harness-profile.html"
   -- tests/` → nothing; the one hit in `devpro/` is the body's own line). The cross-reference
   guard reads every definition body (`tests/test_cross_references.py:1-16`), so the rewritten body
   keeps other definitions' names out of its prose or spelled through the reference mechanism the
   guard accepts — the guard runs under `just test`.
+- The sections the design does not name stand — Locate (`show_profile.py:19-37`), the init
+  paragraph (`:32-35`), the Answer section (`:52-64`) — the deliver-the-page section excepted,
+  whose fate the fact above states. Where the serve-first flow reorders the standing sections, the
+  wording moves, the rules do not change; the Answer's counts still come from the tree's text.
 
 Work:
 
@@ -268,11 +287,13 @@ Facts, each re-run before acting on it:
   problems: 0`, exit 0. Their exact sites: the SPEC pair's from is
   `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:98-100` (the profiler payload sentence,
   ending "as text or as a self-contained HTML page"); ARCH pair 1's from is
-  `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md:9-12` (the Resources sentence's verb
-  list, ending "no dependency; and"); ARCH pair 2's from is
-  `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md:25-28` (the skill paragraph's opening,
-  `**The skill.**` through "under `devpro/definitions/skills/`,") — its becomes block contains
-  that from, so the application inserts the Serving paragraph before it.
+  `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md:9-11` (the Resources sentence's verb
+  list, ending "no dependency; and" — line 12 opens the `view.html` sentence the from block does
+  not contain); ARCH pair 2's from is
+  `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md:25` (the one line `**The skill.**
+  `show-profile` ships as a rendered skill definition under `devpro/definitions/skills/`,`, design
+  line 57 — lines 26-28 continue the paragraph and are not in the from block) — its becomes block
+  ends with that same line, so the application inserts the Serving paragraph before it.
 - No pair block carries a relative link (checked `ACTIVE_DESIGN.md:15-31`, `:37-52`, `:54-72`), so
   nothing is rebased.
 - No test pins either target's text: `git grep -n "self-contained HTML page" -- tests/ devpro/`
@@ -282,8 +303,8 @@ Facts, each re-run before acting on it:
 Work:
 
 1. Apply the SPEC pair's becomes block over `shipped-files.md:98-100` verbatim.
-2. Apply ARCH pair 1's becomes block over `harness-profiler.md:9-12` verbatim.
-3. Apply ARCH pair 2's becomes block over `harness-profiler.md:25-28` verbatim.
+2. Apply ARCH pair 1's becomes block over `harness-profiler.md:9-11` verbatim.
+3. Apply ARCH pair 2's becomes block over `harness-profiler.md:25` verbatim.
 4. Run the delta check: it must report `landed: 3, pending: 0, problems: 0`, exit 0.
 
 Done-line: `just dev-check-design-deltas-applied` (landed: 3), then `just dev-check-links`. One
