@@ -53,6 +53,16 @@ Right now only code-facing changes are handled by the design->plan->burndown wor
 Doc-only changes for README or project docs are currently only handled by ad-hoc processes
 and are not well-represented in the current workflow definition.
 
+### Group traces with plans
+
+Sessions recorded by the profiler become groupable by the plan they worked under, so the
+dashboard's trace index shows which work a session served. The association mechanism is an open
+decision — capture-time stamping of the plan's identity (robust, no retroactive coverage),
+render-time inference from the plan file's history (covers old traces, misattributes silently),
+or stamp going forward with inference marked as inferred for old traces. Rides after the
+attribution pass: capability layers land in order, each on the clean foundation the previous
+layer left.
+
 ## Maintenance
 
 ### (STICKY) Periodic load-bearing-ness pruning pass
