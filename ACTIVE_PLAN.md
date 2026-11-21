@@ -17,16 +17,16 @@ cited design entries, not the whole design.
 | Package | State | Rating | Lifetime | Done |
 |---|---|---|---|---|
 | | drafted | — | — | kickoff: this plan is committed and its checks run |
-| P1 | drafted | expert | shipped | `just dev-check-links` |
-| P2 | drafted | mechanical | shipped | `just test devpro`, `just check-wheel` |
-| P3 | drafted | mechanical | shipped | `just test devpro` |
-| P4 | drafted | expert | shipped | `just test devpro` |
-| P5 | drafted | mechanical | shipped | `just test` |
-| P6 | drafted | mechanical | shipped | `just test devpro`, `just check-wheel` |
-| P7 | drafted | expert | shipped | `just test devpro` |
-| P8 | drafted | expert | shipped | `just dev-check-links`, `just dev-check-design-deltas-applied` |
-| PR | drafted | expert | shipped | `just dev-check-links` on the review document |
-| PB | drafted | expert | shipped | review document's findings have packages |
+| P1 | dispatchable | expert | shipped | `just dev-check-links` |
+| P2 | dispatchable | mechanical | shipped | `just test devpro`, `just check-wheel` |
+| P3 | dispatchable | mechanical | shipped | `just test devpro` |
+| P4 | dispatchable | expert | shipped | `just test devpro` |
+| P5 | dispatchable | mechanical | shipped | `just test` |
+| P6 | dispatchable | mechanical | shipped | `just test devpro`, `just check-wheel` |
+| P7 | dispatchable | expert | shipped | `just test devpro` |
+| P8 | dispatchable | expert | shipped | `just dev-check-links`, `just dev-check-design-deltas-applied` |
+| PR | dispatchable | expert | shipped | `just dev-check-links` on the review document |
+| PB | dispatchable | expert | shipped | review document's findings have packages |
 
 Sequencing is P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8. The order matters in three places: P5
 rewrites the justfile before P6 removes the source tree the old recipes read; P6's
