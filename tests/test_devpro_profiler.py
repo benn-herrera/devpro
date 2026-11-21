@@ -119,6 +119,22 @@ def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> N
     assert data["calls"][0]["tool"] == "Bash"
 
 
+def test_a_capture_writes_its_line_in_the_bytes_it_measured(tmp_path: Path) -> None:
+    """A lone surrogate in a tool argument, and a non-ASCII one, measure as the bytes the store holds:
+    the line is ASCII, so the length `serialize` bounds and the file's bytes are one count, and
+    `read_text` reads the same JSON back on a host whose default encoding is not utf-8."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    payload = dict(json.loads(_PAYLOAD), tool_input={"command": "echo h\u00e9 \ud800"})
+    launcher = _launcher(tmp_path)
+    capture = _run(launcher, "capture", "claude", cwd=project, stdin=json.dumps(payload))
+    assert capture.returncode == 0, capture.stderr
+    trace = project / ".devpro-temp" / "claude-profiler" / "s-profiler.jsonl"
+    line = trace.read_bytes().decode("ascii")
+    assert json.loads(line)["args"] == "echo h\u00e9 \ud800"
+
+
 def test_the_installed_profiler_is_the_sources_bytes(tmp_path: Path) -> None:
     """The copy that ships is the copy the repository holds: no stamp or reflow lands in `hp.py` on
     its way through the package data."""
@@ -215,8 +231,9 @@ def _run_ts(script: Path, *, directory: Path, arg: str | None = None) -> subproc
 def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
     """The shipped `profiler.ts` through a stub plugin context: a completed call, a failed one, a
     skill call, a subagent dispatch and the session's idle each append their record; the failed call's
-    text is its `Tool.Error`'s message, the skill and subagent carry the host's own names, and the one
-    call whose `execute.after` never fires drops its start at the idle."""
+    text is its `Tool.Error`'s message, the skill and subagent carry the host's own names, a dispatch
+    carries the kind its response reports or else its own agent, under either of the host's spellings
+    for the tool, and the one call whose `execute.after` never fires drops its start at the idle."""
     project = tmp_path / "project"
     project.mkdir()
     run = _run_ts(_HERE / "profiler_capture_runner.ts", directory=project)
@@ -229,14 +246,34 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
         ("shell", "rm -rf /"),
         ("Skill", "show-profile"),
         ("Agent", "devpro-python-coder"),
+        ("Agent", "devpro-architect"),
+        ("Agent", "devpro-tech-writer"),
     ]
     assert calls[0]["result"] == "hi"
     assert calls[1]["ok"] is False
     assert calls[1]["result"] == "The user rejected this tool call"
     assert calls[2]["result"] == "loaded"
     assert calls[3]["result"] == "ses_child"
+    assert calls[3]["child_agent_type"] == "devpro-python-coder"
+    assert calls[4]["child_agent_type"] == "fork"
+    assert calls[5]["child_agent_type"] == "devpro-tech-writer"
     assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"]
     assert (out["startedBeforeIdle"], out["startedAfterIdle"]) == (1, 0)
+
+
+def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path) -> None:
+    """`serialize` holds every line to `LINE_LIMIT`, which the torn-tail read relies on: a record whose
+    fixed `session` alone is longer than the bound is fitted by clipping that field too, and a line
+    already inside the bound is left as it stands."""
+    line_limit = 4096
+    first, second = tmp_path / "first", tmp_path / "second"
+    first.mkdir()
+    second.mkdir()
+    over = json.loads(_run_ts(_HERE / "profiler_serialize_runner.ts", directory=first, arg="4090").stdout)
+    assert over["bytes"] <= line_limit
+    assert over["session"] < 4090
+    inside = json.loads(_run_ts(_HERE / "profiler_serialize_runner.ts", directory=second, arg="200").stdout)
+    assert inside == {"bytes": 338, "session": 0}
 
 
 def test_the_two_masks_redact_alike(tmp_path: Path) -> None:

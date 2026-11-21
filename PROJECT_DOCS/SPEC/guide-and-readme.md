@@ -31,7 +31,9 @@ The skill carries two reference pages, which the session reads when its starting
     shows whether the installed set differs from what it would write;
   - global setup: a user-level install, and `install-agents-file` for a user harness directory;
   - under mage: an install into Mage's skills directory, `~/Mage/Skills`, made first where absent,
-    which writes `~/Mage/Skills/devpro/`, and, with the kbase component, restarting Mage;
+    which writes `~/Mage/Skills/devpro/`, and, with the kbase component, restarting Mage; and the
+    `~/Mage/Skills/kbase/` directory an install from before the component left, which Mage loads
+    beside the current one, so it is removed once;
   - the agents file: where an install keeps its block, and the `CLAUDE.md` redirect;
   - the requirements: `just` 1.33.0 or later where the consuming project's runner is a justfile,
     for the runner include lines; `perl` with core `JSON::PP` for the claude guardrail;
@@ -60,10 +62,13 @@ The skill carries two reference pages, which the session reads when its starting
 - **Usage** lets an agent that has read only this skill take a user who has never used the
   workflow from a fresh install to their first landed plan, and, from the files present
   (`ACTIVE_*`, a plan's Status table, `ROADMAP.md`), tell a returning user where their work stands
-  and what comes next. For each step it says what the user decides and does, what they tell the
+  and what comes next. It walks one request through as an example, from the user's first words to
+  the landed plan. For each step it says what the user decides and does, what they tell the
   session, what appears in the project, and what comes next:
   - getting started: a new project, or one with its process or contract documents already
     written, and the setup the `development` skill routes each to;
+  - what the user's go is: the words that authorize an act, and the session's answer to a message
+    that holds a question;
   - bringing a request, the design it becomes, and what accepting the design means;
   - the plan cut from it, and approving the plan, after which it runs to completion;
   - running the plan: the go the session needs before it acts (the agents file devpro installs),
@@ -76,7 +81,8 @@ The skill carries two reference pages, which the session reads when its starting
   - lighter process: a step skipped at the user's direction, and work that goes straight to a
     plan;
   - the board: the session offers to run it in the background, or hands the command line, the
-    user choosing.
+    user choosing;
+  - where work stands: the files present and the state each names, for a returning user.
 
   It describes each step from the user's side: their decisions, their words, the files they see. It
   states no rule the session follows except as what the user observes, and names the `development`
@@ -89,13 +95,15 @@ The repository's `README.md` holds these things:
 - what using devpro asks of the user;
 - what using devpro gets the user;
 - a minimal installation path, with no runner recipe:
-  - installing devpro with Homebrew;
+  - installing devpro with Homebrew, or with pipx where Homebrew is absent, and the new shell the
+    pipx bin directory needs before the next command runs;
   - for claude and opencode: the command that installs into the consuming project, and the lines
-    to add to `.gitignore`;
+    to add to `.gitignore`, each harness's own;
   - for mage: making `~/Mage/Skills` first where absent, and the install into it for the mage
     harness;
 - what to do next: ask your agent, which loads the `guide` skill, invoked as SPEC.md, Deployed
-  Surfaces, Install destination spells it;
-- the third-party acknowledgments.
+  Surfaces, Install destination spells it, or the `show-profile` skill for a session's profile;
+- the third-party acknowledgments, a list of the packages the build runs, with the ideas and the
+  ported source the project credits named above it.
 
 No install delivers human-facing documentation.

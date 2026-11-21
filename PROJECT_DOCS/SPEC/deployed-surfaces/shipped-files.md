@@ -106,7 +106,16 @@ no plugin's hooks and records nothing there; the skill names the tool's `init` f
 hook where a session needs one. A user-level install renders the skill and copies none of the
 resources. A project opencode install also ships the profiler's render payload — `profiler/hp.sh`,
 `profiler/hp.py` and `profiler/view.html` — and the capture `profiler.ts` beside the plugin entry, and
-registers no hook entries; a mage install ships none of them.
+registers no hook entries; each recorded call appends one line to the project's
+`.devpro-temp/opencode-profiler/<session-id>.jsonl`, a capture that fails raises nothing out of the
+hook, and a mage install ships none of them.
+
+A claude project install also carries the plan-state reminder in that registration: one ungated
+`PostToolUse` entry matched on `Agent`, running `<install-dir>/hooks/state-table-reminder.sh`, which
+reads the same gate at the project root and injects the same sentence as opencode's — `Reminder: keep
+the ACTIVE_PLAN state table up to date.` That entry is written on every claude project install,
+whatever the probe decides about the guardrail's, so its script runs on every project claude
+install. A user-level claude install writes no registration, so the reminder never registers there.
 
 Opencode loads the plugin directory and registers its agents, skills, commands and, where
 `kbase` ships, the `kbase` MCP server under the registry's ids, and injects a plan-state reminder

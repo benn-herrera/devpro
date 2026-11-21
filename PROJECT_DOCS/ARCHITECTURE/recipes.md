@@ -7,9 +7,8 @@
 one line; `install` takes `target *args` and `install-agents-file` takes `dir *args`,
 and each forwards all of it as `"$@"`, so `--components=CSV`, `--harness=NAME` and `--dry-run` all
 reach the verb, which defaults the components to none;
-`agents` installs the devpro set into this checkout once per nested harness, passing no
-`--components`, so the two lines are
-`--harness=claude` and `--harness=opencode`;
+`agents` installs the devpro set into this checkout in one line — the target alone, no
+`--components` and no `--harness` flag, the harness left to the install's own inference;
 `render` and `retake-reference` go through the private `_render-slot.sh`, which calls
 `python3 -m devpro install <slot>/devpro --components=kbase` with `--subdir=` once,
 into `<slot>/devpro/`, where a nested plugin's install also writes the project's `AGENTS.md` and,

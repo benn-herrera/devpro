@@ -34,6 +34,7 @@ change goes.
 | starting a design | the `{clauses.ref(name="development")}` skill's *Design* | — |
 | how the development process runs, or where the user's work stands | this skill | `references/using.md` |
 | showing the project's board | the `{clauses.ref(name="docdicer")}` skill's `kanban` | — |
+| what a session did: its profile, trace, call tree, or what its skills and agents cost | the `{clauses.ref(name="show-profile")}` skill | — |
 | installing, updating, inspecting or changing the installed set | this skill | `references/installing.md` |
 | the project's own design: what it does, how it is built, its house rules | the project's contract documents | its SPEC.md, ARCHITECTURE.md and CONVENTIONS.md, or their trees |
 
@@ -238,11 +239,8 @@ The agents file, *Acting on the user's words*, *Responding to the user* and *Tas
 
 ## Getting started
 
-Installing devpro, and agents missing after an install, are `references/installing.md` here. The
-scratch directory, `{clauses.PROJECT_TEMP_DIR}/` at the project root, holds untracked working files (*Terms*):
-the user creates it and adds a `{clauses.PROJECT_TEMP_DIR}/` line to the project's `.gitignore`. Where it is
-missing, the session stops and says so (the agents file, *Scratch space*). Then, by what the
-project already has:
+Installing devpro, and agents missing after an install, are `references/installing.md` here. Then,
+by what the project already has:
 
 - **Nothing yet.** Say "Start a new project with the development process"
   (`references/new-project.md`). The session asks what the project produces, whether it needs code,

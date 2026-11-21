@@ -5,9 +5,23 @@
 // In the kbase plugin, also refuses a call that names a path in kb-root/.index/, a shell command that searches from kb-root/ without excluding it, or a Grep or Glob rooted there whose file filter's last segment does not end in .md.
 
 import { Plugin } from "@opencode/plugin"
-import { existsSync, statSync } from "node:fs"
-import { basename, join, resolve, sep } from "node:path"
+import { existsSync, readFileSync, statSync } from "node:fs"
+import { basename, dirname, join, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
+
+const here = dirname(fileURLToPath(import.meta.url))
+const registryPath = join(here, "registry.json")
+
+// The module's id, as `profiler.ts` and this file take it: the plugin's, read synchronously from
+// `registry.json` because opencode takes an id before `setup` runs, and the install directory's name where
+// the registry is unreadable.
+function pluginId(): string {
+  try {
+    return (JSON.parse(readFileSync(registryPath, "utf8")) as { plugin: string }).plugin
+  } catch {
+    return basename(here)
+  }
+}
 
 const shellTools = new Set(["bash", "shell"])
 
@@ -92,13 +106,17 @@ const writes = /(?:open\s*\([^)]*['"][wa]b?\+?['"]|(?:writeFile|appendFile)(?:Sy
 // cmd is the shell the command runs; code is cmd plus the bodies of heredocs that feed an
 // interpreter, which only the inline-script check reads.
 function mutation(cmd: string, code: string, cwd: string, root: string): string | null {
-  if (inPlace.test(cmd.replace(/"[^"]*"|'[^']*'/g, " "))) {
+  // A shell's word keeps its quotes: `"my file.txt"` is that one word to the shell, so the redirect
+  // scan reads its target whole. The checks below read the text with each quoted span blanked out,
+  // because an operator inside a quote is prose.
+  const unquoted = cmd.replace(/"[^"]*"|'[^']*'/g, " ")
+  if (inPlace.test(unquoted)) {
     return "an in-place sed, perl or ruby edit"
   }
   for (const target of redirects(cmd)) {
     if (!free(target, cwd, root)) return `a redirect that writes ${target}`
   }
-  for (const part of cmd.split(/(?:&&|\|\||;|\||\n)/)) {
+  for (const part of unquoted.split(/(?:&&|\|\||;|\||\n)/)) {
     const ws = part.trim().split(/\s+/).filter(Boolean)
     const name = (ws[0] ?? "").split("/").pop()
     if (name === "tee") {
@@ -187,7 +205,7 @@ function indexReason(tool: string, input: Input, cwd: string, root: string): str
 }
 
 export default Plugin.define({
-  id: "guardrail-plugin",
+  id: pluginId(),
   async setup(ctx) {
     const root = ctx.location.directory
     await ctx.tool.hook("execute.before", (event) => {

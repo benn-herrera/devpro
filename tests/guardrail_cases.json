@@ -48,6 +48,8 @@
   {"command": "echo hi >&src/x.txt", "reason": "a redirect that writes src/x.txt"},
   {"command": "echo hi >&-", "reason": null},
   {"command": "echo hi > out.txt", "cwd": "@scratch@", "reason": null},
+  {"command": "mkdir -p @scratch@ && echo hi > @scratch@/out.txt 2>&1", "reason": null},
+  {"command": "echo hi > @scratch@/out.txt 2>&1", "reason": null},
 
   {"command": "echo hi | tee out.txt", "reason": "tee writing out.txt"},
   {"command": "echo hi | tee -a out.txt", "reason": "tee writing out.txt"},

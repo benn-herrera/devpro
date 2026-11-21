@@ -18,8 +18,10 @@ dispatch moment.
 **The opencode API it uses.** It imports `Plugin` from `@opencode/plugin` and exports
 `Plugin.define({ id, setup })`.
 
-- `id` is the registry's `plugin`, read synchronously from `registry.json` because opencode takes the id
-  before `setup` runs; an unreadable registry falls back to the install directory's name.
+- `id` is the plugin's: the registry's `plugin`, read synchronously from `registry.json` because
+  opencode takes the id before `setup` runs; an unreadable registry falls back to the install
+  directory's name. Every module of the plugin reads it that way, the entry and each module it
+  awaits (`guardrail.ts`, `profiler.ts`), so a module carries no id of its own.
 - `setup(ctx)` receives four registration domains, `ctx.agent`, `ctx.skill`, `ctx.command` and
   `ctx.mcp`. Each has `transform(callback)`, which hands the callback an editor: `update(id, fn)` for
   agents, `add` for skills and commands, `set(name, config)` for MCP servers. Each also has
@@ -62,8 +64,7 @@ opencode itself: the tests run the entry under a stub of this surface
   running work reports nothing: the wake that follows that work fires the hook again, and that idle
   is the completion. Each injection is one `ctx.session.synthetic` message delivered `steer`, so it
   belongs to the execution that just ran, and its text is the sentence claude's reminder script
-  emits, byte for byte, naming the status table's two acts: `in progress` when a package is
-  dispatched, `landed` when its work is accepted and committed.
+  emits, byte for byte: `Reminder: keep the ACTIVE_PLAN state table up to date.`
 - *Watcher.* A recursive `fs.watch` on the install directory schedules a refresh after a 100 ms
   quiet period. Refreshes are serialized on one promise chain, so an older read never replaces a
   newer one. A refresh re-reads the registry and calls the four `reload()`s; a failure is logged and the

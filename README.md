@@ -42,7 +42,7 @@ in just over 16K lines of runtime code, including vision tower support and an Op
 - Homebrew (macOS or Linux), or pipx on a machine without it, to install devpro.
 - `just` 1.33.0 or later, where the project's runner is a justfile: the include line the install writes is an `import?`, which earlier `just` rejects, and no install checks your version.
 - `perl` with core `JSON::PP` for the claude guardrail: without them the install skips the hook, says so in one line, and installs everything else.
-- An activity profiler: each tool call of a session is recorded to `.devpro-temp/<harness>-profiler/` at the project root, and the `show-profile` skill renders the trace as a page.
+- An activity profiler: a claude or opencode project install records the session to `.devpro-temp/claude-profiler/` or `.devpro-temp/opencode-profiler/` at the project root — under claude one line per hook event, under opencode one per call, each with its timings and token costs — and the `show-profile` skill renders the trace as text or as a page. A claude session on the web records nothing there until `init` commits the hook; a mage install ships neither the profiler nor the skill.
 
 ## Quick Start Guide
 
@@ -56,7 +56,9 @@ brew install devpro
 or
 ```sh
 pipx install "git+https://github.com/benn-herrera/devpro@v0.18.0"
+pipx ensurepath
 ```
+then open a new shell, so `devpro` is on your `PATH`.
 
 Author identity: <https://keyoxide.org/wkd/benn@bennherrera.dev>
 
@@ -68,30 +70,29 @@ Install devpro, then run its install from the project root:
 devpro install .
 ```
 
-The install command takes the harness from the `.claude/` or `.opencode/` directory inside the target.
-Where the project holds neither, or holds both, it refuses and writes nothing; `--harness=claude`
-or `--harness=opencode` on the install line settles either case.
+The install reads the harness from the `.claude/` or `.opencode/` directory the target holds; where it
+holds neither, or holds both, pass `--harness=claude` or `--harness=opencode`. A devpro settings file
+that names harnesses installs for each of them instead, one install apiece.
 
 Add the installed tree, the agent scratch space and the agents file's backup to the project's
-`.gitignore`:
+`.gitignore`, listing the lines of the harness you installed:
 
 ```text
+# claude
 .claude/
-# agent scratch space
+# opencode: .opencode/ instead
 .devpro-temp/
 # the agents file's rolling backup
 backup.AGENTS.md
 ```
 
-For opencode, use `.opencode/` in place of `.claude/`.
-
 The install also adds include lines to the project's `justfile` or `Makefile` (a project with
-neither gets a new `Makefile`) for the runner files it installs, and settles the project's agents
-file in one of three ways:
-
-- `AGENTS.md`, holding the devpro block;
-- under claude, `AGENTS.md` and the one-line `CLAUDE.md` redirect to it;
-- nothing, where the global agents file already holds the block.
+neither gets a new `Makefile`) for the runner files it installs, and writes the devpro block into
+the project's `AGENTS.md`, created with it where absent — unless `~/.claude/CLAUDE.md` or
+`~/.config/opencode/AGENTS.md` already holds an agents-file block, which the install keeps current
+there instead and writes no project agents file. Where the project's `AGENTS.md` takes the block,
+claude also gets the project's `CLAUDE.md` as the one-line `@AGENTS.md` redirect, created when
+absent.
 
 Under claude, a hand-written `CLAUDE.md` refuses the install with exit 2 and nothing written: moving its content
 into `AGENTS.md` is yours to do.
@@ -105,7 +106,9 @@ mkdir -p ~/Mage/Skills
 devpro install ~/Mage/Skills --harness=mage
 ```
 
-This writes `~/Mage/Skills/devpro/`. The kbase component is optional: `--components=kbase` adds the
+This writes `~/Mage/Skills/devpro/` and that plugin's `CLAUDE.md`, holding the agents file. A mage
+install writes nothing into the project: no `.gitignore` line, runner include line or `Makefile`.
+The kbase component is optional: `--components=kbase` adds the
 `kbase` skill and the `.mcp.json` entry Mage starts the `kbase` executable from. No devpro install
 provides, runs or checks that executable: on macOS and Linux, install it with
 `brew install benn-herrera/tap/kbase` (0.11.1 or later); native Windows is unsupported for the
@@ -119,21 +122,23 @@ Start your coding harness, or, if a session was already open during the install,
 the kbase component on, restart Mage. Then ask the session agent to load the `guide` skill:
 `devpro:guide` under claude and mage, `devpro-guide` under opencode. It starts a design, explains how
 the development process runs, tells you where your work stands, and shows the board. It also
-installs, updates, inspects or changes what you just installed.
+installs, updates, inspects or changes what you just installed. To see what the session did — its
+profile, trace or call tree — ask for the `show-profile` skill: `devpro:show-profile` under claude and
+mage, `devpro-show-profile` under opencode.
 
 ## Updating
 
 To update, run `brew upgrade devpro`, then the same install line with `--dry-run` added to preview
 it, then without to apply it.
 
+Installed with pipx, update with `pipx install --force` of the next release's tagged URL, then `pipx
+ensurepath` and a new shell, then the same install line.
+
 Under Mage, an install from before the kbase component wrote a second plugin directory,
 `~/Mage/Skills/kbase/`, holding its own duplicate skills, agents file and `.mcp.json`. The current
-install writes only `~/Mage/Skills/devpro/` and leaves that directory alone, so remove
-`~/Mage/Skills/kbase/` once, before or after the install: Mage otherwise loads two sets of skills,
-agents and `kbase` MCP servers side by side.
-
-Installed with pipx, update with `pipx install --force` of the next release's tagged URL, then the
-same install line.
+install writes only `~/Mage/Skills/devpro/`, so Mage keeps loading both directories — two sets of
+skills and agents, and two `kbase` MCP servers — until you remove `~/Mage/Skills/kbase/` once,
+before or after the install.
 
 ## Third Party Acknowledgments
 

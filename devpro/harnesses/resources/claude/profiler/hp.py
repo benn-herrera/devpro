@@ -92,8 +92,12 @@ def _number(value: object) -> float | int:
 
 
 def _json(value: object) -> str:
-    """`value` as compact JSON, the shape a record line and the page's data take."""
-    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    """`value` as compact JSON, the shape a record line and the page's data take.
+
+    Every character outside ASCII is escaped, and a lone surrogate `json.loads` admits from a `\\ud800`
+    escape is escaped too: the line is then pure ASCII, so the bytes `serialize` counts are the bytes the
+    file holds, whatever the writing call's encoding or error policy does with the text."""
+    return json.dumps(value, ensure_ascii=True, separators=(",", ":"))
 
 
 def _iso(moment: datetime) -> str:
@@ -532,11 +536,14 @@ def build_record(payload: dict, harness: str) -> dict:
 
 
 def serialize(record: dict) -> str:
-    """The record's JSON line, `result` and then `args` giving way until the line fits."""
+    """The record's JSON line, `result` and then `args` giving way until the line fits.
+
+    The line is what `_json` makes it — ASCII alone — so its length is the byte count `serialize` bounds
+    and the bytes the file holds, one count."""
     line = _json(record)
     fitted = dict(record)
     for key in ("result", "args"):
-        while len(line.encode("utf-8", "replace")) > LINE_LIMIT and fitted.get(key):
+        while len(line.encode("utf-8")) > LINE_LIMIT and fitted.get(key):
             shorter = len(fitted[key]) // 2
             if shorter < 1:
                 del fitted[key]

@@ -53,7 +53,13 @@ The model's own `todowrite` notes are not recorded: they are not activity, so th
 record per tool call that did something. A capture that fails raises nothing out of the hook. `init`
 and `doctor` stay claude-facing: opencode has no committed-hook concept, and the install ships the
 render payload at `<install-dir>/profiler/`, where the show-profile skill's first finder candidate
-resolves it. An opencode record carries no token counts, so the tree's token columns are blank for
+resolves it. One line holds one record, and the limits that keep it so are `hp.py`'s: `NAME_LIMIT`,
+`ARGS_LIMIT` and `RESULT_LIMIT` clip a field's text as `hp.py` clips it, and `LINE_LIMIT` bounds the
+written line in bytes, `name` and `session` clipped at the root before `result` and `args` give way.
+A line a killed process left torn would fuse the next record onto it, so an append finds the last
+newline in the file's tail and truncates to it, renaming the whole store aside where the file holds
+no newline at all. `hp.py`'s capture has no such repair: it appends as it stands, and its reader skips
+the torn line. An opencode record carries no token counts, so the tree's token columns are blank for
 its sessions; claude's counts come from its own transcripts under `~/.claude/projects/`, which is
 claude's data, not a source the install configures. An opencode record's `branch` is empty on its own
 account: the capture runs in the host's process, and the hooks report no branch, so `tree --branch`

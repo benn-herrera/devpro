@@ -32,7 +32,9 @@ harness supplies as text or as the empty string, an empty one dropping the parag
 and `@!fam-<anchor>!@` for an anchor, an `Anchor` member (`ask-vs-stipulate`, the one a definition
 exposes today).
 A body of any kind may carry `@!plg-name!@` (`PluginText.NAME`, filled from `ctx.plugin.name`) where
-the text must spell the plugin's name, such as the `devpro install --plugin=<plugin>` command.
+the text must spell the plugin's name, such as the plugin word of the agents file's begin marker,
+`vvv-devpro devpro <version>`, or the mage install directory the `guide` skill's installation
+reference names.
 The agents file alone also carries `@!agf-<key>!@` for its scope name and the package version. A
 body of any kind may carry `@!tun-<key>!@` for a derived value, one computed from the `Render`'s
 category map and harness rather than supplied by either: `TuningText`'s one member, `step_down_model`,

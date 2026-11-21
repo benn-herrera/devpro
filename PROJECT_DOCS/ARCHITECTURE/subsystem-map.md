@@ -51,18 +51,23 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   tools package by every install.
   `docdicer.py` names its script `tools/docdicer`, relative to the skill's directory, and says its
   first run installs docdicer beside it; the script's `--help` is the command list, which the skill
-  does not restate. The skill carries no runner-snippet advice and no install step; its one
-  runner instruction is that where the project's runner includes the docdicer snippet, docdicer is
-  run through the recipes (`docdicer`, `docdicer-check-plan`, `docdicer-kanban`, `docdicer-help`).
+  does not restate in full. The skill carries no install step; its one runner instruction is that
+  where the project's runner includes the docdicer snippet, docdicer is run through the recipes
+  (`docdicer`, and by name `docdicer-help`, `docdicer-check-plan`, `docdicer-check-design`,
+  `docdicer-check-design-deltas-applied`, `docdicer-check-roadmap` and `docdicer-kanban`), each of
+  the last four checking the active plan, the active design, the active design's applied deltas and
+  `ROADMAP.md`, with a path given to `docdicer` for any other.
   Its `kanban` paragraph has the session offer to run the board as a background process or hand
-  over the command line, the user choosing. It names `check-design` and `check-roadmap` beside
-  `check-plan`; neither has a recipe of its
-  own, and each runs through `docdicer` (`just docdicer check-design <design>`,
-  `just docdicer check-roadmap ROADMAP.md`).
+  over the command line, the user choosing.
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
   `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it
   renders only where kbase ships. The docdicer version the script
   installs is written once, as `VERSION` in `devpro/docdicer-tools/docdicer`.
+- **Profile skill** — `show-profile` (`definitions/show_profile.py`): one `SKILL.md` with no
+  supporting files, delivered under every harness. It renders the newest session's trace — read from
+  either `<store>-profiler/` under `.devpro-temp/` — as text or as a self-contained HTML page, and
+  finds the profiler's launcher at `../../profiler/hp.sh`, the installed copy, before the committed
+  `.claude/harness-profiler/hp.sh` a claude-on-web session uses (Install, Harness profiler).
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
   under every harness. The description names the uses SPEC.md, Guide and README lists, and

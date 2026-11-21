@@ -64,6 +64,22 @@ await fire("execute.after", {
   result: { output: "ses_child", metadata: { sessionID: "ses_child" } },
 })
 
+// A dispatch the host reports as a fork: the response's `agentType` is the kind hp.py draws the context by.
+await fire("execute.before", base("call_7", "subagent", { agent: "devpro-architect", description: "fork it", prompt: "fork" }))
+await fire("execute.after", {
+  ...base("call_7", "subagent", { agent: "devpro-architect", description: "fork it", prompt: "fork" }),
+  status: "completed",
+  result: { output: "ses_fork", metadata: { sessionID: "ses_fork", agentType: "fork" } },
+})
+
+// The same dispatch under opencode 2.3.0's spelling of the tool, which its floor range covers.
+await fire("execute.before", base("call_8", "task", { agent: "devpro-tech-writer", description: "write it", prompt: "write" }))
+await fire("execute.after", {
+  ...base("call_8", "task", { agent: "devpro-tech-writer", description: "write it", prompt: "write" }),
+  status: "completed",
+  result: { output: "ses_task" },
+})
+
 // A remark the capture skips, a call whose `execute.after` never fires, and the session's idle.
 await fire("execute.before", base("call_5", "todowrite", { todos: [] }))
 await fire("execute.before", base("call_6", "removed_tool", {}))

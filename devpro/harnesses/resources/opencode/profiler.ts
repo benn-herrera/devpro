@@ -9,8 +9,8 @@
 // opencode's hook surface, which reports different things than claude's hooks do.
 //
 // `execute.before` carries no result, so it is where a call's start is taken; `execute.after` is where
-// the record is written. A capture that fails raises nothing out of a hook and says nothing.
-
+// the record is written. A capture that fails raises nothing out of a hook and says nothing, save the
+// store's own repair: an append onto a line a killed process left torn renames that store aside.
 import { Plugin } from "@opencode/plugin"
 import {
   appendFileSync,
@@ -18,11 +18,16 @@ import {
   fstatSync,
   mkdirSync,
   openSync,
+  readFileSync,
   readSync,
   renameSync,
   truncateSync,
 } from "node:fs"
-import { dirname, join } from "node:path"
+import { basename, dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+
+const here = dirname(fileURLToPath(import.meta.url))
+const registryPath = join(here, "registry.json")
 
 // The slice of the plugin context this module uses, declared as the entry declares its own.
 type ToolInput = { [arg: string]: unknown }
@@ -49,8 +54,17 @@ type Context = {
   }
 }
 
-// The module's id, as `guardrail.ts` carries its literal; the entry's own id is the host's.
-const PLUGIN_ID = "profiler-plugin"
+// The module's id, as `guardrail.ts` and this file take it: the plugin's, read synchronously from
+// `registry.json` because opencode takes an id before `setup` runs, and the install directory's name where
+// the registry is unreadable.
+function pluginId(): string {
+  try {
+    return (JSON.parse(readFileSync(registryPath, "utf8")) as { plugin: string }).plugin
+  } catch {
+    return basename(here)
+  }
+}
+
 // hp.py's limits and spellings, so a record from either harness renders the same way.
 const SCHEMA_VERSION = 2
 const TRACE_DIR = join(".devpro-temp", "opencode-profiler")
@@ -76,7 +90,8 @@ const SECRETS: [RegExp, string][] = [
   [/(?<![\p{L}\p{N}_])(?:gh[pousr]_|github_pat_|sk-|xox[abp]-)[\p{L}\p{N}_-]{10,}/gu, "[redacted]"],
 ]
 // hp.py states the same three as `[\w]` with Unicode semantics; JavaScript's `\w` is ASCII, and the
-// `\p{L}\p{N}` classes above are what make a credential holding a non-ASCII letter mask alike.
+// `\p{L}\p{N}` classes above are what make a credential holding a non-ASCII letter mask alike. The
+// lookbehind is that `\w` boundary written for the same classes, since `\b` would not take them.
 // `test_devpro_profiler.py` holds the two implementations to one sample list.
 const SECRET_KEY = /token|secret|password|api_?key|authorization|credential/i
 // JSON.stringify escapes the line terminators JSON leaves raw; this does not, so a record carrying
@@ -139,9 +154,12 @@ function errorText(error: unknown): string {
 // are not activity, so they are not recorded.
 const REMARKS = new Set(["todowrite"])
 // The tools that start a subagent context, and the tool hp.py records them as: the tree draws claude's
-// `Agent` call by default, so opencode's `subagent` must carry that name to be drawn at all.
-const SUBAGENT_TOOLS: Record<string, string> = { subagent: "Agent" }
+// `Agent` call by default, so opencode's subagent dispatch must carry that name to be drawn at all.
+// Both of the host's spellings are here: `task` is the name opencode 2.3.0's floor still uses, and
+// `subagent` the one it is renamed to later in the 2.3 line.
+const SUBAGENT_TOOLS: Record<string, string> = { task: "Agent", subagent: "Agent" }
 const KIND_ARGS: Record<string, string[]> = {
+  task: ["subagent_type", "agent"],
   subagent: ["subagent_type", "agent"],
 }
 // hp.py's `Skill`: the name the tree draws by default, its name the host's skill id.
@@ -218,9 +236,14 @@ function resultOf(call: Finished): string | undefined {
   return clip(mask(firstLine(textOf)), RESULT_LIMIT) || undefined
 }
 
-// childAgentTypeOf is the kind of subagent a parent call started: hp.py's `Agent` call names its own
-// input's subagent type, opencode's `subagent` names its `agent`.
-function childAgentTypeOf(tool: string, input: Record<string, unknown>): string | undefined {
+// childAgentTypeOf is the kind of subagent a parent call started, the response's `agentType` first as
+// hp.py reads it — where a forked child's `fork` appears — then the call's own input, opencode's `agent`.
+function childAgentTypeOf(tool: string, input: Record<string, unknown>, call: Finished): string | undefined {
+  const { result, metadata } = isRecord(call.result) ? call.result : {}
+  const kind =
+    (isRecord(result) ? textFrom(result.agentType) : "") ||
+    (isRecord(metadata) ? textFrom(metadata.agentType) : "")
+  if (kind) return kind
   for (const arg of KIND_ARGS[tool] ?? []) {
     const value = input[arg]
     if (typeof value === "string" && value) return value
@@ -278,7 +301,7 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
     // each opencode session owns its own trace file: a child id here would send hp.py's context walk
     // after the child's calls in this, the parent's, file, where they never are.
     child_agent_id: null,
-    child_agent_type: subagent ? (childAgentTypeOf(raw, input) ?? DEFAULT_AGENT) : null,
+    child_agent_type: subagent ? (childAgentTypeOf(raw, input, call) ?? DEFAULT_AGENT) : null,
     background: false,
     child_spend: null,
     tokens: null,
@@ -308,11 +331,13 @@ function eventRecord(session: string, event: string, at: number): Record<string,
   }
 }
 
-// hp.py's `serialize`: the record's JSON line, `result` and then `args` giving way until it fits.
+// hp.py's `serialize`: the record's JSON line, `name` then `session` then `result` and `args` giving way
+// until it fits. `name` and `session` are clipped first, because they are the fixed fields a record cannot
+// drop and a long session id alone could hold the line over LINE_LIMIT with nothing left to shrink.
 function serialize(record: Record<string, unknown>): string {
   let line = compact(record)
-  const fitted = { ...record }
-  for (const key of ["result", "args"]) {
+  const fitted: Record<string, unknown> = { ...record }
+  for (const key of ["name", "session", "result", "args"]) {
     while (Buffer.byteLength(line, "utf8") > LINE_LIMIT && fitted[key]) {
       const shorter = Math.floor(String(fitted[key]).length / 2)
       if (shorter < 1) delete fitted[key]
@@ -400,7 +425,7 @@ function silently(step: () => void): void {
 }
 
 export default Plugin.define({
-  id: PLUGIN_ID,
+  id: pluginId(),
   async setup(ctx: Context) {
     const root = ctx.location.project.directory
     await ctx.tool.hook("execute.before", (call) => {
