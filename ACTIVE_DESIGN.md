@@ -65,7 +65,10 @@ dependency; and
 cmd-clicking. Its main page is the index of record files: every store the `*-profiler` glob finds,
 one row per session — harness, session id, record count, first and last moments — each linking to
 `/page/<session-id>`, which renders that session's page in memory, the bytes `tree --format html`
-produces. No file is written. The server runs until interrupted.
+produces. No file is written. A store the glob finds but cannot read appears in the index as
+unreadable — the server raises nothing for it. The page shows a session's calls: a session of
+nothing but tool calls renders those calls as its calls content, never an empty tree under a calls
+header. The server runs until interrupted.
 
 **The skill.** `show-profile` ships as a rendered skill definition under `devpro/definitions/skills/`,
 ```
@@ -83,3 +86,9 @@ from memory; no file is written. The skill body's instruction changes to serve-f
 for one-off exports. The repository's justfile gains the runner target `dev-profiler` running the
 source-tree `hp.sh serve`, the way `dev-kanban` wraps docdicer's serve. The leaf, as amended, stays
 true.
+
+The page builder changes in two ways the user decided taking the design up: a session of nothing
+but tool calls renders those calls as its calls content — the call tree the skill and agent calls
+build stays empty there, and the page never shows an empty tree under a calls header; and an
+unreadable `*-profiler` store reaches the index as a stated unreadable row rather than a raised
+error, so one bad directory does not blank the page.
