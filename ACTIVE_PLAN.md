@@ -100,7 +100,7 @@ one finding per departure, marked with what changed since `69eed3e` it rests on.
 | P1 | in progress | expert | Panel — the four conformance seats (4 agents, parallel) |
 | P2 | in progress | expert | Panel — the four consistency seats (4 agents, parallel with P1) |
 | P3 | landed | expert | Post-plan review — the seats synthesized into `ACTIVE_PLAN_REVIEW.md` |
-| P4 | drafted | expert | Post-plan burndown — drafted from the review, PE-reviewed, revised, executed |
+| P4 | dispatchable | expert | Post-plan burndown — drafted from the review, PE-reviewed, revised, executed |
 
 The plan's packages go out `drafted`; the plan's one `devpro-prompt-engineer` usability review and
 one architect revision set P1 and P2 `dispatchable`. P3 becomes `dispatchable` when P1 and P2 are
