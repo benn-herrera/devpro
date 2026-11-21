@@ -38,7 +38,7 @@ dispatches.
 
 | Package | State | Rating | Lifetime | Changes |
 | --- | --- | --- | --- | --- |
-| P1 | dispatchable | expert | shipped | `hp.py` gains the `serve` verb: `ThreadingHTTPServer` on loopback, free port with `--port`, URL on stdout; `/` the index from `list_sessions` with unreadable stores stated, `/page/<session-id>` from memory; serve tests added |
+| P1 | in progress | expert | shipped | `hp.py` gains the `serve` verb: `ThreadingHTTPServer` on loopback, free port with `--port`, URL on stdout; `/` the index from `list_sessions` with unreadable stores stated, `/page/<session-id>` from memory; serve tests added |
 | P2 | dispatchable | expert | shipped | `view.html`'s call tree: a session of nothing but tool calls renders those calls as its calls content, never an empty tree under the calls header |
 | P3 | dispatchable | expert | shipped | `show-profile`'s body serve-first: run the launcher's `serve`, hand the user the URL; the file redirect demoted to a one-line mention |
 | P4 | dispatchable | mechanical | shipped | the justfile gains `dev-profiler`, wrapping source-tree `hp.sh serve` the way `dev-kanban` wraps docdicer's serve |
