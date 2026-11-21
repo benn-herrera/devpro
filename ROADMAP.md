@@ -53,15 +53,20 @@ Right now only code-facing changes are handled by the design->plan->burndown wor
 Doc-only changes for README or project docs are currently only handled by ad-hoc processes
 and are not well-represented in the current workflow definition.
 
-### Group traces with plans
+### Group traces with plans — the operational-context stamp
 
-Sessions recorded by the profiler become groupable by the plan they worked under, so the
-dashboard's trace index shows which work a session served. The association mechanism is an open
-decision — capture-time stamping of the plan's identity (robust, no retroactive coverage),
-render-time inference from the plan file's history (covers old traces, misattributes silently),
-or stamp going forward with inference marked as inferred for old traces. Rides after the
-attribution pass: capability layers land in order, each on the clean foundation the previous
-layer left.
+Sessions recorded by the profiler carry their operational context, so the dashboard can answer
+what happened under what set of operational directives and when — before-and-after comparison for
+an agent or skill tuning being the use the whole forensic layer serves. The stamp binds three
+things to each trace group at capture time: the plan the session worked under; the directives
+state in effect — a fingerprint of the installed agent and skill definitions and the agents file,
+taken once per session start, so two sessions under the same plan but different definitions are
+distinguishable; and the session's time against directive-state changes, so before and after a
+tuning change are defined by the change, not inferred. Open decisions for the pass's own design
+work: the fingerprint's exact scope and mechanism, how association renders in the dashboard's
+index, and whether pre-stamping traces get inference-based association marked as inferred. Rides
+after the attribution pass: capability layers land in order, each on the clean foundation the
+previous layer left.
 
 ## Maintenance
 
