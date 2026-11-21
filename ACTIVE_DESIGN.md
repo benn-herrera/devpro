@@ -37,6 +37,14 @@ The preceding is a summary of the detailed design below. Summaries are unavoidab
   is entered in the design, and the plan's post-plan review reads the design.
 ```
 
+The chain rule for one accepted design's pairs applied in stages: a later accepted pair's application
+supersedes the earlier pair's `becomes` in the target — the region the later application rewrites is
+the state the earlier pair left — and the earlier pair re-anchors to what the target holds from then
+on: its `from` the smallest anchor of the current state, its `becomes` the state the target now
+holds, the later pair's text or the anchor both applications leave standing. The latest accepted
+statement is never lost; the earlier pair carries the chain's history as a `landed` anchor, and a
+pair re-anchored before its chain's next application keeps that application from drifting it.
+
 ### [Package and Command](PROJECT_DOCS/SPEC/package-and-command.md) — the dicing verbs are devpro's
 
 **As it stands:**
@@ -174,27 +182,18 @@ verb's contract.
 
 **As it stands:**
 ```
-(Plugins). Every install delivers the **docdicer tools package** at its package destination under
-the install directory, `skills/docdicer/tools/`: inside the `docdicer` skill's own directory. It
-also delivers the **development scripts package**, `skills/development/scripts/`, inside the
-`development` skill's own directory (below), under mage as under claude and opencode. An install
-with the kbase component also delivers the kb-tools package (below). A user-level install delivers none (SPEC.md,
-Deployed Surfaces, Install destination). The docdicer package holds four files:
-- `docdicer`, a `bash` script, executable, carrying the installed banner below its shebang
-- `.gitignore`, holding `.venv/` and carrying no banner
-- `runner-snippets/docdicer.just` and `runner-snippets/docdicer.mk`, runner snippets for a
-  consuming project to include, each carrying the installed banner at its top. A project install of
-  either plugin under claude or opencode writes the docdicer runner include line for them (Plugins).
-  They define the recipes `docdicer`, `docdicer-check-plan`, `docdicer-kanban` and `docdicer-help`.
+(Plugins). Every install delivers the **development scripts package**
 ```
 **Becomes:**
 ```
 (Plugins). Every install delivers the **development scripts package**, `skills/development/scripts/`,
-inside the `development` skill's own directory (below), under mage as under claude and opencode. An
+inside the `development` skill's own directory (below), and the **dicing snippets package**
+(below), under mage as under claude and opencode. An
 install with the kbase component also delivers the kb-tools package (below). A user-level install
 delivers none (SPEC.md,
-Deployed Surfaces, Install destination). No dicing package ships: the dicing, check and board
-verbs run as verbs of the `devpro` command (Package and Command, Dicing and Checks).
+Deployed Surfaces, Install destination). No dicing code ships in a package: the dicing, check and
+board verbs run as verbs of the `devpro` command (Package and Command, Dicing and Checks); the
+dicing snippets package holds only their runner shortcuts.
 ```
 
 **As it stands:**
@@ -411,49 +410,42 @@ next plan's content, the user directing it now — and stay pending until that p
 **As it stands:**
 ```
 A supporting artifact is delivered with the definition that uses it, and only where that definition
-ships. The docdicer tools package (SPEC.md, Deployed Surfaces, Shipped files) goes to its destination
-inside the `docdicer` skill's own directory, and the development scripts package inside the
-`development` skill's. The docdicer tools and the development scripts ship with every install, so
-every project has the `kanban` board, `check-plan` and plan dicing. The kbase component also delivers
+ships.
 ```
 **Becomes:**
 ```
 A supporting artifact is delivered with the definition that uses it, and only where that definition
 ships. The development scripts package goes to its destination inside the
-`development` skill's, and ships with every install. The dicing verbs — the `kanban` board,
-`check-plan` and plan dicing included — ship with the `devpro` command itself (Package and Command,
-Dicing and Checks). The kbase component also delivers
+`development` skill's, and the dicing snippets package inside the `docdicer` skill's; both ship with
+every install. The dicing verbs — the `kanban` board, `check-plan` and plan dicing included — ship
+with the `devpro` command itself (Package and Command, Dicing and Checks); the dicing snippets
+package carries only their runner shortcuts. The kbase component also delivers
+the kb-tools package (runner snippets: `justfile` and `Makefile` fragments a project includes,
+inside the `kbase` skill's own directory) and the harness's `kbase` MCP entry.
 ```
 
 **As it stands:**
 ```
 A **runner include line** is the line that includes one package's runner snippets in the project's
-**runner file**, its `justfile` or `Makefile`. Two packages carry snippets: the docdicer tools, a
-snippet set called `docdicer`, and the kb-tools, a set called `kb`. A project install
-writes the line of every set whose package it ships: every install writes the `docdicer` line,
-and an install with the kbase component also writes the `kb` line. Only a project install under a harness whose plugin
-nests in the project (claude, opencode) writes one; a mage install writes no runner include line and
-creates no `Makefile`, and nothing is written into this repository's own runner file. A line names
-the snippets inside the installed tree (under claude,
-`.claude/skills/devpro/skills/docdicer/tools/runner-snippets/` or
-`.claude/skills/devpro/skills/kbase/kb-tools/runner-snippets/`; under opencode, the same below
-`.opencode/plugins/devpro/`). The line does nothing where the snippets are absent: `import? '<path>'`
-in a justfile, `-include <path>` in a Makefile. A project with neither runner file gets a `Makefile`
-created to hold every line the install writes.
+**runner file**, its `justfile` or `Makefile`.
 ```
 **Becomes:**
 ```
 A **runner include line** is the line that includes one package's runner snippets in the project's
-**runner file**, its `justfile` or `Makefile`. One package carries snippets: the kb-tools, a set
-called `kb`. A project install with the kbase component writes its line. Only a project install under a harness whose plugin
+**runner file**, its `justfile` or `Makefile`. Two packages carry snippets: the dicing snippets
+package, a set called `devpro`, and the kb-tools, a set called `kb`. Every project install of a
+nested plugin writes the `devpro` line; one with the kbase component also writes the `kb` line. Only
+a project install under a harness whose plugin
 nests in the project (claude, opencode) writes one; a mage install writes no runner include line and
 creates no `Makefile`, and nothing is written into this repository's own runner file. A line names
 the snippets inside the installed tree (under claude,
+`.claude/skills/devpro/skills/docdicer/dicing-snippets/runner-snippets/` or
 `.claude/skills/devpro/skills/kbase/kb-tools/runner-snippets/`; under opencode, the same below
 `.opencode/plugins/devpro/`). The line does nothing where the snippets are absent: `import? '<path>'`
 in a justfile, `-include <path>` in a Makefile. A project with neither runner file gets a `Makefile`
 created to hold every line the install writes. The line an install wrote for the docdicer tools
-package — retired with the absorbed dicing verbs — the install removes itself: a non-comment line
+package — retired with the absorbed dicing verbs, and none of its snippet paths point at anything
+any more — the install removes itself: a non-comment line
 whose snippets path ends `runner-snippets/docdicer.just` or `runner-snippets/docdicer.mk` and whose
 first path segment is the harness directory this install writes is removed, the removal named in the
 install report; a docdicer line naming another harness directory's snippets is reported and left.
@@ -463,9 +455,10 @@ install report; a docdicer line naming another harness directory's snippets is r
 ```
 A supporting artifact is delivered with the definition that uses it, and only where that definition
 ships. The development scripts package goes to its destination inside the
-`development` skill's, and ships with every install. The dicing verbs — the `kanban` board,
-`check-plan` and plan dicing included — ship with the `devpro` command itself (Package and Command,
-Dicing and Checks). The kbase component also delivers
+`development` skill's, and the dicing snippets package inside the `docdicer` skill's; both ship with
+every install. The dicing verbs — the `kanban` board, `check-plan` and plan dicing included — ship
+with the `devpro` command itself (Package and Command, Dicing and Checks); the dicing snippets
+package carries only their runner shortcuts. The kbase component also delivers
 the kb-tools package (runner snippets: `justfile` and `Makefile` fragments a project includes,
 inside the `kbase` skill's own directory) and the harness's `kbase` MCP entry.
 ```
@@ -594,12 +587,11 @@ line and no runner file.
 **As it stands:**
 ```
 destination is replaced whole, `skills/kbase/kb-tools/` included, except a `.venv` directly under it,
-which stays. The development scripts package and the docdicer tools package are replaced the same way.
 ```
 **Becomes:**
 ```
 destination is replaced whole, `skills/kbase/kb-tools/` included, except a `.venv` directly under it,
-which stays. The development scripts package is replaced the same way.
+which stays. The development scripts and dicing snippets packages are replaced the same way.
 ```
 
 **As it stands:**
@@ -714,7 +706,7 @@ docdicer/               gitignored hosted clone — the docdicer project this re
 
 **As it stands:**
 ````
-  docdicer-tools/       shipped package, owned by `docdicer` and so delivered by every project install — the `docdicer` bash launcher, which builds and runs a docdicer venv beside itself on demand, a `.gitignore` holding `.venv/`, and the runner snippets (docdicer.just, docdicer.mk) a project install writes the consuming project's include line for; nothing importable; installed under <install-dir>/skills/docdicer/tools/, inside the docdicer skill's own directory (DOCDICER_TOOLS_PACKAGE, devpro/install.py)
+the absorbed dicing package — the docdicer project's dicer, checks and board as devpro code
 ````
 **Becomes:**
 ````
@@ -735,21 +727,11 @@ docdicer/               gitignored hosted clone — the docdicer project this re
 
 **As it stands:**
 ```
-- **Package data.** `[tool.setuptools.package-data]` lists five patterns, `kb-tools/**/*`,
-  `harnesses/resources/**/*`, `docdicer-tools/**/*`, `docdicer-tools/**/.*` and
-  `development-tools/**/*`: the trees `install.py`
-  reads through `PACKAGE_ROOT` (`HARNESS_RESOURCES_SOURCE` and each `SHIPPED_PACKAGES` source,
-  the kb-tools, docdicer-tools and development-tools trees). The `.*` pattern exists because
-  setuptools' `**/*` skips dotfiles, and the docdicer package ships a `.gitignore`. A glob sweeps in whatever sits
+`PACKAGE_ROOT` (`HARNESS_RESOURCES_SOURCE` and each `SHIPPED_PACKAGES` source
 ```
 **Becomes:**
 ```
-- **Package data.** `[tool.setuptools.package-data]` lists four patterns, `kb-tools/**/*`,
-  `harnesses/resources/**/*`, `development-tools/**/*` and
-  `dicing/kanban/assets/**/*`: the trees `install.py`
-  reads through `PACKAGE_ROOT` (`HARNESS_RESOURCES_SOURCE` and each `SHIPPED_PACKAGES` source,
-  the kb-tools and development-tools trees) and the board's assets (Repo Layout), which
-  `importlib.resources` serves. A glob sweeps in whatever sits
+`PACKAGE_ROOT` (`HARNESS_RESOURCES_SOURCE` and each `SHIPPED_PACKAGES` source,
 ```
 
 **As it stands:**
@@ -789,31 +771,13 @@ docdicer/               gitignored hosted clone — the docdicer project this re
 
 **As it stands:**
 ```
-**Toolchain.** This repository's justfile needs `just` 1.33.0 or later: its `import?` line is that
-release's, and the `[doc]` recipe attribute it also uses arrived in 1.27.0. It runs its recipes under
-`bash`. A consuming project's floor is the same 1.33.0, for the `import?` of the include line
-(SPEC.md, Guide and README). That import is the install's own snippet,
-`.claude/skills/devpro/skills/docdicer/tools/runner-snippets/docdicer.just`, so this checkout needs
-one `just agents` run before its docdicer recipes exist: until it has run, the `docs` surface —
-`just check-links`, and so `just test` and `just test-changed` on any document — fails with
-`Does not contain recipe 'docdicer'`. A design's delta application is verified by
-`check-design --deltas-applied`, which the snippet set exposes as
-`docdicer-check-design-deltas-applied`; this repository runs it as
-`just dev-check-design-deltas-applied`, through `dev-dd` against the hosted clone. The `_venv`
+`bash`. The dicing and check verbs run through the `devpro` command
 ```
 **Becomes:**
 ```
-**Toolchain.** This repository's justfile needs `just` 1.27.0 or later, for the `[doc]` recipe
-attribute; a consuming project's floor is 1.33.0 or later where the kbase component ships, for the
-`import?` of the kb include line
-(SPEC.md, Guide and README). It runs its recipes under
 `bash`. The dicing and check verbs run through the `devpro` command — `python3 -m devpro` in the
 checkout's venv — so no import or snippet stands between this checkout and its `docs` surface:
-`just check-links` runs the absorbed verb directly. A design's delta application is verified by
-`check-design --deltas-applied`; this repository runs it as
-`just dev-check-design-deltas-applied`, over the absorbed verb. The `docdicer-repo`, `dev-dd` and
-`dev-kanban` recipes, and `docdicer-repo.sh` with its test, retire with the hosted clone; the
-dev-check recipes run the absorbed verbs. The `_venv`
+`just check-links` runs the absorbed verb directly.
 ```
 
 **As it stands:**
@@ -836,71 +800,35 @@ kbase component riding the same floor
 
 **As it stands:**
 ```
-**Owners.** A supporting artifact ships iff the definition that uses it ships. Each package is a row
-of `SHIPPED_PACKAGES` (`devpro/install.py`), a `ShippedPackage` of source, destination, owner and `snippets` (a `runner_file.SnippetSet`, or none):
-
-| source in `devpro/` | destination below the install directory | owner |
-|---|---|---|
-| `docdicer-tools` | `skills/docdicer/tools` | `docdicer` |
-| `development-tools` | `skills/development/scripts` | `development` |
-| `kb-tools` | `skills/kbase/kb-tools` | `kbase` |
-
-`install` takes the rows whose owner the selection's `ships(name)` admits, and none on a user-level
+`install` takes the rows whose owner the selection's `ships(name)` admits
 ```
 **Becomes:**
 ```
-**Owners.** A supporting artifact ships iff the definition that uses it ships. Each package is a row
-of `SHIPPED_PACKAGES` (`devpro/install.py`), a `ShippedPackage` of source, destination, owner and `snippets` (a `runner_file.SnippetSet`, or none):
-
-| source in `devpro/` | destination below the install directory | owner |
-|---|---|---|
-| `development-tools` | `skills/development/scripts` | `development` |
-| `kb-tools` | `skills/kbase/kb-tools` | `kbase` |
-
 `install` takes the rows whose owner the selection's `ships(name)` admits, and none on a user-level
 ```
 
 **As it stands:**
 ```
 **The runner include lines**, appended to the project's justfile or Makefile, follow the shipped
-packages that carry snippets: a `ShippedPackage` row's `snippets` field is a `runner_file.SnippetSet`
-(label, snippets directory below the package's destination, snippet name per runner), set on the
-docdicer tools row (`docdicer`) and the kb-tools row (`kb`). The lines are written where the install
-ships at least one such row and is a project install of a nested plugin
-(`_is_project_install_of_a_nested_plugin`), so every install writes the docdicer line and one with
-the kbase component also the kb line. `ShippedPackage.installed_snippets()` joins the destination to the set's directory, and a line names the
+packages that carry snippets
 ```
 **Becomes:**
 ```
 **The runner include lines**, appended to the project's justfile or Makefile, follow the shipped
 packages that carry snippets: a `ShippedPackage` row's `snippets` field is a `runner_file.SnippetSet`
 (label, snippets directory below the package's destination, snippet name per runner), set on the
-kb-tools row (`kb`) alone. The lines are written where the install
-ships at least one such row and is a project install of a nested plugin
-(`_is_project_install_of_a_nested_plugin`), so one with
-the kbase component writes the kb line. `ShippedPackage.installed_snippets()` joins the destination to the set's directory, and a line names the
 ```
 
 **As it stands:**
 ```
 Mage gets no line and no `Makefile`. A line is this install's when its first path
-segment equals `harness_relpath`'s, and its path token is then spliced in place. A set's line is
-recognized by the path's shape, ending `<snippets directory name>/<snippet>`, so the `docdicer` and
-`kb` sets never match each other's line. A set whose line is reported and left does not stop the
-others. Where the project has no runner file, one `Makefile` is created holding every line.
+segment equals `harness_relpath`'s
 ```
 **Becomes:**
 ```
 Mage gets no line and no `Makefile`. A line is this install's when its first path
 segment equals `harness_relpath`'s, and its path token is then spliced in place. A set's line is
-recognized by the path's shape, ending `<snippets directory name>/<snippet>`. A set whose line is reported and left does not stop the
-others. Where the project has no runner file, one `Makefile` is created holding every line.
-
-The retired docdicer set's line is this install's to clean up: the dicing verbs are devpro's own
-(Dicing and Checks), and the install removes the docdicer line as SPEC.md, Plugins, states it —
-recognized by the same shape rule that recognizes its own lines (`_snippet_pattern`), removed, and
-the removal named in the install report; a docdicer line naming another harness directory's
-snippets is reported and left.
+recognized by the path's shape, ending `<snippets directory name>/<snippet>`
 ```
 
 **As it stands:**
@@ -988,25 +916,13 @@ the cleanup never touches a line of the new set.
 
 **As it stands:**
 ```
-wider than the install directory would delete a neighbor's. That walk needs no carve-out for a package
-destination: the three `SHIPPED_PACKAGES` rows, the docdicer tools package, the development scripts
-package and the kb-tools package, all sit inside the install directory's `skills/` —
-`skills/docdicer/tools/`, `skills/development/scripts/` and `skills/kbase/kb-tools/`, each in its
-skill's own directory — where every file they hold is stamped installed or left unstamped, never
-generated, so every file under those trees is still either ours or untouched. A `.venv` the
-docdicer script builds under its destination is outside what `_shipped` admits too, so its files
-never enter the stale list. A definition of ours that this run did not write, such as one its plugin
+where every file they hold is stamped installed or left unstamped, never generated
 ```
 **Becomes:**
 ```
-wider than the install directory would delete a neighbor's. That walk needs no carve-out for a package
-destination: the two `SHIPPED_PACKAGES` rows, the development scripts
-package and the kb-tools package, both sit inside the install directory's `skills/` —
-`skills/development/scripts/` and `skills/kbase/kb-tools/`, each in its
-skill's own directory — where every file they hold is stamped installed or left unstamped, never
-generated, so every file under those trees is still either ours or untouched. A `.venv` directly
-under a package destination is outside what `_shipped` admits too, so its files
-never enter the stale list. A definition of ours that this run did not write, such as one its plugin
+where every file they hold is stamped installed or left unstamped, never generated, so every file
+under those trees is still either ours or untouched. A `.venv` directly under a package destination
+is outside what `_shipped` admits too, so its files never enter the stale list.
 ```
 
 **As it stands:**
@@ -1081,10 +997,6 @@ never enter the stale list. A definition of ours that this run did not write, su
 ```
 (`devtools/render_diff.py` states the rules). `just render <slug>` renders into `rendered/<slug>/`
 and refuses a slug starting with `reference`. A slot holds one slot project
-(`rendered/<slug>/devpro/`), an install of the devpro set with the kbase component on, with itself
-as project root, so beside the definitions it holds the kb-tools package, the harness's
-MCP entry and the runner include lines (the docdicer line always, the kb line with the component
-on; none in the mage slot, a harness-directory plugin), and it
 ```
 **Becomes:**
 ```
@@ -1092,8 +1004,7 @@ on; none in the mage slot, a harness-directory plugin), and it
 and refuses a slug starting with `reference`. A slot holds one slot project
 (`rendered/<slug>/devpro/`), an install of the devpro set with the kbase component on, with itself
 as project root, so beside the definitions it holds the kb-tools package, the harness's
-MCP entry and the kb runner include line with the component
-on (none in the mage slot, a harness-directory plugin), and it
+MCP entry and the
 ```
 
 **As it stands:**
@@ -1119,36 +1030,13 @@ on (none in the mage slot, a harness-directory plugin), and it
 
 **As it stands:**
 ```
-- **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered with its
-  tools package by every install.
-  `docdicer.py` names its script `tools/docdicer`, relative to the skill's directory, and says its
-  first run installs docdicer beside it; the script's `--help` is the command list, which the skill
-  does not restate in full. The skill carries no install step; its one runner instruction is that
-  where the project's runner includes the docdicer snippet, docdicer is run through the recipes
-  (`docdicer`, and by name `docdicer-help`, `docdicer-check-plan`, `docdicer-check-design`,
-  `docdicer-check-design-deltas-applied`, `docdicer-check-roadmap` and `docdicer-kanban`), each of
-  the last four checking the active plan, the active design, the active design's applied deltas and
-  `ROADMAP.md`, with a path given to `docdicer` for any other.
-  Its `kanban` paragraph has the session offer to run the board as a background process or hand
-  over the command line, the user choosing.
-  It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
-  `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it
-  renders only where kbase ships. The docdicer version the script
-  installs is written once, as `VERSION` in `devpro/docdicer-tools/docdicer`.
+`docdicer.py` routes the session to devpro's dicing verbs
 ```
 **Becomes:**
 ```
-- **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered by every
-  install.
-  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`,
-  the check verbs and `devpro kanban` — run from the command line, and does not restate their
-  `--help` (CONVENTIONS.md, A skill omits its tool's offered surface). The skill carries no install
-  step and no runner instruction: the recipes and snippets the docdicer tools package carried are
-  retired with it (Plugins). Its `kanban` paragraph has the session offer to run the board as a
-  background process or hand over the command line, the user choosing.
-  It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
-  `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it
-  renders only where kbase ships.
+`docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`,
+the check verbs and `devpro kanban` — run from the command line, and does not restate their
+`--help` (CONVENTIONS.md, A skill omits its tool's offered surface).
 ```
 
 **As it stands:**
