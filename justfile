@@ -311,27 +311,34 @@ tap-update: tap-repo
 tap-local: tap-repo
   @just --justfile "{{HOSTED_TAP_DIR}}/scripts/justfile" TAP_FORMULA={{TAP_FORMULA}} tap-local
 
+dev-devpro *args:
+  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro "${@}"
+
 [doc("serve the profiler pages using the source-tree launcher")]
 dev-profiler:
   @cd "{{PROJECT_ROOT}}" && ./devpro/harnesses/resources/claude/profiler/hp.sh serve
 
+[doc("run kanban board (blocks with running http server)")]
+dev-kanban:
+  @just dev-devpro kanban
+
 [doc("run ACTIVE_PLAN format compliance check")]
 dev-check-plan:
-  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-plan
+  @just dev-devpro check-plan
 
 [doc("run ACTIVE_DESIGN final-form check")]
 dev-check-design:
-  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-design
+  @just dev-devpro check-design
 
 [doc("run check that ACTIVE_DESIGN deltas have been applied to project docs")]
 dev-check-design-deltas-applied:
-  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-design --deltas-applied
+  @just dev-devpro check-design --deltas-applied
 
 [doc("run ROADMAP format compliance check")]
 dev-check-roadmap:
-  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-roadmap
+  @just dev-devpro check-roadmap
 
 [doc("check doc links and the PROJECT_DOCS tree")]
 dev-check-links:
-  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-links PROJECT_DOCS *.md
-  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-tree PROJECT_DOCS
+  @just dev-devpro check-links PROJECT_DOCS *.md
+  @just dev-devpro check-tree PROJECT_DOCS
