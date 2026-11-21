@@ -1,6 +1,7 @@
 """The include lines an install writes into the consumer's runner file (justfile or Makefile) so the
-project can reach the runner snippets its shipped packages carry. Which snippet sets exist is the
-caller's: each function here takes the set it is given."""
+project can reach the runner snippets its shipped packages carry, and the cleanup of the line a
+retired package left there. Which snippet sets exist is the caller's: each function here takes the
+sets it is given."""
 
 from __future__ import annotations
 
@@ -16,6 +17,9 @@ from devpro.render import appended_paragraph, write_text_verbatim
 
 JUSTFILE_NAMES = ("justfile", "Justfile", ".justfile")
 MAKEFILE_NAMES = ("Makefile", "makefile", "GNUmakefile")
+# The banner the first line of every runner file this install creates: what tells a file it created
+# from one the consumer wrote, which the install never removes.
+CREATED_MAKEFILE_BANNER = "# Makefile — created by the devpro installer."
 
 
 class SnippetSet(NamedTuple):
@@ -106,6 +110,51 @@ def _named_harnesses(text: str, snippet_set: SnippetSet, *, runner: str) -> list
     return found
 
 
+def _without_lines(text: str, indexes: Sequence[int]) -> str:
+    """`text` without the lines at `indexes`, every other byte as written."""
+    dropped = set(indexes)
+    return "".join(line for index, line in enumerate(text.splitlines(keepends=True)) if index not in dropped)
+
+
+def _remove_a_created_runner_file_left_without_a_line(path: Path, text: str) -> None:
+    """Remove `path` when the cleanup left it holding no include line and nothing but the comments this
+    install creates it with — a Makefile it created and the consumer added nothing to. One holding the
+    consumer's own targets is left, reported: it is theirs now, and the install removes only what it
+    created and only while that holds nothing of the consumer's."""
+    lines = text.splitlines()
+    if (
+        not lines
+        or lines[0] != CREATED_MAKEFILE_BANNER
+        or not all(not line.strip() or line.lstrip().startswith("#") for line in lines[1:])
+    ):
+        report_left_alone(f"left {path} in place holding no include line: it holds content other than this install's")
+        return
+    path.unlink()
+    print(f"removed {path}: the installer created it and it holds no include line")
+
+
+def _remove_retired_line(
+    text: str, retired_set: SnippetSet, *, runner: str, path: str, harness_relpath: str
+) -> tuple[str, list[str]]:
+    """`text` without this install's include line for `retired_set` — every such line, the set having
+    no package left to write one beside — and the messages naming what the cleanup did. A line naming
+    this harness directory is recognized by the shape `_snippet_pattern` reads and removed; one naming
+    another harness directory's snippets is reported and left. Lines of any other set are untouched."""
+    removed: list[int] = []
+    messages: list[str] = []
+    for match in _named_harnesses(text, retired_set, runner=runner):
+        line = text.splitlines(keepends=True)[match.index]
+        if line[match.start : match.end].split("/", 1)[0] != harness_relpath.split("/", 1)[0]:
+            report_left_alone(
+                f"no {retired_set.label} include line removed: {path} line {match.index + 1} names the "
+                f"retired {retired_set.label} snippets for harness '{match.name}'"
+            )
+            continue
+        removed.append(match.index)
+        messages.append(f"removed the retired {retired_set.label} include line from {path} line {match.index + 1}")
+    return _without_lines(text, removed), messages
+
+
 def _with_include_line(
     text: str, snippet_set: SnippetSet, *, runner: str, path: Path, harness_relpath: str
 ) -> tuple[str, str | None]:
@@ -147,7 +196,12 @@ def _with_include_line(
 
 
 def install_include_lines(
-    project: Path, snippet_sets: Sequence[SnippetSet], *, harness_relpath: str, real_project: Path | None = None
+    project: Path,
+    snippet_sets: Sequence[SnippetSet],
+    *,
+    harness_relpath: str,
+    retired_set: SnippetSet | None = None,
+    real_project: Path | None = None,
 ) -> None:
     """Write each of `snippet_sets`' canonical include lines, in order, into `project`'s runner file:
     the justfile or Makefile probed there, else a `Makefile` created carrying every one.
@@ -162,19 +216,26 @@ def install_include_lines(
     the other sets' lines to be written. Only the runner file this run selected is examined: a second
     runner file's stale line is left to the operator and is non-fatal. Nothing is written when `project`
     is this repository — its own runner is the generator's, not a consumer's. `real_project`, defaulting
-    to `project`, is the project that is, where `project` is a scratch copy of it."""
+    to `project`, is the project that is, where `project` is a scratch copy of it.
+
+    `retired_set` is a set no shipped package carries any more: its lines are removed rather than
+    written (`_remove_retired_line`), and removing the last one from a runner file this run created
+    removes the file. No runner file is created, or a `Makefile` touched, when neither there is a line
+    to write nor that runner file holds a retired line."""
     if (project if real_project is None else real_project).resolve() == install_base.REPO_ROOT:
         return
     labels = " and ".join(snippet_set.label for snippet_set in snippet_sets)
     found = _runner_file(project)
     if found is None:
+        if not snippet_sets:
+            return
         path = project / "Makefile"
         lines = "".join(
             f"{include_line(snippet_set, runner='make', harness_relpath=harness_relpath)}\n"
             for snippet_set in snippet_sets
         )
         path.write_text(
-            "# Makefile — created by the devpro installer.\n"
+            f"{CREATED_MAKEFILE_BANNER}\n"
             f"# Each include line below pulls in targets from the installed tree under {harness_relpath} "
             f"({labels}); add project targets below them.\n\n{lines}",
             encoding="utf-8",
@@ -185,6 +246,10 @@ def install_include_lines(
     prior = utf8_text(path)
     text = prior
     messages: list[str] = []
+    if retired_set is not None:
+        text, messages = _remove_retired_line(
+            text, retired_set, runner=runner, path=str(path), harness_relpath=harness_relpath
+        )
     for snippet_set in snippet_sets:
         text, message = _with_include_line(text, snippet_set, runner=runner, path=path, harness_relpath=harness_relpath)
         if message is not None:
@@ -193,3 +258,5 @@ def install_include_lines(
         write_text_verbatim(path, text)
     for message in messages:
         print(message)
+    if retired_set is not None and text != prior:
+        _remove_a_created_runner_file_left_without_a_line(path, text)

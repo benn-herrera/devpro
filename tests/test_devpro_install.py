@@ -38,6 +38,7 @@ from devpro.harnesses.opencode import HARNESS as OPENCODE
 from devpro.install import (
     _RESOURCE_BANNER_LINES,
     HARNESS_RESOURCES_SOURCE,
+    RETIRED_SNIPPET_SET,
     SHIPPED_PACKAGES,
     ShippedPackage,
     _is_our_resource,
@@ -1199,9 +1200,7 @@ def test_a_makefile_is_created_when_the_project_has_neither_runner_file(tmp_path
     _definition_install(root, _KBASE_OPENCODE_RENDER, project_root=tmp_path)
     text = (tmp_path / "Makefile").read_text(encoding="utf-8")
     assert text.startswith("# Makefile — created by the devpro installer.\n")
-    assert text.endswith(
-        "\n-include .opencode/plugins/devpro/skills/kbase/kb-tools/runner-snippets/kb.mk\n"
-    )
+    assert text.endswith("\n-include .opencode/plugins/devpro/skills/kbase/kb-tools/runner-snippets/kb.mk\n")
     assert not (tmp_path / "justfile").exists()
 
 
@@ -1329,6 +1328,60 @@ def test_the_repositorys_own_project_root_gets_no_include_line() -> None:
     install_include_lines(REPO_ROOT, list(_SNIPPET_SETS.values()), harness_relpath=".claude")
     assert (REPO_ROOT / "justfile").read_bytes() == before
     assert not (REPO_ROOT / "Makefile").exists()
+
+
+def test_a_retired_docdicer_line_is_removed_and_reported(tmp_path: Path, capsys) -> None:
+    """`skills/docdicer/tools/` is pruned at the next install, so a line importing its snippets outlives
+    the snippets it names and the recipes vanish silently. Both of this harness's lines go, each removal
+    reported; a line naming another harness directory's snippets is reported and left."""
+    docdicer_just = f"import? '{_CLAUDE_PLUGIN_RELPATH}/skills/docdicer/tools/runner-snippets/docdicer.just'"
+    (tmp_path / "justfile").write_text(
+        f"default:\n  @echo hi\n\n{docdicer_just}\n{docdicer_just}\nimport? '.opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.just'\n",
+        encoding="utf-8",
+    )
+    install_include_lines(tmp_path, [], harness_relpath=".claude", retired_set=RETIRED_SNIPPET_SET)
+    assert (tmp_path / "justfile").read_text(encoding="utf-8") == (
+        "default:\n  @echo hi\n\n"
+        "import? '.opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.just'\n"
+    )
+    out, err = capsys.readouterr()
+    assert out.count("removed the retired docdicer include line from") == 2
+    assert "names the retired docdicer snippets for harness 'opencode'" in err
+
+
+def test_no_makefile_is_created_for_no_include_line(tmp_path: Path) -> None:
+    """An install shipping no snippet set — one without the kbase component — into a project with
+    neither runner file creates a `Makefile` holding a banner and no include line: a runner file that
+    runs nothing."""
+    root = tmp_path / ".claude"
+    root.mkdir()
+    _definition_install(root, _CLAUDE_RENDER, project_root=tmp_path)
+    assert not (tmp_path / "Makefile").exists()
+    assert not (tmp_path / "justfile").exists()
+
+
+def test_the_makefile_the_installer_created_is_removed_with_its_last_line(tmp_path: Path, capsys) -> None:
+    """The cleanup removes the docdicer line and leaves the file it created holding nothing. It goes with
+    its last include line, reported as removed; one the consumer added targets to is theirs and is left,
+    reported as holding no include line, its own line gone."""
+    docdicer_mk = "-include .opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.mk\n"
+    removed = tmp_path / "removed"
+    removed.mkdir()
+    kept = tmp_path / "kept"
+    kept.mkdir()
+    for project in (removed, kept):
+        # The bytes a project install leaves a project with neither runner file: the banner, then the line.
+        install_include_lines(project, [RETIRED_SNIPPET_SET], harness_relpath=".opencode")
+    with (kept / "Makefile").open("a", encoding="utf-8") as stream:
+        stream.write("\nall:\n\t@echo hi\n")
+    for project in (removed, kept):
+        install_include_lines(project, [], harness_relpath=".opencode", retired_set=RETIRED_SNIPPET_SET)
+    assert not (removed / "Makefile").exists()
+    text = (kept / "Makefile").read_text(encoding="utf-8")
+    assert docdicer_mk not in text and text.endswith("\nall:\n\t@echo hi\n")
+    out, err = capsys.readouterr()
+    assert f"removed {removed / 'Makefile'}: the installer created it and it holds no include line" in out
+    assert f"left {kept / 'Makefile'} in place holding no include line" in err
 
 
 def test_no_two_snippet_sets_name_the_same_snippet() -> None:

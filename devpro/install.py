@@ -111,6 +111,12 @@ SHIPPED_PACKAGES: tuple[ShippedPackage, ...] = (
         SnippetSet("kb", "runner-snippets", {"just": "kb.just", "make": "kb.mk"}),
     ),
 )
+# The snippet set of the docdicer tools package, retired with the absorbed dicing verbs: no row ships
+# it, and a project install removes the line an earlier release wrote for it. Its shape is all that is
+# left of it — the directory name and the snippet per runner an include line ended in.
+RETIRED_SNIPPET_SET = SnippetSet(
+    "docdicer", "skills/docdicer/tools/runner-snippets", {"just": "docdicer.just", "make": "docdicer.mk"}
+)
 # The harness resources: files a harness ships that land in ROOT as they stand, copied and never
 # rendered. The directory below this one in the source is the harness's own
 # name, and the destination is ROOT itself — both stated, neither derived from a directory listing.
@@ -483,9 +489,10 @@ def install(
     resource_files = _resource_copies(root, harness=ctx.harness, user_level=user_level)
     guardrail = _guardrail_in_play(ctx.bound_harness, user_level=user_level)
     snippet_sets = [snippets for package in packages if (snippets := package.installed_snippets()) is not None]
-    writes_include_lines = bool(snippet_sets) and _is_project_install_of_a_nested_plugin(
-        ctx.harness, user_level=user_level
-    )
+    # A project install of a nested plugin touches the project's runner file: it writes each shipped
+    # set's include line and removes the retired docdicer line where the project holds one, whichever
+    # shipped packages it carries. Nothing else — a mage or user-level install — reads or writes it.
+    touches_runner_file = _is_project_install_of_a_nested_plugin(ctx.harness, user_level=user_level)
     guardrail_skipped: str | None = None
     own_files = shipped_harness_files(ctx)
     harness_files = list(own_files)
@@ -515,7 +522,7 @@ def install(
     # Everything this install copies, in one list: `keep` and the report below count a harness's own
     # files with the packages', so neither reads as a stale render.
     copies = [*package_files, *resource_files]
-    if writes_include_lines:
+    if touches_runner_file:
         check_runner(project)
     agents_file: AgentsFileWrite | None = None
     if _installs_agents_file(harness_dir, ctx.harness, project=project):
@@ -560,8 +567,14 @@ def install(
     if verbose:
         for path in [*(target for _, target in copies), *written]:
             print(f"wrote {path}")
-    if writes_include_lines:
-        install_include_lines(project, snippet_sets, harness_relpath=harness_relpath, real_project=real_project)
+    if touches_runner_file:
+        install_include_lines(
+            project,
+            snippet_sets,
+            harness_relpath=harness_relpath,
+            retired_set=RETIRED_SNIPPET_SET,
+            real_project=real_project,
+        )
     if guardrail is not None and not registers_guardrail:
         # Neither prune nor the one-way copy removes what an earlier install delivered, so the script
         # is named; the registration is written on every install, so it is never left.
