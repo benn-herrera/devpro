@@ -25,7 +25,7 @@ with the rest of the stage-2 set.
 | | drafted | | | Kickoff: the stage-2 plan written from the design; 29 stage-2 pairs in scope, 2 (stages 3-4) left pending |
 | P1 | landed | expert | shipped | the profiler's code absorbed into `devpro/profiler/`; the launcher finds `devpro` |
 | P2 | landed | expert | shipped | the store rename to `.profiler-*` and the existing-stores migration |
-| P3 | dispatchable | expert | shipped | the dicing snippets package ships; its include line on every nested-plugin project install |
+| P3 | in progress | expert | shipped | the dicing snippets package ships; its include line on every nested-plugin project install |
 | P4 | dispatchable | mechanical | shipped | the docdicer skill's runner instruction returns |
 | P5 | dispatchable | mechanical | shipped | the SPEC delta and README pairs applied |
 | P6 | dispatchable | mechanical | shipped | the ARCHITECTURE delta pairs applied |
