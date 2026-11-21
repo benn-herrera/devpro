@@ -20,7 +20,7 @@ under their dispatching session in the index, links each Agent row to
 them. The stores stay flat: the child never knows its parent at write time,
 the hierarchy is metadata the parent side builds, and claude has no child
 session records at all. User-directed here after the serve rework landed: too
-large to join that plan's burndown.
+large to join that plan's burndown. Rides the absorption-and-dashboard pass.
 
 ### Profiler page: the outer frame
 
@@ -46,6 +46,23 @@ questions: whether installs inject runner-file recipes the way docdicer does
 carry the absolute install path, apply only where the profiler ships, and
 grow the injected surface), or whether the better run path is something else.
 Not decided — the design pass answers it.
+
+### devpro absorbs its tooling — the dashboard server
+
+User-directed decision on the runner surface and beyond: devpro absorbs its
+tools rather than wrapping them. Docdicer is fully absorbed — its verbs land
+as flat subcommands of devpro (`devpro dice`, `devpro check-plan`, …), and
+the install-on-demand wrapper jank (the PYTHONPATH step-down, the
+`docdicer-repo` recipes, the cross-repo boundary) goes with it. The same
+pattern absorbs the Python profiler: `hp.py`'s code becomes a devpro module,
+and the hook files refer back to devpro wherever they needed `hp.py`. Then
+one more module — **dashboard** — the single HTTP server front end for the
+web interface: what is going on actively and what happened in the past, the
+kanban board and the profiler's index and pages as panels of one site, the
+outer frame and its legend served once. The runner-surface question's answer
+is the dashboard; the attribution and outer-frame tickets ride this pass.
+Its own design pass — THESIS-level (the tool boundary moves), with the CLI
+shape and hook wiring as design questions.
 
 ### Codex CLI harness support
 
