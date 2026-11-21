@@ -29,7 +29,7 @@ with the rest of the stage-2 set.
 | P4 | landed | mechanical | shipped | the docdicer skill's runner instruction returns |
 | P5 | landed | mechanical | shipped | the SPEC delta and README pairs applied |
 | P6 | landed | mechanical | shipped | the ARCHITECTURE delta pairs applied |
-| P7 | dispatchable | expert | shipped | the plan-borne house leaves (harness-profiler, repo-layout resources line, CONVENTIONS) |
+| P7 | in progress | expert | shipped | the plan-borne house leaves (harness-profiler, repo-layout resources line, CONVENTIONS) |
 | PR | dispatchable | expert | shipped | Post-plan review |
 | PB | dispatchable | expert | shipped | Post-plan burndown |
 
