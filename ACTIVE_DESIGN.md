@@ -31,7 +31,8 @@ The preceding is a summary of the detailed design below. Summaries are unavoidab
   when that plan is done, and is set aside with its plan, or alone before a plan exists. A design
   accepted across stages stays until the last stage's plan is done: each stage is its own shippable
   increment with its own plan, the stage boundaries are the user's to move, and an entry the design
-  holds for a later stage stays pending until that stage's work lands it. The plan
+  holds for a later stage stays pending until that stage's work lands it, applying only the pairs
+  the design marks to that stage. The plan
   cites the design's entries rather than restating them, a requirement found while the plan runs
   is entered in the design, and the plan's post-plan review reads the design.
 ```
@@ -50,9 +51,11 @@ Deployed Surfaces, Plugins states.
 ```
 The installed package provides the `devpro` command. `python3 -m devpro` is the same command:
 both print the same `--help`, and the same arguments install the same product, byte for byte.
-Every install-surface command exits 0 on success and 2 on a refusal or an operating-system failure,
-printing `error: <message>` on
-stderr; the dicing and check verbs exit 0, 1 and 2 as Dicing and Checks states. Every command that
+The install verbs — `render`, `install`, `install-agents-file`, `render-agents-file` and the
+hidden `harness` — exit 0 on success and 2 on a refusal or an operating-system failure, printing
+`error: <message>` on
+stderr; the dicing, check and board verbs of Dicing and Checks exit 0, 1 and 2 as that section
+states. Every command that
 takes components takes them as `--components=CSV`, with the default
 Deployed Surfaces, Plugins states.
 ```
@@ -90,16 +93,21 @@ implementation of them is held to.
 The verbs are `devpro dice-doc`, `devpro undice`, `devpro dice-docs`, `devpro verify`,
 `devpro check-links`, `devpro check-tree`, `devpro check-plan`, `devpro check-design`,
 `devpro check-roadmap` and `devpro kanban`. `devpro --version` prints the version; `-h`, alone or
-after a verb, prints help. Every verb exits 0 on success, 1 where a step or check failed, and 2 on
-a usage error or a refusal; results and summaries go to stdout, diagnostics to stderr.
+after a verb, prints help. The verbs run where the `devpro` command runs: the devpro package on the
+host is the dicing surface's prerequisite, the operator's to install.
+
+Every verb exits 0 on success, 1 where its check or dicing failed, and 2 on a usage error or a
+refusal; `kanban` serves until interrupted and exits 0 either way. Results and summaries go to
+stdout, diagnostics to stderr.
 
 Six outcomes hold:
 
 - **Navigable.** Every entry point and index lists the files directly below it, so the tree's entry
   point leads to every file; `check-tree` verifies this.
 - **Lossless.** Each line of the source appears in exactly one file, unaltered except for link
-  rewriting; this is verified after every dicing.
-- **Linked.** Cross references in the source (`§N`, `#anchor`, relative paths) resolve in the tree.
+  rewriting; a dicing whose verification fails exits 1.
+- **Linked.** Cross references in the source (`§N`, `#anchor`, relative paths) resolve in the tree;
+  `check-links` verifies this.
 - **Repeatable.** For every verb but `kanban`, equal inputs give equal trees and messages, and
   nothing depends on the clock, the network, or any state outside the named inputs.
 - **Non-destructive.** No verb modifies a source document, except that `kanban` moves tickets
@@ -113,8 +121,10 @@ table, `check-design` a design's final form and its delta pairs against their ta
 `check-roadmap` the roadmap's ticket layout. Without a file argument each checks the active file
 under the project root — the nearest directory at or above the current one holding a `.git` entry;
 `kanban` serves that project. The full contract of each verb — the diced-tree format, link
-rewriting, the link map, the manifest, the checks' reports and the board's moves — is the absorbed
-implementation's, and this section carries it as the stage-1 plan lands it.
+rewriting, the link map, the manifest, the checks' reports and the board's moves — is this
+section's: the stage-1 plan carries it over from the contract documents the absorbed project held,
+stated in this section and its section's own leaves, and no document outside this tree holds any
+verb's contract.
 ```
 
 ### [SPEC entry point](PROJECT_DOCS/SPEC/entry-point.md) — the new section listed
@@ -214,6 +224,8 @@ No package is a definition: a package under a
 skill's directory is neither its skill entry file nor one of its supporting files, the development
 scripts package included.
 ```
+
+(Stages 2-4: the five pairs below wait for their stages' plans; the four pairs above are stage 1's.)
 
 **As it stands:**
 ```
@@ -383,6 +395,17 @@ profiler's launcher sits in the install directory's `profiler/` and is named rel
 directory (`../../profiler/hp.sh`). The
 ```
 
+**As it stands:**
+```
+the file is read. Every other copied file — `tools/.gitignore` among them — and every harness
+resource is installed byte-verbatim.
+```
+**Becomes:**
+```
+the file is read. Every other copied file — a package's `.gitignore` among them — and every harness
+resource is installed byte-verbatim.
+```
+
 ### [Install destination](PROJECT_DOCS/SPEC/deployed-surfaces/install-destination.md) — the user-level package list
 
 **As it stands:**
@@ -446,7 +469,7 @@ docdicer/               gitignored hosted clone — the docdicer project this re
 ````
 **Becomes:**
 ````
-  dicing/               the absorbed dicing package — the docdicer project's dicer, checks and board as devpro code, run as devpro's dicing and check verbs (Dicing and Checks); importable Python, nothing of it package data, its tests joining the devpro test surface
+  dicing/               the absorbed dicing package — the docdicer project's dicer, checks and board as devpro code, run as devpro's dicing and check verbs (Dicing and Checks); importable Python, the board's assets (kanban/assets/) the package data it ships (Packaging), the absorbed project's contract documents carried into Dicing and Checks, its tests joining the devpro test surface
 ````
 
 ### [Packaging](PROJECT_DOCS/ARCHITECTURE/packaging.md) — the wheel's data globs and the lazy entry point
@@ -462,11 +485,12 @@ docdicer/               gitignored hosted clone — the docdicer project this re
 ```
 **Becomes:**
 ```
-- **Package data.** `[tool.setuptools.package-data]` lists three patterns, `kb-tools/**/*`,
-  `harnesses/resources/**/*` and
-  `development-tools/**/*`: the trees `install.py`
+- **Package data.** `[tool.setuptools.package-data]` lists four patterns, `kb-tools/**/*`,
+  `harnesses/resources/**/*`, `development-tools/**/*` and
+  `dicing/kanban/assets/**/*`: the trees `install.py`
   reads through `PACKAGE_ROOT` (`HARNESS_RESOURCES_SOURCE` and each `SHIPPED_PACKAGES` source,
-  the kb-tools and development-tools trees). A glob sweeps in whatever sits
+  the kb-tools and development-tools trees) and the board's assets (Repo Layout), which
+  `importlib.resources` serves. A glob sweeps in whatever sits
 ```
 
 **As it stands:**
@@ -478,9 +502,8 @@ docdicer/               gitignored hosted clone — the docdicer project this re
 ```
 - **Console script.** `devpro = "devpro.cli:main"`. argparse's `prog` is `"devpro"`, so
   `devpro --help` and `python3 -m devpro --help` print the same text. The dispatch is lazy: the
-  entry point imports only the verb invoked, so a verb that must start fast — the profiler's
-  capture, which the hook path runs on every tool call — pays for no other verb's imports, and its
-  path imports no third-party dependency (Package and Command).
+  entry point imports only the verb invoked, and every verb imports no third-party dependency
+  (Package and Command), so no verb pays for another verb's imports.
 ```
 
 ### [Recipes](PROJECT_DOCS/ARCHITECTURE/recipes.md) — the verbs run from devpro, the snippet import retires
@@ -501,14 +524,17 @@ one `just agents` run before its docdicer recipes exist: until it has run, the `
 ```
 **Becomes:**
 ```
-**Toolchain.** This repository's justfile needs `just` 1.33.0 or later, and a consuming project's
-floor is the same 1.33.0 where the kbase component ships, for the `import?` of the kb include line
+**Toolchain.** This repository's justfile needs `just` 1.27.0 or later, for the `[doc]` recipe
+attribute; a consuming project's floor is 1.33.0 or later where the kbase component ships, for the
+`import?` of the kb include line
 (SPEC.md, Guide and README). It runs its recipes under
 `bash`. The dicing and check verbs run through the `devpro` command — `python3 -m devpro` in the
 checkout's venv — so no import or snippet stands between this checkout and its `docs` surface:
 `just check-links` runs the absorbed verb directly. A design's delta application is verified by
 `check-design --deltas-applied`; this repository runs it as
-`just dev-check-design-deltas-applied`, over the absorbed verb. The `_venv`
+`just dev-check-design-deltas-applied`, over the absorbed verb. The `docdicer-repo`, `dev-dd` and
+`dev-kanban` recipes, and `docdicer-repo.sh` with its test, retire with the hosted clone; the
+dev-check recipes run the absorbed verbs. The `_venv`
 ```
 
 ### [Plugins](PROJECT_DOCS/ARCHITECTURE/install/plugins.md) — one shipped row with snippets, the retired line's cleanup
@@ -576,11 +602,10 @@ recognized by the path's shape, ending `<snippets directory name>/<snippet>`. A 
 others. Where the project has no runner file, one `Makefile` is created holding every line.
 
 The retired docdicer set's line is this install's to clean up: the dicing verbs are devpro's own
-(Dicing and Checks), and the install recognizes a docdicer line by the same shape rule — a
-non-comment path ending `runner-snippets/docdicer.just` or `runner-snippets/docdicer.mk` whose
-first path segment is the harness directory this install writes — removes it, and names the
-removal in the install report. A docdicer line naming another harness directory's snippets is
-reported and left.
+(Dicing and Checks), and the install removes the docdicer line as SPEC.md, Plugins, states it —
+recognized by the same shape rule that recognizes its own lines (`_snippet_pattern`), removed, and
+the removal named in the install report; a docdicer line naming another harness directory's
+snippets is reported and left.
 ```
 
 ### [Renders and copies](PROJECT_DOCS/ARCHITECTURE/install/renders-and-copies.md) — two package rows, no launcher naming, no tool install
@@ -706,4 +731,35 @@ on (none in the mage slot, a harness-directory plugin), and it
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
   `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it
   renders only where kbase ships.
+```
+
+**As it stands:**
+```
+- **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
+  `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
+  under every harness. The description names the uses SPEC.md, Guide and README lists, and
+```
+**Becomes:**
+```
+- **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
+  `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
+  under every harness. Its board section routes the board through the `docdicer` skill's routing
+  and names no launcher path or recipe: the launcher paths and recipes it named are retired with
+  the docdicer tools package (Plugins). The description names the uses SPEC.md, Guide and README lists, and
+```
+
+**As it stands:**
+```
+  with every install, so each fills. The *Plan status* and *Roadmap tickets* sections render whole
+  under every install; each one's `check-plan` or `check-roadmap` instruction is a paragraph of its
+  own, so an optional reference that fills to nothing drops that paragraph alone. The sentence
+```
+**Becomes:**
+```
+  with every install, so each fills. The *Plan status* and *Roadmap tickets* sections render whole
+  under every install; each one's `check-plan` or `check-roadmap` instruction is a paragraph of its
+  own, so an optional reference that fills to nothing drops that paragraph alone. The *Design*
+  section's delta-application sentence names no runner recipe: the application is verified by
+  `check-design --deltas-applied`, the runner recipe it named retired with the docdicer tools
+  package (Recipes). The sentence
 ```
