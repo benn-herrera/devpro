@@ -100,7 +100,7 @@ one finding per departure, marked with what changed since `69eed3e` it rests on.
 | P1 | in progress | expert | Panel — the four conformance seats (4 agents, parallel) |
 | P2 | in progress | expert | Panel — the four consistency seats (4 agents, parallel with P1) |
 | P3 | landed | expert | Post-plan review — the seats synthesized into `ACTIVE_PLAN_REVIEW.md` |
-| P4 | dispatchable | expert | Post-plan burndown — drafted from the review, PE-reviewed, revised, executed |
+| P4 | drafted | expert | Post-plan burndown — drafted from the review, PE-reviewed, revised, executed |
 
 The plan's packages go out `drafted`; the plan's one `devpro-prompt-engineer` usability review and
 one architect revision set P1 and P2 `dispatchable`. P3 becomes `dispatchable` when P1 and P2 are
@@ -160,16 +160,21 @@ Done-line: `just dev-check-links` — the review document's links must resolve
 
 ## P4 — Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `4a0025b`): 6 Critical, 11 Medium/High, 8 Low —
-ten items by root cause, plus two user-decision items held out. Each item names its surfaces and
-verification; the seat files in `.devpro-temp/` carry the per-finding detail.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `4a0025b`): 6 Critical (F1–F6), 18 Medium/High
+(F7–F24, one per ID), 6 Low (F25–F30) — 30 findings. Thirteen items by root cause, plus two
+user-decision items held out. Two findings retired in the prompt-engineer review for having no
+defect at HEAD — F6 with B4 (noted before the held list), F20 with B12's first half (noted at B12) —
+leaving their items one shorter. Each item names its surfaces and verification; the seat files in
+`.devpro-temp/` carry the per-finding detail.
 
-**B1 — README's install/update/mage surface returns to SPEC (F1, F2, F3, F11, F12, F13).** The
-broken mage escape, the install-paragraph contradictions, the Updating self-contradiction, the
-pipx `ensurepath` steps, the gitignore guidance, and the mage migration paragraph's SPEC absence —
-one README pass reading each section against its SPEC leaf, plus the SPEC-side sentence the mage
-paragraph needs. Verify: each corrected section read against the SPEC leaf it answers to; the mage
-command copied and run in a scratch project.
+**B1 — README's install/update/mage surface returns to SPEC (F2, F3, F11, F12, F13; F1 verified
+fixed).** The install-paragraph contradictions, the Updating self-contradiction, the pipx
+`ensurepath` steps, the gitignore guidance, and the mage migration paragraph's SPEC absence — one
+README pass reading each section against its SPEC leaf, plus the SPEC-side sentence the mage
+paragraph needs. F1 (the mage install command) is already repaired at HEAD (`f0b32ab`,
+`README.md:105`) and is verified only, not re-fixed. Verify: each of the five live sections names
+the SPEC passage it answers to and the sentence that changed; the mage command copied and run in a
+scratch project.
 
 **B2 — the profiler's user-facing line and its discovery (F4, F10).** `README.md:45` states what
 actually records per harness (claude's six events; claude-on-web's `init` requirement; mage ships
@@ -178,24 +183,32 @@ routing. Verify: README read against `shipped-files.md`; the Route names the ski
 
 **B3 — the two-acts reminder description moves to the shipped sentence (F5).**
 `opencode-entry.md:63-66` and `guardrail-hook.md:24-25` describe the reminder as injected —
-"keep the ACTIVE_PLAN state table up to date." — the sentence both harnesses actually carry.
+"keep the ACTIVE_PLAN state table up to date." — the sentence both harnesses actually carry
+(`index.ts:108`, `state-table-reminder.sh:52`). The same pass corrects the code comment still
+asserting the retired description, at `state-table-reminder.sh:50-51`. B3 lands before B8, whose
+SPEC sentence reads the corrected leaf.
 
-**B4 — opencode-entry's capture shipping claims align with the code (F6).** The user-level
-exclusion stated as `install.py`'s filter and `renders-and-copies.md` state it.
-
-**B5 — the rendered carriers refresh (F7).** `just render` re-runs; the installed set carries the
-interval default 5 and the current step-down rendering. The recurrence is noted: a version bump's
-landing re-renders — the mechanism question (auto-render at bump) is a design candidate, not a fix.
+**B5 — the carriers refresh (F7).** `just agents` re-installs this checkout's devpro here
+(justfile:297), refreshing the installed carriers that live in every session —
+`.opencode/plugins/devpro/…` and `.claude/…`; `just render` re-runs for the rendered slots. Both
+carry the interval default 5 and the current step-down rendering, with B7's source correction
+landed first. Verify: `grep 'default 5'` over the installed carriers reads the refreshed value
+back. The recurrence is noted: a version bump's landing re-renders — the mechanism question
+(auto-render at bump) is a design candidate, not a fix.
 
 **B6 — the docdicer skill's script section states the shipped recipes (F8).** `check-design` and
 `check-roadmap` recipes exist; the deltas-applied recipe is named where the development skill and
 the CONVENTIONS leaf point at it.
 
-**B7 — the guide's Getting-started and SPEC agree on the scratch step (F9).**
+**B7 — the guide's Getting-started and SPEC agree on the scratch step (F9).** The fix is in the
+source (`guide.py:241-245`, still carrying the scratch step via `{clauses.PROJECT_TEMP_DIR}`) and
+lands before B5's re-render, so no stale terminal render passes the gate.
 
-**B8 — SPEC gains the claude reminder sentence and the opencode store (F14, F28 part).**
-`shipped-files.md` mirrors `guardrail-hook.md`'s claude entry; the opencode-profiler store joins the
-claude one.
+**B8 — SPEC gains the claude reminder sentence and the opencode store (F14, F28 part).** After
+B3's leaf correction, `shipped-files.md` states the claude reminder as it ships: the injected
+sentence "Reminder: keep the ACTIVE_PLAN state table up to date." (`index.ts:108`,
+`state-table-reminder.sh:52`) — not `guardrail-hook.md:20-27`'s two-acts wording, which B3 retires;
+the opencode-profiler store joins the claude one.
 
 **B9 — structural-rules and test_plugins lose the second-plugin premise (F15).** The sweeps' scope
 reads as the one-plugin reality; the test file's companion claim matches.
@@ -205,24 +218,46 @@ recipe stated; `version-has-one-home.md` names `bump-version.sh`; the leaked `{{
 in its diagnostic fixed.
 
 **B11 — profiler.ts's floor and field fidelity (F17, F19); the module id documented (F18).**
-`SUBAGENT_TOOLS` covers the 2.3.0-era spelling or the floor statement moves; `childAgentTypeOf`
-reads `agentType`; the module `id`'s one rule lands in `opencode-entry.md` and the modules follow it.
+`SUBAGENT_TOOLS` carries both spellings — the 2.3.0-era `task` and the renamed `subagent` — and the
+floor statement stays. `childAgentTypeOf` reads `call.result` into its agent-type lookup
+(`profiler.ts:221-229`). The module `id`'s one rule is the registry-read convention the entry
+already uses (`opencode-entry.md:21-22`: the id read synchronously from `registry.json`); the rule
+lands in `opencode-entry.md`, the modules follow it, and `profiler.ts`'s `PLUGIN_ID` literal
+(`:52-53`) goes.
 
-**B12 — the scratch-HOME and encode-policy conformances (F20, F23).** `check-wheel.sh` honors the
-scratch rule; `hp.py`'s fit-check and write policies named and aligned.
+**B12 — hp.py's encode-policy conformance (F23).** `hp.py`'s fit-check and write policies named
+and aligned: it measures a line under one encode policy and writes under another (`_json`'s
+`ensure_ascii=False`, `hp.py:96`). F20 is retired: `check-wheel.sh:42` has exported
+`HOME="${scratch}/home"` since `32fe7da` — its seat's grep could not have run against HEAD.
 
-**B13 — the guardrail's scratch-redirect false positive (F21).** The case file gains the
-`.devpro-temp/` redirect pattern; the guardrail stops blocking it.
+**B13 — the guardrail's scratch-redirect false positive (F21).** First the failing case: the
+`.devpro-temp/` redirect pattern (`echo hi > file 2>&1` writing into the scratch tree) joins
+`tests/guardrail_cases.json` with a non-null reason and fails against the current guardrail — its
+existing scratch cases (`echo hi > @scratch@/out.txt`, reason `null`) already mark the class
+allowed. Then the code: `guardrail.ts`'s scratch free-list and redirect logic (`:15`, `:36-50`)
+stops blocking it, and the case passes.
 
-**B14 — the stale citations and the Lows (F28, F29, F30).** `placeholders.md`'s `--plugin=`; the
-subsystem map's `show-profile` entry; the torn-tail/LINE_LIMIT contract sentences; the seat files'
-Notes tiers as listed.
+**B14 — the stale listings, citations and the Lows (F22, F28, F29, F30).**
+`guide-and-readme.md`'s "holds these things" list and Usage bullet are brought back to the rendered
+page's sections they govern (F22); `placeholders.md`'s `--plugin=` and the subsystem map's
+`show-profile` entry (F28); the torn-tail/LINE_LIMIT contract sentences (F29) — and their code
+half, in scope here: `serialize` (`profiler.ts:312-324`) cannot guarantee `LINE_LIMIT`, fixed
+fields over the bound surviving with keys already emptied, so the `name`/`session` clip at the
+root is code this item lands; the seat files' Notes tiers as listed (F30).
 
 **Held for user decision (not executed by this package):**
 - **F25/F26** — THESIS's building-block table gains the component kind, and the Installed-resources
-  row's wording widens past "scripts". Proposed wordings ride the burndown's review; they land only
-  with the user's word.
-- **F27** — THESIS's adopter-audience sentence and `USER_README.md`'s status: decisions, not fixes.
+  row's wording widens past "scripts". The wording is drafted when the user decides, from the seat
+  file's alternative shapes (a clause, not a row — or its own kind with a row; widen the row's kinds
+  or state the list as examples — `review-prompt-engineer-consistency.md:45-46,72`), and rides the
+  next plan's review.
+- **F27** — THESIS's adopter-audience sentence and `USER_README.md`'s status: decisions, not fixes;
+  they land the same way, with the user's word, in the next plan.
+
+Retired in the prompt-engineer review: **B4** (F6) — the seat's fact misread
+`renders-and-copies.md`'s copy-list lines as a mode statement; `opencode-entry.md:7-10`,
+`install.py:408-416` and `renders-and-copies.md:71-72` all state the user-level exclusion
+consistently at HEAD.
 
 The burndown is expert.
 
@@ -233,9 +268,6 @@ Done-line: `just test`, then `just sweep-python`, then `just lint`, then
 `just dev-check-design-deltas-applied` (landed: 11), then `just dev-check-links`, then
 `just dev-check-plan` — all before the landing acts; the landing commit's tree carries the gate
 passing.
-
-Done-line: the checkpoint gate — `just test`, then `just sweep-python` — and
-`just dev-check-links` for the document fixes, run once, at the package's end.
 
 ## Landing
 
