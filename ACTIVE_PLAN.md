@@ -135,7 +135,13 @@ git tracks under `devpro/`, so the asset files must be in the pattern or it fail
 
 ## P3 — lazy dispatch at the entry point
 
-**Scope.** `devpro/cli.py` only. The design's *Packaging* entry states the outcome
+**Scope.** `devpro/cli.py` only, plus one stated exemption in a pinning test: the lazy dispatch's
+function-level imports are what `tests/test_devpro.py:1461`'s `test_every_import_is_at_module_level`
+walk forbids, and the design's *Packaging* entry states the lazy outcome — so the test gains
+`devpro.cli` as its one exempt module, stated as the design's exception: the entry point imports
+verb modules at dispatch time. The house rule (every import at module level) holds for every other
+module of the package, and the test keeps asserting it package-wide except for the one module. The
+design's *Packaging* entry states the outcome
 (`ACTIVE_DESIGN.md:505–507`): "The dispatch is lazy: the entry point imports only the verb invoked,
 and every verb imports no third-party dependency (Package and Command), so no verb pays for
 another verb's imports."
@@ -152,7 +158,8 @@ move inside `_run`'s branches.
 defect: the entry point imports every verb's module while building the parser, so running any verb
 — `--help` included — pays for the install machinery, and a later stage's verb could not opt out
 of another's import cost. Failing run before the change: the same import shows `devpro.install` in
-`sys.modules`.
+`sys.modules`. The invariant test's edit is the exemption above: `devpro.cli` named as the one
+module whose imports the design moves to dispatch time, with the house rule re-stated for the rest.
 
 **Done.** `just test devpro`.
 
