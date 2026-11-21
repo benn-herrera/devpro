@@ -29,9 +29,9 @@ with the rest of the stage-2 set.
 | P4 | landed | mechanical | shipped | the docdicer skill's runner instruction returns |
 | P5 | landed | mechanical | shipped | the SPEC delta and README pairs applied |
 | P6 | landed | mechanical | shipped | the ARCHITECTURE delta pairs applied |
-| P7 | in progress | expert | shipped | the plan-borne house leaves (harness-profiler, repo-layout resources line, CONVENTIONS) |
+| P7 | landed | expert | shipped | the plan-borne house leaves (harness-profiler, repo-layout resources line, CONVENTIONS) |
 | PR | landed | expert | shipped | Post-plan review |
-| PB | dispatchable | expert | shipped | Post-plan burndown |
+| PB | dispatchable | expert | shipped | Post-plan burndown — revised in this pass; the changed-text review re-dispatches it |
 
 ## P1 — the profiler is devpro's code
 
@@ -460,54 +460,92 @@ reconciled, in the commit that adds it. Its row is `landed` in that commit.
 Lifetime: shipped. One commit closes it.
 
 Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `5e675df`): eight defects — 4 Critical, 1 High,
-2 Warning — six items by root cause, plus the P1 incident's guard. The seat files in
+2 Warning — six items by root cause, plus the P1 incident's guard. Every defect has an item:
+R1, R2 and R7 → B3; R3 and R6 → B1; R4 → B2; R5 → B4; R8's notes → B2 (the laziness docstring),
+B3 (the mage-render sentence) and B6 (the rest). The seat files in
 `.devpro-temp/stage2-review-*.md` carry the per-finding detail.
 
-**B1 — the rename's recognition narrows to the stores, and its guard covers the plain path (R3,
-R6).** `rename_stores` recognizes the two profiler stores — `.profiler-claude`/`.profiler-opencode`
-targets from `claude-profiler`/`opencode-profiler`, and no other `<name>-profiler` shape (the
-`notes-profiler` probe states the defect); `_one_project_renamed_once` covers the plain
-`install()` path, not only the second real run; a test pins the non-store directory left alone on
-the plain path. Doctor's remedies state the deliberate boundary: the manual `mv` for a standing
-old-pattern store, and what merging means for the operator (no installer merge).
+**B1 — the rename's recognition narrows to the stores, its guard covers the plain path, and the
+remedies state both branches (R3, R6).** `rename_stores` recognizes the two profiler stores —
+`.profiler-claude`/`.profiler-opencode` targets from `claude-profiler`/`opencode-profiler`, and no
+other `<name>-profiler` shape (the `notes-profiler` probe states the defect);
+`_one_project_renamed_once` covers the plain `install()` path (`install.py:592`'s unguarded call),
+not only the second real run (`install.py:702`); a test pins the non-store directory left alone on
+the plain path. Doctor's remedies state both branches: the collision remedy the manual `mv` for a
+standing old-pattern store, and what merging means for the operator (no installer merge); the
+straggler remedy the manual `mv` with its report line where the install cannot run — this
+repository's own install deliberately refuses its own root (`runner_file.py:231`, the no-op
+`up to date` run), which is why the live store here stands — and `devpro profiler init claude`
+where the committed-hook repository takes it. The narrowing revokes the generic rename sentence
+`harness-profiler.md:122-125` states: the leaf is corrected to the two stores' rename —
+`claude-profiler` → `.profiler-claude`, `opencode-profiler` → `.profiler-opencode` — not "each
+such store".
 
 **B2 — the capture path pays for nothing it does not run (R4, R8).** The rename path's imports
 move to the rename call in `profiler/hooks.py` (the dicing precedent's pattern); the module's
-docstring states its own laziness; the Packaging statement in the design gains the capture-path
-rule beside the verb-entry rule (a pending-ness check first — the statement's home is the landed
-pair's text or a new pending pair, the architect decides); the two-entry `sys.modules` probe
-extends to the hooks import chain.
+docstring states its own laziness; the two-entry `sys.modules` probe extends to the hooks import
+chain. The capture-path rule's design statement is decided here, not deferred: a new pending pair
+on the design's Packaging entry — its from-text the leaf's `**Console script.**` bullet as this
+revision finds it (the six-pattern `**Package data.**` bullet and the verb-entry lazy-dispatch
+rule stand as the landed stage-2 pair's becomes wrote them — verified against
+`PROJECT_DOCS/ARCHITECTURE/packaging.md`), its becomes that text with one sentence beside the
+verb-entry rule stating the capture-path rule for the absorbed module: the hook-run capture and
+the store-rename path import only the modules they execute, the renderer not among them. The
+executor verifies the from-text against the leaf before writing the pair; editing a landed pair's
+text is drift, so the pair is new.
 
-**B3 — the surfaces the pairs never covered (R1, R2).** `guide.py`'s Requirements and Updating
-sections written from the SPEC leaf's landed statements (the conditional floor; the walk without
-the created-Makefile clause; `skills/docdicer/tools/`, not `skills/docdicer/`); README's profiler
-bullet rewritten from `shipped-files.md`'s landed terms (the `.profiler-*` stores, the rename, the
-install's copy set). Verify-before: each section read against its landed leaf; the text names
-nothing the tests don't pin where one exists.
+**B3 — the surfaces the pairs never covered (R1, R2, R7).** `guide.py`'s Requirements and Updating
+sections written from `PROJECT_DOCS/SPEC/guide-and-readme.md`'s landed statements (the conditional
+floor at :38; the walk without the created-Makefile clause; `skills/docdicer/tools/`, not
+`skills/docdicer/`); README's profiler bullet rewritten — the stores and the install's copy set
+from `shipped-files.md`'s landed terms (:106, :110, :113), the rename statement from
+`ARCHITECTURE/install/harness-profiler.md` (:122-127), the only leaf that states it; the mage
+clause states its truth source, verified in this plan: the mage reference slot's rendered skill
+set, `rendered/reference-mage`, holds `skills/show-profile/` — the corrected clause states the
+skill ships under mage and the profiler's hook entries and capture do not. The upgrade walk
+(:142-165) gains the rename sentence: it names the install's in-place store rename and its report
+line, stated from the landed install behavior. Verify-before: each section read against its
+landed leaf; the text names nothing the tests don't pin where one exists.
 
 **B4 — P7's leaf rewrite negations corrected (R5).** `harness-profiler.md`'s opencode sentence to
-the code's truth (the cross-harness map and its test named); the verbatim CONVENTIONS leaf's
-resource sentence to the tree's truth (no Python resource remains); the "There is no window…"
-absolute to the design's collision case. The mage-render README sentence and the stage-3 board
-note ride the same pass's judgment (R8).
+the code's truth (the cross-harness map at `install.py:138` and its test,
+`test_an_opencode_install_copies_the_profiler_payload_while_a_mage_one_does_not`,
+`test_devpro_install.py:1973`, named); the verbatim CONVENTIONS leaf's resource sentence to the
+tree's truth (no Python resource remains); the "There is no window…" absolute to the design's
+collision case. The stage-3 board note rides the same pass's judgment (R8).
 
-**B5 — the install refuses its own package tree (the P1 incident's guard).** The install (and
-`profiler init`) refuses a resolved destination inside the running devpro package's own source
-tree — the error names the boundary — with the failing-first test: `devpro install devpro/`
-(or any resolved-inside target) refuses naming the boundary, on the base commit recorded.
+**B5 — the install refuses its own package tree (the P1 incident's guard).** The boundary is
+stated: the resolved destination is checked against the running devpro package's own source root —
+the directory `devpro.__file__`'s package resolves to, as the installed code computes it — and the
+install (and `profiler init`'s git-root target) refuses when the resolved destination is that root
+or inside it, the error naming the boundary. The failing-first test: `devpro install devpro/` (or
+any resolved-inside target) refuses naming the boundary; the test's precondition clause carries
+the base-commit recording — the record's home is this burndown's landing commit, which records
+the base commit the refusal was demonstrated absent on.
 
-**B6 — the notes tier (R8).** Judged at execution: the `profiler.ts` torn-line comment, the
-parameter shadow, the `!INSTALLED!` banner distinction's CONVENTIONS sentence, the
-`DICING_SNIPPETS_PACKAGE` dangle, the *No traces* branch reaching doctor's `old:` line, the README
-runner-file note — fix where a one-liner holds, decline with a line where the shape is the
-contract.
+**B6 — the notes tier (R8).** The one-liner/decline rule holds for the notes written for it: the
+`profiler.ts` torn-line comment, the parameter shadow, the `DICING_SNIPPETS_PACKAGE` dangle, the
+*No traces* branch reaching doctor's `old:` line, the README runner-file note — fix where a
+one-liner holds, decline with a line where the shape is the contract. Two are stated fixes, not
+judgments: the `!INSTALLED!` banner distinction's CONVENTIONS sentence — one sentence in the
+copied-verbatim or banner leaf, the executor picking the leaf from the landed ones, stating the
+distinction `init`'s copy makes; and the `hooks.py`/`install.py` docstrings describing the pre-P1
+finder and stores in historical terms (architect N, carried) — rewritten to the shipped state
+where a sentence is wrong, declined with a line where it is history the reader needs.
 
-The burndown is expert (B1–B4 judgment; B5 is mechanical once the boundary is stated).
+The burndown is expert (B1–B4 judgment; B5 mechanical — its boundary is stated above).
 
 **Done-line.** `just test`, then `just sweep-python`, then `just lint`, then
-`just dev-check-design-deltas-applied` (landed: 62, pending: 2 — the stage state), then
-`just dev-check-links`, then `just dev-check-plan` — all before the landing acts; the landing
-commit's tree carries the gate passing.
+`just dev-check-design-deltas-applied` — the expected counts stated for the branch B2 decides and
+the attribution pair joins: entering the new Packaging pair reads landed: 62, pending: 3; after it
+and the attribution pair (design:300) apply, landed: 64, pending: 1 — the stage-3 dashboard pair
+alone. The attribution pair applies here because its statement is the code's shipped truth: the
+parent-side extraction the profiler tests pin (`test_devpro_profiler.py:371-374`) and the render's
+child grouping are P1's absorbed code — the stage-4 mark assumed work the absorption already
+shipped. Then `just retake-reference` — the render-products step: B3's guide text and B6's
+possible changes render, and the reference slots follow the changed render (the P4 and P2
+precedents) — then `just dev-check-links`, then `just dev-check-plan`; the landing commit's tree
+carries the gate passing.
 
 **The landing acts**, after the burndown's work:
 
