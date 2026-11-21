@@ -84,7 +84,38 @@ The command also carries the dicing, check and board surface: `devpro dice-doc`,
 run wherever the `devpro` command runs; they are not part of the install product.
 ```
 
-### Dicing and Checks — the dicing surface's section
+(*Stage 3: the two pairs below are the active plan's P2 package's content — the `dashboard` verb's
+addition and the board verb's retirement — and stay pending until that package lands them.*)
+
+**As it stands:**
+```
+stderr; the dicing, check and board verbs of Dicing and Checks exit 0, 1 and 2 as that section
+states. Every command that
+```
+**Becomes:**
+```
+stderr; the dicing and check verbs of Dicing and Checks exit 0, 1 and 2 as that section
+states. Every command that
+```
+
+**As it stands:**
+```
+The command also carries the dicing, check and board surface: `devpro dice-doc`, `devpro undice`,
+`devpro dice-docs`, `devpro check-links`, `devpro check-tree`, `devpro check-plan`,
+`devpro check-design`, `devpro check-roadmap` and `devpro kanban` (Dicing and Checks). The verbs
+run wherever the `devpro` command runs; they are not part of the install product.
+```
+**Becomes:**
+```
+The command also carries the dicing and check surface: `devpro dice-doc`, `devpro undice`,
+`devpro dice-docs`, `devpro check-links`, `devpro check-tree`, `devpro check-plan`,
+`devpro check-design` and `devpro check-roadmap` (Dicing and Checks), and the `devpro dashboard`
+verb — devpro's one loopback server for the web interface: its traces panel the rendering the
+retired `devpro profiler serve` drove, its board panel the board the retired `devpro kanban`
+served. The verbs run wherever the `devpro` command runs; they are not part of the install product.
+```
+
+### [Dicing and Checks](PROJECT_DOCS/SPEC/dicing-and-checks.md) — the dicing surface's section
 
 **As it stands:**
 ```
@@ -134,6 +165,70 @@ rewriting, the link map, the manifest, the checks' reports and the board's moves
 section's: the stage-1 plan carries it over from the contract documents the absorbed project held,
 stated in this section and its section's own leaves, and no document outside this tree holds any
 verb's contract.
+```
+
+(*Stage 3: the five pairs below are the active plan's P2 package's content — the verb list losing
+`devpro kanban` — and stay pending until that package lands them.*)
+
+**As it stands:**
+```
+The verbs are `devpro dice-doc`, `devpro undice`, `devpro dice-docs`,
+`devpro check-links`, `devpro check-tree`, `devpro check-plan`, `devpro check-design`,
+`devpro check-roadmap` and `devpro kanban`. `devpro --version` prints the version; `-h`, alone or
+after a verb, prints help.
+```
+**Becomes:**
+```
+The verbs are `devpro dice-doc`, `devpro undice`, `devpro dice-docs`,
+`devpro check-links`, `devpro check-tree`, `devpro check-plan`, `devpro check-design`
+and `devpro check-roadmap`. `devpro --version` prints the version; `-h`, alone or
+after a verb, prints help.
+```
+
+**As it stands:**
+```
+Every verb exits 0 on success, 1 where its check or dicing failed, and 2 on a usage error or a
+refusal; `kanban` serves until interrupted and exits 0 either way.
+```
+**Becomes:**
+```
+Every verb exits 0 on success, 1 where its check or dicing failed, and 2 on a usage error or a
+refusal.
+```
+
+**As it stands:**
+```
+- **Repeatable.** For every verb but `kanban`, equal inputs give equal trees and messages, and
+  nothing depends on the clock, the network, or any state outside the named inputs.
+```
+**Becomes:**
+```
+- **Repeatable.** Equal inputs give equal trees and messages, and
+  nothing depends on the clock, the network, or any state outside the named inputs.
+```
+
+**As it stands:**
+```
+- **Non-destructive.** No verb modifies a source document, except that `kanban` moves tickets
+  between `ROADMAP.md` and the active design, in either direction, adds a parked card's link ticket
+  to the active design, and removes a link ticket from it.
+```
+**Becomes:**
+```
+- **Non-destructive.** No verb modifies a source document: the board's moves — a ticket moved
+  between `ROADMAP.md` and the active design, in either direction, a parked card's link ticket
+  added to the active design, a link ticket removed from it — are no verb's writes, served by the
+  dashboard's board panel.
+```
+
+**As it stands:**
+```
+under the project root — the nearest directory at or above the current one holding a `.git` entry;
+`kanban` serves that project.
+```
+**Becomes:**
+```
+under the project root — the nearest directory at or above the current one holding a `.git` entry.
 ```
 
 ### [SPEC entry point](PROJECT_DOCS/SPEC/entry-point.md) — the new section listed
@@ -240,7 +335,7 @@ skill's directory is neither its skill entry file nor one of its supporting file
 scripts package included.
 ```
 
-(Stages 2-4: the seven pairs below wait for their stages' plans; the four pairs above are stage 1's.)
+(Stages 2-4: the four pairs above are stage 1's; of the seven below, five landed with stage 2's plan and the launcher pair is the stage-3 plan's, its packages landing it; the dashboard pair waits for the presentation pass, its layout the user's decided target — the active plan's staging boundary is the record of that staging.)
 
 **As it stands:**
 ```
@@ -281,9 +376,24 @@ lists every record file it can render. The pages and the records stay local: rea
 `show-profile` skill, which renders a session's recorded activity — its skill, agent and tool calls
 with timings and token costs — as text, as a self-contained HTML page, or served over HTTP: the
 dashboard, devpro's one loopback server for the web interface, renders the record files in memory
-as one panel of a site whose other panel is the project's board, the how-to-read legend served once
-in an outer frame, a record selection changing the inner frame only and the inner frame's top-level
-view the all-records list. The pages and the records stay local: reachable only from the
+as one panel of its site. The board is the landing surface: opening the dashboard's URL shows the
+kanban board — the project's actual current state — and the traces are the second view, reached
+from the nav. A simple top nav persists across every view: the `devpro` brand, then the view names
+`kanban` and `profiler`, the active view's name carrying the accent color and the inactive view's
+dimmed, selection switching the view — intuitive, recognizable surfaces, no invented paradigms, the
+dynamic behavior spent only where it counts. The server's elements persist across every view: a
+live/idle state indicator and, when live, a stop control; starting is the CLI's alone, no served
+page starting its own server. In the profiler view the how-to-read legend sits at the top of the
+view's frame band and persists there across drill-down, the same band carrying a return-to-list
+control; drill-down is ordinary page navigation, the trace list to the session page with
+`/page/<session-id>` deep links intact and no inner-frame mechanic. One presentation layer serves
+the whole presented interface: a single CSS source the board's assets and the profiler's pages
+alike consume, the palette living there, the profiler page's re-style to the kanban presentation
+made through that shared layer, never as a second reskin. The legend's text has one home and two
+carriers, one source both read: the rendering side holds it once — the standalone render injects
+it into the page it renders, the template carrying no second copy — and the dashboard's frame band
+reads the same source, so the served page's legend comes from the frame. The pages and the records
+stay local: reachable only from the
 ```
 
 **The dashboard's visual verification.** Browser-level verification of the dashboard's pages runs
@@ -294,6 +404,31 @@ real pages with no operator involvement, no sandbox change, and no browser downl
 installed browser is the tool. Chromium's builds cannot serve here: the full browser dies when its
 compositor's frame pump fails to get the window server's mach services, and the headless-shell
 build merely tolerates the same failure (exit 0, stderr noise) — it stays unprovisioned.
+
+**The dashboard's presentation — the user's decided target, a later pass's work.** The user's UX
+decisions for the presented interface, the design's accepted target state: the board is the landing
+surface — project first; the kanban board is the actual current state, and crowding it with data
+spelunked separately is a distraction — so opening the dashboard's URL shows the board and the
+profiler is the second view, reached from the nav. A simple top nav persists across every view: the
+`devpro` brand, then the view names `kanban` and `profiler`, the active view's name carrying the
+accent color and the inactive view's dimmed, selection switching the view — intuitive, recognizable
+surfaces, no invented paradigms, dynamic behavior spent only where it counts. The server's elements
+persist across every view: a live/idle state indicator and, when live, a stop control — start is
+the CLI's alone, for no served page starts its own server. In the profiler view the how-to-read
+legend sits at the top of the view's frame band and persists there across drill-down, the same band
+carrying a return-to-list control; drill-down is ordinary page navigation, the trace list to the
+session page with `/page/<session-id>` deep links intact, the pending pair's inner-frame mechanic
+dropped. One presentation layer serves the whole presented interface: a single CSS source the
+board's assets and the profiler's pages alike consume, the palette living there, the profiler
+page's re-style to the kanban presentation made through that shared layer, never as a second
+reskin. The legend's text has one home and two carriers, one source both read: the rendering side
+holds the text once — the standalone render injects it into the page it renders, the template
+carrying no second copy — and the dashboard's frame band reads the same source, so the served
+page's legend comes from the frame. Two details stay open to the pass that builds this: the accent
+palette's expansion within the mauve family, and the actual label of the return-to-list control.
+The layout decisions are stage 3's accepted target; their build-out is not stage-3 work — it is a
+separate pass's, its own plan drafted when the user directs it after the technical base has landed —
+and the dashboard pair above stays pending until that pass lands its text.
 
 **As it stands:**
 ```
@@ -840,6 +975,25 @@ kbase component riding the same floor
 (SPEC.md, Guide and README). It runs its recipes under
 ```
 
+(*Stage 3: the pair below is the active plan's P2 package's content — the `dev-kanban` recipe's
+retirement — and stays pending until that package lands it.*)
+
+**As it stands:**
+```
+`check-design --deltas-applied`; this repository runs it as
+`just dev-check-design-deltas-applied`, over the absorbed verb. The `docdicer-repo`, `dev-dd` and
+`dev-kanban` recipes, and `docdicer-repo.sh` with its test, retire with the hosted clone; the
+dev-check recipes run the absorbed verbs.
+```
+**Becomes:**
+```
+`check-design --deltas-applied`; this repository runs it as
+`just dev-check-design-deltas-applied`, over the absorbed verb. The `docdicer-repo` and `dev-dd`
+recipes, and `docdicer-repo.sh` with its test, retired with the hosted clone; the `dev-kanban`
+recipe retires with the board verb it ran — `dev-dashboard` runs the dashboard verb, the board its
+panel; the dev-check recipes run the absorbed verbs.
+```
+
 ### [Plugins](PROJECT_DOCS/ARCHITECTURE/install/plugins.md) — two shipped rows with snippets, the retired line's cleanup
 
 **As it stands:**
@@ -1147,6 +1301,62 @@ the check verbs and `devpro kanban` — run from the command line, and does not 
   section's delta-application sentence names no runner recipe: the application is verified by
   `check-design --deltas-applied`, the runner recipe it named retired with the docdicer tools
   package (Recipes). The sentence
+```
+
+(*Stage 3: the four pairs below are the active plan's P2 package's content — the board's and the
+records' routing moving to the dashboard — and stay pending until that package lands them.*)
+
+**As it stands:**
+```
+  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`,
+  the check verbs and `devpro kanban` — run from the command line, and does not restate their
+  `--help` (CONVENTIONS.md, A skill omits its tool's offered surface).
+```
+**Becomes:**
+```
+  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`
+  and the check verbs — run from the command line, and does not restate their
+  `--help` (CONVENTIONS.md, A skill omits its tool's offered surface).
+```
+
+**As it stands:**
+```
+  (Plugins). Its `kanban` paragraph has the session offer to run the board as a
+  background process or hand over the command line, the user choosing.
+```
+**Becomes:**
+```
+  (Plugins). Its board paragraph names the `devpro dashboard` verb for the board — the board is the
+  dashboard's panel, the `devpro kanban` verb retired with it — offering to run it as a background
+  process or handing over the command line, the user choosing.
+```
+
+**As it stands:**
+```
+  supporting files, delivered under every harness. It renders the newest session's trace — read from
+  either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
+  `.profiler-*` ones `devpro profiler tree` walks — as text or as a self-contained HTML page, and
+```
+**Becomes:**
+```
+  supporting files, delivered under every harness. It renders the newest session's trace — read from
+  either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
+  `.profiler-*` ones `devpro profiler tree` walks — as text, as a self-contained HTML page, or
+  served over HTTP: its serve sections name the `devpro dashboard` verb, the records' serving being
+  the dashboard's traces panel now the profiler's own `serve` subcommand has retired — and
+```
+
+**As it stands:**
+```
+  under every harness. Its board section routes the board through the `docdicer` skill's routing
+  and names no launcher path or recipe: the launcher paths and recipes it named are retired with
+  the docdicer tools package (Plugins).
+```
+**Becomes:**
+```
+  under every harness. Its board section routes the board to the `devpro dashboard` verb — the
+  board is the dashboard's panel — and names no launcher path or recipe: the launcher paths and
+  recipes it named are retired with the docdicer tools package (Plugins).
 ```
 
 ### [Harness profiler](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md) — the profiler stores rename to dot directories
