@@ -397,9 +397,58 @@ its path; the done-line claims no coverage of it.
 
 ## PB — post-plan burndown
 
-Until PR lands, this section holds only: "Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan
-review lands." Then the burndown's work list is drafted from the review document, replacing this
-text; it takes `devpro-prompt-engineer` usability review and revision before it is dispatchable.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `b3bb32f`): thirteen defects — 3 Critical, 4
+Medium, 2 High/Medium-tier singles, 4 Low — six items by root cause. The seat files in
+`.devpro-temp/stage1-review-*.md` carry the per-finding detail.
+
+**B1 — the absorbed code aligns to the SPEC it implements (R1, R4).** `dicing/kanban/board.js` and
+the payload key state the hover as the SPEC's `devpro v<version>` — `devpro --version`'s text — and
+the package's second version constant goes with the key it fed (`test_server.py:241` updated with
+it). `dicing/cli.py`'s implementation imports move into `run()`'s branches — the pattern
+`devpro/cli.py` uses and the invariant exempts — so `build_parser()` stops pulling all nine verbs;
+the probe adds `build_parser()`, and the Packaging leaf's exemption names both modules. Verify
+before: the architect's probe (all three modules in `sys.modules` after `build_parser()`).
+
+**B2 — the runner-file mechanism's two edge behaviors (R2, R12).** The `REPO_ROOT` exemption
+covers the creation branch — a no-runner-file project root is exercised by a test; the
+created-file removal path's report states what the run actually did, with a test reaching it where
+P7's tests can.
+
+**B3 — the 0.17.x upgrade walk, stated once (R3, R9).** README's Updating section states what the
+absorbed-state install does to a 0.17.x checkout — the pruned package destination, the retired
+include line's removal and its report, the created runner file's disposal — in the prune's real
+terms, and names the lingering inert `skills/docdicer/tools/` as the operator's to delete. Verify
+before: the P7 tests' behavior over a planted 0.17.x tree.
+
+**B4 — the user-facing surfaces match the landed leaves (R5, R6, R7).** README and the guide's
+Requirements bullet state the conditional `just` floor (1.27.0; 1.33.0 where the kbase component
+ships); the include-line/Makefile promise matches `plugins.md` (the kb line where kbase ships; the
+retired docdicer line removed and named); the pipx line names the newest existing tag, and the
+plan that cuts the next release stamps the README's install line — stated as the release-time
+step, not a checkout edit.
+
+**B5 — the absorbed project's references retire cleanly (R8, R10, R11).** The acknowledgments
+state the docdicer absorption — the credited dicer, checks and board are devpro's own code at
+`devpro/dicing`, the ported-source credit reads as such; `plugins.md`'s example names the kb line;
+`install.py`'s docstrings state the two-row reality.
+
+**B6 — the notes tier (R13).** Judged at execution: fix where a one-liner holds, decline with a
+line where the inherited shape is the contract — each Notes item stated with its disposition.
+
+The burndown is expert (B1, B2, B4 judgment; the rest carry the plan's stated decisions).
+
+Done-line: `just test`, then `just sweep-python`, then `just lint`, then
+`just dev-check-design-deltas-applied` (landed: 34, pending: 5 — the stage state), then
+`just dev-check-links`, then `just dev-check-plan` — all before the landing acts; the landing
+commit's tree carries the gate passing.
+
+The landing acts, after the burndown's work:
+
+1. The landing commit deletes `ACTIVE_DESIGN.md` (not diced, so no tree).
+2. The landing commit deletes `ACTIVE_PLAN_REVIEW.md`.
+3. The landing commit deletes this plan — stage 1 of the absorption pass closes; the next stage's
+   plan is written from the design's next stage content when the user directs it. The deletion is
+   PB's row resolution: no Status row is set, the row dies with the plan.
 
 ## Notes the packages run under
 
