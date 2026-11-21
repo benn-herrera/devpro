@@ -17,7 +17,7 @@ cited design entries, not the whole design.
 | Package | State | Rating | Lifetime | Done |
 |---|---|---|---|---|
 | | drafted | — | — | kickoff: this plan is committed and its checks run |
-| P1 | dispatchable | expert | shipped | `just dev-check-links` |
+| P1 | in progress | expert | shipped | `just dev-check-links` |
 | P2 | dispatchable | mechanical | shipped | `just test devpro`, `just check-wheel` |
 | P3 | dispatchable | mechanical | shipped | `just test devpro` |
 | P4 | dispatchable | expert | shipped | `just test devpro` |
