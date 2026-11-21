@@ -107,6 +107,12 @@ class ShippedPackage(NamedTuple):
 SHIPPED_PACKAGES: tuple[ShippedPackage, ...] = (
     ShippedPackage("development-tools", DEVELOPMENT_SCRIPTS_PACKAGE, "development"),
     ShippedPackage(
+        "dicing-snippets",
+        "skills/docdicer/dicing-snippets",
+        "docdicer",
+        SnippetSet("devpro", "runner-snippets", {"just": "devpro.just", "make": "devpro.mk"}),
+    ),
+    ShippedPackage(
         "kb-tools",
         KB_TOOLS_DIR,
         KBASE_OWNER,
@@ -496,7 +502,8 @@ def install(
     snippet_sets = [snippets for package in packages if (snippets := package.installed_snippets()) is not None]
     # A project install of a nested plugin touches the project's runner file: it writes each shipped
     # set's include line and removes the retired docdicer line where the project holds one, whichever
-    # shipped packages it carries. Nothing else — a mage or user-level install — reads or writes it.
+    # shipped packages it carries — the retiree's cleanup needing no set of its own. Nothing else — a
+    # mage or user-level install — reads or writes it.
     touches_runner_file = _is_project_install_of_a_nested_plugin(ctx.harness, user_level=user_level)
     guardrail_skipped: str | None = None
     own_files = shipped_harness_files(ctx)

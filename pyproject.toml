@@ -24,6 +24,7 @@ include = ["devpro", "devpro.*"]
 [tool.setuptools.package-data]
 devpro = [
     "kb-tools/**/*",
+    "dicing-snippets/**/*",
     "harnesses/resources/**/*",
     "development-tools/**/*",
     "dicing/kanban/assets/**/*",
