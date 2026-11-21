@@ -160,27 +160,27 @@ _harness-value harness key:
 # monolith and every relative link resolves.
 [doc("dice a markdown monolith into linked leaves")]
 dice-doc monolith out map="":
-    @just docdicer dice-doc "{{monolith}}" "{{out}}" "{{map}}"
+    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro dice-doc "{{monolith}}" "{{out}}" "{{map}}"
 
 # Reads the listed documents from src-dir, keeps intermediates in work-dir, then verifies all
 # trees.
 [doc("dice a manifest's documents into volumes")]
 dice-docs manifest src work:
-    @just docdicer dice-docs "{{manifest}}" "{{src}}" "{{work}}"
+    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro dice-docs "{{manifest}}" "{{src}}" "{{work}}"
 
 # <tree> is the directory holding its entry-point.md; <monolith> must not exist. Then checks the
 # monolith dices back to the same tree.
 [doc("write a diced tree back out as one document")]
 undice tree monolith:
-    @just docdicer undice "{{tree}}" "{{monolith}}"
+    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro undice "{{tree}}" "{{monolith}}"
 
 # Checks every relative link and #anchor in PROJECT_DOCS and the top-level *.md files, then that
 # every PROJECT_DOCS document is listed by its parent and reachable from its entry point; exits 1 on
 # a broken link or an orphan.
 [doc("check doc links and the PROJECT_DOCS tree")]
 check-links:
-  @just docdicer check-links PROJECT_DOCS *.md
-  @just docdicer check-tree PROJECT_DOCS
+  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-links PROJECT_DOCS *.md
+  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-tree PROJECT_DOCS
 
 # Reports and never gates: a difference between two slots is the expected
 # outcome of doing work, so differences exit zero. Only a comparison that could
@@ -280,10 +280,8 @@ test-changed base="":
 clause-join-sites *paths:
     @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devtools.clause_join_sites "$@"
 
-# The delta byte-check is docdicer's: `docdicer-check-design-deltas-applied` (the installed runner
-# snippet) verifies a design's delta application, and `dev-check-design-deltas-applied` runs it
-# through the hosted tool. The devpro-local tool retired with devtools/check_deltas.py's removal;
-# the capability it carried ships with the docdicer release the pin names.
+# A design's delta application is verified by `check-design --deltas-applied`; this repository runs
+# it as `just dev-check-design-deltas-applied`, over the absorbed verb.
 
 # Emits hits, never verdicts: American spellings are the standard, and this lists the British forms
 # left in tracked text for a reader to judge. The justfile and the leaf that hold the pattern and the
@@ -313,41 +311,27 @@ tap-update: tap-repo
 tap-local: tap-repo
   @just --justfile "{{HOSTED_TAP_DIR}}/scripts/justfile" TAP_FORMULA={{TAP_FORMULA}} tap-local
 
-[doc("clone the docdicer project as a hosted repo")]
-docdicer-repo:
-    @DOCDICER_PIN="v$(sed -n 's/^VERSION=//p' devpro/docdicer-tools/docdicer)" devtools/scripts/docdicer-repo.sh
-
-[doc("use hosted docdicer to perform a task")]
-dev-dd *args: docdicer-repo
-  PYTHONPATH="{{PROJECT_ROOT}}/docdicer" python3 -m docdicer "${@}"
-
-[doc("serve the kanban board using hosted docdicer")]
-dev-kanban:
-  @just dev-dd kanban
-
 [doc("serve the profiler pages using the source-tree launcher")]
 dev-profiler:
   @cd "{{PROJECT_ROOT}}" && ./devpro/harnesses/resources/claude/profiler/hp.sh serve
 
-[doc("run ACTIVE_PLAN format compliance check using hosted docdicer")]
+[doc("run ACTIVE_PLAN format compliance check")]
 dev-check-plan:
-  @just dev-dd check-plan
+  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-plan
 
-[doc("run ACTIVE_DESIGN final-form check using hosted docdicer")]
+[doc("run ACTIVE_DESIGN final-form check")]
 dev-check-design:
-  @just dev-dd check-design
+  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-design
 
-[doc("run check that ACTIVE_DESIGN deltas have been applied to project docs using hosted docdicer")]
+[doc("run check that ACTIVE_DESIGN deltas have been applied to project docs")]
 dev-check-design-deltas-applied:
-  @just dev-dd check-design --deltas-applied
+  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-design --deltas-applied
 
-[doc("run ROADMAP format compliance check using hosted docdicer")]
+[doc("run ROADMAP format compliance check")]
 dev-check-roadmap:
-  @just dev-dd check-roadmap
+  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-roadmap
 
-[doc("check doc links and the PROJECT_DOCS tree using hosted docdicer")]
+[doc("check doc links and the PROJECT_DOCS tree")]
 dev-check-links:
-  @just dev-dd check-links PROJECT_DOCS *.md
-  @just dev-dd check-tree PROJECT_DOCS
-
-import? ".opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.just"
+  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-links PROJECT_DOCS *.md
+  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-tree PROJECT_DOCS
