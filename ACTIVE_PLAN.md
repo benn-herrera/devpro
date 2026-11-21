@@ -19,25 +19,26 @@ shim: git is the rollback. P2 retires the old verbs only after P1's evidence sho
 doing their job.
 
 **Staging boundary — the pending pair and the frame/legend work.** The design's dashboard pair —
-its `becomes` text, ACTIVE_DESIGN.md:281-287, quoted: "the dashboard, devpro's one loopback server
-for the web interface, renders the record files in memory as one panel of a site whose other panel
-is the project's board, the how-to-read legend served once in an outer frame, a record selection
-changing the inner frame only and the inner frame's top-level view the all-records list" — is NOT
-applied by this plan. Its layout clauses are the UX discussion's subject, which runs concurrently:
-the outer frame's presentation, the landing surface, the navigation structure and the legend
-placement are all awaiting that outcome. The pair stays pending; a later package — under a later
-plan, in the design's amended text — applies it verbatim and builds the frame and legend work it
-describes. This plan's note is the whole of that boundary here: no package below half-specifies the
-frame. What the plan leaves knowingly broken: after P2, PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:99-103
+its `becomes` text, ACTIVE_DESIGN.md:376-396, stating the user's decided layout: the board as the
+landing surface, the persistent top nav with the `devpro` brand and the view names, the persistent
+server elements, the profiler view's frame band carrying the how-to-read legend and the
+return-to-list control, ordinary drill-down navigation and the one shared presentation layer — is
+NOT applied by this plan. Those layout clauses are the design's accepted target state, and the pass
+that builds them is a later pass's own plan, drafted when the user directs it after this plan's
+technical base has landed — not a package of this plan, and none of this plan's packages
+half-specifies the frame. The pair stays pending until that pass applies it verbatim. What the plan
+leaves knowingly broken: after P2, PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:99-103
 still describes "the tool's `serve` subcommand" the code no longer has — the record the pending
-pair replaces; the pair's application resolves it.
+pair replaces; the pass's application resolves it.
 
 **Verification approach** (the design's decision, accepted): browser-level checks run agent-side
-through Firefox headless only, `--headless --screenshot` — "the stage's visual checks screenshot
-real pages with no operator involvement, no sandbox change, and no browser download: the installed
-browser is the tool" (the Shipped-files entry's *dashboard's visual verification* paragraph,
-ACTIVE_DESIGN.md:289-296, landed as `292c367`). Chromium stays unprovisioned. Firefox stands on this
-host (Firefox.app in /Applications), so the checks run and skip nowhere else.
+through Firefox headless only — the installed browser is the tool; no browser is downloaded, no
+windowing compositor touched, Chromium stays unprovisioned. Firefox stands on this host
+(Firefox.app in /Applications), so such a check runs and skips nowhere else. P1 itself performs no
+browser-level check: its verification is the fetch-level suite, and browser-driven visual
+verification — which needs a page that can be settled and judged rendered, more than
+`--screenshot` can assert — is the roadmap ticket taken up with the UX pass, not an ad-hoc check
+slotted into this plan.
 
 **Route plumbing already settled in the record** — every package preserves these as they stand:
 
@@ -63,8 +64,8 @@ host (Firefox.app in /Applications), so the checks run and skip nowhere else.
 | Package | State | Rating | Lifetime | Work |
 | --- | --- | --- | --- | --- |
 | | drafted | | | Kickoff: the stage-3 plan drafted from the design; the dashboard pair and frame/legend work left pending for the UX outcome |
-| P1 | in progress | expert | shipped | the dashboard verb: one loopback server, the traces panel and the board panel, the minimal frame |
-| P2 | drafted: the design's verb and retirement entries land by your approval first | expert | shipped | the one front end: the old serving verbs retire, the record and the snippets' routing move with them |
+| P1 | in progress: built, fetch-level suite green; the close-out run (`just test devpro`, `just lint`) remains under the re-specified verification | expert | shipped | the dashboard verb: one loopback server, the traces panel and the board panel, the minimal frame |
+| P2 | drafted: the amendment's entries are landed; the kanban.md alignment entry remains before it is dispatchable | expert | shipped | the one front end: the old serving verbs retire, the record and the snippets' routing move with them |
 | PR | dispatchable | expert | shipped | Post-plan review |
 | PB | dispatchable | expert | shipped | Post-plan burndown |
 
@@ -85,7 +86,7 @@ nothing: there is no incumbent dashboard to extend; this package is new.
 `.profiler-*` stores, through `pages.py`'s `read_sessions`/`index_html`/`page_of` as they stand —
 the settled route plumbing above is P1's contract, and the tests that pin it are P1's to keep
 passing (the four bullets: the page-bytes test :610, the unreadable-store test :586, the
-calls-only test P1 adds, the foreign-project test :567). Until P2, the old `serve` still runs
+calls-only coverage the dashboard suite's fixtures carry, the foreign-project test :567). Until P2, the old `serve` still runs
 alongside, unchanged. The board panel is the kanban server's serve surface whole, behavior for
 behavior — so P2's retarget is a whole-surface move, never a re-implementation: the board page's
 files (`devpro/dicing/kanban/assets/index.html`, `board.js`, `board.css`), the `/api/board` payload
@@ -124,25 +125,18 @@ from the network, the URL printed once on stdout for cmd-clicking. The dashboard
 surfaces' existing protections: the kanban handler's host-header check and CSP
 (`tests/dicing/test_server.py:552`, `:564`) travel with the board panel.
 
-**Visual checks and the calls-only pin** (the design's verification decision, specified to
-execution). The test resolves Firefox by one rule: the app bundle binary
-`/Applications/Firefox.app/Contents/MacOS/firefox` is checked for existence and executability; where
-it is absent, the test skips — never fails — naming the skip, and no browser is downloaded, no
-windowing compositor touched. Invocation: `firefox -headless --screenshot <absolute .png path>
-<url>`, the output path under the test's own temporary directory, one screenshot per URL. The test
-screenshots a URL only after that URL answers 200 to the test's own fetch and, for the board page,
-after `/api/board` has answered once — the page's first render follows its own fetch of that
-payload — plus a one-second settle before the shot. The assertion distinguishes a blank or failed
-render from content: a blank-render control — a minimal empty page served by the same test server,
-screenshotted in the same run at the same viewport — is taken first, and each real page's PNG must
-be at least twice the control's byte size. TEST_PRECONDITION: the check fails on a dashboard whose
-pages render blank or fail to load — the defect no fetch-based test catches, because a failed load
-still writes a screenshot and a blank render is a control-sized PNG. The screenshots cover three
-URLs: the root with the board link, a `/page/<session-id>` page of a fixture session, and the board
-page. P1 also adds the calls-only pin the route plumbing lacks: a fixture session of tool calls
-only, rendered through the dashboard's page path, shows its calls content and no empty tree under a
-calls header — TEST_PRECONDITION: it fails on a composition that drops or empties the calls render
-for a tool-call-only session.
+**Verification.** The dashboard's verification is its fetch-level suite (`tests/dashboard/`):
+every served path — the root with the board link, `/page/<session-id>`, `/board/` and its assets,
+the API endpoints, the served documents — is fetched and asserted against fixtures, so a page that
+fails to serve fails the suite. No browser-level visual check is in this plan's scope; the
+roadmap's browser-driven visual verification ticket carries that work, taken up with the UX pass.
+
+**The calls-only composition.** The suite's fixtures are tool-call-only sessions rendered through
+every served path — index, `/page/<session-id>`, the API payload
+(`tests/dashboard/test_server.py:25-50`) — so the calls-only render is covered where the earlier
+draft's separate test would have duplicated it; no dedicated test is added, and the suite's
+page-bytes pin (`test_the_served_page_is_the_html_the_file_flow_writes`,
+tests/test_devpro_profiler.py:610) holds the served page to what the file flow writes.
 
 **Facts.**
 - `git grep -il dashboard -- devpro` → no output. No existing front end to absorb; new package.
@@ -160,7 +154,7 @@ for a tool-call-only session.
 
 **Done-line.** `just test devpro`, then `just lint`, run once at the package's end. `just test
 devpro` runs the whole pytest surface over `tests/` (devtools/scripts/test.sh:34, `devpro) dirs=(tests)`),
-so it covers the profiler suite, the dicing suite and the new visual check.
+so it covers the profiler suite, the dicing suite and the dashboard suite.
 
 ## P2 — the one front end: the old serving verbs retire
 
@@ -169,10 +163,13 @@ Lifetime: shipped. One commit closes it.
 **Precondition.** The design carries the technical entries the user's approval of this plan
 directs — the `dashboard` verb in Package and Command, and Dicing and Checks' verb list losing
 `devpro kanban` (its verbs list PROJECT_DOCS/SPEC/dicing-and-checks.md:10, its exit line :15, its
-repeatable outcome :27, its non-destructive outcome :29, its serve line :39; the board's own
-contract PROJECT_DOCS/SPEC/dicing/kanban.md aligned to serving as the dashboard's panel; the board
-verb's line in PROJECT_DOCS/SPEC/package-and-command.md:21-23). Until those entries are in the
-design and `just dev-check-design` passes, P2 is not dispatchable.
+repeatable outcome :27, its non-destructive outcome :29, its serve line :39; the board verb's line
+in PROJECT_DOCS/SPEC/package-and-command.md:21-23), and the routing entries in the Subsystem Map
+and Recipes moving the board's and the records' routing to the dashboard. One alignment the
+approval directs is still owed: the board's own contract, PROJECT_DOCS/SPEC/dicing/kanban.md,
+aligned to serving as the dashboard's panel — no entry in the design carries it yet, the leaf still
+contracting the verb P2 retires. Until that entry is in the design and `just dev-check-design`
+passes, P2 is not dispatchable; the entries named above are in the design as of this amendment.
 
 **Scope — code.** Removed: `devpro/profiler/pages.py`'s `IndexHandler`, `serve` and
 `parse_serve_args` (the HTTP layer P1's server replaces; `index_html`, `page_of`, `read_sessions`
