@@ -65,6 +65,7 @@ slotted into this plan.
 | --- | --- | --- | --- | --- |
 | | drafted | | | Kickoff: the stage-3 plan drafted from the design; the dashboard pair and frame/legend work left pending for the UX outcome |
 | P1 | landed | expert | shipped | the dashboard verb: one loopback server, the traces panel and the board panel, the minimal frame |
+| P1b | drafted: the PE review and revision of its text remain before it is dispatchable | expert | shipped | the dashboard verb takes a positional project directory |
 | P2 | drafted: the amendment's entries are landed; the kanban.md alignment entry remains before it is dispatchable | expert | shipped | the one front end: the old serving verbs retire, the record and the snippets' routing move with them |
 | PR | dispatchable | expert | shipped | Post-plan review |
 | PB | dispatchable | expert | shipped | Post-plan burndown |
@@ -160,6 +161,49 @@ tests/test_devpro_profiler.py:610) holds the served page to what the file flow w
 devpro` runs the whole pytest surface over `tests/` (devtools/scripts/test.sh:34, `devpro) dirs=(tests)`),
 so it covers the profiler suite, the dicing suite and the dashboard suite.
 
+## P1b — the dashboard verb takes a positional project directory
+
+Lifetime: shipped. One commit closes it.
+
+**Scope.** Edited: `devpro/dashboard/cli.py` — the verb's positional, optional, following the
+verb's argparse conventions; `devpro kanban [<project-dir>]`'s positional is the pattern
+(`devpro/dicing/cli.py:110-120`:
+`board.add_argument("project_dir", nargs="?", metavar="project-dir", …)`), so the dashboard's is
+declared the same way; `devpro/dashboard/server.py` — `serve` takes the directory and passes it to
+`dashboard_root(directory)`, which already accepts one; and the tests. Unchanged: the resolution
+rule itself — the positional, when given, is resolved by the same `git_root` walk `dashboard_root`
+uses; the board panel and the traces panel both read the resolved root, no panel re-resolving.
+
+**Facts.**
+- `git grep -n "def serve" -- devpro/dashboard/server.py` → `devpro/dashboard/server.py:195: def
+  serve(port: int) -> None:` — the current signature takes the port alone. Its caller:
+  `git grep -n "serve(args" -- devpro` → `devpro/dashboard/cli.py:36:    serve(args.port)`, the
+  verb's `run` dispatch — the one caller: the other `serve(` hits in `git grep -n "serve(" -- devpro
+  tests` are the profiler verb's own serve (devpro/profiler/cli.py:63, retired at P2) and the
+  dashboard suite's pytest fixture (tests/dashboard/conftest.py:114), not this function.
+- `git grep -n "def dashboard_root" -- devpro/dashboard/server.py` → `devpro/dashboard/server.py:56:
+  def dashboard_root(directory: Optional[str] = None) -> str:` — the directory parameter exists
+  already; the change passes the verb's positional to it, and the `git_root` walk it does
+  (server.py:59) resolves the named directory by the same rule the cwd walk uses today.
+- The kanban verb's positional declaration, the pattern the dashboard's follows:
+  `devpro/dicing/cli.py:110-120` — `subparsers.add_parser("kanban", …)` then
+  `board.add_argument("project_dir", nargs="?", metavar="project-dir", …)`.
+
+**Tests.** A test serving a *named* directory's project — fixture projects A and B (the `project`
+helper, tests/dashboard/conftest.py:31), the verb run with A named through `_serve_the_command`'s
+subprocess pattern (tests/dashboard/test_server.py:290), the served index shows A's sessions and
+not B's — TEST_PRECONDITION (devpro/clauses.py:170): it fails on a server that ignores the
+positional and serves the cwd's project instead — the defect named: a `run` dispatch that passes
+nothing to `serve`, so a server launched by another process from any CWD serves the wrong project.
+The cwd-default behavior keeps its pins
+(`test_dashboard_root_is_the_git_root_of_the_directory_it_runs_in`, tests/dashboard/test_server.py:265;
+`test_the_command_prints_the_loopback_url_once_and_serves_the_project_it_runs_in`, :314).
+
+**Sequencing.** P2 applies the kanban.md pair whose `becomes` names `devpro dashboard
+[<project-dir>]` (the design's Kanban leaf alignment entry), so P1b lands before P2 dispatches.
+
+**Done-line.** `just test devpro`, then `just lint`, run once at the package's end.
+
 ## P2 — the one front end: the old serving verbs retire
 
 Lifetime: shipped. One commit closes it.
@@ -169,11 +213,11 @@ directs — the `dashboard` verb in Package and Command, and Dicing and Checks' 
 `devpro kanban` (its verbs list PROJECT_DOCS/SPEC/dicing-and-checks.md:10, its exit line :15, its
 repeatable outcome :27, its non-destructive outcome :29, its serve line :39; the board verb's line
 in PROJECT_DOCS/SPEC/package-and-command.md:21-23), and the routing entries in the Subsystem Map
-and Recipes moving the board's and the records' routing to the dashboard. One alignment the
-approval directs is still owed: the board's own contract, PROJECT_DOCS/SPEC/dicing/kanban.md,
-aligned to serving as the dashboard's panel — no entry in the design carries it yet, the leaf still
-contracting the verb P2 retires. Until that entry is in the design and `just dev-check-design`
-passes, P2 is not dispatchable; the entries named above are in the design as of this amendment.
+and Recipes moving the board's and the records' routing to the dashboard. The board's
+own contract is aligned in the design as of this amendment — the Kanban leaf's entry
+(`ACTIVE_DESIGN.md`, the `devpro dashboard [<project-dir>]` pair) — and P2 applies it with the
+entries named above. Until those entries are applied and `just dev-check-design-deltas-applied`
+passes for them, P2 is not done; P1b lands the code the entries name first.
 
 **Scope — code.** Removed: `devpro/profiler/pages.py`'s `IndexHandler`, `serve` and
 `parse_serve_args` (the HTTP layer P1's server replaces; `index_html`, `page_of`, `read_sessions`

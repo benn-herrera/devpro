@@ -109,11 +109,19 @@ run wherever the `devpro` command runs; they are not part of the install product
 ```
 The command also carries the dicing and check surface: `devpro dice-doc`, `devpro undice`,
 `devpro dice-docs`, `devpro check-links`, `devpro check-tree`, `devpro check-plan`,
-`devpro check-design` and `devpro check-roadmap` (Dicing and Checks), and the `devpro dashboard`
-verb — devpro's one loopback server for the web interface: its traces panel the rendering the
-retired `devpro profiler serve` drove, its board panel the board the retired `devpro kanban`
-served. The verbs run wherever the `devpro` command runs; they are not part of the install product.
+`devpro check-design` and `devpro check-roadmap` (Dicing and Checks), and the
+`devpro dashboard [<project-dir>] [--port <number>]` verb — devpro's one loopback server for the
+web interface: its traces panel the rendering the retired `devpro profiler serve` drove, its board
+panel the board the retired `devpro kanban` served. The verbs run wherever the `devpro` command
+runs; they are not part of the install product.
 ```
+
+**The dashboard's project directory — the user's decision, the active plan's P1b package's
+content, pending until that package lands it.** The `dashboard` verb takes an optional positional
+project directory, defaulting to the project the command runs in — the cwd's git root, as
+`dashboard_root` resolves it today. The reason is the user's: a server launched by another
+process — the coming MCP door — may run from any CWD, so the project cannot be inferred from the
+working directory alone.
 
 ### [Dicing and Checks](PROJECT_DOCS/SPEC/dicing-and-checks.md) — the dicing surface's section
 
@@ -230,6 +238,31 @@ under the project root — the nearest directory at or above the current one hol
 ```
 under the project root — the nearest directory at or above the current one holding a `.git` entry.
 ```
+
+### [Kanban](PROJECT_DOCS/SPEC/dicing/kanban.md) — the board verb's contract leaf: the dashboard serves the board
+
+(*Stage 3: the pair and the prose below are the active plan's P2 package's content — the retiring
+board verb's leaf — and stay pending until that package lands them.*)
+
+**As it stands:**
+```
+`devpro kanban [<project-dir>]` serves a live board of a project's development-process files on the
+local machine, for the user to open in a browser.
+```
+**Becomes:**
+```
+`devpro dashboard [<project-dir>]` serves a live board of a project's development-process files on
+the local machine as the dashboard's board panel at `/board/`, for the user to open in a browser.
+```
+
+**The leaf's remaining verb-naming sites.** Beyond its opening sentence the leaf names the retired
+verb at three sites: the no-project-root error's contract quoting the message that says
+`run devpro kanban inside a project, or name a directory inside a project: devpro kanban <project-dir>`
+(`PROJECT_DOCS/SPEC/dicing/kanban.md:48`), and the recovery instructions
+"restart `devpro kanban` and open the URL it prints" (`:293` and `:303`). P2 rewords those alongside
+the code's own error message and page text, which the leaf quotes; the exact wording is the
+executor's, matched to the code. The leaf's payload, moves, host-guard and served-documents
+contracts are untouched: the board panel holds them verbatim.
 
 ### [SPEC entry point](PROJECT_DOCS/SPEC/entry-point.md) — the new section listed
 
