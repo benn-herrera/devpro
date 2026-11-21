@@ -358,13 +358,15 @@ scripts package included.
 The dicing snippets package is a shipped package installed at its own stated destination:
 `skills/docdicer/dicing-snippets/`, inside the `docdicer` skill's own directory, holding only the
 runner snippets, not an importable package either, read by the consuming project through the same
-runner include line. The snippets run the `devpro` command from `PATH`. Every target the snippets
-define is named `devpro-<name>`, the seven the docdicer tools package's set carried: the bare
-`devpro`, running the command so its `--help` prints; by name `devpro-help`, showing the commands
-and their doc strings; `devpro-check-plan`, `devpro-check-design`,
-`devpro-check-design-deltas-applied` and `devpro-check-roadmap`, checking the active plan, the
-active design, the active design's applied deltas and `ROADMAP.md`, a path given going through the
-bare recipe for any other file; and `devpro-kanban`, the board server. Both runners carry the set —
+runner include line. The snippets run the `devpro` command from `PATH`. They define the recipes
+`devpro`, `devpro-help`, `devpro-check-plan`, `devpro-check-design`,
+`devpro-check-design-deltas-applied` and `devpro-check-roadmap`: the bare `devpro` printing the
+command's help, and `devpro-help` showing the commands and their doc strings. The four gates take no
+argument, each checking the active file under the project root — the active plan, the active design,
+the active design's applied deltas and `ROADMAP.md` — that argumentlessness being what makes them
+runner-able. No `devpro-kanban` and no dicing recipes: the board is the dashboard's panel, and the
+dicing shortcuts need the arguments their direct calls give them, documented in the `docdicer` skill
+and Dicing and Checks. Both runners carry the set —
 `devpro.just` for a justfile, `devpro.mk` for a Makefile — and `devpro-help` shows the commands and
 their doc strings in either: under just from the recipes' own `[doc]` strings, under make by
 parsing the snippet's own target-list comments, the approach the retired set's make snippet used and
@@ -374,12 +376,15 @@ the feature worked.
 ### [Plugins](PROJECT_DOCS/SPEC/deployed-surfaces/plugins.md) — the snippet sets: devpro returns, the retired line cleaned up
 
 The user directed the runner shortcuts' return after stage 1's plan landed: the absorbed dicing
-verbs' runner recipes come back as a new snippet set — the retired docdicer set's replacement, seven
-recipes with the `devpro-` prefix where the old ones carried `docdicer-` — and the include line is
+verbs' check recipes come back as a new snippet set — the retired docdicer set's replacement, the
+checks-only set of six recipes, `devpro` bare and five with the `devpro-` prefix where the old ones
+carried `docdicer-` — and the include line is
 written for every project install of a nested plugin again, not only with the kbase component. The
+"served, not injected" decision named the profiler's serve surface — the dashboard's — and the
+checks were never that question: their shortcuts are the process surface, and they return. The
 verbs stay served by the `devpro` command; what returns is the runner surface's convenience over
-them, not a second tool install. This entry and the entries with it are the next plan's content,
-carried with that plan's own work.
+them, not a second tool install. This entry and the entries with it are stage-1 surface work — the
+next plan's content, the user directing it now — and stay pending until that plan lands them.
 
 **As it stands:**
 ```
@@ -1145,11 +1150,12 @@ on (none in the mage slot, a harness-directory plugin), and it
   the check verbs and `devpro kanban` — run from the command line, and does not restate their
   `--help` (CONVENTIONS.md, A skill omits its tool's offered surface). The skill carries no install
   step. Its runner instruction is back, naming the recipes of the `devpro` snippet set: where the
-  project's runner includes that set, the dicing verbs run through the recipes (`devpro`, and by
-  name `devpro-help`, `devpro-check-plan`, `devpro-check-design`,
-  `devpro-check-design-deltas-applied`, `devpro-check-roadmap` and `devpro-kanban`), each of the
-  check recipes checking the active plan, the active design, the active design's applied deltas and
-  `ROADMAP.md`, a path given going through the bare recipe for any other file (Plugins). Its
+  project's runner includes that set, the checks run through the recipes (`devpro`, and by name
+  `devpro-help`, `devpro-check-plan`, `devpro-check-design`,
+  `devpro-check-design-deltas-applied` and `devpro-check-roadmap`), the four gates argumentless,
+  each checking the active file under the project root — the active plan, the active design, the
+  active design's applied deltas and `ROADMAP.md` — with a direct `devpro` call for any other
+  (Plugins). Its
   `kanban` paragraph has the session offer to run the board as a background process or hand over
   the command line, the user choosing.
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
