@@ -147,8 +147,8 @@ bindable term that has no default and is unbound, ask the user for it then, thro
   under `{SPEC_DELTA_TERM}` or `{ARCHITECTURE_DELTA_TERM}` applies it to its target verbatim except
   its relative links: those are written relative to the file the entry is in, and each move rebases
   them where the destination is in another directory. The project's link check, where it has one,
-  confirms them. Where the project's runner carries a delta check
-  (`docdicer-check-design-deltas-applied`), its run confirms each pair's `becomes` block occurs in
+  confirms them. The design's delta application is verified by the dicing verb
+  `check-design --deltas-applied`, which confirms each pair's `becomes` block occurs in
   its target with each run of whitespace read as one space, and the from-text is gone where the
   becomes-text does not contain it; the application is done when that run reports every pair landed.
   An entry that states a whole leaf or a removal has no pair for it to confirm.

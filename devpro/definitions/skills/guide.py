@@ -448,13 +448,12 @@ above follows one plan, this one looks at what many plans have left behind.
 
 ## The board
 
-The `{clauses.ref(name="docdicer")}` skill, *The script*.
+The `{clauses.ref(name="docdicer")}` skill routes the board.
 
-- A live board of the project's roadmap, design and plan. `tools/docdicer kanban --help` gives the
+- A live board of the project's roadmap, design and plan. `devpro kanban --help` gives the
   details.
 - The session offers to run it as a background process; the user who would rather run it gets the
-  command line: `just docdicer-kanban`, or `make docdicer-kanban`, where a project install wrote the
-  runner include line; otherwise `tools/docdicer kanban` in that skill's directory. It never
+  command line. It never
   finishes, so a dispatched agent hands over the command line instead of running it. It serves until
   the user asks for it to stop.
 

@@ -1,5 +1,5 @@
-"""docdicer: the skill that dices markdown into trees of small linked files, and undices them, through
-the launcher shipped beside it in `tools/`."""
+"""docdicer: the skill that dices markdown into trees of small linked files, and undices them, routing
+to the dicing verbs of the `devpro` command."""
 
 from devpro import clauses
 from devpro.definition import Definition
@@ -42,34 +42,16 @@ DEFINITIONS = (
 `kb-root/` and everything under it belongs to the `{clauses.optional_ref(name="kbase")}` skill: do not
 dice, undice or link-check any of it unless the user directs that for it specifically.
 
-## The script
+## The verbs
 
-Where the project's justfile or Makefile includes a `docdicer.just` or `docdicer.mk` snippet, use
-its recipes in place of `tools/docdicer`: `just docdicer <arguments>` or
-`make docdicer DOCDICER_ARGS='<arguments>'`, and these by name under either:
-`docdicer-check-plan`, `docdicer-check-design`, `docdicer-check-design-deltas-applied`,
-`docdicer-check-roadmap` and `docdicer-kanban`. `docdicer-check-plan` checks the active plan and
-`docdicer-check-design` the active design; another plan or design is checked with
-`just docdicer check-plan <path>` or `just docdicer check-design <path>`, and the same under
-`make docdicer DOCDICER_ARGS='…'`. `docdicer-check-design-deltas-applied` checks that the active
-design's pending project-document deltas have been applied to the documents. `docdicer-check-roadmap`
-checks `ROADMAP.md`'s form, and another roadmap with `just docdicer check-roadmap <path>`. A recipe
-that takes no path checks the file named in its description and nothing else.
-
-Without those recipes, docdicer runs through `tools/docdicer` in this skill's directory, which
-passes its arguments to docdicer; run the script by its path under that directory, check a plan
-with `tools/docdicer check-plan <path>`, a design with `tools/docdicer check-design <path>`, the
-design's applied deltas with `tools/docdicer check-design --deltas-applied`, and the roadmap with
-`tools/docdicer check-roadmap ROADMAP.md`.
-Its first run installs docdicer beside it, which needs `git` and the network.
-`tools/docdicer --help` is the command list, and `tools/docdicer <command> --help` gives each
-command's arguments. Where this skill's directory has no `tools/docdicer`, as under a
-user-level install, a project install provides it.
+Dice, undice and check through the dicing verbs of the `devpro` command, run from the command line:
+`devpro dice-doc`, `devpro undice`, the check verbs (`check-links`, `check-tree`, `check-plan`,
+`check-design`, `check-roadmap`) and `devpro kanban`. The verbs' `--help` is the command list, and
+this skill does not restate it.
 
 `kanban` serves a live board of the project's roadmap, design and plan. Offer to run it as a
-background process, or hand the user the command line; the user chooses. `docdicer-kanban` where the
-recipes are included, `tools/docdicer kanban` without them. It serves until the user asks for it to
-stop, and it never finishes, so a dispatched agent hands over the command line instead of running it.
-`tools/docdicer kanban --help` gives the details.""",
+background process, or hand the user the command line; the user chooses. It serves until the user
+asks for it to stop, and it never finishes, so a dispatched agent hands over the command line
+instead of running it.""",
     ),
 )

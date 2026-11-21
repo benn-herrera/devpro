@@ -5,11 +5,10 @@ description and skill supporting file, the agents file, and every family overlay
 
 A spelling counts as a reference when it is:
 - a hyphenated definition name as a whole word, not inside a path or a longer name;
-- any other definition name in backticks, except the two that are also a tool or a CLI
-  (`docdicer`, `kbase`);
-- one of those two in backticks followed by ` skill`.
+- any other definition name in backticks;
+- `kbase` in backticks followed by ` skill`.
 
-Role nouns ("hand that to the architect") and those two names as their programs ("Run `kbase`
+Role nouns ("hand that to the architect") and `kbase` as its program ("Run `kbase`
 itself") are prose, and stay bare.
 """
 
@@ -27,7 +26,7 @@ from devpro.loading import load
 from devpro.render import PLACEHOLDER
 from devpro.vocabulary import reference
 
-_PROGRAM_NAMES = frozenset({"docdicer", "kbase"})
+_PROGRAM_NAMES = frozenset({"kbase"})
 
 
 def _reference_spellings(names: Collection[str]) -> re.Pattern[str]:
@@ -87,7 +86,7 @@ def test_no_definition_text_names_a_definition_outside_a_hole() -> None:
     [
         ("Prefer over python-coder for any Python task.", ["python-coder"]),
         ("revision by `architect`.", ["`architect`"]),
-        ("diced (the `docdicer` skill), and", ["`docdicer` skill"]),
+        ("diced (the `docdicer` skill), and", ["`docdicer`"]),
         ("load the `development` skill.", ["`development`"]),
         (f"Prefer over {reference('python-coder')} for any Python task.", []),
         (f"load the `{reference('development')}` skill.", []),
