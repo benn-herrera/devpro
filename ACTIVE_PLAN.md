@@ -43,7 +43,7 @@ dispatches.
 | P3 | landed | expert | shipped | `show-profile`'s body serve-first: run the launcher's `serve`, hand the user the URL; the file redirect demoted to a one-line mention |
 | P4 | landed | mechanical | shipped | the justfile gains `dev-profiler`, wrapping source-tree `hp.sh serve` the way `dev-kanban` wraps docdicer's serve |
 | P5 | landed | mechanical | shipped | the three delta pairs applied: one to `shipped-files.md`, two to `harness-profiler.md` |
-| P6 | in progress | expert | shipped | Post-plan review — dispatchable when P5's commit lands |
+| P6 | landed | expert | shipped | Post-plan review — dispatchable when P5's commit lands |
 | P7 | drafted | expert | shipped | Post-plan burndown — dispatchable when P6's review document lands |
 
 ## P1 — The serve verb: hp.py serves its pages over HTTP
