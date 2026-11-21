@@ -20,8 +20,8 @@ from urllib.parse import quote, unquote, urlparse
 
 from .capture import fill_context_tokens, spent_tokens, transcript_files
 from .values import (
-    COPY_AGENT_TYPE,
     CONTEXT_WIDTH,
+    COPY_AGENT_TYPE,
     DEFAULT_AGENT,
     DUPLICATE_EVENT_MS,
     HANDBACK,
@@ -29,9 +29,9 @@ from .values import (
     NAME_LIMIT,
     PARENT_TOOLS,
     SESSION_WIDTH,
-    TREE_WIDTH,
     TRACE_DIR,
     TRACE_GLOB,
+    TREE_WIDTH,
     _epoch_ms,
     _iso,
     _json,
@@ -565,7 +565,7 @@ def session_of(path: Path) -> dict:
 def list_sessions(directory: Path | str) -> list[dict]:
     """Every session trace under `directory`, with its records and its first and last moments.
 
-    Every `*-profiler` store under `.devpro-temp/` is read, so both harnesses' sessions reach one tree,
+    Every `.profiler-*` store under `.devpro-temp/` is read, so both harnesses' sessions reach one tree,
     and a session id is unique across them."""
     traces: list[Path] = []
     for store in sorted((Path(directory) / TRACE_DIR.parent).glob(TRACE_GLOB)):

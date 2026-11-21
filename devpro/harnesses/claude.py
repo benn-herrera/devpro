@@ -67,8 +67,8 @@ _PLUGIN_GUARDRAIL_COMMAND = _hook_command(interpreter="perl", script=_GUARDRAIL_
 # than the shell the command itself runs under.
 _PLUGIN_REMINDER_COMMAND = _hook_command(interpreter="bash", script=_REMINDER_SCRIPT, report=_MISSING_REMINDER_REPORT)
 # The activity profiler's capture: one hook payload on stdin, one record appended to the project's
-# `.devpro-temp/claude-profiler/` — claude's own capture, beside the opencode plugin's store. It runs
-# out of band and short, and its launcher exits 0 where it finds no python3, so neither a failed
+# `.devpro-temp/.profiler-claude/` — claude's own capture, beside the opencode plugin's store. It runs
+# out of band and short, and its launcher exits 0 where it finds no devpro, so neither a failed
 # capture nor a missing toolchain blocks the call that fired it.
 _PROFILER_SCRIPT = "profiler/hp.sh"
 _PROFILER_COMMAND = f'sh "${{CLAUDE_PLUGIN_ROOT}}/{_PROFILER_SCRIPT}" capture claude'

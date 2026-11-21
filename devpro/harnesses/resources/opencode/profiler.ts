@@ -3,8 +3,8 @@
 // opencode 2.3.2 plugin module (floor 2.3.0)
 // The activity capture: every tool call of a session, with its duration, arguments, result and
 // outcome, and the session's idle marks, appended to the project's
-// `.devpro-temp/opencode-profiler/<session-id>.jsonl` — the store `devpro profiler tree` renders beside
-// the claude sessions'. The record's fields and their meanings are `devpro/profiler/capture.py`'s,
+// `.devpro-temp/.profiler-opencode/<session-id>.jsonl` — the store `devpro profiler tree` renders
+// beside the claude sessions'. The record's fields and their meanings are `devpro/profiler/capture.py`'s,
 // because the same render reads both, and the masking is its masking: this file is that record rebuilt
 // against opencode's hook surface, which reports different things than claude's hooks do.
 //
@@ -67,7 +67,7 @@ function pluginId(): string {
 
 // `devpro/profiler/capture.py`'s limits and spellings, so a record from either harness renders the same way.
 const SCHEMA_VERSION = 2
-const TRACE_DIR = join(".devpro-temp", "opencode-profiler")
+const TRACE_DIR = join(".devpro-temp", ".profiler-opencode")
 const NAME_LIMIT = 80
 const ARGS_LIMIT = 200
 const RESULT_LIMIT = 300

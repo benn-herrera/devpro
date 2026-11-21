@@ -14,8 +14,8 @@ _DESCRIPTION = (
 )
 
 _BODY = """Serve this session's recorded trace to the user as a page in their browser. The trace is the newest
-session recording under `.devpro-temp/` at the repository root: `.devpro-temp/claude-profiler/` under
-claude, `.devpro-temp/opencode-profiler/` under opencode. `sh HP tree` reads both stores.
+session recording under `.devpro-temp/` at the repository root: `.devpro-temp/.profiler-claude/` under
+claude, `.devpro-temp/.profiler-opencode/` under opencode. `sh HP tree` reads both stores.
 
 ## Locate the profiler
 

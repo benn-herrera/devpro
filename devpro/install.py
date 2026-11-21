@@ -51,6 +51,8 @@ from devpro.install_target import (
     user_dir_harnesses,
 )
 from devpro.preflight import run_preflighted
+from devpro.profiler.hooks import rename_stores as migrate_stores
+from devpro.profiler.values import NEW_STORE_PREFIX, OLD_STORE_SUFFIX, TRACE_DIR
 from devpro.render import (
     GENERATED_MARK,
     GENERATED_NOTICE,
@@ -465,6 +467,7 @@ def install(
     real_harness_dir: Path | None = None,
     real_project: Path | None = None,
     global_dir: Path | None = None,
+    rename_stores: Callable[[Path], list[str]] | None = None,
 ) -> None:
     """Install the set `ctx` renders into ROOT, `harness_dir / ctx.bound_harness.plugin_dir`. Every
     check runs first, so a refusal writes nothing; then the writes; then the removals.
@@ -474,7 +477,9 @@ def install(
     where a write must refuse on them. `real_harness_dir` and `real_project` are the harness directory
     and project root the install is for, where `harness_dir` and `project_root` are a scratch copy of
     them, each defaulting to the path written. `global_dir` is the harness's user harness directory, or a
-    scratch copy of it, defaulting to the directory itself."""
+    scratch copy of it, defaulting to the directory itself. `rename_stores` renames a project's stores
+    from the profiler's `*-profiler` naming to `.profiler-*`, called for the project written and
+    returning the lines the report names; it is `rename_stores` where not given."""
     root = harness_dir / ctx.bound_harness.plugin_dir
     project = _lexical(harness_dir if project_root is None else Path(project_root))
     user_level = ctx.harness.name in user_dir_harnesses(harness_dir if real_harness_dir is None else real_harness_dir)
@@ -575,6 +580,10 @@ def install(
             retired_set=RETIRED_SNIPPET_SET,
             real_project=real_project,
         )
+    # The profiler's stores from before their rename, for the project written: the preflight's scratch run
+    # renames its copy, which is what shows the preflight a move, and the real project is renamed once.
+    for line in (rename_stores or migrate_stores)(project):
+        print(line)
     if guardrail is not None and not registers_guardrail:
         # Neither prune nor the one-way copy removes what an earlier install delivered, so the script
         # is named; the registration is written on every install, so it is never left.
@@ -618,6 +627,10 @@ def _install_managed_paths(
     under_project: list[str] = []
     if _is_project_install_of_a_nested_plugin(harness, user_level=user_level):
         under_project += [*JUSTFILE_NAMES, *MAKEFILE_NAMES]
+    # The profiler's stores: an old-pattern one the install renames, and the name it renames to, so the
+    # preflight sees the move it would make rather than reporting the target up to date.
+    store_dir = TRACE_DIR.parent.as_posix()
+    under_project += [f"{store_dir}/{NEW_STORE_PREFIX}*", f"{store_dir}/*{OLD_STORE_SUFFIX}"]
     if _installs_agents_file(harness_dir, harness, project=project):
         write = checked_agents_file(harness_dir, harness, ctx.plugin)
         under_harness_dir += [path.relative_to(harness_dir).as_posix() for path in write.paths]
@@ -648,13 +661,16 @@ def preflighted_install(
     project_root: Path | None = None,
     uncommitted: Callable[[], tuple[str, ...]],
     dry_run: bool = False,
+    rename_stores: Callable[[Path], list[str]] | None = None,
 ) -> None:
     """`install` behind the preflight: run first into a scratch copy of the paths it manages, with the
     real harness directory and project root as its identity. Where that changed nothing, the harness
     directory is reported up to date and nothing in the target is touched — no file, no package
     destination, no `.venv`. With `dry_run`, what would be created, changed and removed is printed
     relative to the project root, and nothing is written. Otherwise the install runs exactly as
-    `install` does. Every printed path and refusal names the real target."""
+    `install` does. Every printed path and refusal names the real target. `rename_stores` is `install`'s,
+    defaulting to the project's stores renamed once; a run installing for several harnesses passes one
+    shared across them, so the real project is renamed by its first real run alone."""
     project = _lexical(harness_dir if project_root is None else Path(project_root))
     user_level = ctx.harness.name in user_dir_harnesses(harness_dir)
     managed = _install_managed_paths(
@@ -674,11 +690,31 @@ def preflighted_install(
             real_harness_dir=harness_dir,
             real_project=project,
             global_dir=bases[3],
+            # One harness per run, so one rename: the preflight's scratch run renames its own copy, and
+            # the real run renames the real project.
+            rename_stores=rename_stores or _one_project_renamed_once(project),
         ),
         dry_run=dry_run,
         target=harness_dir,
         report_root=project,
     )
+
+
+def _one_project_renamed_once(project: Path) -> Callable[[Path], list[str]]:
+    """The stores' rename for a run installing for several harnesses into one project: the preflight's
+    scratch runs rename their own copies, and the real project is renamed by the first real run alone, so
+    the second harness's run finds nothing to move and the report names each rename once."""
+    renamed = False
+
+    def rename(directory: Path) -> list[str]:
+        nonlocal renamed
+        in_preflight = Path(directory).resolve() != project.resolve()
+        if renamed and not in_preflight:
+            return []
+        renamed = renamed or not in_preflight
+        return migrate_stores(directory)
+
+    return rename
 
 
 INSTALL_SETTINGS = ("always", "detect", "never")
@@ -741,6 +777,7 @@ def install_selected(
                 f"devpro settings file '{path}', section '[{name}]': install '{setting}' is not one of "
                 f"{', '.join(INSTALL_SETTINGS)}; nothing written"
             )
+    store_renames: dict[Path, Callable[[Path], list[str]]] = {}
     for name, setting in settings_by_harness.items():
         if setting == "never":
             continue
@@ -750,6 +787,9 @@ def install_selected(
         chosen = components_value(components, settings, name)
         try:
             resolved = resolve_install_target(target, harness=name, plugin=NAME, subdir=subdir)
+            # One rename per project across the loop: the second harness's install must not move a store
+            # the first run's report already named.
+            rename = store_renames.setdefault(resolved.project_root, _one_project_renamed_once(resolved.project_root))
             preflighted_install(
                 resolved.harness_dir,
                 tuned(name, entry.supply, chosen),
@@ -757,6 +797,7 @@ def install_selected(
                 project_root=resolved.project_root,
                 uncommitted=uncommitted,
                 dry_run=dry_run,
+                rename_stores=rename,
             )
         except InputError as exc:
             raise InputError(f"harness '{name}': {exc}") from exc

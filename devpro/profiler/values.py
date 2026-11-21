@@ -12,10 +12,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 SCHEMA_VERSION = 2
-# Each harness's capture owns one store, and `tree` reads them all: every `*-profiler` directory under
-# `.devpro-temp/`. This one is the claude capture's.
-TRACE_DIR = Path(".devpro-temp") / "claude-profiler"
-TRACE_GLOB = "*-profiler"
+# Each harness's capture owns one store, and `tree` reads them all: every `.profiler-*` directory under
+# `.devpro-temp/`, a dot name so the stores group at the top of the tree. This one is the claude capture's.
+TRACE_DIR = Path(".devpro-temp") / ".profiler-claude"
+TRACE_GLOB = ".profiler-*"
+# The store naming before the rename: `<store>-profiler`, which an install renames to `.profiler-<store>`.
+OLD_STORE_SUFFIX = "-profiler"
+NEW_STORE_PREFIX = ".profiler-"
 TOOL_EVENTS = ("PostToolUse", "PostToolUseFailure")
 SESSION_EVENTS = ("PreCompact", "PostCompact", "SessionStart", "SubagentStop")
 LAUNCHED = "async_launched"

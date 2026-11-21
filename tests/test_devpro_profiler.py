@@ -14,6 +14,10 @@ Two more are the launcher's own: a capture whose devpro the finder cannot resolv
 output and no other subcommand does, and `init` lays down the launcher alone, removing the `hp.py` and
 `view.html` an older init left beside it.
 
+The stores' rename is the last group's: an install and an `init` move each `*-profiler` store under
+`.devpro-temp/` to its `.profiler-*` name and name the move, and neither ever merges one store into
+another; `doctor` names an old-pattern store the reader cannot see.
+
 The package is imported from the repository root, which `just test` puts on PYTHONPATH. The launcher
 runs whatever `devpro` it resolves, and no test relies on one installed on the host: each installs a
 shim running this checkout into the directory it runs in and points `HP_DEVPRO` at it.
@@ -26,6 +30,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import threading
 import time
 import urllib.error
@@ -99,8 +104,7 @@ def _devpro_shim(project: Path) -> Path:
     code: its finder, the verb's dispatch and the capture all run as the install's do."""
     shim = project / "devpro"
     shim.write_text(
-        "#!/bin/sh\nexec env "
-        f"PYTHONPATH={_PACKAGE_ROOT} PYTHONDONTWRITEBYTECODE=1 python3 -m devpro \"$@\"\n",
+        "#!/bin/sh\nexec env " f'PYTHONPATH={_PACKAGE_ROOT} PYTHONDONTWRITEBYTECODE=1 python3 -m devpro "$@"\n',
         encoding="utf-8",
     )
     shim.chmod(0o755)
@@ -185,7 +189,7 @@ def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> N
     capture = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD)
     assert capture.returncode == 0, capture.stderr
     assert capture.stdout == "" and capture.stderr == ""
-    trace = project / ".devpro-temp" / "claude-profiler" / "s-profiler.jsonl"
+    trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
     [record] = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
     assert record["v"] == 2
     assert _RECORD_FIELDS <= set(record), sorted(record)
@@ -213,7 +217,7 @@ def test_a_capture_writes_its_line_in_the_bytes_it_measured(tmp_path: Path) -> N
     launcher = _launcher(tmp_path / "harness")
     capture = _run(launcher, "capture", "claude", cwd=project, stdin=json.dumps(payload))
     assert capture.returncode == 0, capture.stderr
-    trace = project / ".devpro-temp" / "claude-profiler" / "s-profiler.jsonl"
+    trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
     line = trace.read_bytes().decode("ascii")
     assert json.loads(line)["args"] == "echo h\u00e9 \ud800"
 
@@ -223,6 +227,7 @@ def test_the_installed_profiler_is_the_sources_bytes(tmp_path: Path) -> None:
     on its way through the package data."""
     launcher = _launcher(tmp_path / "harness")
     assert launcher.read_bytes() == launcher_resource().read_bytes()
+
 
 @pytest.mark.parametrize("command", ["capture", "tree"])
 def test_a_launcher_finding_no_devpro_captures_silently_and_reports_otherwise(tmp_path: Path, command: str) -> None:
@@ -255,7 +260,7 @@ def test_a_launcher_finding_no_devpro_captures_silently_and_reports_otherwise(tm
 
 def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Path) -> None:
     """A session in each harness's store under one project, and one `tree <id>` per store renders it:
-    the read that walks every `*-profiler` store, whose revert to claude's alone loses the opencode
+    the read that walks every `.profiler-*` store, whose revert to claude's alone loses the opencode
     session silently."""
     project = tmp_path / "project"
     project.mkdir()
@@ -265,7 +270,7 @@ def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Pa
     assert capture.returncode == 0, capture.stderr
     # A record the opencode capture writes, holding what `tree`'s render reads: an event at start and
     # the call, which only --verbose draws.
-    opencode = project / ".devpro-temp" / "opencode-profiler" / "s-opencode.jsonl"
+    opencode = project / ".devpro-temp" / ".profiler-opencode" / "s-opencode.jsonl"
     opencode.parent.mkdir()
     opencode.write_text(
         "\n".join(
@@ -423,6 +428,26 @@ def test_init_lays_down_the_launcher_and_clears_an_older_runs_files(tmp_path: Pa
     assert "harness-profiler/hp.sh" in (project / ".claude" / "settings.json").read_text(encoding="utf-8")
 
 
+def test_init_renames_the_repositorys_old_pattern_stores(tmp_path: Path) -> None:
+    """A repository holding `.devpro-temp/claude-profiler/` and `.devpro-temp/opencode-profiler/`:
+    `init` moves each to its `.profiler-*` name and names it, the same migration an install runs. A
+    committed-hook repository that migrates nowhere goes dark the moment its hook records on."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    claude = _write_store(project, "claude-profiler", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
+    opencode = _write_store(project, "opencode-profiler", "s-opencode", "2026-01-01T00:00:00.000Z", harness="opencode")
+
+    done = _profiler_init(project)
+
+    assert done.returncode == 0, done.stderr
+    stores = project / ".devpro-temp"
+    assert sorted(path.name for path in stores.iterdir()) == [".profiler-claude", ".profiler-opencode"]
+    assert f"renamed {claude} → {stores / '.profiler-claude'}" in done.stdout
+    assert f"renamed {opencode} → {stores / '.profiler-opencode'}" in done.stdout
+    assert sorted(path.name for path in (stores / ".profiler-opencode").iterdir()) == ["s-opencode.jsonl"]
+
+
 def test_doctor_reports_a_committed_launcher_that_differs_from_the_resource(tmp_path: Path) -> None:
     """A committed hook this devpro's `init` wrote, its launcher then edited: `doctor` says the hook has
     another version of it. A compare reading a source no install ships reports nothing, and the `update`
@@ -444,7 +469,7 @@ def test_doctor_reports_a_committed_launcher_that_differs_from_the_resource(tmp_
 
 
 def _write_store(root: Path, store: str, session: str, at: str, *, harness: str, records: int = 1) -> Path:
-    """A `*-profiler` store under `root`, holding `records` call records for one session, a second
+    """A `.profiler-*` store under `root`, holding `records` call records for one session, a second
     apart from the moment `at` names."""
     directory = root / ".devpro-temp" / store
     directory.mkdir(parents=True)
@@ -486,8 +511,8 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
-    _write_store(project, "claude-profiler", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
-    _write_store(project, "opencode-profiler", "s-opencode", "2026-01-01T00:00:05.000Z", harness="opencode")
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
+    _write_store(project, ".profiler-opencode", "s-opencode", "2026-01-01T00:00:05.000Z", harness="opencode")
 
     with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
         index = _fetch(url)
@@ -509,10 +534,10 @@ def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
-    _write_store(project, "claude-profiler", "s-here", "2026-01-01T00:00:00.000Z", harness="claude")
+    _write_store(project, ".profiler-claude", "s-here", "2026-01-01T00:00:00.000Z", harness="claude")
     foreign = tmp_path / "foreign"
     foreign.mkdir()
-    _write_store(foreign, "claude-profiler", "s-elsewhere", "2026-01-01T00:00:00.000Z", harness="claude")
+    _write_store(foreign, ".profiler-claude", "s-elsewhere", "2026-01-01T00:00:00.000Z", harness="claude")
 
     with _serve(_launcher(tmp_path / "harness"), cwd=project, env={"CLAUDE_PROJECT_DIR": str(foreign)}) as url:
         index = _fetch(url)
@@ -522,15 +547,15 @@ def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_
 
 
 def test_the_served_index_states_an_unreadable_store(tmp_path: Path) -> None:
-    """One `*-profiler` store the glob finds and cannot read, beside one it can: the index answers
+    """One `.profiler-*` store the glob finds and cannot read, beside one it can: the index answers
     2xx, names the unreadable store as such, and still lists the readable store's session, and the
     unreadable store's own page is a 404 rather than a traceback; an index that lets the one bad
     directory blank the page or raise out of the handler is the defect the stated row replaces."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
-    locked = _write_store(project, "broken-profiler", "s-broken", "2026-01-01T00:00:00.000Z", harness="claude")
-    _write_store(project, "claude-profiler", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
+    locked = _write_store(project, ".profiler-broken", "s-broken", "2026-01-01T00:00:00.000Z", harness="claude")
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
     os.chmod(locked, 0o000)
     try:
         with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
@@ -540,7 +565,7 @@ def test_the_served_index_states_an_unreadable_store(tmp_path: Path) -> None:
     finally:
         os.chmod(locked, 0o755)
 
-    assert "broken-profiler is unreadable" in index
+    assert ".profiler-broken is unreadable" in index
     assert "/page/s-claude" in index
     assert missing.value.code == 404
 
@@ -552,7 +577,7 @@ def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> Non
     defect: the user's two routes would show two pages."""
     project = tmp_path / "project"
     project.mkdir()
-    _write_store(project, "claude-profiler", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
     launcher = _launcher(tmp_path / "harness")
 
     with _serve(launcher, cwd=project) as url:
@@ -561,3 +586,104 @@ def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> Non
     printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
     assert printed.returncode == 0, printed.stderr
     assert served == printed.stdout.removesuffix("\n")
+
+
+# ---------- the stores' rename, and an install's migration of them ----------
+
+
+def _devpro(cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    """The `devpro` command this checkout's shim runs, as the installer is invoked."""
+    return subprocess.run(
+        [str(_devpro_shim(cwd)), *args],
+        capture_output=True,
+        text=True,
+        cwd=cwd,
+        stdin=subprocess.DEVNULL,
+        check=False,
+    )
+
+
+def _install_project(project: Path) -> subprocess.CompletedProcess[str]:
+    """`devpro install` of this checkout into `project`, its claude harness detected: the CLI's own
+    `main`, in a child interpreter so the run's exit status and streams are the installer's."""
+    return subprocess.run(
+        [sys.executable, "-m", "devpro", "install", str(project)],
+        capture_output=True,
+        text=True,
+        cwd=project,
+        stdin=subprocess.DEVNULL,
+        env={
+            **os.environ,
+            "PYTHONPATH": str(_PACKAGE_ROOT),
+            "PYTHONDONTWRITEBYTECODE": "1",
+            # No user-level harness directory of this machine's own: detection reads the target alone.
+            "HOME": str(project.parent / "home"),
+        },
+        check=False,
+    )
+
+
+def test_an_install_renames_an_old_pattern_store_and_a_second_install_touches_nothing(tmp_path: Path) -> None:
+    """A project holding `.devpro-temp/claude-profiler/`: the install moves it to `.profiler-claude/`,
+    contents and all, naming the rename in its report, and a second install reports the target up to
+    date and leaves the store alone. A rename left undone leaves the store outside the reader's
+    `.profiler-*` glob, so the project's recorded history vanishes from the index at the upgrade with
+    nothing saying it happened."""
+    project = tmp_path / "project"
+    (project / ".claude").mkdir(parents=True)
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    store = _write_store(project, "claude-profiler", "s-old", "2026-01-01T00:00:00.000Z", harness="claude")
+
+    installed = _install_project(project)
+
+    assert installed.returncode == 0, installed.stderr
+    renamed = project / ".devpro-temp" / ".profiler-claude"
+    assert f"renamed {store} → {renamed}" in installed.stdout
+    assert not store.exists()
+    assert sorted(path.name for path in renamed.iterdir()) == ["s-old.jsonl"]
+    assert (_run(_launcher(tmp_path / "harness"), "tree", "s-old", cwd=project)).returncode == 0
+
+    again = _install_project(project)
+
+    assert again.returncode == 0, again.stderr
+    assert "up to date" in again.stdout
+    assert "renamed " not in again.stdout + again.stderr
+    assert sorted(path.name for path in (project / ".devpro-temp").iterdir()) == [".profiler-claude"]
+
+
+def test_an_install_skips_an_old_pattern_store_whose_new_name_already_stands(tmp_path: Path) -> None:
+    """Both a `.devpro-temp/claude-profiler/` and a populated `.profiler-claude/`, the state after a
+    capture ran post-upgrade and before the install: the install leaves the old store exactly where it
+    stands and names it, never merging or deleting it. A rename onto the live store destroys the traces
+    recorded since the upgrade, and a silent skip leaves the operator without the one line saying the
+    old store stands."""
+    project = tmp_path / "project"
+    (project / ".claude").mkdir(parents=True)
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    old = _write_store(project, "claude-profiler", "s-old", "2026-01-01T00:00:00.000Z", harness="claude")
+    live = _write_store(project, ".profiler-claude", "s-new", "2026-01-02T00:00:00.000Z", harness="claude")
+
+    installed = _install_project(project)
+
+    assert installed.returncode == 0, installed.stderr
+    assert f"left {old} in place" in installed.stdout
+    assert sorted(path.name for path in old.iterdir()) == ["s-old.jsonl"]
+    assert sorted(path.name for path in live.iterdir()) == ["s-new.jsonl"]
+
+
+def test_a_doctor_names_an_old_pattern_store_and_its_remedy(tmp_path: Path) -> None:
+    """A project whose only store is `.devpro-temp/claude-profiler/`: `doctor` names it as one `tree`
+    does not read and the install or `init` that renames it. A store the reader cannot see reads as
+    "no calls recorded yet", and the operator has no line telling them why."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    store = _write_store(project, "claude-profiler", "s-old", "2026-01-01T00:00:00.000Z", harness="claude")
+
+    reported = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
+
+    assert reported.returncode == 0, reported.stderr
+    assert f"old:     {store} is not a store tree reads; run devpro install or devpro profiler init claude" in (
+        reported.stdout
+    )
+    assert "no calls recorded yet" in reported.stdout

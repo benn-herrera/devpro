@@ -23,7 +23,9 @@ def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]")
         help="record a session's tool calls and show them as a tree or a page",
         allow_abbrev=False,
     )
-    profiler.add_argument("arguments", nargs=argparse.REMAINDER, help="serve | tree | init | doctor | capture <harness>")
+    profiler.add_argument(
+        "arguments", nargs=argparse.REMAINDER, help="serve | tree | init | doctor | capture <harness>"
+    )
 
 
 def read_stdin() -> str:

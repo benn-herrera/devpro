@@ -1,7 +1,7 @@
 // Runs the capture's records through the shipped hp.py's tree, for tests/test_devpro_profiler.py.
 //
 // Usage: bun tests/profiler_capture_runner.ts
-// Stdin: JSON {directory}: a project root whose `.devpro-temp/opencode-profiler/` receives the records.
+// Stdin: JSON {directory}: a project root whose `.devpro-temp/.profiler-opencode/` receives the records.
 // Stdout: JSON {records, startedBeforeIdle, startedAfterIdle} — the records the shipped `profiler.ts`
 // wrote, through the plugin context stub, for a completed call, a failed one, a skill call, a subagent
 // dispatch, a remark and a call whose `execute.after` never fires; and the in-flight start map's size
@@ -87,7 +87,7 @@ const startedBeforeIdle = profiler.started.size
 await fire("experimental.idle", { sessionID: session, background: [] })
 const startedAfterIdle = profiler.started.size
 
-const file = `${input.directory}/.devpro-temp/opencode-profiler/${session}.jsonl`
+const file = `${input.directory}/.devpro-temp/.profiler-opencode/${session}.jsonl`
 const records = (await Bun.file(file).text())
   .trim()
   .split("\n")

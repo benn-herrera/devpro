@@ -2200,6 +2200,33 @@ def test_a_dry_run_lists_a_stale_render_as_removed(tmp_path: Path, capsys) -> No
     assert groups == {"removed": {f"{_CLAUDE_PLUGIN_RELPATH}/agents/gone.md"}}
 
 
+def test_a_dry_run_lists_a_renamed_profiler_store_as_a_path_removed_and_a_path_created(tmp_path: Path, capsys) -> None:
+    """A project up to date, then given a `.devpro-temp/claude-profiler/`: the dry run names the old store
+    removed and `.devpro-temp/.profiler-claude/` created, and neither its files nor a store's contents as
+    changed. A preflight that cannot read the rename reports the target up to date and promises a dry run
+    that omits the one change the run makes."""
+    project = tmp_path / "project"
+    project.mkdir()
+    argv = ["install", str(project), "--harness=claude"]
+    main(argv)
+    store = project / ".devpro-temp" / "claude-profiler"
+    store.mkdir(parents=True)
+    (store / "s-old.jsonl").write_text('{"v": 2}\n', encoding="utf-8")
+    state = _state(project)
+    capsys.readouterr()
+
+    main([*argv, "--dry-run"])
+    groups = _dry_run_groups(capsys.readouterr().out)
+    assert groups == {
+        "created": {".devpro-temp/.profiler-claude/s-old.jsonl"},
+        "removed": {".devpro-temp/claude-profiler/"},
+    }
+    assert _state(project) == state
+
+    main(argv)
+    assert sorted(path.name for path in (project / ".devpro-temp").iterdir()) == [".profiler-claude"]
+
+
 @pytest.mark.usefixtures("_no_uncommitted")
 @pytest.mark.parametrize(
     "argv",

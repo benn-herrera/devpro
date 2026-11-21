@@ -2,7 +2,8 @@
 
 `init` writes the launcher and the show-profile skill into a repository's `.claude/` and registers the
 capture on every event it records, for a session that loads no plugin's hooks. `doctor` says whether
-capture works in a repository, and why not.
+capture works in a repository, and why not. Both apply the stores' rename: an install and an `init` move
+each `*-profiler` store under the project's `.devpro-temp/` to its `.profiler-*` name.
 
 The skill is a rendered definition, so this module imports the renderer (`devpro.render`,
 `devpro.context`) where it dispatches `init`: a verb that does not write a hook loads neither.
@@ -22,6 +23,8 @@ from devpro.render import render_all
 from .pages import UsageError, list_sessions
 from .values import (
     CAPTURED_EVENTS,
+    NEW_STORE_PREFIX,
+    OLD_STORE_SUFFIX,
     SHOW_SKILL,
     TRACE_DIR,
     TRACE_GLOB,
@@ -121,9 +124,45 @@ def show_skill_text() -> str:
     return dict(render_all(ctx))[SHOW_SKILL / "SKILL.md"]
 
 
+def old_store_name(store: str) -> str | None:
+    """The `.profiler-*` name the store `store` takes, or nothing where its name is not an old-pattern
+    store's and no name of the new pattern either."""
+    if store.startswith(NEW_STORE_PREFIX):
+        return None
+    if not store.endswith(OLD_STORE_SUFFIX) or len(store) == len(OLD_STORE_SUFFIX):
+        return None
+    return NEW_STORE_PREFIX + store[: -len(OLD_STORE_SUFFIX)]
+
+
+def rename_stores(directory: Path | str) -> list[str]:
+    """Rename every old-pattern store under `directory`'s `.devpro-temp/` to its `.profiler-*` name, and
+    return one line per store the rename leaves standing.
+
+    A rename is reported where it happens. A store whose new name is already taken is left as it stands
+    and named instead: the stores' contents are never merged, and merging or deleting the old store is
+    the operator's call, not this call's. A name the new pattern gives is left alone, so a second run
+    touches nothing."""
+    stores = Path(directory) / TRACE_DIR.parent
+    lines = []
+    for old in sorted(stores.glob(f"*{OLD_STORE_SUFFIX}")) if stores.is_dir() else []:
+        new = old_store_name(old.name)
+        if new is None or not old.is_dir():
+            continue
+        if (stores / new).exists():
+            lines.append(
+                f"left {old} in place: {stores / new} already exists, so its traces were not merged — "
+                "merge or delete the old store yourself"
+            )
+            continue
+        old.rename(stores / new)
+        lines.append(f"renamed {old} → {stores / new}")
+    return lines
+
+
 def init(argv: list[str], cwd: Path | str) -> str:
     """Commit the hook into the repository at `cwd`: the launcher and the skill, and the six entries in
-    its `.claude/settings.json`, for a session that loads no plugin's hooks."""
+    its `.claude/settings.json`, for a session that loads no plugin's hooks. The repository's stores
+    from before the `.profiler-*` rename are renamed here too, as an install renames them."""
     if not argv or argv[0] != "claude":
         raise UsageError("Usage: devpro profiler init claude")
     repo = git_root(cwd)
@@ -149,6 +188,7 @@ def init(argv: list[str], cwd: Path | str) -> str:
         [
             f"Copied the hook to {target.relative_to(repo)}/, registered it in .claude/settings.json,"
             " and added the show-profile skill.",
+            *rename_stores(repo),
             "Commit them; Claude Code on the web picks the hook up in the next session:",
             "  git add .claude/harness-profiler .claude/skills/show-profile .claude/settings.json",
         ]
@@ -201,7 +241,9 @@ def stale_hook(repo: Path) -> str | None:
 
 
 def doctor(cwd: Path | str) -> str:
-    """Whether capture works here, and why not."""
+    """Whether capture works here, and why not: the toolchain, the store and the pattern `tree` reads,
+    the hook's registration, any store from before the rename, a stale committed hook, and the newest
+    claude session."""
     directory = project_dir(cwd)
     # doctor is claude-facing: every other line reads claude's hook and this directory's claude sessions,
     # so `newest` is claude's store alone, and the `traces` line names it beside what `tree` reads.
@@ -219,6 +261,20 @@ def doctor(cwd: Path | str) -> str:
         f"devpro:  {devpro}",
         f"traces:  {claude_store} (tree reads {Path(directory) / TRACE_DIR.parent / TRACE_GLOB})",
         f"hook:    {installed}",
+    ]
+    # A store from before the rename is one `tree` cannot see: its remedy is the install or `init` that
+    # renames it, where the new store already stands the operator's own merge or deletion.
+    for store in sorted((Path(directory) / TRACE_DIR.parent).glob(f"*{OLD_STORE_SUFFIX}")):
+        if store.is_dir() and (new := old_store_name(store.name)) is not None:
+            target = Path(directory) / TRACE_DIR.parent / new
+            remedy = (
+                f"{target} already exists, so run devpro profiler init claude and merge or delete the old store "
+                "yourself"
+                if target.exists()
+                else "run devpro install or devpro profiler init claude again, which renames it"
+            )
+            lines.append(f"old:     {store} is not a store tree reads; {remedy}")
+    lines += [
         f"update:  the committed hook {stale}; run devpro profiler init claude again and commit" if stale else None,
         f"newest:  {_iso(_utc(newest)) if newest is not None else 'no calls recorded yet'}",
     ]
