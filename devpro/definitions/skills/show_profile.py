@@ -1,7 +1,8 @@
-"""The profile skill: this session's activity trace, rendered as a page the user can open.
+"""The profile skill: this session's activity trace, served to the user as a page in their browser.
 
 It carries no supporting file and no harness text: the launcher it finds is the one the install
-copies beside it, and the page it writes is the same page everywhere.
+copies beside it, and the page `serve` renders is the same page everywhere. The skill writes no
+page file — the trace reaches the user through the served URL alone.
 """
 
 from devpro.definition import Definition
@@ -43,14 +44,16 @@ sh HP serve
 ```
 
 `serve` prints the URL it serves on stdout and runs until interrupted: start it out of the
-session's way, then hand the user that URL. Its index lists this repository's recorded sessions,
+session's way — it never completes, so the URL is read from the running job's output once it
+prints — then hand the user that URL. Its index lists this repository's recorded sessions,
 each linking to its page. Where a one-off export is wanted, `sh HP tree --format html >
 .devpro-temp/harness-profile.html` writes a session's page to a file.
 
 ## Answer
 
-In two or three lines: how many calls and contexts the trace holds — count the lines of that
-recording — and, for a claude session, the three most expensive contexts by duration with their
+In two or three lines: how many records the trace holds — count the lines of that recording, where
+a record is a call or an event marker, and a call the plugin and the committed hook both recorded
+appears twice — and, for a claude session, the three most expensive contexts by duration with their
 tokens, read from `sh HP tree --verbose`: the plain tree draws only the skills, agents and
 compactions, so a session of plain tool calls prints the column header alone. An opencode session
 records no token counts, so say so where those columns are blank. Then the URL `serve` printed. Do

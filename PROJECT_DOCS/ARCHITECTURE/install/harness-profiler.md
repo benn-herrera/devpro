@@ -25,7 +25,9 @@ directory, which the project's own convention gitignores; a capture that fails, 
 
 **Serving.** The `serve` subcommand renders in memory behind a local HTTP server: `hp serve` binds
 `127.0.0.1` on a free port — `--port` pins one — and prints the served URL on stdout for
-cmd-clicking. Its main page is the index of record files: every store the `*-profiler` glob finds,
+cmd-clicking. The bind is the rule, not a detail: the server listens on loopback only and loads
+nothing from the network, so the records it renders never leave the machine. Its main page is the
+index of record files: every store the `*-profiler` glob finds,
 one row per session — harness, session id, record count, first and last moments — each linking to
 `/page/<session-id>`, which renders that session's page in memory, the bytes `tree --format html`
 produces. No file is written. A store the glob finds but cannot read appears in the index as

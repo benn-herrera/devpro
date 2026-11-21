@@ -160,10 +160,15 @@ function packColumns(rows, rowOf) {
   return { col, members };
 }
 
+// The default view falls back to every call when it would otherwise draw none, as `drawTree`'s
+// does, so a session of nothing but tool calls shows those calls here too, and the checkbox
+// short-circuits the fallback.
 function drawSequence() {
-  const all = document.getElementById('all').checked;
+  const requested = document.getElementById('all').checked;
+  const asSkillAndAgent = (c) => c.tool === 'Skill' || c.tool === 'Agent';
+  const fallback = !requested && !D.calls.some(asSkillAndAgent) && !D.markers.some((m) => m.kind === 'compact');
   const svg = document.getElementById('tl');
-  const rows = sequenceEvents(all);
+  const rows = sequenceEvents(requested || fallback);
   const rowOf = new Map();
   rows.forEach((e, r) => { if (e.type === 'call' || e.type === 'return') rowOf.set(`${e.type}${e.i}`, r); });
   const { col, members } = packColumns(rows, rowOf);

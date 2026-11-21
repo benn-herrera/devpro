@@ -327,7 +327,7 @@ dev-kanban:
 
 [doc("serve the profiler pages using the source-tree launcher")]
 dev-profiler:
-  @devpro/harnesses/resources/claude/profiler/hp.sh serve
+  @cd "{{PROJECT_ROOT}}" && ./devpro/harnesses/resources/claude/profiler/hp.sh serve
 
 [doc("run ACTIVE_PLAN format compliance check using hosted docdicer")]
 dev-check-plan:

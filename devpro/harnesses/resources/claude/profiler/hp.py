@@ -14,6 +14,7 @@ import os
 import platform
 import re
 import shutil
+import string
 import sys
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -1229,8 +1230,9 @@ def session_of(path: Path) -> dict:
 
 
 def session_harness(session: dict) -> str:
-    """The harness's name, as the session's own records carry it."""
-    return next((record.get("harness") for record in session["records"] if record.get("harness")), "")
+    """The harness's name, as the session's own records carry it, masked and clipped like any field."""
+    harness = next((record.get("harness") for record in session["records"] if record.get("harness")), "")
+    return clip(mask(str(harness)), NAME_LIMIT)
 
 
 def session_row(session: dict) -> str:
@@ -1259,14 +1261,16 @@ def index_html(directory: Path | str) -> str:
     """The index of record files: one row per session, and one per store that cannot be read."""
     sessions, unreadable = read_sessions(directory)
     rows = "".join(session_row(session) for session in sorted(sessions, key=lambda session: session["first"]))
-    return INDEX.replace("/*UNREADABLE*/", "".join(unreadable_row(store) for store in unreadable)).replace(
-        "/*ROWS*/", rows or '<tr><td colspan="4">No sessions recorded yet.</td></tr>'
+    return string.Template(INDEX).substitute(
+        unreadable="".join(unreadable_row(store) for store in unreadable),
+        rows=rows or '<tr><td colspan="4">No sessions recorded yet.</td></tr>',
     )
 
 
 PAGE_PREFIX = "/page/"
 LOOPBACK = "127.0.0.1"
-# The index's two slots, each a comment no session row's text can spell: filled by `index_html`.
+# The index's two slots, named by `index_html`. Substitution is one pass, so text spliced into one
+# slot is never read as another slot's.
 INDEX = """<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
@@ -1281,7 +1285,7 @@ INDEX = """<!doctype html>
 <h1>Sessions</h1>
 <table>
 <tr><th>harness</th><th>session</th><th>records</th><th>first to last</th></tr>
-/*UNREADABLE*//*ROWS*/</table>
+$unreadable$rows</table>
 </html>
 """
 
@@ -1299,7 +1303,10 @@ class IndexHandler(BaseHTTPRequestHandler):
     """The served surface: `/` is the index, `/page/<session-id>` a session's page, both from memory."""
 
     def do_GET(self) -> None:
-        directory = project_dir(os.getcwd())
+        # The directory the server was started in, taken to the git root: capture's rule reads
+        # `CLAUDE_PROJECT_DIR`, which names the outermost claude session's launch directory, not the
+        # terminal `serve` runs in.
+        directory = git_root(os.getcwd()) or os.getcwd()
         path = unquote(urlparse(self.path).path)
         page = index_html(directory) if path in ("", "/") else page_of(path, directory)
         if page is None:

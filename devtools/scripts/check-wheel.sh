@@ -28,6 +28,19 @@ done
 in_wheel="$(unzip -Z1 "${wheel}" | awk -v top="${GEN}/" 'index($0, top) == 1 && !/\.py$/ && !/\/$/' | sort)"
 in_tree="$(git -C "${PROJECT_ROOT}" ls-files --cached --others --exclude-standard "${GEN}" \
   | awk '!/\.py$/' | sort)"
+
+# Bytecode is never package data: a `__pycache__` in the wheel was written beside a shipped resource
+# by an import that ran outside the runner, which exports PYTHONDONTWRITEBYTECODE (the justfile's
+# header states the trap). Failing on it, rather than excluding it, names each file and the cure.
+stray_bytecode="$(grep -E '(^|/)__pycache__/' <<<"${in_wheel}" || true)"
+if [[ -n "${stray_bytecode}" ]]; then
+  while IFS= read -r stray; do
+    printf 'check-wheel: stray bytecode in the tree: %s\n' "${PROJECT_ROOT}/${stray}" >&2
+  done <<<"${stray_bytecode}"
+  fail "an import outside the runner wrote bytecode beside a shipped resource; run it through its recipe, \
+then remove every __pycache__ the above names"
+fi
+
 if [[ "${in_wheel}" != "${in_tree}" ]]; then
   comm -13 <(printf '%s\n' "${in_wheel}") <(printf '%s\n' "${in_tree}") | sed 's/^/missing from the wheel: /' >&2
   comm -23 <(printf '%s\n' "${in_wheel}") <(printf '%s\n' "${in_tree}") | sed 's/^/extra in the wheel: /' >&2

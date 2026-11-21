@@ -101,7 +101,7 @@ _SERVE_URL = re.compile(r"^http://127\.0\.0\.1:\d+/$", re.MULTILINE)
 
 
 @contextmanager
-def _serve(launcher: Path, *, cwd: Path) -> Iterator[str]:
+def _serve(launcher: Path, *, cwd: Path, env: dict[str, str] | None = None) -> Iterator[str]:
     """`serve` through the launcher, as `_run` starts it, as a context manager yielding its URL.
 
     `_run` blocks, and `serve` never exits, so the process is started as a `Popen` and its stdout
@@ -114,7 +114,7 @@ def _serve(launcher: Path, *, cwd: Path) -> Iterator[str]:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=cwd,
-        env={**os.environ, "HP_PYTHON": sys.executable},
+        env={**os.environ, "HP_PYTHON": sys.executable, **(env or {})},
     )
     assert process.stdout is not None and process.stderr is not None
     urls: list[str] = []
@@ -409,6 +409,25 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     assert "opencode" in rows[1] and "1 records" in rows[1]
     assert "2026-01-01 00:00:05 UTC to 2026-01-01T00:00:05.000Z" in rows[1]
     assert _page_data(page)["session"] == "s-claude"
+
+
+def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_path: Path) -> None:
+    """`CLAUDE_PROJECT_DIR` at another project, as a claude shell sets it, while `serve` runs in this
+    one: the index lists this project's sessions; an index that follows the variable serves the other
+    project's stores, which for a terminal-launched server is the wrong repository."""
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / ".devpro-temp").mkdir()
+    _write_store(project, "claude-profiler", "s-here", "2026-01-01T00:00:00.000Z", harness="claude")
+    foreign = tmp_path / "foreign"
+    foreign.mkdir()
+    _write_store(foreign, "claude-profiler", "s-elsewhere", "2026-01-01T00:00:00.000Z", harness="claude")
+
+    with _serve(_launcher(tmp_path), cwd=project, env={"CLAUDE_PROJECT_DIR": str(foreign)}) as url:
+        index = _fetch(url)
+
+    assert "/page/s-here" in index
+    assert "/page/s-elsewhere" not in index
 
 
 def test_the_served_index_states_an_unreadable_store(tmp_path: Path) -> None:

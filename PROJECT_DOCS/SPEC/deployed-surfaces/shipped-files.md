@@ -99,7 +99,8 @@ A claude project install also ships the **activity profiler** payload: the harne
 `show-profile` skill, which renders a session's recorded activity — its skill, agent and tool calls
 with timings and token costs — as text, as a self-contained HTML page, or served over HTTP: the
 tool's `serve` subcommand renders the record files in memory behind a local server whose main page
-lists every record file it can render. Six hook entries, one per
+lists every record file it can render. The pages and the records stay local: reachable only from the
+machine that runs the server. Six hook entries, one per
 event (`PostToolUse`, `PostToolUseFailure`, `PreCompact`, `PostCompact`, `SessionStart`,
 `SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each appends
 one line to the project's `.devpro-temp/claude-profiler/<session-id>.jsonl`, and a capture that
