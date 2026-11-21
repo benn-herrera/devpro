@@ -63,7 +63,7 @@ host (Firefox.app in /Applications), so the checks run and skip nowhere else.
 | Package | State | Rating | Lifetime | Work |
 | --- | --- | --- | --- | --- |
 | | drafted | | | Kickoff: the stage-3 plan drafted from the design; the dashboard pair and frame/legend work left pending for the UX outcome |
-| P1 | dispatchable | expert | shipped | the dashboard verb: one loopback server, the traces panel and the board panel, the minimal frame |
+| P1 | in progress | expert | shipped | the dashboard verb: one loopback server, the traces panel and the board panel, the minimal frame |
 | P2 | drafted: the design's verb and retirement entries land by your approval first | expert | shipped | the one front end: the old serving verbs retire, the record and the snippets' routing move with them |
 | PR | dispatchable | expert | shipped | Post-plan review |
 | PB | dispatchable | expert | shipped | Post-plan burndown |
