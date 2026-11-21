@@ -76,7 +76,11 @@ Lifetime: shipped. One commit closes it.
 **Scope.** New: `devpro/dashboard/` — `cli.py` adding the `dashboard` verb (lazy, the
 profiler-verb pattern: registering it imports nothing of the package), `server.py` the loopback
 server and its routes. Edited: `devpro/cli.py` (verb registration beside the dicing and profiler
-verbs), `justfile` (a `dev-dashboard` recipe beside `dev-profiler` and `dev-kanban`), and the tests.
+verbs), `justfile` (a `dev-dashboard` recipe beside `dev-profiler` and `dev-kanban`), and the tests:
+the dashboard's own suite, and the import-placement invariant's exemption tuple
+(`tests/test_devpro.py:1503` `test_every_import_is_at_module_level`) gaining
+`devpro/dashboard/cli.py` as the fourth entry-point exception — the tuple exists for exactly this
+pattern, and the lazy-dispatch test (:1568) requires the function-level import the tuple exempts.
 Unchanged: `devpro/profiler/pages.py`'s rendering stays the traces panel's single home — the
 dashboard imports it; no rendering logic moves or is copied. The board's model and moves stay in
 `devpro/dicing/kanban/` — the dashboard imports them. `git grep -il dashboard -- devpro` returns
