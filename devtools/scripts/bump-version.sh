@@ -15,7 +15,7 @@ case "${1}" in
   M*) M=$((M + 1)); m=0; p=0;;
   m*) m=$((m + 1)); p=0;;
   p*) p=$((p + 1));;
-  *) printf 'invalid arg "%s". valid args are M)ajor, m)inor, or p)atch.\n' "{{dot}}" >&2; exit 1;;
+  *) printf 'invalid arg "%s". valid args are M)ajor, m)inor, or p)atch.\n' "${1}" >&2; exit 1;;
 esac
 
 function sedi() {
