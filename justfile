@@ -325,6 +325,10 @@ dev-dd *args: docdicer-repo
 dev-kanban:
   @just dev-dd kanban
 
+[doc("serve the profiler pages using the source-tree launcher")]
+dev-profiler:
+  @devpro/harnesses/resources/claude/profiler/hp.sh serve
+
 [doc("run ACTIVE_PLAN format compliance check using hosted docdicer")]
 dev-check-plan:
   @just dev-dd check-plan
