@@ -12,7 +12,7 @@ _DESCRIPTION = (
     "skills and agents cost; NOT for reading or editing a trace by hand."
 )
 
-_BODY = """Render this session's trace and put the page where the user can open it. The trace is the newest
+_BODY = """Serve this session's recorded trace to the user as a page in their browser. The trace is the newest
 session recording under `.devpro-temp/` at the repository root: `.devpro-temp/claude-profiler/` under
 claude, `.devpro-temp/opencode-profiler/` under opencode. `sh HP tree` reads both stores.
 
@@ -36,18 +36,16 @@ every call itself, so an opencode session needs neither.
 
 Call the launcher `HP` below and run it with `sh`.
 
-## Render the trace
+## Serve the trace
 
 ```
-sh HP tree
-sh HP tree --format html > .devpro-temp/harness-profile.html
+sh HP serve
 ```
 
-## Deliver the page
-
-On the user's machine, give them the path and open the page: `open` on macOS, `xdg-open` on Linux,
-`start` on Windows. Where the session cannot open a page for them, publish it as an artifact where
-the harness offers one, and otherwise give them the path.
+`serve` prints the URL it serves on stdout and runs until interrupted: start it out of the
+session's way, then hand the user that URL. Its index lists this repository's recorded sessions,
+each linking to its page. Where a one-off export is wanted, `sh HP tree --format html >
+.devpro-temp/harness-profile.html` writes a session's page to a file.
 
 ## Answer
 
@@ -55,8 +53,8 @@ In two or three lines: how many calls and contexts the trace holds — count the
 recording — and, for a claude session, the three most expensive contexts by duration with their
 tokens, read from `sh HP tree --verbose`: the plain tree draws only the skills, agents and
 compactions, so a session of plain tool calls prints the column header alone. An opencode session
-records no token counts, so say so where those columns are blank. Then the page's path. Do not paste
-the tree.
+records no token counts, so say so where those columns are blank. Then the URL `serve` printed. Do
+not paste the tree.
 
 Where the verbose tree prints the column header alone, nothing was recorded: say so, and, under
 claude, run `sh HP doctor`, report what it printed about the traces and the newest session, and that
