@@ -62,7 +62,13 @@ kanban board and the profiler's index and pages as panels of one site, the
 outer frame and its legend served once. The runner-surface question's answer
 is the dashboard; the attribution and outer-frame tickets ride this pass.
 Its own design pass — THESIS-level (the tool boundary moves), with the CLI
-shape and hook wiring as design questions.
+shape and hook wiring as design questions. The argument that settles
+absorption over composition: the single venv install by brew handles all the
+utility code needs — today docdicer is not in the wheel at all, the wrapper
+runs the checkout's source tree. Constraint stated with it: startup time
+stays snappy — the claude hook path pays a capture invocation on every tool
+call, so the CLI dispatches lazily (import only the invoked verb's module)
+and the capture path stays dependency-free.
 
 ### Codex CLI harness support
 
