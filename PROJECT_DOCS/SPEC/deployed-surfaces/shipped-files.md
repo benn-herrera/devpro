@@ -5,11 +5,13 @@ installed at its **package destination**, a fixed directory under the install di
 installed copy is stamped where Installed tree says: the installed banner, not the generated
 banner. A package ships with the definition it belongs to, and only where that definition ships
 (Plugins). Every install delivers the **development scripts package**, `skills/development/scripts/`,
-inside the `development` skill's own directory (below), under mage as under claude and opencode. An
+inside the `development` skill's own directory (below), and the **dicing snippets package**
+(below), under mage as under claude and opencode. An
 install with the kbase component also delivers the kb-tools package (below). A user-level install
 delivers none (SPEC.md,
-Deployed Surfaces, Install destination). No dicing package ships: the dicing, check and board
-verbs run as verbs of the `devpro` command (Package and Command, Dicing and Checks).
+Deployed Surfaces, Install destination). No dicing code ships in a package: the dicing, check and
+board verbs run as verbs of the `devpro` command (Package and Command, Dicing and Checks); the
+dicing snippets package holds only their runner shortcuts.
 
 A `.venv` directly under a package destination is not install output.
 
@@ -51,6 +53,23 @@ include line. The snippets run `kbase` from `PATH`. Every target the snippets de
 skill's directory is neither its skill entry file nor one of its supporting files, the development
 scripts package included.
 
+The dicing snippets package is a shipped package installed at its own stated destination:
+`skills/docdicer/dicing-snippets/`, inside the `docdicer` skill's own directory, holding only the
+runner snippets, not an importable package either, read by the consuming project through the same
+runner include line. The snippets run the `devpro` command from `PATH`. They define the recipes
+`devpro`, `devpro-help`, `devpro-check-plan`, `devpro-check-design`,
+`devpro-check-design-deltas-applied` and `devpro-check-roadmap`: the bare `devpro` printing the
+command's help, and `devpro-help` showing the commands and their doc strings. The four gates take no
+argument, each checking the active file under the project root — the active plan, the active design,
+the active design's applied deltas and `ROADMAP.md` — that argumentlessness being what makes them
+runner-able. No `devpro-kanban` and no dicing recipes: the board is the dashboard's panel, and the
+dicing shortcuts need the arguments their direct calls give them, documented in the `docdicer` skill
+and Dicing and Checks. Both runners carry the set —
+`devpro.just` for a justfile, `devpro.mk` for a Makefile — and `devpro-help` shows the commands and
+their doc strings in either: under just from the recipes' own `[doc]` strings, under make by
+parsing the snippet's own target-list comments, the approach the retired set's make snippet used and
+the feature worked.
+
 A **harness resource** is a file a harness ships, such as a guardrail script, opencode's plugin
 entry or the plan-state reminder script, copied as it stands and never rendered. A harness also writes harness-rendered files into the
 install directory — the plugin manifest `.claude-plugin/plugin.json`, one value shared by claude and
@@ -64,7 +83,7 @@ resources into the install directory, except a user-level install, which copies 
 entry, and save a file conditional on the install-time probe (below), so a resource lands at the
 path it holds below the install directory: opencode's at `<install-dir>/index.ts`, the plugin entry,
 `<install-dir>/guardrail.ts` and `<install-dir>/profiler.ts`, and, for claude and opencode alike,
-`<install-dir>/profiler/hp.sh`, `<install-dir>/profiler/hp.py` and `<install-dir>/profiler/view.html`;
+`<install-dir>/profiler/hp.sh`;
 claude's at `<install-dir>/hooks/guardrail.pl` and
 `<install-dir>/hooks/state-table-reminder.sh` (mage ships none):
 in the install directory, outside its three deployed surfaces. Each keeps its bytes and its mode:
@@ -72,8 +91,11 @@ the install stamps nothing on them. Every such file carries an installed banner
 (`!INSTALLED! … devpro`) in its first ten lines — the guardrails' name this repository and forbid
 edits. A harness shipping none copies nothing, which is not an error.
 
-A claude project install also ships the **activity profiler** payload: the harness resources
-`profiler/hp.sh`, `profiler/hp.py` and `profiler/view.html`, copied as they stand, and the
+A claude project install also ships the **activity profiler**: its code is devpro's own, and the
+hook files refer back to devpro wherever they ran the profiler's script, with the capture hook's
+contract — a failed or interpreterless capture exits 0 with no output — unchanged. The page
+template `view.html` the render reads is the devpro wheel's package data
+(`devpro/profiler/view.html`, read by the rendering module), not an install resource; and the
 `show-profile` skill, which renders a session's recorded activity — its skill, agent and tool calls
 with timings and token costs — as text, as a self-contained HTML page, or served over HTTP: the
 tool's `serve` subcommand renders the record files in memory behind a local server whose main page
@@ -81,14 +103,14 @@ lists every record file it can render. The pages and the records stay local: rea
 machine that runs the server. Six hook entries, one per
 event (`PostToolUse`, `PostToolUseFailure`, `PreCompact`, `PostCompact`, `SessionStart`,
 `SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each appends
-one line to the project's `.devpro-temp/claude-profiler/<session-id>.jsonl`, and a capture that
+one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl`, and a capture that
 fails, or finds no `python3` to run under, exits 0 with no output. A claude session on the web loads
 no plugin's hooks and records nothing there; the skill names the tool's `init` for committing the
 hook where a session needs one. A user-level install renders the skill and copies none of the
-resources. A project opencode install also ships the profiler's render payload — `profiler/hp.sh`,
-`profiler/hp.py` and `profiler/view.html` — and the capture `profiler.ts` beside the plugin entry, and
+resources. A project opencode install also ships the profiler's launcher — `profiler/hp.sh` — and
+the capture `profiler.ts` beside the plugin entry, and
 registers no hook entries; each recorded call appends one line to the project's
-`.devpro-temp/opencode-profiler/<session-id>.jsonl`, a capture that fails raises nothing out of the
+`.devpro-temp/.profiler-opencode/<session-id>.jsonl`, a capture that fails raises nothing out of the
 hook, and a mage install ships none of them.
 
 A claude project install also carries the plan-state reminder in that registration: one ungated

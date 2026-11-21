@@ -16,7 +16,7 @@ banner, and with them any
 directory that leaves empty; this removal takes no file that lacks a generated banner. The install
 directory itself is never removed, and a directory that was already empty stays. A package
 destination is replaced whole, `skills/kbase/kb-tools/` included, except a `.venv` directly under it,
-which stays. The development scripts package is replaced the same way.
+which stays. The development scripts and dicing snippets packages are replaced the same way.
 A harness resource is replaced whole on each
 install when the file already at its path carries `!INSTALLED! … devpro` in its first ten lines;
 any other file there refuses the install the same way. It is not removed by prune: a harness

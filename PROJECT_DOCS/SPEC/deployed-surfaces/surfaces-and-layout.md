@@ -16,6 +16,8 @@ beneath that directory and nowhere else. A project install places each shipped p
 directory of the skill it belongs to, where that skill ships:
 - the development scripts package — a script that runs one agent on a brief with no tools — in the
   `development` skill's;
+- the dicing snippets package — the absorbed dicing verbs' runner shortcuts (Shipped files) — in the
+  `docdicer` skill's;
 - the kb-tools package in the `kbase` skill's.
 
 None is a supporting file of its skill; what each is and where it sits is in SPEC.md, Deployed

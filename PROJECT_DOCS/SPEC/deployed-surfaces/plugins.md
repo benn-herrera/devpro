@@ -39,9 +39,10 @@ destination); a component changes what it holds, never where it is.
 
 A supporting artifact is delivered with the definition that uses it, and only where that definition
 ships. The development scripts package goes to its destination inside the
-`development` skill's, and ships with every install. The dicing verbs — the `kanban` board,
-`check-plan` and plan dicing included — ship with the `devpro` command itself (Package and Command,
-Dicing and Checks). The kbase component also delivers
+`development` skill's, and the dicing snippets package inside the `docdicer` skill's; both ship with
+every install. The dicing verbs — the `kanban` board, `check-plan` and plan dicing included — ship
+with the `devpro` command itself (Package and Command, Dicing and Checks); the dicing snippets
+package carries only their runner shortcuts. The kbase component also delivers
 the kb-tools package (runner snippets: `justfile` and `Makefile` fragments a project includes,
 inside the `kbase` skill's own directory) and the harness's `kbase` MCP entry. The MCP entry is the
 `.mcp.json` in the install directory under claude and mage (Install destination), and a
@@ -53,16 +54,20 @@ belongs to kbase, and that docdicer does not dice, undice or link-check it unles
 that for it specifically. Where it does not ship, the skill carries no such statement.
 
 A **runner include line** is the line that includes one package's runner snippets in the project's
-**runner file**, its `justfile` or `Makefile`. One package carries snippets: the kb-tools, a set
-called `kb`. A project install with the kbase component writes its line. Only a project install under a harness whose plugin
+**runner file**, its `justfile` or `Makefile`. Two packages carry snippets: the dicing snippets
+package, a set called `devpro`, and the kb-tools, a set called `kb`. Every project install of a
+nested plugin writes the `devpro` line; one with the kbase component also writes the `kb` line. Only
+a project install under a harness whose plugin
 nests in the project (claude, opencode) writes one; a mage install writes no runner include line and
 creates no `Makefile`, and nothing is written into this repository's own runner file. A line names
 the snippets inside the installed tree (under claude,
+`.claude/skills/devpro/skills/docdicer/dicing-snippets/runner-snippets/` or
 `.claude/skills/devpro/skills/kbase/kb-tools/runner-snippets/`; under opencode, the same below
 `.opencode/plugins/devpro/`). The line does nothing where the snippets are absent: `import? '<path>'`
 in a justfile, `-include <path>` in a Makefile. A project with neither runner file gets a `Makefile`
 created to hold every line the install writes. The line an install wrote for the docdicer tools
-package — retired with the absorbed dicing verbs — the install removes itself: a non-comment line
+package — retired with the absorbed dicing verbs, and none of its snippet paths point at anything
+any more — the install removes itself: a non-comment line
 whose snippets path ends `runner-snippets/docdicer.just` or `runner-snippets/docdicer.mk` and whose
 first path segment is the harness directory this install writes is removed, the removal named in the
 install report; a docdicer line naming another harness directory's snippets is reported and left.

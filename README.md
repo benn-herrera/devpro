@@ -40,7 +40,7 @@ in just over 16K lines of runtime code, including vision tower support and an Op
 
 - Harness: claude, opencode, or mage; `--harness` takes these three names.
 - Homebrew (macOS or Linux), or pipx on a machine without it, to install devpro.
-- `just` 1.27.0 or later, where the project's runner is a justfile, and 1.33.0 or later there where the kbase component ships: the `kb` include line an install with that component writes is an `import?`, which earlier `just` rejects. No install checks the version.
+- `just` 1.27.0 or later, where the project's runner is a justfile, and 1.33.0 or later there wherever the devpro line ships: every project install of a nested plugin writes that line, an `import?`, which earlier `just` rejects; the `kb` include line an install with the kbase component also writes rides the same floor. No install checks the version.
 - `perl` with core `JSON::PP` for the claude guardrail: without them the install skips the hook, says so in one line, and installs everything else.
 - An activity profiler: a claude or opencode project install records the session to `.devpro-temp/claude-profiler/` or `.devpro-temp/opencode-profiler/` at the project root — under claude one line per hook event, under opencode one per call, each with its timings and token costs — and the `show-profile` skill renders the trace as text or as a page. A claude session on the web records nothing there until `init` commits the hook; a mage install ships neither the profiler nor the skill.
 
@@ -89,11 +89,13 @@ Add the installed tree, the agent scratch space and the agents file's backup to 
 backup.AGENTS.md
 ```
 
-A project install under claude or opencode adds one include line to the project's `justfile` or
+A project install under claude or opencode adds the include lines to the project's `justfile` or
 `Makefile` — an `import?` or an `-include` — for the runner snippets it installs, and a project
-with neither runner file gets a new `Makefile` holding it. The line is the kb-tools package's, `kb`,
-written with `--components=kbase`. A line an earlier release wrote for the docdicer tools package,
-retired with the absorbed dicing verbs, the install removes, naming the removal in its report. The
+with neither runner file gets a new `Makefile` holding them. One is the dicing snippets package's,
+`devpro`, written on every project install of a nested plugin; another is the kb-tools package's,
+`kb`, written with `--components=kbase`. A line an earlier release wrote for the docdicer tools
+package — retired with the absorbed dicing verbs, and none of its snippet paths point at anything
+any more — the install removes, naming the removal in its report. The
 install also writes the devpro block into the project's `AGENTS.md`, created with it where absent —
 unless `~/.claude/CLAUDE.md` or `~/.config/opencode/AGENTS.md` already holds an agents-file block,
 which the install keeps current there instead and writes no project agents file. Where the
@@ -146,15 +148,15 @@ Installed with pipx, update with `pipx install --force` of the next release's ta
 ensurepath` and a new shell, then the same install line.
 
 A project installed by 0.17.x upgrades in two runs. The first removes `skills/docdicer/tools/`'s own
-files — the dicer, its runner snippets — along with the `docdicer` skill's files, and removes the
-docdicer include line from the project's runner file, naming it in the report; a `Makefile` it
-created and that line was the only content of goes with it. Then the tree is exhausted: a second
-install reports nothing and leaves the same files where it left them.
+files — the dicer, its runner snippets — along with the `docdicer` skill's earlier files, and
+removes the docdicer include line from the project's runner file, naming it in the report; the
+include line it writes for the new dicing snippets package lands in the same runner file. Then the
+tree is exhausted: a second install reports nothing and leaves the same files where it left them.
 
 What survives both runs is the launcher's `.venv` under `skills/docdicer/tools/`, with everything in
-it, and the directory `skills/docdicer/` holding it. Nothing uses what is there: no definition, no
-include line, and no install writes into it, the prune keeping a `VENV_DIR` entry by rule. Delete
-`skills/docdicer/` once, and the upgrade is complete.
+it, and the directory `skills/docdicer/tools/` holding it. Nothing uses what is there: no
+definition, no include line, and no install writes into it, the prune keeping a `VENV_DIR` entry by
+rule. Delete `skills/docdicer/tools/` once, and the upgrade is complete.
 
 Under Mage, an install from before the kbase component wrote a second plugin directory,
 `~/Mage/Skills/kbase/`, holding its own duplicate skills, agents file and `.mcp.json`. No install
