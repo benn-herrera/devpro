@@ -4,36 +4,14 @@ A **shipped package** is plain code, never rendered and so never carrying a gene
 installed at its **package destination**, a fixed directory under the install directory. Its
 installed copy is stamped where Installed tree says: the installed banner, not the generated
 banner. A package ships with the definition it belongs to, and only where that definition ships
-(Plugins). Every install delivers the **docdicer tools package** at its package destination under
-the install directory, `skills/docdicer/tools/`: inside the `docdicer` skill's own directory. It
-also delivers the **development scripts package**, `skills/development/scripts/`, inside the
-`development` skill's own directory (below), under mage as under claude and opencode. An install
-with the kbase component also delivers the kb-tools package (below). A user-level install delivers none (SPEC.md,
-Deployed Surfaces, Install destination). The docdicer package holds four files:
-- `docdicer`, a `bash` script, executable, carrying the installed banner below its shebang
-- `.gitignore`, holding `.venv/` and carrying no banner
-- `runner-snippets/docdicer.just` and `runner-snippets/docdicer.mk`, runner snippets for a
-  consuming project to include, each carrying the installed banner at its top. A project install of
-  either plugin under claude or opencode writes the docdicer runner include line for them (Plugins).
-  They define the recipes `docdicer`, `docdicer-check-plan`, `docdicer-kanban` and `docdicer-help`.
+(Plugins). Every install delivers the **development scripts package**, `skills/development/scripts/`,
+inside the `development` skill's own directory (below), under mage as under claude and opencode. An
+install with the kbase component also delivers the kb-tools package (below). A user-level install
+delivers none (SPEC.md,
+Deployed Surfaces, Install destination). No dicing package ships: the dicing, check and board
+verbs run as verbs of the `devpro` command (Package and Command, Dicing and Checks).
 
-The launcher installs docdicer on demand and takes no `--install` argument. Run as
-`tools/docdicer` from the skill's directory, on every run it:
-- rebuilds `tools/.venv` where the venv's python is missing or does not run. Where `python3` 3.9 or
-  later with its `venv` module is not on the host, it names the remedy and exits non-zero
-- installs into `tools/.venv` the docdicer version the script names, where the venv's docdicer does
-  not report that version; a failure exits non-zero
-- sends all install output to stderr
-- then passes its arguments to docdicer unchanged
-
-The first run, and any run after the venv is lost, therefore needs the network and `git`. No install
-runs the launcher. An install leaves `tools/.venv` in place; on its next run the launcher's checks
-above rebuild or update it. A `.venv` directly under a package
-destination is not install output.
-
-Where the project's runner includes the docdicer snippet, the `docdicer` skill directs the agent to
-run docdicer through its recipes rather than through `tools/docdicer`. The skill carries no other
-runner-snippet advice and no install step.
+A `.venv` directly under a package destination is not install output.
 
 The development scripts package holds one file, `cold-read.sh`, a `bash` script, executable,
 carrying the installed banner below its shebang. A **cold read** is one agent reading one brief
@@ -71,7 +49,7 @@ snippets, and not an importable package either, read by the consuming project th
 include line. The snippets run `kbase` from `PATH`. Every target the snippets define is named
 `kb-<name>`. No package is a definition: a package under a
 skill's directory is neither its skill entry file nor one of its supporting files, the development
-scripts package and the docdicer tools package included.
+scripts package included.
 
 A **harness resource** is a file a harness ships, such as a guardrail script, opencode's plugin
 entry or the plan-state reminder script, copied as it stands and never rendered. A harness also writes harness-rendered files into the

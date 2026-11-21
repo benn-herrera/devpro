@@ -32,17 +32,17 @@ CONVENTIONS.md states where the version is written down, and the order a bump ta
 checkout side of its install comparison, and runs the `devpro` console script only from its
 throwaway venv. Packaging states both.
 
-**Toolchain.** This repository's justfile needs `just` 1.33.0 or later: its `import?` line is that
-release's, and the `[doc]` recipe attribute it also uses arrived in 1.27.0. It runs its recipes under
-`bash`. A consuming project's floor is the same 1.33.0, for the `import?` of the include line
-(SPEC.md, Guide and README). That import is the install's own snippet,
-`.claude/skills/devpro/skills/docdicer/tools/runner-snippets/docdicer.just`, so this checkout needs
-one `just agents` run before its docdicer recipes exist: until it has run, the `docs` surface —
-`just check-links`, and so `just test` and `just test-changed` on any document — fails with
-`Does not contain recipe 'docdicer'`. A design's delta application is verified by
-`check-design --deltas-applied`, which the snippet set exposes as
-`docdicer-check-design-deltas-applied`; this repository runs it as
-`just dev-check-design-deltas-applied`, through `dev-dd` against the hosted clone. The `_venv`
+**Toolchain.** This repository's justfile needs `just` 1.27.0 or later, for the `[doc]` recipe
+attribute; a consuming project's floor is 1.33.0 or later where the kbase component ships, for the
+`import?` of the kb include line
+(SPEC.md, Guide and README). It runs its recipes under
+`bash`. The dicing and check verbs run through the `devpro` command — `python3 -m devpro` in the
+checkout's venv — so no import or snippet stands between this checkout and its `docs` surface:
+`just check-links` runs the absorbed verb directly. A design's delta application is verified by
+`check-design --deltas-applied`; this repository runs it as
+`just dev-check-design-deltas-applied`, over the absorbed verb. The `docdicer-repo`, `dev-dd` and
+`dev-kanban` recipes, and `docdicer-repo.sh` with its test, retire with the hosted clone; the
+dev-check recipes run the absorbed verbs. The `_venv`
 recipe creates `.venv`
 where its python is absent. On macOS it makes it from `/usr/bin/python3` where present, the Xcode
 command-line tools' Python 3.9.6, so the suite there runs on the Python 3.9 floor. It installs the

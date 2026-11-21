@@ -12,8 +12,8 @@ headings, thematic breaks, list items, table rows, fenced blocks and frontmatter
 and refuses a slug starting with `reference`. A slot holds one slot project
 (`rendered/<slug>/devpro/`), an install of the devpro set with the kbase component on, with itself
 as project root, so beside the definitions it holds the kb-tools package, the harness's
-MCP entry and the runner include lines (the docdicer line always, the kb line with the component
-on; none in the mage slot, a harness-directory plugin), and it
+MCP entry and the kb runner include line with the component
+on (none in the mage slot, a harness-directory plugin), and it
 holds, where the harness ships them, its own harness resources — the whole install product, which is
 what makes a `render-diff` a comparison of installs. A nested plugin's install also
 writes the project's `AGENTS.md` at its slot project's root, and the `CLAUDE.md` redirect beside it

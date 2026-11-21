@@ -7,12 +7,21 @@ it. A Homebrew tap is a distribution channel for that release archive, not a pac
 
 The installed package provides the `devpro` command. `python3 -m devpro` is the same command:
 both print the same `--help`, and the same arguments install the same product, byte for byte.
-Every `devpro` command exits 0 on success and 2 on a refusal or an operating-system failure, printing `error: <message>` on
-stderr. Every command that takes components takes them as `--components=CSV`, with the default
+The install verbs — `render`, `install`, `install-agents-file`, `render-agents-file` and the
+hidden `harness` — exit 0 on success and 2 on a refusal or an operating-system failure, printing
+`error: <message>` on
+stderr; the dicing, check and board verbs of Dicing and Checks exit 0, 1 and 2 as that section
+states. Every command that
+takes components takes them as `--components=CSV`, with the default
 Deployed Surfaces, Plugins states.
 
 devpro also runs from a checkout of this repository, as `PYTHONPATH=<clone> python3 -m devpro
 install …` (Deployed Surfaces). The install product is the same from a checkout or from an installed package.
+
+The command also carries the dicing, check and board surface: `devpro dice-doc`, `devpro undice`,
+`devpro dice-docs`, `devpro check-links`, `devpro check-tree`, `devpro check-plan`,
+`devpro check-design`, `devpro check-roadmap` and `devpro kanban` (Dicing and Checks). The verbs
+run wherever the `devpro` command runs; they are not part of the install product.
 
 A check that protects or assumes a checkout holds only when devpro runs from one. A worktree and
 an editable install of a clone count as one. The devpro package installed into a Python

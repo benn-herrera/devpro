@@ -84,7 +84,11 @@ A reader of plans:
 A design:
 
 - The design under way stays at `ACTIVE_DESIGN.md` from before its plan is written: it is removed
-  when that plan is done, and is set aside with its plan, or alone before a plan exists. The plan
+  when that plan is done, and is set aside with its plan, or alone before a plan exists. A design
+  accepted across stages stays until the last stage's plan is done: each stage is its own shippable
+  increment with its own plan, the stage boundaries are the user's to move, and an entry the design
+  holds for a later stage stays pending until that stage's work lands it, applying only the pairs
+  the design marks to that stage. The plan
   cites the design's entries rather than restating them, a requirement found while the plan runs
   is entered in the design, and the plan's post-plan review reads the design.
 - Work a design has not yet written as entries is held under one `## Drafts` heading, as tickets

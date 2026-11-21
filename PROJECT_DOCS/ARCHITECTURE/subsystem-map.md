@@ -47,22 +47,17 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   marketing-comms-expert, ml-engineer, prompt-engineer, prose-architect, theoretical-economist:
   single-purpose, invoked directly rather than as part of a coding pipeline.
   applied-mathematician carries the `fam-ask-vs-stipulate` anchor.
-- **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered with its
-  tools package by every install.
-  `docdicer.py` names its script `tools/docdicer`, relative to the skill's directory, and says its
-  first run installs docdicer beside it; the script's `--help` is the command list, which the skill
-  does not restate in full. The skill carries no install step; its one runner instruction is that
-  where the project's runner includes the docdicer snippet, docdicer is run through the recipes
-  (`docdicer`, and by name `docdicer-help`, `docdicer-check-plan`, `docdicer-check-design`,
-  `docdicer-check-design-deltas-applied`, `docdicer-check-roadmap` and `docdicer-kanban`), each of
-  the last four checking the active plan, the active design, the active design's applied deltas and
-  `ROADMAP.md`, with a path given to `docdicer` for any other.
-  Its `kanban` paragraph has the session offer to run the board as a background process or hand
-  over the command line, the user choosing.
+- **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered by every
+  install.
+  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`,
+  the check verbs and `devpro kanban` — run from the command line, and does not restate their
+  `--help` (CONVENTIONS.md, A skill omits its tool's offered surface). The skill carries no install
+  step and no runner instruction: the recipes and snippets the docdicer tools package carried are
+  retired with it (Plugins). Its `kanban` paragraph has the session offer to run the board as a
+  background process or hand over the command line, the user choosing.
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
   `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it
-  renders only where kbase ships. The docdicer version the script
-  installs is written once, as `VERSION` in `devpro/docdicer-tools/docdicer`.
+  renders only where kbase ships.
 - **Profile skill** — `show-profile` (`definitions/show_profile.py`): one `SKILL.md` with no
   supporting files, delivered under every harness. It renders the newest session's trace — read from
   either `<store>-profiler/` under `.devpro-temp/` — as text or as a self-contained HTML page, and
@@ -70,7 +65,9 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   `.claude/harness-profiler/hp.sh` a claude-on-web session uses (Install, Harness profiler).
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
-  under every harness. The description names the uses SPEC.md, Guide and README lists, and
+  under every harness. Its board section routes the board through the `docdicer` skill's routing
+  and names no launcher path or recipe: the launcher paths and recipes it named are retired with
+  the docdicer tools package (Plugins). The description names the uses SPEC.md, Guide and README lists, and
   says it is not for a change to the consuming project's own code. `SKILL.md` is a route, as the
   `development` skill's *Route* table is: one row per starting place SPEC.md, Guide and README
   lists, under the never-edit rule it states. The `development` and `docdicer` rows name their skill
@@ -110,7 +107,10 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   `docdicer` references are optional references (Rendering, Placeholders), and `docdicer` ships
   with every install, so each fills. The *Plan status* and *Roadmap tickets* sections render whole
   under every install; each one's `check-plan` or `check-roadmap` instruction is a paragraph of its
-  own, so an optional reference that fills to nothing drops that paragraph alone. The sentence
+  own, so an optional reference that fills to nothing drops that paragraph alone. The *Design*
+  section's delta-application sentence names no runner recipe: the application is verified by
+  `check-design --deltas-applied`, the runner recipe it named retired with the docdicer tools
+  package (Recipes). The sentence
   naming the default step-down model is
   `clauses.STEP_DOWN_MODEL`, the `tun` placeholder (Rendering, Placeholders), so that sentence alone
   renders only where the rendering names a mechanical member to step down to. The entry body's

@@ -6,7 +6,7 @@ Mage that lets you build to last: you work with the agents to design, plan, buil
 
 ![kanban screenshot](images/kanban.webp)
 
-*Work packages on the board `docdicer kanban` serves*
+*Work packages on the board `devpro kanban` serves*
 
 ## What it asks of you
 

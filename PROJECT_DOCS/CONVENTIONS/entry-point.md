@@ -30,7 +30,6 @@ Contents:
   - [Install parameters ship with their flags](code-definitions-and-install/install-parameters-ship-with-their-flags.md)
   - [Agents file changes explicitly](code-definitions-and-install/agents-file-changes-explicitly.md)
   - [Version has one home](code-definitions-and-install/version-has-one-home.md)
-  - [Docdicer pin is a release](code-definitions-and-install/docdicer-pin-is-a-release.md)
   - [Annotations on the floor](code-definitions-and-install/annotations-on-the-floor.md)
   - [Obviated code is deleted, not parked](code-definitions-and-install/obviated-code-is-deleted-not-parked.md)
   - [A devtools tool joins the tests](code-definitions-and-install/a-devtools-tool-joins-the-tests.md)

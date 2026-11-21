@@ -24,7 +24,7 @@ cited design entries, not the whole design.
 | P5 | landed | mechanical | shipped | `just test` |
 | P6 | landed | mechanical | shipped | `just test devpro`, `just check-wheel` |
 | P7 | landed | expert | shipped | `just test devpro` |
-| P8 | in progress | expert | shipped | `just dev-check-links`, `just dev-check-design-deltas-applied` |
+| P8 | landed | expert | shipped | `just dev-check-links`, `just dev-check-design-deltas-applied` |
 | PR | dispatchable | expert | shipped | `just dev-check-links` on the review document |
 | PB | dispatchable | expert | shipped | review document's findings have packages |
 

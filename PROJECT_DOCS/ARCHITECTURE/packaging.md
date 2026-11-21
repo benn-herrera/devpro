@@ -9,18 +9,20 @@ devpro project root is the whole build configuration.
 - **Version.** `dynamic = ["version"]` with `[tool.setuptools.dynamic]` reading
   `devpro.__version__`. `pyproject.toml` holds no version literal (CONVENTIONS.md, Version has one
   home).
-- **Package data.** `[tool.setuptools.package-data]` lists five patterns, `kb-tools/**/*`,
-  `harnesses/resources/**/*`, `docdicer-tools/**/*`, `docdicer-tools/**/.*` and
-  `development-tools/**/*`: the trees `install.py`
+- **Package data.** `[tool.setuptools.package-data]` lists four patterns, `kb-tools/**/*`,
+  `harnesses/resources/**/*`, `development-tools/**/*` and
+  `dicing/kanban/assets/**/*`: the trees `install.py`
   reads through `PACKAGE_ROOT` (`HARNESS_RESOURCES_SOURCE` and each `SHIPPED_PACKAGES` source,
-  the kb-tools, docdicer-tools and development-tools trees). The `.*` pattern exists because
-  setuptools' `**/*` skips dotfiles, and the docdicer package ships a `.gitignore`. A glob sweeps in whatever sits
+  the kb-tools and development-tools trees) and the board's assets (Repo Layout), which
+  `importlib.resources` serves. A glob sweeps in whatever sits
   under its tree, so `just check-wheel` holds the list equal to the tree: the wheel's non-`.py`
   files under `devpro/` must be exactly the non-`.py` files git tracks or would track there
   (`git ls-files --cached --others --exclude-standard`). A shipped tree missing from the list fails
   it, and so does a stray file the list sweeps in.
 - **Console script.** `devpro = "devpro.cli:main"`. argparse's `prog` is `"devpro"`, so
-  `devpro --help` and `python3 -m devpro --help` print the same text.
+  `devpro --help` and `python3 -m devpro --help` print the same text. The dispatch is lazy: the
+  entry point imports only the verb invoked, and every verb imports no third-party dependency
+  (Package and Command), so no verb pays for another verb's imports.
 - **Offline build.** `just build` runs `python -m build --no-isolation` in `.venv` and writes the
   wheel and sdist to `dist/`, so it uses the venv's own setuptools, not a downloaded one. `.venv`'s
   install line in the justfile's `_venv` recipe therefore pins `setuptools~=82.0.1` and

@@ -14,8 +14,6 @@ The supported harnesses are `claude` (Claude Code), `opencode` and `mage` (Mage,
 the skill kind — `skills/<name>/SKILL.md`, the **skill entry file**, then its supporting files,
 beneath that directory and nowhere else. A project install places each shipped package in the
 directory of the skill it belongs to, where that skill ships:
-- the docdicer tools package — the launcher for docdicer, a separately published tool that dices a
-  markdown document into a tree of linked files — in the `docdicer` skill's own directory;
 - the development scripts package — a script that runs one agent on a brief with no tools — in the
   `development` skill's;
 - the kb-tools package in the `kbase` skill's.

@@ -16,7 +16,7 @@ banner, and with them any
 directory that leaves empty; this removal takes no file that lacks a generated banner. The install
 directory itself is never removed, and a directory that was already empty stays. A package
 destination is replaced whole, `skills/kbase/kb-tools/` included, except a `.venv` directly under it,
-which stays. The development scripts package and the docdicer tools package are replaced the same way.
+which stays. The development scripts package is replaced the same way.
 A harness resource is replaced whole on each
 install when the file already at its path carries `!INSTALLED! … devpro` in its first ten lines;
 any other file there refuses the install the same way. It is not removed by prune: a harness
@@ -35,7 +35,7 @@ stands.
 
 An up-to-date run reports `up to date: <harness-dir> — nothing written`, exits 0 and touches
 nothing: no file
-written, no mode or modification time changed, no package destination replaced and no `tools/.venv`
+written, no mode or modification time changed, no package destination replaced and no `.venv`
 removed. "Nothing" is judged on the result: every file the install would
 write is already byte-identical and mode-identical, and none would be created or removed. Changing
 `--harness`, `--family`, the category map or `--components` changes bytes, so that install proceeds. A `.venv` directory is not install

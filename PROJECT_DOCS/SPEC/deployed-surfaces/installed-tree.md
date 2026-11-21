@@ -20,7 +20,7 @@ for local edit, and the tuning line (Rendering). A skill's supporting file has n
 carries the same two lines as HTML comments — its first two lines, above a blank line and the body
 — and nothing about how the file is read depends on them. Under opencode every rendered file is
 written without frontmatter and carries the two lines as those comments. A copied package file of a script or
-build-file type (`.py`, `.sh`, `.mk`, `.just`), and the extensionless launcher `tools/docdicer`,
+build-file type (`.py`, `.sh`, `.mk`, `.just`)
 carries an installed banner at its top, below its shebang where it has one. Both banners say to
 request changes from the devpro project and that local needs belong in the consuming project's
 CONVENTIONS.md. An installed banner names the source file it was copied from. A copied package
@@ -33,13 +33,13 @@ registration — carries no banner; its **ownership marker**, a fixed string in 
 its origin: `"name": "devpro"` in the plugin manifest, `"command": "kbase"` in `.mcp.json`,
 `"plugin": "devpro"` in `registry.json`, and `no readable script at` in
 `hooks/hooks.json`. No banner sits where it changes how
-the file is read. Every other copied file — `tools/.gitignore` among them — and every harness
+the file is read. Every other copied file — a package's `.gitignore` among them — and every harness
 resource is installed byte-verbatim.
 
 A definition body names no installed path below the harness directory for a session to run or edit. A
-script inside a skill's own directory is named relative to that directory (`tools/docdicer`); the
+script inside a skill's own directory is named relative to that directory: the
 profiler's launcher sits in the install directory's `profiler/` and is named relative to the skill's
-directory too (`../../profiler/hp.sh`). The
+directory (`../../profiler/hp.sh`). The
 project's scratch directory is `.devpro-temp/` under the project root, the same name under every
 harness. A cross-definition reference renders
 with the plugin's namespace — under claude and mage `<plugin>:<name>` for an agent, a command or a

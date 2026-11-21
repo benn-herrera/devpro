@@ -35,8 +35,8 @@ The skill carries two reference pages, which the session reads when its starting
     `~/Mage/Skills/kbase/` directory an install from before the component left, which Mage loads
     beside the current one, so it is removed once;
   - the agents file: where an install keeps its block, and the `CLAUDE.md` redirect;
-  - the requirements: `just` 1.33.0 or later where the consuming project's runner is a justfile,
-    for the runner include lines; `perl` with core `JSON::PP` for the claude guardrail; and the
+  - the requirements: `just` 1.27.0 or later, and 1.33.0 or later where the kbase component ships,
+    for the kb include line; `perl` with core `JSON::PP` for the claude guardrail; and the
     `show-profile` skill's recording of a claude or opencode project install, which needs no more
     than what delivers it (Shipped files, the activity profiler), and ships nothing under mage;
   - what the operator sets up for a cold read: `DEVPRO_COLD_READ_DIR`;

@@ -52,7 +52,7 @@ manifest and `.mcp.json` where `kbase` ships, or
 the registry `registry.json`), prunes as any install does, and writes nothing else but, under opencode,
 the plugin entry, a harness resource without which the plugin cannot register: no other harness resource, no
 install-time probe or guardrail registration (Shipped files), no shipped package (none of
-`kb-tools/`, the docdicer tools package and the development scripts package), no runner include line and no runner file. A user-level install with the kbase
+`kb-tools/` and the development scripts package), no runner include line and no runner file. A user-level install with the kbase
 component under opencode registers the `kbase` MCP server through the registry ([Plugins](plugins.md)).
 
 A user-level claude install and a project's of the same plugin share a name, and Claude Code loads the

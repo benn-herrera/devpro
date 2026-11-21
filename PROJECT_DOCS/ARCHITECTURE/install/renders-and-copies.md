@@ -15,12 +15,12 @@ else, and the upward walk visits only a stale file's ancestors and stops at the 
 The walk is one install directory's: under claude the install directory
 (`.claude/skills/devpro/`) sits inside the harness directory's `skills/` beside what the project
 keeps there, so a walk wider than the install directory would delete a neighbor's. That walk needs no carve-out for a package
-destination: the three `SHIPPED_PACKAGES` rows, the docdicer tools package, the development scripts
-package and the kb-tools package, all sit inside the install directory's `skills/` —
-`skills/docdicer/tools/`, `skills/development/scripts/` and `skills/kbase/kb-tools/`, each in its
+destination: the two `SHIPPED_PACKAGES` rows, the development scripts
+package and the kb-tools package, both sit inside the install directory's `skills/` —
+`skills/development/scripts/` and `skills/kbase/kb-tools/`, each in its
 skill's own directory — where every file they hold is stamped installed or left unstamped, never
-generated, so every file under those trees is still either ours or untouched. A `.venv` the
-docdicer script builds under its destination is outside what `_shipped` admits too, so its files
+generated, so every file under those trees is still either ours or untouched. A `.venv` directly
+under a package destination is outside what `_shipped` admits too, so its files
 never enter the stale list. A definition of ours that this run did not write, such as one its plugin
 does not ship, is stale and goes — every one of its files, a skill's included. Every definition is
 rendered before the first write. A file at a rendered-definition destination that has lost the
@@ -34,14 +34,9 @@ process umask gives a new file plus the source's execute bits, and the harness r
 borrows the same vocabulary (below) — and `prune`
 removes nothing `_shipped` excludes, so a file outside it is never stale. A copied file takes the
 installed banner when its suffix is in `STAMPED_SUFFIXES` (`.py`, `.sh`, `.mk`, `.just`) or its name
-is in `STAMPED_NAMES` (`docdicer`, the one extensionless
-launcher); `stamped` places the banner below a shebang. Any other file — the package's `.gitignore`
+is in `STAMPED_NAMES`; `stamped` places the banner below a shebang. Any other file — a package's
+`.gitignore`
 among them — is copied byte-verbatim.
-
-The docdicer package lands inside the `docdicer` skill's own directory, so the skill names its script
-`tools/docdicer`, relative to that directory. That is the one body path not written against the
-harness directory (SPEC.md, Deployed Surfaces, Installed tree), because the skill's
-directory differs by harness.
 
 The development scripts package, `devpro/development-tools/`, takes the same package copy and adds
 no code path: one row, `("development-tools", DEVELOPMENT_SCRIPTS_PACKAGE, "development")`, in
@@ -128,10 +123,8 @@ part.
   (`.opencode` as a file) is copied in the directory's place (`_copy_managed`), so the scratch
   install meets the obstacle the real one does.
 
-**No tool install.** `install` runs no shipped package's script and takes no callable for one. The docdicer
-tools package's destination is replaced like any other, and the `.venv` the launcher built beside
-itself is kept. On its next run the launcher rebuilds that venv where its python does not run, and
-reinstalls the docdicer it names where the venv's docdicer reports another version (SPEC.md, Deployed Surfaces, Shipped files). The install manages no dependencies across
+**No tool install.** `install` runs no shipped package's script and takes no callable for one. The
+install manages no dependencies across
 packages, and needs no network.
 
 **Shadow report and reload sentence.** The last two steps of `install`, for a harness whose
