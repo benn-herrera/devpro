@@ -65,9 +65,11 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   renders only where kbase ships.
 - **Profile skill** — `show-profile` (`definitions/show_profile.py`): one `SKILL.md` with no
   supporting files, delivered under every harness. It renders the newest session's trace — read from
-  either `<store>-profiler/` under `.devpro-temp/` — as text or as a self-contained HTML page, and
-  finds the profiler's launcher at `../../profiler/hp.sh`, the installed copy, before the committed
-  `.claude/harness-profiler/hp.sh` a claude-on-web session uses (Install, Harness profiler).
+  either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
+  `.profiler-*` ones `devpro profiler tree` walks — as text or as a self-contained HTML page, and
+  finds the profiler's launcher at `../../profiler/hp.sh`, the installed copy of claude's, before the
+  committed `.claude/harness-profiler/hp.sh` a claude-on-web session uses; the launcher runs the
+  `profiler` verb of the `devpro` command it finds (Install, Harness profiler).
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
   under every harness. Its board section routes the board through the `docdicer` skill's routing

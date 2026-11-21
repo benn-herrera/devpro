@@ -1136,11 +1136,19 @@ capture writes one name and traces sit under the other.
 
 **As it stands:**
 ```
-module, not a new mechanism, and no entry is gated on the install-time probe. A capture appends one line to the project's `.devpro-temp/claude-profiler/<session-id>.jsonl` — one of the per-harness stores under `.devpro-temp/`, every `*-profiler` directory of which `hp.py`'s `tree` renders — the project's scratch
+is data in the harness module, not a new mechanism, and no entry is gated on the install-time probe. A
+capture appends one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl` — one of
+the per-harness stores under `.devpro-temp/`, every `.profiler-*` directory of which the `tree`
+subcommand renders — the project's scratch directory, which the project's own convention gitignores; a
+capture that fails, or finds no `devpro`, exits 0 with no output.
 ```
 **Becomes:**
 ```
-module, not a new mechanism, and no entry is gated on the install-time probe. A capture appends one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl` — one of the per-harness stores under `.devpro-temp/`, every `.profiler-*` directory of which `hp.py`'s `tree` renders — the project's scratch
+is data in the harness module, not a new mechanism, and no entry is gated on the install-time probe. A
+capture appends one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl` — one of
+the per-harness stores under `.devpro-temp/`, every `.profiler-*` directory of which the `tree`
+subcommand renders — the project's scratch directory, which the project's own convention gitignores; a
+capture that fails, or finds no `devpro`, exits 0 with no output.
 ```
 
 **As it stands:**
@@ -1156,13 +1164,13 @@ index of record files: every store the `.profiler-*` glob finds,
 
 **As it stands:**
 ```
-a lifecycle record the tree does not draw — writing them to its own
-`.devpro-temp/opencode-profiler/<session-id>.jsonl` store, `harness` `"opencode"`, which `hp.py`'s
-tree and page render beside the claude sessions', each record read from its own `*-profiler` store.
+`.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which the
+`devpro profiler tree` and `serve` render beside the claude sessions', each record read from its own
+`.profiler-*` store.
 ```
 **Becomes:**
 ```
-a lifecycle record the tree does not draw — writing them to its own
-`.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which `hp.py`'s
-tree and page render beside the claude sessions', each record read from its own `.profiler-*` store.
+`.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which the
+`devpro profiler tree` and `serve` render beside the claude sessions', each record read from its own
+`.profiler-*` store.
 ```

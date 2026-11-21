@@ -10,6 +10,9 @@ because the walk is already there: the suffix or name says nothing about what a 
 and a `.py` resource would gain a banner above its own. This tree is the master for what it ships — an installed copy is never edited,
 and no other repository's copy is a source.
 
-A harness resource written in Python is inside `just lint`'s paths (`justfile:214-216`) like any
-other module, so it must pass black, isort and flake8 as well as carrying its banner — adding or
-deleting one changes what the lint gate covers, not just what a consumer receives.
+The one Python file this tree once carried, the profiler's `hp.py`, is gone: the profiler's code is
+the `devpro/profiler/` package, which is a devpro module like any other and inside `just lint`'s
+paths by the same rule, so adding or deleting a resource no longer changes what the lint gate covers.
+The only Python under this tree is a resource nothing executes as Python, and a resource written in
+Python again would pass black, isort and flake8 as well as carrying its banner — the gate it is
+subject to is the module it becomes.

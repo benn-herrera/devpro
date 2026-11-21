@@ -104,7 +104,7 @@ machine that runs the server. Six hook entries, one per
 event (`PostToolUse`, `PostToolUseFailure`, `PreCompact`, `PostCompact`, `SessionStart`,
 `SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each appends
 one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl`, and a capture that
-fails, or finds no `python3` to run under, exits 0 with no output. A claude session on the web loads
+fails, or finds no `devpro` to run under, exits 0 with no output. A claude session on the web loads
 no plugin's hooks and records nothing there; the skill names the tool's `init` for committing the
 hook where a session needs one. A user-level install renders the skill and copies none of the
 resources. A project opencode install also ships the profiler's launcher — `profiler/hp.sh` — and
