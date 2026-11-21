@@ -15,9 +15,9 @@ else, and the upward walk visits only a stale file's ancestors and stops at the 
 The walk is one install directory's: under claude the install directory
 (`.claude/skills/devpro/`) sits inside the harness directory's `skills/` beside what the project
 keeps there, so a walk wider than the install directory would delete a neighbor's. That walk needs no carve-out for a package
-destination: the two `SHIPPED_PACKAGES` rows, the development scripts
-package and the kb-tools package, both sit inside the install directory's `skills/` —
-`skills/development/scripts/` and `skills/kbase/kb-tools/`, each in its
+destination: the three `SHIPPED_PACKAGES` rows, the development scripts
+package, the dicing snippets package and the kb-tools package, all sit inside the install directory's `skills/` —
+`skills/development/scripts/`, `skills/docdicer/dicing-snippets/` and `skills/kbase/kb-tools/`, each in its
 skill's own directory — where every file they hold is stamped installed or left unstamped, never
 generated, so every file under those trees is still either ours or untouched. A `.venv` directly
 under a package destination is outside what `_shipped` admits too, so its files

@@ -52,8 +52,13 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`,
   the check verbs and `devpro kanban` — run from the command line, and does not restate their
   `--help` (CONVENTIONS.md, A skill omits its tool's offered surface). The skill carries no install
-  step and no runner instruction: the recipes and snippets the docdicer tools package carried are
-  retired with it (Plugins). Its `kanban` paragraph has the session offer to run the board as a
+  step. Its runner instruction is back, naming the recipes of the `devpro` snippet set: where the
+  project's runner includes that set, the checks run through the recipes (`devpro`, and by name
+  `devpro-help`, `devpro-check-plan`, `devpro-check-design`,
+  `devpro-check-design-deltas-applied` and `devpro-check-roadmap`), the four gates argumentless,
+  each checking the active file under the project root — the active plan, the active design, the
+  active design's applied deltas and `ROADMAP.md` — with a direct `devpro` call for any other
+  (Plugins). Its `kanban` paragraph has the session offer to run the board as a
   background process or hand over the command line, the user choosing.
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
   `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it

@@ -33,8 +33,9 @@ checkout side of its install comparison, and runs the `devpro` console script on
 throwaway venv. Packaging states both.
 
 **Toolchain.** This repository's justfile needs `just` 1.27.0 or later, for the `[doc]` recipe
-attribute; a consuming project's floor is 1.33.0 or later where the kbase component ships, for the
-`import?` of the kb include line
+attribute; a consuming project's floor is 1.33.0 or later where the devpro line ships — on every
+project install of a nested plugin — for the `import?` of the include lines, the kb line with the
+kbase component riding the same floor
 (SPEC.md, Guide and README). It runs its recipes under
 `bash`. The dicing and check verbs run through the `devpro` command — `python3 -m devpro` in the
 checkout's venv — so no import or snippet stands between this checkout and its `docs` surface:
