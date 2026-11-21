@@ -252,7 +252,7 @@ claude's at `<install-dir>/hooks/guardrail.pl` and
 **Becomes:**
 ```
 `<install-dir>/guardrail.ts` and `<install-dir>/profiler.ts`, and, for claude and opencode alike,
-`<install-dir>/profiler/hp.sh` and `<install-dir>/profiler/view.html`;
+`<install-dir>/profiler/hp.sh`;
 claude's at `<install-dir>/hooks/guardrail.pl` and
 ```
 
@@ -265,7 +265,9 @@ A claude project install also ships the **activity profiler** payload: the harne
 ```
 A claude project install also ships the **activity profiler**: its code is devpro's own, and the
 hook files refer back to devpro wherever they ran the profiler's script, with the capture hook's
-contract — a failed or interpreterless capture exits 0 with no output — unchanged, and the
+contract — a failed or interpreterless capture exits 0 with no output — unchanged. The page
+template `view.html` the render reads is the devpro wheel's package data
+(`devpro/profiler/view.html`, read by the rendering module), not an install resource; and the
 ```
 
 **As it stands:**
@@ -292,8 +294,8 @@ resources. A project opencode install also ships the profiler's render payload �
 ```
 **Becomes:**
 ```
-resources. A project opencode install also ships the profiler's launcher and page template —
-`profiler/hp.sh` and `profiler/view.html` — and the capture `profiler.ts` beside the plugin entry, and
+resources. A project opencode install also ships the profiler's launcher — `profiler/hp.sh` — and
+the capture `profiler.ts` beside the plugin entry, and
 ```
 
 **As it stands:**
@@ -761,12 +763,13 @@ docdicer/               gitignored hosted clone — the docdicer project this re
 ```
 **Becomes:**
 ```
-- **Package data.** `[tool.setuptools.package-data]` lists five patterns, `kb-tools/**/*`,
-  `harnesses/resources/**/*`, `development-tools/**/*`, `dicing-snippets/**/*` and
-  `dicing/kanban/assets/**/*`: the trees `install.py`
+- **Package data.** `[tool.setuptools.package-data]` lists six patterns, `kb-tools/**/*`,
+  `harnesses/resources/**/*`, `development-tools/**/*`, `dicing-snippets/**/*`,
+  `profiler/view.html` and `dicing/kanban/assets/**/*`: the trees `install.py`
   reads through `PACKAGE_ROOT` (`HARNESS_RESOURCES_SOURCE` and each `SHIPPED_PACKAGES` source,
-  the kb-tools, development-tools and dicing-snippets trees) and the board's assets (Repo Layout),
-  which `importlib.resources` serves. A glob sweeps in whatever sits
+  the kb-tools, development-tools and dicing-snippets trees), the board's assets (Repo Layout) and
+  the profiler's page template (Harness profiler), which `importlib.resources` serves. A glob
+  sweeps in whatever sits
 ```
 
 **As it stands:**
