@@ -26,4 +26,6 @@ Contents:
 - [Bodies usable without frontmatter](bodies-usable-without-frontmatter.md)
 - [Agents File](agents-file.md)
 - [Plan Status Form](plan-status-form.md)
+- [Dicing and Checks](dicing-and-checks.md)
 - [Guide and README](guide-and-readme.md)
+- [Dicing and Checks leaves](dicing/index.md)
