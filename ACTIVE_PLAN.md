@@ -459,10 +459,60 @@ reconciled, in the commit that adds it. Its row is `landed` in that commit.
 
 Lifetime: shipped. One commit closes it.
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands. Until then this section
-holds that sentence only. The burndown's work list is drafted from the review document, grouped by
-root cause with one ID per defect, gets `devpro-prompt-engineer` usability review, then revision,
-before it is `dispatchable`.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `5e675df`): eight defects — 4 Critical, 1 High,
+2 Warning — six items by root cause, plus the P1 incident's guard. The seat files in
+`.devpro-temp/stage2-review-*.md` carry the per-finding detail.
 
-**Done-line.** `just dev-check-plan` `just dev-check-links` — the burndown's section holds the
-work list, the plan's own form still checking.
+**B1 — the rename's recognition narrows to the stores, and its guard covers the plain path (R3,
+R6).** `rename_stores` recognizes the two profiler stores — `.profiler-claude`/`.profiler-opencode`
+targets from `claude-profiler`/`opencode-profiler`, and no other `<name>-profiler` shape (the
+`notes-profiler` probe states the defect); `_one_project_renamed_once` covers the plain
+`install()` path, not only the second real run; a test pins the non-store directory left alone on
+the plain path. Doctor's remedies state the deliberate boundary: the manual `mv` for a standing
+old-pattern store, and what merging means for the operator (no installer merge).
+
+**B2 — the capture path pays for nothing it does not run (R4, R8).** The rename path's imports
+move to the rename call in `profiler/hooks.py` (the dicing precedent's pattern); the module's
+docstring states its own laziness; the Packaging statement in the design gains the capture-path
+rule beside the verb-entry rule (a pending-ness check first — the statement's home is the landed
+pair's text or a new pending pair, the architect decides); the two-entry `sys.modules` probe
+extends to the hooks import chain.
+
+**B3 — the surfaces the pairs never covered (R1, R2).** `guide.py`'s Requirements and Updating
+sections written from the SPEC leaf's landed statements (the conditional floor; the walk without
+the created-Makefile clause; `skills/docdicer/tools/`, not `skills/docdicer/`); README's profiler
+bullet rewritten from `shipped-files.md`'s landed terms (the `.profiler-*` stores, the rename, the
+install's copy set). Verify-before: each section read against its landed leaf; the text names
+nothing the tests don't pin where one exists.
+
+**B4 — P7's leaf rewrite negations corrected (R5).** `harness-profiler.md`'s opencode sentence to
+the code's truth (the cross-harness map and its test named); the verbatim CONVENTIONS leaf's
+resource sentence to the tree's truth (no Python resource remains); the "There is no window…"
+absolute to the design's collision case. The mage-render README sentence and the stage-3 board
+note ride the same pass's judgment (R8).
+
+**B5 — the install refuses its own package tree (the P1 incident's guard).** The install (and
+`profiler init`) refuses a resolved destination inside the running devpro package's own source
+tree — the error names the boundary — with the failing-first test: `devpro install devpro/`
+(or any resolved-inside target) refuses naming the boundary, on the base commit recorded.
+
+**B6 — the notes tier (R8).** Judged at execution: the `profiler.ts` torn-line comment, the
+parameter shadow, the `!INSTALLED!` banner distinction's CONVENTIONS sentence, the
+`DICING_SNIPPETS_PACKAGE` dangle, the *No traces* branch reaching doctor's `old:` line, the README
+runner-file note — fix where a one-liner holds, decline with a line where the shape is the
+contract.
+
+The burndown is expert (B1–B4 judgment; B5 is mechanical once the boundary is stated).
+
+**Done-line.** `just test`, then `just sweep-python`, then `just lint`, then
+`just dev-check-design-deltas-applied` (landed: 62, pending: 2 — the stage state), then
+`just dev-check-links`, then `just dev-check-plan` — all before the landing acts; the landing
+commit's tree carries the gate passing.
+
+**The landing acts**, after the burndown's work:
+
+1. The landing commit deletes `ACTIVE_PLAN_REVIEW.md`.
+2. The landing commit deletes this plan — stage 2 of the absorption pass closes; stage 3's plan is
+   written from the design's stage-3 content when the user directs it. The design stays: stages
+   3–5's pending entries hold under the staging rule, and the design's removal is the last stage's
+   landing act. PB's row resolution: no Status row is set, the row dies with the plan.
