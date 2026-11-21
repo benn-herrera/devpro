@@ -22,7 +22,7 @@ cited design entries, not the whole design.
 | P3 | landed | mechanical | shipped | `just test devpro` |
 | P4 | landed | expert | shipped | `just test devpro` |
 | P5 | landed | mechanical | shipped | `just test` |
-| P6 | dispatchable | mechanical | shipped | `just test devpro`, `just check-wheel` |
+| P6 | in progress | mechanical | shipped | `just test devpro`, `just check-wheel` |
 | P7 | dispatchable | expert | shipped | `just test devpro` |
 | P8 | dispatchable | expert | shipped | `just dev-check-links`, `just dev-check-design-deltas-applied` |
 | PR | dispatchable | expert | shipped | `just dev-check-links` on the review document |
