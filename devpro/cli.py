@@ -11,7 +11,6 @@ import sys
 from pathlib import Path
 
 from devpro import __version__
-from devpro.agents_file import preflighted_agents_file_install, scope_name
 from devpro.components import COMPONENTS, NAME, Components, selection
 from devpro.context import (
     DEFAULT_FAMILY,
@@ -25,12 +24,7 @@ from devpro.context import (
     map_spec,
     read_settings,
 )
-from devpro.dicing.cli import add_verbs
-from devpro.dicing.cli import run as run_dicing
 from devpro.errors import InputError
-from devpro.install import components_value, install_selected, preflighted_install, uncommitted_sources
-from devpro.install_target import agents_file_harness, resolve_install_target
-from devpro.render import render_agents_file, render_all, write_renders
 from devpro.vocabulary import HarnessText, key
 
 _DRY_RUN_HELP = "print what the install would create, change and remove; write nothing"
@@ -86,6 +80,8 @@ def build_parser() -> argparse.ArgumentParser:
     no optional component on by default. The top-level `--version` prints the bare version. allow_abbrev=False
     on every parser.
     """
+    from devpro.dicing.cli import add_verbs
+
     parser = argparse.ArgumentParser(prog="devpro", allow_abbrev=False)
     parser.add_argument("--version", action="version", version=__version__)
     # The hidden verbs are added without help, and the verb list is set below from every other: argparse
@@ -155,6 +151,8 @@ def _supply(settings: dict[str, HarnessSettings] | None, harness: str) -> MapSup
 
 def _run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> None:
     if args.verb == "render":
+        from devpro.render import render_all, write_renders
+
         settings, _ = read_settings(args.config_file)
         components = args.components or ""
         renders = render_all(
@@ -163,6 +161,9 @@ def _run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> None:
         for path in write_renders(args.out, renders):
             print(f"wrote {path}")
     elif args.verb == "install":
+        from devpro.install import components_value, install_selected, preflighted_install, uncommitted_sources
+        from devpro.install_target import resolve_install_target
+
         settings, path = read_settings(args.config_file)
         # One iteration of `install_selected`'s loop, minus the harness prefix: the two paths install the
         # same way, so a change to either belongs in both.
@@ -196,16 +197,25 @@ def _run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> None:
                 uncommitted=uncommitted_sources,
             )
     elif args.verb == "install-agents-file":
+        from devpro.agents_file import preflighted_agents_file_install
+        from devpro.install import uncommitted_sources
+        from devpro.install_target import agents_file_harness
+
         harness = harness_named(agents_file_harness(args.directory, args.harness))
         preflighted_agents_file_install(
             args.directory, harness, Components(), uncommitted=uncommitted_sources, dry_run=args.dry_run
         )
     elif args.verb == "render-agents-file":
+        from devpro.agents_file import scope_name
+        from devpro.render import render_agents_file
+
         harness = harness_named(args.harness)
         text = render_agents_file(harness, selection(args.components or ""), scope=scope_name(harness, args.out.parent))
         args.out.write_text(text, encoding="utf-8")
         print(f"wrote {args.out}")
     elif args.verb in DICING_VERBS:
+        from devpro.dicing.cli import run as run_dicing
+
         sys.exit(run_dicing(args, parser=parser))
     else:
         bound = harness_named(args.name).bound(NAME)

@@ -2047,7 +2047,7 @@ def _dry_run_groups(out: str) -> dict[str, set[str]]:
 @pytest.fixture
 def _no_uncommitted(monkeypatch: pytest.MonkeyPatch) -> None:
     """The CLI's commit-state check standing down, so an agents-file write does not turn on this tree."""
-    monkeypatch.setattr("devpro.cli.uncommitted_sources", _committed)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", _committed)
 
 
 def _fail_if_called() -> tuple[str, ...]:
@@ -2058,7 +2058,7 @@ def _fail_if_called() -> tuple[str, ...]:
 def _uncommitted_never_read(monkeypatch: pytest.MonkeyPatch) -> None:
     """The CLI's commit-state check failing the test if it runs: an install that writes no agents file
     has no reason to read it."""
-    monkeypatch.setattr("devpro.cli.uncommitted_sources", _fail_if_called)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", _fail_if_called)
 
 
 def _assert_dry_run_predicts(argv: list[str], *, project: Path, capsys) -> dict[str, set[str]]:
@@ -2353,7 +2353,7 @@ def test_without_a_global_block_a_project_install_keeps_it_in_the_projects_agent
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, name: str, redirect: bool, uncommitted: bool
 ) -> None:
     """The global file holds no block, so its text is not touched, and the commit state is not read."""
-    monkeypatch.setattr("devpro.cli.uncommitted_sources", _dirty if uncommitted else _committed)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", _dirty if uncommitted else _committed)
     harness = _HARNESS_NAMED[name]
     _plant(_global_agents_file(tmp_path / "home", harness), "# my global rules\n")
     project = tmp_path / "project"
@@ -2456,7 +2456,7 @@ def test_a_legacy_kbase_stamped_global_block_is_replaced_as_a_block_of_no_plugin
 def test_the_global_write_under_uncommitted_sources_is_refused_with_nothing_written(
     tmp_path: Path, capsys, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("devpro.cli.uncommitted_sources", _dirty)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", _dirty)
     _plant(_global_agents_file(tmp_path / "home", CLAUDE), f"{_BEGIN}\nold\n{_END}\n")
     project = _project_with_a_copy(tmp_path, native="@AGENTS.md\n", own="# mine\n")
     before = {"home": _state(tmp_path / "home"), "project": _state(project)}

@@ -97,7 +97,7 @@ def test_a_harness_directory_target_is_the_harness_directory_under_its_parent_as
 
 
 def test_a_mage_skills_target_installs_the_plugin_with_its_agents_file(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setattr(cli, "uncommitted_sources", _committed)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", _committed)
     skills = tmp_path / "Mage/Skills"
     skills.mkdir(parents=True)
     cli.main(["install", str(skills)])
@@ -218,7 +218,7 @@ def test_a_mage_install_below_its_project_with_uncommitted_sources_writes_its_ag
     tmp_path: Path, monkeypatch
 ) -> None:
     """A project install guards no live operator configuration, so the commit state refuses nothing."""
-    monkeypatch.setattr(cli, "uncommitted_sources", _uncommitted)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", _uncommitted)
     skills = tmp_path / "Mage/Skills"
     skills.mkdir(parents=True)
     cli.main(["install", str(skills)])
@@ -228,7 +228,7 @@ def test_a_mage_install_below_its_project_with_uncommitted_sources_writes_its_ag
 def test_a_mage_install_into_the_target_itself_writes_no_agents_file(tmp_path: Path, monkeypatch) -> None:
     """The slot render path: ROOT is the project root, so there is no agents file to
     install and the commit state is never read — an uncommitted tree would otherwise refuse."""
-    monkeypatch.setattr(cli, "uncommitted_sources", _uncommitted)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", _uncommitted)
     cli.main(["install", str(tmp_path), "--subdir=", "--harness=mage"])
     assert (tmp_path / ".claude-plugin/plugin.json").is_file()
     assert not (tmp_path / "CLAUDE.md").exists()
@@ -239,7 +239,7 @@ def test_the_agents_file_harness_is_inferred_from_a_user_directory(
     tmp_path: Path, monkeypatch, harness: list[str]
 ) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    monkeypatch.setattr(cli, "uncommitted_sources", _committed)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", _committed)
     user_dir = tmp_path / ".claude"
     user_dir.mkdir()
     cli.main(["install-agents-file", str(user_dir), *harness])
@@ -247,7 +247,7 @@ def test_the_agents_file_harness_is_inferred_from_a_user_directory(
 
 
 def test_an_agents_file_harness_given_as_a_positional_is_refused(tmp_path: Path, monkeypatch, capsys) -> None:
-    monkeypatch.setattr(cli, "uncommitted_sources", _committed)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", _committed)
     project = tmp_path / "project"
     project.mkdir()
     assert "unrecognized arguments: claude" in _refused(["install-agents-file", str(project), "claude"], capsys)
@@ -334,7 +334,7 @@ def test_an_opencode_user_level_kb_install_writes_no_guardrail_or_settings(_home
 def test_the_agents_file_verb_into_a_user_directory_with_uncommitted_sources_writes_nothing(
     _home: Path, monkeypatch, capsys
 ) -> None:
-    monkeypatch.setattr(cli, "uncommitted_sources", _uncommitted)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", _uncommitted)
     (_home / ".claude").mkdir(parents=True)
     assert "uncommitted changes" in _refused(["install-agents-file", str(_home / ".claude")], capsys)
     assert _paths(_home) == [".claude"]
@@ -347,7 +347,7 @@ def test_the_agents_file_verb_into_a_user_directory_reads_the_commit_state_once(
         reads.append(None)
         return ()
 
-    monkeypatch.setattr(cli, "uncommitted_sources", counted)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", counted)
     (_home / ".claude").mkdir(parents=True)
     cli.main(["install-agents-file", str(_home / ".claude")])
     assert (_home / ".claude" / CLAUDE.agents_file).is_file()
@@ -361,7 +361,7 @@ def _failed_git_status() -> tuple[str, ...]:
 def test_a_failed_git_status_refuses_the_agents_file_into_a_user_directory_only(
     _home: Path, tmp_path: Path, monkeypatch, capsys
 ) -> None:
-    monkeypatch.setattr(cli, "uncommitted_sources", _failed_git_status)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", _failed_git_status)
     project = tmp_path / "project"
     project.mkdir()
     cli.main(["install-agents-file", str(project), "--harness=claude"])
@@ -375,7 +375,7 @@ def test_a_non_directory_above_the_install_directory_is_not_examined(tmp_path: P
     """`.claude/skills` sits between the harness directory and the install directory: the operator's own,
     so the destination refusal does not name it and the install ends in the operating system's failure,
     reported as an error line."""
-    monkeypatch.setattr(cli, "uncommitted_sources", _committed)
+    monkeypatch.setattr("devpro.install.uncommitted_sources", _committed)
     harness_dir = tmp_path / ".claude"
     harness_dir.mkdir()
     (harness_dir / "skills").write_text("mine\n", encoding="utf-8")

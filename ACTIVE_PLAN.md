@@ -19,7 +19,7 @@ cited design entries, not the whole design.
 | | drafted | — | — | kickoff: this plan is committed and its checks run |
 | P1 | landed | expert | shipped | `just dev-check-links` |
 | P2 | landed | mechanical | shipped | `just test devpro`, `just check-wheel` |
-| P3 | in progress | mechanical | shipped | `just test devpro` |
+| P3 | landed | mechanical | shipped | `just test devpro` |
 | P4 | dispatchable | expert | shipped | `just test devpro` |
 | P5 | dispatchable | mechanical | shipped | `just test` |
 | P6 | dispatchable | mechanical | shipped | `just test devpro`, `just check-wheel` |

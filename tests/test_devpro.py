@@ -17,9 +17,11 @@ import dataclasses
 import importlib.util
 import inspect
 import json
+import os
 import re
 import shutil
 import subprocess
+import sys
 import sysconfig
 import types
 from collections import Counter
@@ -1459,9 +1461,13 @@ def test_definitions_and_text_reach_nothing_outside_their_arguments() -> None:
 
 
 def test_every_import_is_at_module_level() -> None:
+    # The entry point is the one exception: its dispatch is lazy, importing each verb's module at dispatch
+    # time so no verb pays for another's imports, so its function-level imports are the deliberate
+    # exception and are not walked here. The house rule holds for every other module of the package.
     offenders = [
         f"{path}:{node.lineno}"
         for path, tree in _modules()
+        if path != "devpro/cli.py"
         for node in ast.walk(tree)
         if isinstance(node, (ast.Import, ast.ImportFrom)) and node not in tree.body
     ]
@@ -1506,6 +1512,22 @@ def test_every_import_is_stdlib_or_the_package() -> None:
         if name.split(".")[0] != "devpro" and not _is_stdlib(name.split(".")[0])
     ]
     assert offenders == []
+
+
+def test_importing_the_entry_point_imports_no_verb_module() -> None:
+    """The dispatch is lazy: importing the entry point — building the parser and choosing no verb — imports
+    no verb's module, so `--help` and every verb pay for no other's imports. Before the change the parser
+    build imported every verb's module, so this same import showed `devpro.install` in `sys.modules`."""
+    probe = (
+        "import sys\n"
+        "import devpro.cli\n"
+        "banned = ('devpro.install', 'devpro.render', 'devpro.agents_file', 'devpro.dicing')\n"
+        "present = [name for name in banned if name in sys.modules]\n"
+        "assert not present, present\n"
+    )
+    env = {**os.environ, "PYTHONPATH": str(_PACKAGE.parent)}
+    result = subprocess.run([sys.executable, "-c", probe], env=env, capture_output=True, text=True)
+    assert result.returncode == 0, f"{result.stdout}\n{result.stderr}"
 
 
 def test_the_definition_modules_and_the_text_module_hold_their_structure() -> None:
