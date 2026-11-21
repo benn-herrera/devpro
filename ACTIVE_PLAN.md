@@ -2,8 +2,8 @@
 
 The plan executes stage 1 of the accepted design `ACTIVE_DESIGN.md` (17 entries; final form,
 user-accepted). The design's one stage-marker line — `(Stages 2-4: the five pairs below wait for
-their stages' plans; the four pairs above are stage 1's.)` at `ACTIVE_DESIGN.md:228` — defers the
-five pairs whose `As it stands:` lines are 230, 243, 255, 272 and 283, all in the *Shipped files*
+their stages' plans; the four pairs above are stage 1's.)` at `ACTIVE_DESIGN.md:229` — defers the
+five pairs whose `As it stands:` lines are 231, 244, 256, 273 and 284, all in the *Shipped files*
 entry. Every other pair is stage 1's: 35 of the design's 40 pairs (`grep -c '\*\*As it stands:\*\*'
 ACTIVE_DESIGN.md` → 40). This plan applies those 35 and carries the work they describe; the five
 deferred pairs stay pending for stages 2–4.
@@ -88,10 +88,14 @@ reachable from `SPEC/entry-point.md` (check-tree), and every relative link and a
 `command ls docdicer/docdicer/kanban/assets` → `board.css board.js index.html`;
 `docdicer/pyproject.toml` → `requires-python = ">=3.9"`, `dependencies = []`, package data
 `"docdicer.kanban" = ["assets/*"]`. devpro is `dependencies = []` too (`pyproject.toml:14`) — no
-third-party dependency enters. `git grep -c docdicer -- devpro/ tests/` names the referencing files:
-`devpro/install.py` (9), `tests/test_devpro_install.py` (34), `tests/test_docdicer_tools.py` (24),
-`tests/test_cross_references.py` (3), `tests/test_plugins.py` (1) — none import docdicer; P6
-updates them.
+third-party dependency enters. `git grep -c docdicer -- devpro/ tests/` → eleven files:
+`devpro/definitions/skills/development.py` 9, `devpro/definitions/skills/docdicer.py` 23,
+`devpro/definitions/skills/guide.py` 6, `devpro/docdicer-tools/docdicer` 7,
+`devpro/docdicer-tools/runner-snippets/docdicer.just` 24,
+`devpro/docdicer-tools/runner-snippets/docdicer.mk` 24, `devpro/install.py` 9,
+`tests/test_cross_references.py` 3, `tests/test_devpro_install.py` 34,
+`tests/test_docdicer_tools.py` 24, `tests/test_plugins.py` 1. None import docdicer: the three
+definitions files are P4's, the `docdicer-tools` tree P6's; P6 updates the remaining counts.
 
 **Decisions this plan makes.**
 
@@ -112,14 +116,15 @@ updates them.
 - `pyproject.toml` `[tool.setuptools.package-data]` gains the pattern `dicing/kanban/assets/**/*`
   (the `.*`-pattern need does not arise: no dotfile ships). `[tool.setuptools.packages.find]`
   already includes `devpro.*`.
-- Tests: the sixteen test modules of `docdicer/docdicer/test/` join `tests/dicing/` under the same
+- Tests: the fifteen test modules of `docdicer/docdicer/test/` join `tests/dicing/` under the same
   names, with `docdicer.test.data` → `tests/dicing/data/` and the `temp/` scratch recreated by the
   tests under pytest's `tmp_path` where they used it; imports rewritten `docdicer.` →
   `devpro.dicing.`. The devpro test surface runs `tests/` (`justfile` TEST_SURFACE_MAP:
   `tests/ devpro`), so they join it under that name.
 
-**Tests.** The moved tests pin the absorbed behavior wholesale. One new test: `devpro --help` lists
-the nine verbs. Its defect, by the test-precondition clause (`clauses.TEST_PRECONDITION`,
+**Tests.** The moved tests pin the absorbed behavior wholesale. One new test,
+`tests/dicing/test_cli_surface.py`: `devpro --help` lists the nine verbs. Its defect, by the
+test-precondition clause (`clauses.TEST_PRECONDITION`,
 `devpro/clauses.py:170`): the nine verbs are the dicing surface's command-line offering; before the
 change `devpro dice-doc` is refused by argparse (`invalid choice: 'dice-doc'`, exit 2), so the
 offered surface does not include them. Failing run before the change:
@@ -131,7 +136,7 @@ git tracks under `devpro/`, so the asset files must be in the pattern or it fail
 ## P3 — lazy dispatch at the entry point
 
 **Scope.** `devpro/cli.py` only. The design's *Packaging* entry states the outcome
-(`ACTIVE_DESIGN.md:504–506`): "The dispatch is lazy: the entry point imports only the verb invoked,
+(`ACTIVE_DESIGN.md:505–507`): "The dispatch is lazy: the entry point imports only the verb invoked,
 and every verb imports no third-party dependency (Package and Command), so no verb pays for
 another verb's imports."
 
@@ -155,7 +160,7 @@ of another's import cost. Failing run before the change: the same import shows `
 
 **Scope.** Edited: `devpro/definitions/skills/docdicer.py`, `devpro/definitions/skills/guide.py`,
 `devpro/definitions/skills/development.py` (one sentence), `tests/test_cross_references.py` (one
-constant). This carries the code side of the *Subsystem Map* entry (`ACTIVE_DESIGN.md:703–765`).
+constant). This carries the code side of the *Subsystem Map* entry (`ACTIVE_DESIGN.md:704–766`).
 
 **Facts.** `devpro/definitions/skills/docdicer.py:45–67` is the body's *The script* section, naming
 `tools/docdicer`, the recipes `docdicer-check-plan` … `docdicer-kanban` and the on-demand install.
@@ -180,9 +185,12 @@ definition body may spell a program name outside a reference hole.
 3. `development.py`: the delta-application sentence names no runner recipe — the application is
    verified by `check-design --deltas-applied`, the recipe it named retired with the docdicer
    tools package.
-4. `tests/test_cross_references.py`: `_PROGRAM_NAMES` becomes `{"kbase"}`. No rendered body spells
-   `docdicer` as a bare program after 1–3 (`git grep -n '\`docdicer\`' devpro/definitions/`
-   shows only the ` skill` forms and `tools/docdicer`, which the reference rule excludes).
+4. `tests/test_cross_references.py`: `_PROGRAM_NAMES` becomes `{"kbase"}`. The pinning state
+   already holds before 1–3 and holds after: `git grep -n '`docdicer`' -- devpro/definitions/`
+   exits 1 with no matches — no definition body spells `docdicer` as a bare program in backticks
+   at all (the ` skill` forms the rule admits and the `tools/docdicer` paths are not backtick-
+   delimited bare words) — so this item narrows a set whose check passes before and after, and no
+   rendered output changes from it.
 
 **Pinning.** `tests/test_kbase_surface.py` checks the kbase names only — untouched.
 `tests/test_plugins.py:53` parametrizes the refusal cases over `docdicer` as a definition name —
@@ -193,16 +201,20 @@ single `retake-reference` covers both.
 
 ## P5 — the justfile runs the absorbed verbs
 
-**Scope.** `justfile` only, plus the retirement of `devtools/tests/test_docdicer_repo.py` with the
-recipe it reads. Carries the code side of the *Recipes* entry (`ACTIVE_DESIGN.md:511–538`).
+**Scope.** `justfile` only, plus the retirement of `devtools/scripts/docdicer-repo.sh` and
+`devtools/tests/test_docdicer_repo.py`. Carries the code side of the *Recipes* entry
+(`ACTIVE_DESIGN.md:512–539`).
 
 **Facts.** `justfile:353` — `import? ".opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.just"`.
 Recipes routing through the clone: `docdicer-repo` (317), `dev-dd` (321), `dev-kanban` (325),
 `dev-check-plan` (333), `dev-check-design` (337), `dev-check-design-deltas-applied` (341),
 `dev-check-roadmap` (345), `dev-check-links` (349). Recipes routing through `just docdicer` (the
-installed snippet): `dice-doc` (163), `dice-docs` (168), `undice` (174), `check-links` (182). The
-toolchain comment at 513–523 and the delta-check comment at 283–286 name the hosted tool and the
-pin. `devtools/tests/test_docdicer_repo.py` reads the `docdicer-repo` recipe body and
+installed snippet): `dice-doc` (162), `dice-docs` (168), `undice` (174), `check-links` (181). The
+only justfile comment block naming the hosted tool and the pin is the delta-check comment at
+283–286; the justfile carries no toolchain comment (`grep -n '1\.33\|1\.27\|toolchain' justfile`
+→ no hits) — the toolchain-floor statement the *Recipes* pair changes lives in
+`PROJECT_DOCS/ARCHITECTURE/recipes.md` and lands with its pair (P8).
+`devtools/tests/test_docdicer_repo.py` reads the `docdicer-repo` recipe body and
 `devpro/docdicer-tools/docdicer` — both retire here.
 
 **Work.**
@@ -213,11 +225,15 @@ pin. `devtools/tests/test_docdicer_repo.py` reads the `docdicer-repo` recipe bod
 2. `dev-check-plan/design/design-deltas-applied/roadmap/links` run the absorbed verbs the same
    way, with no file argument where the old recipe gave none (`check-plan` reads the active file
    under the project root), and `dev-check-design-deltas-applied` passing `--deltas-applied`.
-3. Retire: the `docdicer-repo`, `dev-dd`, `dev-kanban` recipes; the `import?` line; the two comment
-   blocks at 283–286 and 513–523, rewritten to the entry's `Becomes` text — the justfile floor is
-   `just` 1.27.0 for the `[doc]` attribute, 1.33.0 where the kbase component ships.
-4. Delete `devtools/tests/test_docdicer_repo.py` — its subject, the `docdicer-repo` recipe and the
-   pin it reads, is gone with this package.
+3. Retire: the `docdicer-repo`, `dev-dd`, `dev-kanban` recipes; the `import?` line; the delta-check
+   comment block at 283–286, rewritten to the entry's statement — the design's delta application
+   is verified by `check-design --deltas-applied` over the absorbed verb. There is no second
+   justfile comment block to rewrite (see Facts): the toolchain floor is the *Recipes* pair's own
+   text, landing in `PROJECT_DOCS/ARCHITECTURE/recipes.md` at P8.
+4. Delete `devtools/scripts/docdicer-repo.sh` and `devtools/tests/test_docdicer_repo.py` — the
+   script's last references are the recipes this package retires (`git grep -n 'docdicer-repo' --
+   justfile devtools/` → `justfile:318` and the test, both gone with this package), and the
+   test's subject — the recipe and the pin it reads — is gone with them.
 
 **Named breakage the plan accounts for.** `just dev-check-design-deltas-applied` reports the
 design's pairs not yet applied — 33 miss until P8; the five stage-2–4 pairs report pending
@@ -237,18 +253,28 @@ comment), `tests/test_devpro_install.py`. Deleted: `devpro/docdicer-tools/**`,
 `:110–115` — the `docdicer-tools` row with `SnippetSet("docdicer", "runner-snippets", …)`;
 `pyproject.toml:30` — the patterns `docdicer-tools/**/*` and `docdicer-tools/**/.*`;
 `devtools/scripts/render.sh:36` — the comment naming the docdicer include line in slot projects.
-`git grep -c docdicer -- devpro/ tests/ devtools/` after P5: `devpro/install.py` 9,
-`tests/test_devpro_install.py` 34, `tests/test_docdicer_tools.py` 24 (its whole subject),
-`tests/test_cross_references.py` 3, `tests/test_plugins.py` 1, `devpro/definitions/**` as P4
-left them. `devtools/scripts/docdicer-repo.sh` and its test are gone at P5.
+`git grep -c docdicer -- devpro/ tests/ devtools/` → fourteen files (the eleven of P2's Facts plus
+`devtools/scripts/docdicer-repo.sh` 8, `devtools/scripts/render.sh` 1,
+`devtools/tests/test_docdicer_repo.py` 11). At P6's start, P5 has removed the script, its test and
+the justfile references, and P4 has rewritten the three definitions files (their counts drop); run
+the same command before editing and reconcile what it shows against this.
 
 **Work.**
 
 1. `install.py`: delete `DOCDICER_TOOLS_PACKAGE`, the `docdicer-tools` `ShippedPackage` row and
    the `docdicer` `SnippetSet` — the table holds the development-tools and kb-tools rows. The
-   stale-list walk, banner stamping (`STAMPED_NAMES` drops `docdicer`), and destination pruning
-   read the table, so the retirement follows from the row: a project install prunes the old
-   `skills/docdicer/tools/` destination as stale, keeping a `.venv` directly under it.
+   stale-list walk and banner stamping (`STAMPED_NAMES` drops `docdicer`) read the table.
+   **Verified code truth, and what the retirement leaves:** the old `skills/docdicer/tools/`
+   destination is *not* pruned by a later install, and neither half of that is a removal with a
+   `.venv` carve-out. `prune`'s stale test reads `_is_ours` (`devpro/install.py:319–323`), which
+   reads the *generated* banner, never the *installed* one a copied package file carries
+   (`_is_ours` at `:245–254`; the docstring at `:310–313` states it — a copied package file "is
+   untouched here rather than pruned") — and a `.venv` is outside `_shipped` by `EXCLUDED_DIRS`
+   (`:142`). So no row replaces the old destination, and nothing prunes it: every install after
+   this one leaves `skills/docdicer/tools/` and its `.venv` in place, inert once P7 has removed
+   the include line that routed to it. The design states no removal of it, and none is added
+   here; the lingering copy is the operator's to delete. What does clear it: the reference slots
+   (item 7 — `_render-slot.sh` removes and rebuilds each slot) and P7's include-line cleanup.
 2. Delete `devpro/docdicer-tools/` and `tests/test_docdicer_tools.py`.
 3. `pyproject.toml`: drop the two `docdicer-tools` patterns.
 4. `tests/test_devpro_install.py`: update the tests pinning the row — the include-line fixtures
@@ -266,7 +292,7 @@ left them. `devtools/scripts/docdicer-repo.sh` and its test are gone at P5.
 
 **Scope.** `devpro/runner_file.py`, `devpro/install.py` (the call site's retired-set argument),
 tests in `tests/test_devpro_install.py`. Carries the code side of the *Plugins* entry's second
-pair (`ACTIVE_DESIGN.md:347–351`), whose mechanism the design states at `ACTIVE_DESIGN.md:604–608`
+pair (`ACTIVE_DESIGN.md:348–352`), whose mechanism the design states at `ACTIVE_DESIGN.md:605–609`
 — recognized by the same shape rule that recognizes its own lines (`_snippet_pattern`).
 
 **Facts.** `devpro/runner_file.py:62–70` — `_snippet_pattern` recognizes a line by the shape of the
@@ -358,7 +384,9 @@ absorbed package, the entry point, the runner file), `devpro-architect` (structu
 review in `.devpro-temp/`; the session synthesizes `ACTIVE_PLAN_REVIEW.md` from them,
 de-duplicating, without waiting between the last report and the write-up.
 
-**Done.** `just dev-check-links` over the review document's links, in the commit that adds it.
+**Done.** `just dev-check-links`, run once, at the end. The target checks the tracked documents —
+`PROJECT_DOCS` and the top-level `*.md` files. The review document lives in scratch and is not in
+its path; the done-line claims no coverage of it.
 
 ## PB — post-plan burndown
 
