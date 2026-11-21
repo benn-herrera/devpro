@@ -310,6 +310,10 @@ dev-profiler:
 dev-kanban:
   @just dev-devpro kanban
 
+[doc("serve the dashboard — the session records and the board — from the checkout's devpro")]
+dev-dashboard:
+    @just dev-devpro dashboard
+
 [doc("run ACTIVE_PLAN format compliance check")]
 dev-check-plan:
   @just dev-devpro check-plan

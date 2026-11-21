@@ -86,11 +86,15 @@ def _unreadable(e: OSError, reading: str) -> str:
 class KanbanServer(ThreadingHTTPServer):
     """The board of the project at root, served on HOST at an ephemeral port. Reads the board on
     construction, raising OSError where a file it reads cannot be read and CannotListen where the
-    port cannot be bound; `start` begins polling the files every POLL_SECONDS, until server_close."""
+    port cannot be bound; `start` begins polling the files every POLL_SECONDS, until server_close.
+
+    Built with `after`, it is that server's board panel instead: it binds no socket of its own, its
+    answers are written onto `after`'s, and `server_close` only ends its polling. Its own
+    `POST /api/stop` then stops `after`, which is how the panel's stop ends the server serving it."""
 
     daemon_threads = True
 
-    def __init__(self, root: str, *, stderr: TextIO) -> None:
+    def __init__(self, root: str, *, stderr: TextIO, after: Optional[ThreadingHTTPServer] = None) -> None:
         self.root = root
         self._stderr = stderr
         self._lock = threading.Condition()
@@ -100,10 +104,22 @@ class KanbanServer(ThreadingHTTPServer):
         self._board = read_board(root)
         self._version = 1
         self._reported: Optional[str] = None  # the unreadable file last named on stderr
-        try:
-            super().__init__((HOST, 0), _Handler)
-        except OSError as e:
-            raise CannotListen(e.strerror or str(e)) from e
+        self.panel_of = after
+        if after is None:
+            try:
+                super().__init__((HOST, 0), _Handler)
+            except OSError as e:
+                raise CannotListen(e.strerror or str(e)) from e
+            return
+        # What `shutdown` waits on and `server_close` sets, and the lock it takes: `__init__` binds
+        # both through `BaseServer.__init__`, which a panel does not run.
+        self.__is_shut_down = threading.Event()
+        self.__shutdown_request = False
+        self._BaseServer__lock = threading.Lock()
+
+    def panel_handler(self, request: Any, client_address: Any) -> BaseHTTPRequestHandler:
+        """A handler over a request another server has read, the board's own `do_` answering it."""
+        return _Handler(request, client_address, self, read_request=False)
 
     def start(self) -> None:
         """Begin polling the watched files. Called once the server is serving, inside the try whose
@@ -112,7 +128,16 @@ class KanbanServer(ThreadingHTTPServer):
 
     @property
     def url(self) -> str:
-        return f"http://{HOST}:{self.server_address[1]}/"
+        """The board's URL at the server serving it: its own address, or the panel's server's."""
+        server = self if self.panel_of is None else self.panel_of
+        return f"http://{HOST}:{server.server_address[1]}/"
+
+    def shutdown(self) -> None:
+        """Stop the server this board's answers are written by: its own loop, or the panel's server's."""
+        if self.panel_of is None:
+            super().shutdown()
+        else:
+            self.panel_of.shutdown()
 
     def server_close(self) -> None:
         self._stop.set()
@@ -120,7 +145,16 @@ class KanbanServer(ThreadingHTTPServer):
             self._poller.join()
         with self._lock:
             self._lock.notify_all()
-        super().server_close()
+        if self.panel_of is None:
+            super().server_close()
+            return
+        # A panel binds no socket and runs no loop of its own: there is nothing here to close. It
+        # releases a `shutdown` a caller may have waiting on it, as closing a serving server does, so
+        # that `shutdown` and `server_close` end in either order. The attribute is `BaseServer`'s own
+        # name, written unqualified here it would mangle to this class's; a panel reaches this line
+        # without `__init__` having made one, so it is made here.
+        self._BaseServer__is_shut_down = threading.Event()
+        self._BaseServer__is_shut_down.set()
 
     def handle_error(self, request: Any, client_address: Any) -> None:
         """A client gone mid-request (a page reloaded during a long poll) is not an error; anything
@@ -235,6 +269,18 @@ def _document(root: str, url_path: str) -> Optional[tuple[bytes, str]]:
 class _Handler(BaseHTTPRequestHandler):
     server: KanbanServer
 
+    def __init__(self, *args: Any, read_request: bool = True, **kwargs: Any) -> None:
+        """A handler over a request another server has already read when read_request is false: its
+        `do_` answers onto that server's connection, and this one reads no request line again."""
+        self._read_request = read_request
+        super().__init__(*args, **kwargs)
+
+    def handle_one_request(self) -> None:
+        if not self._read_request:
+            self.close_connection = True
+            return
+        super().handle_one_request()
+
     _ACTIONS = {
         "/api/to-design": KanbanServer.to_design,
         "/api/to-roadmap": KanbanServer.to_roadmap,
@@ -295,7 +341,7 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _local_host(self) -> bool:
         """Refuse a request naming another host, as a page served elsewhere would (DNS rebinding)."""
-        port = self.server.server_address[1]
+        port = self.server.server_address[1] if self.server.panel_of is None else self.server.panel_of.server_address[1]
         if self.headers.get("Host") in (f"{HOST}:{port}", f"localhost:{port}"):
             return True
         self._send_json(403, {"error": "requests must name the host the board is served on"})

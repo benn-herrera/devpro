@@ -45,6 +45,9 @@ DICING_VERBS = (
 PROFILER_VERB = "profiler"
 """The profiler verb, added by `devpro.profiler.cli.add_verbs` and dispatched to its `run`."""
 
+DASHBOARD_VERB = "dashboard"
+"""The dashboard verb, added by `devpro.dashboard.cli.add_verbs` and dispatched to its `run`."""
+
 
 def _add_tuning_flags(verb: argparse.ArgumentParser, *, harness_default: str | None, harness_help: str) -> None:
     verb.add_argument("--harness", default=harness_default, metavar="NAME", help=harness_help)
@@ -78,11 +81,13 @@ def build_parser() -> argparse.ArgumentParser:
     """One verb, required: `render --out DIR` and `install TARGET [--subdir DIR] [--verbose] [--dry-run]`,
     each with the tuning flags; `install-agents-file DIR [--harness NAME] [--dry-run]`;
     `render-agents-file HARNESS OUT`; the nine dicing verbs `devpro.dicing.cli.add_verbs` adds, the
-    `profiler` verb `devpro.profiler.cli.add_verbs` adds; and one maintainer helper hidden from `--help`:
+    `profiler` verb `devpro.profiler.cli.add_verbs` adds, the `dashboard` verb
+    `devpro.dashboard.cli.add_verbs` adds; and one maintainer helper hidden from `--help`:
     `harness NAME KEY`.
-    Each verb but `harness`, `install-agents-file`, the dicing verbs and `profiler` takes
+    Each verb but `harness`, `install-agents-file`, the dicing verbs, `profiler` and `dashboard` takes
     `[--components=CSV]`, turning no optional component on by default. The top-level `--version` prints the bare version. allow_abbrev=False on every parser.
     """
+    from devpro.dashboard.cli import add_verbs as add_dashboard_verbs
     from devpro.dicing.cli import add_verbs
     from devpro.profiler.cli import add_verbs as add_profiler_verbs
 
@@ -137,6 +142,7 @@ def build_parser() -> argparse.ArgumentParser:
     query.add_argument("key", choices=[key(part) for part in HarnessText], metavar="KEY")
     add_verbs(verbs)
     add_profiler_verbs(verbs)
+    add_dashboard_verbs(verbs)
     hidden = {"harness"}
     verbs.metavar = "{" + ",".join(name for name in verbs.choices if name not in hidden) + "}"
     return parser
@@ -218,6 +224,10 @@ def _run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> None:
         text = render_agents_file(harness, selection(args.components or ""), scope=scope_name(harness, args.out.parent))
         args.out.write_text(text, encoding="utf-8")
         print(f"wrote {args.out}")
+    elif args.verb == DASHBOARD_VERB:
+        from devpro.dashboard.cli import run as run_dashboard
+
+        sys.exit(run_dashboard(args))
     elif args.verb in DICING_VERBS:
         from devpro.dicing.cli import run as run_dicing
 

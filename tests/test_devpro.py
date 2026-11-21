@@ -1507,7 +1507,8 @@ def test_every_import_is_at_module_level() -> None:
     # The absorbed dicing verbs' entry point carries the same exception, for the same reason: its `run`
     # imports each verb's implementation where it dispatches that verb. The profiler's entry point is
     # the third: its verb is one remainder the dispatch resolves, and its `run` imports the subcommands'
-    # modules so the `devpro --help` build pays for none of them.
+    # modules so the `devpro --help` build pays for none of them. The dashboard's entry point is the
+    # fourth, for the same reason: its `run` imports the server where it dispatches.
     # The profiler's hook wiring is the one other module, and the same reason one level down: the
     # hook-run capture imports it, so the renderer's imports live in `show_skill_text`, the function that
     # renders the skill a hook writes, rather than at module scope, and the renderer never reaches the
@@ -1516,7 +1517,7 @@ def test_every_import_is_at_module_level() -> None:
     offenders = [
         f"{path}:{node.lineno}"
         for path, tree in _modules()
-        if path not in ("devpro/cli.py", "devpro/dicing/cli.py", "devpro/profiler/cli.py")
+        if path not in ("devpro/cli.py", "devpro/dicing/cli.py", "devpro/profiler/cli.py", "devpro/dashboard/cli.py")
         for node in ast.walk(tree)
         if isinstance(node, (ast.Import, ast.ImportFrom))
         and node not in tree.body

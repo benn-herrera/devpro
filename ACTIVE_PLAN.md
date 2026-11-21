@@ -64,7 +64,7 @@ slotted into this plan.
 | Package | State | Rating | Lifetime | Work |
 | --- | --- | --- | --- | --- |
 | | drafted | | | Kickoff: the stage-3 plan drafted from the design; the dashboard pair and frame/legend work left pending for the UX outcome |
-| P1 | in progress: built; the exemption-tuple fix and the done-line run (`just test devpro`, `just lint`) remain | expert | shipped | the dashboard verb: one loopback server, the traces panel and the board panel, the minimal frame |
+| P1 | landed | expert | shipped | the dashboard verb: one loopback server, the traces panel and the board panel, the minimal frame |
 | P2 | drafted: the amendment's entries are landed; the kanban.md alignment entry remains before it is dispatchable | expert | shipped | the one front end: the old serving verbs retire, the record and the snippets' routing move with them |
 | PR | dispatchable | expert | shipped | Post-plan review |
 | PB | dispatchable | expert | shipped | Post-plan burndown |
