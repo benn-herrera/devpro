@@ -25,7 +25,7 @@ cited design entries, not the whole design.
 | P6 | landed | mechanical | shipped | `just test devpro`, `just check-wheel` |
 | P7 | landed | expert | shipped | `just test devpro` |
 | P8 | landed | expert | shipped | `just dev-check-links`, `just dev-check-design-deltas-applied` |
-| PR | in progress | expert | shipped | `just dev-check-links` on the review document |
+| PR | landed | expert | shipped | `just dev-check-links` on the review document |
 | PB | dispatchable | expert | shipped | review document's findings have packages |
 
 Sequencing is P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8. The order matters in three places: P5
