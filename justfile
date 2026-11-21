@@ -48,16 +48,6 @@ install target *args:
 install-agents-file dir *args:
     @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m "{{GEN}}" install-agents-file "$@"
 
-##
-##
-## mmmm                        mmmmm                  "
-## #   "m  mmm   m   m         #   "#  mmm    mmm   mmm    mmmm    mmm    mmm
-## #    # #"  #  "m m"         #mmmm" #"  #  #"  "    #    #" "#  #"  #  #   "
-## #    # #""""   #m#          #   "m #""""  #        #    #   #  #""""   """m
-## #mmm"  "#mm"    #           #    " "#mm"  "#mm"  mm#mm  ##m#"  "#mm"  "mmm"
-##                                                          #
-##                                                          "
-
 # venv layout differs by OS: POSIX puts executables in .venv/bin, Windows in
 # .venv/Scripts with .exe suffixes. Resolved here via just's os() builtin.
 
