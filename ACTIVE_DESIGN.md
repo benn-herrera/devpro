@@ -241,7 +241,7 @@ skill's directory is neither its skill entry file nor one of its supporting file
 scripts package included.
 ```
 
-(Stages 2-4: the five pairs below wait for their stages' plans; the four pairs above are stage 1's.)
+(Stages 2-4: the seven pairs below wait for their stages' plans; the four pairs above are stage 1's.)
 
 **As it stands:**
 ```
@@ -298,20 +298,40 @@ resources. A project opencode install also ships the profiler's launcher and pag
 
 **As it stands:**
 ```
-registers no hook entries; each recorded call appends one line to the project's
-`.devpro-temp/opencode-profiler/<session-id>.jsonl`, a capture that fails raises nothing out of the
 hook, and a mage install ships none of them.
 ```
 **Becomes:**
 ```
 registers no hook entries; each recorded call appends one line to the project's
-`.devpro-temp/opencode-profiler/<session-id>.jsonl`, a capture that fails raises nothing out of the
+`.devpro-temp/.profiler-opencode/<session-id>.jsonl`, a capture that fails raises nothing out of the
 hook, and a mage install ships none of them. A page attributes a child session to the session that
 dispatched it: the capture extracts the child's session id into the parent call's record, the render
 groups children under their dispatching session, links each Agent row to the child's page and heads
 a child page with its dispatcher, and the stores stay flat — the child never knows its parent at
 write time, the hierarchy being metadata the parent side builds, and claude holding no child
 session records at all.
+```
+
+**As it stands:**
+```
+`SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each appends
+one line to the project's `.devpro-temp/claude-profiler/<session-id>.jsonl`, and a capture that
+```
+**Becomes:**
+```
+`SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each appends
+one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl`, and a capture that
+```
+
+**As it stands:**
+```
+registers no hook entries; each recorded call appends one line to the project's
+`.devpro-temp/opencode-profiler/<session-id>.jsonl`, a capture that fails raises nothing out of the
+```
+**Becomes:**
+```
+registers no hook entries; each recorded call appends one line to the project's
+`.devpro-temp/.profiler-opencode/<session-id>.jsonl`, a capture that fails raises nothing out of the
 ```
 
 **As it stands:**
@@ -1192,4 +1212,66 @@ on (none in the mage slot, a harness-directory plugin), and it
   section's delta-application sentence names no runner recipe: the application is verified by
   `check-design --deltas-applied`, the runner recipe it named retired with the docdicer tools
   package (Recipes). The sentence
+```
+
+### [Harness profiler](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md) — the profiler stores rename to dot directories
+
+The user renamed the profiler's stores: `.devpro-temp/claude-profiler/` and
+`.devpro-temp/opencode-profiler/` become `.devpro-temp/.profiler-claude/` and
+`.devpro-temp/.profiler-opencode/` — dot-directory naming, so all the profiler's stores group
+together and sort to the top of the scratch tree. The rename is naming, not hierarchy: the
+attribution entry's flat-store statement stands untouched. Everything that names a store moves with
+it — the captures' write paths, the render side's read pattern, the skill's locate text — and the
+store path the attribution pair quotes takes the new spelling with the rename, its statement
+unaltered. This entry is stage-2 surface work — the next plan's content — and stays pending until
+that plan lands it.
+
+The code side moves with the pairs. `hp.py`'s `TRACE_DIR` default (`Path(".devpro-temp") /
+"claude-profiler"`) and its `TRACE_GLOB` (`"*-profiler"`) take the new names: the claude capture
+writes `.profiler-claude`, and the tree and page read every `.profiler-*` directory under
+`.devpro-temp/`. `profiler.ts`'s `TRACE_DIR` (`join(".devpro-temp", "opencode-profiler")`) writes
+`.profiler-opencode`. The `show-profile` skill's locate paragraph, which names the two store
+directories, names the new ones. `tests/test_devpro_profiler.py` pins the old paths — the store
+fixtures it writes (`claude-profiler`, `opencode-profiler`, `broken-profiler`) and the trace paths
+it asserts — and updating those pins is the stage-2 plan's work.
+
+**The migration of existing stores.** The boundary question stage 2 must settle: the existing
+`.devpro-temp/*-profiler/` trees hold real traces — the live claude and opencode stores. The
+stage-2 plan chooses between renaming the existing stores in place and reading both patterns
+during a migration window, the old stores read-only while new captures write the new names. The
+no-half-absorbed-state rule applies to stores too: at the choice's end one store name per harness
+stands and every trace the old names held is readable under the new one — never a state where the
+capture writes one name and traces sit under the other.
+
+**As it stands:**
+```
+module, not a new mechanism, and no entry is gated on the install-time probe. A capture appends one line to the project's `.devpro-temp/claude-profiler/<session-id>.jsonl` — one of the per-harness stores under `.devpro-temp/`, every `*-profiler` directory of which `hp.py`'s `tree` renders — the project's scratch
+```
+**Becomes:**
+```
+module, not a new mechanism, and no entry is gated on the install-time probe. A capture appends one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl` — one of the per-harness stores under `.devpro-temp/`, every `.profiler-*` directory of which `hp.py`'s `tree` renders — the project's scratch
+```
+
+**As it stands:**
+```
+nothing from the network, so the records it renders never leave the machine. Its main page is the
+index of record files: every store the `*-profiler` glob finds,
+```
+**Becomes:**
+```
+nothing from the network, so the records it renders never leave the machine. Its main page is the
+index of record files: every store the `.profiler-*` glob finds,
+```
+
+**As it stands:**
+```
+a lifecycle record the tree does not draw — writing them to its own
+`.devpro-temp/opencode-profiler/<session-id>.jsonl` store, `harness` `"opencode"`, which `hp.py`'s
+tree and page render beside the claude sessions', each record read from its own `*-profiler` store.
+```
+**Becomes:**
+```
+a lifecycle record the tree does not draw — writing them to its own
+`.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which `hp.py`'s
+tree and page render beside the claude sessions', each record read from its own `.profiler-*` store.
 ```
