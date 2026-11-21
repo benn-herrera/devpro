@@ -48,19 +48,25 @@ host (Firefox.app in /Applications), so the checks run and skip nowhere else.
   by `test_the_served_index_states_an_unreadable_store` (tests/test_devpro_profiler.py:586).
 - A tool-call-only session's page shows the calls, never an empty tree under a calls header
   (harness-profiler.md:57-58).
-- The index lists this project's sessions under a foreign `CLAUDE_PROJECT_DIR`
-  (harness-profiler.md:745's rule; pinned by `test_the_served_index_lists_its_own_project_under_a_foreign_project_dir`,
-  tests/test_devpro_profiler.py:567).
+- The index lists this project's sessions under a foreign `CLAUDE_PROJECT_DIR`: the rule is stated
+  where it lives, the pinning test's own docstring (tests/test_devpro_profiler.py:567-570) —
+  "`CLAUDE_PROJECT_DIR` at another project, as a claude shell sets it, while `serve` runs in this
+  one: the index lists this project's sessions; an index that follows the variable serves the other
+  project's stores, which for a terminal-launched server is the wrong repository" — pinned by
+  `test_the_served_index_lists_its_own_project_under_a_foreign_project_dir` (:567).
+- A tool-call-only session's page shows the calls (bullet 3) has no pinning test today —
+  `git grep -n "empty tree" tests/test_devpro_profiler.py` returns nothing — so P1 adds one, named
+  under *Visual checks and the calls-only pin* below.
 
 ## Status
 
 | Package | State | Rating | Lifetime | Work |
 | --- | --- | --- | --- | --- |
 | | drafted | | | Kickoff: the stage-3 plan drafted from the design; the dashboard pair and frame/legend work left pending for the UX outcome |
-| P1 | drafted | expert | shipped | the dashboard verb: one loopback server, the traces panel and the board panel, the minimal frame |
-| P2 | drafted | expert | shipped | the one front end: the old serving verbs retire, the record and the snippets' routing move with them |
-| PR | drafted | expert | shipped | Post-plan review |
-| PB | drafted | expert | shipped | Post-plan burndown |
+| P1 | dispatchable | expert | shipped | the dashboard verb: one loopback server, the traces panel and the board panel, the minimal frame |
+| P2 | drafted: the design's verb and retirement entries land by your approval first | expert | shipped | the one front end: the old serving verbs retire, the record and the snippets' routing move with them |
+| PR | dispatchable | expert | shipped | Post-plan review |
+| PB | dispatchable | expert | shipped | Post-plan burndown |
 
 ## P1 — the dashboard verb: one server, two panels, the minimal frame
 
@@ -78,48 +84,74 @@ nothing: there is no incumbent dashboard to extend; this package is new.
 **What it serves.** The traces panel: the profiler's index and `/page/<session-id>` pages, from the
 `.profiler-*` stores, through `pages.py`'s `read_sessions`/`index_html`/`page_of` as they stand —
 the settled route plumbing above is P1's contract, and the tests that pin it are P1's to keep
-passing (the four tests named above; the serve tests drive the dashboard after P2 — until then the
-old `serve` still runs, unchanged). The board panel: the existing kanban rendering —
-`devpro/dicing/kanban/assets/index.html`, `board.js`, `board.css` served as the board page's files,
-the `/api/board` payload with its long poll, and the moves (`/api/to-design`, `/api/to-roadmap`,
-`/api/stop`) — the rendering and API the existing tests pin
-(`tests/dicing/test_server.py`, `serve` fixture: `test_page_and_its_files_are_served` :138,
-`test_board_payload_is_the_model` :227, `test_a_card_moves_to_design_and_back` :340,
-`test_every_response_forbids_sniffing_and_the_pages_restrict_their_sources` :564).
+passing (the four bullets: the page-bytes test :610, the unreadable-store test :586, the
+calls-only test P1 adds, the foreign-project test :567). Until P2, the old `serve` still runs
+alongside, unchanged. The board panel is the kanban server's serve surface whole, behavior for
+behavior — so P2's retarget is a whole-surface move, never a re-implementation: the board page's
+files (`devpro/dicing/kanban/assets/index.html`, `board.js`, `board.css`), the `/api/board` payload
+with its long poll, the moves (`/api/to-design`, `/api/to-roadmap`, `/api/stop`), and the served
+documents — every `.md` file at the project root's top level, every `.md` file beneath the
+project's `PROJECT_DOCS/` and `ROADMAP_DESIGNS/` directories, and the active design's and active
+plan's files as the form reads them, each read-only as `text/markdown` at the URL path that is the
+file's path from the project root, an unreadable one answered 404 with the others still served, and
+no other file of the project (PROJECT_DOCS/SPEC/dicing/kanban.md:32-38, quoted in its essentials).
+The behaviors the existing tests pin: the page and its files
+(`test_page_and_its_files_are_served`, tests/dicing/test_server.py:138), the served documents and
+no other file (`test_a_served_file_is_served` :177, `test_no_other_file_is_served` :199,
+`test_an_unreadable_served_file_is_refused_alone` :213), the payload
+(`test_board_payload_is_the_model` :227), the moves (`test_a_card_moves_to_design_and_back` :340),
+the host and CSP guards (`:552`, `:564`).
 
-**The board page's paths are fixed by its rendering**: the page's assets are named relative
+**The board page's paths are fixed by its rendering, and P1 fixes its URL**: the board page is
+served at `/board/`, the trailing slash included, and its assets are named relative
 (`index.html:7` `<link rel="stylesheet" href="board.css">`, `index.html:22` `<script
-src="board.js"></script>`) and its API root-absolute (`board.js:419` `moveTicket("/api/to-design",
+src="board.js"></script>`) while its API is root-absolute (`board.js:419` `moveTicket("/api/to-design",
 …)`, `board.js:422` `/api/to-roadmap`, `board.js:492` `fetch("/api/board…")`, `board.js:524`
-`/api/stop`). The dashboard serves the API at exactly those root paths and the assets where the
-board page's own URL resolves them; the assets and `board.js` are edited by no package in this plan.
+`/api/stop`). The dashboard serves the API at exactly those root paths and the assets at
+`/board/board.css` and `/board/board.js`, where `/board/` resolves them. With the URL stated, the
+resolution rule is mechanical; the assets and `board.js` are edited by no package in this plan.
 
-**The minimal frame.** The dashboard's root is the existing traces index as it stands, plus one
-link line naming the board panel — the least the two-panel site can be. No outer frame, no legend,
-no inner-frame structure, no navigation beyond the link: every one of those is the later package's,
-in the design's amended text. The link line is the only frame commitment this plan makes, and the
-later work replaces it wholesale.
+**The minimal frame, stated to the byte.** The dashboard's root is the existing traces index as it
+stands, plus one link line: the dashboard's handler appends, to the index page's body, the literal
+line `<p><a href="/board/">Board</a> — the project's kanban board</p>` immediately before the
+template's closing `</html>` (pages.py:711-727's `INDEX` ends with `</table>` then `</html>`), and
+serves that page at `/` as it serves it today. No outer frame, no legend, no inner-frame structure,
+no navigation beyond that line: every one of those is the later package's, in the design's amended
+text, and the line is replaced wholesale there.
 
 **The loopback bind is the rule** (harness-profiler.md:49-51): `127.0.0.1` only, nothing loaded
 from the network, the URL printed once on stdout for cmd-clicking. The dashboard keeps both
 surfaces' existing protections: the kanban handler's host-header check and CSP
 (`tests/dicing/test_server.py:552`, `:564`) travel with the board panel.
 
-**Visual checks** (the design's verification decision). A test in `tests/` screenshots the
-dashboard's real pages through Firefox headless — `--headless --screenshot`: the root with the
-board link, a `/page/<session-id>` page of a fixture session, and the board page — asserting each
-screenshot is produced and non-trivial in size. TEST_PRECONDITION: it fails on a dashboard whose
-pages render blank or fail to load — the defect no fetch-based test catches. It skips where Firefox
-is absent, naming the skip. No browser is downloaded, no windowing compositor is touched.
+**Visual checks and the calls-only pin** (the design's verification decision, specified to
+execution). The test resolves Firefox by one rule: the app bundle binary
+`/Applications/Firefox.app/Contents/MacOS/firefox` is checked for existence and executability; where
+it is absent, the test skips — never fails — naming the skip, and no browser is downloaded, no
+windowing compositor touched. Invocation: `firefox -headless --screenshot <absolute .png path>
+<url>`, the output path under the test's own temporary directory, one screenshot per URL. The test
+screenshots a URL only after that URL answers 200 to the test's own fetch and, for the board page,
+after `/api/board` has answered once — the page's first render follows its own fetch of that
+payload — plus a one-second settle before the shot. The assertion distinguishes a blank or failed
+render from content: a blank-render control — a minimal empty page served by the same test server,
+screenshotted in the same run at the same viewport — is taken first, and each real page's PNG must
+be at least twice the control's byte size. TEST_PRECONDITION: the check fails on a dashboard whose
+pages render blank or fail to load — the defect no fetch-based test catches, because a failed load
+still writes a screenshot and a blank render is a control-sized PNG. The screenshots cover three
+URLs: the root with the board link, a `/page/<session-id>` page of a fixture session, and the board
+page. P1 also adds the calls-only pin the route plumbing lacks: a fixture session of tool calls
+only, rendered through the dashboard's page path, shows its calls content and no empty tree under a
+calls header — TEST_PRECONDITION: it fails on a composition that drops or empties the calls render
+for a tool-call-only session.
 
 **Facts.**
 - `git grep -il dashboard -- devpro` → no output. No existing front end to absorb; new package.
-- `git grep -l IndexHandler` → devpro/profiler/pages.py only — the profiler's HTTP layer moves
-  under the dashboard; its rendering functions stay put.
-- `git grep -l run_kanban` → devpro/dicing/cli.py, devpro/dicing/kanban/server.py,
-  tests/dicing/test_server.py. `git grep -l KanbanServer` → devpro/dicing/kanban/server.py,
-  tests/dicing/test_server.py. P1 touches none of these: the old board server still runs, and its
-  tests still pass, until P2.
+- `git grep -l IndexHandler -- devpro tests` → devpro/profiler/pages.py only — the profiler's HTTP
+  layer moves under the dashboard; its rendering functions stay put.
+- `git grep -l run_kanban -- devpro tests` → devpro/dicing/cli.py, devpro/dicing/kanban/server.py,
+  tests/dicing/test_server.py. `git grep -l KanbanServer -- devpro tests` →
+  devpro/dicing/kanban/server.py, tests/dicing/test_server.py. P1 touches none of these: the old
+  board server still runs, and its tests still pass, until P2.
 - The profiler verb registers lazily (devpro/cli.py:45, `PROFILER_VERB`) and its subcommands parse
   at dispatch (devpro/profiler/cli.py:16-20) — the pattern the dashboard verb follows.
 - The board model reads `ROADMAP.md`, the active design and plan through `read_board`
@@ -147,39 +179,63 @@ design and `just dev-check-design` passes, P2 is not dispatchable.
 and the rendering stay); the `serve` subcommand of the profiler verb (devpro/profiler/cli.py:62-64,
 its USAGE line :27); the `kanban` verb (devpro/dicing/cli.py:110-118 and its run dispatch,
 devpro/cli.py:41's list) and `devpro/dicing/kanban/server.py`'s `KanbanServer` and `run_kanban`.
-Edited: `justfile` — `dev-profiler` (:306) and `dev-kanban` (:310) give way to `dev-dashboard`;
-`devpro/definitions/skills/docdicer.py` — the routing names the dashboard for the board (:49,
-:58); `devpro/definitions/skills/guide.py` — the board rows (:36, :468) route the same way;
-`devpro/definitions/skills/show_profile.py` — the "Serve the trace" section (:40-59) sends the
-session to the dashboard verb instead of `sh HP serve`; `tests/test_devpro_profiler.py` — the serve
-tests drive the dashboard (the `_serve` context manager :130-175 launches the verb, not `serve`);
-`tests/dicing/test_server.py` — the server tests target the dashboard's board panel, behavior for
-behavior. The profiler verb keeps `capture`, `tree`, `init`, `doctor`.
+Edited, text-in-code and printed surfaces included: `justfile` — `dev-profiler` (:306) and
+`dev-kanban` (:310) give way to `dev-dashboard`;
+`devpro/definitions/skills/docdicer.py` — the description's `(`kanban`)` clause (:17), the verb
+list (:49) and the board paragraph (:58) all name the dashboard for the board;
+`devpro/definitions/skills/guide.py` — the board rows (:36, :468) route the same way;
+`devpro/definitions/skills/show_profile.py` — its module docstring's `serve` sentence (:4) and
+both named sections, "## Serve the trace" (:40-51, the `sh HP serve` block and the flow it
+describes) and "## Answer" (:52-60, whose :59 line reads "the URL `serve` printed"), send the
+session to the dashboard verb;
+`devpro/profiler/hooks.py` — `USAGE` (:56-62) is a string the bare `devpro profiler` call prints
+(devpro/profiler/cli.py:74 `print(USAGE)`), so its `devpro profiler serve [--port <number>]` line
+comes out and the change is text-in-code, not a format;
+`devpro/dicing/__init__.py` — the module docstring's "and serve a board" (:2) reads the dashboard;
+`tests/test_devpro_profiler.py` — the serve tests drive the dashboard (the `_serve` context
+manager :130-175 launches the verb, not `serve`); `tests/dicing/test_server.py` — the server tests
+target the dashboard's board panel, behavior for behavior. The profiler verb keeps `capture`,
+`tree`, `init`, `doctor`.
 
 **Scope — the record.** PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md: the **Serving.**
 section (:48-58) names the dashboard verb with the same bind, unreadable-store and calls-only-page
-statements; the serve subcommand's mentions at :15, :97, :123 read the dashboard. PROJECT_DOCS/ARCHITECTURE/recipes.md:45:
+statements; the serve subcommand's mentions at :15, :97, :123 read the dashboard.
+PROJECT_DOCS/ARCHITECTURE/repo-layout.md:15: the `profiler/` row's subcommand list drops `serve`.
+PROJECT_DOCS/ARCHITECTURE/recipes.md:45:
 the `dev-kanban` retirement sentence names the recipe's replacement. PROJECT_DOCS/ARCHITECTURE/subsystem-map.md:
 the docdicer skill's routing and the guide skill's board section name the dashboard. README.md:9:
-the board screenshot's caption names the dashboard. The SPEC delta pairs the design's technical
-entries carry are applied verbatim per the design's application form.
+the board screenshot's caption names the dashboard; README.md:48-49: the paragraph naming "The
+`tree` and `serve` subcommands" reads `tree` and the dashboard. The SPEC delta pairs the design's
+technical entries carry are applied verbatim per the design's application form.
 
 **The known breakage this package leaves** is the pending pair's window, named in the staging
-boundary: shipped-files.md:99-103 still describes the profiler's `serve` subcommand. Nothing else
-is left.
+boundary: shipped-files.md:99-103 still describes the profiler's `serve` subcommand. **The
+completeness sweep** backing every retirement site above:
+`git grep -nP '\bserve\b' -- README.md PROJECT_DOCS devpro tests ':(exclude)*.pyc'`. Its hits,
+filtered of the ordinary-English `serve` prose that names no retired surface (repo-layout.md:43
+"no copy to serve from", guide.py:234, clauses.py:182, the agent-definition prose), are: the
+harness-profiler.md :15/:97/:123 mentions, repo-layout.md:15, README.md:48, show_profile.py :4,
+:43, :59, dicing/__init__.py:2, dicing/cli.py:112, profiler/cli.py :27/:43/:62-63, hooks.py:58,
+pages.py :645/:777 and the two test files' serve surfaces — every one in the scope above. After
+P2's edits the same sweep returns only the named breakage's line and that ordinary-English
+remainder: nothing else is left.
 
 **Facts.**
-- `git grep -l run_kanban` → devpro/dicing/cli.py, devpro/dicing/kanban/server.py,
-  tests/dicing/test_server.py — all three are in scope above. `git grep -l KanbanServer` → the
-  server and its tests only.
-- `git grep -l IndexHandler` → devpro/profiler/pages.py — removed here, after P1's evidence.
+- `git grep -l run_kanban -- devpro tests` → devpro/dicing/cli.py, devpro/dicing/kanban/server.py,
+  tests/dicing/test_server.py — all three are in scope above. `git grep -l KanbanServer -- devpro
+  tests` → the server and its tests only.
+- `git grep -l IndexHandler -- devpro tests` → devpro/profiler/pages.py — removed here, after P1's
+  evidence.
 - `git grep -n "HP serve" devpro/definitions/skills/show_profile.py` → :43 — the skill's one serve
   instruction; :46 and :59 name what `serve` printed.
 - `git grep -n "dev-kanban"` outside the design → PROJECT_DOCS/ARCHITECTURE/recipes.md:45 and the
   justfile's :310 — both in scope; `just dev-devpro kanban` is the recipe body the replacement
   retires.
-- `git grep -n "devpro kanban" README.md devpro/definitions` → README.md:9;
-  docdicer.py:49, :58; guide.py:468 — the routing and caption sites above.
+- The verb-phrase search and the bare-name search are separate facts: `git grep -n "devpro kanban"
+  README.md devpro/definitions` → README.md:9, docdicer.py:49, guide.py:468 — the routing and
+  caption sites above; `git grep -n kanban devpro/definitions/skills/docdicer.py` → :17, :49, :58 —
+  the :58 line quoted: "`kanban` serves a live board of the project's roadmap, design and plan.
+  Offer to run it as a background process, or hand the user the command line; the user chooses."
 - The profiler tests' serve surface: tests/test_devpro_profiler.py:138 launches `["sh",
   str(launcher), "serve"]` through the launcher; the shim at :100 runs this checkout's devpro —
   the same shim drives the dashboard verb after the change.
