@@ -22,6 +22,14 @@ the hierarchy is metadata the parent side builds, and claude has no child
 session records at all. User-directed here after the serve rework landed: too
 large to join that plan's burndown.
 
+### Profiler page: the outer frame
+
+User-directed note on the served surface: the how-to-read guidance belongs in
+an outer frame — shown once, not repeated per record page — and selecting a
+record changes the inner frame only, with the inner frame's top-level view
+being the all-records list. Composition work on the serve surface; natural to
+ride the attribution ticket's pass.
+
 ### Codex CLI harness support
 
 Add the ability to install as a codex plugin. Feasible with gaps
