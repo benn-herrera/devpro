@@ -49,7 +49,7 @@ svg .spawn rect { stroke:var(--panel); stroke-width:1; }
   <span><svg width="10" height="16"><rect x="0" y="0" width="10" height="16" rx="2" fill="var(--c0)" fill-opacity=".85"/></svg>context at work</span>
 </div></details>
 
-<div class="toolbar"><label><input type="checkbox" id="all"> every tool call</label><span>Without it: skills, subagents and compactions, like <code>harness-profiler tree</code>.</span></div>
+<div class="toolbar"><label><input type="checkbox" id="all"> every tool call</label><span>Without it: skills, subagents and compactions, like <code>harness-profiler tree</code> — or every tool call when the session has none of those.</span></div>
 <div class="panel"><svg id="tl" role="img" aria-label="Sequence diagram, one lifeline per context"></svg></div>
 <h2>Call tree</h2>
 <div class="tree" id="tree"></div>
@@ -334,9 +334,26 @@ const resultText = (c) => (c.result ? c.result
 // The same square-root scale as the text tree: the longest call fills the bar.
 const barWidth = (ms, longest) => (longest && ms ? Math.max(1, Math.round(Math.sqrt(Math.min(ms, longest) / longest) * 66)) : 0);
 
+// One row per item is drawn here: a call only when shownCall keeps it, a compaction always.
+// The default view falls back to every call when it would otherwise draw none, so a session of
+// nothing but tool calls shows those calls rather than a header row with no rows under it. The
+// fallback reads the drawing itself, so it holds for any reason a default view comes up empty.
 function drawTree() {
-  const all = document.getElementById('all').checked;
-  const shownCall = (c) => all || c.tool === 'Skill' || c.tool === 'Agent';
+  const requested = document.getElementById('all').checked;
+  const drawn = (show) => {
+    const rows = [];
+    const walk = (key) => (kids.get(key) || []).forEach((it) => {
+      const c = it.type === 'compact' ? null : D.calls[it.i];
+      if (c && !show(c)) return;
+      rows.push(it);
+      if (c && c.child) walk(c.child);
+    });
+    walk('root');
+    return rows;
+  };
+  const asSkillAndAgent = (c) => c.tool === 'Skill' || c.tool === 'Agent';
+  const fallback = !requested && drawn(asSkillAndAgent).length === 0;
+  const shownCall = (c) => requested || fallback || asSkillAndAgent(c);
   const longest = Math.max(0, ...D.calls.filter(shownCall).map((c) => c.dur));
   let h = '<div class="thead"><span>time</span><span class="num">duration</span><span></span><span class="num">new</span><span class="num">cached</span><span class="num">out</span><span>call</span></div>';
   const walk = (key, depth) => (kids.get(key) || []).forEach((it) => {
