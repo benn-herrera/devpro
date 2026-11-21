@@ -33,7 +33,7 @@
 # The one slot project is rendered with the kbase component on, so a `render-diff` compares the whole
 # set: it carries the kb-tools package and, under a harness that renders one, the MCP entry (a
 # claude slot project's at <slot>/devpro/skills/devpro/.mcp.json), and, where the harness writes a
-# runner file, the runner include lines — docdicer's and kb's. A harness-directory install's slot
+# runner file, the runner include line — kb's. A harness-directory install's slot
 # project (`mage`) carries no runner include line and no `Makefile`, its harness writing neither.
 set -euo pipefail
 : "${PROJECT_ROOT:?PROJECT_ROOT is empty or unset — run this script through its justfile recipe}"

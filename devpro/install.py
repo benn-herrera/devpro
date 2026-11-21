@@ -76,10 +76,6 @@ def uncommitted_sources() -> tuple[str, ...]:
     return tuple(line for line in out.splitlines() if line)
 
 
-# The docdicer tools package, inside the docdicer skill's own directory: its launcher script, and the
-# virtual environment that script builds beside itself on its next run — not install output, so the
-# install keeps it.
-DOCDICER_TOOLS_PACKAGE = "skills/docdicer/tools"
 # The development scripts package, inside the development skill's own directory: the cold-read runner.
 DEVELOPMENT_SCRIPTS_PACKAGE = "skills/development/scripts"
 
@@ -107,12 +103,6 @@ class ShippedPackage(NamedTuple):
 # `package_copies`, the `!INSTALLED!` stamping, the destination replacement and the runner include
 # lines all read this table; the include lines land in its order.
 SHIPPED_PACKAGES: tuple[ShippedPackage, ...] = (
-    ShippedPackage(
-        "docdicer-tools",
-        DOCDICER_TOOLS_PACKAGE,
-        "docdicer",
-        SnippetSet("docdicer", "runner-snippets", {"just": "docdicer.just", "make": "docdicer.mk"}),
-    ),
     ShippedPackage("development-tools", DEVELOPMENT_SCRIPTS_PACKAGE, "development"),
     ShippedPackage(
         "kb-tools",
@@ -148,7 +138,7 @@ EXCLUDED_SUFFIX = ".bak"
 # or by name for an extensionless script. Every other file — a `.gitignore` among them — is copied
 # byte-verbatim.
 STAMPED_SUFFIXES = frozenset({".py", ".sh", ".mk", ".just"})
-STAMPED_NAMES = frozenset({"docdicer"})
+STAMPED_NAMES = frozenset()
 SURFACES = ("agents", "commands", "skills")
 # The generated-banner prefixes, built from the mark `render` writes above the payload, and the prefix
 # of the module path a payload names: `devpro/`, which every module path below `devpro/definitions/`
