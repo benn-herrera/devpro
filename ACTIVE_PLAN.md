@@ -329,10 +329,52 @@ Done-line: `just dev-check-links`. The review document and P6's Status row land 
 
 ## P7 — Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `a5dbc5c`): eleven defects — 1 Critical, 1 High,
+7 Warning/Low groups — five items by root cause. The seat files in `.devpro-temp/p6-review-*.md`
+carry the per-finding detail.
 
-The burndown gets `devpro-prompt-engineer` usability review, then revision, before it is
-`dispatchable`.
+**B1 — serve resolves its project directory as a foreground command (R1).** The handler stops
+calling `project_dir(os.getcwd())`; it resolves the directory the way the foreground `tree` command
+does (verify `tree`'s own resolution against `hp.py:229-236` and match it — the design's serve is a
+user-run route, not a committed hook). A serve test drives the handler with `CLAUDE_PROJECT_DIR`
+pointed at a foreign project and asserts this repository's sessions still index. Verify before:
+the defect re-runs as stated (variable set → empty index).
+
+**B2 — the decided view reaches the sequence panel (R2).** `drawSequence` gets the same fallback
+`drawTree` has: a session whose filtered view yields nothing draws its calls; the checkbox
+short-circuits; the toolbar line stays truthful. No test is added (no DOM harness — the plan's
+statement carries); the observable outcome verifies on the serve surface and the user's live
+session.
+
+**B3 — the skill body's words (R3, R7, R10).** One clause states the URL is read from the running
+job's output (the command does not complete); the module docstring states serve-first rendering
+(the skill writes no page file); the count instruction counts what the recording holds — calls and
+event markers — or states the rule. Pins: the render pin (`test_devpro_install.py:491-495`), the
+cross-reference guard.
+
+**B4 — the documents state the policy and read cleanly (R4, R9).** The Serving paragraph gains the
+rule sentence: `serve` binds loopback only and loads nothing from the network (stated as
+enforcement — the bind is the enforcement). SPEC's serve sentence names the reachability outcome
+(local pages, local records). The pair-applied short lines reflow — the delta check reads
+whitespace as one space, so the pairs stay landed; the check re-runs green as the proof.
+
+**B5 — the serve code's polish and the gate's hygiene (R5, R6, R8, R11).** First: remove the stray
+untracked `__pycache__/hp.cpython-311.pyc` (it blocks every gate run) and harden
+`check-wheel.sh` — the justfile header names the guard; a failing-first test or an explicit guard
+in the script, named as such. Fold the unreadable-store `except OSError` into `list_sessions` and
+delete the `session_of` mirror — the page-equality test and the index test pin the sync. The
+`dev-profiler` recipe pins the repository root (the `justfile_directory()` form) so the served
+project is the checkout, not the caller's cwd. The R11 notes — the index fields' clip/mask
+bypass, the `str.replace` slot markers, the double walk — are judged at execution: fix where a
+one-liner holds, decline with a line where the current form is the contract.
+
+The burndown is expert (B1, B2, B4 judgment) plus mechanical sub-work; it runs on the expert
+dispatches.
+
+Done-line: `just test`, then `just sweep-python`, then `just lint`, then
+`just dev-check-design-deltas-applied` (landed: 3), then `just dev-check-links`, then
+`just dev-check-plan` — all before the landing acts; the landing commit's tree carries the gate
+passing.
 
 The landing acts, after the burndown's work:
 
@@ -340,10 +382,6 @@ The landing acts, after the burndown's work:
 2. The landing commit deletes `ACTIVE_PLAN_REVIEW.md`.
 3. The landing commit deletes this plan (`ACTIVE_PLAN.md`) — no next plan exists at that time. The
    deletion is P7's row resolution: no Status row is set, the row dies with the plan.
-
-Done-line: `just test`, then `just sweep-python`, then `just dev-check-design-deltas-applied`
-(landed: 3), then `just dev-check-links`, then `just dev-check-plan` — all before the landing
-acts; the landing commit's tree carries the gate passing.
 
 Every commit message and pull-request description carries the attribution line the development
 skill states:
