@@ -7,6 +7,7 @@ One file, Python 3 standard library only. The command forms are the USAGE consta
 
 from __future__ import annotations
 
+import html
 import json
 import math
 import os
@@ -15,7 +16,10 @@ import re
 import shutil
 import sys
 from datetime import datetime, timezone
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import quote, unquote, urlparse
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
@@ -1180,6 +1184,164 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
     return "\n\n".join(blocks)
 
 
+# ---------- serve ----------
+
+
+def read_sessions(directory: Path | str) -> tuple[list[dict], list[str]]:
+    """`list_sessions`'s sessions, and the stores it cannot read, named as such rather than raised.
+
+    One read over all of them cannot tell an unreadable store from an empty tree: `iterdir` raises
+    out of it, so the index walks the stores one at a time, building each session the shape
+    `list_sessions` builds, and states the store it cannot list in place of the session it lost."""
+    stores = Path(directory) / TRACE_DIR.parent
+    sessions: list[dict] = []
+    unreadable: list[str] = []
+    for store in sorted(stores.glob(TRACE_GLOB)):
+        if not store.is_dir():
+            continue
+        try:
+            traces = [path for path in store.iterdir() if path.name.endswith(".jsonl")]
+        except OSError:
+            unreadable.append(store.name)
+            continue
+        sessions.extend(session_of(path) for path in traces)
+    return [session for session in sessions if session["records"]], unreadable
+
+
+def session_of(path: Path) -> dict:
+    """One trace as `list_sessions` shapes it: its records and its first and last moments."""
+    records = read_trace(path)
+    starts: list[int] = []
+    ends: list[int] = []
+    for record in records:
+        end = _epoch_ms(record.get("at"))
+        if end is None:
+            continue
+        ends.append(end)
+        starts.append(end - (record.get("duration_ms") or 0))
+    return {
+        "id": path.name[: -len(".jsonl")],
+        "path": path,
+        "records": records,
+        "first": min(starts, default=math.inf),
+        "last": max(ends, default=-math.inf),
+    }
+
+
+def session_harness(session: dict) -> str:
+    """The harness's name, as the session's own records carry it."""
+    return next((record.get("harness") for record in session["records"] if record.get("harness")), "")
+
+
+def session_row(session: dict) -> str:
+    """One index row: the session's harness, id, record count, first and last moments, and its page."""
+    span = html.escape(f"{stamp(session)} to {_iso(_utc(session['last']))}")
+    cells = (
+        html.escape(session_harness(session)),
+        _link(f"/page/{quote(session['id'])}", session["id"]),
+        html.escape(f"{len(session['records'])} records"),
+        span,
+    )
+    return "<tr>" + "".join(f"<td>{cell}</td>" for cell in cells) + "</tr>"
+
+
+def unreadable_row(store: str) -> str:
+    """The index row for a store the glob found but could not read."""
+    return f'<tr><td colspan="4">{html.escape(store)} is unreadable</td></tr>'
+
+
+def _link(href: str, text: str) -> str:
+    """`text`, as a link to `href`."""
+    return f'<a href="{html.escape(href)}">{html.escape(text)}</a>'
+
+
+def index_html(directory: Path | str) -> str:
+    """The index of record files: one row per session, and one per store that cannot be read."""
+    sessions, unreadable = read_sessions(directory)
+    rows = "".join(session_row(session) for session in sorted(sessions, key=lambda session: session["first"]))
+    return INDEX.replace("/*UNREADABLE*/", "".join(unreadable_row(store) for store in unreadable)).replace(
+        "/*ROWS*/", rows or '<tr><td colspan="4">No sessions recorded yet.</td></tr>'
+    )
+
+
+PAGE_PREFIX = "/page/"
+LOOPBACK = "127.0.0.1"
+# The index's two slots, each a comment no session row's text can spell: filled by `index_html`.
+INDEX = """<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>harness-profiler — sessions</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem; color: #222; }
+  table { border-collapse: collapse; }
+  th, td { text-align: left; padding: 0.3rem 1rem 0.3rem 0; border-bottom: 1px solid #ddd; }
+  th { font-weight: 600; }
+  a { color: #048; }
+</style>
+<h1>Sessions</h1>
+<table>
+<tr><th>harness</th><th>session</th><th>records</th><th>first to last</th></tr>
+/*UNREADABLE*//*ROWS*/</table>
+</html>
+"""
+
+
+def page_of(path: str, directory: Path | str) -> str | None:
+    """The page at `/page/<session-id>`, or nothing where the path names no page or no session."""
+    if not path.startswith(PAGE_PREFIX):
+        return None
+    sessions, _ = read_sessions(directory)
+    session = next((session for session in sessions if session["id"] == path[len(PAGE_PREFIX) :]), None)
+    return None if session is None else render_html(session)
+
+
+class IndexHandler(BaseHTTPRequestHandler):
+    """The served surface: `/` is the index, `/page/<session-id>` a session's page, both from memory."""
+
+    def do_GET(self) -> None:
+        directory = project_dir(os.getcwd())
+        path = unquote(urlparse(self.path).path)
+        page = index_html(directory) if path in ("", "/") else page_of(path, directory)
+        if page is None:
+            self.send_error(HTTPStatus.NOT_FOUND, "No such page")
+            return
+        body = page.encode("utf-8")
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+def parse_serve_args(argv: list[str]) -> int:
+    """The port to bind: `--port`'s where it is given, and 0 — a free port the system chooses — otherwise."""
+    port = 0
+    arguments = iter(argv)
+    for argument in arguments:
+        if argument.startswith("--port="):
+            value = argument.partition("=")[2]
+        elif argument == "--port":
+            value = next(arguments, "")
+        else:
+            raise UsageError(f"Unknown option {argument}; use --port <number>.")
+        if not value.isdigit() or not 0 <= int(value) <= 65535:
+            raise UsageError(f"Unknown port {value}; use a port from 0 to 65535.")
+        port = int(value)
+    return port
+
+
+def serve(argv: list[str]) -> None:
+    """Serve the index and the pages on loopback until interrupted, the URL printed once on stdout."""
+    server = ThreadingHTTPServer((LOOPBACK, parse_serve_args(argv)), IndexHandler)
+    try:
+        print(f"http://{LOOPBACK}:{server.server_address[1]}/", flush=True)
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+
+
 # ---------- init ----------
 
 
@@ -1330,6 +1492,7 @@ class UsageError(Exception):
 
 USAGE = """Usage:
   harness-profiler tree [session-id-prefix] [--branch <name>] [--verbose] [--format text|html]
+  harness-profiler serve [--port <number>]
   harness-profiler init claude
   harness-profiler doctor
   harness-profiler capture <harness>  (run by the hook, not by hand)"""
@@ -1359,6 +1522,9 @@ def main(argv: list[str]) -> int:
         if command == "tree":
             color = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
             print(tree(rest, project_dir(os.getcwd()), color=color))
+            return 0
+        if command == "serve":
+            serve(rest)
             return 0
         if command == "init":
             print(init(rest, Path.cwd()))

@@ -18,10 +18,19 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
+import threading
+import time
+import urllib.error
+import urllib.request
+from collections.abc import Iterator
+from contextlib import contextmanager
+from datetime import datetime, timedelta
 from pathlib import Path
+from typing import IO
 
 import pytest
 
@@ -33,6 +42,8 @@ _HERE = Path(__file__).parent
 # The samples both masking implementations are held to: the credential shapes hp.py's SECRETS are
 # written for, and the same shapes holding a non-ASCII letter, where JavaScript's `\w` stops matching.
 _MASK_SAMPLES = "mask_samples.txt"
+# How long a serve's URL may take to appear, and how long one fetch may take to answer.
+_SERVE_TIMEOUT_S = 15.0
 
 # The four keys the hook's own payload carries (the guardrail's probe payload apart from the values).
 _PAYLOAD = json.dumps(
@@ -84,6 +95,56 @@ def _run(launcher: Path, *args: str, cwd: Path, stdin: str | None = None) -> sub
         env={**os.environ, "HP_PYTHON": sys.executable},
         check=False,
     )
+
+
+_SERVE_URL = re.compile(r"^http://127\.0\.0\.1:\d+/$", re.MULTILINE)
+
+
+@contextmanager
+def _serve(launcher: Path, *, cwd: Path) -> Iterator[str]:
+    """`serve` through the launcher, as `_run` starts it, as a context manager yielding its URL.
+
+    `_run` blocks, and `serve` never exits, so the process is started as a `Popen` and its stdout
+    read by a watcher thread until the URL it prints arrives, the waiting side bounded by a timeout:
+    nothing connects to a port before the server says it is listening. The process is killed and
+    reaped on the way out, and a URL that never arrives leaves the process's stderr in the failure."""
+    process = subprocess.Popen(
+        ["sh", str(launcher), "serve"],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=cwd,
+        env={**os.environ, "HP_PYTHON": sys.executable},
+    )
+    assert process.stdout is not None and process.stderr is not None
+    urls: list[str] = []
+    errors: list[str] = []
+
+    def watch(stream: IO[bytes], into: list[str]) -> None:
+        """One line at a time, until the stream closes: a whole-stream read answers only at EOF."""
+        for line in iter(stream.readline, b""):
+            into.append(line.decode("utf-8", "replace"))
+
+    watchers = [
+        threading.Thread(target=watch, args=(process.stdout, urls), daemon=True),
+        threading.Thread(target=watch, args=(process.stderr, errors), daemon=True),
+    ]
+    for watcher in watchers:
+        watcher.start()
+    try:
+        deadline = time.monotonic() + _SERVE_TIMEOUT_S
+        while not urls and not errors and process.poll() is None and time.monotonic() < deadline:
+            time.sleep(0.01)
+        url = next((line.strip() for line in urls if _SERVE_URL.match(line)), "")
+        assert url, f"serve printed no URL; exited {process.poll()}: {''.join(errors)}"
+        yield url
+    finally:
+        process.kill()
+        process.wait()
+        process.stdout.close()
+        process.stderr.close()
+        for watcher in watchers:
+            watcher.join(_SERVE_TIMEOUT_S)
 
 
 def _page_data(page: str) -> dict:
@@ -289,3 +350,104 @@ def test_the_two_masks_redact_alike(tmp_path: Path) -> None:
     ported = [json.loads(line) for line in run.stdout.splitlines()]
 
     assert ported == [hp.mask(sample) for sample in samples]
+
+
+def _write_store(root: Path, store: str, session: str, at: str, *, harness: str, records: int = 1) -> Path:
+    """A `*-profiler` store under `root`, holding `records` call records for one session, a second
+    apart from the moment `at` names."""
+    directory = root / ".devpro-temp" / store
+    directory.mkdir(parents=True)
+    start = datetime.fromisoformat(at.replace("Z", "+00:00"))
+    (directory / f"{session}.jsonl").write_text(
+        "".join(
+            json.dumps(
+                {
+                    "v": 2,
+                    "harness": harness,
+                    "at": (start + timedelta(seconds=second)).strftime("%Y-%m-%dT%H:%M:%S.") + "000Z",
+                    "session": session,
+                    "tool": "Bash",
+                    "name": "ls",
+                    "duration_ms": 0,
+                    "ok": True,
+                }
+            )
+            + "\n"
+            for second in range(records)
+        ),
+        encoding="utf-8",
+    )
+    return directory
+
+
+def _fetch(url: str) -> str:
+    """The page at `url`, read as utf-8, with the request bounded by a timeout."""
+    with urllib.request.urlopen(url, timeout=_SERVE_TIMEOUT_S) as response:
+        return response.read().decode("utf-8")
+
+
+def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
+    """A store in each harness's directory and a session of several records under one project: the
+    served index carries a row for every recorded session, each stating the harness and count its own
+    records hold and its first and last moment, and linking to that session's page; an index that
+    omits a session the stores hold, or states one the store does not, drops or invents what the
+    records say."""
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / ".devpro-temp").mkdir()
+    _write_store(project, "claude-profiler", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
+    _write_store(project, "opencode-profiler", "s-opencode", "2026-01-01T00:00:05.000Z", harness="opencode")
+
+    with _serve(_launcher(tmp_path), cwd=project) as url:
+        index = _fetch(url)
+        page = _fetch(f"{url}page/s-claude")
+
+    rows = re.findall(r"<tr>(?!<th>).*?</tr>", index)
+    assert [re.search(r'href="[^"]*/page/([^"]+)"', row).group(1) for row in rows] == ["s-claude", "s-opencode"]
+    assert "claude" in rows[0] and "2 records" in rows[0]
+    assert "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z" in rows[0]
+    assert "opencode" in rows[1] and "1 records" in rows[1]
+    assert "2026-01-01 00:00:05 UTC to 2026-01-01T00:00:05.000Z" in rows[1]
+    assert _page_data(page)["session"] == "s-claude"
+
+
+def test_the_served_index_states_an_unreadable_store(tmp_path: Path) -> None:
+    """One `*-profiler` store the glob finds and cannot read, beside one it can: the index answers
+    2xx, names the unreadable store as such, and still lists the readable store's session, and the
+    unreadable store's own page is a 404 rather than a traceback; an index that lets the one bad
+    directory blank the page or raise out of the handler is the defect the stated row replaces."""
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / ".devpro-temp").mkdir()
+    locked = _write_store(project, "broken-profiler", "s-broken", "2026-01-01T00:00:00.000Z", harness="claude")
+    _write_store(project, "claude-profiler", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
+    os.chmod(locked, 0o000)
+    try:
+        with _serve(_launcher(tmp_path), cwd=project) as url:
+            index = _fetch(url)
+            with pytest.raises(urllib.error.HTTPError) as missing:
+                _fetch(f"{url}page/s-broken")
+    finally:
+        os.chmod(locked, 0o755)
+
+    assert "broken-profiler is unreadable" in index
+    assert "/page/s-claude" in index
+    assert missing.value.code == 404
+
+
+def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> None:
+    """One session's `/page/<id>` is the bytes `tree --format html` prints for it, less the one
+    trailing newline `print` adds: the serve surface shows the page the file-redirect flow produces,
+    and a served page that diverges from it — rebuilt another way, or another session's — is the
+    defect: the user's two routes would show two pages."""
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_store(project, "claude-profiler", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
+    launcher = _launcher(tmp_path)
+
+    with _serve(launcher, cwd=project) as url:
+        served = _fetch(f"{url}page/s-claude")
+
+    printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
+    assert printed.returncode == 0, printed.stderr
+    assert served == printed.stdout.removesuffix("\n")
