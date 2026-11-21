@@ -49,6 +49,12 @@ Dice, undice and check through the dicing verbs of the `devpro` command, run fro
 `check-design`, `check-roadmap`) and `devpro kanban`. The verbs' `--help` is the command list, and
 this skill does not restate it.
 
+Where the project's runner includes the `devpro` snippet set, the checks run through its recipes
+(`devpro`, and by name `devpro-help`, `devpro-check-plan`, `devpro-check-design`,
+`devpro-check-design-deltas-applied` and `devpro-check-roadmap`), the four gates argumentless, each
+checking the active file under the project root — the active plan, the active design, the active
+design's applied deltas and `ROADMAP.md` — with a direct `devpro` call for any other.
+
 `kanban` serves a live board of the project's roadmap, design and plan. Offer to run it as a
 background process, or hand the user the command line; the user chooses. It serves until the user
 asks for it to stop, and it never finishes, so a dispatched agent hands over the command line
