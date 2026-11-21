@@ -287,13 +287,13 @@ view the all-records list. The pages and the records stay local: reachable only 
 ```
 
 **The dashboard's visual verification.** Browser-level verification of the dashboard's pages runs
-agent-side: Firefox's headless mode (`--headless --screenshot`) renders with no dependency on the
-windowing compositor the development agents' session lacks — proven end to end by rendering the
-profiler's `view.html` with real trace data — so the stage's visual checks screenshot real pages
-with no operator involvement and no change to the sandbox. Chromium's builds cannot serve here:
-the full browser dies when its compositor's frame pump fails to get the window server's mach
-services, and the headless-shell build only tolerates the same failure — it is the CDP-capable
-fallback should interaction testing need it, not the verification path.
+agent-side, with Firefox headless only (`--headless --screenshot`): it renders with no dependency
+on the windowing compositor the development agents' session lacks — proven end to end by
+rendering the profiler's `view.html` with real trace data — so the stage's visual checks screenshot
+real pages with no operator involvement, no sandbox change, and no browser download: the
+installed browser is the tool. Chromium's builds cannot serve here: the full browser dies when its
+compositor's frame pump fails to get the window server's mach services, and the headless-shell
+build merely tolerates the same failure (exit 0, stderr noise) — it stays unprovisioned.
 
 **As it stands:**
 ```
