@@ -26,7 +26,7 @@ cited design entries, not the whole design.
 | P7 | landed | expert | shipped | `just test devpro` |
 | P8 | landed | expert | shipped | `just dev-check-links`, `just dev-check-design-deltas-applied` |
 | PR | landed | expert | shipped | `just dev-check-links` on the review document |
-| PB | dispatchable | expert | shipped | `just test`, `sweep-python`, `lint`, delta check (pending: 5), `dev-check-links`, `dev-check-plan` |
+| PB | in progress | expert | shipped | `just test`, `sweep-python`, `lint`, delta check (pending: 5), `dev-check-links`, `dev-check-plan` |
 
 Sequencing is P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8. The order matters in three places: P5
 rewrites the justfile before P6 removes the source tree the old recipes read; P6's
