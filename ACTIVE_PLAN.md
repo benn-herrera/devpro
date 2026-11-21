@@ -44,7 +44,7 @@ dispatches.
 | P4 | landed | mechanical | shipped | the justfile gains `dev-profiler`, wrapping source-tree `hp.sh serve` the way `dev-kanban` wraps docdicer's serve |
 | P5 | landed | mechanical | shipped | the three delta pairs applied: one to `shipped-files.md`, two to `harness-profiler.md` |
 | P6 | landed | expert | shipped | Post-plan review — dispatchable when P5's commit lands |
-| P7 | dispatchable | expert | shipped | Post-plan burndown — drafted from the review, PE-reviewed, revised, executed |
+| P7 | in progress | expert | shipped | Post-plan burndown — drafted from the review, PE-reviewed, revised, executed |
 
 ## P1 — The serve verb: hp.py serves its pages over HTTP
 
