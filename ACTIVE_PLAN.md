@@ -30,7 +30,7 @@ with the rest of the stage-2 set.
 | P5 | landed | mechanical | shipped | the SPEC delta and README pairs applied |
 | P6 | landed | mechanical | shipped | the ARCHITECTURE delta pairs applied |
 | P7 | in progress | expert | shipped | the plan-borne house leaves (harness-profiler, repo-layout resources line, CONVENTIONS) |
-| PR | dispatchable | expert | shipped | Post-plan review |
+| PR | in progress | expert | shipped | Post-plan review |
 | PB | dispatchable | expert | shipped | Post-plan burndown |
 
 ## P1 — the profiler is devpro's code
