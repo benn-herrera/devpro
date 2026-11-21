@@ -35,6 +35,18 @@ choice; the inner page stays the self-contained bytes the file flow produces
 unless that pin is moved deliberately. Composition work on the serve surface;
 natural to ride the attribution ticket's pass.
 
+### Profiler runner surface: how consuming projects serve their traces
+
+User-directed: we need a better way to run the profiler's serve surface in a
+consuming project — today the options are the agent's skill, or hand-finding
+the installed launcher, and the repo's own `dev-profiler` recipe does not
+reach a consuming project. One open question among the design pass's
+questions: whether installs inject runner-file recipes the way docdicer does
+(the mechanism exists and is SPEC'd for the runner include lines; it would
+carry the absolute install path, apply only where the profiler ships, and
+grow the injected surface), or whether the better run path is something else.
+Not decided — the design pass answers it.
+
 ### Codex CLI harness support
 
 Add the ability to install as a codex plugin. Feasible with gaps
