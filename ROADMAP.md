@@ -7,69 +7,6 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Features
 
-### Profiler attribution: the parent-child session link
-
-The profiler's pages cannot attribute activity across a dispatch: an Agent row
-on the parent's page names the child's agent type but not its session, a child
-session's page opens with the same `main` header as any other, and the index
-lists sessions flat. The capture side extracts the child's session id from the
-dispatch result's metadata into `child_agent_id` (`profiler.ts` reads the
-result it already reads for `agentType`); the render side groups children
-under their dispatching session in the index, links each Agent row to
-`/page/<child-id>`, and heads child pages with the session that dispatched
-them. The stores stay flat: the child never knows its parent at write time,
-the hierarchy is metadata the parent side builds, and claude has no child
-session records at all. User-directed here after the serve rework landed: too
-large to join that plan's burndown. Rides the absorption-and-dashboard pass.
-
-### Profiler page: the outer frame
-
-User-directed note on the served surface: the how-to-read guidance belongs in
-an outer frame — shown once, not repeated per record page — and selecting a
-record changes the inner frame only, with the inner frame's top-level view
-being the all-records list. The driver is the reading experience: the same
-legend on every page reads as clunky rather than designed — render-on-demand
-makes repetition free, so this is composition, not cost. The mechanism (outer
-shell, served-asset split, or another arrangement) is the design pass's
-choice; the inner page stays the self-contained bytes the file flow produces
-unless that pin is moved deliberately. Composition work on the serve surface;
-natural to ride the attribution ticket's pass.
-
-### Profiler runner surface: how consuming projects serve their traces
-
-User-directed: we need a better way to run the profiler's serve surface in a
-consuming project — today the options are the agent's skill, or hand-finding
-the installed launcher, and the repo's own `dev-profiler` recipe does not
-reach a consuming project. One open question among the design pass's
-questions: whether installs inject runner-file recipes the way docdicer does
-(the mechanism exists and is SPEC'd for the runner include lines; it would
-carry the absolute install path, apply only where the profiler ships, and
-grow the injected surface), or whether the better run path is something else.
-Not decided — the design pass answers it.
-
-### devpro absorbs its tooling — the dashboard server
-
-User-directed decision on the runner surface and beyond: devpro absorbs its
-tools rather than wrapping them. Docdicer is fully absorbed — its verbs land
-as flat subcommands of devpro (`devpro dice`, `devpro check-plan`, …), and
-the install-on-demand wrapper jank (the PYTHONPATH step-down, the
-`docdicer-repo` recipes, the cross-repo boundary) goes with it. The same
-pattern absorbs the Python profiler: `hp.py`'s code becomes a devpro module,
-and the hook files refer back to devpro wherever they needed `hp.py`. Then
-one more module — **dashboard** — the single HTTP server front end for the
-web interface: what is going on actively and what happened in the past, the
-kanban board and the profiler's index and pages as panels of one site, the
-outer frame and its legend served once. The runner-surface question's answer
-is the dashboard; the attribution and outer-frame tickets ride this pass.
-Its own design pass — THESIS-level (the tool boundary moves), with the CLI
-shape and hook wiring as design questions. The argument that settles
-absorption over composition: the single venv install by brew handles all the
-utility code needs — today docdicer is not in the wheel at all, the wrapper
-runs the checkout's source tree. Constraint stated with it: startup time
-stays snappy — the claude hook path pays a capture invocation on every tool
-call, so the CLI dispatches lazily (import only the invoked verb's module)
-and the capture path stays dependency-free.
-
 ### Codex CLI harness support
 
 Add the ability to install as a codex plugin. Feasible with gaps
