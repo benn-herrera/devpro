@@ -60,6 +60,18 @@ harness and model family. A harness selects which harness-specific
 paragraphs it carries, and supplies its own layout and names. A family supplies its default model
 for each category, and may add text at anchors but never replace or remove a definition's base text.
 
+## The process it ships
+
+The agent set devpro ships carries a development process, and that process is designed around
+one principle: remediation opportunities — the checks, reviews and decision points — are placed
+where the applicable working context is most available to the combined human-agent collaboration.
+A defect found while the context that produced it is still live is cheap to fix; the same defect
+found post-hoc, reconstructed from artifacts alone, is expensive, and the reconstruction is where
+the cost concentrates. So the process decides at design and plan time, when a sentence can still
+change the work; surfaces findings while the session that directed the work still holds the
+thread; and records decisions at decision time. What post-hoc review remains starts from carried
+context, not reconstructed context.
+
 Volumes:
 
 - [SPEC](SPEC/entry-point.md): The devpro project renders agent, command and skill definitions to order, for any supported harness and model family, from one source in which shared text is written once; the one plugin it ships, consumed by other projects, is its flagship rendering.
