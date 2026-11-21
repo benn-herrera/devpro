@@ -8,7 +8,8 @@ and carries no version stamp on it.
 
 **Resources.** Three files live in `devpro/harnesses/resources/claude/profiler/`: `hp.sh`, the
 POSIX-sh launcher that finds `python3` (`HP_PYTHON` overrides the search); `hp.py`, the whole tool —
-`capture`, `tree`, `init`, `doctor` — one file, Python 3 standard library only, no dependency; and
+`capture`, `tree`, `init`, `doctor`, `serve` — one file, Python 3 standard library only, no
+dependency; and
 `view.html`, the self-contained page template that loads nothing from the network. Each carries the
 `!INSTALLED! … devpro` banner within its first ten lines — the banner rule binds every harness
 resource. `harness_resource_copies` lands each at the path it holds below the install directory, so
@@ -21,6 +22,16 @@ running `sh "${CLAUDE_PLUGIN_ROOT}/profiler/hp.sh" capture claude`. The wiring i
 module, not a new mechanism, and no entry is gated on the install-time probe. A capture appends one line to the project's `.devpro-temp/claude-profiler/<session-id>.jsonl` — one of the per-harness stores under `.devpro-temp/`, every `*-profiler` directory of which `hp.py`'s `tree` renders — the project's scratch
 directory, which the project's own convention gitignores; a capture that fails, or finds no
 `python3`, exits 0 with no output.
+
+**Serving.** The `serve` subcommand renders in memory behind a local HTTP server: `hp serve` binds
+`127.0.0.1` on a free port — `--port` pins one — and prints the served URL on stdout for
+cmd-clicking. Its main page is the index of record files: every store the `*-profiler` glob finds,
+one row per session — harness, session id, record count, first and last moments — each linking to
+`/page/<session-id>`, which renders that session's page in memory, the bytes `tree --format html`
+produces. No file is written. A store the glob finds but cannot read appears in the index as
+unreadable — the server raises nothing for it. The page shows a session's calls: a session of
+nothing but tool calls renders those calls as its calls content, never an empty tree under a calls
+header. The server runs until interrupted.
 
 **The skill.** `show-profile` ships as a rendered skill definition under `devpro/definitions/skills/`,
 so it carries the generated banner and the harness's namespace (`devpro:show-profile` under claude)

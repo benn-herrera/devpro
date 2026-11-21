@@ -97,7 +97,9 @@ edits. A harness shipping none copies nothing, which is not an error.
 A claude project install also ships the **activity profiler** payload: the harness resources
 `profiler/hp.sh`, `profiler/hp.py` and `profiler/view.html`, copied as they stand, and the
 `show-profile` skill, which renders a session's recorded activity — its skill, agent and tool calls
-with timings and token costs — as text or as a self-contained HTML page. Six hook entries, one per
+with timings and token costs — as text, as a self-contained HTML page, or served over HTTP: the
+tool's `serve` subcommand renders the record files in memory behind a local server whose main page
+lists every record file it can render. Six hook entries, one per
 event (`PostToolUse`, `PostToolUseFailure`, `PreCompact`, `PostCompact`, `SessionStart`,
 `SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each appends
 one line to the project's `.devpro-temp/claude-profiler/<session-id>.jsonl`, and a capture that
