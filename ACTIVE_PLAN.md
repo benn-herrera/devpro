@@ -27,7 +27,7 @@ with the rest of the stage-2 set.
 | P2 | landed | expert | shipped | the store rename to `.profiler-*` and the existing-stores migration |
 | P3 | landed | expert | shipped | the dicing snippets package ships; its include line on every nested-plugin project install |
 | P4 | landed | mechanical | shipped | the docdicer skill's runner instruction returns |
-| P5 | dispatchable | mechanical | shipped | the SPEC delta and README pairs applied |
+| P5 | in progress | mechanical | shipped | the SPEC delta and README pairs applied |
 | P6 | dispatchable | mechanical | shipped | the ARCHITECTURE delta pairs applied |
 | P7 | dispatchable | expert | shipped | the plan-borne house leaves (harness-profiler, repo-layout resources line, CONVENTIONS) |
 | PR | dispatchable | expert | shipped | Post-plan review |
