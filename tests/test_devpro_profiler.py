@@ -1,6 +1,6 @@
 """The activity profiler's contract, driven through the launcher the install copies: one capture
-writes a schema-2 record, `tree --format html`'s page data carries the keys `view.html` parses, and
-the installed tool is the source's bytes. It fails on the port defect that renames or drops a record
+writes a schema-2 record, `tree --format html`'s page data carries the keys `view.html` parses, and the
+installed launcher is the source's bytes. It fails on the port defect that renames or drops a record
 field the page data carries — the rename or drop ships green and renders an empty page.
 
 Two records the port itself owns: `tree` renders an opencode session's store beside the claude
@@ -10,18 +10,22 @@ show; and the opencode capture, driven by `tests/profiler_capture_runner.ts` thr
 `test_the_two_masks_redact_alike` holds the two harnesses' masking to one sample list, since
 JavaScript's `\\w` is ASCII where Python's is not.
 
-The package is imported from the repository root, which `just test` puts on PYTHONPATH.
+Two more are the launcher's own: a capture whose devpro the finder cannot resolve exits 0 with no
+output and no other subcommand does, and `init` lays down the launcher alone, removing the `hp.py` and
+`view.html` an older init left beside it.
+
+The package is imported from the repository root, which `just test` puts on PYTHONPATH. The launcher
+runs whatever `devpro` it resolves, and no test relies on one installed on the host: each installs a
+shim running this checkout into the directory it runs in and points `HP_DEVPRO` at it.
 """
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import os
 import re
 import shutil
 import subprocess
-import sys
 import threading
 import time
 import urllib.error
@@ -34,12 +38,13 @@ from typing import IO
 
 import pytest
 
-from devpro.install import HARNESS_RESOURCES_SOURCE
-from devpro.install_base import PACKAGE_ROOT
+from devpro.profiler.capture import mask
+from devpro.profiler.hooks import RETIRED_HOOK_FILES, launcher_resource
 from tests.test_devpro_install import _PROFILER, _claude_plugin, _definition_install
 
 _HERE = Path(__file__).parent
-# The samples both masking implementations are held to: the credential shapes hp.py's SECRETS are
+_PACKAGE_ROOT = Path(__file__).resolve().parents[1]
+# The samples both masking implementations are held to: the credential shapes the profiler's SECRETS are
 # written for, and the same shapes holding a non-ASCII letter, where JavaScript's `\w` stops matching.
 _MASK_SAMPLES = "mask_samples.txt"
 # How long a serve's URL may take to appear, and how long one fetch may take to answer.
@@ -77,12 +82,29 @@ _CALL_KEYS = {
 }
 
 
-def _launcher(tmp_path: Path) -> Path:
-    """The installed launcher: the claude install into `tmp_path`, where the payload lands."""
-    root = tmp_path / ".claude"
-    root.mkdir()
-    _definition_install(root, project_root=tmp_path)
-    return _claude_plugin(root) / _PROFILER / "hp.sh"
+def _launcher(directory: Path) -> Path:
+    """The installed launcher, from a claude install into `directory`.
+
+    `directory` is its own project root, so the install writes no `AGENTS.md` or `CLAUDE.md` beside the
+    devpro shim a run places in it."""
+    directory.mkdir(exist_ok=True)
+    _definition_install(directory, project_root=directory)
+    return _claude_plugin(directory) / _PROFILER / "hp.sh"
+
+
+def _devpro_shim(project: Path) -> Path:
+    """A `devpro` command the launcher finds: this checkout's `python3 -m devpro`, in `project`.
+
+    The launcher runs whatever `devpro` it resolves, so a test gives it one that runs this repository's
+    code: its finder, the verb's dispatch and the capture all run as the install's do."""
+    shim = project / "devpro"
+    shim.write_text(
+        "#!/bin/sh\nexec env "
+        f"PYTHONPATH={_PACKAGE_ROOT} PYTHONDONTWRITEBYTECODE=1 python3 -m devpro \"$@\"\n",
+        encoding="utf-8",
+    )
+    shim.chmod(0o755)
+    return shim
 
 
 def _run(launcher: Path, *args: str, cwd: Path, stdin: str | None = None) -> subprocess.CompletedProcess[str]:
@@ -92,7 +114,7 @@ def _run(launcher: Path, *args: str, cwd: Path, stdin: str | None = None) -> sub
         capture_output=True,
         text=True,
         cwd=cwd,
-        env={**os.environ, "HP_PYTHON": sys.executable},
+        env={**os.environ, "HP_DEVPRO": str(_devpro_shim(cwd))},
         check=False,
     )
 
@@ -114,7 +136,7 @@ def _serve(launcher: Path, *, cwd: Path, env: dict[str, str] | None = None) -> I
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=cwd,
-        env={**os.environ, "HP_PYTHON": sys.executable, **(env or {})},
+        env={**os.environ, "HP_DEVPRO": str(_devpro_shim(cwd)), **(env or {})},
     )
     assert process.stdout is not None and process.stderr is not None
     urls: list[str] = []
@@ -159,7 +181,7 @@ def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> N
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    launcher = _launcher(tmp_path)
+    launcher = _launcher(tmp_path / "harness")
     capture = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD)
     assert capture.returncode == 0, capture.stderr
     assert capture.stdout == "" and capture.stderr == ""
@@ -188,7 +210,7 @@ def test_a_capture_writes_its_line_in_the_bytes_it_measured(tmp_path: Path) -> N
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
     payload = dict(json.loads(_PAYLOAD), tool_input={"command": "echo h\u00e9 \ud800"})
-    launcher = _launcher(tmp_path)
+    launcher = _launcher(tmp_path / "harness")
     capture = _run(launcher, "capture", "claude", cwd=project, stdin=json.dumps(payload))
     assert capture.returncode == 0, capture.stderr
     trace = project / ".devpro-temp" / "claude-profiler" / "s-profiler.jsonl"
@@ -197,11 +219,38 @@ def test_a_capture_writes_its_line_in_the_bytes_it_measured(tmp_path: Path) -> N
 
 
 def test_the_installed_profiler_is_the_sources_bytes(tmp_path: Path) -> None:
-    """The copy that ships is the copy the repository holds: no stamp or reflow lands in `hp.py` on
-    its way through the package data."""
-    launcher = _launcher(tmp_path)
-    source = PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / "claude" / "profiler" / "hp.py"
-    assert (launcher.parent / "hp.py").read_bytes() == source.read_bytes()
+    """The launcher that ships is the launcher the repository holds: no stamp or reflow lands in `hp.sh`
+    on its way through the package data."""
+    launcher = _launcher(tmp_path / "harness")
+    assert launcher.read_bytes() == launcher_resource().read_bytes()
+
+@pytest.mark.parametrize("command", ["capture", "tree"])
+def test_a_launcher_finding_no_devpro_captures_silently_and_reports_otherwise(tmp_path: Path, command: str) -> None:
+    """With no devpro the finder can resolve, `capture` drains stdin and exits 0 writing nothing, and every
+    other subcommand reports on stderr and exits 1: a capture that reports or exits nonzero blocks the
+    tool call that fired it, under the harness hook error policy, and a tree that says nothing leaves the
+    operator no line naming the one dependency to install."""
+    launcher = _launcher(tmp_path / "harness")
+    payload = json.dumps({"hook_event_name": "PostToolUse", "session_id": "s-none", "tool_name": "Bash"})
+    project = tmp_path / "project"
+    project.mkdir()
+    done = subprocess.run(
+        ["sh", str(launcher), command],
+        input=payload,
+        capture_output=True,
+        text=True,
+        cwd=project,
+        env={**os.environ, "HP_DEVPRO": str(tmp_path / "absent")},
+        check=False,
+    )
+
+    if command == "capture":
+        assert (done.returncode, done.stdout, done.stderr) == (0, "", "")
+    else:
+        assert done.returncode == 1
+        assert done.stdout == ""
+        assert "HP_DEVPRO" in done.stderr
+    assert not (project / ".devpro-temp").exists()
 
 
 def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Path) -> None:
@@ -211,7 +260,7 @@ def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Pa
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    launcher = _launcher(tmp_path)
+    launcher = _launcher(tmp_path / "harness")
     capture = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD)
     assert capture.returncode == 0, capture.stderr
     # A record the opencode capture writes, holding what `tree`'s render reads: an event at start and
@@ -338,18 +387,60 @@ def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path) -> None:
 
 
 def test_the_two_masks_redact_alike(tmp_path: Path) -> None:
-    """hp.py's `mask` and the port's, over one sample list: each sample's masked text is the same on
+    """The profiler's `mask` and the port's, over one sample list: each sample's masked text is the same on
     both sides, the non-ASCII credential included."""
     samples = (_HERE / _MASK_SAMPLES).read_text(encoding="utf-8").splitlines()
-    spec = importlib.util.spec_from_file_location(
-        "hp", PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / "claude" / "profiler" / "hp.py"
-    )
-    hp = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(hp)
     run = _run_ts(_HERE / "profiler_mask_runner.ts", directory=tmp_path, arg=str(_HERE / _MASK_SAMPLES))
     ported = [json.loads(line) for line in run.stdout.splitlines()]
 
-    assert ported == [hp.mask(sample) for sample in samples]
+    assert ported == [mask(sample) for sample in samples]
+
+
+def _profiler_init(project: Path) -> subprocess.CompletedProcess[str]:
+    """`profiler init claude` in `project`, through its installed launcher and the test's devpro."""
+    return _run(_launcher(project.parent / "harness"), "init", "claude", cwd=project)
+
+
+def test_init_lays_down_the_launcher_and_clears_an_older_runs_files(tmp_path: Path) -> None:
+    """A committed hook directory holding an older `init`'s launcher, `hp.py` and `view.html`: a re-run
+    writes the launcher alone and removes both retired files. A committed hook running devpro beside a
+    stale `hp.py` is the half-absorbed install, and `stale_hook` would chase files no install ships."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    hook_dir = project / ".claude" / "harness-profiler"
+    hook_dir.mkdir(parents=True)
+    for name in ("hp.sh", *RETIRED_HOOK_FILES):
+        (hook_dir / name).write_text("an older init's copy\n", encoding="utf-8")
+
+    done = _profiler_init(project)
+
+    assert done.returncode == 0, done.stderr
+    assert [path.name for path in sorted(hook_dir.iterdir())] == ["hp.sh"]
+    assert (hook_dir / "hp.sh").read_bytes() == launcher_resource().read_bytes()
+    assert os.access(hook_dir / "hp.sh", os.X_OK)
+    assert (project / ".claude" / "skills" / "show-profile" / "SKILL.md").is_file()
+    assert "harness-profiler/hp.sh" in (project / ".claude" / "settings.json").read_text(encoding="utf-8")
+
+
+def test_doctor_reports_a_committed_launcher_that_differs_from_the_resource(tmp_path: Path) -> None:
+    """A committed hook this devpro's `init` wrote, its launcher then edited: `doctor` says the hook has
+    another version of it. A compare reading a source no install ships reports nothing, and the `update`
+    line loses its one job."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    assert _profiler_init(project).returncode == 0
+    current = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
+    assert current.returncode == 0, current.stderr
+    assert "update:" not in current.stdout
+
+    (project / ".claude" / "harness-profiler" / "hp.sh").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+
+    edited = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
+
+    assert edited.returncode == 0, edited.stderr
+    assert "update:  the committed hook has another version of hp.sh;" in edited.stdout
 
 
 def _write_store(root: Path, store: str, session: str, at: str, *, harness: str, records: int = 1) -> Path:
@@ -398,7 +489,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     _write_store(project, "claude-profiler", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
     _write_store(project, "opencode-profiler", "s-opencode", "2026-01-01T00:00:05.000Z", harness="opencode")
 
-    with _serve(_launcher(tmp_path), cwd=project) as url:
+    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
         index = _fetch(url)
         page = _fetch(f"{url}page/s-claude")
 
@@ -423,7 +514,7 @@ def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_
     foreign.mkdir()
     _write_store(foreign, "claude-profiler", "s-elsewhere", "2026-01-01T00:00:00.000Z", harness="claude")
 
-    with _serve(_launcher(tmp_path), cwd=project, env={"CLAUDE_PROJECT_DIR": str(foreign)}) as url:
+    with _serve(_launcher(tmp_path / "harness"), cwd=project, env={"CLAUDE_PROJECT_DIR": str(foreign)}) as url:
         index = _fetch(url)
 
     assert "/page/s-here" in index
@@ -442,7 +533,7 @@ def test_the_served_index_states_an_unreadable_store(tmp_path: Path) -> None:
     _write_store(project, "claude-profiler", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
     os.chmod(locked, 0o000)
     try:
-        with _serve(_launcher(tmp_path), cwd=project) as url:
+        with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
             index = _fetch(url)
             with pytest.raises(urllib.error.HTTPError) as missing:
                 _fetch(f"{url}page/s-broken")
@@ -462,7 +553,7 @@ def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> Non
     project = tmp_path / "project"
     project.mkdir()
     _write_store(project, "claude-profiler", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
-    launcher = _launcher(tmp_path)
+    launcher = _launcher(tmp_path / "harness")
 
     with _serve(launcher, cwd=project) as url:
         served = _fetch(f"{url}page/s-claude")

@@ -42,6 +42,9 @@ DICING_VERBS = (
 )
 """The dicing verbs, added by `devpro.dicing.cli.add_verbs` and dispatched to its `run`."""
 
+PROFILER_VERB = "profiler"
+"""The profiler verb, added by `devpro.profiler.cli.add_verbs` and dispatched to its `run`."""
+
 
 def _add_tuning_flags(verb: argparse.ArgumentParser, *, harness_default: str | None, harness_help: str) -> None:
     verb.add_argument("--harness", default=harness_default, metavar="NAME", help=harness_help)
@@ -74,13 +77,14 @@ def _add_components(verb: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     """One verb, required: `render --out DIR` and `install TARGET [--subdir DIR] [--verbose] [--dry-run]`,
     each with the tuning flags; `install-agents-file DIR [--harness NAME] [--dry-run]`;
-    `render-agents-file HARNESS OUT`; the nine dicing verbs `devpro.dicing.cli.add_verbs` adds; and one
-    maintainer helper hidden from `--help`: `harness NAME KEY`.
-    Each verb but `harness`, `install-agents-file` and the dicing verbs takes `[--components=CSV]`, turning
-    no optional component on by default. The top-level `--version` prints the bare version. allow_abbrev=False
-    on every parser.
+    `render-agents-file HARNESS OUT`; the nine dicing verbs `devpro.dicing.cli.add_verbs` adds, the
+    `profiler` verb `devpro.profiler.cli.add_verbs` adds; and one maintainer helper hidden from `--help`:
+    `harness NAME KEY`.
+    Each verb but `harness`, `install-agents-file`, the dicing verbs and `profiler` takes
+    `[--components=CSV]`, turning no optional component on by default. The top-level `--version` prints the bare version. allow_abbrev=False on every parser.
     """
     from devpro.dicing.cli import add_verbs
+    from devpro.profiler.cli import add_verbs as add_profiler_verbs
 
     parser = argparse.ArgumentParser(prog="devpro", allow_abbrev=False)
     parser.add_argument("--version", action="version", version=__version__)
@@ -132,6 +136,7 @@ def build_parser() -> argparse.ArgumentParser:
     query.add_argument("name", metavar="NAME")
     query.add_argument("key", choices=[key(part) for part in HarnessText], metavar="KEY")
     add_verbs(verbs)
+    add_profiler_verbs(verbs)
     hidden = {"harness"}
     verbs.metavar = "{" + ",".join(name for name in verbs.choices if name not in hidden) + "}"
     return parser
@@ -217,6 +222,10 @@ def _run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> None:
         from devpro.dicing.cli import run as run_dicing
 
         sys.exit(run_dicing(args, parser=parser))
+    elif args.verb == PROFILER_VERB:
+        from devpro.profiler.cli import run as run_profiler
+
+        sys.exit(run_profiler(args))
     else:
         bound = harness_named(args.name).bound(NAME)
         print(bound.text(HarnessText("_".join(args.key.split("-")))))

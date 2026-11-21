@@ -1,11 +1,9 @@
 # agents task recipes.
 
-# No recipe run writes bytecode into the source tree: an import of a shipped
-# resource (hp.py lives under the resources dir the wheel grafts wholesale)
-# drops a `__pycache__` beside it, and the next `check-wheel` packages that
-# cache into the wheel — a wheel carrying bytecode for an interpreter the
-# consumer never chose. The env var stops the cache at the source; nothing
-# in the tree needs it.
+# No recipe run writes bytecode into the source tree: an import of a resource the wheel grafts
+# wholesale would drop a `__pycache__` beside it, and the next `check-wheel` counts that cache
+# among the tree's files — bytecode for an interpreter the consumer never chose. The env var stops
+# the cache at the source; nothing in the tree needs it.
 export PYTHONDONTWRITEBYTECODE := "1"
 
 # Recipe bodies are bash, not just's default `sh`. Stating it makes the
@@ -304,9 +302,9 @@ tap-local: tap-repo
 dev-devpro *args:
   @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro "${@}"
 
-[doc("serve the profiler pages using the source-tree launcher")]
+[doc("serve the profiler pages from the checkout's devpro")]
 dev-profiler:
-  @cd "{{PROJECT_ROOT}}" && ./devpro/harnesses/resources/claude/profiler/hp.sh serve
+  @just dev-devpro profiler serve
 
 [doc("run kanban board (blocks with running http server)")]
 dev-kanban:

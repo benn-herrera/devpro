@@ -22,7 +22,13 @@ Repository = "https://github.com/benn-herrera/devpro"
 include = ["devpro", "devpro.*"]
 
 [tool.setuptools.package-data]
-devpro = ["kb-tools/**/*", "harnesses/resources/**/*", "development-tools/**/*", "dicing/kanban/assets/**/*"]
+devpro = [
+    "kb-tools/**/*",
+    "harnesses/resources/**/*",
+    "development-tools/**/*",
+    "dicing/kanban/assets/**/*",
+    "profiler/view.html",
+]
 
 [tool.setuptools.dynamic]
 version = { attr = "devpro.__version__" }

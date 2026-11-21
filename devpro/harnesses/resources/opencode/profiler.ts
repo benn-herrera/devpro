@@ -3,10 +3,10 @@
 // opencode 2.3.2 plugin module (floor 2.3.0)
 // The activity capture: every tool call of a session, with its duration, arguments, result and
 // outcome, and the session's idle marks, appended to the project's
-// `.devpro-temp/opencode-profiler/<session-id>.jsonl` — the store `hp.py`'s tree and page render beside
-// the claude sessions'. The record's fields and their meanings are claude's `hp.py`'s, because the same
-// render reads both, and the masking is its masking: this file is that record rebuilt against
-// opencode's hook surface, which reports different things than claude's hooks do.
+// `.devpro-temp/opencode-profiler/<session-id>.jsonl` — the store `devpro profiler tree` renders beside
+// the claude sessions'. The record's fields and their meanings are `devpro/profiler/capture.py`'s,
+// because the same render reads both, and the masking is its masking: this file is that record rebuilt
+// against opencode's hook surface, which reports different things than claude's hooks do.
 //
 // `execute.before` carries no result, so it is where a call's start is taken; `execute.after` is where
 // the record is written. A capture that fails raises nothing out of a hook and says nothing, save the
@@ -65,7 +65,7 @@ function pluginId(): string {
   }
 }
 
-// hp.py's limits and spellings, so a record from either harness renders the same way.
+// `devpro/profiler/capture.py`'s limits and spellings, so a record from either harness renders the same way.
 const SCHEMA_VERSION = 2
 const TRACE_DIR = join(".devpro-temp", "opencode-profiler")
 const NAME_LIMIT = 80
@@ -79,7 +79,7 @@ const DEFAULT_AGENT = "general-purpose"
 // session has gone idle, and at the latest once this many starts are held.
 const MAX_STARTED = 1024
 
-// ---------- hp.py's text helpers ----------
+// ---------- `devpro/profiler/values.py`'s text helpers ----------
 
 const SECRETS: [RegExp, string][] = [
   [/\b(Bearer|Basic|token)\s+[\p{L}\p{N}_.~+/=-]{8,}/giu, "$1 [redacted]"],
@@ -89,7 +89,7 @@ const SECRETS: [RegExp, string][] = [
   ],
   [/(?<![\p{L}\p{N}_])(?:gh[pousr]_|github_pat_|sk-|xox[abp]-)[\p{L}\p{N}_-]{10,}/gu, "[redacted]"],
 ]
-// hp.py states the same three as `[\w]` with Unicode semantics; JavaScript's `\w` is ASCII, and the
+// `devpro/profiler/values.py` states the same three as `[\w]` with Unicode semantics; JavaScript's `\w` is ASCII, and the
 // `\p{L}\p{N}` classes above are what make a credential holding a non-ASCII letter mask alike. The
 // lookbehind is that `\w` boundary written for the same classes, since `\b` would not take them.
 // `test_devpro_profiler.py` holds the two implementations to one sample list.
@@ -112,7 +112,7 @@ function mask(text: string): string {
   return SECRETS.reduce((masked, [pattern, replacement]) => masked.replace(pattern, replacement), text)
 }
 
-// clip is text cut to limit code points, its last one an ellipsis: hp.py's limit is a count of
+// clip is text cut to limit code points, its last one an ellipsis: `devpro/profiler/values.py`'s limit is a count of
 // characters, and a UTF-16 index would cut an astral character in half.
 function clip(text: string, limit: number): string {
   const points = [...text]
@@ -153,7 +153,7 @@ function errorText(error: unknown): string {
 // Remarks the model writes to itself, which opencode reports as tool calls: they carry no result and
 // are not activity, so they are not recorded.
 const REMARKS = new Set(["todowrite"])
-// The tools that start a subagent context, and the tool hp.py records them as: the tree draws claude's
+// The tools that start a subagent context, and the tool the devpro profiler records them as: the tree draws claude's
 // `Agent` call by default, so opencode's subagent dispatch must carry that name to be drawn at all.
 // Both of the host's spellings are here: `task` is the name opencode 2.3.0's floor still uses, and
 // `subagent` the one it is renamed to later in the 2.3 line.
@@ -162,19 +162,19 @@ const KIND_ARGS: Record<string, string[]> = {
   task: ["subagent_type", "agent"],
   subagent: ["subagent_type", "agent"],
 }
-// hp.py's `Skill`: the name the tree draws by default, its name the host's skill id.
+// `devpro/profiler/capture.py`'s `Skill`: the name the tree draws by default, its name the host's skill id.
 const SKILL = "Skill"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-// textFrom is hp.py's `.get()` read: a string value's text, and nothing for any other.
+// textFrom is the devpro profiler's `.get()` read: a string value's text, and nothing for any other.
 function textFrom(value: unknown): string {
   return typeof value === "string" ? value : ""
 }
 
-// nameOf, argsOf and resultOf are hp.py's three, over opencode's tools: a skill's name, a subagent's
+// nameOf, argsOf and resultOf are `devpro/profiler/capture.py`'s three, over opencode's tools: a skill's name, a subagent's
 // kind and brief, a shell command's head and its text. The host names a subagent dispatch by its
 // `agent` and a skill call by its `id`; neither is a tool name, so neither falls through to the tool
 // itself. Any other tool's name is its own (hp's MCP suffix rule apart), its args its input as JSON.
@@ -189,7 +189,7 @@ function nameOf(tool: string, input: Record<string, unknown>): string | undefine
 }
 
 function argsOf(tool: string, input: Record<string, unknown>): string | undefined {
-  // hp.py's `Agent` brief, which is a string even where it is empty.
+  // `devpro/profiler/capture.py`'s `Agent` brief, which is a string even where it is empty.
   if (tool in SUBAGENT_TOOLS) {
     const brief = [textFrom(input.description), firstLine(textFrom(input.prompt))].filter(Boolean).join(": ")
     return clip(mask(oneLine(brief)), ARGS_LIMIT) || undefined
@@ -209,7 +209,7 @@ function argsOf(tool: string, input: Record<string, unknown>): string | undefine
   return clip(mask(oneLine(safe)), ARGS_LIMIT) || undefined
 }
 
-// resultText is a completed call's text: hp.py's `response_text` unwrapping — the `content` parts'
+// resultText is a completed call's text: the devpro profiler's `response_text` unwrapping — the `content` parts'
 // text, then a string `output`, then `stdout` and `stderr` — and, where the result carries none of
 // those, its `metadata` as JSON.
 function resultText(result: unknown): string {
@@ -224,7 +224,7 @@ function resultText(result: unknown): string {
   return result.metadata === undefined || result.metadata === null ? "" : valueText(result.metadata)
 }
 
-// resultOf is what the call returned, or, on a failed call, why: hp.py's result is the error's text
+// resultOf is what the call returned, or, on a failed call, why: the devpro profiler's result is the error's text
 // where the response carries none.
 function resultOf(call: Finished): string | undefined {
   const textOf =
@@ -237,7 +237,7 @@ function resultOf(call: Finished): string | undefined {
 }
 
 // childAgentTypeOf is the kind of subagent a parent call started, the response's `agentType` first as
-// hp.py reads it — where a forked child's `fork` appears — then the call's own input, opencode's `agent`.
+// the devpro profiler reads it — where a forked child's `fork` appears — then the call's own input, opencode's `agent`.
 function childAgentTypeOf(tool: string, input: Record<string, unknown>, call: Finished): string | undefined {
   const { result, metadata } = isRecord(call.result) ? call.result : {}
   const kind =
@@ -251,9 +251,9 @@ function childAgentTypeOf(tool: string, input: Record<string, unknown>, call: Fi
   return undefined
 }
 
-// The record's fields are hp.py's `build_record` / `build_event_record` in their schema order, every
+// The record's fields are `devpro/profiler/capture.py`'s `build_record` / `build_event_record` in their schema order, every
 // one present so a reader never meets a missing key. A field a hook supplies no value for takes the
-// field's empty rendering: `null` where hp.py leaves the key out, `false` where the tree reads
+// field's empty rendering: `null` where the devpro profiler leaves the key out, `false` where the tree reads
 // truthiness, zero for a duration the tree formats as a number.
 type CallRecord = {
   v: number
@@ -288,7 +288,7 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
     harness: "opencode",
     at: new Date(end).toISOString(),
     session: call.sessionID,
-    // hp.py's `agent_id` keys the subagent context a call ran in, not the agent's name; opencode reports
+    // the devpro profiler's `agent_id` keys the subagent context a call ran in, not the agent's name; opencode reports
     // that name in `agent`, and every call it hooks here runs in the session's own context.
     agent_id: null,
     agent_type: null,
@@ -298,7 +298,7 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
     duration_ms: end - start,
     ok: call.status === "completed",
     // A subagent call starts its child's context. opencode's result does name the child's session, but
-    // each opencode session owns its own trace file: a child id here would send hp.py's context walk
+    // each opencode session owns its own trace file: a child id here would send the devpro profiler's context walk
     // after the child's calls in this, the parent's, file, where they never are.
     child_agent_id: null,
     child_agent_type: subagent ? (childAgentTypeOf(raw, input, call) ?? DEFAULT_AGENT) : null,
@@ -306,7 +306,7 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
     child_spend: null,
     tokens: null,
     context_tokens: null,
-    // A branch is the checkout's, which hp.py reads beside the capture it runs; the capture here runs
+    // A branch is the checkout's, which the devpro profiler reads beside the capture it runs; the capture here runs
     // in the host's process, and opencode's hooks report no branch.
     branch: null,
     args: argsOf(raw, input) ?? null,
@@ -314,7 +314,7 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
   }
 }
 
-// eventRecord marks the session's lifecycle, as hp.py's record for a SessionStart does: an event and
+// eventRecord marks the session's lifecycle, as the devpro profiler's record for a SessionStart does: an event and
 // no tool, so the tree draws it as a marker. `transcript` names claude's transcript file, which opencode
 // has none of.
 function eventRecord(session: string, event: string, at: number): Record<string, unknown> {
@@ -331,7 +331,7 @@ function eventRecord(session: string, event: string, at: number): Record<string,
   }
 }
 
-// hp.py's `serialize`: the record's JSON line, `name` then `session` then `result` and `args` giving way
+// `devpro/profiler/capture.py`'s `serialize`: the record's JSON line, `name` then `session` then `result` and `args` giving way
 // until it fits. `name` and `session` are clipped first, because they are the fixed fields a record cannot
 // drop and a long session id alone could hold the line over LINE_LIMIT with nothing left to shrink.
 function serialize(record: Record<string, unknown>): string {
@@ -348,7 +348,7 @@ function serialize(record: Record<string, unknown>): string {
   return line
 }
 
-// sessionFile is the trace for one session, its id made path-safe as hp.py makes it.
+// sessionFile is the trace for one session, its id made path-safe as `devpro/profiler/capture.py` makes it.
 function sessionFile(root: string, session: string): string {
   return join(root, TRACE_DIR, `${session.replace(/[^\w.-]/g, "_")}.jsonl`)
 }
@@ -380,7 +380,7 @@ const TORN_TAIL_BYTES = 64 * 1024
 // dropTornTail refuses to append onto a line a killed process left unusable, which would fuse two
 // records and lose both. The file is read from its tail, not whole: an append happens on every call.
 // The torn line moves aside and the file keeps the lines before it, or nothing at all happens where the
-// file ends clean. hp.py has no such repair — it tolerates a torn line on read, and nothing repairs a
+// file ends clean. The devpro profiler has no such repair — it tolerates a torn line on read, and nothing repairs a
 // claude store on write.
 function dropTornTail(file: string): void {
   let handle: number

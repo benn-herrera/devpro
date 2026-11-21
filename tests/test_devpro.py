@@ -1465,11 +1465,13 @@ def test_every_import_is_at_module_level() -> None:
     # time so no verb pays for another's imports, so its function-level imports are the deliberate
     # exception and are not walked here. The house rule holds for every other module of the package.
     # The absorbed dicing verbs' entry point carries the same exception, for the same reason: its `run`
-    # imports each verb's implementation where it dispatches that verb.
+    # imports each verb's implementation where it dispatches that verb. The profiler's entry point is
+    # the third: its verb is one remainder the dispatch resolves, and its `run` imports the subcommands'
+    # modules so the `devpro --help` build pays for none of them.
     offenders = [
         f"{path}:{node.lineno}"
         for path, tree in _modules()
-        if path not in ("devpro/cli.py", "devpro/dicing/cli.py")
+        if path not in ("devpro/cli.py", "devpro/dicing/cli.py", "devpro/profiler/cli.py")
         for node in ast.walk(tree)
         if isinstance(node, (ast.Import, ast.ImportFrom)) and node not in tree.body
     ]

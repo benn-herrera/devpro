@@ -403,10 +403,10 @@ _REMINDER = "hooks/state-table-reminder.sh"
 _SETTINGS = ".claude/settings.json"
 # A claude install writes its set into its plugin directory, below the harness directory it is given.
 _CLAUDE_PLUGIN_RELPATH = f".claude/{CLAUDE.bound(NAME).plugin_dir}"
-# The activity profiler: the payload the claude install copies beside the hooks, the skill that finds
+# The activity profiler: the launcher the claude install copies beside the hooks, the skill that finds
 # it, and the registration entries that feed it.
 _PROFILER = "profiler"
-_PROFILER_FILES = ("hp.py", "hp.sh", "view.html")
+_PROFILER_FILES = ("hp.sh",)
 _PROFILER_EVENTS = (
     "PostToolUse",
     "PostToolUseFailure",
@@ -462,9 +462,9 @@ def test_a_fresh_claude_install_ships_the_guardrail_and_registers_it_in_the_plug
 
 
 def test_the_profiler_resources_land_under_the_install_directorys_profiler(tmp_path: Path) -> None:
-    """The payload is a harness resource like the hooks beside it: each vendored file lands at
-    the path it holds below `resources/claude/`, so the plugin directory gains `profiler/` holding exactly
-    the launcher, the tool and the page, the launcher executable."""
+    """The launcher is a harness resource like the hooks beside it: it lands at the path it holds below
+    `resources/claude/`, so the plugin directory gains `profiler/` holding exactly the launcher, and
+    executable: the profiler's code and page are devpro's own and ship in the wheel, not here."""
     root = tmp_path / ".claude"
     root.mkdir()
     _definition_install(root, project_root=tmp_path)
@@ -1858,9 +1858,9 @@ def test_an_opencode_install_writes_no_claude_settings_file(tmp_path: Path) -> N
 
 def test_an_opencode_install_copies_the_profiler_payload_while_a_mage_one_does_not(tmp_path: Path) -> None:
     """The profiler's hooks are claude's, but its render payload is harness-neutral, so opencode's copy
-    list carries it: opencode's project install holds `profiler/` with exactly the launcher, the tool and
-    the page and registers nothing, while mage's copy list gains nothing and so its install holds neither
-    the payload nor a registration. Both carry the show-profile skill that finds the payload."""
+    list carries it: opencode's project install holds `profiler/` with exactly the launcher and registers
+    nothing, while mage's copy list gains nothing and so its install holds neither the payload nor a
+    registration. Both carry the show-profile skill that finds the payload."""
     opencode = tmp_path / "opencode"
     (opencode / ".opencode").mkdir(parents=True)
     _definition_install(opencode / ".opencode", _OPENCODE_RENDER, project_root=opencode)
