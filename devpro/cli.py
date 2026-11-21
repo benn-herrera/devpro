@@ -25,6 +25,8 @@ from devpro.context import (
     map_spec,
     read_settings,
 )
+from devpro.dicing.cli import add_verbs
+from devpro.dicing.cli import run as run_dicing
 from devpro.errors import InputError
 from devpro.install import components_value, install_selected, preflighted_install, uncommitted_sources
 from devpro.install_target import agents_file_harness, resolve_install_target
@@ -32,6 +34,19 @@ from devpro.render import render_agents_file, render_all, write_renders
 from devpro.vocabulary import HarnessText, key
 
 _DRY_RUN_HELP = "print what the install would create, change and remove; write nothing"
+
+DICING_VERBS = (
+    "dice-doc",
+    "undice",
+    "dice-docs",
+    "check-links",
+    "check-tree",
+    "check-plan",
+    "check-design",
+    "check-roadmap",
+    "kanban",
+)
+"""The dicing verbs, added by `devpro.dicing.cli.add_verbs` and dispatched to its `run`."""
 
 
 def _add_tuning_flags(verb: argparse.ArgumentParser, *, harness_default: str | None, harness_help: str) -> None:
@@ -65,10 +80,11 @@ def _add_components(verb: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     """One verb, required: `render --out DIR` and `install TARGET [--subdir DIR] [--verbose] [--dry-run]`,
     each with the tuning flags; `install-agents-file DIR [--harness NAME] [--dry-run]`;
-    `render-agents-file HARNESS OUT`; and one maintainer helper hidden from `--help`: `harness NAME KEY`.
-    Each verb but `harness` and `install-agents-file` takes `[--components=CSV]`, turning no optional
-    component on by default. The top-level `--version` prints the bare version. allow_abbrev=False on
-    every parser.
+    `render-agents-file HARNESS OUT`; the nine dicing verbs `devpro.dicing.cli.add_verbs` adds; and one
+    maintainer helper hidden from `--help`: `harness NAME KEY`.
+    Each verb but `harness`, `install-agents-file` and the dicing verbs takes `[--components=CSV]`, turning
+    no optional component on by default. The top-level `--version` prints the bare version. allow_abbrev=False
+    on every parser.
     """
     parser = argparse.ArgumentParser(prog="devpro", allow_abbrev=False)
     parser.add_argument("--version", action="version", version=__version__)
@@ -119,6 +135,7 @@ def build_parser() -> argparse.ArgumentParser:
     query = verbs.add_parser("harness", allow_abbrev=False)
     query.add_argument("name", metavar="NAME")
     query.add_argument("key", choices=[key(part) for part in HarnessText], metavar="KEY")
+    add_verbs(verbs)
     hidden = {"harness"}
     verbs.metavar = "{" + ",".join(name for name in verbs.choices if name not in hidden) + "}"
     return parser
@@ -136,7 +153,7 @@ def _supply(settings: dict[str, HarnessSettings] | None, harness: str) -> MapSup
     return None if entry is None else entry.supply
 
 
-def _run(args: argparse.Namespace) -> None:
+def _run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> None:
     if args.verb == "render":
         settings, _ = read_settings(args.config_file)
         components = args.components or ""
@@ -188,6 +205,8 @@ def _run(args: argparse.Namespace) -> None:
         text = render_agents_file(harness, selection(args.components or ""), scope=scope_name(harness, args.out.parent))
         args.out.write_text(text, encoding="utf-8")
         print(f"wrote {args.out}")
+    elif args.verb in DICING_VERBS:
+        sys.exit(run_dicing(args, parser=parser))
     else:
         bound = harness_named(args.name).bound(NAME)
         print(bound.text(HarnessText("_".join(args.key.split("-")))))
@@ -195,9 +214,10 @@ def _run(args: argparse.Namespace) -> None:
 
 def main(argv: list[str] | None = None) -> None:
     """Run the verb. An InputError or OSError prints `error: <msg>` on stderr and exits 2."""
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
     try:
-        _run(args)
+        _run(args, parser=parser)
     except (InputError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         sys.exit(2)

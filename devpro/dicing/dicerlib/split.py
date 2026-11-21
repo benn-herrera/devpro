@@ -1,0 +1,40 @@
+"""The write pass: each section's lines, links rewritten, into its file under the output directory;
+the entry point and each section index end with a Contents block listing what is below them."""
+
+from typing import TextIO
+
+from .heads import CONTENTS, contents_line
+from .linkrewrite import Linker, Tree, parent_dir, rel
+from .outline import Outline, Section
+from .textfile import fence_flags, write_lines
+
+
+def contents_block(outline: Outline, section: Section) -> list[str]:
+    """The entry point lists every section, indented by depth; an index lists its children."""
+    block = [CONTENTS, ""]
+    if section.id == 0:
+        for s in outline.sections[1:]:
+            indent = "  " * (outline.depth[s.id] - 1)
+            block.append(contents_line(indent, text=outline.link_text(s.id), path=s.path))
+        return block
+    here = parent_dir(section.path)
+    for kid in outline.children.get(section.id, []):
+        block.append(contents_line("", text=outline.link_text(kid), path=rel(here, outline.sections[kid].path)))
+    return block
+
+
+def write_tree(sections: list[Section], lines: list[str], tree: Tree, *, err: TextIO) -> None:
+    outline = Outline(sections)
+    linker = Linker(outline, tree, lines)
+    fenced = fence_flags(lines)
+    for s in sections:
+        leaf_dir = parent_dir(s.path)
+        body = []
+        for k in range(s.first - 1, s.last):
+            next_line = lines[k + 1] if k + 1 < len(lines) else ""
+            body.append(lines[k] if fenced[k] else linker.forward(lines[k], leaf_dir, next_line))
+        if s.kind != "L":
+            body += contents_block(outline, s)
+        write_lines(f"{tree.out}/{s.path}", body)
+    distinct = "".join(f" §{number}({count})" for number, count in linker.dangling.items())
+    print(f"refs linked: {linker.resolved}; dangling: {len(linker.dangling)} distinct:{distinct}", file=err)
