@@ -39,11 +39,17 @@ the network — and the SPEC sentence's reachability outcome where SPEC states t
 
 ## R5 — Warning: `session_of` duplicates `list_sessions`' per-trace shape. *coder + architect*
 
-The seats split on the judgment — the coder calls the duplication a defect whose real new behavior
-(the `except OSError` swallow) belongs in `list_sessions`; the architect calls it justified
-repetition, machine-pinned by the page-equality test — and agree on the remedy: fold the
-unreadable-store handling into `list_sessions` and delete the mirror. The sync stays pinned either
-way.
+The seats split, and their remedies point in opposite directions: the coder calls the duplication
+a defect whose real new behavior (the `except OSError` swallow) belongs in `list_sessions`, with
+`tree` ignoring the second return value; the architect calls it justified repetition,
+machine-pinned by the page-equality test, recommends the opposite fold — build `list_sessions`
+from `session_of` — and holds the unreadable handling's placement correct and required where it
+stands, in `read_sessions` (`hp.py:1202-1206`), because `list_sessions`' `iterdir` is unguarded
+and `tree` and `doctor` call it, where its raised behavior is what the design pinned. Resolution:
+no action on the placement — `session_of` stands as justified repetition, the `except OSError`
+stays in `read_sessions`, and `tree` and `doctor` keep today's raising behavior, which the design
+pinned; the coder's remedy would change pinned behavior the design never stated. The sync stays
+pinned.
 
 ## R6 — Warning: `just test` is red at HEAD on a stray bytecode file. *architect*
 

@@ -331,26 +331,31 @@ Done-line: `just dev-check-links`. The review document and P6's Status row land 
 
 Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `a5dbc5c`): eleven defects — 1 Critical, 1 High,
 7 Warning/Low groups — five items by root cause. The seat files in `.devpro-temp/p6-review-*.md`
-carry the per-finding detail.
+carry the per-finding detail. The main session revises this section after its usability review,
+then sets this row `dispatchable`.
 
-**B1 — serve resolves its project directory as a foreground command (R1).** The handler stops
-calling `project_dir(os.getcwd())`; it resolves the directory the way the foreground `tree` command
-does (verify `tree`'s own resolution against `hp.py:229-236` and match it — the design's serve is a
-user-run route, not a committed hook). A serve test drives the handler with `CLAUDE_PROJECT_DIR`
-pointed at a foreign project and asserts this repository's sessions still index. Verify before:
-the defect re-runs as stated (variable set → empty index).
+**B1 — serve resolves its project directory from cwd, taken to the git root (R1).** The handler
+stops calling `project_dir(os.getcwd())`; it resolves `git_root(os.getcwd()) or os.getcwd()` —
+cwd taken to the git root, the coder's rule — a foreground command's own resolution, never
+capture's env-var-first rule. The consequence the rule creates is intended, stated here: with
+`CLAUDE_PROJECT_DIR` set, serve and `tree` resolve differently; `tree`'s own use of capture's rule
+is a pre-existing fact outside this design's scope, recorded as such — no item changes it. A serve
+test drives the handler with `CLAUDE_PROJECT_DIR` pointed at a foreign project and asserts this
+repository's sessions still index. Verify before: the defect re-runs as stated (variable set →
+empty index).
 
 **B2 — the decided view reaches the sequence panel (R2).** `drawSequence` gets the same fallback
 `drawTree` has: a session whose filtered view yields nothing draws its calls; the checkbox
 short-circuits; the toolbar line stays truthful. No test is added (no DOM harness — the plan's
-statement carries); the observable outcome verifies on the serve surface and the user's live
-session.
+statement carries); the serve surface is the executor's observable, and the user confirms on
+their own session after landing (the plan's opening note carries).
 
 **B3 — the skill body's words (R3, R7, R10).** One clause states the URL is read from the running
 job's output (the command does not complete); the module docstring states serve-first rendering
 (the skill writes no page file); the count instruction counts what the recording holds — calls and
-event markers — or states the rule. Pins: the render pin (`test_devpro_install.py:491-495`), the
-cross-reference guard.
+event markers — or states the rule. The docstring carries no pin — its reader is a devpro-source
+maintainer; the render pin (`test_devpro_install.py:491-495`) applies to the body changes only,
+with the cross-reference guard beside it.
 
 **B4 — the documents state the policy and read cleanly (R4, R9).** The Serving paragraph gains the
 rule sentence: `serve` binds loopback only and loads nothing from the network (stated as
@@ -360,21 +365,27 @@ whitespace as one space, so the pairs stay landed; the check re-runs green as th
 
 **B5 — the serve code's polish and the gate's hygiene (R5, R6, R8, R11).** First: remove the stray
 untracked `__pycache__/hp.cpython-311.pyc` (it blocks every gate run) and harden
-`check-wheel.sh` — the justfile header names the guard; a failing-first test or an explicit guard
-in the script, named as such. Fold the unreadable-store `except OSError` into `list_sessions` and
-delete the `session_of` mirror — the page-equality test and the index test pin the sync. The
-`dev-profiler` recipe pins the repository root (the `justfile_directory()` form) so the served
-project is the checkout, not the caller's cwd. The R11 notes — the index fields' clip/mask
-bypass, the `str.replace` slot markers, the double walk — are judged at execution: fix where a
-one-liner holds, decline with a line where the current form is the contract.
+`check-wheel.sh` — the justfile header names the guard. The guard fails, never excludes: where the
+comparison would otherwise package a stray `__pycache__` file, the script fails naming that file
+and the out-of-runner import that wrote it (the trap the justfile's own header states), so the
+next out-of-runner import is a loud gate failure naming its remedy, not a silently polluted wheel.
+No fold — R5's resolution stands: `session_of` is justified repetition, the `except OSError` stays
+in `read_sessions`, and `tree` and `doctor` keep today's raising behavior, which the design
+pinned; the page-equality test (`test_the_served_page_is_the_html_the_file_flow_writes`,
+`tests/test_devpro_profiler.py:438`) and the index test (`:389`) pin the sync. The `dev-profiler`
+recipe pins the repository root (the `justfile_directory()` form) so the served project is the
+checkout, not the caller's cwd. The R11 notes — the index fields' clip/mask bypass, the
+`str.replace` slot markers, the double walk — are judged at execution: fix where a one-liner
+holds, decline with a line where the current form is the contract.
 
 The burndown is expert (B1, B2, B4 judgment) plus mechanical sub-work; it runs on the expert
 dispatches.
 
 Done-line: `just test`, then `just sweep-python`, then `just lint`, then
 `just dev-check-design-deltas-applied` (landed: 3), then `just dev-check-links`, then
-`just dev-check-plan` — all before the landing acts; the landing commit's tree carries the gate
-passing.
+`just dev-check-plan` — the gates run against the pre-landing tree, and the landing commit deletes
+the files those gates read (`dev-check-plan`, `dev-check-design-deltas-applied` and
+`dev-check-links` read the plan and design the landing deletes).
 
 The landing acts, after the burndown's work:
 
