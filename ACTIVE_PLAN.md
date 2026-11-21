@@ -23,15 +23,15 @@ with the rest of the stage-2 set.
 | Package | State | Rating | Lifetime | Work |
 | --- | --- | --- | --- | --- |
 | | drafted | | | Kickoff: the stage-2 plan written from the design; 29 stage-2 pairs in scope, 2 (stages 3-4) left pending |
-| P1 | drafted | expert | shipped | the profiler's code absorbed into `devpro/profiler/`; the launcher finds `devpro` |
-| P2 | drafted | expert | shipped | the store rename to `.profiler-*` and the existing-stores migration |
-| P3 | drafted | expert | shipped | the dicing snippets package ships; its include line on every nested-plugin project install |
-| P4 | drafted | mechanical | shipped | the docdicer skill's runner instruction returns |
-| P5 | drafted | mechanical | shipped | the SPEC delta and README pairs applied |
-| P6 | drafted | mechanical | shipped | the ARCHITECTURE delta pairs applied |
-| P7 | drafted | expert | shipped | the plan-borne house leaves (harness-profiler, repo-layout resources line, CONVENTIONS) |
-| PR | drafted | expert | shipped | Post-plan review |
-| PB | drafted | expert | shipped | Post-plan burndown |
+| P1 | dispatchable | expert | shipped | the profiler's code absorbed into `devpro/profiler/`; the launcher finds `devpro` |
+| P2 | dispatchable | expert | shipped | the store rename to `.profiler-*` and the existing-stores migration |
+| P3 | dispatchable | expert | shipped | the dicing snippets package ships; its include line on every nested-plugin project install |
+| P4 | dispatchable | mechanical | shipped | the docdicer skill's runner instruction returns |
+| P5 | dispatchable | mechanical | shipped | the SPEC delta and README pairs applied |
+| P6 | dispatchable | mechanical | shipped | the ARCHITECTURE delta pairs applied |
+| P7 | dispatchable | expert | shipped | the plan-borne house leaves (harness-profiler, repo-layout resources line, CONVENTIONS) |
+| PR | dispatchable | expert | shipped | Post-plan review |
+| PB | dispatchable | expert | shipped | Post-plan burndown |
 
 ## P1 — the profiler is devpro's code
 
