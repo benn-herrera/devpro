@@ -7,6 +7,21 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Features
 
+### Profiler attribution: the parent-child session link
+
+The profiler's pages cannot attribute activity across a dispatch: an Agent row
+on the parent's page names the child's agent type but not its session, a child
+session's page opens with the same `main` header as any other, and the index
+lists sessions flat. The capture side extracts the child's session id from the
+dispatch result's metadata into `child_agent_id` (`profiler.ts` reads the
+result it already reads for `agentType`); the render side groups children
+under their dispatching session in the index, links each Agent row to
+`/page/<child-id>`, and heads child pages with the session that dispatched
+them. The stores stay flat: the child never knows its parent at write time,
+the hierarchy is metadata the parent side builds, and claude has no child
+session records at all. User-directed here after the serve rework landed: too
+large to join that plan's burndown.
+
 ### Codex CLI harness support
 
 Add the ability to install as a codex plugin. Feasible with gaps
