@@ -27,8 +27,13 @@ large to join that plan's burndown.
 User-directed note on the served surface: the how-to-read guidance belongs in
 an outer frame — shown once, not repeated per record page — and selecting a
 record changes the inner frame only, with the inner frame's top-level view
-being the all-records list. Composition work on the serve surface; natural to
-ride the attribution ticket's pass.
+being the all-records list. The driver is the reading experience: the same
+legend on every page reads as clunky rather than designed — render-on-demand
+makes repetition free, so this is composition, not cost. The mechanism (outer
+shell, served-asset split, or another arrangement) is the design pass's
+choice; the inner page stays the self-contained bytes the file flow produces
+unless that pin is moved deliberately. Composition work on the serve surface;
+natural to ride the attribution ticket's pass.
 
 ### Codex CLI harness support
 
