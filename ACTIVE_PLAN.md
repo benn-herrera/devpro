@@ -26,7 +26,7 @@ cited design entries, not the whole design.
 | P7 | landed | expert | shipped | `just test devpro` |
 | P8 | landed | expert | shipped | `just dev-check-links`, `just dev-check-design-deltas-applied` |
 | PR | landed | expert | shipped | `just dev-check-links` on the review document |
-| PB | dispatchable | expert | shipped | review document's findings have packages |
+| PB | drafted | expert | shipped | `just test`, `sweep-python`, `lint`, delta check (pending: 5), `dev-check-links`, `dev-check-plan` |
 
 Sequencing is P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8. The order matters in three places: P5
 rewrites the justfile before P6 removes the source tree the old recipes read; P6's
@@ -397,40 +397,70 @@ its path; the done-line claims no coverage of it.
 
 ## PB — post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `b3bb32f`): thirteen defects — 3 Critical, 4
-Medium, 2 High/Medium-tier singles, 4 Low — six items by root cause. The seat files in
-`.devpro-temp/stage1-review-*.md` carry the per-finding detail.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at `b3bb32f`): thirteen findings — 3 Critical
+(R1–R3), 1 High (R4), 4 Medium (R5–R8), 4 Low (R9–R12), R13's notes tier — six items by root
+cause. The seat files in `.devpro-temp/stage1-review-*.md` carry the per-finding detail.
 
-**B1 — the absorbed code aligns to the SPEC it implements (R1, R4).** `dicing/kanban/board.js` and
-the payload key state the hover as the SPEC's `devpro v<version>` — `devpro --version`'s text — and
-the package's second version constant goes with the key it fed (`test_server.py:241` updated with
-it). `dicing/cli.py`'s implementation imports move into `run()`'s branches — the pattern
-`devpro/cli.py` uses and the invariant exempts — so `build_parser()` stops pulling all nine verbs;
-the probe adds `build_parser()`, and the Packaging leaf's exemption names both modules. Verify
-before: the architect's probe (all three modules in `sys.modules` after `build_parser()`).
+**B1 — the absorbed code aligns to the SPEC it implements (R1, R4).** The board's payload key
+`docdicer_version` becomes `devpro_version` — `version` is already the board revision the payload
+carries — fed from `devpro.__version__`: `devpro/dicing/kanban/server.py:169` feeds it,
+`devpro/dicing/kanban/assets/board.js:134` reads it as the SPEC's `devpro v<version>` hover, and
+`tests/dicing/test_server.py:241` asserts `payload["devpro_version"] == devpro.__version__`; the
+dicing package's second version constant (`devpro/dicing/__init__.py:7`, fed by the old key) is
+deleted with its docstring's second sentence. `dicing/cli.py`'s implementation imports move into
+`run()`'s branches — the pattern `devpro/cli.py` uses — so `build_parser()` stops pulling the
+absorbed modules; the probe adds `build_parser()`. Verify before: the probe re-run
+(`import devpro.cli; devpro.cli.build_parser()`, then reading `sys.modules`) leaves twenty entries
+beginning `devpro.dicing` in `sys.modules` — the package root plus nineteen `devpro.dicing.*`
+submodules — where three named exemplars stood; the check the fix needs is absence: after it, none
+does. The walk test's exemption is B1's own step: `test_every_import_is_at_module_level`
+(`tests/test_devpro.py:1463`) exempts `devpro/cli.py` alone (`:1470`, `path != "devpro/cli.py"`),
+so the moved imports make `devpro/dicing/cli.py` a function-level offender and the run fails —
+the exemption extends to `devpro/dicing/cli.py` beside `devpro/cli.py`, and the Packaging leaf
+(`PROJECT_DOCS/ARCHITECTURE/packaging.md:22–25`) states both exemptions with it.
 
-**B2 — the runner-file mechanism's two edge behaviors (R2, R12).** The `REPO_ROOT` exemption
-covers the creation branch — a no-runner-file project root is exercised by a test; the
-created-file removal path's report states what the run actually did, with a test reaching it where
-P7's tests can.
+**B2 — the runner-file mechanism's two edge behaviors (R2, R12).** R2's defect is declined as a
+misreading; the code shows the guard covers the creation branch. The guard
+(`devpro/runner_file.py:225–226`) returns before `_runner_file` runs (`:227`) and so before the
+`Makefile` creation branch it precedes — `test_the_repositorys_own_project_root_gets_no_include_line`
+(`tests/test_devpro_install.py:1326`) passes via the guard's return, not via this repository's
+justfile — and R2's remedy-as-written, a test over a no-runner-file root, is already
+`test_a_makefile_is_created_when_the_project_has_neither_runner_file` (`:1196`). The edge that has
+no test is the guard crossed with a runner-file-less root: a test monkeypatches
+`install_base.REPO_ROOT` to a scratch root holding no runner file, calls `install_include_lines`
+on it, and asserts no `Makefile` is created and nothing written — the guard's coverage of the
+creation branch, pinned where it would matter. R12 stands as written: the created-file path's
+report states what the run actually did, with a test reaching it where P7's tests reach
+(`tests/test_devpro_install.py`).
 
-**B3 — the 0.17.x upgrade walk, stated once (R3, R9).** README's Updating section states what the
-absorbed-state install does to a 0.17.x checkout — the pruned package destination, the retired
-include line's removal and its report, the created runner file's disposal — in the prune's real
-terms, and names the lingering inert `skills/docdicer/tools/` as the operator's to delete. Verify
-before: the P7 tests' behavior over a planted 0.17.x tree.
+**B3 — the 0.17.x upgrade walk, stated once (R3, R9).** README's Updating section
+(`README.md:134`) and the guide's (`devpro/definitions/skills/guide.py:88–97`) carry the same
+instruction and are stated together, agreeing: what the absorbed-state install does to a 0.17.x
+checkout — the pruned package destination, the retired include line's removal and its report, the
+created runner file's disposal — in the prune's real terms, and names the lingering inert
+`skills/docdicer/tools/` as the operator's to delete. Verify before: the P7 tests' behavior over a
+planted 0.17.5 checkout — a scratch project laid out as a 0.17.5 install left it, holding the
+planted retired include line and the created-banner `Makefile` of P7's three tests' fixtures plus
+the retired destination with its `.venv`, per P6's verified prune behavior — run P7's three
+behaviors over that tree and state what the walk reports.
 
 **B4 — the user-facing surfaces match the landed leaves (R5, R6, R7).** README and the guide's
 Requirements bullet state the conditional `just` floor (1.27.0; 1.33.0 where the kbase component
-ships); the include-line/Makefile promise matches `plugins.md` (the kb line where kbase ships; the
-retired docdicer line removed and named); the pipx line names the newest existing tag, and the
-plan that cuts the next release stamps the README's install line — stated as the release-time
-step, not a checkout edit.
+ships); the include-line/Makefile promise (`README.md:89–90`) matches
+`PROJECT_DOCS/SPEC/deployed-surfaces/plugins.md` — the kb line where kbase ships; the retired
+docdicer line removed and named; the pipx line names the newest existing release tag (`git tag`'s
+newest is `v0.17.5`; the line at `README.md:58` names `@v0.18.0`, which no remote holds), and the
+README's install line is re-stamped at release time by the release plan's content — recorded here
+as a note, not a carried step.
 
-**B5 — the absorbed project's references retire cleanly (R8, R10, R11).** The acknowledgments
-state the docdicer absorption — the credited dicer, checks and board are devpro's own code at
-`devpro/dicing`, the ported-source credit reads as such; `plugins.md`'s example names the kb line;
-`install.py`'s docstrings state the two-row reality.
+**B5 — the absorbed project's references retire cleanly (R8, R10, R11).** `README.md:158`'s
+Third-Party docdicer bullet credits the absorbed source — the dicer, checks and board are
+devpro's own code at `devpro/dicing` — the design's summary as its wording source; the prose
+credit paragraphs (`README.md:152–154`, Coleman's idea, Furmanov's profiler source) stay as they
+stand, crediting people, not the retired package; the example at
+`PROJECT_DOCS/ARCHITECTURE/install/plugins.md:52–56` names the kb line alone, wording from the
+landed *Plugins* pair's kb-only row; `devpro/install.py:4–6` and `:303`' docstrings state the
+two-row reality, wording from the landed table.
 
 **B6 — the notes tier (R13).** Judged at execution: fix where a one-liner holds, decline with a
 line where the inherited shape is the contract — each Notes item stated with its disposition.
@@ -439,16 +469,22 @@ The burndown is expert (B1, B2, B4 judgment; the rest carry the plan's stated de
 
 Done-line: `just test`, then `just sweep-python`, then `just lint`, then
 `just dev-check-design-deltas-applied` (landed: 34, pending: 5 — the stage state), then
-`just dev-check-links`, then `just dev-check-plan` — all before the landing acts; the landing
-commit's tree carries the gate passing.
+`just dev-check-links`, then `just dev-check-plan`. Expected exits, stated per target: the first
+three and the last two exit 0; the delta check exits 1 reporting `pending: 5` — the five
+stage-2–4 pairs the design holds, pending by design, not a failure of this package.
 
 The landing acts, after the burndown's work:
 
-1. The landing commit deletes `ACTIVE_DESIGN.md` (not diced, so no tree).
-2. The landing commit deletes `ACTIVE_PLAN_REVIEW.md`.
-3. The landing commit deletes this plan — stage 1 of the absorption pass closes; the next stage's
+1. The landing commit deletes `ACTIVE_PLAN_REVIEW.md`.
+2. The landing commit deletes this plan — stage 1 of the absorption pass closes; the next stage's
    plan is written from the design's next stage content when the user directs it. The deletion is
    PB's row resolution: no Status row is set, the row dies with the plan.
+
+The design is not among the acts: the Plan Status Form's staging rule this stage's own P8 landed
+(`PROJECT_DOCS/SPEC/plan-status-form.md:86–93`) keeps `ACTIVE_DESIGN.md` until the last stage's
+plan is done — its five pending pairs (the stage-2–4 Shipped-files pairs) exist nowhere else, and
+`ROADMAP.md` holds no stage ticket to carry them. The design's deletion is that last stage's
+landing act, not this one's.
 
 ## Notes the packages run under
 
