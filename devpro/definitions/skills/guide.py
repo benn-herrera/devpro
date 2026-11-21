@@ -70,8 +70,10 @@ installs with.
 
 ## Requirements
 
-- `just` 1.33.0 or later, where the project's runner is a justfile: a claude or opencode project
-  install writes include lines into it.
+- `just` 1.27.0 or later, where the project's runner is a justfile, and 1.33.0 or later there
+  where the kbase component ships: the `kb` include line a claude or opencode project install with
+  that component writes is an `import?`, which earlier `just` rejects. No install checks the
+  version.
 - `perl` on `PATH` with core `JSON::PP`, for the claude guardrail hook. Without them a claude install
   skips the hook and its registration, says why in one line, and installs everything else.
 
@@ -93,6 +95,12 @@ venv, `<dir>/bin/pip install "git+<repository>@v<version>"` with the next releas
 the same venv; for pipx, `pipx install --force "git+<repository>@v<version>"` likewise. Then preview
 with `devpro install … --dry-run` and rerun the same `devpro install`, each with the target and flags
 it already installs with. This holds under every harness, mage included.
+
+A project installed by 0.17.x upgrades in two runs, as the repository's README states that walk under
+*Updating* ({clauses.REPOSITORY_URL}): the first prunes the retired docdicer tools, the docdicer
+skill's files and the include line, a `Makefile` it created and that line was the only content of
+gone with it, and the second reports nothing. The launcher's `.venv` under `skills/docdicer/tools/`
+survives both, inert, and the operator deletes `skills/docdicer/` once.
 
 ## Inspecting
 

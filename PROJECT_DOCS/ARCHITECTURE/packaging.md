@@ -22,7 +22,10 @@ devpro project root is the whole build configuration.
 - **Console script.** `devpro = "devpro.cli:main"`. argparse's `prog` is `"devpro"`, so
   `devpro --help` and `python3 -m devpro --help` print the same text. The dispatch is lazy: the
   entry point imports only the verb invoked, and every verb imports no third-party dependency
-  (Package and Command), so no verb pays for another verb's imports.
+  (Package and Command), so no verb pays for another verb's imports. Registered at parser build,
+  the verbs themselves import nothing: `devpro.cli` and the dicing verbs' `dicing/cli.py` import each
+  verb's implementation where it dispatches that verb, which are their only function-level imports
+  and the module-level-import house rule's one exception, the pair `tests/test_devpro.py` exempts by name.
 - **Offline build.** `just build` runs `python -m build --no-isolation` in `.venv` and writes the
   wheel and sdist to `dist/`, so it uses the venv's own setuptools, not a downloaded one. `.venv`'s
   install line in the justfile's `_venv` recipe therefore pins `setuptools~=82.0.1` and

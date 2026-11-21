@@ -31,7 +31,7 @@ from importlib.resources import files
 from typing import Any, Callable, Optional, TextIO
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from .. import __version__
+from ... import __version__
 from ..dicerlib.textfile import read_text
 from .board import (
     PLAN_COLUMNS,
@@ -166,7 +166,7 @@ class KanbanServer(ThreadingHTTPServer):
             "board": asdict(self._board),
             "plan_columns": list(PLAN_COLUMNS),
             "project": os.path.basename(self.root),
-            "docdicer_version": __version__,
+            "devpro_version": __version__,
         }
 
     def _poll(self) -> None:

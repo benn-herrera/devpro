@@ -116,18 +116,23 @@ def _without_lines(text: str, indexes: Sequence[int]) -> str:
     return "".join(line for index, line in enumerate(text.splitlines(keepends=True)) if index not in dropped)
 
 
-def _remove_a_created_runner_file_left_without_a_line(path: Path, text: str) -> None:
+def _remove_a_created_runner_file_left_without_a_line(path: Path, text: str, *, line_removed: bool) -> None:
     """Remove `path` when the cleanup left it holding no include line and nothing but the comments this
     install creates it with — a Makefile it created and the consumer added nothing to. One holding the
     consumer's own targets is left, reported: it is theirs now, and the install removes only what it
-    created and only while that holds nothing of the consumer's."""
+    created and only while that holds nothing of the consumer's. `line_removed` is what this run removed;
+    a file left with no line where the run removed none is reported as found, not as left over."""
     lines = text.splitlines()
     if (
         not lines
         or lines[0] != CREATED_MAKEFILE_BANNER
         or not all(not line.strip() or line.lstrip().startswith("#") for line in lines[1:])
     ):
-        report_left_alone(f"left {path} in place holding no include line: it holds content other than this install's")
+        report_left_alone(
+            f"left {path} in place holding no include line: it holds content other than this install's"
+            if line_removed
+            else f"left {path} in place: it holds no include line, and this install removed none"
+        )
         return
     path.unlink()
     print(f"removed {path}: the installer created it and it holds no include line")
@@ -135,11 +140,12 @@ def _remove_a_created_runner_file_left_without_a_line(path: Path, text: str) -> 
 
 def _remove_retired_line(
     text: str, retired_set: SnippetSet, *, runner: str, path: str, harness_relpath: str
-) -> tuple[str, list[str]]:
+) -> tuple[str, list[str], bool]:
     """`text` without this install's include line for `retired_set` — every such line, the set having
-    no package left to write one beside — and the messages naming what the cleanup did. A line naming
-    this harness directory is recognized by the shape `_snippet_pattern` reads and removed; one naming
-    another harness directory's snippets is reported and left. Lines of any other set are untouched."""
+    no package left to write one beside — the messages naming what the cleanup did, and whether it
+    removed a line. A line naming this harness directory is recognized by the shape `_snippet_pattern`
+    reads and removed; one naming another harness directory's snippets is reported and left. Lines of
+    any other set are untouched."""
     removed: list[int] = []
     messages: list[str] = []
     for match in _named_harnesses(text, retired_set, runner=runner):
@@ -152,7 +158,7 @@ def _remove_retired_line(
             continue
         removed.append(match.index)
         messages.append(f"removed the retired {retired_set.label} include line from {path} line {match.index + 1}")
-    return _without_lines(text, removed), messages
+    return _without_lines(text, removed), messages, bool(removed)
 
 
 def _with_include_line(
@@ -246,8 +252,9 @@ def install_include_lines(
     prior = utf8_text(path)
     text = prior
     messages: list[str] = []
+    line_removed = False
     if retired_set is not None:
-        text, messages = _remove_retired_line(
+        text, messages, line_removed = _remove_retired_line(
             text, retired_set, runner=runner, path=str(path), harness_relpath=harness_relpath
         )
     for snippet_set in snippet_sets:
@@ -259,4 +266,4 @@ def install_include_lines(
     for message in messages:
         print(message)
     if retired_set is not None and text != prior:
-        _remove_a_created_runner_file_left_without_a_line(path, text)
+        _remove_a_created_runner_file_left_without_a_line(path, text, line_removed=line_removed)

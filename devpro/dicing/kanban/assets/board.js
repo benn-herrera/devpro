@@ -131,7 +131,7 @@ function render(payload) {
     const title = `${payload.project} kanban`;
     document.title = title;
     $("page-title").textContent = title;
-    $("connection").title = `docdicer v${payload.docdicer_version}`;
+    $("connection").title = `devpro v${payload.devpro_version}`;
     renderColumns(payload);
     drawn = payload.version;
     lastPayload = payload;

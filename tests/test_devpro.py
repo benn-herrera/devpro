@@ -1464,10 +1464,12 @@ def test_every_import_is_at_module_level() -> None:
     # The entry point is the one exception: its dispatch is lazy, importing each verb's module at dispatch
     # time so no verb pays for another's imports, so its function-level imports are the deliberate
     # exception and are not walked here. The house rule holds for every other module of the package.
+    # The absorbed dicing verbs' entry point carries the same exception, for the same reason: its `run`
+    # imports each verb's implementation where it dispatches that verb.
     offenders = [
         f"{path}:{node.lineno}"
         for path, tree in _modules()
-        if path != "devpro/cli.py"
+        if path not in ("devpro/cli.py", "devpro/dicing/cli.py")
         for node in ast.walk(tree)
         if isinstance(node, (ast.Import, ast.ImportFrom)) and node not in tree.body
     ]
@@ -1515,14 +1517,23 @@ def test_every_import_is_stdlib_or_the_package() -> None:
 
 
 def test_importing_the_entry_point_imports_no_verb_module() -> None:
-    """The dispatch is lazy: importing the entry point — building the parser and choosing no verb — imports
-    no verb's module, so `--help` and every verb pay for no other's imports. Before the change the parser
-    build imported every verb's module, so this same import showed `devpro.install` in `sys.modules`."""
+    """The dispatch is lazy: building the parser and choosing no verb imports no verb's module, so `--help`
+    and every verb pay for no other's imports. Before the change the parser build imported every verb's
+    implementation — all nine, the kanban server among them — so this same parser build showed
+    `devpro.install` and the dicing verbs' modules in `sys.modules`. The dicing registration chain is the
+    pair of the package and its verb surface; no other `devpro.dicing` module is imported by it."""
     probe = (
         "import sys\n"
         "import devpro.cli\n"
-        "banned = ('devpro.install', 'devpro.render', 'devpro.agents_file', 'devpro.dicing')\n"
+        "devpro.cli.build_parser()\n"
+        "banned = ('devpro.install', 'devpro.render', 'devpro.agents_file')\n"
         "present = [name for name in banned if name in sys.modules]\n"
+        "dicing = {\n"
+        "    name\n"
+        "    for name in sys.modules\n"
+        "    if name == 'devpro.dicing' or name.startswith('devpro.dicing.')\n"
+        "}\n"
+        "present += sorted(dicing - {'devpro.dicing', 'devpro.dicing.cli'})\n"
         "assert not present, present\n"
     )
     env = {**os.environ, "PYTHONPATH": str(_PACKAGE.parent)}

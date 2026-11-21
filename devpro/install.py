@@ -1,12 +1,12 @@
 """`python3 -m devpro install TARGET [--components CSV]`, once `devpro.install_target` has resolved the
 harness directory and the project root from TARGET. The set is written into ROOT, the harness's
 `plugin_dir` below the harness directory — the harness directory itself where that is empty: every
-definition the selection ships rendered into ROOT's agents/, commands/ and skills/, each shipped
-package whose owning definition rendered copied to its stated destination — the docdicer tools inside
-the docdicer skill's directory, keeping any venv their launcher built there, the development scripts
-inside the development skill's, the kb-tools package inside the kbase skill's, with the `kbase` MCP
-entry — and, for each copied package carrying runner snippets, its include line in the consumer's
-runner file; each file the installing harness ships copied into ROOT as it stands,
+definition the selection ships rendered into ROOT's agents/, commands/ and skills/, each of the two
+shipped packages whose owning definition rendered copied to its stated destination — the development
+scripts inside the development skill's directory, the kb-tools package inside the kbase skill's, with the
+`kbase` MCP entry — and, for each copied package carrying runner snippets, its include line in the
+consumer's runner file, a line an earlier release wrote for the retired docdicer package removed there;
+each file the installing harness ships copied into ROOT as it stands,
 the harness's hooks registered in a file of their own under ROOT, its guardrail's entry only where one
 install-time run of the guardrail succeeds; a harness-directory install below its project root
 also gets its agents file in its harness directory. Overwrites without ceremony only what carries this
@@ -299,8 +299,8 @@ def prune(root: Path, *, keep: set[Path]) -> list[Path]:
     ship, and is ours; then each directory that leaves empty, walking upward from the file to the first
     directory that still holds anything, the surface included and ROOT never.
 
-    Package destinations sit inside the skills surface — `skills/kbase/kb-tools/`,
-    `skills/docdicer/tools/` and `skills/development/scripts/` — and no destination is carved out by
+    Package destinations sit inside the skills surface — `skills/kbase/kb-tools/` and
+    `skills/development/scripts/` — and no destination is carved out by
     name. None needs to be: a copied package file carries the `!INSTALLED!` banner or none, never the
     generated one `_is_ours` reads, so it is untouched here rather than pruned, and a `.venv` below a
     destination is outside the would-ship vocabulary, so its files never enter the stale list. Every file under a surface is thus either ours

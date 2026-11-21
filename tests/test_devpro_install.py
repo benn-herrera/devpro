@@ -1330,6 +1330,19 @@ def test_the_repositorys_own_project_root_gets_no_include_line() -> None:
     assert not (REPO_ROOT / "Makefile").exists()
 
 
+def test_the_exemption_creates_no_runner_file_in_a_project_holding_none(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The exemption returns before the runner file is probed, so it covers the creation branch too: a
+    repository root with neither runner file gets neither, the `Makefile` that branch would write included.
+    Not exempted, this root holds a created `Makefile` after the call."""
+    root = tmp_path / "repo"
+    root.mkdir()
+    monkeypatch.setattr("devpro.install_base.REPO_ROOT", root.resolve())
+    install_include_lines(root, list(_SNIPPET_SETS.values()), harness_relpath=".claude")
+    assert list(root.iterdir()) == []
+
+
 def test_a_retired_docdicer_line_is_removed_and_reported(tmp_path: Path, capsys) -> None:
     """`skills/docdicer/tools/` is pruned at the next install, so a line importing its snippets outlives
     the snippets it names and the recipes vanish silently. Both of this harness's lines go, each removal
@@ -1382,6 +1395,18 @@ def test_the_makefile_the_installer_created_is_removed_with_its_last_line(tmp_pa
     out, err = capsys.readouterr()
     assert f"removed {removed / 'Makefile'}: the installer created it and it holds no include line" in out
     assert f"left {kept / 'Makefile'} in place holding no include line" in err
+
+
+def test_a_runner_file_holding_no_retired_line_is_reported_as_found_not_as_left(tmp_path: Path, capsys) -> None:
+    """The removal helper runs on a file this install's write changed, which an append does as surely as
+    a removal, so it reaches a consumer's own Makefile the cleanup touched nothing in. That file is left
+    reported as holding no include line and nothing removed — not as left over after a removal."""
+    (tmp_path / "Makefile").write_text("all:\n\t@echo hi\n", encoding="utf-8")
+    install_include_lines(tmp_path, [_KB_SNIPPETS], harness_relpath=".opencode", retired_set=RETIRED_SNIPPET_SET)
+    out, err = capsys.readouterr()
+    assert "removed" not in out
+    assert f"left {tmp_path / 'Makefile'} in place: it holds no include line, and this install removed none" in err
+    assert "holding no include line: it holds content other than this install's" not in err
 
 
 def test_no_two_snippet_sets_name_the_same_snippet() -> None:

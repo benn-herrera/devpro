@@ -40,7 +40,7 @@ in just over 16K lines of runtime code, including vision tower support and an Op
 
 - Harness: claude, opencode, or mage; `--harness` takes these three names.
 - Homebrew (macOS or Linux), or pipx on a machine without it, to install devpro.
-- `just` 1.33.0 or later, where the project's runner is a justfile: the include line the install writes is an `import?`, which earlier `just` rejects, and no install checks your version.
+- `just` 1.27.0 or later, where the project's runner is a justfile, and 1.33.0 or later there where the kbase component ships: the `kb` include line an install with that component writes is an `import?`, which earlier `just` rejects. No install checks the version.
 - `perl` with core `JSON::PP` for the claude guardrail: without them the install skips the hook, says so in one line, and installs everything else.
 - An activity profiler: a claude or opencode project install records the session to `.devpro-temp/claude-profiler/` or `.devpro-temp/opencode-profiler/` at the project root — under claude one line per hook event, under opencode one per call, each with its timings and token costs — and the `show-profile` skill renders the trace as text or as a page. A claude session on the web records nothing there until `init` commits the hook; a mage install ships neither the profiler nor the skill.
 
@@ -55,10 +55,13 @@ brew install devpro
 ```
 or
 ```sh
-pipx install "git+https://github.com/benn-herrera/devpro@v0.18.0"
+pipx install "git+https://github.com/benn-herrera/devpro@v0.17.5"
 pipx ensurepath
 ```
 then open a new shell, so `devpro` is on your `PATH`.
+
+The pipx line names the newest release tag. Nothing checks it: the release plan re-stamps it, by hand,
+in the release that publishes a version.
 
 Author identity: <https://keyoxide.org/wkd/benn@bennherrera.dev>
 
@@ -86,13 +89,16 @@ Add the installed tree, the agent scratch space and the agents file's backup to 
 backup.AGENTS.md
 ```
 
-The install also adds include lines to the project's `justfile` or `Makefile` (a project with
-neither gets a new `Makefile`) for the runner files it installs, and writes the devpro block into
-the project's `AGENTS.md`, created with it where absent — unless `~/.claude/CLAUDE.md` or
-`~/.config/opencode/AGENTS.md` already holds an agents-file block, which the install keeps current
-there instead and writes no project agents file. Where the project's `AGENTS.md` takes the block,
-claude also gets the project's `CLAUDE.md` as the one-line `@AGENTS.md` redirect, created when
-absent.
+A project install under claude or opencode adds one include line to the project's `justfile` or
+`Makefile` — an `import?` or an `-include` — for the runner snippets it installs, and a project
+with neither runner file gets a new `Makefile` holding it. The line is the kb-tools package's, `kb`,
+written with `--components=kbase`. A line an earlier release wrote for the docdicer tools package,
+retired with the absorbed dicing verbs, the install removes, naming the removal in its report. The
+install also writes the devpro block into the project's `AGENTS.md`, created with it where absent —
+unless `~/.claude/CLAUDE.md` or `~/.config/opencode/AGENTS.md` already holds an agents-file block,
+which the install keeps current there instead and writes no project agents file. Where the
+project's `AGENTS.md` takes the block, claude also gets the project's `CLAUDE.md` as the one-line
+`@AGENTS.md` redirect, created when absent.
 
 Under claude, a hand-written `CLAUDE.md` refuses the install with exit 2 and nothing written: moving its content
 into `AGENTS.md` is yours to do.
@@ -139,6 +145,17 @@ it, then without to apply it.
 Installed with pipx, update with `pipx install --force` of the next release's tagged URL, then `pipx
 ensurepath` and a new shell, then the same install line.
 
+A project installed by 0.17.x upgrades in two runs. The first removes `skills/docdicer/tools/`'s own
+files — the dicer, its runner snippets — along with the `docdicer` skill's files, and removes the
+docdicer include line from the project's runner file, naming it in the report; a `Makefile` it
+created and that line was the only content of goes with it. Then the tree is exhausted: a second
+install reports nothing and leaves the same files where it left them.
+
+What survives both runs is the launcher's `.venv` under `skills/docdicer/tools/`, with everything in
+it, and the directory `skills/docdicer/` holding it. Nothing uses what is there: no definition, no
+include line, and no install writes into it, the prune keeping a `VENV_DIR` entry by rule. Delete
+`skills/docdicer/` once, and the upgrade is complete.
+
 Under Mage, an install from before the kbase component wrote a second plugin directory,
 `~/Mage/Skills/kbase/`, holding its own duplicate skills, agents file and `.mcp.json`. No install
 writes there or removes it, and Mage loads it beside `~/Mage/Skills/devpro/` — two sets of skills
@@ -155,5 +172,6 @@ Credit to Aleksandr Furmanov for his [harness-profiler](https://github.com/afurm
 - **black** (Łukasz Langa and contributors, MIT): Python formatter
 - **isort** (Timothy Crosley and contributors, MIT): Python import sorter
 - **flake8** (Tarek Ziadé and contributors, Python Code Quality Authority, MIT): Python linter
-- **docdicer** (Benn Herrera, MIT): context-saving reformatter and kanban server
+- **docdicer** (Benn Herrera, MIT): the source the dicer, the checks and the kanban board were ported
+  from; they are devpro's own code under `devpro/dicing`, and the package itself is no longer installed
 - **kbase** (Benn Herrera, MIT): the knowledge-base program and MCP server the kbase component drives

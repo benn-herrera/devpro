@@ -52,7 +52,6 @@ ships at least one such row and is a project install of a nested plugin
 the kbase component writes the kb line. `ShippedPackage.installed_snippets()` joins the destination to the set's directory, and a line names the
 installed snippets at `<harness-relpath>/<destination>/<set directory>/<snippet>`, `harness_relpath` being the install directory
 relative to the project root, so under claude
-`.claude/skills/devpro/skills/docdicer/tools/runner-snippets/docdicer.just` and
 `.claude/skills/devpro/skills/kbase/kb-tools/runner-snippets/kb.just`, and under opencode the same
 below `.opencode/plugins/devpro/`. `runner_file.install_include_lines` writes them, in the
 table's order, judging each set alone (`_with_include_line`) and writing the runner file once when

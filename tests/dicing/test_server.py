@@ -25,6 +25,7 @@ from urllib.parse import urlsplit
 
 import pytest
 
+import devpro
 import devpro.dicing
 from devpro.dicing.kanban import board as board_module
 from devpro.dicing.kanban import planform
@@ -238,7 +239,7 @@ def test_board_payload_is_the_model(tmp_path, serve):
     assert payload["board"] == _json_round_trip(asdict(read_board(root)))
     assert payload["plan_columns"] == ["drafted", "dispatchable", "in progress", "landed"]
     assert payload["project"] == "proj"
-    assert payload["docdicer_version"] == devpro.dicing.__version__
+    assert payload["devpro_version"] == devpro.__version__
 
 
 @pytest.mark.parametrize(

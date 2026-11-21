@@ -1,7 +1,8 @@
 """The dicing verbs' argparse surface and dispatch: `devpro <verb>` for each of them.
 
 `add_verbs` adds the nine verbs to `devpro.cli.build_parser`'s subparsers; `run` dispatches one and
-returns its exit status: 0 on success, 1 when a check or step fails, 2 on a refusal.
+returns its exit status: 0 on success, 1 when a check or step fails, 2 on a refusal. A verb's
+implementation is imported where that verb is dispatched, so registering the verbs imports none.
 """
 
 import argparse
@@ -9,17 +10,11 @@ import os
 import sys
 from typing import TextIO
 
-from .dicerlib.dicedoc import dice_doc, undice
-from .dicerlib.linkcheck import check_markdown_links, markdown_files
-from .dicerlib.manifest import dice_docs
-from .dicerlib.outline import DEEPEST_SPLIT_LEVEL
-from .dicerlib.treecheck import check_trees
-from .kanban.plancheck import check_design, check_plan, check_roadmap
-from .kanban.server import run_kanban
-
 
 def _refuse_unreadable(roots: list[str], *, err: TextIO) -> bool:
     """Report each markdown file under roots that cannot be read as a file; True if any."""
+    from .dicerlib.linkcheck import markdown_files
+
     unreadable = [f for f in markdown_files(roots) if not (os.path.isfile(f) and os.access(f, os.R_OK))]
     for f in unreadable:
         print(f"cannot read: {f}", file=err)
@@ -27,12 +22,14 @@ def _refuse_unreadable(roots: list[str], *, err: TextIO) -> bool:
 
 
 def _add_split_level(parser: argparse.ArgumentParser) -> None:
-    # choices are compared as written, so "04" is refused like any other value outside them
+    # choices are compared as written, so "04" is refused like any other value outside them. The
+    # options and the default are the SPEC's fixed three, and argparse prints a default from this
+    # form, so registering the verb needs no import; the path imports the constant it plans with.
     parser.add_argument(
         "--split-level",
-        choices=[str(level) for level in range(2, DEEPEST_SPLIT_LEVEL + 1)],
-        default=str(DEEPEST_SPLIT_LEVEL),
-        help=f"deepest heading level that splits into sections (default {DEEPEST_SPLIT_LEVEL})",
+        choices=["2", "3", "4"],
+        default="4",
+        help="deepest heading level that splits into sections (default %(default)s)",
     )
 
 
@@ -133,12 +130,18 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
     run_dir = os.getcwd()  # the one read of the working directory: every pass below is given it
     verb = args.verb
     if verb == "dice-doc":
+        from .dicerlib.dicedoc import dice_doc
+
         return dice_doc(
             args.monolith, args.out, args.map, root=run_dir, stdout=out, stderr=err, deepest=int(args.split_level)
         )
     if verb == "undice":
+        from .dicerlib.dicedoc import undice
+
         return undice(args.tree, args.monolith, root=run_dir, stdout=out, stderr=err, deepest=int(args.split_level))
     if verb == "dice-docs":
+        from .dicerlib.manifest import dice_docs
+
         return dice_docs(args.manifest, args.src, args.work, root=run_dir, stdout=out, stderr=err)
     if verb == "check-links":
         missing = [root for root in args.roots if not os.path.exists(root)]
@@ -146,6 +149,8 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
             parser.error(f"no such root: {', '.join(missing)}")
         if _refuse_unreadable(args.roots, err=err):
             return 2
+        from .dicerlib.linkcheck import check_markdown_links
+
         try:
             return 0 if check_markdown_links(args.roots, out=out, err=err) else 1
         except OSError as e:
@@ -158,6 +163,8 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
             parser.error(f"no such directory: {', '.join(missing)}")
         if _refuse_unreadable(args.roots, err=err):
             return 2
+        from .dicerlib.treecheck import check_trees
+
         try:
             return 0 if check_trees(args.roots, out=out, err=err) else 1
         except OSError as e:
@@ -168,17 +175,25 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
             parser.error(
                 f"no such plan file: {args.plan} (name a plan's markdown file, or a diced plan's entry-point.md)"
             )
+        from .kanban.plancheck import check_plan
+
         return check_plan(args.plan, start=run_dir, stdout=out, stderr=err)
     if verb == "check-design":
         if args.design is not None and not os.path.isfile(args.design):
             parser.error(
                 f"no such design file: {args.design} (name a design's markdown file, or a diced design's entry-point.md)"
             )
+        from .kanban.plancheck import check_design
+
         return check_design(args.design, start=run_dir, stdout=out, stderr=err, deltas_applied=args.deltas_applied)
     if verb == "check-roadmap":
         if args.roadmap is not None and not os.path.isfile(args.roadmap):
             parser.error(f"no such roadmap file: {args.roadmap} (name a roadmap's markdown file)")
+        from .kanban.plancheck import check_roadmap
+
         return check_roadmap(args.roadmap, start=run_dir, stdout=out, stderr=err)
+    from .kanban.server import run_kanban
+
     if args.project_dir is not None and not os.path.isdir(args.project_dir):
         parser.error(f"no such directory: {args.project_dir}")
     return run_kanban(args.project_dir, start=run_dir, stdout=out, stderr=err)
