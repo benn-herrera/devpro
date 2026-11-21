@@ -71,9 +71,10 @@ installs with.
 ## Requirements
 
 - `just` 1.27.0 or later, where the project's runner is a justfile, and 1.33.0 or later there
-  where the kbase component ships: the `kb` include line a claude or opencode project install with
-  that component writes is an `import?`, which earlier `just` rejects. No install checks the
-  version.
+  wherever the devpro line ships — on every project install of a nested plugin: the `devpro`
+  include line such an install writes is an `import?`, which earlier `just` rejects, and so is the
+  `kb` include line an install with the kbase component also writes, which rides the same 1.33.0
+  floor. No install checks the version.
 - `perl` on `PATH` with core `JSON::PP`, for the claude guardrail hook. Without them a claude install
   skips the hook and its registration, says why in one line, and installs everything else.
 
@@ -98,9 +99,15 @@ it already installs with. This holds under every harness, mage included.
 
 A project installed by 0.17.x upgrades in two runs, as the repository's README states that walk under
 *Updating* ({clauses.REPOSITORY_URL}): the first prunes the retired docdicer tools, the docdicer
-skill's files and the include line, a `Makefile` it created and that line was the only content of
-gone with it, and the second reports nothing. The launcher's `.venv` under `skills/docdicer/tools/`
-survives both, inert, and the operator deletes `skills/docdicer/` once.
+skill's earlier files and the include line that named them, and writes the dicing snippets package's
+own include line into the same runner file; the second reports nothing. The launcher's `.venv` under
+`skills/docdicer/tools/` survives both, inert, and the operator deletes `skills/docdicer/tools/` once.
+
+Where a project's `.devpro-temp/` holds a profiler store from before the `.profiler-*` rename —
+`claude-profiler/` or `opencode-profiler/` — the install renames it in place and prints
+`renamed <old> → <new>`; where the new name already stands it leaves the old store alone and says so,
+never merging the two, and merging or deleting it is the operator's. `devpro profiler doctor` names a
+store the rename left behind, with the move to make.
 
 ## Inspecting
 

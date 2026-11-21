@@ -1,5 +1,7 @@
 """What the capture, the render and the hook wiring all read: the schema and record limits, the masks,
-the stores, the text helpers, and the git facts a record and a project root take without spawning git.
+the store's directory and the pattern the stores are read by, the text helpers, and the git facts a
+record and a project root take without spawning git. The stores' rename and the two names it moves from
+are `stores`'s, which reads this module and nothing else of the package.
 """
 
 from __future__ import annotations
@@ -16,8 +18,8 @@ SCHEMA_VERSION = 2
 # `.devpro-temp/`, a dot name so the stores group at the top of the tree. This one is the claude capture's.
 TRACE_DIR = Path(".devpro-temp") / ".profiler-claude"
 TRACE_GLOB = ".profiler-*"
-# The store naming before the rename: `<store>-profiler`, which an install renames to `.profiler-<store>`.
-OLD_STORE_SUFFIX = "-profiler"
+# The store naming's prefix every name now carries; `stores` holds the naming before the rename, and the
+# two stores it renames.
 NEW_STORE_PREFIX = ".profiler-"
 TOOL_EVENTS = ("PostToolUse", "PostToolUseFailure")
 SESSION_EVENTS = ("PreCompact", "PostCompact", "SessionStart", "SubagentStop")

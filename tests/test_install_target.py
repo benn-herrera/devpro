@@ -16,6 +16,7 @@ from devpro.errors import InputError
 from devpro.harnesses.claude import HARNESS as CLAUDE
 from devpro.harnesses.mage import HARNESS as MAGE
 from devpro.harnesses.opencode import HARNESS as OPENCODE
+from devpro.install_base import PACKAGE_ROOT
 from devpro.install_target import resolve_install_target, target_holds_harness_dir
 from devpro.render import render_agents_file
 from tests.conftest import PLAIN
@@ -155,6 +156,27 @@ def test_a_nonexistent_target_is_refused(tmp_path: Path, capsys) -> None:
     target = tmp_path / "absent"
     assert "install target" in _refused(["install", str(target), "--harness=claude"], capsys)
     assert not target.exists()
+
+
+@pytest.mark.parametrize("inside", ["", "definitions"], ids=["the-package-root", "inside-it"])
+def test_an_install_into_the_running_packages_own_source_tree_is_refused(
+    tmp_path: Path, monkeypatch, capsys, inside: str
+) -> None:
+    """Precondition: taken at base commit `a6c077b` — probed by a copy of that commit's package tree in a
+    scratch project, so no path inside the checkout is an install target — `devpro install <the copy>
+    --harness=claude` exits 0 and writes `AGENTS.md`, `CLAUDE.md`, `Makefile` and `.claude/` into the
+    running package's own source: the incident's cause. A refused install writes nothing, so serving an
+    install into its own source leaves .pyc files, and in a checkout an editable install reads what an
+    install has pruned: the package's own set."""
+    source = PACKAGE_ROOT
+    before = _paths(source)
+    monkeypatch.chdir(source.parent)
+    capsys.readouterr()
+
+    err = _refused(["install", str(source / inside), "--harness=claude"], capsys)
+
+    assert f"the running devpro package's source, {source}" in err
+    assert _paths(source) == before
 
 
 # The `detect` install setting's per-harness judgment: one harness's own harness directory against the

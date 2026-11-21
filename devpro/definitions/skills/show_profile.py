@@ -62,7 +62,9 @@ not paste the tree.
 Where the verbose tree prints the column header alone, nothing was recorded: say so, and, under
 claude, run `sh HP doctor`, report what it printed about the traces and the newest session, and that
 its plugin-record check cannot see the payload copy, and stop. Where `tree` instead says
-`No traces in …`, the repository holds no recording at all: say so and stop."""
+`No traces in …`, run `sh HP doctor` before answering, under claude and under opencode alike, and
+report every `old:` line it prints — a store under the name from before the rename, which `tree`
+cannot read — where it prints none, say the repository holds no recording at all."""
 
 DEFINITIONS = (
     Definition(

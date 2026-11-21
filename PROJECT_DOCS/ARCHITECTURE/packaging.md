@@ -26,7 +26,11 @@ devpro project root is the whole build configuration.
   (Package and Command), so no verb pays for another verb's imports. Registered at parser build,
   the verbs themselves import nothing: `devpro.cli` and the dicing verbs' `dicing/cli.py` import each
   verb's implementation where it dispatches that verb, which are their only function-level imports
-  and the module-level-import house rule's one exception, the pair `tests/test_devpro.py` exempts by name.
+  and the module-level-import house rule's one exception, the trio `tests/test_devpro.py` exempts by
+  name. The profiler's hook wiring carries the rule's second exception, which the same test names: the
+  hook-run capture imports `hooks.py`, so the renderer's import lives in `show_skill_text`, the
+  function that renders the skill a hook writes, and never at module scope — the hook-write path
+  imports only what it executes, as the capture path does.
 - **Offline build.** `just build` runs `python -m build --no-isolation` in `.venv` and writes the
   wheel and sdist to `dist/`, so it uses the venv's own setuptools, not a downloaded one. `.venv`'s
   install line in the justfile's `_venv` recipe therefore pins `setuptools~=82.0.1` and

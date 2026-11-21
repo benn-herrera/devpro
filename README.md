@@ -42,7 +42,18 @@ in just over 16K lines of runtime code, including vision tower support and an Op
 - Homebrew (macOS or Linux), or pipx on a machine without it, to install devpro.
 - `just` 1.27.0 or later, where the project's runner is a justfile, and 1.33.0 or later there wherever the devpro line ships: every project install of a nested plugin writes that line, an `import?`, which earlier `just` rejects; the `kb` include line an install with the kbase component also writes rides the same floor. No install checks the version.
 - `perl` with core `JSON::PP` for the claude guardrail: without them the install skips the hook, says so in one line, and installs everything else.
-- An activity profiler: a claude or opencode project install records the session to `.devpro-temp/claude-profiler/` or `.devpro-temp/opencode-profiler/` at the project root — under claude one line per hook event, under opencode one per call, each with its timings and token costs — and the `show-profile` skill renders the trace as text or as a page. A claude session on the web records nothing there until `init` commits the hook; a mage install ships neither the profiler nor the skill.
+- An activity profiler, shipped with a claude or opencode project install: the session's activity is
+  recorded to the project's own store under `.devpro-temp/` at the project root — `.profiler-claude/`
+  under claude, one line per hook event, and `.profiler-opencode/` under opencode, one per tool call.
+  The `tree` and `serve` subcommands of the `devpro profiler` verb read every `.profiler-*` store
+  there, and the `show-profile` skill hands a session to the user as text, an HTML page or a served
+  page. The claude install copies the launcher `profiler/hp.sh` and registers six hook entries in the
+  plugin's `hooks/hooks.json`; the opencode install copies the launcher and the capture `profiler.ts`
+  beside the plugin entry and registers no hook entries. The page template `view.html` is the devpro
+  wheel's own package data, not an install resource.
+- Under mage, `show-profile` ships with no launcher and no capture, so a mage session records nothing
+  and has no trace to read. A claude session on the web loads no plugin's hooks and records nothing
+  there until `init` commits the hook; the skill names that `init`.
 
 ## Quick Start Guide
 
@@ -153,10 +164,22 @@ removes the docdicer include line from the project's runner file, naming it in t
 include line it writes for the new dicing snippets package lands in the same runner file. Then the
 tree is exhausted: a second install reports nothing and leaves the same files where it left them.
 
+A line already in your `justfile` or `Makefile` that names this install's snippets is rewritten in
+place, not appended beside: the install rewrites only the snippets path that line names, keeping the
+rest of it, an assignment's left-hand side and a trailing comment among them, and every line ending
+in the file.
+
 What survives both runs is the launcher's `.venv` under `skills/docdicer/tools/`, with everything in
 it, and the directory `skills/docdicer/tools/` holding it. Nothing uses what is there: no
 definition, no include line, and no install writes into it, the prune keeping a `VENV_DIR` entry by
 rule. Delete `skills/docdicer/tools/` once, and the upgrade is complete.
+
+A project that recorded sessions before this release keeps them: the profiler's stores were named
+`claude-profiler/` and `opencode-profiler/` under `.devpro-temp/`, and the install renames each to
+its `.profiler-claude/` or `.profiler-opencode/` in place, printing `renamed <old> → <new>`. An old
+store stands only where the new name already holds a store too, and the install names it instead of
+moving it: the two are never merged, and merging or deleting the old one is yours. `devpro profiler
+doctor` names such a store with the move to make.
 
 Under Mage, an install from before the kbase component wrote a second plugin directory,
 `~/Mage/Skills/kbase/`, holding its own duplicate skills, agents file and `.mcp.json`. No install

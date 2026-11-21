@@ -1460,6 +1460,46 @@ def test_definitions_and_text_reach_nothing_outside_their_arguments() -> None:
     assert offenders == []
 
 
+_HOOK_WIRING = "devpro/profiler/hooks.py"
+# The renderer's imports the hook wiring may hold inside a function, and the functions that hold them.
+_HOOK_WIRING_IMPORTS = ("from devpro.context import build_render", "from devpro.render import render_all")
+
+
+def _hook_wiring_imports(tree: ast.Module) -> set[tuple[str, str]]:
+    """The `(path, statement)` pairs the hook wiring's carve-out admits: the renderer's two imports, held
+    inside `show_skill_text`, the function that renders the skill a hook writes. `tree` is the module's
+    own, so the carve-out is read against the file it exempts and admits nothing the file does not hold
+    there."""
+    held = {
+        ast.unparse(stmt)
+        for function in tree.body
+        if isinstance(function, ast.FunctionDef) and function.name == "show_skill_text"
+        for stmt in function.body
+        if isinstance(stmt, (ast.Import, ast.ImportFrom))
+    }
+    return {(_HOOK_WIRING, stmt) for stmt in held & set(_HOOK_WIRING_IMPORTS)}
+
+
+def test_the_hook_wiring_carve_out_admits_only_its_two_imports_in_the_writer() -> None:
+    """The carve-out is not a hole: the renderer's two imports are admitted where `show_skill_text` holds
+    them, and neither is admitted anywhere else — a third import in the writer, or either import in
+    another function, reads as the offender it is."""
+    source = (
+        "def show_skill_text():\n"
+        "    from devpro.render import render_all\n"
+        "    from devpro.context import build_render\n"
+        "    import json\n"
+        "\n"
+        "def launcher_resource():\n"
+        "    from devpro.render import render_all\n"
+    )
+    admitted = _hook_wiring_imports(ast.parse(source))
+    assert admitted == {
+        (_HOOK_WIRING, "from devpro.render import render_all"),
+        (_HOOK_WIRING, "from devpro.context import build_render"),
+    }
+
+
 def test_every_import_is_at_module_level() -> None:
     # The entry point is the one exception: its dispatch is lazy, importing each verb's module at dispatch
     # time so no verb pays for another's imports, so its function-level imports are the deliberate
@@ -1468,12 +1508,19 @@ def test_every_import_is_at_module_level() -> None:
     # imports each verb's implementation where it dispatches that verb. The profiler's entry point is
     # the third: its verb is one remainder the dispatch resolves, and its `run` imports the subcommands'
     # modules so the `devpro --help` build pays for none of them.
+    # The profiler's hook wiring is the one other module, and the same reason one level down: the
+    # hook-run capture imports it, so the renderer's imports live in `show_skill_text`, the function that
+    # renders the skill a hook writes, rather than at module scope, and the renderer never reaches the
+    # every-tool-call capture path. `_hook_wiring_imports` reads them from the module, so an import
+    # moved back to module scope leaves nothing carved out and reads as the offender it would be.
     offenders = [
         f"{path}:{node.lineno}"
         for path, tree in _modules()
         if path not in ("devpro/cli.py", "devpro/dicing/cli.py", "devpro/profiler/cli.py")
         for node in ast.walk(tree)
-        if isinstance(node, (ast.Import, ast.ImportFrom)) and node not in tree.body
+        if isinstance(node, (ast.Import, ast.ImportFrom))
+        and node not in tree.body
+        and (path, ast.unparse(node)) not in _hook_wiring_imports(tree)
     ]
     assert offenders == []
 
@@ -1536,6 +1583,24 @@ def test_importing_the_entry_point_imports_no_verb_module() -> None:
         "    if name == 'devpro.dicing' or name.startswith('devpro.dicing.')\n"
         "}\n"
         "present += sorted(dicing - {'devpro.dicing', 'devpro.dicing.cli'})\n"
+        "assert not present, present\n"
+    )
+    env = {**os.environ, "PYTHONPATH": str(_PACKAGE.parent)}
+    result = subprocess.run([sys.executable, "-c", probe], env=env, capture_output=True, text=True)
+    assert result.returncode == 0, f"{result.stdout}\n{result.stderr}"
+
+
+def test_importing_the_profiler_hook_wiring_never_reaches_the_renderer() -> None:
+    """The capture path pays for nothing it does not run: the hook-run capture imports the profiler's hook
+    wiring for its two names, and the install imports it for the stores' rename, so neither may pull the
+    renderer in — seventeen devpro submodules for the rename alone, the renderer's import on the
+    every-tool-call capture path. The modules that register the profiler verb are the only others the
+    chain may name."""
+    probe = (
+        "import sys\n"
+        "import devpro.profiler.hooks\n"
+        "banned = ('devpro.render', 'devpro.context', 'devpro.definitions', 'devpro.loading', 'devpro.family')\n"
+        "present = [name for name in banned if name in sys.modules]\n"
         "assert not present, present\n"
     )
     env = {**os.environ, "PYTHONPATH": str(_PACKAGE.parent)}

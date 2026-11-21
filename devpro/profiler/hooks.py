@@ -3,10 +3,13 @@
 `init` writes the launcher and the show-profile skill into a repository's `.claude/` and registers the
 capture on every event it records, for a session that loads no plugin's hooks. `doctor` says whether
 capture works in a repository, and why not. Both apply the stores' rename: an install and an `init` move
-each `*-profiler` store under the project's `.devpro-temp/` to its `.profiler-*` name.
+the `claude-profiler` and `opencode-profiler` stores under the project's `.devpro-temp/` to their
+`.profiler-*` names.
 
-The skill is a rendered definition, so this module imports the renderer (`devpro.render`,
-`devpro.context`) where it dispatches `init`: a verb that does not write a hook loads neither.
+The renderer and the package's root are imported where they are used, in `show_skill_text` and
+`launcher_resource`: the hook-run capture reaches this module for `doctor` and `init`, and the install
+for `rename_stores` — from `stores`, which imports the store facts alone — and none of those reads a
+rendered definition or a package path.
 """
 
 from __future__ import annotations
@@ -16,15 +19,12 @@ import os
 import shutil
 from pathlib import Path
 
-from devpro.context import build_render
 from devpro.install_base import PACKAGE_ROOT
-from devpro.render import render_all
 
 from .pages import UsageError, list_sessions
+from .stores import OLD_STORE_SUFFIX, old_store_name, rename_stores
 from .values import (
     CAPTURED_EVENTS,
-    NEW_STORE_PREFIX,
-    OLD_STORE_SUFFIX,
     SHOW_SKILL,
     TRACE_DIR,
     TRACE_GLOB,
@@ -48,8 +48,9 @@ RETIRED_HOOK_FILES = ("hp.py", "view.html")
 # The harness resource the launcher is the master of: the install copies it, and `init` copies it again
 # into the repository's committed hook directory.
 HARNESS_RESOURCES = Path("harnesses") / "resources" / "claude" / "profiler"
-# The candidates the launcher's finder searches after `PATH`, in its order. `HP_DEVPRO` overrides them
-# all there; doctor lists them here so its line names what the launcher would resolve.
+# The candidates the launcher's finder searches after `PATH`, in its order. `HP_DEVPRO`, where set,
+# replaces the search rather than leading it; doctor lists them here so its line names what the launcher
+# would resolve.
 DEVPRO_CANDIDATES = ("/opt/homebrew/bin/devpro", "/usr/local/bin/devpro")
 
 USAGE = """Usage:
@@ -120,43 +121,11 @@ def merge_hooks(settings: dict) -> dict:
 
 def show_skill_text() -> str:
     """The show-profile skill as a claude project install renders it."""
+    from devpro.context import build_render
+    from devpro.render import render_all
+
     ctx = build_render(harness="claude", components="", family="claude", supply=None)
     return dict(render_all(ctx))[SHOW_SKILL / "SKILL.md"]
-
-
-def old_store_name(store: str) -> str | None:
-    """The `.profiler-*` name the store `store` takes, or nothing where its name is not an old-pattern
-    store's and no name of the new pattern either."""
-    if store.startswith(NEW_STORE_PREFIX):
-        return None
-    if not store.endswith(OLD_STORE_SUFFIX) or len(store) == len(OLD_STORE_SUFFIX):
-        return None
-    return NEW_STORE_PREFIX + store[: -len(OLD_STORE_SUFFIX)]
-
-
-def rename_stores(directory: Path | str) -> list[str]:
-    """Rename every old-pattern store under `directory`'s `.devpro-temp/` to its `.profiler-*` name, and
-    return one line per store the rename leaves standing.
-
-    A rename is reported where it happens. A store whose new name is already taken is left as it stands
-    and named instead: the stores' contents are never merged, and merging or deleting the old store is
-    the operator's call, not this call's. A name the new pattern gives is left alone, so a second run
-    touches nothing."""
-    stores = Path(directory) / TRACE_DIR.parent
-    lines = []
-    for old in sorted(stores.glob(f"*{OLD_STORE_SUFFIX}")) if stores.is_dir() else []:
-        new = old_store_name(old.name)
-        if new is None or not old.is_dir():
-            continue
-        if (stores / new).exists():
-            lines.append(
-                f"left {old} in place: {stores / new} already exists, so its traces were not merged — "
-                "merge or delete the old store yourself"
-            )
-            continue
-        old.rename(stores / new)
-        lines.append(f"renamed {old} → {stores / new}")
-    return lines
 
 
 def init(argv: list[str], cwd: Path | str) -> str:
@@ -168,6 +137,11 @@ def init(argv: list[str], cwd: Path | str) -> str:
     repo = git_root(cwd)
     if not repo:
         raise UsageError("Run devpro profiler init inside a git repository.")
+    if repo.resolve() == PACKAGE_ROOT or repo.resolve().is_relative_to(PACKAGE_ROOT):
+        raise UsageError(
+            f"This repository's root is the running devpro package's source, {PACKAGE_ROOT}: "
+            "init writes into a project, not the package running it."
+        )
     target = repo / HOOK_DIR
     target.mkdir(parents=True, exist_ok=True)
     for name in HOOK_FILES:
@@ -262,16 +236,18 @@ def doctor(cwd: Path | str) -> str:
         f"traces:  {claude_store} (tree reads {Path(directory) / TRACE_DIR.parent / TRACE_GLOB})",
         f"hook:    {installed}",
     ]
-    # A store from before the rename is one `tree` cannot see: its remedy is the install or `init` that
-    # renames it, where the new store already stands the operator's own merge or deletion.
+    # A store from before the rename is one `tree` cannot see, and no devpro command merges two stores:
+    # where its new name stands the operator merges or deletes it, and elsewhere the `mv` or the `init`
+    # renames it. The `mv` is the remedy wherever an install cannot run — this repository's own install
+    # refuses its root, the package's source, so the straggler here stands until it is moved by hand.
     for store in sorted((Path(directory) / TRACE_DIR.parent).glob(f"*{OLD_STORE_SUFFIX}")):
         if store.is_dir() and (new := old_store_name(store.name)) is not None:
             target = Path(directory) / TRACE_DIR.parent / new
             remedy = (
-                f"{target} already exists, so run devpro profiler init claude and merge or delete the old store "
-                "yourself"
+                f"{target} already exists, and devpro never merges two stores: merge or delete the old one "
+                f"yourself, by moving its files into {target} and removing this directory"
                 if target.exists()
-                else "run devpro install or devpro profiler init claude again, which renames it"
+                else f"move it there yourself, mv {store} {target}, or run devpro profiler init claude, which renames it"
             )
             lines.append(f"old:     {store} is not a store tree reads; {remedy}")
     lines += [

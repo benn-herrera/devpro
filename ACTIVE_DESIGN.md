@@ -668,15 +668,20 @@ any more — the install removes, naming the removal in its report. The
 **As it stands:**
 ```
 A project installed by 0.17.x upgrades in two runs. The first removes `skills/docdicer/tools/`'s own
-files — the dicer, its runner snippets — along with the `docdicer` skill's files, and removes the
-docdicer include line from the project's runner file, naming it in the report; a `Makefile` it
-created and that line was the only content of goes with it. Then the tree is exhausted: a second
-install reports nothing and leaves the same files where it left them.
+files — the dicer, its runner snippets — along with the `docdicer` skill's earlier files, and
+removes the docdicer include line from the project's runner file, naming it in the report; the
+include line it writes for the new dicing snippets package lands in the same runner file. Then the
+tree is exhausted: a second install reports nothing and leaves the same files where it left them.
+
+A line already in your `justfile` or `Makefile` that names this install's snippets is rewritten in
+place, not appended beside: the install rewrites only the snippets path that line names, keeping the
+rest of it, an assignment's left-hand side and a trailing comment among them, and every line ending
+in the file.
 
 What survives both runs is the launcher's `.venv` under `skills/docdicer/tools/`, with everything in
-it, and the directory `skills/docdicer/` holding it. Nothing uses what is there: no definition, no
-include line, and no install writes into it, the prune keeping a `VENV_DIR` entry by rule. Delete
-`skills/docdicer/` once, and the upgrade is complete.
+it, and the directory `skills/docdicer/tools/` holding it. Nothing uses what is there: no
+definition, no include line, and no install writes into it, the prune keeping a `VENV_DIR` entry by
+rule. Delete `skills/docdicer/tools/` once, and the upgrade is complete.
 ```
 **Becomes:**
 ```
@@ -685,6 +690,11 @@ files — the dicer, its runner snippets — along with the `docdicer` skill's e
 removes the docdicer include line from the project's runner file, naming it in the report; the
 include line it writes for the new dicing snippets package lands in the same runner file. Then the
 tree is exhausted: a second install reports nothing and leaves the same files where it left them.
+
+A line already in your `justfile` or `Makefile` that names this install's snippets is rewritten in
+place, not appended beside: the install rewrites only the snippets path that line names, keeping the
+rest of it, an assignment's left-hand side and a trailing comment among them, and every line ending
+in the file.
 
 What survives both runs is the launcher's `.venv` under `skills/docdicer/tools/`, with everything in
 it, and the directory `skills/docdicer/tools/` holding it. Nothing uses what is there: no
@@ -720,7 +730,7 @@ the absorbed dicing package — the docdicer project's dicer, checks and board a
 **Becomes:**
 ````
   dicing/               the absorbed dicing package — the docdicer project's dicer, checks and board as devpro code, run as devpro's dicing and check verbs (Dicing and Checks); importable Python, the board's assets (kanban/assets/) the package data it ships (Packaging), the absorbed project's contract documents carried into Dicing and Checks, its tests joining the devpro test surface
-  dicing-snippets/      shipped package, owned by `docdicer` and so delivered by every project install — the runner snippets (devpro.just, devpro.mk) a project install writes the consuming project's include line for, which run the `devpro` command from `PATH`; nothing importable; installed under <install-dir>/skills/docdicer/dicing-snippets/, inside the docdicer skill's own directory (DICING_SNIPPETS_PACKAGE, devpro/install.py)
+  dicing-snippets/      shipped package, owned by `docdicer` and so delivered by every project install — the runner snippets (devpro.just, devpro.mk) a project install writes the consuming project's include line for, which run the `devpro` command from `PATH`; nothing importable; installed under <install-dir>/skills/docdicer/dicing-snippets/, inside the docdicer skill's own directory (the `SHIPPED_PACKAGES` row, devpro/install.py)
 ````
 
 ### [Packaging](PROJECT_DOCS/ARCHITECTURE/packaging.md) — the wheel's data globs and the lazy entry point
@@ -765,6 +775,31 @@ the absorbed dicing package — the docdicer project's dicer, checks and board a
   `devpro --help` and `python3 -m devpro --help` print the same text. The dispatch is lazy: the
   entry point imports only the verb invoked, and every verb imports no third-party dependency
   (Package and Command), so no verb pays for another verb's imports.
+```
+
+**As it stands:**
+```
+- **Console script.** `devpro = "devpro.cli:main"`. argparse's `prog` is `"devpro"`, so
+  `devpro --help` and `python3 -m devpro --help` print the same text. The dispatch is lazy: the
+  entry point imports only the verb invoked, and every verb imports no third-party dependency
+  (Package and Command), so no verb pays for another verb's imports. Registered at parser build,
+  the verbs themselves import nothing: `devpro.cli` and the dicing verbs' `dicing/cli.py` import each
+  verb's implementation where it dispatches that verb, which are their only function-level imports
+  and the module-level-import house rule's one exception, the pair `tests/test_devpro.py` exempts by name.
+```
+**Becomes:**
+```
+- **Console script.** `devpro = "devpro.cli:main"`. argparse's `prog` is `"devpro"`, so
+  `devpro --help` and `python3 -m devpro --help` print the same text. The dispatch is lazy: the
+  entry point imports only the verb invoked, and every verb imports no third-party dependency
+  (Package and Command), so no verb pays for another verb's imports. Registered at parser build,
+  the verbs themselves import nothing: `devpro.cli` and the dicing verbs' `dicing/cli.py` import each
+  verb's implementation where it dispatches that verb, which are their only function-level imports
+  and the module-level-import house rule's one exception, the trio `tests/test_devpro.py` exempts by
+  name. The profiler's hook wiring carries the rule's second exception, which the same test names: the
+  hook-run capture imports `hooks.py`, so the renderer's import lives in `show_skill_text`, the
+  function that renders the skill a hook writes, and never at module scope — the hook-write path
+  imports only what it executes, as the capture path does.
 ```
 
 ### [Recipes](PROJECT_DOCS/ARCHITECTURE/recipes.md) — the verbs run from devpro; the consumer's floor is the devpro line's

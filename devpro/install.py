@@ -9,7 +9,10 @@ consumer's runner file, a line an earlier release wrote for the retired docdicer
 each file the installing harness ships copied into ROOT as it stands,
 the harness's hooks registered in a file of their own under ROOT, its guardrail's entry only where one
 install-time run of the guardrail succeeds; a harness-directory install below its project root
-also gets its agents file in its harness directory. Overwrites without ceremony only what carries this
+also gets its agents file in its harness directory, and its profiler stores from before the `.profiler-*`
+rename — `claude-profiler` and `opencode-profiler` — renamed in place, once, with the move printed.
+A target that resolves into the running devpro package's own source is refused before anything is
+written. Overwrites without ceremony only what carries this
 repository's banner, refusing over any other file at a path it writes: the consumer's git is the record
 of what an install changed.
 Where the devpro settings file names harnesses and `--harness` is not given, `install_selected` drives
@@ -45,14 +48,16 @@ from devpro.harness import KBASE_OWNER, GuardrailHook, Harness, HarnessFile
 from devpro.install_base import KB_TOOLS_DIR, PACKAGE_ROOT, VENV_DIR, report_left_alone
 from devpro.install_target import (
     require_existing_target,
+    require_outside_package_source,
     require_subdir_inside,
     resolve_install_target,
     target_holds_harness_dir,
     user_dir_harnesses,
 )
 from devpro.preflight import run_preflighted
-from devpro.profiler.hooks import rename_stores as migrate_stores
-from devpro.profiler.values import NEW_STORE_PREFIX, OLD_STORE_SUFFIX, TRACE_DIR
+from devpro.profiler.stores import OLD_STORE_SUFFIX, OLD_STORES
+from devpro.profiler.stores import rename_stores as migrate_stores
+from devpro.profiler.values import NEW_STORE_PREFIX, TRACE_DIR
 from devpro.render import (
     GENERATED_MARK,
     GENERATED_NOTICE,
@@ -473,7 +478,7 @@ def install(
     real_harness_dir: Path | None = None,
     real_project: Path | None = None,
     global_dir: Path | None = None,
-    rename_stores: Callable[[Path], list[str]] | None = None,
+    store_migration: Callable[[Path], list[str]] | None = None,
 ) -> None:
     """Install the set `ctx` renders into ROOT, `harness_dir / ctx.bound_harness.plugin_dir`. Every
     check runs first, so a refusal writes nothing; then the writes; then the removals.
@@ -483,9 +488,11 @@ def install(
     where a write must refuse on them. `real_harness_dir` and `real_project` are the harness directory
     and project root the install is for, where `harness_dir` and `project_root` are a scratch copy of
     them, each defaulting to the path written. `global_dir` is the harness's user harness directory, or a
-    scratch copy of it, defaulting to the directory itself. `rename_stores` renames a project's stores
-    from the profiler's `*-profiler` naming to `.profiler-*`, called for the project written and
-    returning the lines the report names; it is `rename_stores` where not given."""
+    scratch copy of it, defaulting to the directory itself. `store_migration` renames a project's
+    `claude-profiler` and `opencode-profiler` stores to their `.profiler-*` names, called for the project
+    written and returning the lines the report names; where not given it is the project's stores renamed
+    once (`_one_project_renamed_once`), so a run's preflight scratch copy is renamed and no second call
+    renames what the report already named."""
     root = harness_dir / ctx.bound_harness.plugin_dir
     project = _lexical(harness_dir if project_root is None else Path(project_root))
     user_level = ctx.harness.name in user_dir_harnesses(harness_dir if real_harness_dir is None else real_harness_dir)
@@ -589,7 +596,8 @@ def install(
         )
     # The profiler's stores from before their rename, for the project written: the preflight's scratch run
     # renames its copy, which is what shows the preflight a move, and the real project is renamed once.
-    for line in (rename_stores or migrate_stores)(project):
+    # Called straight, with no migration passed, this call is the only one, so it makes the one rename.
+    for line in (store_migration or _one_project_renamed_once(project))(project):
         print(line)
     if guardrail is not None and not registers_guardrail:
         # Neither prune nor the one-way copy removes what an earlier install delivered, so the script
@@ -634,10 +642,13 @@ def _install_managed_paths(
     under_project: list[str] = []
     if _is_project_install_of_a_nested_plugin(harness, user_level=user_level):
         under_project += [*JUSTFILE_NAMES, *MAKEFILE_NAMES]
-    # The profiler's stores: an old-pattern one the install renames, and the name it renames to, so the
+    # The profiler's stores: each old-pattern one the install renames, and the name it renames to, so the
     # preflight sees the move it would make rather than reporting the target up to date.
     store_dir = TRACE_DIR.parent.as_posix()
-    under_project += [f"{store_dir}/{NEW_STORE_PREFIX}*", f"{store_dir}/*{OLD_STORE_SUFFIX}"]
+    renamed = [
+        (f"{store_dir}/{store}{OLD_STORE_SUFFIX}", f"{store_dir}/{NEW_STORE_PREFIX}{store}") for store in OLD_STORES
+    ]
+    under_project += [path for pair in renamed for path in pair]
     if _installs_agents_file(harness_dir, harness, project=project):
         write = checked_agents_file(harness_dir, harness, ctx.plugin)
         under_harness_dir += [path.relative_to(harness_dir).as_posix() for path in write.paths]
@@ -668,16 +679,16 @@ def preflighted_install(
     project_root: Path | None = None,
     uncommitted: Callable[[], tuple[str, ...]],
     dry_run: bool = False,
-    rename_stores: Callable[[Path], list[str]] | None = None,
+    store_migration: Callable[[Path], list[str]] | None = None,
 ) -> None:
     """`install` behind the preflight: run first into a scratch copy of the paths it manages, with the
     real harness directory and project root as its identity. Where that changed nothing, the harness
     directory is reported up to date and nothing in the target is touched — no file, no package
     destination, no `.venv`. With `dry_run`, what would be created, changed and removed is printed
     relative to the project root, and nothing is written. Otherwise the install runs exactly as
-    `install` does. Every printed path and refusal names the real target. `rename_stores` is `install`'s,
-    defaulting to the project's stores renamed once; a run installing for several harnesses passes one
-    shared across them, so the real project is renamed by its first real run alone."""
+    `install` does. Every printed path and refusal names the real target. `store_migration` is
+    `install`'s, defaulting to the project's stores renamed once; a run installing for several harnesses
+    passes one shared across them, so the real project is renamed by its first real run alone."""
     project = _lexical(harness_dir if project_root is None else Path(project_root))
     user_level = ctx.harness.name in user_dir_harnesses(harness_dir)
     managed = _install_managed_paths(
@@ -699,7 +710,7 @@ def preflighted_install(
             global_dir=bases[3],
             # One harness per run, so one rename: the preflight's scratch run renames its own copy, and
             # the real run renames the real project.
-            rename_stores=rename_stores or _one_project_renamed_once(project),
+            store_migration=store_migration or _one_project_renamed_once(project),
         ),
         dry_run=dry_run,
         target=harness_dir,
@@ -708,9 +719,11 @@ def preflighted_install(
 
 
 def _one_project_renamed_once(project: Path) -> Callable[[Path], list[str]]:
-    """The stores' rename for a run installing for several harnesses into one project: the preflight's
-    scratch runs rename their own copies, and the real project is renamed by the first real run alone, so
-    the second harness's run finds nothing to move and the report names each rename once."""
+    """The stores' rename for one project, called by `install` itself where no migration was passed: the
+    preflight's scratch runs rename their own copies, and the real project is renamed by the first real
+    call alone, so a run for several harnesses finds nothing to move on the second and the report names
+    each rename once. A call renaming inline in `install` passes no migration, and this is the migration
+    it makes, so the policy holds whichever caller reaches `install`."""
     renamed = False
 
     def rename(directory: Path) -> list[str]:
@@ -767,6 +780,7 @@ def install_selected(
     judged against `INSTALL_SETTINGS` before anything is written. The loop stops at the first refusal,
     naming the harness that refused; earlier harnesses' installs stand."""
     require_existing_target(target)
+    require_outside_package_source(target)
     if subdir is not None:
         require_subdir_inside(subdir)
     if not settings:
@@ -784,7 +798,7 @@ def install_selected(
                 f"devpro settings file '{path}', section '[{name}]': install '{setting}' is not one of "
                 f"{', '.join(INSTALL_SETTINGS)}; nothing written"
             )
-    store_renames: dict[Path, Callable[[Path], list[str]]] = {}
+    store_migrations: dict[Path, Callable[[Path], list[str]]] = {}
     for name, setting in settings_by_harness.items():
         if setting == "never":
             continue
@@ -796,7 +810,9 @@ def install_selected(
             resolved = resolve_install_target(target, harness=name, plugin=NAME, subdir=subdir)
             # One rename per project across the loop: the second harness's install must not move a store
             # the first run's report already named.
-            rename = store_renames.setdefault(resolved.project_root, _one_project_renamed_once(resolved.project_root))
+            migration = store_migrations.setdefault(
+                resolved.project_root, _one_project_renamed_once(resolved.project_root)
+            )
             preflighted_install(
                 resolved.harness_dir,
                 tuned(name, entry.supply, chosen),
@@ -804,7 +820,7 @@ def install_selected(
                 project_root=resolved.project_root,
                 uncommitted=uncommitted,
                 dry_run=dry_run,
-                rename_stores=rename,
+                store_migration=migration,
             )
         except InputError as exc:
             raise InputError(f"harness '{name}': {exc}") from exc

@@ -10,7 +10,8 @@
 //
 // `execute.before` carries no result, so it is where a call's start is taken; `execute.after` is where
 // the record is written. A capture that fails raises nothing out of a hook and says nothing, save the
-// store's own repair: an append onto a line a killed process left torn renames that store aside.
+// store's own repair: an append onto a line a killed process left torn cuts that line off the file —
+// truncating to the newline before it — and renames the whole file aside where it holds no newline.
 import { Plugin } from "@opencode/plugin"
 import {
   appendFileSync,

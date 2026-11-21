@@ -98,10 +98,12 @@ a lifecycle record the tree does not draw — writing them to its own
 `.profiler-*` store.
 The model's own `todowrite` notes are not recorded: they are not activity, so the store holds one
 record per tool call that did something. A capture that fails raises nothing out of the hook. `init`
-and `doctor` stay claude-facing: opencode has no committed-hook concept. The install ships no profiler
-launcher under opencode — `hp.sh` is claude's — so the show-profile skill's first finder candidate
-finds nothing there and the committed copy is absent too: an opencode install renders the skill and
-records through the plugin, and the store it writes is read by `devpro profiler tree` run from the
+and `doctor` stay claude-facing: opencode has no committed-hook concept. The install ships the
+profiler's launcher under opencode too: `_CROSS_HARNESS_SOURCES` carries claude's
+`claude/profiler` directory to opencode's `profiler/`, so an opencode project install holds
+`profiler/hp.sh` beside the plugin's `profiler.ts`, and the show-profile skill's first finder
+candidate resolves it. The payload is copied, not wired: opencode registers no hook entry, so no
+committed copy arises, and the store the plugin writes is read by `devpro profiler tree` run from the
 `devpro` command's `PATH`. One line holds one record, and the limits that keep it so are
 `devpro/profiler/values.py`'s: `NAME_LIMIT`,
 `ARGS_LIMIT` and `RESULT_LIMIT` clip a field's text as the Python capture clips it, and `LINE_LIMIT`
@@ -120,11 +122,17 @@ selects no opencode session.
 `.devpro-temp/`: claude's `.profiler-claude/`, opencode's `.profiler-opencode/`, and the `tree`,
 `serve` and page reads walk every `.profiler-*` directory there — a dot name, so the stores group
 and sort at the top of the scratch tree. The naming before the rename was `<store>-profiler`, and
-both `devpro install` and `devpro profiler init claude` migrate it: each such store under
-`.devpro-temp/` is renamed to `.profiler-<store>`, and the move is printed. Where a store's new name
-is already taken, the old one is left in place and named instead — the stores' contents are never
-merged, and merging or deleting the old store is the operator's call. A second run touches nothing.
-There is no window in which a capture writes one name and traces sit unread under the other.
+both `devpro install` and `devpro profiler init claude` migrate the two stores it named:
+`.devpro-temp/claude-profiler/` is renamed to `.profiler-claude` and
+`.devpro-temp/opencode-profiler/` to `.profiler-opencode`, and the move is printed. A directory
+under `.devpro-temp/` whose name only ends in `-profiler` is no store and is left alone. Where a
+store's new name is already taken, the old one is left in place and named instead — the stores'
+contents are never merged, and merging or deleting the old store is the operator's call. A second
+run touches nothing. The window between the upgrade's first capture and the install that follows it
+exists: captures write `.profiler-*` while an old-pattern store still holds its traces, so `tree` cannot
+read that store until the migration runs. The skip-and-name case above is where the window does not
+close — the old store is left standing and named, and at the migration's end one store name per
+harness stands with its traces readable under it, or the operator is told which store was left behind.
 
 **Doctor's lines.** `devpro profiler doctor` reports `devpro:` the executable the launcher's finder
 would resolve — or `not found on PATH, in Homebrew or ~/.local/bin (install devpro)` — `traces:` the

@@ -31,7 +31,7 @@ with the rest of the stage-2 set.
 | P6 | landed | mechanical | shipped | the ARCHITECTURE delta pairs applied |
 | P7 | landed | expert | shipped | the plan-borne house leaves (harness-profiler, repo-layout resources line, CONVENTIONS) |
 | PR | landed | expert | shipped | Post-plan review |
-| PB | in progress | expert | shipped | Post-plan burndown — revised in this pass; the changed-text review re-dispatches it |
+| PB | landed | expert | shipped | Post-plan burndown — revised in this pass; the changed-text review re-dispatches it |
 
 ## P1 — the profiler is devpro's code
 

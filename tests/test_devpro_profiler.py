@@ -428,6 +428,43 @@ def test_init_lays_down_the_launcher_and_clears_an_older_runs_files(tmp_path: Pa
     assert "harness-profiler/hp.sh" in (project / ".claude" / "settings.json").read_text(encoding="utf-8")
 
 
+def test_a_rename_leaves_a_directory_that_is_no_profiler_store_alone(tmp_path: Path) -> None:
+    """A project holding `.devpro-temp/notes-profiler/`, a directory named after an operator's own tool:
+    the install leaves it where it stands, its contents and all. Claude Code's own convention puts a
+    `-profiler` suffix on a directory, so a rename reading the suffix alone takes an operator's directory
+    for a store."""
+    project = tmp_path / "project"
+    (project / ".claude").mkdir(parents=True)
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    their_own = project / ".devpro-temp" / "notes-profiler"
+    their_own.mkdir(parents=True)
+    (their_own / "readme.txt").write_text("an operator's own notes\n", encoding="utf-8")
+
+    installed = _install_project(project)
+
+    assert installed.returncode == 0, installed.stderr
+    assert sorted(path.name for path in (project / ".devpro-temp").iterdir()) == ["notes-profiler"]
+    assert (their_own / "readme.txt").read_text(encoding="utf-8") == "an operator's own notes\n"
+
+
+def test_a_plain_install_renames_the_stores_once_with_no_wrapper(tmp_path: Path) -> None:
+    """`devpro install` on its one-harness branch — `install` called straight, no preflight and no stored
+    migration passed: its own call renames the project's old-pattern store and names the move, and a
+    second install of the same project renames nothing. A plain call renaming on every run renames on
+    every run, and a caller passing no wrapper reaches the operator's directories unguarded — the
+    incident this rule exists for."""
+    project = tmp_path / "project"
+    (project / ".claude").mkdir(parents=True)
+    claude = _write_store(project, "claude-profiler", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
+
+    first, second = _install_project(project), _install_project(project)
+
+    stores = project / ".devpro-temp"
+    assert sorted(path.name for path in stores.iterdir()) == [".profiler-claude"]
+    assert f"renamed {claude} → {stores / '.profiler-claude'}" in first.stdout
+    assert "renamed " not in second.stdout + second.stderr
+
+
 def test_init_renames_the_repositorys_old_pattern_stores(tmp_path: Path) -> None:
     """A repository holding `.devpro-temp/claude-profiler/` and `.devpro-temp/opencode-profiler/`:
     `init` moves each to its `.profiler-*` name and names it, the same migration an install runs. A
@@ -673,8 +710,10 @@ def test_an_install_skips_an_old_pattern_store_whose_new_name_already_stands(tmp
 
 def test_a_doctor_names_an_old_pattern_store_and_its_remedy(tmp_path: Path) -> None:
     """A project whose only store is `.devpro-temp/claude-profiler/`: `doctor` names it as one `tree`
-    does not read and the install or `init` that renames it. A store the reader cannot see reads as
-    "no calls recorded yet", and the operator has no line telling them why."""
+    does not read, with the `mv` that moves it — the remedy where an install cannot run, this
+    repository's own among them — and `init`, which renames it where the repository takes a committed
+    hook. A store the reader cannot see reads as "no calls recorded yet", and the operator has no line
+    telling them why; a remedy naming only `install` names a command that will not run here."""
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
@@ -683,7 +722,28 @@ def test_a_doctor_names_an_old_pattern_store_and_its_remedy(tmp_path: Path) -> N
     reported = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
 
     assert reported.returncode == 0, reported.stderr
-    assert f"old:     {store} is not a store tree reads; run devpro install or devpro profiler init claude" in (
+    target = project / ".devpro-temp" / ".profiler-claude"
+    assert f"old:     {store} is not a store tree reads; move it there yourself, mv {store} {target}," in (
         reported.stdout
     )
+    assert "or run devpro profiler init claude, which renames it" in reported.stdout
+    assert "devpro install" not in reported.stdout
     assert "no calls recorded yet" in reported.stdout
+
+
+def test_a_doctor_names_a_collided_store_as_the_operators_own_merge(tmp_path: Path) -> None:
+    """An old store standing where its `.profiler-*` name already exists: `doctor` names both and says
+    devpro never merges two stores, so the merge or deletion is the operator's. Sending them to a
+    command that refuses on the same collision is a remedy that cannot do what it says."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    old = _write_store(project, "claude-profiler", "s-old", "2026-01-01T00:00:00.000Z", harness="claude")
+    live = _write_store(project, ".profiler-claude", "s-new", "2026-01-02T00:00:00.000Z", harness="claude")
+
+    reported = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
+
+    assert reported.returncode == 0, reported.stderr
+    assert f"old:     {old} is not a store tree reads; {live} already exists" in reported.stdout
+    assert "devpro never merges two stores: merge or delete the old one yourself" in reported.stdout
+    assert "profiler init claude and" not in reported.stdout
