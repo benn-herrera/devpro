@@ -38,11 +38,11 @@ dispatches.
 
 | Package | State | Rating | Lifetime | Changes |
 | --- | --- | --- | --- | --- |
-| P1 | drafted | expert | shipped | `hp.py` gains the `serve` verb: `ThreadingHTTPServer` on loopback, free port with `--port`, URL on stdout; `/` the index from `list_sessions` with unreadable stores stated, `/page/<session-id>` from memory; serve tests added |
-| P2 | drafted | expert | shipped | `view.html`'s call tree: a session of nothing but tool calls renders those calls as its calls content, never an empty tree under the calls header |
-| P3 | drafted | expert | shipped | `show-profile`'s body serve-first: run the launcher's `serve`, hand the user the URL; the file redirect demoted to a one-line mention |
-| P4 | drafted | mechanical | shipped | the justfile gains `dev-profiler`, wrapping source-tree `hp.sh serve` the way `dev-kanban` wraps docdicer's serve |
-| P5 | drafted | mechanical | shipped | the three delta pairs applied: one to `shipped-files.md`, two to `harness-profiler.md` |
+| P1 | dispatchable | expert | shipped | `hp.py` gains the `serve` verb: `ThreadingHTTPServer` on loopback, free port with `--port`, URL on stdout; `/` the index from `list_sessions` with unreadable stores stated, `/page/<session-id>` from memory; serve tests added |
+| P2 | dispatchable | expert | shipped | `view.html`'s call tree: a session of nothing but tool calls renders those calls as its calls content, never an empty tree under the calls header |
+| P3 | dispatchable | expert | shipped | `show-profile`'s body serve-first: run the launcher's `serve`, hand the user the URL; the file redirect demoted to a one-line mention |
+| P4 | dispatchable | mechanical | shipped | the justfile gains `dev-profiler`, wrapping source-tree `hp.sh serve` the way `dev-kanban` wraps docdicer's serve |
+| P5 | dispatchable | mechanical | shipped | the three delta pairs applied: one to `shipped-files.md`, two to `harness-profiler.md` |
 | P6 | drafted | expert | shipped | Post-plan review — dispatchable when P5's commit lands |
 | P7 | drafted | expert | shipped | Post-plan burndown — dispatchable when P6's review document lands |
 
