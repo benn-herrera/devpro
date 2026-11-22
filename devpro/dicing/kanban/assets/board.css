@@ -167,8 +167,10 @@ h1 { font-size: 1.1rem; margin: 0; }
   gap: 0.6rem;
 }
 #connection { color: var(--muted); }
-#connection.live { color: var(--brand); }
-#connection.idle { color: var(--alert); }
+.nav-server .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; align-self: center; }
+.nav-live .dot { background: var(--brand); }
+.nav-idle .dot { background: var(--alert); }
+.nav-idle #connection { color: var(--alert); }
 
 /* The stop is a small control beside the state it ends, in the nav's server block. */
 #stop {

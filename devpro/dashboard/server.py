@@ -61,6 +61,7 @@ RETURN_LABEL = "Return to list"
 # static file of its own, and a page's script loads under the policy every page is served with. The
 # markup is one text both carriers substitute, so an id or a class cannot drift between the views.
 CHROME = """<span class="nav-server">
+  <span class="dot"></span>
   <span id="connection" role="status" aria-labelledby="connection"></span>
   <button id="stop" class="nav-stop" type="button">Stop</button>
 </span>"""

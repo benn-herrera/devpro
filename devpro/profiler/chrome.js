@@ -12,16 +12,20 @@
 (() => {
   const connection = document.getElementById("connection");
   const stop = document.getElementById("stop");
+  const server = document.querySelector(".nav-server");
   const STOPPED = "server stopped: restart devpro dashboard and open the URL it prints";
   const STATE = "/api/state";
   const EVERY_MS = 2000;
   let ended = false; // the server was stopped from the page: polling has ended for good
 
-  // An unchanged text is not re-announced by the live region.
+  // An unchanged text is not re-announced by the live region, and the server block carries the
+  // state's class: the dot's color is the state mark — the brand's phosphor where the server
+  // serves, the alert's where it does not — and the label stays quiet.
   const show = (text, version) => {
     if (connection.textContent !== text) connection.textContent = text;
-    connection.classList.toggle("live", text === "live" && !ended);
-    connection.classList.toggle("idle", text !== "live" || ended);
+    const live = text === "live" && !ended;
+    server.classList.toggle("nav-live", live);
+    server.classList.toggle("nav-idle", !live);
     connection.title = version ? `devpro ${version}` : "";
   };
 
