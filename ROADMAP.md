@@ -115,6 +115,22 @@ index, and whether pre-stamping traces get inference-based association marked as
 after the attribution pass: capability layers land in order, each on the clean foundation the
 previous layer left.
 
+### Nested agent fan-outs read as the process, or the detector names them
+
+The one-level dispatch shape the process keeps — every agent-facing brief crossing the
+main session's reviewable chain (draft, PE review, revise, dispatch with a named package and a
+state cell) — holds while agents are dispatched directly from the main session. Nested fan-outs
+(an executor dispatching its own reviewers and workers) can be legitimate exactly when the trace
+reads as the process working: the executor drafts its brief, dispatches its own PE review,
+revises, and only then dispatches the worker — every step a named agent call the profiler's
+capture already records. Two halves, one ticket: a detector that walks the flat profiler stores
+for any Agent row whose child session dispatched further agents, reporting one whose trace
+carries no review chain beside it (the unreviewed fan-out — today caught by nothing), and the
+attribution render showing the depth-2 chain itself, so the board reader sees the process
+working rather than that something ran. The index stays one level deep (the flat table of
+sessions); the session page is the depth view. Rides after the attribution pass, whose
+grouping and child pages this extends.
+
 ## Maintenance
 
 ### (STICKY) Periodic load-bearing-ness pruning pass
