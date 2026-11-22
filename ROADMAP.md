@@ -151,13 +151,17 @@ decisions are the work):
   construction only under `DEVPRO_DEV=1`: absent from `--help`, refused with argparse's stock
   invalid-choice when unset, no user-facing documentation. The justfile's dev scripts
   (`render.sh`, `_render-slot.sh`, `render-agents-file.sh`) export the envar once.
-- **The `dicing-snippets/` flattening.** `devpro/dicing-snippets/runner-snippets/` becomes
-  `devpro/runner-snippets/` — the outer name described docdicer's historical monopoly while the
-  files run `devpro` from PATH for any consumer. Renames the shipped package
-  (`install.py`'s `SHIPPED_PACKAGES`, pyproject's package-data) and relocates its install home; the
-  include-line writer, the `.just`/`.mk` self-referencing comments, the tests pinning include
-  paths, and the SPEC/plugins + ARCHITECTURE rows go with it. The stale `SPEC/plugins.md`
-  citation (`docdicer.just`/`docdicer.mk` vs the shipped `devpro.just`/`devpro.mk`) corrects here.
+- **The `dicing-snippets/` flattening and rehoming.** `devpro/dicing-snippets/runner-snippets/`
+  becomes `devpro/runner-snippets/`, and the snippets leave the docdicer skill's directory — the
+  outer name described docdicer's historical monopoly while the files run `devpro` from PATH for
+  any consumer, and the install home inside `skills/docdicer/` carried the same stale ownership.
+  Renames the shipped package (`install.py`'s `SHIPPED_PACKAGES`, pyproject's package-data) and
+  relocates its install home; the include-line writer, the `.just`/`.mk` self-referencing
+  comments, the tests pinning include paths, and the SPEC/plugins + ARCHITECTURE rows go with it.
+  **The retired docdicer target goes as redundant**: `install.py`'s `RETIRED_SNIPPET_SET` — the
+  `docdicer.just`/`docdicer.mk` include targets whose whole existence is removing a line an
+  earlier release wrote — retires with the stale `SPEC/plugins.md` citation naming it; every
+  project that carried the line has migrated, and the shipped `devpro` set is the one front door.
 - **`show-profile` renames to `profiler`.** The one verb-y name in a noun family
   (`development`, `docdicer`, `guide`, `kbase`), and the noun names the domain it reports on. The
   definition source, `values.py`'s `SHOW_SKILL`, `hooks.py`'s copy/messages, `guide.py`'s ref, the
