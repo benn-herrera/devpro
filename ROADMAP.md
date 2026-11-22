@@ -97,14 +97,6 @@ previous layer left.
 
 ## Maintenance
 
-### A naming rule for the strict fill's keys: literal marks are `_MARK`, `$name` slots are `_SLOT`
-
-`strict_fill` splits its fills by whether the key is a `$name` slot or a literal mark, and the
-call sites' names already agree (`DATA_SLOT`, `CSS_SLOT` retired, `BAND_LEGEND`, `DISPATCHED_MARK`,
-`RETURN_MARK`, `LAYER_MARK`) — but no rule states it, and `LAYER_SLOT`-shaped names were proposed
-before the `_MARK` convention was noticed. One CONVENTIONS sentence: a literal strict-fill mark is
-named `_MARK`; a `$name` slot is named `_SLOT`. Carried by the next plan touching the fill.
-
 ### A test harness re-implementing the browser's DOM starts from a verified-empty state
 
 The bun runners re-implement a minimal DOM in-process. A harness whose asserted subject is absent
@@ -138,39 +130,6 @@ whole rendered tree with it. Single-harness installs converge and are pinned by 
 (`tests/test_devpro_install.py`). A fix would render the block byte-identical across harnesses
 (plugin references with a space separator, no harness-named paths) or scope the up-to-date decision
 per harness.
-
-## Install surface
-
-### The install surface's stale and dev-only shapes
-
-Four decisions, settled while the assemble-once plan ran (its record retired at landing; the
-decisions are the work):
-
-- **The dev-verb family gated.** `render` renames to `dev-render`; `render-agents-file` and the
-  `harness` query verb go with it — the three dev-only subparsers registered during parser
-  construction only under `DEVPRO_DEV=1`: absent from `--help`, refused with argparse's stock
-  invalid-choice when unset, no user-facing documentation. The justfile's dev scripts
-  (`render.sh`, `_render-slot.sh`, `render-agents-file.sh`) export the envar once.
-- **The `dicing-snippets/` flattening and rehoming.** `devpro/dicing-snippets/runner-snippets/`
-  becomes `devpro/runner-snippets/`, and the snippets leave the docdicer skill's directory — the
-  outer name described docdicer's historical monopoly while the files run `devpro` from PATH for
-  any consumer, and the install home inside `skills/docdicer/` carried the same stale ownership.
-  Renames the shipped package (`install.py`'s `SHIPPED_PACKAGES`, pyproject's package-data) and
-  relocates its install home; the include-line writer, the `.just`/`.mk` self-referencing
-  comments, the tests pinning include paths, and the SPEC/plugins + ARCHITECTURE rows go with it.
-  The stale `SPEC/plugins.md` citation (`docdicer.just`/`docdicer.mk` naming the retired set)
-  corrects here.
-- **`show-profile` renames to `profiler`.** The one verb-y name in a noun family
-  (`development`, `docdicer`, `guide`, `kbase`), and the noun names the domain it reports on. The
-  definition source, `values.py`'s `SHOW_SKILL`, `hooks.py`'s copy/messages, `guide.py`'s ref, the
-  tests' `_SHOW_PROFILE`, the SPEC and README mentions, the rendered copies regenerate. Sequenced
-  after any design whose delta pairs cite `show_profile.py`.
-- **The bare `devpro` recipe removed** from the runner snippets — the one prefix-less recipe in a
-  file whose own header promises `devpro-` prefixes so recipes cannot collide; `just devpro` runs
-  `devpro --help`, which the consumer types anyway. The `.just`/`.mk` twins, the docstring, and
-  the six-to-five `devpro-help` listing.
-
-Each touches install behavior — a design first, then a plan.
 
 ## Testing
 
