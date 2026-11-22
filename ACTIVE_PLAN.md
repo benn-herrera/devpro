@@ -41,7 +41,7 @@ nothing to build against while the capture lands. No verb, route or file retires
 | --- | --- | --- | --- | --- |
 | A1 | landed: the delta gate reports 80 landed, 0 pending | expert | shipped | the attribution pass: the opencode capture's child-session extraction, the index's grouping, zebra and brand marks, the moments in local time with the span as a datum, the child page's dispatch band, the Agent-row links, and the pending pair's application |
 | PR | landed: the review document committed | expert | shipped | Post-plan review |
-| PB | dispatchable: the PE review's findings revised in; B2's hold gates the dispatch | expert | shipped | Post-plan burndown |
+| PB | dispatchable: the changed text (B2's disposition, B12) awaits its PE re-review | expert | shipped | Post-plan burndown |
 
 ## A1 — the attribution pass
 
@@ -287,10 +287,12 @@ names is the mutation that fails it).
   test pins stop asserting the literal declaration (F1: the literal spelling is not the contract)
   and assert the carrier's effect instead: the odd-row rule reaches the served page, and the
   harness cell carries its class.
-- **B2 (F2)** — nested dispatch chains: HELD for the user's decision. If the word is *walk*:
-  `index_html` draws each dispatcher's subtree and the count covers every row beneath. If the word
-  is *one level*: the code stands and both leaves gain the clause "a dispatch's child one level
-  deep; deeper chains read on the session's page, whose tree draws every dispatch as a context."
+- **B2 (F2)** — nested dispatch chains: DECIDED one level — the user's word (`go` on the stated
+  lean). The code stands and the clause lands in both leaves it answers —
+  `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md` (the count sentence) and
+  `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md` (the grouping sentence): "a dispatch's
+  child one level deep; deeper chains read on the session's page, whose tree draws every dispatch
+  as a context."
 - **B3 (F3)** — the self-dispatch exclusion is one fact: `dispatches` drops a session named as its
   own child before returning (or the admissible children are computed once and both the filter and
   the grouping derive from them). The `index_html` docstring states what the code now does, and
@@ -306,9 +308,10 @@ names is the mutation that fails it).
   not exist — this test is what fails under it.
 - **B6 (F6)** — decided, not branched: the moments' format authority moves to `_moments`, which
   emits `<time datetime="…">` elements the script reads — the `MOMENTS` regex goes — and a runner
-  test loads `chrome.js` over same-day and cross-day cells asserting the rewrite, the untouched
-  title, and the unmatched-cell fallback. Defect: a moment cell whose served format drifts parses
-  to nothing and keeps raw UTC silently — this test is what fails under it.
+  test loads `deco.js` (the renamed nav script, B12) over same-day and cross-day cells asserting
+  the rewrite, the untouched title, and the unmatched-cell fallback. Defect: a moment cell whose
+  served format drifts parses to nothing and keeps raw UTC silently — this test is what fails
+  under it.
 - **B7 (F7)** — the code carries what no act can produce as a file today: `childSessionOf`'s
   docstring names the version range the field holds from and states that a result with no record
   metadata is a valid no-child state. The machine-hold gap — nothing re-checks the host fact on
@@ -322,8 +325,9 @@ names is the mutation that fails it).
   (`chrome.js:88`, `:97`) with `dayOf` for display only; `view.html:372-378` gains a note that the
   link's target answers the existing 404 where no child page is served; the band test helper
   `_band()` (tests/dashboard/test_server.py) names its return-label coupling in its docstring.
-- **B9 (G3)** — `pyproject.toml` gains `profiler/chrome.js` as package data; `just test` (whole
-  tree) green again.
+- **B9 (G3)** — `pyproject.toml` gains `profiler/deco.js` as package data (the renamed nav
+  script, B12 — the entry names the file the tree will carry); `just test` (whole tree) green
+  again.
 - **B10 (G1)** — the proposed CONVENTIONS rule lands as
   `PROJECT_DOCS/CONVENTIONS/planning-and-execution/evidence-commands-run-before-they-ship.md`:
   "Evidence commands run before they ship. A command a plan or design states as re-runnable
@@ -332,11 +336,18 @@ names is the mutation that fails it).
   `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/harness-resources-are-copied-verbatim.md`:
   the `.ts` harness resources are held only by their tests — no type check or lint covers them.
 - **B12 (new — the user's finding during the hotfix, `c11c4d9`)** — `chrome.js` is renamed
-  `deco.js`: a name a reader meets in a failure path cannot tell apart from a platform-specific
-  resource loaded erroneously, and the confusion is a diagnosability defect — today it cost real
-  diagnostic time, and the name manufactures a question no other site answers. Sites the rename
-  touches, each verified in the change: the file and the `CHROME_SCRIPT` constant and
-  `/profiler/chrome.js` route in `server.py`, the board page's script reference, the byte pins
-  and the new one-scope compile pin, the ARCHITECTURE leaf's statement of the script, and the
-  plan's own prose. The prose term "the nav's chrome" stays where it stands: the record is the
-  name's retirement, not the concept's.
+  `deco.js`, and the identifiers that carry the name with it (`CHROME_SCRIPT`, `CHROME`,
+  `CHROME_MARK`, `chrome_script()`) rename to their `deco` forms: a name a reader meets in a
+  failure path cannot tell apart from a platform-specific resource loaded erroneously, and the
+  confusion is a diagnosability defect — today it cost real diagnostic time, and the name
+  manufactures a question no other site answers. Every site the rename touches, verified in the
+  change: the file itself; the `CHROME_SCRIPT` constant, the `chrome_script()` URL builder and
+  the `/profiler/chrome.js` route in `server.py`; the board page's script reference and the two
+  comments in `board.js` that name the file; the byte pins and the new one-scope compile pin;
+  the ARCHITECTURE leaves that carry the name — `install/harness-profiler.md` and
+  `repo-layout.md`; and `pyproject.toml`'s package-data entry B9 adds. The one-scope test B6
+  loads the renamed file. ROADMAP.md's historical mention stays as the record of the retired
+  ticket it cites; it is history, not instruction. The prose term "the nav's chrome" stays where
+  it stands: the record is the name's retirement, not the concept's. B9 and B6 name the renamed
+  file — the rename lands in the same package, and no item's instruction names a sibling's
+  retired name.
