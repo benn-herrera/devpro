@@ -427,9 +427,12 @@ approved can run as approved.
 
 - Once the {PERIODIC_REVIEW_INTERVAL_TERM}'s count of plans has landed since the last periodic
   review, the next plan is a periodic review, before any other plan is made active. It looks past
-  single changes, at what has accumulated across them. *Purpose:* drift that no single change
-  caused accumulates whether or not anyone looks, and is found on a count the process keeps, not
-  when someone remembers.
+  single changes, at what has accumulated across them. The review also waits for a coherent
+  feature boundary: where a project carries incomplete work split across plans, the interval's
+  being met is not enough — the boundary is, and the review waits for it. *Purpose:* drift that
+  no single change caused accumulates whether or not anyone looks, and is found on a count the
+  process keeps, not when someone remembers; and the review's product is high-level signal about
+  the whole project, which a project mid-flight buries under undone work that is not signal.
 - The count is read from the history: a plan's landing commit says it lands a plan, and a periodic
   review's landing commit says it lands a periodic review. *Purpose:* the count needs no file of its
   own to keep current.
