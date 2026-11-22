@@ -244,7 +244,9 @@ are cited so no seat's report is lost.
 arrangement and the records were not reconciled in the same edit. R1 the user has decided: the
 profiler view's silence is a bug — the accepted design's sentence governs, and the code comes to
 it. The profiler view's chrome gains the live/idle indicator and the stop, the shared nav
-carrying both on every view; the mechanism for a page that does not long-poll: the shared chrome
+carrying both on every view, **right-justified at the nav's flex edge** — the server block the
+nav's last flex item, its `margin-left: auto` reaching the edge as the mockups show; the
+mechanism for a page that does not long-poll: the shared chrome
 polls a cheap state endpoint the dashboard answers (`GET /api/state`), the indicator reading the
 poll's answer as the board's reads its own — true where the server is serving, idle where not —
 and the stop posting the existing `/api/stop`. Pinned by tests naming their defects
