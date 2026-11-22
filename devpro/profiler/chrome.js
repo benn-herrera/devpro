@@ -3,8 +3,11 @@
 // The nav's chrome on every view: the live/idle state indicator and the stop. It reads the one
 // cheap state endpoint the dashboard answers, so a view whose page carries no payload of its own —
 // the profiler view's — shows the state the server is in, and it posts the stop the board panel
-// serves. The dashboard inlines this text into each of its pages; the board page's markup names
-// assets/chrome.js instead, the same text under another name.
+// serves. The dashboard inlines this text into each of its pages; the board page names the file
+// the profiler path serves.
+//
+// The indicator's states are colored — the brand's phosphor where the server serves, the alert's
+// where it does not — and carry the serving version as hover text, the devpro the dashboard runs.
 
 (() => {
   const connection = document.getElementById("connection");
@@ -15,8 +18,11 @@
   let ended = false; // the server was stopped from the page: polling has ended for good
 
   // An unchanged text is not re-announced by the live region.
-  const show = (text) => {
+  const show = (text, version) => {
     if (connection.textContent !== text) connection.textContent = text;
+    connection.classList.toggle("live", text === "live" && !ended);
+    connection.classList.toggle("idle", text !== "live" || ended);
+    connection.title = version ? `devpro ${version}` : "";
   };
 
   const poll = async () => {
@@ -24,7 +30,8 @@
     try {
       const response = await fetch(STATE, { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      show((await response.json()).state);
+      const state = await response.json();
+      show(state.state, state.version);
     } catch (error) {
       // The endpoint answers no state: the server is not serving, and the indicator says so.
       show("idle");

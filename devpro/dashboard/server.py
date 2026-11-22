@@ -12,7 +12,8 @@ Endpoints:
 - `GET /`: a `302` to `/board/`'s absolute URL. The board is the landing surface, and it serves from
   `/board/` so its page's assets, its payload and its served documents stay under that path; the
   redirect is the one answer the root owes.
-- `GET /profiler/`: the profiler view's index — `pages.index_html` — with the nav and the band.
+- `GET /profiler/`: the profiler view's index — `pages.index_html` — with the nav and the band,
+  the shared layer linked at `/board/board.css` and the nav's script linked at `/profiler/chrome.js`.
 - `GET /page/<session-id>`: that session's page, the render's, with the nav, the band's legend and its
   return to the list.
 - `GET /board/` and `GET /board/<file>`: the board page and its files, the file resolved beside the
@@ -26,6 +27,7 @@ Endpoints:
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import sys
@@ -36,6 +38,7 @@ from importlib.resources import files
 from typing import Any, Optional, TextIO
 from urllib.parse import unquote, urlsplit
 
+from devpro import __version__
 from devpro.profiler.pages import (
     LEGEND,
     PAGE_PREFIX,
@@ -65,7 +68,13 @@ CHROME_SCRIPT = (files("devpro.profiler") / "chrome.js").read_text(encoding="utf
 CHROME_MARK = "<!--CHROME-->"
 # The one policy both panels' pages are served under, so a page cannot load from elsewhere and no
 # page frames either.
-CONTENT_SECURITY_POLICY = "default-src 'self'; frame-ancestors 'none'"
+# The templates' own style and script blocks are inline, and the served pages carry them: the
+# pages are first-party, and the render escapes every record field at source (`html.escape`, quoted
+# ids, the payload's `<` script-escaped), so 'unsafe-inline' admits them while 'self' keeps
+# everything else same-origin.
+CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+)
 _REFUSED_HOST = '{"error": "requests must name the host the dashboard is served on"}'
 _NO_SUCH_PAGE = "No such page"
 
@@ -83,9 +92,9 @@ def nav_html(active: str) -> str:
 
 
 def chrome_script() -> str:
-    """The nav's one script, as the page inlines it: the server answers no static file of its own, so
-    the board page's script names its own asset and a page served in memory carries the text."""
-    return f"<script>{CHROME_SCRIPT}</script>"
+    """The nav's one script, as the page names it: the script's one source is the shipped file, which
+    the dashboard serves at the profiler path the way the board page names its own beside it."""
+    return f'<script src="{PROFILER_PATH}chrome.js"></script>'
 
 
 def band_html(return_to: str | None) -> str:
@@ -202,11 +211,17 @@ class _Handler(BaseHTTPRequestHandler):
         if path in ("", "/"):
             self._redirect(f"http://{HOST}:{self.server.port}{BOARD_PATH}")
         elif path == STATE_PATH:
-            self._send(HTTPStatus.OK, b'{"state": "live"}', "application/json")
+            self._send(
+                HTTPStatus.OK,
+                json.dumps({"state": "live", "version": __version__}).encode("utf-8"),
+                "application/json",
+            )
         elif path == PROFILER_PATH:
             self._send(
                 HTTPStatus.OK, self.server.profiler_index().encode("utf-8"), "text/html; charset=utf-8", page=True
             )
+        elif path == PROFILER_PATH + "chrome.js":
+            self._send(HTTPStatus.OK, CHROME_SCRIPT.encode("utf-8"), "text/javascript")
         elif path.startswith(BOARD_PATH):
             self._board(self.path[len(BOARD_PATH) - 1 :])
         elif path.startswith(PAGE_PREFIX):

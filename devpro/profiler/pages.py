@@ -757,17 +757,28 @@ def index_html(directory: Path | str) -> str:
 
 
 def with_frame(page: str, *, nav: str, band: str, script: str) -> str:
-    """The rendered page as the dashboard serves it: the presentation layer's text in place of a
-    template's own `CSS_SLOT`, nav in place of its nav mark, band in place of its band mark, and the
-    nav's script in the page's head, where the template marks it.
+    """The rendered page as the dashboard serves it: the presentation layer **linked** — the
+    dashboard's Content-Security-Policy refuses an inline stylesheet, and the one source is the
+    board panel's own file, which the board page links too. The render's carrier is the inline — a
+    standalone page being self-contained — so the serve path strips the render's inline copy where
+    the page carries it and names the file where the style block stood; a session's page arrives
+    through the render first and carries the inline copy, an index does not. The template's own
+    style block stands: its rules are the page's own, served and written alike. The nav in place of
+    its nav mark, band in place of its band mark, and the nav's script named where the template
+    marks it — a linked script, for the same CSP.
 
     The band is where the view's legend is served from, and the render injected its own copy into the
     page it rendered: that copy is removed here, at the one site holding both in hand, so the served
     page carries the legend once. The removal comes before the band's splice because the band carries
     `LEGEND` itself (`dashboard.server.band_html`), which a removal run afterwards would take out of
-    the band; the CSS splice stands beside both, its mark disjoint from the legend's, and the mark the
-    script goes into stands below them all, so no stylesheet text can be read as that mark."""
-    page = page.replace(CSS_SLOT, SHARED_CSS).replace(LEGEND, "")
+    the band; the link's site stands beside both, its mark disjoint from the legend's, and the mark
+    the script goes into stands below them all, so no stylesheet text can be read as that mark."""
+    layer_link = '<link rel="stylesheet" href="/board/board.css">'
+    if SHARED_CSS in page:
+        page = page.replace(SHARED_CSS, "").replace("<style>\n", f"{layer_link}<style>", 1)
+    else:
+        page = page.replace("<style>\n" + CSS_SLOT, f"{layer_link}<style>", 1)
+    page = page.replace(LEGEND, "")
     return page.replace(NAV_MARK, nav).replace(BAND_MARK, band).replace(CHROME_MARK, script)
 
 

@@ -43,10 +43,15 @@ from typing import IO
 
 import pytest
 
+from devpro.dashboard.server import BOARD_PATH
 from devpro.profiler.capture import mask
 from devpro.profiler.hooks import RETIRED_HOOK_FILES, launcher_resource
 from devpro.profiler.pages import BAND_MARK, CHROME_MARK, LEGEND, NAV_MARK, SHARED_CSS
 from tests.test_devpro_install import _PROFILER, _claude_plugin, _definition_install
+
+# The serve path's carrier of the shared layer: the one file the board panel serves, which the pages
+# it serves name instead of the inline text `SHARED_CSS` holds.
+LAYER_LINK = f'<link rel="stylesheet" href="{BOARD_PATH}board.css">'
 
 _HERE = Path(__file__).parent
 _PACKAGE_ROOT = Path(__file__).resolve().parents[1]
@@ -183,19 +188,26 @@ def _page_data(page: str) -> dict:
 
 
 def _without_chrome(served: str) -> str:
-    """A served page with the dashboard's chrome taken out of it: its nav, its script and its band.
+    """A served page with the dashboard's carriers undone: its script, its nav and its band come out
+    and their marks stand there, the render's own marks being three lines in a row, and the shared
+    layer's link stands back as the inline text the render writes there.
 
-    Each is one region with no other of its kind in the page — the band runs to the `Return to list`
-    link it ends with — and each stands back where the render left its mark, so what remains is the
-    printed page."""
-    script = served[served.find("<script>") : served.find("</script>") + len("</script>")]
-    page = served.replace("\n" + script, "\n" + CHROME_MARK, 1)
+    Each region is one with no other of its kind in the page — the band runs to the `Return to list`
+    link it ends with — and the script, which stands after the band, comes out first; each region
+    takes its own whole line or lines with it, so nothing is left where the render has nothing."""
+    script = served[served.find("<script") : served.find("</script>") + len("</script>")]
+    page = served.replace(script + "\n", "", 1)
     band = page[
         page.find('<div class="frame-band') : page.find("Return to list</a></div>") + len("Return to list</a></div>")
     ]
-    page = page.replace("\n" + band, "\n" + BAND_MARK, 1)
-    nav = page[page.find('<nav class="site-nav') : page.find("</nav>") + len("</nav>")]
-    return page.replace("\n" + nav, "\n" + NAV_MARK, 1)
+    page = page.replace(band + "\n", "", 1)
+    nav = page[page.find('<nav class="site-nav') :]
+    nav = nav[: nav.find("</nav>") + len("</nav>")]
+    page = page.replace(nav + "\n", "", 1)
+    lines = page.splitlines()
+    lines[lines.index('<link rel="stylesheet" href="/board/board.css"><style>')] = "<style>\n" + SHARED_CSS
+    lines[lines.index('<h1>Session <span id="sid"></span></h1>') : 0] = [NAV_MARK, BAND_MARK, CHROME_MARK]
+    return "\n".join(lines) + "\n"
 
 
 def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> None:
@@ -636,13 +648,13 @@ def test_the_served_index_states_an_unreadable_store(tmp_path: Path) -> None:
 
 
 def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> None:
-    """One session's `/page/<id>` carries the file flow's page data and, with the dashboard's chrome
-    around it, nothing else: take the nav, the script and the band out of the served page, put the
-    marks the render left back where they stood, and it is `tree --format html`'s page without its
-    own legend copy, to the byte. A page whose stylesheet is not that page's — its template's own
-    rules left standing beside the shared layer, its legend in twice — is the page careful CSS
-    happens to render over, which is how the served page and the printed one came apart while both
-    rendered."""
+    """One session's `/page/<id>` carries the file flow's page data and that flow's page, with the
+    dashboard's own carriers undone: navigating, scripting and the band come off, the legend goes
+    where the band holds it, and the shared layer's link stands back as the text the render inlines
+    — leaving `tree --format html`'s page, to the byte. A page whose stylesheet is not that page's —
+    its template's own rules left standing beside the shared layer, its legend in twice — is the page
+    careful CSS happens to render over, which is how the served page and the printed one came apart
+    while both rendered."""
     project = tmp_path / "project"
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
@@ -654,6 +666,9 @@ def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> Non
     printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
     assert printed.returncode == 0, printed.stderr
     assert _page_data(served) == _page_data(printed.stdout)
+    # The serve path names the layer's one file where the file flow inlines its text: one source, two
+    # carriers, and the page else the same to the byte.
+    assert served.count(LAYER_LINK) == 1 and SHARED_CSS not in served
     assert _without_chrome(served) == printed.stdout.replace(LEGEND, "").rstrip("\n") + "\n"
 
 
@@ -675,10 +690,13 @@ def test_the_standalone_render_carries_the_shared_layer_and_the_legend_once(tmp_
     assert 'class="site-nav' not in printed.stdout and 'class="frame-band' not in printed.stdout
 
 
-def test_the_served_index_carries_the_shared_layers_own_text(tmp_path: Path) -> None:
-    """`/profiler/` inlines the board's stylesheet as it stands, from the stylesheet's own text: a
-    profiler page carrying a palette of its own is the second reskin the design forbids, the board
-    and the profiler showing two identities for one site."""
+def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path) -> None:
+    """`/profiler/` names the board's stylesheet at the path the board panel serves it, and the bytes
+    that path answers are the layer's own text: the index carries no copy of the layer itself, its
+    one link names one file, and the file it names serves `SHARED_CSS`'s bytes. A profiler page
+    carrying a palette of its own is the second reskin the design forbids, the board and the
+    profiler showing two identities for one site; a link to a path nothing serves, or to a path
+    serving other text, is a page styled by nothing."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
@@ -686,8 +704,12 @@ def test_the_served_index_carries_the_shared_layers_own_text(tmp_path: Path) -> 
 
     with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
         index = _fetch(f"{url}profiler/")
+        [linked] = re.findall(r'<link rel="stylesheet" href="([^"]+)">', index)
+        layer = _fetch(f"{url}{linked.removeprefix('/')}")
 
-    assert SHARED_CSS in index
+    assert LAYER_LINK == f'<link rel="stylesheet" href="{linked}">'
+    assert SHARED_CSS not in index
+    assert layer == SHARED_CSS
 
 
 # ---------- the stores' rename, and an install's migration of them ----------

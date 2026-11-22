@@ -16,8 +16,10 @@ from pathlib import Path
 
 import pytest
 
+from devpro import __version__
 from devpro.dashboard.server import (
     BOARD_PATH,
+    CHROME_SCRIPT,
     CONTENT_SECURITY_POLICY,
     DashboardServer,
     dashboard_root,
@@ -29,6 +31,9 @@ from devpro.profiler.pages import BAND_MARK, CHROME_MARK, CSS_SLOT, NAV_MARK, SH
 from .conftest import PLAN, TIMEOUT, Client, project, record, store
 
 ASSETS = Path(str(files("devpro.dicing.kanban") / "assets"))
+# The serve path's carrier of the shared layer: the board panel's own file, named by the pages the
+# dashboard serves in place of the inline text `SHARED_CSS` holds.
+LAYER_LINK = f'<link rel="stylesheet" href="{BOARD_PATH}board.css">'
 
 
 def _tool_call(session: str, at: str, name: str) -> dict:
@@ -50,14 +55,19 @@ def test_the_root_redirects_to_the_board_the_landing_surface(tmp_path: Path, ser
 
 
 def test_the_state_endpoint_answers_live_while_the_server_serves(tmp_path: Path, serve) -> None:
-    """`/api/state` answers `{"state": "live"}` for the host it is served on: the nav's indicator
-    reads that answer on every view, so an endpoint answering anything else — nothing, or a payload
-    the indicator would have to dig for — leaves the profiler view's chrome reading no state."""
+    """`/api/state` answers the server's state — `live`, and the version the dashboard runs, the
+    hover text the indicator carries — while it serves, so the chrome's poll shows the phosphor and
+    names the devpro serving it. An endpoint answering without the version is an indicator whose
+    hover text is empty: the operator cannot tell what is serving."""
     client = serve(project(tmp_path / "proj", {}))
 
     status, content_type, body = client.get("api/state")
 
-    assert (status, content_type, json.loads(body)) == (200, "application/json", {"state": "live"})
+    assert (status, content_type, json.loads(body)) == (
+        200,
+        "application/json",
+        {"state": "live", "version": __version__},
+    )
 
 
 def test_the_profiler_view_serves_its_list_and_its_pages(tmp_path: Path, serve) -> None:
@@ -314,26 +324,65 @@ def test_the_profiler_view_carries_its_nav_and_legend_once(tmp_path: Path, serve
 @pytest.mark.parametrize(
     "path, scripts",
     [
-        pytest.param("profiler/", 1, id="index"),
-        pytest.param("page/s-one", 2, id="session-page"),
+        pytest.param("profiler/", 0, id="index"),
+        pytest.param("page/s-one", 1, id="session-page"),
     ],
 )
 def test_every_profiler_view_page_renders_the_way_the_file_flow_renders_it(
     tmp_path: Path, serve, path: str, scripts: int
 ) -> None:
-    """A served page is the page the file flow writes, with the dashboard's own chrome around it: the
-    same stylesheet inlined once, the nav once with the server block, the nav's script once — beside
-    the render's own on a session's page — and no mark the splice did not fill. A served page whose
-    layer differs from the file's, or which carries an unfilled mark or a second nav, is the page the
-    dashboard serves standing apart from the one the render writes."""
+    """A served page is the page the file flow writes, with the dashboard's own chrome around it:
+    the shared layer linked once to the board panel's own file — the CSP refuses an inline
+    stylesheet, and one source serves both carriers — the nav once with the server block, the nav's
+    script linked once — beside the render's own scripts on a session's page — and no mark the
+    splice did not fill. A served page whose layer is inlined (the render's carrier, not the
+    serve's), or which carries an unfilled mark or a second nav, is the page the dashboard serves
+    standing apart from the one the render writes, and the CSP would strip its styling on
+    delivery."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
     page = serve(root).get(path)[2].decode("utf-8")
 
-    assert page.count(SHARED_CSS) == 1
+    assert page.count(LAYER_LINK) == 1
+    assert SHARED_CSS not in page
     assert page.count('class="site-nav') == 1 and page.count('id="connection"') == 1 and page.count('id="stop"') == 1
-    assert page.count("<script>") == scripts and page.count("api/state") == 1
+    assert page.count("<script>") == scripts
+    assert page.count('<script src="/profiler/chrome.js">') == 1 and page.count("api/state") == 0
     assert not [mark for mark in (CSS_SLOT, NAV_MARK, BAND_MARK, CHROME_MARK) if mark in page]
+
+
+def test_the_pages_csp_admits_the_pages_own_blocks(tmp_path: Path, serve) -> None:
+    """The pages' Content-Security-Policy admits the templates' own inline style and script blocks —
+    the pages are first-party and the render escapes every record field at source, so 'unsafe-inline'
+    admits what the file flow writes while 'self' keeps everything else same-origin. A policy that
+    strips a page's own blocks is the defect that left every profiler page default-styled and its
+    drawing script unrun while the bytes were correct."""
+    assert "style-src 'self' 'unsafe-inline'" in CONTENT_SECURITY_POLICY
+    assert "script-src 'self' 'unsafe-inline'" in CONTENT_SECURITY_POLICY
+    assert "frame-ancestors 'none'" in CONTENT_SECURITY_POLICY
+
+
+def test_the_profiler_chrome_is_served_as_the_file_its_pages_name(tmp_path: Path, serve) -> None:
+    """`/profiler/chrome.js` answers the shipped script's bytes as JavaScript: the profiler pages name
+    that file for the nav's behavior — the poll that keeps the indicator true and the stop that ends
+    the server — and the CSP refuses the script inline. A page naming a file the dashboard serves
+    nowhere is a nav whose stop never loads and whose indicator is idle forever."""
+    served = serve(project(tmp_path / "proj", {})).get("profiler/chrome.js")
+    assert served[0] == 200
+    assert served[2].decode("utf-8") == CHROME_SCRIPT
+    assert served[1] == "text/javascript"
+
+
+def test_the_served_pages_link_a_shared_layer_whose_bytes_are_the_one_homes(tmp_path: Path, serve) -> None:
+    """The layer the profiler pages link is the board panel's own file: the bytes `/board/board.css`
+    serves are the bytes `SHARED_CSS` holds. A layer that drifts from the one home is a second
+    stylesheet under another name — the page the link builds and the page the render writes diverge
+    on delivery, the defect no fetch of either page alone can see."""
+    served = serve(project(tmp_path / "proj", {}))
+    css = served.get("board/board.css")[2].decode("utf-8")
+    assert css == SHARED_CSS
+    page = served.get("profiler/")[2].decode("utf-8")
+    assert LAYER_LINK in page
 
 
 def test_the_board_page_holds_its_chrome_once_and_the_nav_supplies_it(tmp_path: Path, serve) -> None:
@@ -345,7 +394,7 @@ def test_the_board_page_holds_its_chrome_once_and_the_nav_supplies_it(tmp_path: 
     page = serve(project(tmp_path / "proj", {})).get("board/")[2].decode("utf-8")
 
     assert page.count('id="connection"') == 1 and page.count('id="stop"') == 1
-    assert re.findall(r'<script src="([^"]+)"', page) == ["chrome.js", "board.js"]
+    assert re.findall(r'<script src="([^"]+)"', page) == ["/profiler/chrome.js", "board.js"]
 
 
 def test_a_session_page_carries_the_bands_legend_and_the_way_back(tmp_path: Path, serve) -> None:

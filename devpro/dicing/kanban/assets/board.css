@@ -167,6 +167,8 @@ h1 { font-size: 1.1rem; margin: 0; }
   gap: 0.6rem;
 }
 #connection { color: var(--muted); }
+#connection.live { color: var(--brand); }
+#connection.idle { color: var(--alert); }
 
 /* The stop is a small control beside the state it ends, in the nav's server block. */
 #stop {
