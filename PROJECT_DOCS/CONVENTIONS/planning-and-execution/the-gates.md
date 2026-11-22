@@ -3,7 +3,7 @@
 ```
 checkpoint gate: `just test`, then `just sweep-python` (A checkpoint includes the sweep)
 step-down application: the dispatch's `model` parameter
-periodic review interval: 5
+periodic review interval: 8
 ```
 
 The periodic review runs at a coherent feature boundary, the user's direction: a full project
