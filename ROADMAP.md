@@ -5,6 +5,12 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
+### A failed `/api/traces` fetch leaves the index's table empty, silently
+
+The index's row-rendering script catches the feed failure and logs a console line only — the
+operator sees an empty table with no state naming why. The failure wants a user-visible state (an
+in-page notice naming the feed's failure), not a console line no dashboard reader opens.
+
 ## Features
 
 ### Codex CLI harness support
@@ -58,21 +64,6 @@ Right now only code-facing changes are handled by the design->plan->burndown wor
 Doc-only changes for README or project docs are currently only handled by ad-hoc processes
 and are not well-represented in the current workflow definition.
 
-### Group traces with plans — the operational-context stamp
-
-Sessions recorded by the profiler carry their operational context, so the dashboard can answer
-what happened under what set of operational directives and when — before-and-after comparison for
-an agent or skill tuning being the use the whole forensic layer serves. The stamp binds three
-things to each trace group at capture time: the plan the session worked under; the directives
-state in effect — a fingerprint of the installed agent and skill definitions and the agents file,
-taken once per session start, so two sessions under the same plan but different definitions are
-distinguishable; and the session's time against directive-state changes, so before and after a
-tuning change are defined by the change, not inferred. Open decisions for the pass's own design
-work: the fingerprint's exact scope and mechanism, how association renders in the dashboard's
-index, and whether pre-stamping traces get inference-based association marked as inferred. Rides
-after the attribution pass: capability layers land in order, each on the clean foundation the
-previous layer left.
-
 ### Nested agent fan-outs read as the process, or the detector names them
 
 The one-level dispatch shape the process keeps — every agent-facing brief crossing the
@@ -89,7 +80,38 @@ working rather than that something ran. The index stays one level deep (the flat
 sessions); the session page is the depth view. Rides after the attribution pass, whose
 grouping and child pages this extends.
 
+### Group traces with plans — the operational-context stamp
+
+Sessions recorded by the profiler carry their operational context, so the dashboard can answer
+what happened under what set of operational directives and when — before-and-after comparison for
+an agent or skill tuning being the use the whole forensic layer serves. The stamp binds three
+things to each trace group at capture time: the plan the session worked under; the directives
+state in effect — a fingerprint of the installed agent and skill definitions and the agents file,
+taken once per session start, so two sessions under the same plan but different definitions are
+distinguishable; and the session's time against directive-state changes, so before and after a
+tuning change are defined by the change, not inferred. Open decisions for the pass's own design
+work: the fingerprint's exact scope and mechanism, how association renders in the dashboard's
+index, and whether pre-stamping traces get inference-based association marked as inferred. Rides
+after the attribution pass: capability layers land in order, each on the clean foundation the
+previous layer left.
+
 ## Maintenance
+
+### A naming rule for the strict fill's keys: literal marks are `_MARK`, `$name` slots are `_SLOT`
+
+`strict_fill` splits its fills by whether the key is a `$name` slot or a literal mark, and the
+call sites' names already agree (`DATA_SLOT`, `CSS_SLOT` retired, `BAND_LEGEND`, `DISPATCHED_MARK`,
+`RETURN_MARK`, `LAYER_MARK`) — but no rule states it, and `LAYER_SLOT`-shaped names were proposed
+before the `_MARK` convention was noticed. One CONVENTIONS sentence: a literal strict-fill mark is
+named `_MARK`; a `$name` slot is named `_SLOT`. Carried by the next plan touching the fill.
+
+### A test harness re-implementing the browser's DOM starts from a verified-empty state
+
+The bun runners re-implement a minimal DOM in-process. A harness whose asserted subject is absent
+(say the selector misses) can pass a vacuous run silently — W5's probe caught the deco reading
+nothing through `document` while the run reported green. One definition sentence, shipped with the
+clauses: a run whose asserted subject is absent is a failure, not a pass. Carried by the next plan
+touching the harnesses or the clauses.
 
 ### (STICKY) Periodic load-bearing-ness pruning pass
 
@@ -117,38 +139,47 @@ whole rendered tree with it. Single-harness installs converge and are pinned by 
 (plugin references with a space separator, no harness-named paths) or scope the up-to-date decision
 per harness.
 
-### The `just install` target retires — the CLI's install verb is the only front door
+## Install surface
 
-`just install` is a checkout-side runner for the install verb, and no one reaches installation
-that way: the only front door for installing devpro — outside internal test renderings, which
-drive the CLI verb directly — is the install verb of the CLI itself (`devpro install` /
-`python -m devpro install`), the surface check-wheel exercises and every install document states.
-A user cloning this repository to run `just install` is not a flow that exists. The target
-retires as a mechanism past its use; the recipe, its docstring and any test or document naming
-it go with it. Its sibling `install-agents-file` is the same question — a checkout-side runner
-for a verb the CLI serves — and retires with it or survives with its own statement, as the
-executor's reference search and the agents-file churn ticket's fix decide.
+### The install surface's stale and dev-only shapes
 
-### The modules' homes: kanban out of dicing, the checkers into doccheck
+Four decisions, settled while the assemble-once plan ran (its record retired at landing; the
+decisions are the work):
 
-The modules' locations correspond to usage **and to the dependency direction**, and — the
-boundary's principle — **kanban consumes a known-good doc set and serves it up; the module's job
-is presentation, not validation**. Dicing and validation are different jobs. The shape:
-`devpro.dicing.kanban` — the board, the dashboard's panel — becomes `devpro.kanban`;
-**`plancheck.py` (the check verbs' implementation) and `planform.py` (the workflow documents'
-model they validate against) become `devpro.doccheck`** — the validation world — whose model
-`devpro.kanban` consumes. `dicing.cli`'s reverse arrow (`.kanban.plancheck`) is what blocks the
-clean arrangement today. The target arrows point one way only: `devpro.kanban` →
-`devpro.doccheck` → `devpro.dicing`, `devpro.dashboard` → the front ends, nothing back;
-`dicerlib` flattening into `devpro.dicing` is the optional half. The CLI layer follows the same
-line: **doccheck owns its commands' argparse and dispatch** (`check-plan`/`check-design`/
-`check-roadmap`, lazy, the verb-entry pattern — the invariant test's exemption tuple gains it),
-`devpro.dicing.cli` keeps the dicing verbs including `check-links`/`check-tree` (the dicing
-operations' own verification), and `devpro/cli.py` composes the fourth `add_verbs` — the house
-pattern the profiler and dashboard already follow. The generic verb-registry alternative is the
-over-engineering trap the thesis's building-blocks table names.
+- **The dev-verb family gated.** `render` renames to `dev-render`; `render-agents-file` and the
+  `harness` query verb go with it — the three dev-only subparsers registered during parser
+  construction only under `DEVPRO_DEV=1`: absent from `--help`, refused with argparse's stock
+  invalid-choice when unset, no user-facing documentation. The justfile's dev scripts
+  (`render.sh`, `_render-slot.sh`, `render-agents-file.sh`) export the envar once.
+- **The `dicing-snippets/` flattening.** `devpro/dicing-snippets/runner-snippets/` becomes
+  `devpro/runner-snippets/` — the outer name described docdicer's historical monopoly while the
+  files run `devpro` from PATH for any consumer. Renames the shipped package
+  (`install.py`'s `SHIPPED_PACKAGES`, pyproject's package-data) and relocates its install home; the
+  include-line writer, the `.just`/`.mk` self-referencing comments, the tests pinning include
+  paths, and the SPEC/plugins + ARCHITECTURE rows go with it. The stale `SPEC/plugins.md`
+  citation (`docdicer.just`/`docdicer.mk` vs the shipped `devpro.just`/`devpro.mk`) corrects here.
+- **`show-profile` renames to `profiler`.** The one verb-y name in a noun family
+  (`development`, `docdicer`, `guide`, `kbase`), and the noun names the domain it reports on. The
+  definition source, `values.py`'s `SHOW_SKILL`, `hooks.py`'s copy/messages, `guide.py`'s ref, the
+  tests' `_SHOW_PROFILE`, the SPEC and README mentions, the rendered copies regenerate. Sequenced
+  after any design whose delta pairs cite `show_profile.py`.
+- **The bare `devpro` recipe removed** from the runner snippets — the one prefix-less recipe in a
+  file whose own header promises `devpro-` prefixes so recipes cannot collide; `just devpro` runs
+  `devpro --help`, which the consumer types anyway. The `.just`/`.mk` twins, the docstring, and
+  the six-to-five `devpro-help` listing.
+
+Each touches install behavior — a design first, then a plan.
 
 ## Testing
+
+### A `check-links` duplicate-heading check — a shared heading's citations must name their `-N` fragment
+
+`check_markdown_links` collects a document's anchors into a set, so two `###` headings with the
+same text (the design's `## ARCHITECTURE delta` and `## Code delta` carrying the same
+`Install — Harness profiler` heading) produce one anchor, and a citation's `-1` fragment is
+indistinguishable from the first heading — nothing machine-checks which section a reader lands on.
+The check refuses a document whose duplicate headings carry citations not naming the `-N` variant
+(the post-plan review's R10 tooling gap).
 
 ### A shared sentence written out inside a longer paragraph is not checked for double delivery
 
