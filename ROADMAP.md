@@ -5,62 +5,6 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
-### The zebra's dark stripes are too subtle against the dark background
-
-The landed zebra reads the shared layer's `--column` for both motifs — light `#e7e7eb` reads well,
-dark `#232328` sits a shade above the dark background `#18181b`, and the operator reads the rows
-as unstriped. The dark tone wants a visibly lighter step than the background's — the executor
-names the value against the real dark nav, the mockup's original dark literal (`#191c22`) being
-the cautionary tale: darker than the background is the failure mode that hid the odd rows
-entirely.
-
-### The board panel's error path raises AttributeError instead of handling
-
-`devpro/dicing/kanban/server.py:140` calls `BaseHTTPRequestHandler.handle_error(...)`, which does
-not exist — `handle_error` is a `BaseServer` method, and the call is made from a handler. Every
-client error reaching the branch raises `AttributeError` instead of the handler's quiet
-client-gone behavior. Found by the UX pass's burndown executor, pre-existing.
-
-### The show-profile skill's verbose statement contradicts the profiler's own leaf
-
-`devpro/definitions/skills/show_profile.py:67-69` says `sh HP tree --verbose` draws "the column
-header alone"; the training-skill correction in `harness-profiler.md` states every tool call is
-drawn.
-
-### The modules' homes: kanban out of dicing, the checkers into doccheck
-
-The user's direction: the modules' locations correspond to usage **and to the dependency
-direction**, and — the boundary's principle, the user's — **kanban consumes a known-good doc set
-and serves it up; the module's job is presentation, not validation**. Dicing and validation are
-different jobs. The shape: `devpro.dicing.kanban` — the board, the dashboard's panel — becomes
-`devpro.kanban`; **`plancheck.py` (the check verbs' implementation) and `planform.py` (the
-workflow documents' model they validate against) become `devpro.doccheck`** — the validation
-world — whose model `devpro.kanban` consumes. `dicing.cli`'s reverse arrow
-(`.kanban.plancheck`) is what blocks the clean arrangement today. The target arrows point one way
-only: `devpro.kanban` → `devpro.doccheck` → `devpro.dicing`, `devpro.dashboard` → the front
-ends, nothing back; `dicerlib` flattening into `devpro.dicing` is the optional half. The CLI layer follows the same
-line: **doccheck owns its commands' argparse and dispatch** (`check-plan`/`check-design`/
-`check-roadmap`, lazy, the verb-entry pattern — the invariant test's exemption tuple gains it),
-`devpro.dicing.cli` keeps the dicing verbs including `check-links`/`check-tree` (the dicing
-operations' own verification), and `devpro/cli.py` composes the fourth `add_verbs` — the house
-pattern the profiler and dashboard already follow. The generic verb-registry alternative is the
-over-engineering trap the thesis's building-blocks table names; both users of this record
-rejected it independently.
-
-### The profiler pages render unstyled under the dashboard's CSP, and their chrome script never runs
-
-The dashboard answers pages with `Content-Security-Policy: default-src 'self'`, which blocks
-inline `<style>` blocks and inline scripts. The UX pass moved the profiler pages to *inlined*
-shared CSS and an inlined chrome script — so every profiler page the dashboard serves renders
-unstyled, the indicator poll never runs and the stop is dead, while the board renders styled (it
-links `board.css` externally, which `'self'` allows). Found by rendering the served bytes from
-disk: identical bytes render styled from `file://` and unstyled over HTTP. R14's serve-path
-divergence diagnosis is corrected: the bytes were always identical — the CSP was eating the style,
-invisible to fetch-level tests. The user folds the fix into the next pass (the attribution pass):
-the shared layer and `chrome.js` served as same-origin files and linked/scripted externally — the
-board's own pattern, no CSP weakening, and the recorded feed direction's "the shared layer is
-linked rather than inlined."
-
 ## Features
 
 ### Codex CLI harness support
@@ -71,6 +15,11 @@ with a fixed model per agent. An agent cannot be denied editing or web search, s
 are unenforced; whether reviewers stay read-only is to be tried first. `AGENTS.md` has no `@`
 imports and a 32 KiB cap; agents, skills, hooks and MCP live in separate places, MCP in a shared
 `config.toml`; agent bodies are TOML strings; one provider per session, Responses API only.
+
+### Direct agent model pinning
+
+Expand the model category map assignment scheme to allow specifying a specific model
+to a specific agent. Allow globbing for agent names, e.g. *-coder
 
 ### Change-case analysis process
 
@@ -142,18 +91,6 @@ grouping and child pages this extends.
 
 ## Maintenance
 
-### The `just install` target retires — the CLI's install verb is the only front door
-
-`just install` is a checkout-side runner for the install verb, and no one reaches installation
-that way: the only front door for installing devpro — outside internal test renderings, which
-drive the CLI verb directly — is the install verb of the CLI itself (`devpro install` /
-`python -m devpro install`), the surface check-wheel exercises and every install document states.
-A user cloning this repository to run `just install` is not a flow that exists. The target
-retires as a mechanism past its use; the recipe, its docstring and any test or document naming
-it go with it. Its sibling `install-agents-file` is the same question — a checkout-side runner
-for a verb the CLI serves — and retires with it or survives with its own statement, as the
-executor's reference search and the agents-file churn ticket's fix decide.
-
 ### (STICKY) Periodic load-bearing-ness pruning pass
 
 A pass over definition clauses, across model generations: apply strip-first-observe-patch
@@ -180,6 +117,37 @@ whole rendered tree with it. Single-harness installs converge and are pinned by 
 (plugin references with a space separator, no harness-named paths) or scope the up-to-date decision
 per harness.
 
+### The `just install` target retires — the CLI's install verb is the only front door
+
+`just install` is a checkout-side runner for the install verb, and no one reaches installation
+that way: the only front door for installing devpro — outside internal test renderings, which
+drive the CLI verb directly — is the install verb of the CLI itself (`devpro install` /
+`python -m devpro install`), the surface check-wheel exercises and every install document states.
+A user cloning this repository to run `just install` is not a flow that exists. The target
+retires as a mechanism past its use; the recipe, its docstring and any test or document naming
+it go with it. Its sibling `install-agents-file` is the same question — a checkout-side runner
+for a verb the CLI serves — and retires with it or survives with its own statement, as the
+executor's reference search and the agents-file churn ticket's fix decide.
+
+### The modules' homes: kanban out of dicing, the checkers into doccheck
+
+The modules' locations correspond to usage **and to the dependency direction**, and — the
+boundary's principle — **kanban consumes a known-good doc set and serves it up; the module's job
+is presentation, not validation**. Dicing and validation are different jobs. The shape:
+`devpro.dicing.kanban` — the board, the dashboard's panel — becomes `devpro.kanban`;
+**`plancheck.py` (the check verbs' implementation) and `planform.py` (the workflow documents'
+model they validate against) become `devpro.doccheck`** — the validation world — whose model
+`devpro.kanban` consumes. `dicing.cli`'s reverse arrow (`.kanban.plancheck`) is what blocks the
+clean arrangement today. The target arrows point one way only: `devpro.kanban` →
+`devpro.doccheck` → `devpro.dicing`, `devpro.dashboard` → the front ends, nothing back;
+`dicerlib` flattening into `devpro.dicing` is the optional half. The CLI layer follows the same
+line: **doccheck owns its commands' argparse and dispatch** (`check-plan`/`check-design`/
+`check-roadmap`, lazy, the verb-entry pattern — the invariant test's exemption tuple gains it),
+`devpro.dicing.cli` keeps the dicing verbs including `check-links`/`check-tree` (the dicing
+operations' own verification), and `devpro/cli.py` composes the fourth `add_verbs` — the house
+pattern the profiler and dashboard already follow. The generic verb-registry alternative is the
+over-engineering trap the thesis's building-blocks table names.
+
 ## Testing
 
 ### A shared sentence written out inside a longer paragraph is not checked for double delivery
@@ -204,34 +172,6 @@ No recipe runs `shellcheck` over `devtools/scripts/*.sh`,
 `devpro/harnesses/resources/*/hooks/*.sh`, `devpro/harnesses/resources/claude/profiler/hp.sh` or
 `devpro/development-tools/cold-read.sh`. The user directs it: the sources need to be lintable,
 shell included — the resources are shipped code.
-
-### The HTML templates' slot fills are never checked
-
-`devpro/profiler/view.html`'s placeholders (`/*STYLE*/`, `<!--LEGEND-->`, the nav and band marks)
-and every Python-spliced fragment have no check that a render leaves no placeholder standing: the
-UX review found a literal `${0}` in every served session page and a dead `/*STYLE*/` key —
-byte-level failures no test of the splices catches, because the splices are what the tests
-assert. The check the render needs: a fill that refuses an unknown or unfilled placeholder, and a
-test running it over every template — the same refusal the definitions' `filled_text` already
-makes.
-
-### The pages assemble by string splices
-
-The dashboard's and profiler's pages are assembled by Python string splices — templates with
-placeholder slots filled by `replace`, fragments spliced in order-dependent sequences — and the
-per-request serving changes the page under the browser: the chrome (nav, band, CSS, legend) is
-spliced in at serve time. The UX review's findings (the dead `/*STYLE*/` key, the load-bearing
-splice order, the serve path diverging from the file path, the literal `${0}`) are one failure
-class, and the burndown's fixes make the assembly path one and pin it byte-for-byte. The user's
-recorded direction beyond it: **dynamic data is data, served through a clean feed that the
-served content — including its script — consumes**, the board's pattern the model (`/api/board`
-and client-side DOM); the traces index becomes a data feed with client rendering, the session
-pages keep their embedded payload as the feed, the shared layer is linked rather than inlined,
-and the chrome ships in the page — each view's active state known statically — so the server
-stops changing pages under the browser. If server-side assembly survives anywhere after that,
-Python's `string.Template` is the candidate step: standard library, strict fill, unknown keys
-raising instead of surviving as literals. The whole of it is the design work of the pass that
-takes it.
 
 ### Browser-driven visual verification
 
