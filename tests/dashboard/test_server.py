@@ -287,10 +287,10 @@ class Served:
     stderr: str
 
 
-def _serve_the_command(cwd: Path) -> Served:
-    """`python -m devpro dashboard --port 0` in cwd: its first line, its root fetched, then stopped."""
+def _serve_the_command(cwd: Path, *arguments: str) -> Served:
+    """`python -m devpro dashboard` with arguments, in cwd: its first line, its root fetched, then stopped."""
     child = subprocess.Popen(
-        [sys.executable, "-m", "devpro", "dashboard", "--port", "0"],
+        [sys.executable, "-m", "devpro", "dashboard", "--port", "0", *arguments],
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -324,6 +324,38 @@ def test_the_command_prints_the_loopback_url_once_and_serves_the_project_it_runs
     assert loopback(served.url)
     assert served.status == 200
     assert (served.rest, served.stderr) == ([], "")
+
+
+def test_the_command_serves_the_project_it_names_from_a_directory_outside_it(tmp_path: Path) -> None:
+    """`devpro dashboard` naming project A from inside project B serves A's stores and board, not
+    B's: a server launched by another process from any working directory must reach the project it
+    is told to serve. Launched inside A, a server that ignores the positional would still serve A."""
+    a = project(tmp_path / "a", {"ROADMAP.md": "## Next\n"})
+    b = project(tmp_path / "b", {"ROADMAP.md": "## Next\n"})
+    store(a, "in-a", [_tool_call("in-a", "2026-01-01T00:00:00.000Z", "ls")])
+    store(b, "in-b", [_tool_call("in-b", "2026-01-01T00:00:00.000Z", "ls")])
+    child = subprocess.Popen(
+        [sys.executable, "-m", "devpro", "dashboard", str(a), "--port", "0"],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=b,
+    )
+    assert child.stdout is not None and child.stderr is not None
+    try:
+        client = Client(child.stdout.readline().strip())
+        index = client.get("")[2].decode("utf-8")
+        payload = json.loads(client.get("api/board")[2])
+        client.post("api/stop", {})
+        child.communicate(timeout=TIMEOUT)
+    finally:
+        if child.poll() is None:
+            child.kill()
+            child.wait()
+
+    assert 'href="/page/in-a"' in index and 'href="/page/in-b"' not in index
+    assert payload["project"] == "a"
 
 
 @pytest.mark.parametrize(

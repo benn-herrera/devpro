@@ -54,7 +54,8 @@ def loopback(url: str) -> bool:
 
 
 def dashboard_root(directory: Optional[str] = None) -> str:
-    """The project the dashboard serves: the directory the command runs in, up to its git root."""
+    """The project the dashboard serves: the directory the command names, or where it names none,
+    the directory the command runs in, either up to its git root."""
     start = os.getcwd() if directory is None else directory
     return str(git_root(start) or start)
 
@@ -64,10 +65,11 @@ class DashboardServer(ThreadingHTTPServer):
     being an ephemeral one.
 
     `root` is explicit: the project whose `.profiler-*` stores and git root the traces panel reads,
-    and whose files the board panel reads. The command takes it from the directory it runs in; a
-    test names it. The board panel is a `KanbanServer` over the same root, which reads the board on
-    construction and raises OSError where a file it reads cannot be read; the port refuses with
-    CannotListen. `start` begins the board's polling of its files, until server_close closes both."""
+    and whose files the board panel reads. The command takes it from the directory it names, or
+    where it names none, from the directory it runs in; a test names it. The board panel is a
+    `KanbanServer` over the same root, which reads the board on construction and raises OSError where a
+    file it reads cannot be read; the port refuses with CannotListen. `start` begins the board's
+    polling of its files, until server_close closes both."""
 
     daemon_threads = True
 
@@ -192,10 +194,10 @@ class _Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
-def serve(port: int) -> None:
-    """Serve the dashboard of the project the current directory is in until interrupted or stopped,
-    the URL printed once on stdout."""
-    server = DashboardServer(dashboard_root(), stderr=sys.stderr, port=port)
+def serve(directory: Optional[str], port: int) -> None:
+    """Serve the dashboard of the project directory is in, or with None the project the current
+    directory is in, until interrupted or stopped, the URL printed once on stdout."""
+    server = DashboardServer(dashboard_root(directory), stderr=sys.stderr, port=port)
     try:
         print(server.url, flush=True)
         server.start()
