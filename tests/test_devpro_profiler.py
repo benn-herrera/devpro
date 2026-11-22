@@ -47,14 +47,13 @@ from devpro.dashboard.server import BOARD_PATH
 from devpro.profiler.capture import mask
 from devpro.profiler.hooks import RETIRED_HOOK_FILES, launcher_resource
 from devpro.profiler.pages import (
-    BAND_MARK,
+    BAND_LEGEND,
     CSS_SLOT,
     DATA_SLOT,
-    DECO_MARK,
+    DISPATCHED_MARK,
     INDEX,
     LEGEND,
-    LEGEND_SLOT,
-    NAV_MARK,
+    RETURN_MARK,
     SHARED_CSS,
     _moments,
     format_span,
@@ -202,26 +201,24 @@ def _page_data(page: str) -> dict:
 
 
 def _without_chrome(served: str) -> str:
-    """A served page with the dashboard's carriers undone: its script, its nav and its band come out
-    and their marks stand there, the render's own marks being three lines in a row, and the shared
-    layer's link stands back as the inline text the render writes there.
+    """A served page reduced to the file flow's page, so the served and the printed stand apart on
+    the layer's carriage and nothing else: the shared layer's link stands back as the inline text the
+    render writes there, and the band's per-page facts — the way back this page carries and the
+    legend, which the render's own band holds in the same place — come out, leaving the band the
+    render carries bare.
 
-    Each region is one with no other of its kind in the page — the band runs to the `Return to list`
-    link it ends with — and the script, which stands after the band, comes out first; each region
-    takes its own whole line or lines with it, so nothing is left where the render has nothing."""
-    script = served[served.find("<script") : served.find("</script>") + len("</script>")]
-    page = served.replace(script + "\n", "", 1)
+    The layer line is one with no other `</style>`-opening kind between it and the head; the way back
+    and the legend are the band's own, the band one with no other `frame-band` div, and it runs to the
+    `Return to list` link it ends with, so each region takes its own whole lines with it and nothing
+    is left where the render has nothing. The band comes out bare — the render's own band, its legend
+    removed in the comparison, is bare too."""
+    lines = served.splitlines()
+    lines[lines.index('<link rel="stylesheet" href="/board/board.css"><style>')] = "<style>\n" + SHARED_CSS
+    page = "\n".join(lines) + "\n"
     band = page[
         page.find('<div class="frame-band') : page.find("Return to list</a></div>") + len("Return to list</a></div>")
     ]
-    page = page.replace(band + "\n", "", 1)
-    nav = page[page.find('<nav class="site-nav') :]
-    nav = nav[: nav.find("</nav>") + len("</nav>")]
-    page = page.replace(nav + "\n", "", 1)
-    lines = page.splitlines()
-    lines[lines.index('<link rel="stylesheet" href="/board/board.css"><style>')] = "<style>\n" + SHARED_CSS
-    lines[lines.index('<h1>Session <span id="sid"></span></h1>') : 0] = [NAV_MARK, BAND_MARK, DECO_MARK]
-    return "\n".join(lines) + "\n"
+    return page.replace(band, '<div class="frame-band scanlines"></div>')
 
 
 def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> None:
@@ -865,13 +862,15 @@ def test_the_served_index_states_an_unreadable_store(tmp_path: Path) -> None:
 
 
 def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> None:
-    """One session's `/page/<id>` carries the file flow's page data and that flow's page, with the
-    dashboard's own carriers undone: navigating, scripting and the band come off, the legend goes
-    where the band holds it, and the shared layer's link stands back as the text the render inlines
-    — leaving `tree --format html`'s page, to the byte. A page whose stylesheet is not that page's —
-    its template's own rules left standing beside the shared layer, its legend in twice — is the page
-    careful CSS happens to render over, which is how the served page and the printed one came apart
-    while both rendered."""
+    """One session's `/page/<id>` carries the file flow's page data and that flow's page: the two
+    profiler templates' own text — the nav, the frame band and the decoration's script — both carry,
+    and the only difference between the served page and the printed one is the shared layer's
+    carriage, the serve's the link to the board panel's own file and the print's the inlined text.
+    Undo that carriage — the link stands back as the text the render inlines — and the band's
+    per-page facts — the way back this page carries and the legend, which the render's band holds in
+    the same place — come out, leaving `tree --format html`'s page, to the byte. A served page whose
+    layer is inlined (the render's carriage, not the serve's), or whose data is not that page's, is
+    the page standing apart from the one the file flow writes."""
     project = tmp_path / "project"
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
@@ -891,9 +890,10 @@ def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> Non
 
 def test_the_standalone_render_carries_the_shared_layer_and_the_legend_once(tmp_path: Path) -> None:
     """The page `tree --format html` prints carries the presentation layer's own text, inlined whole,
-    and the legend exactly once, and names no view: the standalone page is the render's own carrier
-    of the legend, and one that inlines a layer of its own — or a second copy of the legend, which
-    the served page's band would make two — is the reskin the shared layer forbids."""
+    and the frame band's legend exactly once — the chrome the served page carries as its own text,
+    here the render's: the standalone page names no view active to a live dashboard, so its band
+    heads with the legend alone, no dispatcher and no way back. A render that inlines a second layer,
+    or carries the legend twice, is the reskin the shared layer forbids."""
     project = tmp_path / "project"
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
@@ -904,7 +904,7 @@ def test_the_standalone_render_carries_the_shared_layer_and_the_legend_once(tmp_
     assert printed.returncode == 0, printed.stderr
     assert SHARED_CSS in printed.stdout
     assert printed.stdout.count("How to read this") == 1
-    assert 'class="site-nav' not in printed.stdout and 'class="frame-band' not in printed.stdout
+    assert 'class="site-nav' in printed.stdout and 'class="frame-band' in printed.stdout
 
 
 def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path) -> None:
@@ -1077,9 +1077,9 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     from devpro.profiler.pages import strict_fill
 
     view_text = (_PACKAGE_ROOT / "devpro" / "profiler" / "view.html").read_text(encoding="utf-8")
-    fills = {DATA_SLOT: "data", CSS_SLOT: "layer", LEGEND_SLOT: "legend"}
+    fills = {DATA_SLOT: "data", CSS_SLOT: "layer", BAND_LEGEND: "legend"}
     with pytest.raises(KeyError):
-        strict_fill(view_text.replace(LEGEND_SLOT, ""), fills)
+        strict_fill(view_text.replace(BAND_LEGEND, ""), fills)
     # (b) nothing the fill was handed is left standing, standalone or served.
     project = tmp_path / "project"
     project.mkdir()
@@ -1087,12 +1087,12 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     launcher = _launcher(tmp_path / "harness")
     printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
     assert printed.returncode == 0, printed.stderr
-    for mark in (CSS_SLOT, LEGEND_SLOT, DATA_SLOT):
+    for mark in (CSS_SLOT, DATA_SLOT, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
         assert mark not in printed.stdout, f"{mark} left standing in the rendered page"
     with _serve(launcher, cwd=project) as url:
         page = _fetch(f"{url}page/s-claude")
         index = _fetch(f"{url}profiler/")
-    for mark in (CSS_SLOT, NAV_MARK, BAND_MARK, DECO_MARK):
+    for mark in (CSS_SLOT, DATA_SLOT, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
         assert mark not in page, f"{mark} left standing in the served page"
         assert mark not in index, f"{mark} left standing in the served index"
     assert "$rows" not in index

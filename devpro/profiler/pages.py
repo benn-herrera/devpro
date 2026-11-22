@@ -51,11 +51,10 @@ class UsageError(Exception):
 ANSI_COLORS = (36, 33, 35, 32, 34, 31)
 DATA_SLOT = "/*DATA*/null"
 CSS_SLOT = "/*STYLE*/"
-LEGEND_SLOT = "<!--LEGEND-->"
 
-# The how-to-read legend, once for the whole presented interface. The standalone render injects it
-# into the page it renders, and the dashboard's frame band reads this same constant for the served
-# pages — so the legend has one home and two carriers, and the template carries no second copy.
+# The how-to-read legend, once for the whole presented interface. Its one home, filled by the strict
+# fill into the frame band both profiler templates carry — the standalone render's and the served
+# page's alike — so the template carries no second copy.
 LEGEND = (
     '<details class="intro"><summary>How to read this</summary><p>A sequence diagram of the session. '
     "Each vertical bar is one <b>context</b>: a conversation history the model reads. A Skill or Agent "
@@ -88,6 +87,8 @@ LEGEND = (
     'fill="var(--c0)" fill-opacity=".85"/></svg>context at work</span>\n'
     "</div></details>"
 )
+# The frame band's way-back control label, and the dispatcher line's lead — the band's own text.
+RETURN_LABEL = "Return to list"
 
 
 def shared_css() -> str:
@@ -594,15 +595,14 @@ def render_tree(records: list[dict], *, verbose: bool = False, color: bool = Fal
     return "\n".join([tree_header()] + [format_line(node, depth, **options) for node, depth in shown])
 
 
-def render_html(session: dict) -> str:
-    """One self-contained page: the package's template with the presentation layer, the how-to-read
-    legend and the trace inlined.
-
-    `<` is escaped so tool output in the JSON can't close the script tag."""
+def session_data(session: dict) -> dict:
+    """The page data `view.html` inlines at its data slot: the session's calls as the file flow
+    draws them, one source for the standalone render and the served page alike. `<` is escaped so
+    tool output in the JSON can't close the script tag."""
     calls = unique_calls(fill_context_tokens(session["records"]))
     contexts, markers = contexts_of(session["records"])
     spend = _context_spend(session["records"])
-    data = {
+    return {
         "session": session["id"],
         "branch": next((record.get("branch") for record in calls if record.get("branch")), None),
         "contexts": [{**context, "spent": spend.get(context["id"])} for context in contexts],
@@ -632,13 +632,18 @@ def render_html(session: dict) -> str:
             for record in calls
         ],
     }
+
+
+def render_html(session: dict) -> str:
+    """One self-contained page: the package's template with the presentation layer, the how-to-read
+    legend and the trace inlined, the frame band's facts this page carries none of left empty."""
     template = (files(__package__) / "view.html").read_text(encoding="utf-8")
     return strict_fill(
         template,
         {
-            DATA_SLOT: _json(data).replace("<", "\\u003c"),
+            DATA_SLOT: _json(session_data(session)).replace("<", "\\u003c"),
             CSS_SLOT: SHARED_CSS,
-            LEGEND_SLOT: LEGEND,
+            **band_fills(dispatcher=None, return_to=None),
         },
     )
 
@@ -873,9 +878,10 @@ def index_html(directory: Path | str) -> str:
     count of the rows drawn beneath it; a session no other dispatched keeps its own place in
     first-moment order. A session naming itself dispatches nothing (`dispatches` drops it), so it is
     no child and keeps that place. The index carries the presentation layer and names no view of its
-    own: opened on its own it stands beside no board, so the nav, the frame band and the
-    decoration's script are the marks the dashboard fills when it serves the index (`with_frame`),
-    and absent where nothing fills them."""
+    own: opened on its own it stands beside no board, so the chrome — the nav, the frame band and the
+    decoration's script — is the template's own text, the band's legend filled here from its one home
+    (the index carrying no dispatcher and no way back), and the layer filled for the serve path to
+    link (`link_layer`), absent where nothing serves it."""
     sessions, unreadable = read_sessions(directory)
     parent_of = dispatches(sessions)
     children: dict[str, list[tuple[dict, str]]] = {}
@@ -899,44 +905,50 @@ def index_html(directory: Path | str) -> str:
             "unreadable": "".join(unreadable_row(store) for store in unreadable),
             "rows": rows or '<tr><td colspan="5">No sessions recorded yet.</td></tr>',
             **ZEBRA_MARKS,
+            CSS_SLOT: SHARED_CSS,
+            **band_fills(dispatcher=None, return_to=None),
         },
     )
 
 
-def with_frame(page: str, *, nav: str, band: str, script: str) -> str:
-    """The rendered page as the dashboard serves it: the presentation layer **linked** — the
-    dashboard's Content-Security-Policy refuses an inline stylesheet, and the one source is the
-    board panel's own file, which the board page links too. The render's carrier is the inline — a
-    standalone page being self-contained — so the serve path strips the render's inline copy where
-    the page carries it and names the file where the style block stood; a session's page arrives
-    through the render first and carries the inline copy, an index does not. The template's own
-    style block stands: its rules are the page's own, served and written alike. The nav in place of
-    its nav mark, band in place of its band mark, and the decoration's script named where the
-    template marks it — a linked script, for the same CSP.
-
-    The band is where the view's legend is served from, and the render injected its own copy into the
-    page it rendered: that copy is removed here, at the one site holding both in hand, so the served
-    page carries the legend once. The removal comes before the band's splice because the band carries
-    `LEGEND` itself (`dashboard.server.band_html`), which a removal run afterwards would take out of
-    the band; the link's site stands beside both, its mark disjoint from the legend's, and the mark
-    the script goes into stands below them all, so no stylesheet text can be read as that mark."""
+def link_layer(page: str) -> str:
+    """The assembled page as the dashboard serves it: the presentation layer **linked** — the
+    dashboard's Content-Security-Policy refuses an inline stylesheet, and the one source is the board
+    panel's own file, which the board page and the profiler's pages link alike. The render's carrier
+    is the inline — a standalone page being self-contained — so the serve path strips the inline copy
+    and names the file where the style block stood; the template's own style block stands, its rules
+    the page's own, served and written alike."""
     layer_link = '<link rel="stylesheet" href="/board/board.css">'
-    if SHARED_CSS in page:
-        page = page.replace(SHARED_CSS, "").replace("<style>\n", f"{layer_link}<style>", 1)
-    else:
-        page = page.replace("<style>\n" + CSS_SLOT, f"{layer_link}<style>", 1)
-    page = page.replace(LEGEND, "")
-    return strict_fill(page, {NAV_MARK: nav, BAND_MARK: band, DECO_MARK: script})
+    return page.replace(SHARED_CSS, "").replace("<style>\n", f"{layer_link}<style>", 1)
+
+
+def dispatcher_html(dispatcher: tuple[str, str]) -> str:
+    """The frame band's dispatch line: the session that dispatched this page, linked to its page, and
+    the call that dispatched it."""
+    session, name = dispatcher
+    return f'<span class="dispatched"><strong>Dispatched by</strong> {_session_link(session)} — {html.escape(name)}</span>'
+
+
+def band_fills(*, dispatcher: tuple[str, str] | None, return_to: str | None) -> dict[str, str]:
+    """The frame band's per-page fills for the strict fill: the legend from its one home `LEGEND`,
+    the dispatch line, and the way back. A fact this page carries none of fills its slot empty — the
+    dispatcher where none dispatched it, the way back where there is no list to return to — and the
+    strict fill does not raise on an empty value, so a page with neither carries the band bare."""
+    return {
+        BAND_LEGEND: LEGEND,
+        DISPATCHED_MARK: dispatcher_html(dispatcher) if dispatcher else "",
+        RETURN_MARK: f'<a class="return" href="{return_to}">{RETURN_LABEL}</a>' if return_to else "",
+    }
 
 
 PAGE_PREFIX = "/page/"
-# The marks the dashboard fills on the pages it serves: the nav, the frame band, and where the
-# decoration's script goes — below the templates' splices, where no stylesheet text can be read as a
-# mark. The index's template carries the last two as well, and the page's all three, so one renderer
-# serves both.
-NAV_MARK = "<!--NAV-->"
-BAND_MARK = "<!--BAND-->"
-DECO_MARK = "<!--DECO-->"
+# The frame band's fills, in the order the band reads them — the how-to-read legend from its one home
+# `LEGEND`, then the dispatch line, then the way back — as marks the strict fill replaces. They sit
+# inside the band both profiler templates carry as their own text, so one fill assembles the chrome
+# the dashboard once spliced; a mark the fill is told to leave empty comes out empty, not standing.
+BAND_LEGEND = "<!--LEGEND-->"
+DISPATCHED_MARK = "<!--DISPATCHED-->"
+RETURN_MARK = "<!--RETURN-->"
 # The index's own brand marks: a harness's dot, in its brand colors, and the variable each wears.
 # They are the page's, not the site's — the dots are the only brand-marked part of a row — so they
 # live in the template's own style block beside its other rules. `ZEBRA_MARKS` is the template's
@@ -977,10 +989,13 @@ tr td:first-child.child + td { padding-left: 2.4rem; }
 .harness.$class_opencode { background: $opencode; }
 .harness.$class_claude { background: $claude; }
 </style>
-<body>
-<!--NAV-->
-<!--BAND-->
-<!--DECO-->
+<nav class="site-nav scanlines"><span class="brand">devpro</span><span class="views"><a class="view" href="/board/">kanban</a><a class="view active" href="/profiler/" aria-current="page">profiler</a></span><span class="nav-server">
+  <span class="dot"></span>
+  <span id="connection" role="status" aria-labelledby="connection"></span>
+  <button id="stop" class="nav-stop" type="button">Stop</button>
+</span></nav>
+<div class="frame-band scanlines"><!--LEGEND--><!--DISPATCHED--><!--RETURN--></div>
+<script src="/profiler/deco.js"></script>
 <main>
 <h1>Sessions</h1>
 <table>
@@ -992,10 +1007,26 @@ $unreadable$rows</table>
 """
 
 
-def page_of(path: str, directory: Path | str) -> str | None:
-    """The page at `/page/<session-id>`, or nothing where the path names no page or no session."""
+def session_for(path: str, directory: Path | str) -> dict | None:
+    """The session recorded at `/page/<session-id>`'s id, or nothing where the path names no page or
+    no session: the page's own read, the records the render and the band's facts both draw from."""
     if not path.startswith(PAGE_PREFIX):
         return None
     sessions, _ = read_sessions(directory)
-    session = next((session for session in sessions if session["id"] == path[len(PAGE_PREFIX) :]), None)
-    return None if session is None else render_html(session)
+    return next((session for session in sessions if session["id"] == path[len(PAGE_PREFIX) :]), None)
+
+
+def profiler_page(session: dict, *, return_to: str | None, dispatcher: tuple[str, str] | None) -> str:
+    """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
+    frame band with its legend, the decoration's script, the presentation layer linked — the band's
+    per-page facts the dashboard's own lookup names, one legend on the page and the script once."""
+    return link_layer(
+        strict_fill(
+            (files(__package__) / "view.html").read_text(encoding="utf-8"),
+            {
+                DATA_SLOT: _json(session_data(session)).replace("<", "\\u003c"),
+                CSS_SLOT: SHARED_CSS,
+                **band_fills(dispatcher=dispatcher, return_to=return_to),
+            },
+        )
+    )

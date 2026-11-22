@@ -26,7 +26,15 @@ from devpro.dashboard.server import (
     loopback,
 )
 from devpro.dicing.kanban.board import read_board
-from devpro.profiler.pages import BAND_MARK, CSS_SLOT, DECO_MARK, NAV_MARK, SHARED_CSS, dispatches, read_sessions
+from devpro.profiler.pages import (
+    BAND_LEGEND,
+    CSS_SLOT,
+    DISPATCHED_MARK,
+    RETURN_MARK,
+    SHARED_CSS,
+    dispatches,
+    read_sessions,
+)
 
 from .conftest import PLAN, TIMEOUT, Client, project, record, store
 
@@ -348,7 +356,7 @@ def test_every_profiler_view_page_renders_the_way_the_file_flow_renders_it(
     assert page.count('class="site-nav') == 1 and page.count('id="connection"') == 1 and page.count('id="stop"') == 1
     assert page.count("<script>") == scripts
     assert page.count('<script src="/profiler/deco.js">') == 1 and page.count("api/state") == 0
-    assert not [mark for mark in (CSS_SLOT, NAV_MARK, BAND_MARK, DECO_MARK) if mark in page]
+    assert not [mark for mark in (CSS_SLOT, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK) if mark in page]
 
 
 def test_the_pages_csp_admits_the_pages_own_blocks(tmp_path: Path, serve) -> None:

@@ -3,9 +3,10 @@
 Neither panel's rendering is this module's. The board panel is `devpro.dicing.kanban.server`'s serve
 surface — its page, files, payload, moves and served documents, answered by the `KanbanServer` built
 over the dashboard's root — and the profiler view is `devpro.profiler.pages`' index and pages, read
-from the stores as they stand. This module adds the routes that hold them apart, the chrome the
-profiler view's pages are served with — the top nav and the frame band — and the state endpoint
-every view's chrome reads.
+from the stores as they stand. This module adds the routes that hold them apart and the state
+endpoint every view's chrome reads; the view's chrome — the top nav and the frame band — is the
+templates' own text, this module adding only the band's per-page facts, the way back and the
+dispatcher its lookup names.
 
 Endpoints:
 
@@ -15,8 +16,8 @@ Endpoints:
 - `GET /profiler/`: the profiler view's index — `pages.index_html` — with the nav and the band,
   the shared layer linked at `/board/board.css` and the decoration's script linked at
   `/profiler/deco.js`.
-- `GET /page/<session-id>`: that session's page, the render's, with the nav, the band's legend and its
-  return to the list.
+- `GET /page/<session-id>`: that session's page, with the nav, the band's legend and its return to the
+  list, and the dispatcher its lookup names where one dispatched it.
 - `GET /board/` and `GET /board/<file>`: the board page and its files, the file resolved beside the
   page, so the page's relative asset names reach them.
 - `GET /<path>.md`: a served document, as the board panel serves it.
@@ -41,16 +42,8 @@ from typing import Any, Optional, TextIO
 from urllib.parse import unquote, urlsplit
 
 from devpro import __version__
-from devpro.profiler.pages import (
-    LEGEND,
-    PAGE_PREFIX,
-    _session_link,
-    dispatches,
-    index_html,
-    page_of,
-    read_sessions,
-    with_frame,
-)
+from devpro.profiler import pages
+from devpro.profiler.pages import PAGE_PREFIX, dispatches, read_sessions
 from devpro.profiler.values import git_root
 
 from ..dicing.kanban.server import HOST, KanbanServer
@@ -59,22 +52,13 @@ from ..errors import InputError
 BOARD_PATH = "/board/"
 PROFILER_PATH = "/profiler/"
 STATE_PATH = "/api/state"
-RETURN_LABEL = "Return to list"
-# The chrome every view carries after its view names: the live/idle indicator and the stop, and the
-# script that gives them their behavior. That script ships as `devpro/profiler/deco.js` and is
-# inlined where it goes — the board page's script names it instead — because the server answers no
-# static file of its own, and a page's script loads under the policy every page is served with. The
-# markup is one text both carriers substitute, so an id or a class cannot drift between the views.
-NAV_SERVER = """<span class="nav-server">
-  <span class="dot"></span>
-  <span id="connection" role="status" aria-labelledby="connection"></span>
-  <button id="stop" class="nav-stop" type="button">Stop</button>
-</span>"""
+# The decoration's script: its one source is the shipped file, which the server answers at the
+# profiler path the pages name (`/profiler/deco.js`, a link the templates carry) — the board page's
+# script names it too. The one policy both panels' pages are served under, so a page cannot load from
+# elsewhere and no page frames either.
 DECO_SCRIPT = (files("devpro.profiler") / "deco.js").read_text(encoding="utf-8")
-# The profiler path's name for that script, as the pages name it: one file, served from the one path.
+# The profiler path's name for that script: one file, served from the one path.
 DECO_SCRIPT_PATH = "deco.js"
-# The one policy both panels' pages are served under, so a page cannot load from elsewhere and no
-# page frames either.
 # The templates' own style and script blocks are inline, and the served pages carry them: the
 # pages are first-party, and the render escapes every record field at source (`html.escape`, quoted
 # ids, the payload's `<` script-escaped), so 'unsafe-inline' admits them while 'self' keeps
@@ -86,24 +70,6 @@ _REFUSED_HOST = '{"error": "requests must name the host the dashboard is served 
 _NO_SUCH_PAGE = "No such page"
 
 
-def nav_html(active: str) -> str:
-    """The top nav, with active — `kanban` or `profiler` — the view the page shows. The view names
-    link the routes; the chrome after them, the live/idle indicator and the stop, is on both views."""
-    views = "".join(
-        f'<a class="view{" active" if view == active else ""}" href="{href}"'
-        + (' aria-current="page"' if view == active else "")
-        + f">{view}</a>"
-        for view, href in (("kanban", BOARD_PATH), ("profiler", PROFILER_PATH))
-    )
-    return f'<nav class="site-nav scanlines"><span class="brand">devpro</span><span class="views">{views}</span>{NAV_SERVER}</nav>'
-
-
-def deco_script() -> str:
-    """The decoration's one script, as the page names it: the script's one source is the shipped file,
-    which the dashboard serves at the profiler path the way the board page names its own beside it."""
-    return f'<script src="{PROFILER_PATH}{DECO_SCRIPT_PATH}"></script>'
-
-
 def dispatcher_of(session: str, root: str) -> tuple[str, str] | None:
     """The session that dispatched `session`, and the call that did, for the band it heads.
 
@@ -113,24 +79,11 @@ def dispatcher_of(session: str, root: str) -> tuple[str, str] | None:
     return dispatches([other for other in sessions if other["id"] != session]).get(session)
 
 
-def dispatcher_html(dispatcher: tuple[str, str]) -> str:
-    """The band's dispatch line: the session that dispatched this page, linked to its page, and the
-    call that dispatched it."""
-    session, name = dispatcher
-    return f'<span class="dispatched"><strong>Dispatched by</strong> {_session_link(session)} — {escape(name)}</span>'
-
-
-def band_html(return_to: str | None, dispatcher: tuple[str, str] | None = None) -> str:
-    """The profiler view's frame band: the how-to-read legend at its top, and, on a session's page,
-    the control back to the list; a page a session dispatched also heads with its dispatcher."""
-    back = f'<a class="return" href="{return_to}">{RETURN_LABEL}</a>' if return_to else ""
-    return f'<div class="frame-band scanlines">{LEGEND}{dispatcher_html(dispatcher) if dispatcher else ""}{back}</div>'
-
-
-def profiler_page(page: str, *, return_to: str | None, dispatcher: tuple[str, str] | None = None) -> str:
-    """A page of the profiler view as the dashboard serves it: the nav, the band and the view's own
-    content, one legend on the page, and the decoration's script once."""
-    return with_frame(page, nav=nav_html("profiler"), band=band_html(return_to, dispatcher), script=deco_script())
+def profiler_page(session: dict, *, return_to: str | None, dispatcher: tuple[str, str] | None) -> str:
+    """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
+    frame band, the decoration's script, the shared layer linked — assembled by `pages`, this module
+    adding the band's per-page facts, the way back and the dispatcher its lookup names."""
+    return pages.profiler_page(session, return_to=return_to, dispatcher=dispatcher)
 
 
 def loopback(url: str) -> bool:
@@ -193,19 +146,22 @@ class DashboardServer(ThreadingHTTPServer):
         Read per request: a session recorded a moment ago is listed by the next page loaded.
         `CLAUDE_PROJECT_DIR` is not followed — it names the outermost claude session's launch
         directory, which for a terminal-launched server is another project."""
-        return profiler_page(index_html(self.root), return_to=None)
+        return pages.link_layer(pages.index_html(self.root))
 
     def page(self, session: str) -> str | None:
-        """The page at `/page/<session>`, or nothing where it names no recorded session: the render's
-        page under the nav and the band, whose return control leads back to the list and whose
-        heading names the session that dispatched it, where one did.
+        """The page at `/page/<session>`, or nothing where it names no recorded session: the view's
+        own text — the nav, the band, the shared layer linked — with the band's per-page facts, whose
+        return control leads back to the list and whose heading names the session that dispatched it,
+        where one did.
 
         The store read is the page's own; the dispatcher its band names is looked up beside it, once.
         The page of the session that named this one is a second render, never a second index."""
-        page = page_of(PAGE_PREFIX + session, self.root)
-        if page is None:
+        session_record = pages.session_for(PAGE_PREFIX + session, self.root)
+        if session_record is None:
             return None
-        return profiler_page(page, return_to=PROFILER_PATH, dispatcher=dispatcher_of(session, self.root))
+        return profiler_page(
+            session_record, return_to=PROFILER_PATH, dispatcher=dispatcher_of(session, self.root)
+        )
 
     def start(self) -> None:
         """Begin polling the board's files. Called once the server is serving, inside the try whose

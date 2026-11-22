@@ -38,12 +38,15 @@ svg .spawn rect { stroke:var(--panel); stroke-width:1; }
 .detail { margin:2px 0 8px; padding:8px 10px; border-left:3px solid var(--line); white-space:pre-wrap; word-break:break-word; }
 .detail b { color:var(--muted); font-weight:500; display:inline-block; min-width:64px; }
 </style></head><body>
-<!--NAV-->
-<!--BAND-->
-<!--DECO-->
+<nav class="site-nav scanlines"><span class="brand">devpro</span><span class="views"><a class="view" href="/board/">kanban</a><a class="view active" href="/profiler/" aria-current="page">profiler</a></span><span class="nav-server">
+  <span class="dot"></span>
+  <span id="connection" role="status" aria-labelledby="connection"></span>
+  <button id="stop" class="nav-stop" type="button">Stop</button>
+</span></nav>
+<div class="frame-band scanlines"><!--LEGEND--><!--DISPATCHED--><!--RETURN--></div>
+<script src="/profiler/deco.js"></script>
 <h1>Session <span id="sid"></span></h1>
 <div class="sub" id="subline"></div>
-<!--LEGEND-->
 
 <div class="toolbar"><label><input type="checkbox" id="all"> every tool call</label><span>Without it: skills, subagents and compactions, like the <code>tree</code> command — or every tool call when the session has none of those.</span></div>
 <div class="panel"><svg id="tl" role="img" aria-label="Sequence diagram, one lifeline per context"></svg></div>
