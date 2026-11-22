@@ -26,7 +26,6 @@ Endpoints, each answering JSON but the page's files and the served documents:
 
 import json
 import os
-import sys
 import threading
 from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler
@@ -132,12 +131,6 @@ class KanbanServer:
             self._poller.join()
         with self._lock:
             self._lock.notify_all()
-
-    def handle_error(self, request: Any, client_address: Any) -> None:
-        """A client gone mid-request (a page reloaded during a long poll) is not an error; anything
-        else gets the default traceback."""
-        if not isinstance(sys.exc_info()[1], ConnectionError):
-            BaseHTTPRequestHandler.handle_error(self, request, client_address)  # type: ignore[arg-type]
 
     def payload(self, since: Optional[str]) -> dict[str, Any]:
         """The board payload, once its version differs from since; at most LONG_POLL_SECONDS late."""

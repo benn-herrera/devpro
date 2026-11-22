@@ -36,7 +36,6 @@ import os
 import re
 import sys
 import threading
-from html import escape
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
@@ -174,7 +173,10 @@ class DashboardServer(ThreadingHTTPServer):
         self.board.start()
 
     def handle_error(self, request: Any, client_address: Any) -> None:
-        self.board.handle_error(request, client_address)
+        """A client gone mid-request (a page reloaded during a long poll) is not an error; anything
+        else gets the default traceback."""
+        if not isinstance(sys.exc_info()[1], ConnectionError):
+            super().handle_error(request, client_address)
 
     def server_close(self) -> None:
         """Close the board panel and the socket, once each: a bind that failed half-way closes a

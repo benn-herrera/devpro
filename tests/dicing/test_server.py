@@ -534,6 +534,29 @@ def test_a_client_gone_mid_request_leaves_stderr_empty(tmp_path, serve, capsys):
     assert capsys.readouterr().err == ""
 
 
+def test_an_error_that_is_not_a_gone_client_gets_the_default_traceback(tmp_path, capsys):
+    """`clauses.TEST_PRECONDITION`: the defect is a non-`ConnectionError` reaching
+    `DashboardServer.handle_error`, whose one-line delegation to the board panel's `handle_error`
+    falls through to `BaseHTTPRequestHandler.handle_error` — no handler class carries it — and raises
+    `AttributeError` at the call instead of the default traceback. The run that fails under it is this
+    one: over a scratch root the board reads, a `ValueError` raised and made the current exception,
+    then `handle_error` called on it — before the change the delegation raises `AttributeError` where
+    the traceback should go; after, the base server's default writes the `ValueError`'s traceback to
+    stderr and nothing raises."""
+    root = _project(tmp_path / "proj", {"ACTIVE_PLAN.md": _PLAN})
+    server = DashboardServer(root, stderr=io.StringIO())
+    try:
+        with pytest.raises(ValueError):
+            try:
+                raise ValueError("boom")
+            except ValueError:
+                server.handle_error(None, None)
+                raise
+    finally:
+        server.server_close()
+    assert "boom" in capsys.readouterr().err
+
+
 def _serve_the_command(
     root: str, end: Callable[["subprocess.Popen[bytes]", _Client], None]
 ) -> tuple[int, bytes, bytes]:
