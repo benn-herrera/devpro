@@ -134,12 +134,20 @@ makes.
 ### The pages assemble by string splices
 
 The dashboard's and profiler's pages are assembled by Python string splices — templates with
-placeholder slots filled by `replace`, fragments spliced in order-dependent sequences. The UX
-review's findings (the dead `/*STYLE*/` key, the load-bearing splice order, the serve path
-diverging from the file path, the literal `${0}`) are one failure class, and the burndown's fixes
-make the assembly path one and pin it byte-for-byte. If the class keeps biting, the candidate
-step is Python's `string.Template` — standard library, strict fill, unknown keys raising instead
-of surviving as literals. A dependency decision for the design that takes it, not this pass.
+placeholder slots filled by `replace`, fragments spliced in order-dependent sequences — and the
+per-request serving changes the page under the browser: the chrome (nav, band, CSS, legend) is
+spliced in at serve time. The UX review's findings (the dead `/*STYLE*/` key, the load-bearing
+splice order, the serve path diverging from the file path, the literal `${0}`) are one failure
+class, and the burndown's fixes make the assembly path one and pin it byte-for-byte. The user's
+recorded direction beyond it: **dynamic data is data, served through a clean feed that the
+served content — including its script — consumes**, the board's pattern the model (`/api/board`
+and client-side DOM); the traces index becomes a data feed with client rendering, the session
+pages keep their embedded payload as the feed, the shared layer is linked rather than inlined,
+and the chrome ships in the page — each view's active state known statically — so the server
+stops changing pages under the browser. If server-side assembly survives anywhere after that,
+Python's `string.Template` is the candidate step: standard library, strict fill, unknown keys
+raising instead of surviving as literals. The whole of it is the design work of the pass that
+takes it.
 
 ### Browser-driven visual verification
 
