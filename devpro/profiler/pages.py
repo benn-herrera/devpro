@@ -896,11 +896,10 @@ RETURN_MARK = "<!--RETURN-->"
 # They are the page's, not the site's — the dots are the only brand-marked part of a row — so they
 # live in the template's own style block beside its other rules. `ZEBRA_MARKS` is the template's
 # substitution slots: the two harness class names and the two brand colors — in substitution's one
-# pass, so text spliced into one slot is never read as another's. The zebra's tones are no slot:
-# their carrier is the template's own motif pair below it, whose light value is the shared layer's
-# `--column` and whose dark value is the layer's `--zebra`, standing beside it as the layer's pair
-# stands. The harness class is the name the feed's entry carries where the page holds a dot for it,
-# and no class where it holds none.
+# pass, so text spliced into one slot is never read as another's. The zebra's tones are no slot: the
+# page reads the layer's `--zebra` alone, which the layer already switches with the color scheme. The
+# harness class is the name the feed's entry carries where the page holds a dot for it, and no class
+# where it holds none.
 HARNESS_MARKS = {"opencode": "#4a9eea", "claude": "#d97757"}
 ZEBRA_MARKS = {f"class_{harness}": harness for harness in HARNESS_MARKS} | HARNESS_MARKS
 # The index's template: static. The rows' table is the one the script fills (`index.js`, the feed
@@ -924,7 +923,6 @@ th { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
 a { color: var(--fg); }
 a:hover, a:focus-visible { color: var(--accent); }
 tr:nth-child(odd) td { background: var(--zebra); }
-@media (prefers-color-scheme: dark) { tr:nth-child(odd) td { background: var(--zebra); } }
 td small { color: var(--muted); }
 tr td:first-child.child { border-left: 3px solid var(--accent); }
 tr td:first-child.child + td { padding-left: 2.4rem; }
@@ -1070,7 +1068,7 @@ fetch(FEED, { cache: 'no-store' })
   })
   .then(show)
   .catch((error) =>
-    console.warn({ level: 'warn', message: 'the traces feed could not be read', error: String(error) }),
+    console.warn('the traces feed could not be read: ' + String(error)),
   );
 </script>
 </body>

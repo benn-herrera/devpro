@@ -3,8 +3,8 @@
 // The dashboard's decoration on every view: the nav's live/idle state indicator and the stop, and the
 // index's moments in the reader's local time. The state indicator reads the one cheap endpoint the
 // dashboard answers, so a view whose page carries no payload of its own — the profiler view's — shows
-// the state the server is in, and the stop posts the one the board panel serves. The dashboard inlines
-// this text into each of its pages; the board page names the file the profiler path serves.
+// the state the server is in, and the stop posts the one the board panel serves. The pages link this
+// file and the dashboard serves it at `/profiler/deco.js`.
 //
 // The indicator's states are colored — the brand's phosphor where the server serves, the alert's
 // where it does not — and carry the serving version as hover text, the devpro the dashboard runs.
@@ -99,9 +99,19 @@ const localMoments = (first, last) => {
   return sameDay(a, b) ? `${momentClock(a)} to ${momentClock(b)}` : `${dayOf(a)} ${momentClock(a)} to ${dayOf(b)} ${momentClock(b)}`;
 };
 
-// Each moments cell's text becomes the local reading; its title keeps the raw UTC untouched.
-document.querySelectorAll("td .moments").forEach((cell) => {
+// Each moments cell's text becomes the local reading; its title keeps the raw UTC untouched. The
+// index draws its rows after this script loads, so the sweep runs on the rows container's own
+// changes as well as on what stands at load: a cell drawn later is read when it arrives.
+const readMoments = (cell) => {
   const [first, last] = Array.from(cell.querySelectorAll("time")).map((time) => time.getAttribute("datetime"));
   const local = first && last ? localMoments(first, last) : null;
-  if (local) cell.textContent = local;
-});
+  // The local reading moves the cell's text but never its `<time>` instants: rewriting it changes
+  // nothing this sweep reads, so the observation it fires comes round to the same text and stops.
+  if (local && cell.textContent !== local) cell.textContent = local;
+};
+document.querySelectorAll("td .moments").forEach(readMoments);
+const rows = document.getElementById("rows");
+if (rows)
+  new MutationObserver(() => rows.querySelectorAll("td .moments").forEach(readMoments)).observe(rows, {
+    childList: true,
+  });

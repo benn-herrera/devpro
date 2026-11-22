@@ -758,13 +758,12 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
         },
     ]
     # The page file is static: the rows' empty table, no session's row, and every column heading a
-    # row states, each harness's mark and the zebra's motif-aware tone in the template alone.
+    # row states, each harness's mark, and the zebra's one rule — the layer's `--zebra`, which the
+    # layer switches with the color scheme itself, so the template carries no second rule for it.
     assert '<tbody id="rows"></tbody>' in index and 'href="/page/' not in index
     assert re.search(r"<th>harness</th><th>session</th><th>records</th><th>first to last</th><th>span</th>", index)
     assert re.search(r"tr:nth-child\(odd\) td \{ background: var\(--zebra\); \}", index)
-    assert re.search(
-        r"@media \(prefers-color-scheme: dark\) \{ tr:nth-child\(odd\) td \{ background: var\(--zebra\); \} \}", index
-    )
+    assert "prefers-color-scheme: dark" not in index.split("<style>", 1)[1].split("</style>", 1)[0]
     assert re.search(r"\.harness\.opencode \{ background: #4a9eea; \}", index)
     assert re.search(r"\.harness\.claude \{ background: #d97757; \}", index)
     assert _page_data(page)["session"] == "s-claude"
@@ -825,6 +824,22 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
         "unreadable",
     }
     assert drawn["fetches"] == ["/api/traces"]
+
+    # The deco's sweep over the rows the index drew: the index's script runs first and its fetch
+    # settles after it, the deco's sweep loading before those rows arrive — the served page's own
+    # script order — so a sweep that reads the cells once at load leaves every fresh one raw UTC. Each
+    # moments cell the rows carry is read from its `<time>` instants, its raw text replaced by the
+    # reader's clock and its title left standing.
+    run = _run_ts(
+        _HERE / "profiler_deco_runner.ts",
+        directory=tmp_path,
+        stdin=json.dumps({"index": index, "feed": json.loads(feed)}),
+    )
+    swept = json.loads(run.stdout)
+    assert len(swept["drawn"]) == 4, swept["drawn"]
+    for markup, reading in swept["drawn"]:
+        assert re.search(r'title="\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC to ', markup), markup
+        assert reading and "UTC" not in reading, reading
 
     # The span's own rendering, at every scale the server-side span test covered — seconds below a
     # minute, minutes alone, and the hour forms — fed the runner a crafted feed so the scale is known
