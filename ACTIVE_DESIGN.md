@@ -412,13 +412,31 @@ dashboard, devpro's one loopback server for the web interface, renders the recor
 as one panel of its site. The board is the landing surface: opening the dashboard's URL shows the
 kanban board — the project's actual current state — and the traces are the second view, reached
 from the nav. A simple top nav persists across every view: the `devpro` brand, then the view names
-`kanban` and `profiler`, the active view's name carrying the accent color and the inactive view's
-dimmed, selection switching the view — intuitive, recognizable surfaces, no invented paradigms, the
-dynamic behavior spent only where it counts. The server's elements persist across every view: a
+`kanban` and `profiler`, selection switching the view — intuitive, recognizable surfaces, no
+invented paradigms, the dynamic behavior spent only where it counts. The nav and the views carry
+the phosphor pairing, the brand's callback to amber and green screen terminals inverted from the
+site — the monogram's scanlines deliberate — and the accent is the phosphor, no second brand
+color. The dark mode carries the phosphor green: brand `#3cf077`, the active view `#31c260`, 80%
+of the brand's brightness, the inactive view `#a6a6ad`. The light mode carries the warm phosphor:
+brand `#e8a020`, the active view `#d09020`, the inactive view `#63636b`. The surfaces are the
+board's own variable system — `board.css`'s `:root` and its `prefers-color-scheme` block — the
+site's surfaces not inherited; the site's accent values and its two-motif accent map are. The
+nav's grammar: the brand wordmark is monospace, heavier and about 15% larger than the nav items,
+in the motif's brand color at full brightness; both view names sit in the same smaller size, no
+underline, no visited-link styling; the active view is the brand color at 80% brightness and
+heavier weight, the inactive view a lifted gray that reads available, never deactivated. The
+site's own light-mode mapping (green) and dim value (`--accent-dim`) are superseded: the
+dashboard's light brand is the bright amber, dimmed only for the active view's smaller text.
+Retro colors, modern chrome: the phosphor accents and the scanline treatment are the whole retro
+voice — the layout, spacing and componentry are ordinary modern web, no TUI replication — and the
+scanline treatment may appear in the chrome, the nav or the frame band, never on a card surface,
+its placement the pass's executor call. The server's elements persist across every view: a
 live/idle state indicator and, when live, a stop control; starting is the CLI's alone, no served
 page starting its own server. In the profiler view the how-to-read legend sits at the top of the
 view's frame band and persists there across drill-down, the same band carrying a return-to-list
-control; drill-down is ordinary page navigation, the trace list to the session page with
+control, its label `Return to list`, revisable at execution as a one-string change — the pass's
+second executor call; drill-down is ordinary page navigation, the trace list to the session page
+with
 `/page/<session-id>` deep links intact and no inner-frame mechanic. One presentation layer serves
 the whole presented interface: a single CSS source the board's assets and the profiler's pages
 alike consume, the palette living there, the profiler page's re-style to the kanban presentation
@@ -443,9 +461,11 @@ decisions for the presented interface, the design's accepted target state: the b
 surface — project first; the kanban board is the actual current state, and crowding it with data
 spelunked separately is a distraction — so opening the dashboard's URL shows the board and the
 profiler is the second view, reached from the nav. A simple top nav persists across every view: the
-`devpro` brand, then the view names `kanban` and `profiler`, the active view's name carrying the
-accent color and the inactive view's dimmed, selection switching the view — intuitive, recognizable
-surfaces, no invented paradigms, dynamic behavior spent only where it counts. The server's elements
+`devpro` brand, then the view names `kanban` and `profiler`, the active view's name in the brand
+color at 80% brightness and heavier weight, the inactive view's a lifted gray that reads available,
+never deactivated (the nav grammar the dashboard pair above states specifically), selection
+switching the view — intuitive, recognizable surfaces, no invented paradigms, dynamic behavior
+spent only where it counts. The server's elements
 persist across every view: a live/idle state indicator and, when live, a stop control — start is
 the CLI's alone, for no served page starts its own server. In the profiler view the how-to-read
 legend sits at the top of the view's frame band and persists there across drill-down, the same band
@@ -457,11 +477,17 @@ page's re-style to the kanban presentation made through that shared layer, never
 reskin. The legend's text has one home and two carriers, one source both read: the rendering side
 holds the text once — the standalone render injects it into the page it renders, the template
 carrying no second copy — and the dashboard's frame band reads the same source, so the served
-page's legend comes from the frame. Two details stay open to the pass that builds this: the accent
-palette's expansion within the mauve family, and the actual label of the return-to-list control.
+page's legend comes from the frame. The visual identity was decided with the session, iterating
+over rendered mockups kept in the project's scratch directory `.devpro-temp/ux-pass/` — the
+baseline dashboard renders, the board and profiler view mockups, the nav variant strip and the
+light steps; the record cites that directory, not its files' contents. The identity resolves the
+two details the layout left open: the palette-expansion question within the mauve family is
+answered — the accent is the phosphor, no second brand color — and the return-to-list label stands
+as `Return to list`, revisable at execution as a one-string change.
 The layout decisions are stage 3's accepted target; their build-out is not stage-3 work — it is a
 separate pass's, its own plan drafted when the user directs it after the technical base has landed —
-and the dashboard pair above stays pending until that pass lands its text.
+and the dashboard pair above, carrying the identity now, stays pending until that pass lands its
+text.
 
 **As it stands:**
 ```
