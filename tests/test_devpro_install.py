@@ -1466,9 +1466,10 @@ def test_no_two_snippet_sets_name_the_same_snippet() -> None:
 
 
 @pytest.mark.parametrize("runner", ["just", "make"])
-def test_the_shipped_devpro_snippets_list_the_same_six_recipes_in_both_runners(tmp_path: Path, runner: str) -> None:
-    """`devpro-help` lists the same six recipes whichever runner includes the set, and it lists them
-    from the snippet rather than a copy. A devpro on PATH records where a check runs and what it was
+def test_the_shipped_devpro_snippets_list_the_same_five_recipes_in_both_runners(tmp_path: Path, runner: str) -> None:
+    """`devpro-help` lists the same five recipes whichever runner includes the set, and it lists them
+    from the snippet rather than a copy, naming the CLI's own help beside them — its own `devpro
+    --help` is in the log below. A devpro on PATH records where a check runs and what it was
     given, so the four gates prove they run the check verb argumentless with nothing else. A runner
     whose list drifted from the other's would write include lines promising targets one runner does not
     define; a gate carrying an argument would check a file the consumer did not name."""
@@ -1489,7 +1490,7 @@ def test_the_shipped_devpro_snippets_list_the_same_six_recipes_in_both_runners(t
     (project / runner_file).write_text(f"{body}\n{line}\n", encoding="utf-8")
     environment = {**os.environ, "PATH": f"{tmp_path}:{os.environ['PATH']}", "PROBE_LOG": str(tmp_path / "log")}
     recipes = (
-        "devpro devpro-help devpro-check-plan devpro-check-design devpro-check-design-deltas-applied devpro-check-roadmap"
+        "devpro-help devpro-check-plan devpro-check-design devpro-check-design-deltas-applied devpro-check-roadmap"
     ).split()
     listed = subprocess.run(
         [runner, "devpro-help"], cwd=project, env=environment, capture_output=True, text=True, check=True
@@ -1507,7 +1508,10 @@ def test_the_shipped_devpro_snippets_list_the_same_six_recipes_in_both_runners(t
         ("devpro-check-roadmap", "check-roadmap"),
     ):
         subprocess.run([runner, gate], cwd=project, env=environment, capture_output=True, check=True)
+    # The devpro-help run invokes the command itself — its own `devpro --help` — before the four
+    # gates: the log names the help surface's invocation and the gates' argumentless checks.
     assert (tmp_path / "log").read_text(encoding="utf-8").splitlines() == [
+        "--help",
         "check-plan",
         "check-design",
         "check-design --deltas-applied",

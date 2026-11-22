@@ -1,4 +1,4 @@
-# dicing check targets. This file is installed at
+# kanban check targets. This file is installed at
 # <harness-relpath>/skills/docdicer/dicing-snippets/runner-snippets/ — <harness-relpath>
 # being the install directory relative to the project root:
 # .claude/skills/devpro under claude, .opencode/plugins/devpro under opencode — and is
@@ -37,7 +37,7 @@
 DEVPRO := devpro
 DEVPRO_SNIPPET_FILE := $(lastword $(MAKEFILE_LIST))
 
-.PHONY: devpro-help devpro devpro-check-plan devpro-check-design devpro-check-design-deltas-applied devpro-check-roadmap
+.PHONY: devpro-help devpro-check-plan devpro-check-design devpro-check-design-deltas-applied devpro-check-roadmap
 
 devpro-help:
 	@grep '^#   devpro' "$(DEVPRO_SNIPPET_FILE)" | sed 's:^#: :'
