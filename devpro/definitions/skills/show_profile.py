@@ -27,8 +27,9 @@ Use the first launcher that exists:
 2. `.claude/harness-profiler/hp.sh` at the repository root: the copy a committed hook runs, which is
    how a claude-on-web session records anything at all.
 
-Where neither stands, the profiler is not installed here: say so and stop. A repository can carry
-both, and the committed copy can be older than the installed one, so the installed one goes first.
+Where neither stands — always, under mage, whose install ships no launcher — the profiler is not
+installed here: say so and stop. A repository can carry both, and the committed copy can be older
+than the installed one, so the installed one goes first.
 
 Under claude, where the hook is not installed and the session cannot install it, `sh HP init claude`
 writes it into this repository's `.claude/` and prints the `git add` line to commit; run it only when
@@ -55,22 +56,23 @@ file.
 
 ## Answer
 
-In two or three lines: how many records the trace holds — count the lines of that recording, where
-a record is a call or an event marker, and a call the plugin and the committed hook both recorded
-appears twice — and, for a claude session, the three most expensive contexts by duration with their
-tokens, read from `sh HP tree --verbose`, which draws every node of the session; the plain tree
-draws the placeholder and marker nodes and the calls whose tool is in `PARENT_TOOLS` — the skills,
-agents and compactions — so a session of plain tool calls prints the column header alone on the
-plain tree. An opencode session
-records no token counts, so say so where those columns are blank. Then the URL the dashboard
-printed. Do not paste the tree.
+In two or three lines: how many records the trace holds, as the profiler's own view of the session
+states it — the trace list at `/profiler/`, whose row for the session states the count, is its
+source; never a count of lines you take yourself, where a record is a call or an event marker and a
+call the plugin and the committed hook both recorded appears twice — and, for a claude session, the
+three
+most expensive contexts by duration with their tokens, read from `sh HP tree --verbose`, which draws
+every node of the session; the plain tree draws the placeholder and marker nodes and the calls whose
+tool is in `PARENT_TOOLS` — the skills, agents and compactions — so a session of plain tool calls
+prints the column header alone on the plain tree. An opencode session records no token counts,
+so say so where those columns are blank. Then the URL the dashboard printed. Do not paste the tree.
 
 Where the plain tree prints the column header alone, nothing was recorded: say so, and, under
 claude, run `sh HP doctor`, report what it printed about the traces and the newest session, and that
-its plugin-record check cannot see the payload copy, and stop. Where `tree` instead says
-`No traces in …`, run `sh HP doctor` before answering, under claude and under opencode alike, and
-report every `old:` line it prints — a store under the name from before the rename, which `tree`
-cannot read — where it prints none, say the repository holds no recording at all."""
+its plugin-record check cannot see the payload copy, and stop. Where `tree` instead exits 1 saying
+`No traces in …` on stderr, run `sh HP doctor` before answering, under claude and under opencode
+alike, and report every `old:` line it prints — a store under the name from before the rename,
+which `tree` cannot read — where it prints none, say the repository holds no recording at all."""
 
 DEFINITIONS = (
     Definition(
