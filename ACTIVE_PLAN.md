@@ -40,7 +40,7 @@ nothing to build against while the capture lands. No verb, route or file retires
 | Package | State | Rating | Lifetime | Work |
 | --- | --- | --- | --- | --- |
 | A1 | landed: the delta gate reports 80 landed, 0 pending | expert | shipped | the attribution pass: the opencode capture's child-session extraction, the index's grouping, zebra and brand marks, the moments in local time with the span as a datum, the child page's dispatch band, the Agent-row links, and the pending pair's application |
-| PR | drafted | expert | shipped | Post-plan review |
+| PR | landed: the review document committed | expert | shipped | Post-plan review |
 | PB | drafted | expert | shipped | Post-plan burndown |
 
 ## A1 — the attribution pass
@@ -274,4 +274,37 @@ Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
 
 ## PB — Post-plan burndown
 
-Lifetime: shipped. Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Lifetime: shipped. Drafted from `ACTIVE_PLAN_REVIEW.md` (landed), grouped by root cause; each item
+cites its finding's ID.
+
+- **B1 (F1)** — the zebra's tone gets a motif-aware carrier: a shared-layer variable the
+  board.css `:root`/dark pair owns, or a second `prefers-color-scheme` block in the template's own
+  style — dark keeps `#191c22`, light takes `#e7e7eb` (proposed; strike where wrong); the zebra
+  test pins re-point to the carrier, not the literal declaration.
+- **B2 (F2)** — nested dispatch chains: HELD for the user's decision (walk the chain, or scope
+  both leaves to one level with the tree as the deep view).
+- **B3 (F3)** — the self-dispatch exclusion is one fact (`dispatches` drops the self-naming, or
+  the admissible children computed once); the `index_html` docstring states what the code does;
+  the `childPage` docstring's rationale matches its guard's shape.
+- **B4 (F4)** — one read serves both the page and the dispatcher (`page_of` returns the session,
+  or a sibling lookup takes the sessions in hand); `server.py`'s second full read goes.
+- **B5 (F5)** — a test pins the claude guard: a claude store whose record's `child_agent_id`
+  equals another session's id groups nothing and emits no `childPage` link.
+- **B6 (F6)** — the moments' format authority moves to `_moments` (`<time datetime="…">` the
+  script reads, the regex going) or, minimally, the docstring states the fallback and a runner
+  test loads `chrome.js` over same-day and cross-day cells asserting the rewrite, the untouched
+  title, and the fallback.
+- **B7 (F7)** — the real-host evidence becomes a re-examinable artifact (a captured real
+  `subagent` `execute.after` payload beside the `a1-*.log` evidence), and `childSessionOf`'s
+  docstring names the version range and the valid no-metadata state.
+- **B8 (F8)** — the notes bundle: the count pluralized (`1 dispatched agent`, re-pinned), the
+  stale substitution-slot comment reworded, the href builder shared by all three sites,
+  `calendar` replaced by a `sameDay` predicate, the `view.html` 404 note, the band helper's
+  coupling named in its docstring.
+- **B9 (G3)** — `pyproject.toml` gains `profiler/chrome.js` as package data; `just test`
+  (whole tree) green again.
+- **B10 (G1)** — the proposed CONVENTIONS rule lands: "Evidence commands run before they ship" —
+  a command a plan states as re-runnable evidence is run when the document is written, and its
+  stated output is what the run returned (`PROJECT_DOCS/CONVENTIONS/planning-and-execution/`).
+- **B11 (G2)** — the CONVENTIONS sentence naming what holds the `.ts` harness resources
+  mechanically: nothing today — they are held only by their tests, stated plainly.
