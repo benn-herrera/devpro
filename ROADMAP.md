@@ -158,10 +158,8 @@ decisions are the work):
   Renames the shipped package (`install.py`'s `SHIPPED_PACKAGES`, pyproject's package-data) and
   relocates its install home; the include-line writer, the `.just`/`.mk` self-referencing
   comments, the tests pinning include paths, and the SPEC/plugins + ARCHITECTURE rows go with it.
-  **The retired docdicer target goes as redundant**: `install.py`'s `RETIRED_SNIPPET_SET` — the
-  `docdicer.just`/`docdicer.mk` include targets whose whole existence is removing a line an
-  earlier release wrote — retires with the stale `SPEC/plugins.md` citation naming it; every
-  project that carried the line has migrated, and the shipped `devpro` set is the one front door.
+  The stale `SPEC/plugins.md` citation (`docdicer.just`/`docdicer.mk` naming the retired set)
+  corrects here.
 - **`show-profile` renames to `profiler`.** The one verb-y name in a noun family
   (`development`, `docdicer`, `guide`, `kbase`), and the noun names the domain it reports on. The
   definition source, `values.py`'s `SHOW_SKILL`, `hooks.py`'s copy/messages, `guide.py`'s ref, the
