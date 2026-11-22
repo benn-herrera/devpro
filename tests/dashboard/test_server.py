@@ -79,26 +79,32 @@ def test_the_state_endpoint_answers_live_while_the_server_serves(tmp_path: Path,
 
 
 def test_the_profiler_view_serves_its_list_and_its_pages(tmp_path: Path, serve) -> None:
-    """Two stores' sessions: `/profiler/` lists both, each once, and `/page/<id>` renders that
-    session's own records — a view that answers its routes with an empty page, or another session's,
-    has kept the routes and lost the view."""
+    """`/profiler/` is the static index — its page file carrying the rows' table and no row of its
+    own — and `/api/traces` lists both stores' sessions, each once, the rows' one source:
+    `/page/<id>` renders that session's own records. A view that answers its routes with an empty
+    page, or another session's, has kept the routes and lost the view."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-claude")
     store(root, "s-two", [_tool_call("s-two", "2026-01-01T00:00:05.000Z", "cat")], directory=".profiler-opencode")
-    client = serve(root)
+    served = serve(root)
 
-    index = client.get("profiler/")[2].decode("utf-8")
-    status, content_type, page = client.get("page/s-one")
+    index = served.get("profiler/")[2].decode("utf-8")
+    feed = json.loads(served.get("api/traces")[2])
+    status, content_type, page = served.get("page/s-one")
 
-    assert index.count('href="/page/s-one"') == 1 and index.count('href="/page/s-two"') == 1
+    assert [entry["id"] for entry in feed] == ["s-one", "s-two"]
+    # The page file is static: the rows' empty table, and no session row in the text — the script's
+    # own link prefix standing, a session's link being what the script writes.
+    assert '<tbody id="rows"></tbody>' in index and 'href="/page/' not in index
     assert (status, content_type) == (200, "text/html")
     data = json.loads(page.decode("utf-8").split("const D = ", 1)[1].split(";\n", 1)[0])
     assert (data["session"], [call["name"] for call in data["calls"]]) == ("s-one", ["ls"])
 
 
-def test_an_unreadable_store_is_stated_in_the_index_rather_than_failing_it(tmp_path: Path, serve) -> None:
-    """A `.profiler-*` store the dashboard cannot list is named as unreadable in the profiler view's
-    list and the other store's session is still listed: the index's rule reaches the view's page."""
+def test_an_unreadable_store_is_stated_in_the_feed_rather_than_failing_it(tmp_path: Path, serve) -> None:
+    """A `.profiler-*` store the dashboard cannot list is an entry of its own in the traces feed,
+    and the other store's session is still in it: the index's rule reaches the feed its script draws
+    the rows from."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
     locked = store(
@@ -108,13 +114,91 @@ def test_an_unreadable_store_is_stated_in_the_index_rather_than_failing_it(tmp_p
     try:
         if not _denied(locked.parent):
             pytest.skip("chmod denies this user no read")
-        status, _, body = serve(root).get("profiler/")
+        status, _, body = serve(root).get("api/traces")
     finally:
         os.chmod(locked.parent, 0o755)
 
+    entries = json.loads(body)
     assert status == 200
-    assert ".profiler-broken is unreadable" in body.decode("utf-8")
-    assert "/page/s-one" in body.decode("utf-8")
+    assert {"unreadable": ".profiler-broken"} in entries
+    assert [entry.get("id") for entry in entries if "unreadable" not in entry] == ["s-one"]
+
+
+SESSION_KEYS = {"harness", "id", "records", "first", "last", "span"}
+DISPATCHED_KEYS = SESSION_KEYS | {"dispatcher"}
+
+
+def test_the_traces_feed_answers_one_entry_per_session_and_names_unreadable_stores(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a static index with no rows and a `/api/traces`
+    answering an empty list — which passes every test the rework began from, since each read the
+    index's rows out of a page the server assembled, and this feed did not exist to be empty.
+
+    `/api/traces` answers one entry per recorded session, each carrying exactly the keys the
+    schema names — the harness the records carry, the id, the record count, the first and last
+    moments as epoch milliseconds and the span in seconds — and `dispatcher`, whose two halves are
+    the session that dispatched the child and the call that did, on a child's entry alone. A store
+    the glob finds and cannot read is its own entry, `{unreadable: <store name>}` and no other key.
+    A feed answering an empty list, one entry per store instead of per session, or an entry whose
+    moments are strings is the index drawing nothing, or drawing what the script cannot read."""
+    root = project(tmp_path / "proj", {})
+    store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-claude")
+    store(
+        root,
+        "s-parent",
+        [
+            record("2026-01-01T00:00:05.000Z", tool="Agent", name="devpro-coder", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "s-child"}
+        ],
+        directory=".profiler-opencode",
+    )
+    store(
+        root,
+        "s-child",
+        [_tool_call("s-child", "2026-01-01T00:00:07.000Z", "cat") | {"harness": "opencode"}],
+        directory=".profiler-opencode",
+    )
+    locked = store(
+        root, "s-broken", [_tool_call("s-broken", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-broken"
+    )
+    os.chmod(locked.parent, 0)
+    try:
+        if not _denied(locked.parent):
+            pytest.skip("chmod denies this user no read")
+        status, content_type, body = serve(root).get("api/traces")
+    finally:
+        os.chmod(locked.parent, 0o755)
+    entries = json.loads(body)
+
+    assert (status, content_type) == (200, "application/json")
+    assert entries == [
+        {
+            "harness": "claude",
+            "id": "s-one",
+            "records": 1,
+            "first": 1767225600000,
+            "last": 1767225600000,
+            "span": 0,
+        },
+        {
+            "harness": "opencode",
+            "id": "s-parent",
+            "records": 1,
+            "first": 1767225605000,
+            "last": 1767225605000,
+            "span": 0,
+        },
+        {
+            "harness": "opencode",
+            "id": "s-child",
+            "records": 1,
+            "first": 1767225607000,
+            "last": 1767225607000,
+            "span": 0,
+            "dispatcher": {"session": "s-parent", "name": "devpro-coder"},
+        },
+        {"unreadable": ".profiler-broken"},
+    ]
+    assert [set(entry) for entry in entries] == [SESSION_KEYS, SESSION_KEYS, DISPATCHED_KEYS, {"unreadable"}]
 
 
 def _denied(path: Path) -> bool:
@@ -332,7 +416,7 @@ def test_the_profiler_view_carries_its_nav_and_legend_once(tmp_path: Path, serve
 @pytest.mark.parametrize(
     "path, scripts",
     [
-        pytest.param("profiler/", 0, id="index"),
+        pytest.param("profiler/", 1, id="index"),
         pytest.param("page/s-one", 1, id="session-page"),
     ],
 )
@@ -342,11 +426,11 @@ def test_every_profiler_view_page_renders_the_way_the_file_flow_renders_it(
     """A served page is the page the file flow writes, with the dashboard's own deco around it:
     the shared layer linked once to the board panel's own file — the CSP refuses an inline
     stylesheet, and one source serves both carriers — the nav once with the server block, the nav's
-    script linked once — beside the render's own scripts on a session's page — and no mark the
-    splice did not fill. A served page whose layer is inlined (the render's carrier, not the
-    serve's), or which carries an unfilled mark or a second nav, is the page the dashboard serves
-    standing apart from the one the render writes, and the CSP would strip its styling on
-    delivery."""
+    script linked once — beside the page's own inline script, the render's on a session's page and
+    the rows' on the index — and no mark the splice did not fill. A served page whose layer is
+    inlined (the render's carrier, not the serve's), or which carries an unfilled mark or a second
+    nav, is the page the dashboard serves standing apart from the one the render writes, and the CSP
+    would strip its styling on delivery."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
     page = serve(root).get(path)[2].decode("utf-8")
@@ -391,6 +475,7 @@ def test_the_served_pages_link_a_shared_layer_whose_bytes_are_the_one_homes(tmp_
     assert css == SHARED_CSS
     page = served.get("profiler/")[2].decode("utf-8")
     assert LAYER_LINK in page
+    assert SHARED_CSS not in page
 
 
 def test_the_board_page_holds_its_deco_once_and_the_nav_supplies_it(tmp_path: Path, serve) -> None:
@@ -571,7 +656,7 @@ def _serve_the_command(cwd: Path, *arguments: str) -> Served:
 
 def test_the_command_prints_the_loopback_url_once_and_serves_the_project_it_runs_in(tmp_path: Path) -> None:
     """`devpro dashboard` in a project's subdirectory prints one `127.0.0.1` URL and nothing else, and
-    serves that project at it — the root answering its redirect to the board — ending on the board's
+    serve that project at it — the root answering its redirect to the board — ending on the board's
     stop: a verb that serves another root, binds elsewhere, or reports on its stream after the URL,
     is not the loopback server the record states."""
     root = project(tmp_path / "proj", {"ROADMAP.md": "## Next\n\n### Two\n\nMore.\n"})
@@ -604,7 +689,7 @@ def test_the_command_serves_the_project_it_names_from_a_directory_outside_it(tmp
     assert child.stdout is not None and child.stderr is not None
     try:
         client = Client(child.stdout.readline().strip())
-        index = client.get("profiler/")[2].decode("utf-8")
+        feed = json.loads(client.get("api/traces")[2])
 
         payload = json.loads(client.get("api/board")[2])
         client.post("api/stop", {})
@@ -614,7 +699,7 @@ def test_the_command_serves_the_project_it_names_from_a_directory_outside_it(tmp
             child.kill()
             child.wait()
 
-    assert 'href="/page/in-a"' in index and 'href="/page/in-b"' not in index
+    assert [entry["id"] for entry in feed] == ["in-a"]
     assert payload["project"] == "a"
 
 

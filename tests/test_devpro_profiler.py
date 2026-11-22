@@ -37,7 +37,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import IO
 
@@ -55,8 +55,6 @@ from devpro.profiler.pages import (
     LEGEND,
     RETURN_MARK,
     SHARED_CSS,
-    _moments,
-    format_span,
     index_html,
 )
 from devpro.profiler.values import _epoch_ms
@@ -410,11 +408,14 @@ def _bun() -> str:
     return "bun"
 
 
-def _run_ts(script: Path, *, directory: Path, arg: str | None = None) -> subprocess.CompletedProcess[str]:
-    """One of the TypeScript runners under `tests/`, given the scratch directory it writes into."""
+def _run_ts(
+    script: Path, *, directory: Path, arg: str | None = None, stdin: str | None = None
+) -> subprocess.CompletedProcess[str]:
+    """One of the TypeScript runners under `tests/`, given the scratch directory it writes into, and
+    the JSON payload it reads where it takes one: a runner given none is handed the directory."""
     done = subprocess.run(
         [_bun(), str(script), *([arg] if arg else [])],
-        input=json.dumps({"directory": str(directory)}),
+        input=json.dumps({"directory": str(directory)}) if stdin is None else stdin,
         capture_output=True,
         encoding="utf-8",
         timeout=120,
@@ -424,22 +425,39 @@ def _run_ts(script: Path, *, directory: Path, arg: str | None = None) -> subproc
     return done
 
 
-def _session(first: str, last: str) -> dict:
-    """A session's window, the shape the index's cells read: its first moment and its last."""
-    return {"first": _epoch_ms(first), "last": _epoch_ms(last)}
+def _moments(first: str, last: str) -> str:
+    """The moments' cell as the index's script writes it from the feed's two epoch milliseconds —
+    `index.js`'s `moments`, in Python: each instant an ISO UTC `<time>`, the text raw UTC to the
+    second, the title's last instant with the milliseconds the instant holds.
+
+    The script reads the feed's integers, so a whole second there carries no `.000`; the cell's last
+    `<time>` keeps the milliseconds only where the instant has any, and the title stands on that
+    same instant, so a title that added `.000` would be a form the page never draws."""
+    moments = [datetime.fromtimestamp(_epoch_ms(stamp) / 1000, timezone.utc) for stamp in (first, last)]
+    text = [f"{moment:%Y-%m-%d %H:%M:%S} UTC" for moment in moments]
+    instants = [
+        f"{moment:%Y-%m-%dT%H:%M:%S}" + (f".{moment.microsecond // 1000:03d}" if moment.microsecond else "") + "Z"
+        for moment in moments
+    ]
+    return (
+        f'<span class="moments" title="{text[0]} to {instants[1]}">'
+        f'<time datetime="{instants[0]}">{text[0]}</time> to '
+        f'<time datetime="{instants[1]}">{instants[1]}</time></span>'
+    )
 
 
-def test_the_decoration_script_reads_every_moments_cell_the_render_writes(tmp_path: Path) -> None:
-    """`deco.js` over the moments cells `_moments` serves: a cell whose two instants share the
+def test_the_decoration_script_reads_every_moments_cell_the_index_draws(tmp_path: Path) -> None:
+    """`deco.js` over the moments cells the index's script writes — its `<time>` elements' datetimes
+    the feed's epoch milliseconds, its text and title the raw UTC: a cell whose two instants share the
     reader's calendar day reads `H:MM to H:MM` in the reader's zone, one whose instants fall on two
     days carries each date, a second-precision instant keeps its second of it, and the cell's title
     keeps the raw UTC to the byte; a cell with no `<time>` element keeps the text it served, the
-    render's own fallback where a cell's instants cannot be read. The script parses no cell text, so
-    a moment whose rendered form moves still reads: a script that parses the served text instead
-    stops matching at the first format change and leaves the raw UTC with nothing saying so."""
+    fallback where a cell's instants cannot be read. The script parses no cell text, so a moment
+    whose rendered form moves still reads: a script that parses the served text instead stops
+    matching at the first format change and leaves the raw UTC with nothing saying so."""
     cells = [
-        _moments(_session("2026-01-01T00:00:01.250Z", "2026-01-01T00:00:02.500Z")),
-        _moments(_session("2026-01-01T06:00:00.000Z", "2026-01-01T18:30:00.000Z")),
+        _moments("2026-01-01T00:00:01.250Z", "2026-01-01T00:00:02.500Z"),
+        _moments("2026-01-01T06:00:00.000Z", "2026-01-01T18:30:00.000Z"),
         '<span class="moments" title="2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z">'
         "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z</span>",
     ]
@@ -462,7 +480,7 @@ def test_the_decoration_script_reads_every_moments_cell_the_render_writes(tmp_pa
     ]
     assert readings["titles"] == [
         "2026-01-01 00:00:01 UTC to 2026-01-01T00:00:02.500Z",
-        "2026-01-01 06:00:00 UTC to 2026-01-01T18:30:00.000Z",
+        "2026-01-01 06:00:00 UTC to 2026-01-01T18:30:00Z",
         "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z",
     ]
 
@@ -673,18 +691,16 @@ def _fetch(url: str) -> str:
 
 def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     """A store in each harness's directory and a session of several records under one project: the
-    served index carries a row for every recorded session, each stating the harness and count its own
-    records hold and its first and last moment, and linking to that session's page; an index that
-    omits a session the stores hold, or states one the store does not, drops or invents what the
-    records say.
+    served index's feed carries an entry for every recorded session, each stating the harness and the
+    count its own records hold and its first and last moment as epoch milliseconds, and its span in
+    seconds; a feed that omits a session the stores hold, or states one the store does not, drops or
+    invents what the records say.
 
-    A session whose opencode record names a child session is its dispatcher: its row carries the
-    count of the children drawn under it, each child's row follows with the accent bar's cell, the
-    link naming the call that dispatched it, and the rows alternate their tone with each harness
-    carrying its own mark. The moments' cell states the raw UTC as its text and in its title, which
-    a hover carries with no script run, and hands the script the instants as `<time>` elements, the
-    span is its own cell, and the odd-row rule's tone is the layer's own variable, which carries a
-    light value beside its dark one: a literal there is one motif's ink on the other's ground."""
+    A session whose opencode record names a child session is its dispatcher: the child's entry
+    carries `dispatcher`, the dispatching session's id and the dispatching call's name, and follows
+    its dispatcher's in the feed — the order the index draws the rows in, a child under its
+    dispatcher. The index's page file is static: no row is in its text, and its script renders them
+    from this feed, which `test_the_index_renders_the_rows_the_feed_answers` drives."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
@@ -703,48 +719,147 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
 
     with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
         index = _fetch(f"{url}profiler/")
+        feed = json.loads(_fetch(f"{url}api/traces"))
         page = _fetch(f"{url}page/s-claude")
 
-    rows = re.findall(r"<tr>(?!<th>).*?</tr>", index)
-    assert [re.search(r'href="[^"]*/page/([^"]+)"', row).group(1) for row in rows] == [
-        "s-claude",
-        "s-opencode",
-        "s-dispatcher",
-        "s-child",
+    assert feed == [
+        {
+            "harness": "claude",
+            "id": "s-claude",
+            "records": 2,
+            "first": _epoch_ms("2026-01-01T00:00:00.000Z"),
+            "last": _epoch_ms("2026-01-01T00:00:01.000Z"),
+            "span": 1,
+        },
+        {
+            "harness": "opencode",
+            "id": "s-opencode",
+            "records": 1,
+            "first": _epoch_ms("2026-01-01T00:00:05.000Z"),
+            "last": _epoch_ms("2026-01-01T00:00:05.000Z"),
+            "span": 0,
+        },
+        {
+            "harness": "opencode",
+            "id": "s-dispatcher",
+            "records": 1,
+            "first": _epoch_ms("2026-01-01T00:00:06.000Z"),
+            "last": _epoch_ms("2026-01-01T00:00:06.000Z"),
+            "span": 0,
+        },
+        {
+            "harness": "opencode",
+            "id": "s-child",
+            "records": 2,
+            "first": _epoch_ms("2026-01-01T00:00:07.000Z"),
+            "last": _epoch_ms("2026-01-01T00:00:08.000Z"),
+            "span": 1,
+            "dispatcher": {"session": "s-dispatcher", "name": "devpro-coder"},
+        },
     ]
-    assert "claude" in rows[0] and "2 records" in rows[0]
-    # The moments' cell: the raw UTC as its text, that same string in its title, and each instant as
-    # the `<time>` element the script reads.
-    assert (
-        'title="2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z">'
-        '<time datetime="2026-01-01T00:00:00Z">2026-01-01 00:00:00 UTC</time> to '
-        '<time datetime="2026-01-01T00:00:01.000Z">2026-01-01T00:00:01.000Z</time></span>' in rows[0]
-    )
-    assert "opencode" in rows[1] and "1 records" in rows[1]
-    assert "2026-01-01 00:00:05 UTC to 2026-01-01T00:00:05.000Z" in rows[1]
-    # The dispatcher's row and the child's, drawn under it with the accent bar's empty cell.
-    assert "1 dispatched agent<" in rows[2]
-    assert '<td class="child"></td>' in rows[3]
-    assert "↳ child — devpro-coder" in rows[3]
-    # Each harness's own mark, the zebra's motif-aware tone and the span's own cell, in the template.
-    assert '<span class="harness claude"></span>claude' in rows[0]
-    assert '<span class="harness opencode"></span>opencode' in rows[1]
+    # The page file is static: the rows' empty table, no session's row, and every column heading a
+    # row states, each harness's mark and the zebra's motif-aware tone in the template alone.
+    assert '<tbody id="rows"></tbody>' in index and 'href="/page/' not in index
+    assert re.search(r"<th>harness</th><th>session</th><th>records</th><th>first to last</th><th>span</th>", index)
     assert re.search(r"tr:nth-child\(odd\) td \{ background: var\(--zebra\); \}", index)
     assert re.search(
         r"@media \(prefers-color-scheme: dark\) \{ tr:nth-child\(odd\) td \{ background: var\(--zebra\); \} \}", index
     )
     assert re.search(r"\.harness\.opencode \{ background: #4a9eea; \}", index)
     assert re.search(r"\.harness\.claude \{ background: #d97757; \}", index)
-    # The span: the dispatch's own second on its row, the child's one-second store on its own, its
-    # cell last after the moments.
-    assert re.search(r"<th>first to last</th><th>span</th>", index)
-    assert re.findall(r"<td>([\dhm s]+)</td></tr>", index) == ["1s", "0s", "0s", "1s"]
     assert _page_data(page)["session"] == "s-claude"
 
 
+def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a static index with no rows and a `/api/traces`
+    answering an empty list, which passes every test the rework began from — each read the rows out of
+    a page the server assembled. The run that fails under it is this one: the served page's script,
+    over the feed's JSON, draws the same `<tr>` order the server-assembled index had — each session
+    once, in first-moment order, a dispatched child under its dispatcher — and reads exactly the
+    schema's keys, those the feed builder's entry carries and no others. A script reading a second
+    shape, or a feed answering one, is a row drawn from a key nothing states."""
+    project = tmp_path / "project"
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
+    _write_store(project, ".profiler-opencode", "s-p1", "2026-01-01T00:00:05.000Z", harness="opencode")
+    _write_store(
+        project,
+        ".profiler-opencode",
+        "s-p2",
+        "2026-01-01T00:00:06.000Z",
+        harness="opencode",
+        extra={"tool": "Agent", "name": "devpro-coder", "child_agent_id": "s-child"},
+    )
+    _write_store(project, ".profiler-opencode", "s-child", "2026-01-01T00:00:07.000Z", harness="opencode", records=2)
+
+    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
+        index = _fetch(f"{url}profiler/")
+        feed = _fetch(f"{url}api/traces")
+    run = _run_ts(
+        _HERE / "profiler_index_runner.ts",
+        directory=tmp_path,
+        stdin=json.dumps({"index": index, "feed": json.loads(feed)}),
+    )
+    drawn = json.loads(run.stdout)
+
+    assert [re.search(r'href="/page/([^"]+)"', row).group(1) for row in drawn["rows"]] == [
+        "s-claude",
+        "s-p1",
+        "s-p2",
+        "s-child",
+    ]
+    assert "claude" in drawn["rows"][0] and "2 records" in drawn["rows"][0]
+    assert "1 dispatched agent" in drawn["rows"][2]
+    assert 'class="child"' in drawn["rows"][3] and "↳ child — devpro-coder" in drawn["rows"][3]
+    # The keys the script reads are the schema's: a session entry's six, the dispatcher pair, and an
+    # unreadable store's one — no key the feed builder does not write, and none it writes unread.
+    assert set(drawn["keys"]) == {
+        "harness",
+        "id",
+        "records",
+        "first",
+        "last",
+        "span",
+        "dispatcher",
+        "session",
+        "name",
+        "unreadable",
+    }
+    assert drawn["fetches"] == ["/api/traces"]
+
+    # The span's own rendering, at every scale the server-side span test covered — seconds below a
+    # minute, minutes alone, and the hour forms — fed the runner a crafted feed so the scale is known
+    # by construction; and the table's own empty reading, where the feed holds no session to draw and
+    # no store to name, a full-width row that is no store's unreadable state.
+    crafted = [
+        {"harness": "claude", "id": "s-59", "records": 1, "first": 0, "last": 0, "span": 59},
+        {"harness": "claude", "id": "s-90", "records": 1, "first": 0, "last": 0, "span": 90},
+        {"harness": "claude", "id": "s-120", "records": 1, "first": 0, "last": 0, "span": 120},
+        {"harness": "claude", "id": "s-3600", "records": 1, "first": 0, "last": 0, "span": 3600},
+        {"harness": "claude", "id": "s-5400", "records": 1, "first": 0, "last": 0, "span": 5400},
+    ]
+    run = _run_ts(
+        _HERE / "profiler_index_runner.ts",
+        directory=tmp_path,
+        stdin=json.dumps({"index": index, "feed": crafted}),
+    )
+    drawn = json.loads(run.stdout)
+    for entry, cell in zip(
+        drawn["rows"], ("<td>59s</td>", "<td>1m 30s</td>", "<td>2m</td>", "<td>1h</td>", "<td>1h 30m</td>")
+    ):
+        assert cell in entry, f"{cell} not the span cell of the row drawn for its entry"
+    run = _run_ts(
+        _HERE / "profiler_index_runner.ts",
+        directory=tmp_path,
+        stdin=json.dumps({"index": index, "feed": []}),
+    )
+    drawn = json.loads(run.stdout)
+    assert len(drawn["rows"]) == 1
+    assert "No sessions recorded yet" in drawn["rows"][0] and "is unreadable" not in drawn["rows"][0]
+
+
 def test_a_session_naming_itself_as_a_child_is_drawn_once_in_its_own_place(tmp_path: Path) -> None:
-    """A session whose own opencode record carries its own id as `child_agent_id`: the index draws it
-    once, top-level, carrying no dispatched count. A grouping that reads the self-naming as a
+    """A session whose own opencode record carries its own id as `child_agent_id`: the feed draws it
+    once, top-level, its entry carrying no `dispatcher`. A grouping that reads the self-naming as a
     dispatch drops the session from the index's top level and draws it under itself, its count
     naming a row for a session that dispatched nothing."""
     project = tmp_path / "project"
@@ -761,19 +876,18 @@ def test_a_session_naming_itself_as_a_child_is_drawn_once_in_its_own_place(tmp_p
     )
 
     with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
-        index = _fetch(f"{url}profiler/")
+        feed = json.loads(_fetch(f"{url}api/traces"))
 
-    rows = re.findall(r"<tr>(?!<th>).*?</tr>", index)
-    assert len(rows) == 1
-    assert 'href="/page/s-self"' in rows[0] and "dispatched agent" not in rows[0]
-    assert 'td class="child"' not in rows[0]
+    assert [entry["id"] for entry in feed] == ["s-self"]
+    assert "dispatcher" not in feed[0]
 
 
 def test_a_claude_child_agent_id_groups_no_session(tmp_path: Path) -> None:
-    """A claude store whose record's `child_agent_id` equals another session's id: the index draws that
-    session as a stranger, top-level, and the claude page's call renders its name with no child-page
-    link. Claude's `child_agent_id` is an agent id, and claude records its subagents' calls in the
-    parent's file — grouping on it draws a page no session stands behind."""
+    """A claude store whose record's `child_agent_id` equals another session's id: the feed draws that
+    session as a stranger, top-level, its entry carrying no `dispatcher`, and the claude page's call
+    renders its name with no child-page link. Claude's `child_agent_id` is an agent id, and claude
+    records its subagents' calls in the parent's file — grouping on it draws a page no session stands
+    behind."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
@@ -789,38 +903,18 @@ def test_a_claude_child_agent_id_groups_no_session(tmp_path: Path) -> None:
     _write_store(project, ".profiler-claude", "s-named", "2026-01-01T00:00:05.000Z", harness="claude")
 
     with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
-        index = _fetch(f"{url}profiler/")
+        feed = json.loads(_fetch(f"{url}api/traces"))
         page = _fetch(f"{url}page/s-claude")
 
-    rows = re.findall(r"<tr>(?!<th>).*?</tr>", index)
-    assert [re.search(r'href="[^"]*/page/([^"]+)"', row).group(1) for row in rows] == ["s-claude", "s-named"]
-    assert not any("dispatched agent" in row or 'td class="child"' in row for row in rows)
+    assert [entry["id"] for entry in feed] == ["s-claude", "s-named"]
+    assert not any("dispatcher" in entry for entry in feed)
     assert _page_data(page)["calls"][0]["child"] == "s-named"
     assert _page_data(page)["calls"][0]["childPage"] is None
 
 
-@pytest.mark.parametrize(
-    "ms, span",
-    [
-        (0, "0s"),
-        (500, "1s"),
-        (59_400, "59s"),
-        (60_000, "1m"),
-        (222_000, "3m 42s"),
-        (3600_000, "1h"),
-        (3 * 3600_000 + 42 * 60_000, "3h 42m"),
-    ],
-)
-def test_a_span_is_whole_seconds_legible_at_every_scale(ms: int, span: str) -> None:
-    """`format_span`: hours and minutes, minutes alone, seconds below a minute, and `0s` for a
-    zero-length span. A span rendered as a raw millisecond count, or one whose hours read as minutes,
-    is a number the reader must convert, which is the datum's whole point."""
-    assert format_span(ms) == span
-
-
 def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_path: Path) -> None:
     """`CLAUDE_PROJECT_DIR` at another project, as a claude shell sets it, while the dashboard runs in
-    this one: the index lists this project's sessions; an index that follows the variable serves the
+    this one: the feed lists this project's sessions; a feed that follows the variable serves the
     other project's stores, which for a terminal-launched server is the wrong repository."""
     project = tmp_path / "project"
     project.mkdir()
@@ -831,17 +925,16 @@ def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_
     _write_store(foreign, ".profiler-claude", "s-elsewhere", "2026-01-01T00:00:00.000Z", harness="claude")
 
     with _serve(_launcher(tmp_path / "harness"), cwd=project, env={"CLAUDE_PROJECT_DIR": str(foreign)}) as url:
-        index = _fetch(f"{url}profiler/")
+        feed = json.loads(_fetch(f"{url}api/traces"))
 
-    assert "/page/s-here" in index
-    assert "/page/s-elsewhere" not in index
+    assert [entry["id"] for entry in feed] == ["s-here"]
 
 
-def test_the_served_index_states_an_unreadable_store(tmp_path: Path) -> None:
-    """One `.profiler-*` store the glob finds and cannot read, beside one it can: the index answers
+def test_the_served_feed_states_an_unreadable_store(tmp_path: Path) -> None:
+    """One `.profiler-*` store the glob finds and cannot read, beside one it can: the feed answers
     2xx, names the unreadable store as such, and still lists the readable store's session, and the
-    unreadable store's own page is a 404 rather than a traceback; an index that lets the one bad
-    directory blank the page or raise out of the handler is the defect the stated row replaces."""
+    unreadable store's own page is a 404 rather than a traceback; a feed that lets the one bad
+    directory blank it or raise out of the handler is the defect the stated entry replaces."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
@@ -850,14 +943,23 @@ def test_the_served_index_states_an_unreadable_store(tmp_path: Path) -> None:
     os.chmod(locked, 0o000)
     try:
         with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
-            index = _fetch(f"{url}profiler/")
+            feed = json.loads(_fetch(f"{url}api/traces"))
             with pytest.raises(urllib.error.HTTPError) as missing:
                 _fetch(f"{url}page/s-broken")
     finally:
         os.chmod(locked, 0o755)
 
-    assert ".profiler-broken is unreadable" in index
-    assert "/page/s-claude" in index
+    assert feed == [
+        {
+            "harness": "claude",
+            "id": "s-claude",
+            "records": 1,
+            "first": _epoch_ms("2026-01-01T00:00:00.000Z"),
+            "last": _epoch_ms("2026-01-01T00:00:00.000Z"),
+            "span": 0,
+        },
+        {"unreadable": ".profiler-broken"},
+    ]
     assert missing.value.code == 404
 
 
@@ -1063,14 +1165,14 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
 
     The strict fill every profiler fill now runs through refuses a placeholder it is told to fill
     that the text no longer carries, and leaves no mark it filled standing. `index_html`, fed an
-    `INDEX` whose `$rows` slot the text no longer names yet still told to fill it, raises — where the
-    old `string.Template.substitute` dropped the unused key in silence; `strict_fill` on `view.html`
-    with a mark removed, still told to fill it, raises the same. A rendered session page and the
-    served page and index then carry no mark the fill was handed standing. The `INDEX` swap is for
-    this check alone: `monkeypatch` reverts at the end and the serve below runs in a child process
-    that reads `INDEX` from disk, so nothing after it sees the swap."""
-    # (a) `index_html`: an `INDEX` whose `$rows` slot the text no longer names, still told to fill it.
-    monkeypatch.setattr("devpro.profiler.pages.INDEX", INDEX.replace("$rows", ""))
+    `INDEX` whose `$class_claude` slot the text no longer names yet still told to fill it, raises —
+    where the old `string.Template.substitute` dropped the unused key in silence; `strict_fill` on
+    `view.html` with a mark removed, still told to fill it, raises the same. A rendered session page
+    and the served page and index then carry no mark the fill was handed standing. The `INDEX` swap
+    is for this check alone: `monkeypatch` reverts at the end and the serve below runs in a child
+    process that reads `INDEX` from disk, so nothing after it sees the swap."""
+    # (a) `index_html`: an `INDEX` whose `$class_claude` slot the text no longer names, still told to fill it.
+    monkeypatch.setattr("devpro.profiler.pages.INDEX", INDEX.replace("$class_claude", ""))
     with pytest.raises(KeyError):
         index_html(tmp_path)
     # (a) the fill itself: `view.html` with a mark removed, still told to fill it.
@@ -1095,4 +1197,4 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     for mark in (CSS_SLOT, DATA_SLOT, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
         assert mark not in page, f"{mark} left standing in the served page"
         assert mark not in index, f"{mark} left standing in the served index"
-    assert "$rows" not in index
+    assert "$rows" not in index and "$class_claude" not in index

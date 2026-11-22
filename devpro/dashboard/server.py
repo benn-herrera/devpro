@@ -13,9 +13,11 @@ Endpoints:
 - `GET /`: a `302` to `/board/`'s absolute URL. The board is the landing surface, and it serves from
   `/board/` so its page's assets, its payload and its served documents stay under that path; the
   redirect is the one answer the root owes.
-- `GET /profiler/`: the profiler view's index — `pages.index_html` — with the nav and the band,
+- `GET /profiler/`: the profiler view's static index — `pages.index_html` — with the nav and the band,
   the shared layer linked at `/board/board.css` and the decoration's script linked at
-  `/profiler/deco.js`.
+  `/profiler/deco.js`; its rows are rendered client-side from the feed below.
+- `GET /api/traces`: the index's feed — `pages.traces_feed` — one JSON entry per recorded session and
+  one per store that could not be read, the rows' one schema.
 - `GET /page/<session-id>`: that session's page, with the nav, the band's legend and its return to the
   list, and the dispatcher its lookup names where one dispatched it.
 - `GET /board/` and `GET /board/<file>`: the board page and its files, the file resolved beside the
@@ -52,6 +54,7 @@ from ..errors import InputError
 BOARD_PATH = "/board/"
 PROFILER_PATH = "/profiler/"
 STATE_PATH = "/api/state"
+TRACES_PATH = "/api/traces"
 # The decoration's script: its one source is the shipped file, which the server answers at the
 # profiler path the pages name (`/profiler/deco.js`, a link the templates carry) — the board page's
 # script names it too. The one policy both panels' pages are served under, so a page cannot load from
@@ -140,13 +143,17 @@ class DashboardServer(ThreadingHTTPServer):
         return self.server_address[1]
 
     def profiler_index(self) -> str:
-        """The profiler view's index, as the dashboard serves it: the store rows under the nav and the
-        band, the legend once.
+        """The profiler view's static index, as the dashboard serves it: the page's own text under
+        the nav and the band, the legend once — its rows rendered by its script from `traces`.
 
-        Read per request: a session recorded a moment ago is listed by the next page loaded.
         `CLAUDE_PROJECT_DIR` is not followed — it names the outermost claude session's launch
         directory, which for a terminal-launched server is another project."""
         return pages.link_layer(pages.index_html(self.root))
+
+    def traces(self) -> bytes:
+        """The index's feed as the JSON answer `/api/traces` serves: `pages.traces_feed`'s entries,
+        read per request so a session recorded a moment ago is in the next answer."""
+        return json.dumps(pages.traces_feed(self.root)).encode("utf-8")
 
     def page(self, session: str) -> str | None:
         """The page at `/page/<session>`, or nothing where it names no recorded session: the view's
@@ -159,9 +166,7 @@ class DashboardServer(ThreadingHTTPServer):
         session_record = pages.session_for(PAGE_PREFIX + session, self.root)
         if session_record is None:
             return None
-        return profiler_page(
-            session_record, return_to=PROFILER_PATH, dispatcher=dispatcher_of(session, self.root)
-        )
+        return profiler_page(session_record, return_to=PROFILER_PATH, dispatcher=dispatcher_of(session, self.root))
 
     def start(self) -> None:
         """Begin polling the board's files. Called once the server is serving, inside the try whose
@@ -205,6 +210,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(
                 HTTPStatus.OK, self.server.profiler_index().encode("utf-8"), "text/html; charset=utf-8", page=True
             )
+        elif path == TRACES_PATH:
+            self._send(HTTPStatus.OK, self.server.traces(), "application/json")
         elif path == PROFILER_PATH + DECO_SCRIPT_PATH:
             self._send(HTTPStatus.OK, DECO_SCRIPT.encode("utf-8"), "text/javascript")
         elif path.startswith(BOARD_PATH):

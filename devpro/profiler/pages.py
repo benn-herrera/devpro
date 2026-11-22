@@ -34,7 +34,6 @@ from .values import (
     TRACE_GLOB,
     TREE_WIDTH,
     _epoch_ms,
-    _iso,
     _json,
     _round_half_up,
     _utc,
@@ -159,19 +158,6 @@ def format_count(n: int | float) -> str:
     if n >= 1e3:
         return f"{n / 1e3:.1f}k"
     return f"{n}"
-
-
-def format_span(ms: int | float) -> str:
-    """A span as the index shows it, in whole seconds: `3h 42m`, minutes alone, seconds below a
-    minute and `0s` for a zero-length span."""
-    seconds = _round_half_up(ms / 1000)
-    if seconds < 60:
-        return f"{seconds}s"
-    minutes, seconds = divmod(seconds, 60)
-    if minutes < 60:
-        return f"{minutes}m {seconds}s" if seconds else f"{minutes}m"
-    hours, minutes = divmod(minutes, 60)
-    return f"{hours}h {minutes}m" if minutes else f"{hours}h"
 
 
 def clock(ms: int | float) -> str:
@@ -778,35 +764,6 @@ def session_harness(session: dict) -> str:
     return clip(mask(str(harness)), NAME_LIMIT)
 
 
-def _link(href: str, text: str) -> str:
-    """`text`, as a link to `href`."""
-    return f'<a href="{html.escape(href)}">{html.escape(text)}</a>'
-
-
-def session_href(identifier: str) -> str:
-    """A session's page, at the path the dashboard serves it."""
-    return PAGE_PREFIX + quote(identifier)
-
-
-def _session_link(identifier: str) -> str:
-    """A session id, as a link to its page."""
-    return _link(session_href(identifier), identifier)
-
-
-def _moments(session: dict) -> str:
-    """A session's first and last moments: the raw UTC as the cell's text where no script runs, and in
-    its title where a hover wants the exact instant, and each instant as a `<time>` element the
-    reader's local time is written from — the data, never the cell's own text, parsed."""
-    text = html.escape(f"{stamp(session)} to {_iso(_utc(session['last']))}")
-    first = html.escape(_utc(session["first"]).strftime("%Y-%m-%dT%H:%M:%SZ"))
-    last = html.escape(_iso(_utc(session["last"])))
-    return (
-        f'<span class="moments" title="{text}">'
-        f'<time datetime="{first}">{html.escape(stamp(session))}</time> to '
-        f'<time datetime="{last}">{last}</time></span>'
-    )
-
-
 def dispatches(sessions: list[dict]) -> dict[str, tuple[str, str]]:
     """child session id -> the session that dispatched it and that call's name.
 
@@ -824,86 +781,62 @@ def dispatches(sessions: list[dict]) -> dict[str, tuple[str, str]]:
     return found
 
 
-def _count_of(count: int) -> str:
-    """How many sessions a dispatcher's row says it dispatched, in the singular where it is one."""
-    return "1 dispatched agent" if count == 1 else f"{count} dispatched agents"
+def traces_feed(directory: Path | str) -> list[dict]:
+    """The feed `/api/traces` answers, the index's rows' one source: one JSON entry per recorded
+    session, in the order the index draws them, then one per store the glob found but could not read.
+
+    A session's entry carries its harness, its id, its record count, its first and last moments as
+    epoch milliseconds and its span in seconds, and — where an opencode record names a dispatcher for
+    it — that dispatcher's session id and the dispatching call's name, the two halves `dispatches`
+    holds; an entry so dispatched follows its dispatcher's, so the feed is in the order the index
+    draws the rows. An unreadable store's entry is `{unreadable: <store name>}` and carries no other
+    key. This is the schema's one definition: `index.js` renders the rows from exactly these keys."""
+    sessions, unreadable = read_sessions(directory)
+    dispatched = dispatches(sessions)
+    children: dict[str, list[dict]] = {}
+    for session in sessions:
+        if session["id"] in dispatched:
+            children.setdefault(dispatched[session["id"]][0], []).append(session)
+    entries = []
+    for session in sorted(
+        (session for session in sessions if session["id"] not in dispatched), key=lambda session: session["first"]
+    ):
+        entries.append(_feed_entry(session, dispatched.get(session["id"])))
+        for child in sorted(children.get(session["id"], ()), key=lambda session: session["first"]):
+            entries.append(_feed_entry(child, dispatched.get(child["id"])))
+    return entries + [{"unreadable": store} for store in unreadable]
 
 
-def _records(session: dict) -> str:
-    """A session's record count, as its row states it."""
-    return html.escape(f"{len(session['records'])} records")
-
-
-def session_row(session: dict, *, children: list[tuple[dict, str]] = ()) -> str:
-    """One index row and, under a dispatcher's, the rows of the children drawn beneath it: the
-    harness with its mark, the session's link and its dispatched count, the record count, the
-    moments and the span. Each child's row carries the accent bar's empty cell, its link naming the
-    call that dispatched it, its own count, moments and span."""
-    rows = [
-        "<tr>"
-        f'<td><span class="harness {html.escape(_harness_class(session_harness(session)))}">'
-        f"</span>{html.escape(session_harness(session))}</td>"
-        f"<td>{_session_link(session['id'])}"
-        + (f" <small>— {_count_of(len(children))}</small>" if children else "")
-        + f"</td><td>{_records(session)}</td>"
-        f"<td>{_moments(session)}</td><td>{html.escape(format_span(session['last'] - session['first']))}</td>"
-        "</tr>"
-    ]
-    rows.extend(
-        "<tr>"
-        f'<td class="child"></td><td>{_session_link(child["id"])} '
-        f"<small>↳ child — {html.escape(name)}</small></td>"
-        f"<td>{_records(child)}</td>"
-        f"<td>{_moments(child)}</td><td>{html.escape(format_span(child['last'] - child['first']))}</td>"
-        "</tr>"
-        for child, name in children
-    )
-    return "".join(rows)
-
-
-def _harness_class(harness: str) -> str:
-    """A harness's name as the page's class for its mark, where the page holds one for it."""
-    return harness if harness in HARNESS_MARKS else ""
-
-
-def unreadable_row(store: str) -> str:
-    """The index row for a store the glob found but could not read."""
-    return f'<tr><td colspan="5">{html.escape(store)} is unreadable</td></tr>'
+def _feed_entry(session: dict, dispatcher: tuple[str, str] | None) -> dict:
+    """One session's entry in the feed, `dispatcher` left out where none dispatched it."""
+    entry = {
+        "harness": session_harness(session),
+        "id": session["id"],
+        "records": len(session["records"]),
+        "first": int(session["first"]),
+        "last": int(session["last"]),
+        "span": _round_half_up((session["last"] - session["first"]) / 1000),
+    }
+    if dispatcher:
+        entry["dispatcher"] = {"session": dispatcher[0], "name": dispatcher[1]}
+    return entry
 
 
 def index_html(directory: Path | str) -> str:
-    """The index of record files: one row per session, and one per store that cannot be read.
+    """The index of record files, static: its page file carries no row, and its script renders them
+    from the feed `/api/traces` answers (`traces_feed`) — the board's pattern, the payload consumed
+    client-side. The directory is read for the legend's band and nothing else; the rows' order and
+    their dispatcher grouping are the feed's.
 
-    A child session is drawn under the session that dispatched it, its dispatcher's row carrying the
-    count of the rows drawn beneath it; a session no other dispatched keeps its own place in
-    first-moment order. A session naming itself dispatches nothing (`dispatches` drops it), so it is
-    no child and keeps that place. The index carries the presentation layer and names no view of its
-    own: opened on its own it stands beside no board, so the deco — the nav, the frame band and the
-    decoration's script — is the template's own text, the band's legend filled here from its one home
-    (the index carrying no dispatcher and no way back), and the layer filled for the serve path to
-    link (`link_layer`), absent where nothing serves it."""
-    sessions, unreadable = read_sessions(directory)
-    parent_of = dispatches(sessions)
-    children: dict[str, list[tuple[dict, str]]] = {}
-    for session in sessions:
-        dispatched = parent_of.get(session["id"])
-        if dispatched:
-            children.setdefault(dispatched[0], []).append((session, dispatched[1]))
-    rows = "".join(
-        session_row(
-            session,
-            children=sorted(children.get(session["id"], ()), key=lambda pair: pair[0]["first"]),
-        )
-        for session in sorted(
-            (session for session in sessions if session["id"] not in parent_of),
-            key=lambda session: session["first"],
-        )
-    )
+    The index carries the presentation layer and names no view of its own: opened on its own it
+    stands beside no board, so the deco — the nav, the frame band and the decoration's script — is
+    the template's own text, the band's legend filled here from its one home (the index carrying no
+    dispatcher and no way back), and the layer filled for the serve path to link (`link_layer`),
+    absent where nothing serves it."""
+    read_sessions(directory)
     return strict_fill(
         INDEX,
         {
-            "unreadable": "".join(unreadable_row(store) for store in unreadable),
-            "rows": rows or '<tr><td colspan="5">No sessions recorded yet.</td></tr>',
             **ZEBRA_MARKS,
             CSS_SLOT: SHARED_CSS,
             **band_fills(dispatcher=None, return_to=None),
@@ -922,11 +855,23 @@ def link_layer(page: str) -> str:
     return page.replace(SHARED_CSS, "").replace("<style>\n", f"{layer_link}<style>", 1)
 
 
+def _link(href: str, text: str) -> str:
+    """`text`, as a link to `href`."""
+    return f'<a href="{html.escape(href)}">{html.escape(text)}</a>'
+
+
+def _session_link(identifier: str) -> str:
+    """A session id, as a link to its page."""
+    return _link(PAGE_PREFIX + quote(identifier), identifier)
+
+
 def dispatcher_html(dispatcher: tuple[str, str]) -> str:
     """The frame band's dispatch line: the session that dispatched this page, linked to its page, and
     the call that dispatched it."""
     session, name = dispatcher
-    return f'<span class="dispatched"><strong>Dispatched by</strong> {_session_link(session)} — {html.escape(name)}</span>'
+    return (
+        f'<span class="dispatched"><strong>Dispatched by</strong> {_session_link(session)} — {html.escape(name)}</span>'
+    )
 
 
 def band_fills(*, dispatcher: tuple[str, str] | None, return_to: str | None) -> dict[str, str]:
@@ -952,20 +897,19 @@ RETURN_MARK = "<!--RETURN-->"
 # The index's own brand marks: a harness's dot, in its brand colors, and the variable each wears.
 # They are the page's, not the site's — the dots are the only brand-marked part of a row — so they
 # live in the template's own style block beside its other rules. `ZEBRA_MARKS` is the template's
-# substitution slots: the two harness class names and the two brand colors. The zebra's tones are no
-# slot: their carrier is the template's own motif pair below it, whose light value is the shared
-# layer's `--column` and whose dark value is the layer's `--zebra`, standing beside it as the
-# layer's pair stands.
+# substitution slots: the two harness class names and the two brand colors — in substitution's one
+# pass, so text spliced into one slot is never read as another's. The zebra's tones are no slot:
+# their carrier is the template's own motif pair below it, whose light value is the shared layer's
+# `--column` and whose dark value is the layer's `--zebra`, standing beside it as the layer's pair
+# stands. The harness class is the name the feed's entry carries where the page holds a dot for it,
+# and no class where it holds none.
 HARNESS_MARKS = {"opencode": "#4a9eea", "claude": "#d97757"}
-ZEBRA_MARKS = {
-    **{f"class_{harness}": _harness_class(harness) for harness in HARNESS_MARKS},
-    **HARNESS_MARKS,
-}
-# The index's substitution slots, named by `index_html`: the unreadable stores' rows, the session
-# rows, the harness class each row's mark carries and the two brand colors — in substitution's one
-# pass, so text spliced into one slot is never read as another's.
+ZEBRA_MARKS = {f"class_{harness}": harness for harness in HARNESS_MARKS} | HARNESS_MARKS
+# The index's template: static. The rows' table is the one the script fills (`index.js`, the feed
+# `/api/traces` as its payload), and its script's read of the feed is what the page's body carries;
+# the script is the template's own text, as the deco is, and served under the pages' policy.
 # The presentation layer is no substitution slot: `/*STYLE*/` stands in the template, as it does on a
-# page, and the `CSS_SLOT` splice fills it. The three marks are the last thing before the body's own
+# page, and the `CSS_SLOT` fill inserts it. The three marks are the last thing before the body's own
 # content, their text no stylesheet's.
 INDEX = """<!doctype html>
 <html lang="en">
@@ -999,9 +943,137 @@ tr td:first-child.child + td { padding-left: 2.4rem; }
 <main>
 <h1>Sessions</h1>
 <table>
-<tr><th>harness</th><th>session</th><th>records</th><th>first to last</th><th>span</th></tr>
-$unreadable$rows</table>
+<thead><tr><th>harness</th><th>session</th><th>records</th><th>first to last</th><th>span</th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
 </main>
+<script>
+'use strict';
+// The index's rows, rendered from the feed the server answers — the board's pattern, the payload
+// consumed client-side. One feed entry per session, in the order the index draws them, and one per
+// store the feed could not read. A session dispatched by another is drawn under its dispatcher, its
+// dispatcher's row carrying the count of the children beneath it. The moments are epoch
+// milliseconds and become the row's `<time>` elements, whose local reading the deco writes and whose
+// titles keep the raw UTC for a hover. Reads the entry's own keys and nothing else: `harness`, `id`,
+// `records`, `first`, `last`, `span`, `dispatcher`, and `unreadable` on a store's entry.
+const FEED = '/api/traces';
+const PAGE = '/page/';
+const HARNESS_MARKS = ['opencode', 'claude'];
+
+const el = (tag, text, className) => {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text;
+  if (className) node.className = className;
+  return node;
+};
+
+// A session id, as a link to its page.
+const link = (id) => {
+  const anchor = el('a', id);
+  anchor.href = PAGE + encodeURIComponent(id);
+  return anchor;
+};
+
+const pad = (n) => String(n).padStart(2, '0');
+// A span in whole seconds, as the index states it: hours and minutes, minutes alone, seconds below
+// a minute and `0s` for a zero-length span.
+const span = (seconds) => {
+  if (seconds < 60) return String(seconds) + 's';
+  const [minutes, rest] = [Math.floor(seconds / 60), seconds % 60];
+  if (minutes < 60) return rest ? minutes + 'm ' + rest + 's' : minutes + 'm';
+  const [hours, left] = [Math.floor(minutes / 60), minutes % 60];
+  return left ? hours + 'h ' + left + 'm' : hours + 'h';
+};
+
+// A moment's UTC reading, the one a row states: the first to the second, the last with its
+// milliseconds — `2026-01-01 00:00:00 UTC` and `2026-01-01T00:00:05.000Z`.
+const day = (d) => d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
+const clock = (d) => pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ':' + pad(d.getUTCSeconds());
+const utcStamp = (ms) => day(new Date(ms)) + ' ' + clock(new Date(ms)) + ' UTC';
+const isoStamp = (ms) => {
+  const d = new Date(ms);
+  const fraction = d.getUTCMilliseconds() ? '.' + String(d.getUTCMilliseconds()).padStart(3, '0') : '';
+  return day(d) + 'T' + clock(d) + fraction + 'Z';
+};
+
+// The moments' cell: the raw UTC to the reader with no script run, that same reading as the cell's
+// title, and each instant as a `<time>` element the deco rewrites to the reader's own clock — the
+// data, never the cell's text, read.
+const moments = (session) => {
+  const cell = el('span', undefined, 'moments');
+  cell.title = utcStamp(session.first) + ' to ' + isoStamp(session.last);
+  const first = el('time', utcStamp(session.first));
+  first.setAttribute('datetime', isoStamp(session.first));
+  const last = el('time', isoStamp(session.last));
+  last.setAttribute('datetime', isoStamp(session.last));
+  cell.append(first, ' to ', last);
+  return cell;
+};
+
+// One row: a dispatcher's carries the count of the children drawn beneath it; a child's carries the
+// accent bar's empty cell and names the call that dispatched it. Both carry the harness with its
+// mark where the page holds one, their own count, moments and span.
+const row = ({ session, dispatched }) => {
+  const tr = el('tr');
+  const harness = el('td');
+  const mark = HARNESS_MARKS.includes(session.harness) ? session.harness : '';
+  harness.append(el('span', undefined, ('harness ' + mark).trim()), session.harness);
+  const id = el('td', undefined, dispatched ? 'child' : undefined);
+  id.append(link(session.id));
+  if (dispatched) {
+    id.append(' ', el('small', '↳ child — ' + dispatched.name));
+  } else if (session.children) {
+    const count = session.children === 1 ? '1 dispatched agent' : session.children + ' dispatched agents';
+    id.append(' ', el('small', '— ' + count));
+  }
+  const window = el('td');
+  window.append(moments(session));
+  tr.append(harness, id, el('td', session.records + ' records'), window, el('td', span(session.span)));
+  return tr;
+};
+
+// A full-width row: a store's name where the feed could not read it, the table's own empty reading
+// where the feed holds no session to draw.
+const wideRow = (text) => {
+  const cell = el('td', text);
+  cell.colSpan = 5;
+  const tr = el('tr');
+  tr.append(cell);
+  return tr;
+};
+const unreadable = (store) => wideRow(store + ' is unreadable');
+const empty = () => wideRow('No sessions recorded yet: run a session with the hook installed.');
+
+const show = (feed) => {
+  const children = new Map();
+  for (const entry of feed) {
+    if (entry.unreadable || !entry.dispatcher) continue;
+    if (!children.has(entry.dispatcher.session)) children.set(entry.dispatcher.session, []);
+    children.get(entry.dispatcher.session).push(entry);
+  }
+  const drawn = [];
+  for (const entry of feed) {
+    if (entry.unreadable) {
+      drawn.push(unreadable(entry.unreadable));
+    } else if (!entry.dispatcher) {
+      const kids = children.get(entry.id) || [];
+      drawn.push(row({ session: { ...entry, children: kids.length } }));
+      for (const kid of kids) drawn.push(row({ session: kid, dispatched: kid.dispatcher }));
+    }
+  }
+  document.getElementById('rows').replaceChildren(...(drawn.length ? drawn : [empty()]));
+};
+
+fetch(FEED, { cache: 'no-store' })
+  .then((response) => {
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    return response.json();
+  })
+  .then(show)
+  .catch((error) =>
+    console.warn({ level: 'warn', message: 'the traces feed could not be read', error: String(error) }),
+  );
+</script>
 </body>
 </html>
 """
