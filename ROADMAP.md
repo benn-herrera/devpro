@@ -5,6 +5,15 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
+### The zebra's dark stripes are too subtle against the dark background
+
+The landed zebra reads the shared layer's `--column` for both motifs — light `#e7e7eb` reads well,
+dark `#232328` sits a shade above the dark background `#18181b`, and the operator reads the rows
+as unstriped. The dark tone wants a visibly lighter step than the background's — the executor
+names the value against the real dark nav, the mockup's original dark literal (`#191c22`) being
+the cautionary tale: darker than the background is the failure mode that hid the odd rows
+entirely.
+
 ### The board panel's error path raises AttributeError instead of handling
 
 `devpro/dicing/kanban/server.py:140` calls `BaseHTTPRequestHandler.handle_error(...)`, which does
