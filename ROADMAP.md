@@ -52,6 +52,14 @@ the shared layer and `chrome.js` served as same-origin files and linked/scripted
 board's own pattern, no CSP weakening, and the recorded feed direction's "the shared layer is
 linked rather than inlined."
 
+### The index's moments read local time and the span as data
+
+The profiler index's first/last columns print raw UTC — no one reads UTC in their head, they read
+local time — and the span between them is useful data no one computes mentally. The next pass
+(the attribution pass, whose design refinement owns the index's rows): the moments rendered in
+the reader's local time — the browser's, where the page renders — and the span as its own datum,
+human-legible ("3h 42m"), the raw UTC kept in the title attribute where a hover wants it.
+
 ## Features
 
 ### Codex CLI harness support
