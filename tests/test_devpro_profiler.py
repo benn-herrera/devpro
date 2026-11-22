@@ -719,9 +719,9 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     # Each harness's own mark, the zebra's motif-aware tone and the span's own cell, in the template.
     assert '<span class="harness claude"></span>claude' in rows[0]
     assert '<span class="harness opencode"></span>opencode' in rows[1]
-    assert re.search(r"tr:nth-child\(odd\) td \{ background: var\(--column\); \}", index)
+    assert re.search(r"tr:nth-child\(odd\) td \{ background: var\(--zebra\); \}", index)
     assert re.search(
-        r"@media \(prefers-color-scheme: dark\) \{ tr:nth-child\(odd\) td \{ background: #191c22; \} \}", index
+        r"@media \(prefers-color-scheme: dark\) \{ tr:nth-child\(odd\) td \{ background: var\(--zebra\); \} \}", index
     )
     assert re.search(r"\.harness\.opencode \{ background: #4a9eea; \}", index)
     assert re.search(r"\.harness\.claude \{ background: #d97757; \}", index)

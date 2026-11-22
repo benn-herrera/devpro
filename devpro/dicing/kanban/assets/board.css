@@ -14,6 +14,7 @@
   --muted: #6b6b70;
   --bg: #f4f4f6;
   --column: #e7e7eb;
+  --zebra: #e7e7eb;
   --card: #ffffff;
   --line: #c9c9cf;
   --brand: #e8a020;
@@ -30,6 +31,7 @@
     --muted: #9a9aa2;
     --bg: #18181b;
     --column: #232328;
+    --zebra: #2e2e35;
     --card: #2e2e34;
     --line: #45454d;
     --brand: #3cf077;

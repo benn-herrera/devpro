@@ -906,7 +906,8 @@ DECO_MARK = "<!--DECO-->"
 # live in the template's own style block beside its other rules. `ZEBRA_MARKS` is the template's
 # substitution slots: the two harness class names and the two brand colors. The zebra's tones are no
 # slot: their carrier is the template's own motif pair below it, whose light value is the shared
-# layer's `--column` and whose dark value stands beside it as the layer's pair stands.
+# layer's `--column` and whose dark value is the layer's `--zebra`, standing beside it as the
+# layer's pair stands.
 HARNESS_MARKS = {"opencode": "#4a9eea", "claude": "#d97757"}
 ZEBRA_MARKS = {
     **{f"class_{harness}": _harness_class(harness) for harness in HARNESS_MARKS},
@@ -931,8 +932,8 @@ th, td { text-align: left; padding: 0.4rem 1rem 0.4rem 0; border-bottom: 1px sol
 th { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
 a { color: var(--fg); }
 a:hover, a:focus-visible { color: var(--accent); }
-tr:nth-child(odd) td { background: var(--column); }
-@media (prefers-color-scheme: dark) { tr:nth-child(odd) td { background: #191c22; } }
+tr:nth-child(odd) td { background: var(--zebra); }
+@media (prefers-color-scheme: dark) { tr:nth-child(odd) td { background: var(--zebra); } }
 td small { color: var(--muted); }
 tr td:first-child.child { border-left: 3px solid var(--accent); }
 tr td:first-child.child + td { padding-left: 2.4rem; }
