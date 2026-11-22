@@ -21,7 +21,10 @@ drawn.
 ### The modules' homes: kanban out of dicing, planform and plancheck into it
 
 The user's direction: the modules' locations correspond to usage **and to the dependency
-direction**. `devpro.dicing.kanban` — the board, the dashboard's panel — becomes `devpro.kanban`;
+direction**. The boundary's principle, the user's: **kanban consumes a known-good doc set and
+serves it up — the module's job is presentation, not validation**; planform and plancheck are the
+doc manipulation and validation world and belong to it. `devpro.dicing.kanban` — the board, the
+dashboard's panel — becomes `devpro.kanban`;
 `planform.py` (the workflow documents' model, built on dicerlib) and `plancheck.py` (the
 check verbs' implementation) move into `devpro.dicing`, whose verbs they serve — the reverse
 arrow `dicing.cli → .kanban.plancheck` is what blocks the clean arrangement today. The target
