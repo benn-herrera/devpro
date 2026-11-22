@@ -1571,7 +1571,8 @@ def test_importing_the_entry_point_imports_no_verb_module() -> None:
     and every verb pay for no other's imports. Before the change the parser build imported every verb's
     implementation — all nine, the kanban server among them — so this same parser build showed
     `devpro.install` and the dicing verbs' modules in `sys.modules`. The dicing registration chain is the
-    pair of the package and its verb surface; no other `devpro.dicing` module is imported by it."""
+    pair of the package and its verb surface; no other `devpro.dicing` module is imported by it, the
+    board's server among them: the dashboard's verb registers without it."""
     probe = (
         "import sys\n"
         "import devpro.cli\n"

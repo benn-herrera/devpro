@@ -25,7 +25,7 @@ const dragInfo = new WeakMap(); // card element -> its drag info
 const separatorCard = new WeakMap(); // Roadmap category separator element -> its card as served
 
 const STOPPED_AFTER = 3;
-const STOPPED_TEXT = "server stopped: restart docdicer kanban and open the URL it prints";
+const STOPPED_TEXT = "server stopped: restart devpro dashboard and open the URL it prints";
 const NOT_DRAWN = "board not drawn: ";
 const PARKED_BAND = "ROADMAP_DESIGNS";
 // The payload carries no card for the ROADMAP_DESIGNS band: this is what the page draws it from, and

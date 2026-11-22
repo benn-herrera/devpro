@@ -302,17 +302,9 @@ tap-local: tap-repo
 dev-devpro *args:
   @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro "${@}"
 
-[doc("serve the profiler pages from the checkout's devpro")]
-dev-profiler:
-  @just dev-devpro profiler serve
-
-[doc("run kanban board (blocks with running http server)")]
-dev-kanban:
-  @just dev-devpro kanban
-
-[doc("serve the dashboard — the session records and the board — from the checkout's devpro")]
+[doc("serve the dashboard — the board and the session records — from the checkout's devpro")]
 dev-dashboard:
-    @just dev-devpro dashboard
+  @just dev-devpro dashboard
 
 [doc("run ACTIVE_PLAN format compliance check")]
 dev-check-plan:

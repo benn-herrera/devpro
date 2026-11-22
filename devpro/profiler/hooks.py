@@ -55,7 +55,6 @@ DEVPRO_CANDIDATES = ("/opt/homebrew/bin/devpro", "/usr/local/bin/devpro")
 
 USAGE = """Usage:
   devpro profiler tree [session-id-prefix] [--branch <name>] [--verbose] [--format text|html]
-  devpro profiler serve [--port <number>]
   devpro profiler init claude
   devpro profiler doctor
   devpro profiler capture <harness>  (run by the hook, not by hand)"""

@@ -41,9 +41,10 @@ kbase component riding the same floor
 checkout's venv — so no import or snippet stands between this checkout and its `docs` surface:
 `just check-links` runs the absorbed verb directly. A design's delta application is verified by
 `check-design --deltas-applied`; this repository runs it as
-`just dev-check-design-deltas-applied`, over the absorbed verb. The `docdicer-repo`, `dev-dd` and
-`dev-kanban` recipes, and `docdicer-repo.sh` with its test, retire with the hosted clone; the
-dev-check recipes run the absorbed verbs. The `_venv`
+`just dev-check-design-deltas-applied`, over the absorbed verb. The `docdicer-repo` and `dev-dd`
+recipes, and `docdicer-repo.sh` with its test, retired with the hosted clone; the `dev-kanban`
+recipe retires with the board verb it ran — `dev-dashboard` runs the dashboard verb, the board its
+panel; the dev-check recipes run the absorbed verbs. The `_venv`
 recipe creates `.venv`
 where its python is absent. On macOS it makes it from `/usr/bin/python3` where present, the Xcode
 command-line tools' Python 3.9.6, so the suite there runs on the Python 3.9 floor. It installs the

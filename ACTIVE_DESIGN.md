@@ -51,8 +51,12 @@ pair re-anchored before its chain's next application keeps that application from
 ```
 The installed package provides the `devpro` command. `python3 -m devpro` is the same command:
 both print the same `--help`, and the same arguments install the same product, byte for byte.
-Every `devpro` command exits 0 on success and 2 on a refusal or an operating-system failure, printing `error: <message>` on
-stderr. Every command that takes components takes them as `--components=CSV`, with the default
+The install verbs — `render`, `install`, `install-agents-file`, `render-agents-file` and the
+hidden `harness` — exit 0 on success and 2 on a refusal or an operating-system failure, printing
+`error: <message>` on
+stderr; the dicing, check and board verbs of Dicing and Checks exit 0, 1 and 2 as that section
+states. Every command that
+takes components takes them as `--components=CSV`, with the default
 Deployed Surfaces, Plugins states.
 ```
 **Becomes:**
@@ -62,26 +66,10 @@ both print the same `--help`, and the same arguments install the same product, b
 The install verbs — `render`, `install`, `install-agents-file`, `render-agents-file` and the
 hidden `harness` — exit 0 on success and 2 on a refusal or an operating-system failure, printing
 `error: <message>` on
-stderr; the dicing, check and board verbs of Dicing and Checks exit 0, 1 and 2 as that section
+stderr; the dicing and check verbs of Dicing and Checks exit 0, 1 and 2 as that section
 states. Every command that
 takes components takes them as `--components=CSV`, with the default
 Deployed Surfaces, Plugins states.
-```
-
-**As it stands:**
-```
-devpro also runs from a checkout of this repository, as `PYTHONPATH=<clone> python3 -m devpro
-install …` (Deployed Surfaces). The install product is the same from a checkout or from an installed package.
-```
-**Becomes:**
-```
-devpro also runs from a checkout of this repository, as `PYTHONPATH=<clone> python3 -m devpro
-install …` (Deployed Surfaces). The install product is the same from a checkout or from an installed package.
-
-The command also carries the dicing, check and board surface: `devpro dice-doc`, `devpro undice`,
-`devpro dice-docs`, `devpro check-links`, `devpro check-tree`, `devpro check-plan`,
-`devpro check-design`, `devpro check-roadmap` and `devpro kanban` (Dicing and Checks). The verbs
-run wherever the `devpro` command runs; they are not part of the install product.
 ```
 
 (*Stage 3: the two pairs below are the active plan's P2 package's content — the `dashboard` verb's
@@ -89,7 +77,7 @@ addition and the board verb's retirement — and stay pending until that package
 
 **As it stands:**
 ```
-stderr; the dicing, check and board verbs of Dicing and Checks exit 0, 1 and 2 as that section
+stderr; the dicing and check verbs of Dicing and Checks exit 0, 1 and 2 as that section
 states. Every command that
 ```
 **Becomes:**
@@ -100,10 +88,13 @@ states. Every command that
 
 **As it stands:**
 ```
-The command also carries the dicing, check and board surface: `devpro dice-doc`, `devpro undice`,
+The command also carries the dicing and check surface: `devpro dice-doc`, `devpro undice`,
 `devpro dice-docs`, `devpro check-links`, `devpro check-tree`, `devpro check-plan`,
-`devpro check-design`, `devpro check-roadmap` and `devpro kanban` (Dicing and Checks). The verbs
-run wherever the `devpro` command runs; they are not part of the install product.
+`devpro check-design` and `devpro check-roadmap` (Dicing and Checks), and the
+`devpro dashboard [<project-dir>] [--port <number>]` verb — devpro's one loopback server for the
+web interface: its traces panel the rendering the retired `devpro profiler serve` drove, its board
+panel the board the retired `devpro kanban` served. The verbs run wherever the `devpro` command
+runs; they are not part of the install product.
 ```
 **Becomes:**
 ```
@@ -138,13 +129,13 @@ board. The verbs and their `--help` are the offered surface; this section states
 implementation of them is held to.
 
 The verbs are `devpro dice-doc`, `devpro undice`, `devpro dice-docs`,
-`devpro check-links`, `devpro check-tree`, `devpro check-plan`, `devpro check-design`,
-`devpro check-roadmap` and `devpro kanban`. `devpro --version` prints the version; `-h`, alone or
+`devpro check-links`, `devpro check-tree`, `devpro check-plan`, `devpro check-design`
+and `devpro check-roadmap`. `devpro --version` prints the version; `-h`, alone or
 after a verb, prints help. The verbs run where the `devpro` command runs: the devpro package on the
 host is the dicing surface's prerequisite, the operator's to install.
 
 Every verb exits 0 on success, 1 where its check or dicing failed, and 2 on a usage error or a
-refusal; `kanban` serves until interrupted and exits 0 either way. Results and summaries go to
+refusal. Results and summaries go to
 stdout, diagnostics to stderr. The round-trip check — the monolith re-diced, the tree reassembled,
 the links resolved — is the dicing's own commit gate, not an offered verb.
 
@@ -156,19 +147,20 @@ Six outcomes hold:
   rewriting; a dicing whose verification fails exits 1.
 - **Linked.** Cross references in the source (`§N`, `#anchor`, relative paths) resolve in the tree;
   `check-links` verifies this.
-- **Repeatable.** For every verb but `kanban`, equal inputs give equal trees and messages, and
+- **Repeatable.** Equal inputs give equal trees and messages, and
   nothing depends on the clock, the network, or any state outside the named inputs.
-- **Non-destructive.** No verb modifies a source document, except that `kanban` moves tickets
-  between `ROADMAP.md` and the active design, in either direction, adds a parked card's link ticket
-  to the active design, and removes a link ticket from it.
+- **Non-destructive.** No verb modifies a source document: the board's moves — a ticket moved
+  between `ROADMAP.md` and the active design, in either direction, a parked card's link ticket
+  added to the active design, a link ticket removed from it — are no verb's writes, served by the
+  dashboard's board panel.
 - **Reversible.** A tree `dice-doc` wrote can be written back to a document that dices to the same
   tree.
 
 The check verbs read the forms SPEC.md, Plan Status Form states: `check-plan` the plan's status
 table, `check-design` a design's final form and its delta pairs against their targets, and
 `check-roadmap` the roadmap's ticket layout. Without a file argument each checks the active file
-under the project root — the nearest directory at or above the current one holding a `.git` entry;
-`kanban` serves that project. The full contract of each verb — the diced-tree format, link
+under the project root — the nearest directory at or above the current one holding a `.git` entry.
+The full contract of each verb — the diced-tree format, link
 rewriting, the link map, the manifest, the checks' reports and the board's moves — is this
 section's: the stage-1 plan carries it over from the contract documents the absorbed project held,
 stated in this section and its section's own leaves, and no document outside this tree holds any
@@ -181,8 +173,8 @@ verb's contract.
 **As it stands:**
 ```
 The verbs are `devpro dice-doc`, `devpro undice`, `devpro dice-docs`,
-`devpro check-links`, `devpro check-tree`, `devpro check-plan`, `devpro check-design`,
-`devpro check-roadmap` and `devpro kanban`. `devpro --version` prints the version; `-h`, alone or
+`devpro check-links`, `devpro check-tree`, `devpro check-plan`, `devpro check-design`
+and `devpro check-roadmap`. `devpro --version` prints the version; `-h`, alone or
 after a verb, prints help.
 ```
 **Becomes:**
@@ -196,7 +188,7 @@ after a verb, prints help.
 **As it stands:**
 ```
 Every verb exits 0 on success, 1 where its check or dicing failed, and 2 on a usage error or a
-refusal; `kanban` serves until interrupted and exits 0 either way.
+refusal.
 ```
 **Becomes:**
 ```
@@ -206,7 +198,7 @@ refusal.
 
 **As it stands:**
 ```
-- **Repeatable.** For every verb but `kanban`, equal inputs give equal trees and messages, and
+- **Repeatable.** Equal inputs give equal trees and messages, and
   nothing depends on the clock, the network, or any state outside the named inputs.
 ```
 **Becomes:**
@@ -217,9 +209,10 @@ refusal.
 
 **As it stands:**
 ```
-- **Non-destructive.** No verb modifies a source document, except that `kanban` moves tickets
-  between `ROADMAP.md` and the active design, in either direction, adds a parked card's link ticket
-  to the active design, and removes a link ticket from it.
+- **Non-destructive.** No verb modifies a source document: the board's moves — a ticket moved
+  between `ROADMAP.md` and the active design, in either direction, a parked card's link ticket
+  added to the active design, a link ticket removed from it — are no verb's writes, served by the
+  dashboard's board panel.
 ```
 **Becomes:**
 ```
@@ -231,8 +224,7 @@ refusal.
 
 **As it stands:**
 ```
-under the project root — the nearest directory at or above the current one holding a `.git` entry;
-`kanban` serves that project.
+under the project root — the nearest directory at or above the current one holding a `.git` entry.
 ```
 **Becomes:**
 ```
@@ -246,8 +238,8 @@ board verb's leaf — and stay pending until that package lands them.*)
 
 **As it stands:**
 ```
-`devpro kanban [<project-dir>]` serves a live board of a project's development-process files on the
-local machine, for the user to open in a browser.
+`devpro dashboard [<project-dir>]` serves a live board of a project's development-process files on
+the local machine as the dashboard's board panel at `/board/`, for the user to open in a browser.
 ```
 **Becomes:**
 ```
@@ -1014,9 +1006,10 @@ retirement — and stays pending until that package lands it.*)
 **As it stands:**
 ```
 `check-design --deltas-applied`; this repository runs it as
-`just dev-check-design-deltas-applied`, over the absorbed verb. The `docdicer-repo`, `dev-dd` and
-`dev-kanban` recipes, and `docdicer-repo.sh` with its test, retire with the hosted clone; the
-dev-check recipes run the absorbed verbs.
+`just dev-check-design-deltas-applied`, over the absorbed verb. The `docdicer-repo` and `dev-dd`
+recipes, and `docdicer-repo.sh` with its test, retired with the hosted clone; the `dev-kanban`
+recipe retires with the board verb it ran — `dev-dashboard` runs the dashboard verb, the board its
+panel; the dev-check recipes run the absorbed verbs.
 ```
 **Becomes:**
 ```
@@ -1265,8 +1258,8 @@ on (none in the mage slot, a harness-directory plugin), and it
 ```
 **Becomes:**
 ```
-`docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`,
-the check verbs and `devpro kanban` — run from the command line, and does not restate their
+`docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`
+and the check verbs — run from the command line, and does not restate their
 `--help` (CONVENTIONS.md, A skill omits its tool's offered surface).
 ```
 
@@ -1274,12 +1267,18 @@ the check verbs and `devpro kanban` — run from the command line, and does not 
 ```
 - **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered by every
   install.
-  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`,
-  the check verbs and `devpro kanban` — run from the command line, and does not restate their
+  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`
+  and the check verbs — run from the command line, and does not restate their
   `--help` (CONVENTIONS.md, A skill omits its tool's offered surface). The skill carries no install
-  step and no runner instruction: the recipes and snippets the docdicer tools package carried are
-  retired with it (Plugins). Its `kanban` paragraph has the session offer to run the board as a
-  background process or hand over the command line, the user choosing.
+  step. Its runner instruction is back, naming the recipes of the `devpro` snippet set: where the
+  project's runner includes that set, the checks run through the recipes (`devpro`, and by name
+  `devpro-help`, `devpro-check-plan`, `devpro-check-design`,
+  `devpro-check-design-deltas-applied` and `devpro-check-roadmap`), the four gates argumentless,
+  each checking the active file under the project root — the active plan, the active design, the
+  active design's applied deltas and `ROADMAP.md` — with a direct `devpro` call for any other
+  (Plugins). Its board paragraph names the `devpro dashboard` verb for the board — the board is the
+  dashboard's panel, the `devpro kanban` verb retired with it — offering to run it as a background
+  process or handing over the command line, the user choosing.
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
   `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it
   renders only where kbase ships.
@@ -1288,8 +1287,8 @@ the check verbs and `devpro kanban` — run from the command line, and does not 
 ```
 - **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered by every
   install.
-  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`,
-  the check verbs and `devpro kanban` — run from the command line, and does not restate their
+  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`
+  and the check verbs — run from the command line, and does not restate their
   `--help` (CONVENTIONS.md, A skill omits its tool's offered surface). The skill carries no install
   step. Its runner instruction is back, naming the recipes of the `devpro` snippet set: where the
   project's runner includes that set, the checks run through the recipes (`devpro`, and by name
@@ -1298,8 +1297,9 @@ the check verbs and `devpro kanban` — run from the command line, and does not 
   each checking the active file under the project root — the active plan, the active design, the
   active design's applied deltas and `ROADMAP.md` — with a direct `devpro` call for any other
   (Plugins). Its
-  `kanban` paragraph has the session offer to run the board as a background process or hand over
-  the command line, the user choosing.
+  board paragraph names the `devpro dashboard` verb for the board — the board is the dashboard's
+  panel, the `devpro kanban` verb retired with it — offering to run it as a background process or
+  handing over the command line, the user choosing.
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
   `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it
   renders only where kbase ships.
@@ -1315,9 +1315,9 @@ the check verbs and `devpro kanban` — run from the command line, and does not 
 ```
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
-  under every harness. Its board section routes the board through the `docdicer` skill's routing
-  and names no launcher path or recipe: the launcher paths and recipes it named are retired with
-  the docdicer tools package (Plugins). The description names the uses SPEC.md, Guide and README lists, and
+  under every harness. Its board section routes the board to the `devpro dashboard` verb — the
+  board is the dashboard's panel — and names no launcher path or recipe: the launcher paths and
+  recipes it named are retired with the docdicer tools package (Plugins). The description names the uses SPEC.md, Guide and README lists, and
 ```
 
 **As it stands:**
@@ -1341,8 +1341,8 @@ records' routing moving to the dashboard — and stay pending until that package
 
 **As it stands:**
 ```
-  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`,
-  the check verbs and `devpro kanban` — run from the command line, and does not restate their
+  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`
+  and the check verbs — run from the command line, and does not restate their
   `--help` (CONVENTIONS.md, A skill omits its tool's offered surface).
 ```
 **Becomes:**
@@ -1354,8 +1354,9 @@ records' routing moving to the dashboard — and stay pending until that package
 
 **As it stands:**
 ```
-  (Plugins). Its `kanban` paragraph has the session offer to run the board as a
-  background process or hand over the command line, the user choosing.
+  (Plugins). Its board paragraph names the `devpro dashboard` verb for the board — the board is the
+  dashboard's panel, the `devpro kanban` verb retired with it — offering to run it as a background
+  process or handing over the command line, the user choosing.
 ```
 **Becomes:**
 ```
@@ -1368,7 +1369,9 @@ records' routing moving to the dashboard — and stay pending until that package
 ```
   supporting files, delivered under every harness. It renders the newest session's trace — read from
   either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
-  `.profiler-*` ones `devpro profiler tree` walks — as text or as a self-contained HTML page, and
+  `.profiler-*` ones `devpro profiler tree` walks — as text, as a self-contained HTML page, or
+  served over HTTP: its serve sections name the `devpro dashboard` verb, the records' serving being
+  the dashboard's traces panel now the profiler's own `serve` subcommand has retired — and
 ```
 **Becomes:**
 ```
@@ -1381,9 +1384,9 @@ records' routing moving to the dashboard — and stay pending until that package
 
 **As it stands:**
 ```
-  under every harness. Its board section routes the board through the `docdicer` skill's routing
-  and names no launcher path or recipe: the launcher paths and recipes it named are retired with
-  the docdicer tools package (Plugins).
+  under every harness. Its board section routes the board to the `devpro dashboard` verb — the
+  board is the dashboard's panel — and names no launcher path or recipe: the launcher paths and
+  recipes it named are retired with the docdicer tools package (Plugins).
 ```
 **Becomes:**
 ```
@@ -1440,24 +1443,24 @@ capture that fails, or finds no `devpro`, exits 0 with no output.
 
 **As it stands:**
 ```
-nothing from the network, so the records it renders never leave the machine. Its main page is the
-index of record files: every store the `*-profiler` glob finds,
+nothing from the network, so the records it renders never leave the machine. Its traces panel is the
+index of record files: every store the `.profiler-*` glob finds,
 ```
 **Becomes:**
 ```
-nothing from the network, so the records it renders never leave the machine. Its main page is the
+nothing from the network, so the records it renders never leave the machine. Its traces panel is the
 index of record files: every store the `.profiler-*` glob finds,
 ```
 
 **As it stands:**
 ```
-`.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which the
-`devpro profiler tree` and `serve` render beside the claude sessions', each record read from its own
-`.profiler-*` store.
+`.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which
+`devpro profiler tree` and the dashboard's traces panel render beside the claude sessions', each
+record read from its own `.profiler-*` store.
 ```
 **Becomes:**
 ```
-`.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which the
-`devpro profiler tree` and `serve` render beside the claude sessions', each record read from its own
-`.profiler-*` store.
+`.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which
+`devpro profiler tree` and the dashboard's traces panel render beside the claude sessions', each
+record read from its own `.profiler-*` store.
 ```

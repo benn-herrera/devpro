@@ -1,4 +1,5 @@
-"""The render: the text tree, the self-contained HTML page, and the loopback server serving both.
+"""The render: the text tree, the self-contained HTML page, and the index and pages the dashboard's
+traces panel serves.
 
 The page template `view.html` is this package's own data, read through `importlib.resources`, so the
 render finds it wherever devpro is installed.
@@ -9,14 +10,11 @@ from __future__ import annotations
 import html
 import json
 import math
-import os
 import re
 import string
-from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
 from pathlib import Path
-from urllib.parse import quote, unquote, urlparse
+from urllib.parse import quote
 
 from .capture import fill_context_tokens, spent_tokens, transcript_files
 from .values import (
@@ -38,7 +36,6 @@ from .values import (
     _round_half_up,
     _utc,
     clip,
-    git_root,
     mask,
     read_text,
 )
@@ -642,7 +639,7 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
     return "\n\n".join(blocks)
 
 
-# ---------- serve ----------
+# ---------- the served index and pages ----------
 
 
 def read_sessions(directory: Path | str) -> tuple[list[dict], list[str]]:
@@ -734,53 +731,3 @@ def page_of(path: str, directory: Path | str) -> str | None:
     sessions, _ = read_sessions(directory)
     session = next((session for session in sessions if session["id"] == path[len(PAGE_PREFIX) :]), None)
     return None if session is None else render_html(session)
-
-
-class IndexHandler(BaseHTTPRequestHandler):
-    """The served surface: `/` is the index, `/page/<session-id>` a session's page, both from memory."""
-
-    def do_GET(self) -> None:
-        # The directory the server was started in, taken to the git root: capture's rule reads
-        # `CLAUDE_PROJECT_DIR`, which names the outermost claude session's launch directory, not the
-        # terminal `serve` runs in.
-        directory = git_root(os.getcwd()) or os.getcwd()
-        path = unquote(urlparse(self.path).path)
-        page = index_html(directory) if path in ("", "/") else page_of(path, directory)
-        if page is None:
-            self.send_error(HTTPStatus.NOT_FOUND, "No such page")
-            return
-        body = page.encode("utf-8")
-        self.send_response(HTTPStatus.OK)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-
-def parse_serve_args(argv: list[str]) -> int:
-    """The port to bind: `--port`'s where it is given, and 0 — a free port the system chooses — otherwise."""
-    port = 0
-    arguments = iter(argv)
-    for argument in arguments:
-        if argument.startswith("--port="):
-            value = argument.partition("=")[2]
-        elif argument == "--port":
-            value = next(arguments, "")
-        else:
-            raise UsageError(f"Unknown option {argument}; use --port <number>.")
-        if not value.isdigit() or not 0 <= int(value) <= 65535:
-            raise UsageError(f"Unknown port {value}; use a port from 0 to 65535.")
-        port = int(value)
-    return port
-
-
-def serve(argv: list[str]) -> None:
-    """Serve the index and the pages on loopback until interrupted, the URL printed once on stdout."""
-    server = ThreadingHTTPServer((LOOPBACK, parse_serve_args(argv)), IndexHandler)
-    try:
-        print(f"http://{LOOPBACK}:{server.server_address[1]}/", flush=True)
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()

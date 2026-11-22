@@ -23,9 +23,7 @@ def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]")
         help="record a session's tool calls and show them as a tree or a page",
         allow_abbrev=False,
     )
-    profiler.add_argument(
-        "arguments", nargs=argparse.REMAINDER, help="serve | tree | init | doctor | capture <harness>"
-    )
+    profiler.add_argument("arguments", nargs=argparse.REMAINDER, help="tree | init | doctor | capture <harness>")
 
 
 def read_stdin() -> str:
@@ -40,7 +38,7 @@ def run(args: argparse.Namespace) -> int:
     """Run the profiler subcommand `args.arguments` names, and return its exit status."""
     from .capture import capture
     from .hooks import USAGE, doctor, init
-    from .pages import UsageError, serve, tree
+    from .pages import UsageError, tree
     from .values import project_dir
 
     sys.stdout.reconfigure(encoding="utf-8")
@@ -58,9 +56,6 @@ def run(args: argparse.Namespace) -> int:
         if command == "tree":
             color = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
             print(tree(rest, project_dir(os.getcwd()), color=color))
-            return 0
-        if command == "serve":
-            serve(rest)
             return 0
         if command == "init":
             print(init(rest, Path.cwd()))

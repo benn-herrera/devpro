@@ -6,7 +6,7 @@ Mage that lets you build to last: you work with the agents to design, plan, buil
 
 ![kanban screenshot](images/kanban.webp)
 
-*Work packages on the board `devpro kanban` serves*
+*Work packages on the board `devpro dashboard` serves*
 
 ## What it asks of you
 
@@ -45,9 +45,9 @@ in just over 16K lines of runtime code, including vision tower support and an Op
 - An activity profiler, shipped with a claude or opencode project install: the session's activity is
   recorded to the project's own store under `.devpro-temp/` at the project root — `.profiler-claude/`
   under claude, one line per hook event, and `.profiler-opencode/` under opencode, one per tool call.
-  The `tree` and `serve` subcommands of the `devpro profiler` verb read every `.profiler-*` store
+  The `tree` subcommand of the `devpro profiler` verb reads every `.profiler-*` store
   there, and the `show-profile` skill hands a session to the user as text, an HTML page or a served
-  page. The claude install copies the launcher `profiler/hp.sh` and registers six hook entries in the
+  page, the serving the `devpro dashboard` verb's traces panel. The claude install copies the launcher `profiler/hp.sh` and registers six hook entries in the
   plugin's `hooks/hooks.json`; the opencode install copies the launcher and the capture `profiler.ts`
   beside the plugin entry and registers no hook entries. The page template `view.html` is the devpro
   wheel's own package data, not an install resource.

@@ -1,6 +1,6 @@
 """The dicing verbs' argparse surface and dispatch: `devpro <verb>` for each of them.
 
-`add_verbs` adds the nine verbs to `devpro.cli.build_parser`'s subparsers; `run` dispatches one and
+`add_verbs` adds the eight verbs to `devpro.cli.build_parser`'s subparsers; `run` dispatches one and
 returns its exit status: 0 on success, 1 when a check or step fails, 2 on a refusal. A verb's
 implementation is imported where that verb is dispatched, so registering the verbs imports none.
 """
@@ -34,7 +34,7 @@ def _add_split_level(parser: argparse.ArgumentParser) -> None:
 
 
 def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
-    """Add the nine dicing verbs to subparsers, each refusing abbreviations."""
+    """Add the eight dicing verbs to subparsers, each refusing abbreviations."""
     dice_one = subparsers.add_parser(
         "dice-doc", help="dice one document, then check it reassembles and its links resolve", allow_abbrev=False
     )
@@ -105,18 +105,6 @@ def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]")
         "roadmap",
         nargs="?",
         help="the roadmap's markdown file; default ROADMAP.md of the project the current directory is in",
-    )
-
-    board = subparsers.add_parser(
-        "kanban",
-        help="serve a live board of a project's roadmap, design and plan on 127.0.0.1",
-        allow_abbrev=False,
-    )
-    board.add_argument(
-        "project_dir",
-        nargs="?",
-        metavar="project-dir",
-        help="a directory inside the project; default the current directory",
     )
 
 
@@ -192,8 +180,4 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
         from .kanban.plancheck import check_roadmap
 
         return check_roadmap(args.roadmap, start=run_dir, stdout=out, stderr=err)
-    from .kanban.server import run_kanban
-
-    if args.project_dir is not None and not os.path.isdir(args.project_dir):
-        parser.error(f"no such directory: {args.project_dir}")
-    return run_kanban(args.project_dir, start=run_dir, stdout=out, stderr=err)
+    raise AssertionError(f"{verb} is no dicing verb")

@@ -1,7 +1,7 @@
 """The profile skill: this session's activity trace, served to the user as a page in their browser.
 
 It carries no supporting file and no harness text: the launcher it finds is the one the install
-copies beside it, and the page `serve` renders is the same page everywhere. The skill writes no
+copies beside it, and the page the dashboard serves is the same page everywhere. The skill writes no
 page file — the trace reaches the user through the served URL alone.
 """
 
@@ -39,15 +39,18 @@ Call the launcher `HP` below and run it with `sh`.
 
 ## Serve the trace
 
+The records are served by the dashboard, the `devpro dashboard` verb: its traces panel is this
+repository's recorded sessions, each linking to its page.
+
 ```
-sh HP serve
+devpro dashboard
 ```
 
-`serve` prints the URL it serves on stdout and runs until interrupted: start it out of the
-session's way — it never completes, so the URL is read from the running job's output once it
-prints — then hand the user that URL. Its index lists this repository's recorded sessions,
-each linking to its page. Where a one-off export is wanted, `sh HP tree --format html >
-.devpro-temp/harness-profile.html` writes a session's page to a file.
+Run it in the repository the trace belongs to. It prints the URL it serves on stdout and runs until
+interrupted: start it out of the session's way — it never completes, so the URL is read from the
+running job's output once it prints — then hand the user that URL. Where a one-off export is
+wanted, `sh HP tree --format html > .devpro-temp/harness-profile.html` writes a session's page to a
+file.
 
 ## Answer
 
@@ -56,8 +59,8 @@ a record is a call or an event marker, and a call the plugin and the committed h
 appears twice — and, for a claude session, the three most expensive contexts by duration with their
 tokens, read from `sh HP tree --verbose`: the plain tree draws only the skills, agents and
 compactions, so a session of plain tool calls prints the column header alone. An opencode session
-records no token counts, so say so where those columns are blank. Then the URL `serve` printed. Do
-not paste the tree.
+records no token counts, so say so where those columns are blank. Then the URL the dashboard
+printed. Do not paste the tree.
 
 Where the verbose tree prints the column header alone, nothing was recorded: say so, and, under
 claude, run `sh HP doctor`, report what it printed about the traces and the newest session, and that

@@ -38,7 +38,6 @@ DICING_VERBS = (
     "check-plan",
     "check-design",
     "check-roadmap",
-    "kanban",
 )
 """The dicing verbs, added by `devpro.dicing.cli.add_verbs` and dispatched to its `run`."""
 
@@ -80,7 +79,7 @@ def _add_components(verb: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     """One verb, required: `render --out DIR` and `install TARGET [--subdir DIR] [--verbose] [--dry-run]`,
     each with the tuning flags; `install-agents-file DIR [--harness NAME] [--dry-run]`;
-    `render-agents-file HARNESS OUT`; the nine dicing verbs `devpro.dicing.cli.add_verbs` adds, the
+    `render-agents-file HARNESS OUT`; the eight dicing verbs `devpro.dicing.cli.add_verbs` adds, the
     `profiler` verb `devpro.profiler.cli.add_verbs` adds, the `dashboard` verb
     `devpro.dashboard.cli.add_verbs` adds; and one maintainer helper hidden from `--help`:
     `harness NAME KEY`.

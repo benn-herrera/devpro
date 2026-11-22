@@ -1,7 +1,7 @@
 ## kanban
 
-`devpro kanban [<project-dir>]` serves a live board of a project's development-process files on the
-local machine, for the user to open in a browser. The board shows `ROADMAP.md`'s tickets and the
+`devpro dashboard [<project-dir>]` serves a live board of a project's development-process files on
+the local machine as the dashboard's board panel at `/board/`, for the user to open in a browser. The board shows `ROADMAP.md`'s tickets and the
 parked work, the active design and the active plan's work packages as cards in columns. Its only
 writes to documents are the moves of [Moves between Roadmap and Design](#moves-between-roadmap-and-design),
 made by dropping a card on Design or on Roadmap: a ticket moved between `ROADMAP.md` and the
@@ -24,10 +24,11 @@ title, status table, release line, project root, active plan), of
 defined there.
 
 **Start.** `<project-dir>` names a directory inside the project; without it the project is the one
-the verb runs in. The project root is found from that directory as
-[check-plan](checks.md#check-plan) defines it. Once the server is listening it prints the page's
-URL, `http://127.0.0.1:<port>/`, on a line of its own to stdout; the user opens that URL. The
-server accepts connections from the local machine only (`127.0.0.1`), and refuses a request whose
+the verb runs in. The project root is the nearest of that directory and its ancestors holding a
+`.git` entry, that directory itself where none does; the board then reads the documents at the
+paths below, a document that is absent contributing no cards. Once the server is listening it prints
+the page's URL, `http://127.0.0.1:<port>/`, on a line of its own to stdout; the user opens that URL.
+The server accepts connections from the local machine only (`127.0.0.1`), and refuses a request whose
 `Host` header is not the server's own address (`127.0.0.1` or `localhost`, with the port), so that
 a page served from elsewhere cannot drive the board. The server serves the served documents, and
 no other file of the project: every `.md` file at the project root's top level, every `.md` file
@@ -45,7 +46,6 @@ section ([live following](#live-following)).
 |---|---|---|---|
 | more than one argument, or an unknown option | stderr | the usage error | 2 |
 | `<project-dir>` is not a directory | stderr | the usage error `no such directory: <project-dir>` | 2 |
-| no project root | stderr | `no project root: neither <directory> nor any directory above it holds .git; run devpro kanban inside a project, or name a directory inside a project: devpro kanban <project-dir>` | 2 |
 | a document the board reads cannot be read as a file, at start | stderr | `cannot read: <file>`, before any URL is printed | 2 |
 | the port cannot be bound | stderr | `cannot listen: <reason>`, before any URL is printed | 2 |
 
@@ -290,7 +290,7 @@ parked tree's `entry-point.md`, and the active design and the active plan, a dic
 
 The page's header holds a **connection indicator**, which says whether the server is answering.
 When three consecutive attempts of the page to reach the server fail, the indicator says the server
-has stopped and to restart `devpro kanban` and open the URL it prints, and no drag starts. The page
+has stopped and to restart `devpro dashboard` and open the URL it prints, and no drag starts. The page
 keeps trying; a successful attempt restores the board's live state and drags.
 
 The connection indicator carries `devpro v<version>`, `<version>` being what `devpro --version`
@@ -300,7 +300,7 @@ server is answering. Nothing else on the page shows devpro's version.
 **Stop.** Beside the connection indicator the page shows a stop button. Pressing it, with no
 confirmation, asks the server to exit: the server answers, then ends the process as an interrupt
 does (**kanban**, above). On that answer the indicator says the server has stopped and to restart
-`devpro kanban` and open the URL it prints, no drag starts, the page makes no further attempt to
+`devpro dashboard` and open the URL it prints, no drag starts, the page makes no further attempt to
 reach the server, and keyboard focus moves to the page's heading.
 
 A watched file that cannot be read as a file while the server runs is named on stderr as

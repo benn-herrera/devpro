@@ -1,5 +1,6 @@
-"""The kanban server: the board of one project served to a browser on 127.0.0.1, kept live by
-polling the files it reads, with the moves between Roadmap and Design. It keeps no UI state.
+"""The kanban server: the board of one project, kept live by polling the files it reads, with the moves
+between Roadmap and Design. It keeps no UI state, and it binds no socket: the dashboard serves it as
+its board panel, and answers the routes below onto the dashboard's connection.
 
 Endpoints, each answering JSON but the page's files and the served documents:
 
@@ -8,7 +9,7 @@ Endpoints, each answering JSON but the page's files and the served documents:
   `text/markdown`, read-only; any other path is 404.
 - `GET /api/board?since=<version>`: the board payload; where `since` is the version the server
   holds, the answer waits until the board changes or `LONG_POLL_SECONDS` pass.
-- `POST /api/stop` `{}`: answers `{}`, then stops the server, so `run_kanban` returns 0.
+- `POST /api/stop` `{}`: answers `{}`, then stops the server serving the panel.
 - `POST /api/to-design` `{"card": <a roadmap or parked card as served>}`: move the card's ticket into
   the active design (for a parked card, the link ticket written for it).
 - `POST /api/to-roadmap` `{"card": <a design card as served>, "target": <the Roadmap separator
@@ -26,7 +27,7 @@ import os
 import sys
 import threading
 from dataclasses import asdict
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 from importlib.resources import files
 from typing import Any, Callable, Optional, TextIO
 from urllib.parse import parse_qs, unquote, urlsplit
@@ -45,7 +46,6 @@ from .board import (
     sha256,
     watched_files,
 )
-from .planform import find_project_root
 
 HOST = "127.0.0.1"
 POLL_SECONDS = 0.25
@@ -83,18 +83,17 @@ def _unreadable(e: OSError, reading: str) -> str:
     return e.filename if e.filename is not None else reading
 
 
-class KanbanServer(ThreadingHTTPServer):
-    """The board of the project at root, served on HOST at an ephemeral port. Reads the board on
-    construction, raising OSError where a file it reads cannot be read and CannotListen where the
-    port cannot be bound; `start` begins polling the files every POLL_SECONDS, until server_close.
+class KanbanServer:
+    """The board of the project at root, as the dashboard's board panel. Reads the board on
+    construction, raising OSError where a file it reads cannot be read; `start` begins polling the
+    files every POLL_SECONDS, until server_close.
 
-    Built with `after`, it is that server's board panel instead: it binds no socket of its own, its
-    answers are written onto `after`'s, and `server_close` only ends its polling. Its own
-    `POST /api/stop` then stops `after`, which is how the panel's stop ends the server serving it."""
+    The panel binds no socket of its own: its answers are written onto the dashboard's, and
+    server_close only ends its polling. Its own `POST /api/stop` stops the dashboard serving it."""
 
-    daemon_threads = True
-
-    def __init__(self, root: str, *, stderr: TextIO, after: Optional[ThreadingHTTPServer] = None) -> None:
+    def __init__(self, root: str, *, stderr: TextIO, after: Any) -> None:
+        """after is the dashboard server the panel answers onto, whose address it reports and which its
+        stop ends."""
         self.root = root
         self._stderr = stderr
         self._lock = threading.Condition()
@@ -105,12 +104,6 @@ class KanbanServer(ThreadingHTTPServer):
         self._version = 1
         self._reported: Optional[str] = None  # the unreadable file last named on stderr
         self.panel_of = after
-        if after is None:
-            try:
-                super().__init__((HOST, 0), _Handler)
-            except OSError as e:
-                raise CannotListen(e.strerror or str(e)) from e
-            return
         # What `shutdown` waits on and `server_close` sets, and the lock it takes: `__init__` binds
         # both through `BaseServer.__init__`, which a panel does not run.
         self.__is_shut_down = threading.Event()
@@ -118,7 +111,7 @@ class KanbanServer(ThreadingHTTPServer):
         self._BaseServer__lock = threading.Lock()
 
     def panel_handler(self, request: Any, client_address: Any) -> BaseHTTPRequestHandler:
-        """A handler over a request another server has read, the board's own `do_` answering it."""
+        """A handler over a request the dashboard has read, the board's own `do_` answering it."""
         return _Handler(request, client_address, self, read_request=False)
 
     def start(self) -> None:
@@ -128,31 +121,24 @@ class KanbanServer(ThreadingHTTPServer):
 
     @property
     def url(self) -> str:
-        """The board's URL at the server serving it: its own address, or the panel's server's."""
-        server = self if self.panel_of is None else self.panel_of
-        return f"http://{HOST}:{server.server_address[1]}/"
+        """The board's URL at the dashboard serving it."""
+        return f"http://{HOST}:{self.panel_of.server_address[1]}/"
 
     def shutdown(self) -> None:
-        """Stop the server this board's answers are written by: its own loop, or the panel's server's."""
-        if self.panel_of is None:
-            super().shutdown()
-        else:
-            self.panel_of.shutdown()
+        """Stop the server this board's answers are written by: the dashboard's."""
+        self.panel_of.shutdown()
 
     def server_close(self) -> None:
+        """End the polling, and release a `shutdown` a caller may have waiting on it, as closing a
+        serving server does, so that `shutdown` and `server_close` end in either order. A panel binds
+        no socket and runs no loop of its own: there is nothing here to close."""
         self._stop.set()
         if self._poller.is_alive():
             self._poller.join()
         with self._lock:
             self._lock.notify_all()
-        if self.panel_of is None:
-            super().server_close()
-            return
-        # A panel binds no socket and runs no loop of its own: there is nothing here to close. It
-        # releases a `shutdown` a caller may have waiting on it, as closing a serving server does, so
-        # that `shutdown` and `server_close` end in either order. The attribute is `BaseServer`'s own
-        # name, written unqualified here it would mangle to this class's; a panel reaches this line
-        # without `__init__` having made one, so it is made here.
+        # The attribute is `BaseServer`'s own name, written unqualified here it would mangle to this
+        # class's; a panel reaches this line without `__init__` having made one, so it is made here.
         self._BaseServer__is_shut_down = threading.Event()
         self._BaseServer__is_shut_down.set()
 
@@ -160,7 +146,7 @@ class KanbanServer(ThreadingHTTPServer):
         """A client gone mid-request (a page reloaded during a long poll) is not an error; anything
         else gets the default traceback."""
         if not isinstance(sys.exc_info()[1], ConnectionError):
-            super().handle_error(request, client_address)
+            BaseHTTPRequestHandler.handle_error(self, request, client_address)  # type: ignore[arg-type]
 
     def payload(self, since: Optional[str]) -> dict[str, Any]:
         """The board payload, once its version differs from since; at most LONG_POLL_SECONDS late."""
@@ -270,7 +256,7 @@ class _Handler(BaseHTTPRequestHandler):
     server: KanbanServer
 
     def __init__(self, *args: Any, read_request: bool = True, **kwargs: Any) -> None:
-        """A handler over a request another server has already read when read_request is false: its
+        """A handler over a request the dashboard has already read when read_request is false: its
         `do_` answers onto that server's connection, and this one reads no request line again."""
         self._read_request = read_request
         super().__init__(*args, **kwargs)
@@ -323,8 +309,8 @@ class _Handler(BaseHTTPRequestHandler):
             if not isinstance(body, dict):
                 raise BadRequest("the body must be a JSON object")
             if action is None:
-                # Answered before stopping, as a move's answer cannot be: shutdown returns once
-                # serve_forever, on run_kanban's thread, has ended.
+                # Answered before stopping, as a move's answer cannot be: the dashboard's shutdown
+                # returns once its serve_forever has ended.
                 self._send_json(200, {})
                 self.server.shutdown()
                 return
@@ -341,7 +327,7 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _local_host(self) -> bool:
         """Refuse a request naming another host, as a page served elsewhere would (DNS rebinding)."""
-        port = self.server.server_address[1] if self.server.panel_of is None else self.server.panel_of.server_address[1]
+        port = self.server.panel_of.server_address[1]
         if self.headers.get("Host") in (f"{HOST}:{port}", f"localhost:{port}"):
             return True
         self._send_json(403, {"error": "requests must name the host the board is served on"})
@@ -361,35 +347,3 @@ class _Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Security-Policy", _PAGE_POLICY)
         self.end_headers()
         self.wfile.write(body)
-
-
-def run_kanban(project_dir: Optional[str], *, start: str, stdout: TextIO, stderr: TextIO) -> int:
-    """Serve the board of the project project_dir is in, or with None the project the directory
-    start is in, until interrupted or stopped by `POST /api/stop`; 0 then, 2 where there is no project root, a file the board reads
-    cannot be read at start or the port cannot be bound. A relative project_dir is taken from start."""
-    directory = os.path.abspath(start if project_dir is None else os.path.join(start, project_dir))
-    root = find_project_root(directory)
-    if root is None:
-        print(
-            f"no project root: neither {directory} nor any directory above it holds .git;"
-            " run devpro kanban inside a project, or name a directory inside a project: devpro kanban <project-dir>",
-            file=stderr,
-        )
-        return 2
-    try:
-        server = KanbanServer(root, stderr=stderr)
-    except OSError as e:
-        print(f"cannot read: {_unreadable(e, root)}", file=stderr)
-        return 2
-    except CannotListen as e:
-        print(f"cannot listen: {e}", file=stderr)
-        return 2
-    print(server.url, file=stdout, flush=True)
-    try:
-        server.start()
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
-    return 0

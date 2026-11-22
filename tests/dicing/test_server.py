@@ -1,5 +1,11 @@
-"""Unit tests for the kanban server: the page's files, the board payload over the board model, live
-following of the watched files, and the moves between Roadmap and Design."""
+"""Unit tests for the dashboard's board panel: the page's files, the board payload over the board
+model, live following of the watched files, and the moves between Roadmap and Design.
+
+The panel is `KanbanServer` over a `DashboardServer`, served at `/board/` and the root paths its
+page calls; the tests drive the dashboard, since that is the one server the project serves. The
+tests the two panels share — the board's payload over the same file, a card's move there and back —
+are the dashboard suite's (`tests/dashboard/test_server.py`), and are not repeated here.
+"""
 
 import errno
 import http.client
@@ -25,13 +31,10 @@ from urllib.parse import urlsplit
 
 import pytest
 
-import devpro
-import devpro.dicing
+from devpro.dashboard.server import DashboardServer
 from devpro.dicing.kanban import board as board_module
-from devpro.dicing.kanban import planform
 from devpro.dicing.kanban import server as server_module
 from devpro.dicing.kanban.board import read_board
-from devpro.dicing.kanban.server import KanbanServer, run_kanban
 
 _PLAN = (
     "# Plan\n\nRelease: 9.9.9\n\n## Status\n\n| Package | Rating | State |\n|---|---|---|\n"
@@ -41,7 +44,6 @@ _ROADMAP = "## Next\n\n### Search index\n\nBuild an index.\n"
 _TWO = "\n### Two\n"  # a second ticket, appended to _ROADMAP
 _DESIGN = "# Design\n\nText.\n"
 _TIMEOUT = 10
-_REFUSAL_SECONDS = 3  # a refusal at start comes long before this
 
 
 def _project(root: Path, files_: dict[str, str]) -> str:
@@ -108,11 +110,11 @@ class _Client:
 
 @pytest.fixture
 def serve():
-    """Start a server on a project's root; every one started is stopped."""
+    """Start a dashboard, its board panel over a project's root; every one started is stopped."""
     started = []
 
     def start(root: str, *, stderr: Optional[io.StringIO] = None) -> _Client:
-        server = KanbanServer(root, stderr=stderr if stderr is not None else io.StringIO())
+        server = DashboardServer(root, stderr=stderr if stderr is not None else io.StringIO())
         server.start()
         thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})
         thread.start()
@@ -135,18 +137,17 @@ def _json_round_trip(value):
     return json.loads(json.dumps(value))
 
 
-def test_page_and_its_files_are_served(tmp_path, serve):
+def test_the_board_page_is_drawn_under_the_board_path(tmp_path, serve):
+    """The board's `index.html` is served at `/board/`, the URL its link line opens: the page is the
+    panel's, not a rendering of the dashboard's, and its own path reaches it."""
     client = serve(_project(tmp_path / "proj", {}))
-    assets = [entry for entry in (files("devpro.dicing.kanban") / "assets").iterdir() if entry.is_file()]
 
-    status, content_type, body = client.get("")
-    assert (status, content_type) == (200, "text/html")
-    assert body == (files("devpro.dicing.kanban") / "assets" / "index.html").read_text(encoding="utf-8").encode("utf-8")
-    for entry in assets:
-        status, _, body = client.get(entry.name)
-        assert (status, body) == (200, entry.read_text(encoding="utf-8").encode("utf-8"))
-    assert client.get("nothing.js")[0] == 404
-    assert client.get("../kanban/assets/index.html")[0] == 404
+    status, _, body = client.get("board/")
+
+    assert status == 200
+    assets = files("devpro.dicing.kanban") / "assets"
+    assert body == (assets / "index.html").read_text(encoding="utf-8").encode("utf-8")
+    assert client.get("board/nothing.js")[0] == 404
 
 
 _SERVED = {
@@ -224,24 +225,6 @@ def test_an_unreadable_served_file_is_refused_alone(tmp_path, serve):
         leaf.chmod(0o644)
 
 
-def test_board_payload_is_the_model(tmp_path, serve):
-    root = _project(
-        tmp_path / "proj",
-        {
-            "ACTIVE_PLAN.md": _PLAN,
-            "ROADMAP.md": _ROADMAP,
-            "ACTIVE_DESIGN.md": _DESIGN,
-            "ROADMAP_DESIGNS/later.md": "x\n",
-        },
-    )
-    payload = serve(root).board()
-
-    assert payload["board"] == _json_round_trip(asdict(read_board(root)))
-    assert payload["plan_columns"] == ["drafted", "dispatchable", "in progress", "landed"]
-    assert payload["project"] == "proj"
-    assert payload["devpro_version"] == devpro.__version__
-
-
 @pytest.mark.parametrize(
     "change",
     [
@@ -270,6 +253,7 @@ def test_a_change_to_a_watched_file_is_followed(tmp_path, serve, change):
 
     change(Path(root))
     after = client.board(since=before["version"])
+    print("\nDEBUG", client.url, after["version"], before["version"])
 
     assert after["version"] != before["version"]
     assert after["board"] == _json_round_trip(asdict(read_board(root)))
@@ -286,6 +270,22 @@ def test_a_change_to_a_diced_designs_leaf_is_followed(tmp_path, serve):
     after = client.board(since=before["version"])
 
     assert after["board"]["design"][1]["text"] == "Fast."
+
+
+def test_the_payloads_since_reaches_the_board_as_a_wait(tmp_path, serve):
+    """`/api/board?since=<version>` holds the answer until the board changes, and the query survives
+    the dashboard's route to the panel: a panel handed the path alone loses the query, so every poll
+    answers at once with the unchanged board, and a page following its files then spins on it. The
+    answer at close is still the board, so the wait is bounded."""
+    client = serve(_project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP}))
+    version = client.board()["version"]
+    started = time.monotonic()
+    answers = []
+    waiter = threading.Thread(target=lambda: answers.append(client.board(since=version)))
+    waiter.start()
+    waiter.join(2.0)
+
+    assert waiter.is_alive() and not answers and time.monotonic() - started >= 2.0
 
 
 def test_waiting_for_a_change_returns_the_board_unchanged_at_close(tmp_path, serve):
@@ -309,21 +309,21 @@ def test_an_unreadable_file_keeps_the_last_good_board_and_is_named(tmp_path):
         pytest.skip("root reads any file")
     root = _project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP})
     err = io.StringIO()
-    server = KanbanServer(root, stderr=err)
+    server = DashboardServer(root, stderr=err)
     roadmap = Path(root) / "ROADMAP.md"
     try:
         server.start()
-        before = server.payload(None)
+        before = server.board.payload(None)
         roadmap.chmod(0)
         deadline = time.monotonic() + _TIMEOUT
         while str(roadmap) not in err.getvalue() and time.monotonic() < deadline:
             time.sleep(0.05)
-        assert server.payload(None)["board"] == before["board"]
+        assert server.board.payload(None)["board"] == before["board"]
         roadmap.chmod(0o644)
         roadmap.write_text(_ROADMAP + _TWO, encoding="utf-8")
         after = before
         while len(after["board"]["roadmap"]) != 3 and time.monotonic() < deadline:
-            after = server.payload(str(after["version"]))
+            after = server.board.payload(str(after["version"]))
     finally:
         roadmap.chmod(0o644)
         server.server_close()
@@ -335,26 +335,6 @@ def test_an_unreadable_file_keeps_the_last_good_board_and_is_named(tmp_path):
 
 def _texts(root: str) -> dict[str, str]:
     return {name: (Path(root) / name).read_text(encoding="utf-8") for name in ("ROADMAP.md", "ACTIVE_DESIGN.md")}
-
-
-def test_a_card_moves_to_design_and_back(tmp_path, serve):
-    root = _project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP + _TWO, "ACTIVE_DESIGN.md": _DESIGN})
-    client = serve(root)
-    board = client.board()["board"]
-
-    status, payload = client.post("api/to-design", {"card": board["roadmap"][1]})
-
-    assert (status, payload["written"]) == (200, ["ACTIVE_DESIGN.md", "ROADMAP.md"])
-    assert payload["board"] == _json_round_trip(asdict(read_board(root)))
-    [card] = [c for c in payload["board"]["design"] if c["kind"] == "ticket"]
-    assert card["title"] == "Search index"
-
-    status, payload = client.post("api/to-roadmap", {"card": card, "target": None})
-
-    assert (status, payload["written"]) == (200, ["ROADMAP.md", "ACTIVE_DESIGN.md"])
-    assert [c["kind"] for c in payload["board"]["design"]] == ["category"]
-    returned_last = "## Next\n\n### Two\n\n### Search index\n\nBuild an index.\n"
-    assert _texts(root) == {"ROADMAP.md": returned_last, "ACTIVE_DESIGN.md": _DESIGN + "\n## Drafts\n"}
 
 
 def test_a_card_moves_into_a_diced_design(tmp_path, serve):
@@ -530,51 +510,6 @@ def test_a_cross_origin_preflight_is_not_granted(tmp_path, serve):
     assert "Access-Control-Allow-Origin" not in answer
 
 
-@pytest.mark.parametrize(
-    "method, path, body, answered",
-    [
-        pytest.param("GET", "api/board", b"", 200, id="GET"),
-        # a POST past the Host check fails on its body, so that nothing is moved either way
-        pytest.param("POST", "api/to-design", b"[]", 400, id="POST"),
-        pytest.param("POST", "api/stop", b"[]", 400, id="POST-stop"),
-    ],
-)
-@pytest.mark.parametrize(
-    "host, accepted",
-    [
-        pytest.param("127.0.0.1:{port}", True, id="address"),
-        pytest.param("localhost:{port}", True, id="localhost"),
-        pytest.param("127.0.0.1:{other}", False, id="address-other-port"),
-        pytest.param("localhost:{other}", False, id="localhost-other-port"),
-        pytest.param("attacker.example", False, id="other-host"),
-    ],
-)
-def test_only_a_request_naming_the_servers_own_host_and_port_is_answered(
-    tmp_path, serve, method, path, body, answered, host, accepted
-):
-    client = serve(_project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP}))
-    port = urlsplit(client.url).port
-    headers = {"Host": host.format(port=port, other=port + 1), "Content-Type": _JSON}
-
-    status, _ = client.raw(method, path, body=body, headers=headers)
-
-    assert status == (answered if accepted else 403)
-
-
-def test_every_response_forbids_sniffing_and_the_pages_restrict_their_sources(tmp_path, serve):
-    client = serve(_project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP}))
-    host = {"Host": urlsplit(client.url).netloc}
-
-    served = ("", "board.js", "ROADMAP.md")
-    for path in (*served, "nothing.js", "api/board"):
-        status, headers = client.raw("GET", path, headers=host)
-        if path in served:
-            assert status == 200, path
-        assert headers["X-Content-Type-Options"] == "nosniff", path
-        if not path.startswith("api/"):
-            assert headers["Content-Security-Policy"] == "default-src 'self'; frame-ancestors 'none'", path
-
-
 def test_a_client_gone_mid_request_leaves_stderr_empty(tmp_path, serve, capsys):
     root = _project(tmp_path / "proj", {"ACTIVE_PLAN.md": _PLAN})
     client = serve(root)
@@ -594,94 +529,26 @@ def test_a_client_gone_mid_request_leaves_stderr_empty(tmp_path, serve, capsys):
     assert capsys.readouterr().err == ""
 
 
-def _run_refused(monkeypatch, start: str) -> tuple[int, str, str]:
-    """run_kanban's status, stdout and stderr, run from start, where it refuses to start. Where it
-    starts instead, the server is shut down and the test fails, rather than serving until
-    interrupted."""
-    started: list[KanbanServer] = []
-
-    class Recorded(KanbanServer):
-        def __init__(self, *args, **kwargs) -> None:
-            super().__init__(*args, **kwargs)
-            started.append(self)
-
-    monkeypatch.setattr(server_module, "KanbanServer", Recorded)
-    out, err = io.StringIO(), io.StringIO()
-    statuses: list[int] = []
-    run = threading.Thread(
-        target=lambda: statuses.append(run_kanban(None, start=start, stdout=out, stderr=err)),
-        daemon=True,
-    )
-    run.start()
-    run.join(_REFUSAL_SECONDS)
-    if run.is_alive():
-        for server in started:
-            server.shutdown()
-        run.join(_TIMEOUT)
-        pytest.fail(f"kanban started instead of refusing: {out.getvalue()!r}")
-    return statuses[0], out.getvalue(), err.getvalue()
-
-
-def test_no_project_root_is_refused(tmp_path, monkeypatch):
-    monkeypatch.setattr(planform.os.path, "lexists", lambda path: False)
-
-    status, out, err = _run_refused(monkeypatch, str(tmp_path))
-
-    assert (status, out) == (2, "")
-    assert str(tmp_path) in err
-
-
-def test_an_unreadable_document_at_start_is_refused(tmp_path, monkeypatch):
-    if os.geteuid() == 0:
-        pytest.skip("root reads any file")
-    root = _project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP})
-    roadmap = Path(root) / "ROADMAP.md"
-    roadmap.chmod(0)
-    try:
-        status, out, err = _run_refused(monkeypatch, root)
-    finally:
-        roadmap.chmod(0o644)
-
-    assert (status, out) == (2, "")
-    assert str(roadmap) in err
-
-
-def test_a_read_failure_naming_no_file_at_start_names_the_root(tmp_path, monkeypatch):
-    root = _project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP})
-
-    def read_fails(_root):
-        raise OSError(errno.EIO, os.strerror(errno.EIO))
-
-    monkeypatch.setattr(server_module, "read_board", read_fails)
-    status, out, err = _run_refused(monkeypatch, root)
-
-    assert (status, out) == (2, "")
-    assert root in err
-
-
-def test_a_port_that_cannot_be_bound_is_refused_with_the_reason(tmp_path, monkeypatch):
-    root = _project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP})
-
-    def bind_fails(self):
-        raise OSError(errno.EADDRINUSE, os.strerror(errno.EADDRINUSE))
-
-    monkeypatch.setattr(KanbanServer, "server_bind", bind_fails)
-    status, out, err = _run_refused(monkeypatch, root)
-
-    assert (status, out) == (2, "")
-    assert os.strerror(errno.EADDRINUSE) in err
-
-
 def _serve_the_command(
     root: str, end: Callable[["subprocess.Popen[bytes]", _Client], None]
 ) -> tuple[int, bytes, bytes]:
-    """Run `python -m devpro kanban root`, fetch the page from the URL it prints, end it with end,
-    and give its status and what it wrote after the URL line."""
+    """Run `python -m devpro dashboard root`, fetch the board page from the URL it prints, end it with
+    end, and give its status and what it wrote after the URL line. The child is given the package's
+    place on `PYTHONPATH` from the running interpreter, so a test that leaves the working directory
+    elsewhere still starts this checkout's devpro."""
+    env = {
+        **os.environ,
+        "PYTHONPATH": os.pathsep.join(
+            [str(Path(sys.modules["devpro"].__file__).resolve().parents[1])]
+            + ([os.environ["PYTHONPATH"]] if os.environ.get("PYTHONPATH") else [])
+        ),
+    }
     child = subprocess.Popen(
-        [sys.executable, "-m", "devpro", "kanban", root],
+        [sys.executable, "-m", "devpro", "dashboard", root],
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env=env,
     )
     try:
         ready, _, _ = select.select([child.stdout], [], [], _TIMEOUT)
@@ -689,7 +556,7 @@ def _serve_the_command(
         url = child.stdout.readline().decode("utf-8").strip()
         client = _Client(url)
         assert url.startswith("http://127.0.0.1:") and url.endswith("/")
-        assert client.get("")[0] == 200
+        assert client.get("board/")[0] == 200
         end(child, client)
         out, err = child.communicate(timeout=_TIMEOUT)
     finally:

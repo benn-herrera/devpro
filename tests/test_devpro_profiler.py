@@ -52,7 +52,7 @@ _PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 # The samples both masking implementations are held to: the credential shapes the profiler's SECRETS are
 # written for, and the same shapes holding a non-ASCII letter, where JavaScript's `\w` stops matching.
 _MASK_SAMPLES = "mask_samples.txt"
-# How long a serve's URL may take to appear, and how long one fetch may take to answer.
+# How long a dashboard's URL may take to appear, and how long one fetch may take to answer.
 _SERVE_TIMEOUT_S = 15.0
 
 # The four keys the hook's own payload carries (the guardrail's probe payload apart from the values).
@@ -128,14 +128,17 @@ _SERVE_URL = re.compile(r"^http://127\.0\.0\.1:\d+/$", re.MULTILINE)
 
 @contextmanager
 def _serve(launcher: Path, *, cwd: Path, env: dict[str, str] | None = None) -> Iterator[str]:
-    """`serve` through the launcher, as `_run` starts it, as a context manager yielding its URL.
+    """The dashboard, through the launcher's `devpro`, as `_run` runs it, as a context manager
+    yielding the URL its traces panel is at.
 
-    `_run` blocks, and `serve` never exits, so the process is started as a `Popen` and its stdout
-    read by a watcher thread until the URL it prints arrives, the waiting side bounded by a timeout:
-    nothing connects to a port before the server says it is listening. The process is killed and
-    reaped on the way out, and a URL that never arrives leaves the process's stderr in the failure."""
+    `_run` blocks, and the dashboard never exits, so the process is started as a `Popen` and its
+    stdout read by a watcher thread until the URL it prints arrives, the waiting side bounded by a
+    timeout: nothing connects to a port before the server says it is listening. The process is
+    killed and reaped on the way out, and a URL that never arrives leaves the process's stderr in
+    the failure. The launcher runs the profiler verb, so the dashboard is the found `devpro`'s,
+    run beside the launcher's capture."""
     process = subprocess.Popen(
-        ["sh", str(launcher), "serve"],
+        [str(_devpro_shim(cwd)), "dashboard"],
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -162,7 +165,7 @@ def _serve(launcher: Path, *, cwd: Path, env: dict[str, str] | None = None) -> I
         while not urls and not errors and process.poll() is None and time.monotonic() < deadline:
             time.sleep(0.01)
         url = next((line.strip() for line in urls if _SERVE_URL.match(line)), "")
-        assert url, f"serve printed no URL; exited {process.poll()}: {''.join(errors)}"
+        assert url, f"the dashboard printed no URL; exited {process.poll()}: {''.join(errors)}"
         yield url
     finally:
         process.kill()
@@ -565,9 +568,9 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
 
 
 def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_path: Path) -> None:
-    """`CLAUDE_PROJECT_DIR` at another project, as a claude shell sets it, while `serve` runs in this
-    one: the index lists this project's sessions; an index that follows the variable serves the other
-    project's stores, which for a terminal-launched server is the wrong repository."""
+    """`CLAUDE_PROJECT_DIR` at another project, as a claude shell sets it, while the dashboard runs in
+    this one: the index lists this project's sessions; an index that follows the variable serves the
+    other project's stores, which for a terminal-launched server is the wrong repository."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
@@ -609,9 +612,9 @@ def test_the_served_index_states_an_unreadable_store(tmp_path: Path) -> None:
 
 def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> None:
     """One session's `/page/<id>` is the bytes `tree --format html` prints for it, less the one
-    trailing newline `print` adds: the serve surface shows the page the file-redirect flow produces,
-    and a served page that diverges from it — rebuilt another way, or another session's — is the
-    defect: the user's two routes would show two pages."""
+    trailing newline `print` adds: the dashboard's traces panel shows the page the file-redirect flow
+    produces, and a served page that diverges from it — rebuilt another way, or another session's —
+    is the defect: the user's two routes would show two pages."""
     project = tmp_path / "project"
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)

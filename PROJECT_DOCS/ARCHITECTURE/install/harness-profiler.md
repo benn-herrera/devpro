@@ -12,7 +12,8 @@ no dependency: `values.py` the schema, limits, masks and store facts every other
 and HTTP render, `hooks.py` the committed hook's wiring — `init` and `doctor` — and `cli.py` the
 `profiler` verb's dispatch. The verb is dispatched lazily: registering it imports none of these
 modules, and `cli.py` imports the one whose subcommand runs. Its subcommands are `capture`, `tree`,
-`serve`, `init` and `doctor`, which read exactly as they did inside `hp.py`.
+`init` and `doctor`, which read exactly as they did inside `hp.py`; the records are served by the
+`dashboard` verb, below.
 
 **Resources.** One file lives in `devpro/harnesses/resources/claude/profiler/`:
 `hp.sh`, the POSIX-sh launcher, which finds the `devpro` command and runs its `profiler` verb
@@ -45,17 +46,19 @@ the per-harness stores under `.devpro-temp/`, every `.profiler-*` directory of w
 subcommand renders — the project's scratch directory, which the project's own convention gitignores; a
 capture that fails, or finds no `devpro`, exits 0 with no output.
 
-**Serving.** The `serve` subcommand renders in memory behind a local HTTP server: `devpro profiler
-serve` binds `127.0.0.1` on a free port — `--port` pins one — and prints the served URL on stdout for
-cmd-clicking. The bind is the rule, not a detail: the server listens on loopback only and loads
-nothing from the network, so the records it renders never leave the machine. Its main page is the
+**Serving.** The dashboard renders in memory behind a local HTTP server: the `devpro dashboard
+[<project-dir>] [--port <number>]` verb binds `127.0.0.1` on a free port — `--port` pins one — and
+prints the served URL on stdout for cmd-clicking. The bind is the rule, not a detail: the server
+listens on loopback only and loads
+nothing from the network, so the records it renders never leave the machine. Its traces panel is the
 index of record files: every store the `.profiler-*` glob finds,
 one row per session — harness, session id, record count, first and last moments — each linking to
 `/page/<session-id>`, which renders that session's page in memory, the bytes `tree --format html`
 produces. No file is written. A store the glob finds but cannot read appears in the index as
 unreadable — the server raises nothing for it. The page shows a session's calls: a session of
 nothing but tool calls renders those calls as its calls content, never an empty tree under a calls
-header. The server runs until interrupted.
+header. The server runs until interrupted. The dashboard's board panel is the profiler's sibling
+panel, serving the project's kanban board (SPEC.md, Dicing and Checks, Kanban).
 
 **The skill.** `show-profile` ships as a rendered skill definition under `devpro/definitions/`, so it
 carries the generated banner and the harness's namespace (`devpro:show-profile` under claude) and
@@ -93,9 +96,9 @@ carries the capture, recreated in the plugin's TypeScript against the plugin's h
 `execute.before` and `execute.after` paired on the call's id time every tool call (the `tool`,
 `sessionID`, `status`, `input` and `result`/`error` the after-hook reports), and the idle hook appends
 a lifecycle record the tree does not draw — writing them to its own
-`.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which the
-`devpro profiler tree` and `serve` render beside the claude sessions', each record read from its own
-`.profiler-*` store.
+`.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which
+`devpro profiler tree` and the dashboard's traces panel render beside the claude sessions', each
+record read from its own `.profiler-*` store.
 The model's own `todowrite` notes are not recorded: they are not activity, so the store holds one
 record per tool call that did something. A capture that fails raises nothing out of the hook. `init`
 and `doctor` stay claude-facing: opencode has no committed-hook concept. The install ships the
@@ -119,8 +122,8 @@ account: the capture runs in the host's process, and the hooks report no branch,
 selects no opencode session.
 
 **The stores and their rename.** Each harness's capture owns one store under the project's
-`.devpro-temp/`: claude's `.profiler-claude/`, opencode's `.profiler-opencode/`, and the `tree`,
-`serve` and page reads walk every `.profiler-*` directory there — a dot name, so the stores group
+`.devpro-temp/`: claude's `.profiler-claude/`, opencode's `.profiler-opencode/`, and the `tree`
+and page reads walk every `.profiler-*` directory there — a dot name, so the stores group
 and sort at the top of the scratch tree. The naming before the rename was `<store>-profiler`, and
 both `devpro install` and `devpro profiler init claude` migrate the two stores it named:
 `.devpro-temp/claude-profiler/` is renamed to `.profiler-claude` and

@@ -33,7 +33,7 @@ change goes.
 | --- | --- | --- |
 | starting a design | the `{clauses.ref(name="development")}` skill's *Design* | — |
 | how the development process runs, or where the user's work stands | this skill | `references/using.md` |
-| showing the project's board | the `{clauses.ref(name="docdicer")}` skill's `kanban` | — |
+| showing the project's board | the `{clauses.ref(name="docdicer")}` skill's `dashboard` | — |
 | what a session did: its profile, trace, call tree, or what its skills and agents cost | the `{clauses.ref(name="show-profile")}` skill | — |
 | installing, updating, inspecting or changing the installed set | this skill | `references/installing.md` |
 | the project's own design: what it does, how it is built, its house rules | the project's contract documents | its SPEC.md, ARCHITECTURE.md and CONVENTIONS.md, or their trees |
@@ -465,8 +465,8 @@ above follows one plan, this one looks at what many plans have left behind.
 
 The `{clauses.ref(name="docdicer")}` skill routes the board.
 
-- A live board of the project's roadmap, design and plan. `devpro kanban --help` gives the
-  details.
+- A live board of the project's roadmap, design and plan, the dashboard's board panel.
+  `devpro dashboard --help` gives the details.
 - The session offers to run it as a background process; the user who would rather run it gets the
   command line. It never
   finishes, so a dispatched agent hands over the command line instead of running it. It serves until

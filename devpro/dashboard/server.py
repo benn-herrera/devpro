@@ -1,10 +1,10 @@
 """The dashboard: the project's board and the profiler's records, one server on 127.0.0.1.
 
 Neither panel's rendering is this module's. The board panel is `devpro.dicing.kanban.server`'s serve
-surface as it stands — its page, files, payload, moves and served documents, answered by a
-`KanbanServer` built over the dashboard's root — and the traces panel is `devpro.profiler.pages`' index
-and pages, read from the stores as they stand. This module adds the routes that hold them apart and the
-one link line the root carries.
+surface — its page, files, payload, moves and served documents, answered by the `KanbanServer` built
+over the dashboard's root — and the traces panel is `devpro.profiler.pages`' index and pages, read from
+the stores as they stand. This module adds the routes that hold them apart and the one link line the
+root carries.
 
 Endpoints:
 
@@ -55,8 +55,9 @@ def loopback(url: str) -> bool:
 
 def dashboard_root(directory: Optional[str] = None) -> str:
     """The project the dashboard serves: the directory the command names, or where it names none,
-    the directory the command runs in, either up to its git root."""
-    start = os.getcwd() if directory is None else directory
+    the directory the command runs in, either up to the nearest directory at or above it holding a
+    `.git` entry, which is itself where there is none."""
+    start = os.getcwd() if directory is None else os.path.abspath(directory)
     return str(git_root(start) or start)
 
 
@@ -69,7 +70,7 @@ class DashboardServer(ThreadingHTTPServer):
     where it names none, from the directory it runs in; a test names it. The board panel is a
     `KanbanServer` over the same root, which reads the board on construction and raises OSError where a
     file it reads cannot be read; the port refuses with CannotListen. `start` begins the board's
-    polling of its files, until server_close closes both."""
+    polling of its files, until server_close ends it and closes the socket."""
 
     daemon_threads = True
 
@@ -94,9 +95,9 @@ class DashboardServer(ThreadingHTTPServer):
     def traces_index(self) -> str:
         """The index of the stores under the root, with the board's link line.
 
-        Read per request, as the profiler's own `serve` read it: a session recorded a moment ago is
-        listed by the next page loaded. `CLAUDE_PROJECT_DIR` is not followed — it names the outermost
-        claude session's launch directory, which for a terminal-launched server is another project."""
+        Read per request: a session recorded a moment ago is listed by the next page loaded.
+        `CLAUDE_PROJECT_DIR` is not followed — it names the outermost claude session's launch
+        directory, which for a terminal-launched server is another project."""
         return with_board_link(index_html(self.root))
 
     def page(self, session: str) -> str | None:
@@ -140,11 +141,12 @@ class _Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         if not self._local_host():
             return
-        path = unquote(urlsplit(self.path).path)
+        url = urlsplit(self.path)
+        path = unquote(url.path)
         if path in ("", "/"):
             self._send(HTTPStatus.OK, self.server.traces_index().encode("utf-8"), "text/html; charset=utf-8", page=True)
         elif path.startswith(BOARD_PATH):
-            self._board(path[len(BOARD_PATH) - 1 :])
+            self._board(self.path[len(BOARD_PATH) - 1 :])
         elif path.startswith(PAGE_PREFIX):
             page = self.server.page(path[len(PAGE_PREFIX) :])
             if page is None:
@@ -152,7 +154,7 @@ class _Handler(BaseHTTPRequestHandler):
             else:
                 self._send(HTTPStatus.OK, page.encode("utf-8"), "text/html; charset=utf-8", page=True)
         else:
-            self._board(path)
+            self._board(self.path)
 
     def do_POST(self) -> None:
         if self._local_host():
@@ -162,7 +164,9 @@ class _Handler(BaseHTTPRequestHandler):
         """Answer a request the board panel owns, with the panel's own handler over this request and
         onto this connection: the board's host guard and its Content-Security-Policy travel with it,
         and its routes are reached at the paths its page calls — `/board/` hands the page's assets
-        over as their bare names, which resolve beside the page."""
+        over as their bare names, which resolve beside the page. path is the request's own path with
+        the board prefix taken off, its query kept where it has one: the payload's `since` is the
+        query, and a panel handed the path alone answers every long poll at once."""
         handler = self.server.board.panel_handler(self.request, self.client_address)
         handler.path = path
         handler.command = self.command

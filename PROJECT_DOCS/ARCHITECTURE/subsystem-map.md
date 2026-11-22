@@ -49,8 +49,8 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   applied-mathematician carries the `fam-ask-vs-stipulate` anchor.
 - **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered by every
   install.
-  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`,
-  the check verbs and `devpro kanban` — run from the command line, and does not restate their
+  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`
+  and the check verbs — run from the command line, and does not restate their
   `--help` (CONVENTIONS.md, A skill omits its tool's offered surface). The skill carries no install
   step. Its runner instruction is back, naming the recipes of the `devpro` snippet set: where the
   project's runner includes that set, the checks run through the recipes (`devpro`, and by name
@@ -58,23 +58,26 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   `devpro-check-design-deltas-applied` and `devpro-check-roadmap`), the four gates argumentless,
   each checking the active file under the project root — the active plan, the active design, the
   active design's applied deltas and `ROADMAP.md` — with a direct `devpro` call for any other
-  (Plugins). Its `kanban` paragraph has the session offer to run the board as a
-  background process or hand over the command line, the user choosing.
+  (Plugins). Its board paragraph names the `devpro dashboard` verb for the board — the board is the
+  dashboard's panel, the `devpro kanban` verb retired with it — offering to run it as a background
+  process or handing over the command line, the user choosing.
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
   `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it
   renders only where kbase ships.
 - **Profile skill** — `show-profile` (`definitions/show_profile.py`): one `SKILL.md` with no
   supporting files, delivered under every harness. It renders the newest session's trace — read from
   either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
-  `.profiler-*` ones `devpro profiler tree` walks — as text or as a self-contained HTML page, and
+  `.profiler-*` ones `devpro profiler tree` walks — as text, as a self-contained HTML page, or
+  served over HTTP: its serve sections name the `devpro dashboard` verb, the records' serving being
+  the dashboard's traces panel now the profiler's own `serve` subcommand has retired — and
   finds the profiler's launcher at `../../profiler/hp.sh`, the installed copy of claude's, before the
   committed `.claude/harness-profiler/hp.sh` a claude-on-web session uses; the launcher runs the
   `profiler` verb of the `devpro` command it finds (Install, Harness profiler).
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
-  under every harness. Its board section routes the board through the `docdicer` skill's routing
-  and names no launcher path or recipe: the launcher paths and recipes it named are retired with
-  the docdicer tools package (Plugins). The description names the uses SPEC.md, Guide and README lists, and
+  under every harness. Its board section routes the board to the `devpro dashboard` verb — the
+  board is the dashboard's panel — and names no launcher path or recipe: the launcher paths and
+  recipes it named are retired with the docdicer tools package (Plugins). The description names the uses SPEC.md, Guide and README lists, and
   says it is not for a change to the consuming project's own code. `SKILL.md` is a route, as the
   `development` skill's *Route* table is: one row per starting place SPEC.md, Guide and README
   lists, under the never-edit rule it states. The `development` and `docdicer` rows name their skill

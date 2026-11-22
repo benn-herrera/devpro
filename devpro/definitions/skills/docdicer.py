@@ -14,7 +14,7 @@ DEFINITIONS = (
             "undiced back into one document, when a project's contract documents are to be diced or a diced "
             "tree's links and structure checked, when a plan or design has grown too large to read whole, "
             "when a plan's status form, a design's final form or the roadmap's ticket form is to be checked "
-            "(`check-plan`, `check-design`, `check-roadmap`), or when the project's kanban board is to be shown (`kanban`); NOT for ordinary markdown editing, a leaf of a diced tree included."
+            "(`check-plan`, `check-design`, `check-roadmap`), or when the project's kanban board is to be shown (`dashboard`); NOT for ordinary markdown editing, a leaf of a diced tree included."
         ),
         body=f"""## When
 
@@ -45,9 +45,9 @@ dice, undice or link-check any of it unless the user directs that for it specifi
 ## The verbs
 
 Dice, undice and check through the dicing verbs of the `devpro` command, run from the command line:
-`devpro dice-doc`, `devpro undice`, the check verbs (`check-links`, `check-tree`, `check-plan`,
-`check-design`, `check-roadmap`) and `devpro kanban`. The verbs' `--help` is the command list, and
-this skill does not restate it.
+`devpro dice-doc`, `devpro undice` and the check verbs (`check-links`, `check-tree`, `check-plan`,
+`check-design`, `check-roadmap`). The verbs' `--help` is the command list, and this skill does not
+restate it.
 
 Where the project's runner includes the `devpro` snippet set, the checks run through its recipes
 (`devpro`, and by name `devpro-help`, `devpro-check-plan`, `devpro-check-design`,
@@ -55,9 +55,9 @@ Where the project's runner includes the `devpro` snippet set, the checks run thr
 checking the active file under the project root — the active plan, the active design, the active
 design's applied deltas and `ROADMAP.md` — with a direct `devpro` call for any other.
 
-`kanban` serves a live board of the project's roadmap, design and plan. Offer to run it as a
-background process, or hand the user the command line; the user chooses. It serves until the user
-asks for it to stop, and it never finishes, so a dispatched agent hands over the command line
-instead of running it.""",
+`devpro dashboard` serves a live board of the project's roadmap, design and plan, its board panel.
+Offer to run it as a background process, or hand the user the command line; the user chooses. It
+serves until the user asks for it to stop, and it never finishes, so a dispatched agent hands over
+the command line instead of running it.""",
     ),
 )
