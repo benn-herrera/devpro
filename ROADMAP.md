@@ -142,6 +142,18 @@ grouping and child pages this extends.
 
 ## Maintenance
 
+### The `just install` target retires — the CLI's install verb is the only front door
+
+`just install` is a checkout-side runner for the install verb, and no one reaches installation
+that way: the only front door for installing devpro — outside internal test renderings, which
+drive the CLI verb directly — is the install verb of the CLI itself (`devpro install` /
+`python -m devpro install`), the surface check-wheel exercises and every install document states.
+A user cloning this repository to run `just install` is not a flow that exists. The target
+retires as a mechanism past its use; the recipe, its docstring and any test or document naming
+it go with it. Its sibling `install-agents-file` is the same question — a checkout-side runner
+for a verb the CLI serves — and retires with it or survives with its own statement, as the
+executor's reference search and the agents-file churn ticket's fix decide.
+
 ### (STICKY) Periodic load-bearing-ness pruning pass
 
 A pass over definition clauses, across model generations: apply strip-first-observe-patch
