@@ -18,17 +18,17 @@ client-gone behavior. Found by the UX pass's burndown executor, pre-existing.
 header alone"; the training-skill correction in `harness-profiler.md` states every tool call is
 drawn.
 
-### The modules' homes: kanban out of dicing, the checkers into dockcheck
+### The modules' homes: kanban out of dicing, the checkers into doccheck
 
 The user's direction: the modules' locations correspond to usage **and to the dependency
 direction**, and — the boundary's principle, the user's — **kanban consumes a known-good doc set
 and serves it up; the module's job is presentation, not validation**. Dicing and validation are
 different jobs. The shape: `devpro.dicing.kanban` — the board, the dashboard's panel — becomes
 `devpro.kanban`; **`plancheck.py` (the check verbs' implementation) and `planform.py` (the
-workflow documents' model they validate against) become `devpro.dockcheck`** — the validation
+workflow documents' model they validate against) become `devpro.doccheck`** — the validation
 world — whose model `devpro.kanban` consumes. `dicing.cli`'s reverse arrow
 (`.kanban.plancheck`) is what blocks the clean arrangement today. The target arrows point one way
-only: `devpro.kanban` → `devpro.dockcheck` → `devpro.dicing`, `devpro.dashboard` → the front
+only: `devpro.kanban` → `devpro.doccheck` → `devpro.dicing`, `devpro.dashboard` → the front
 ends, nothing back; `dicerlib` flattening into `devpro.dicing` is the optional half.
 
 ## Features
