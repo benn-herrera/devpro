@@ -149,7 +149,14 @@ resources. A project opencode install also ships the profiler's launcher — `pr
 the capture `profiler.ts` beside the plugin entry, and
 registers no hook entries; each recorded call appends one line to the project's
 `.devpro-temp/.profiler-opencode/<session-id>.jsonl`, a capture that fails raises nothing out of the
-hook, and a mage install ships none of them.
+hook, and a mage install ships none of them. A page attributes a child session to the session that
+dispatched it: the capture extracts the child's session id into the parent call's record, the render
+groups children under their dispatching session, links each Agent row to the child's page and heads
+a child page with its dispatcher, and the stores stay flat — the child never knows its parent at
+write time, the hierarchy being metadata the parent side builds, and claude holding no child
+session records at all. The index's rows alternate their tone — a zebra the eye reads across the
+columns — and each row's harness carries its own mark, a dot in the harness's brand colors:
+opencode's blue, claude's coral.
 
 A claude project install also carries the plan-state reminder in that registration: one ungated
 `PostToolUse` entry matched on `Agent`, running `<install-dir>/hooks/state-table-reminder.sh`, which

@@ -84,8 +84,16 @@ prints, `http://127.0.0.1:<port>/board/` — so opening it shows the kanban boar
 current state. The profiler view is the second view, at
 `/profiler/` (trailing slash, the board panel's convention): the index of record files, every store
 the `.profiler-*` glob finds, one row per session — harness, session id, record count, first and
-last moments — each linking to `/page/<session-id>`, which renders that session's page in memory,
-the render's page carrying the same page data `tree --format html` produces. A top nav persists
+last moments, and the span between them — each linking to `/page/<session-id>`, which renders that
+session's page in memory, the render's page carrying the same page data `tree --format html`
+produces. A session an opencode record names as its dispatch's child is drawn under the session that
+dispatched it, that session's row carrying the count of the rows beneath it and each child's naming
+the call that dispatched it; the rows alternate their tone, and each carries its harness's mark. The
+moments are the raw UTC where no script runs and the reader's local time where the page's chrome
+script does, the raw string kept in the cell's title, and the span is its own column. A session's
+page carries its dispatcher in the frame band, linked to that session's page, where one dispatched
+it, and an Agent row links to the child session's page where the record names one: a child's page
+the dashboard does not serve answers the 404 any unrecorded session's page answers. A top nav persists
 across both views — the `devpro` brand, then `kanban` and `profiler`, the active view in the motif's
 accent and the inactive one a lifted gray, then the server block right-justified at the nav's flex
 edge: the live/idle state indicator and the stop — and in the profiler view a frame band sits under
@@ -150,7 +158,12 @@ carries the capture, recreated in the plugin's TypeScript against the plugin's h
 a lifecycle record the tree does not draw — writing them to its own
 `.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which
 `devpro profiler tree` and the dashboard's profiler view render beside the claude sessions', each
-record read from its own `.profiler-*` store.
+record read from its own `.profiler-*` store. A `subagent` or `task` call also records the child
+session it dispatched, the host's `result.metadata.sessionID` read under the host's own string
+guard: that id fills the record's `child_agent_id`, where the render groups the child under its
+dispatcher and links the dispatch to the child's page. The stores stay flat — the child's id reaches
+no capture as a parent key, the hierarchy being what the parent's records state — and a dispatch
+whose result carries no metadata records no child.
 The model's own `todowrite` notes are not recorded: they are not activity, so the store holds one
 record per tool call that did something. A capture that fails raises nothing out of the hook. `init`
 and `doctor` stay claude-facing: opencode has no committed-hook concept. The install ships the

@@ -46,7 +46,7 @@ import pytest
 from devpro.dashboard.server import BOARD_PATH
 from devpro.profiler.capture import mask
 from devpro.profiler.hooks import RETIRED_HOOK_FILES, launcher_resource
-from devpro.profiler.pages import BAND_MARK, CHROME_MARK, LEGEND, NAV_MARK, SHARED_CSS
+from devpro.profiler.pages import BAND_MARK, CHROME_MARK, LEGEND, NAV_MARK, SHARED_CSS, format_span
 from tests.test_devpro_install import _PROFILER, _claude_plugin, _definition_install
 
 # The serve path's carrier of the shared layer: the one file the board panel serves, which the pages
@@ -349,6 +349,28 @@ def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Pa
                     "args": "make test",
                     "result": "ok",
                 },
+                {
+                    "v": 2,
+                    "harness": "opencode",
+                    "at": "2026-01-01T00:00:02.000Z",
+                    "session": "s-opencode",
+                    "agent_id": None,
+                    "agent_type": None,
+                    "tool_use_id": None,
+                    "tool": "Agent",
+                    "name": "devpro-architect",
+                    "duration_ms": 500,
+                    "ok": True,
+                    "child_agent_id": "ses_fork",
+                    "child_agent_type": "fork",
+                    "background": False,
+                    "child_spend": None,
+                    "tokens": None,
+                    "context_tokens": None,
+                    "branch": None,
+                    "args": "fork it",
+                    "result": "done",
+                },
             )
         )
         + "\n",
@@ -358,6 +380,9 @@ def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Pa
     opencode_tree = _run(launcher, "tree", "--verbose", "s-opencode", cwd=project)
     assert opencode_tree.returncode == 0, opencode_tree.stderr
     assert "make test" in opencode_tree.stdout
+    # The dispatch draws the context words the same fields draw under claude: the host's `fork` kind
+    # makes the child a copy of its caller's history.
+    assert "new context ses_fo, copy of main" in opencode_tree.stdout
     claude_tree = _run(launcher, "tree", "--verbose", "s-profiler", cwd=project)
     assert claude_tree.returncode == 0, claude_tree.stderr
     assert "ls" in claude_tree.stdout
@@ -388,7 +413,8 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
     skill call, a subagent dispatch and the session's idle each append their record; the failed call's
     text is its `Tool.Error`'s message, the skill and subagent carry the host's own names, a dispatch
     carries the kind its response reports or else its own agent, under either of the host's spellings
-    for the tool, and the one call whose `execute.after` never fires drops its start at the idle."""
+    for the tool, the child session its result's metadata names, and the one call whose `execute.after`
+    never fires drops its start at the idle."""
     project = tmp_path / "project"
     project.mkdir()
     run = _run_ts(_HERE / "profiler_capture_runner.ts", directory=project)
@@ -409,8 +435,12 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
     assert calls[1]["result"] == "The user rejected this tool call"
     assert calls[2]["result"] == "loaded"
     assert calls[3]["result"] == "ses_child"
+    assert calls[3]["child_agent_id"] == "ses_child"
     assert calls[3]["child_agent_type"] == "devpro-python-coder"
+    assert calls[4]["child_agent_id"] == "ses_fork"
     assert calls[4]["child_agent_type"] == "fork"
+    # The task spelling's after-hook carries no `metadata`, so its bare `output` names no session.
+    assert calls[5]["child_agent_id"] is None
     assert calls[5]["child_agent_type"] == "devpro-tech-writer"
     assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"]
     assert (out["startedBeforeIdle"], out["startedAfterIdle"]) == (1, 0)
@@ -545,11 +575,13 @@ def test_doctor_reports_a_committed_launcher_that_differs_from_the_resource(tmp_
     assert "update:  the committed hook has another version of hp.sh;" in edited.stdout
 
 
-def _write_store(root: Path, store: str, session: str, at: str, *, harness: str, records: int = 1) -> Path:
+def _write_store(
+    root: Path, store: str, session: str, at: str, *, harness: str, records: int = 1, extra: dict | None = None
+) -> Path:
     """A `.profiler-*` store under `root`, holding `records` call records for one session, a second
-    apart from the moment `at` names."""
+    apart from the moment `at` names, each carrying the fields in `extra`."""
     directory = root / ".devpro-temp" / store
-    directory.mkdir(parents=True)
+    directory.mkdir(parents=True, exist_ok=True)
     start = datetime.fromisoformat(at.replace("Z", "+00:00"))
     (directory / f"{session}.jsonl").write_text(
         "".join(
@@ -563,6 +595,7 @@ def _write_store(root: Path, store: str, session: str, at: str, *, harness: str,
                     "name": "ls",
                     "duration_ms": 0,
                     "ok": True,
+                    **(extra or {}),
                 }
             )
             + "\n"
@@ -584,24 +617,82 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     served index carries a row for every recorded session, each stating the harness and count its own
     records hold and its first and last moment, and linking to that session's page; an index that
     omits a session the stores hold, or states one the store does not, drops or invents what the
-    records say."""
+    records say.
+
+    A session whose opencode record names a child session is its dispatcher: its row carries the
+    count of the children drawn under it, each child's row follows with the accent bar's cell, the
+    link naming the call that dispatched it, and the rows alternate their tone with each harness
+    carrying its own mark. The moments' cell states the raw UTC as its text and in its title, which
+    a hover carries with no script run, and the span is its own cell."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
     _write_store(project, ".profiler-opencode", "s-opencode", "2026-01-01T00:00:05.000Z", harness="opencode")
+    _write_store(
+        project,
+        ".profiler-opencode",
+        "s-dispatcher",
+        "2026-01-01T00:00:06.000Z",
+        harness="opencode",
+        records=1,
+        extra={"tool": "Agent", "name": "devpro-coder", "child_agent_id": "s-child"},
+    )
+    _write_store(project, ".profiler-opencode", "s-child", "2026-01-01T00:00:07.000Z", harness="opencode", records=2)
 
     with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
         index = _fetch(f"{url}profiler/")
         page = _fetch(f"{url}page/s-claude")
 
     rows = re.findall(r"<tr>(?!<th>).*?</tr>", index)
-    assert [re.search(r'href="[^"]*/page/([^"]+)"', row).group(1) for row in rows] == ["s-claude", "s-opencode"]
+    assert [re.search(r'href="[^"]*/page/([^"]+)"', row).group(1) for row in rows] == [
+        "s-claude",
+        "s-opencode",
+        "s-dispatcher",
+        "s-child",
+    ]
     assert "claude" in rows[0] and "2 records" in rows[0]
+    assert (
+        'title="2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z">2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z<'
+        in rows[0]
+    )
     assert "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z" in rows[0]
     assert "opencode" in rows[1] and "1 records" in rows[1]
     assert "2026-01-01 00:00:05 UTC to 2026-01-01T00:00:05.000Z" in rows[1]
+    # The dispatcher's row and the child's, drawn under it with the accent bar's empty cell.
+    assert "1 dispatched agents" in rows[2]
+    assert '<td class="child"></td>' in rows[3]
+    assert "↳ child — devpro-coder" in rows[3]
+    # Each harness's own mark, the zebra's rule and the span's own cell, in the template's style.
+    assert '<span class="harness claude"></span>claude' in rows[0]
+    assert '<span class="harness opencode"></span>opencode' in rows[1]
+    assert re.search(r"tr:nth-child\(odd\) td \{ background: #191c22; \}", index)
+    assert re.search(r"\.harness\.opencode \{ background: #4a9eea; \}", index)
+    assert re.search(r"\.harness\.claude \{ background: #d97757; \}", index)
+    # The span: the dispatch's own second on its row, the child's one-second store on its own, its
+    # cell last after the moments.
+    assert re.search(r"<th>first to last</th><th>span</th>", index)
+    assert re.findall(r"<td>([\dhm s]+)</td></tr>", index) == ["1s", "0s", "0s", "1s"]
     assert _page_data(page)["session"] == "s-claude"
+
+
+@pytest.mark.parametrize(
+    "ms, span",
+    [
+        (0, "0s"),
+        (500, "1s"),
+        (59_400, "59s"),
+        (60_000, "1m"),
+        (222_000, "3m 42s"),
+        (3600_000, "1h"),
+        (3 * 3600_000 + 42 * 60_000, "3h 42m"),
+    ],
+)
+def test_a_span_is_whole_seconds_legible_at_every_scale(ms: int, span: str) -> None:
+    """`format_span`: hours and minutes, minutes alone, seconds below a minute, and `0s` for a
+    zero-length span. A span rendered as a raw millisecond count, or one whose hours read as minutes,
+    is a number the reader must convert, which is the datum's whole point."""
+    assert format_span(ms) == span
 
 
 def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_path: Path) -> None:

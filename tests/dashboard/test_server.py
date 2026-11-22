@@ -397,18 +397,43 @@ def test_the_board_page_holds_its_chrome_once_and_the_nav_supplies_it(tmp_path: 
     assert re.findall(r'<script src="([^"]+)"', page) == ["/profiler/chrome.js", "board.js"]
 
 
+def _band(page: str) -> str:
+    """A served page's frame band, up to the return control it ends with."""
+    start = page.find('<div class="frame-band')
+    return page[start : page.find("Return to list</a></div>", start) + len("Return to list</a></div>")]
+
+
 def test_a_session_page_carries_the_bands_legend_and_the_way_back(tmp_path: Path, serve) -> None:
     """`/page/<id>` carries the band with the legend once and `Return to list` linking `/profiler/`,
     and its body carries no second legend: drill-down with no way back strands the reader on the
-    session, and a doubled legend shows one home where the target states two carriers."""
+    session, and a doubled legend shows one home where the target states two carriers.
+
+    A session an opencode record dispatched heads its band with `Dispatched by`, the dispatcher
+    linked to its page and the dispatching call's name, and one nothing dispatched carries neither:
+    a child page that names no dispatcher loses the way back to the session that started it."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
-    page = serve(root).get("page/s-one")[2].decode("utf-8")
+    store(
+        root,
+        "s-parent",
+        [
+            record("2026-01-01T00:00:00.000Z", tool="Agent", name="devpro-coder", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "s-one"}
+        ],
+        directory=".profiler-opencode",
+    )
+    served = serve(root)
+    page = served.get("page/s-one")[2].decode("utf-8")
+    undispatched = served.get("page/s-parent")[2].decode("utf-8")
 
     assert page.count("How to read this") == 1
     assert re.search(r'<a class="return" href="/profiler/">Return to list</a>', page)
     assert 'class="frame-band' in page
     assert re.search(r'<a class="view active" href="/profiler/" aria-current="page">profiler</a>', page)
+    assert re.search(r'<strong>Dispatched by</strong> <a href="/page/s-parent">s-parent</a> — devpro-coder', page)
+    assert _band(page).index("Dispatched by") < _band(page).index("Return to list")
+    assert "Dispatched by" not in undispatched
+    assert re.search(r'<a class="return" href="/profiler/">Return to list</a>', undispatched)
 
 
 def test_dashboard_root_is_the_git_root_of_the_directory_it_runs_in(tmp_path: Path, monkeypatch) -> None:

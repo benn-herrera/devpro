@@ -133,6 +133,19 @@ def format_count(n: int | float) -> str:
     return f"{n}"
 
 
+def format_span(ms: int | float) -> str:
+    """A span as the index shows it, in whole seconds: `3h 42m`, minutes alone, seconds below a
+    minute and `0s` for a zero-length span."""
+    seconds = _round_half_up(ms / 1000)
+    if seconds < 60:
+        return f"{seconds}s"
+    minutes, seconds = divmod(seconds, 60)
+    if minutes < 60:
+        return f"{minutes}m {seconds}s" if seconds else f"{minutes}m"
+    hours, minutes = divmod(minutes, 60)
+    return f"{hours}h {minutes}m" if minutes else f"{hours}h"
+
+
 def clock(ms: int | float) -> str:
     """Epoch milliseconds as the tree's time column: UTC, to the second."""
     return _utc(ms).strftime("%H:%M:%S")
@@ -579,6 +592,13 @@ def render_html(session: dict) -> str:
                 "args": record.get("args"),
                 "result": record.get("result"),
                 "child": record.get("child_agent_id"),
+                # A child's page exists only where the record's harness names a session: claude's
+                # `child_agent_id` is an agent id.
+                "childPage": (
+                    f"/page/{quote(str(record['child_agent_id']))}"
+                    if record.get("child_agent_id") and record.get("harness") == "opencode"
+                    else None
+                ),
                 "background": record.get("background"),
                 "running": record.get("running"),
             }
@@ -720,39 +740,110 @@ def session_harness(session: dict) -> str:
     return clip(mask(str(harness)), NAME_LIMIT)
 
 
-def session_row(session: dict) -> str:
-    """One index row: the session's harness, id, record count, first and last moments, and its page."""
-    span = html.escape(f"{stamp(session)} to {_iso(_utc(session['last']))}")
-    cells = (
-        html.escape(session_harness(session)),
-        _link(f"/page/{quote(session['id'])}", session["id"]),
-        html.escape(f"{len(session['records'])} records"),
-        span,
-    )
-    return "<tr>" + "".join(f"<td>{cell}</td>" for cell in cells) + "</tr>"
-
-
-def unreadable_row(store: str) -> str:
-    """The index row for a store the glob found but could not read."""
-    return f'<tr><td colspan="4">{html.escape(store)} is unreadable</td></tr>'
-
-
 def _link(href: str, text: str) -> str:
     """`text`, as a link to `href`."""
     return f'<a href="{html.escape(href)}">{html.escape(text)}</a>'
 
 
+def _session_link(identifier: str) -> str:
+    """A session id, as a link to its page."""
+    return _link(f"/page/{quote(identifier)}", identifier)
+
+
+def _moments(session: dict) -> str:
+    """A session's first and last moments, UTC: the cell's text where no script runs, and its hover
+    text after the script has rewritten the text in the reader's local time."""
+    text = html.escape(f"{stamp(session)} to {_iso(_utc(session['last']))}")
+    return f'<span class="moments" title="{text}">{text}</span>'
+
+
+def dispatches(sessions: list[dict]) -> dict[str, tuple[str, str]]:
+    """child session id -> the session that dispatched it and that call's name.
+
+    Only an opencode record names a session: its `child_agent_id` is a session id. A claude record's
+    is an agent id, and claude records its subagents' calls in the parent's own file, so no claude
+    session is ever a child here. A child two sessions name keeps the first in list order."""
+    found: dict[str, tuple[str, str]] = {}
+    for session in sessions:
+        for record in session["records"]:
+            child = record.get("child_agent_id")
+            if record.get("harness") == "opencode" and child:
+                found.setdefault(str(child), (session["id"], str(record.get("name") or "")))
+    return found
+
+
+def _records(session: dict) -> str:
+    """A session's record count, as its row states it."""
+    return html.escape(f"{len(session['records'])} records")
+
+
+def session_row(session: dict, *, children: list[tuple[dict, str]] = ()) -> str:
+    """One index row and, under a dispatcher's, the rows of the children drawn beneath it: the
+    harness with its mark, the session's link and its dispatched count, the record count, the
+    moments and the span. Each child's row carries the accent bar's empty cell, its link naming the
+    call that dispatched it, its own count, moments and span."""
+    rows = [
+        "<tr>"
+        f'<td><span class="harness {html.escape(_harness_class(session_harness(session)))}">'
+        f"</span>{html.escape(session_harness(session))}</td>"
+        f"<td>{_session_link(session['id'])}"
+        + (f" <small>— {len(children)} dispatched agents</small>" if children else "")
+        + f"</td><td>{_records(session)}</td>"
+        f"<td>{_moments(session)}</td><td>{html.escape(format_span(session['last'] - session['first']))}</td>"
+        "</tr>"
+    ]
+    rows.extend(
+        "<tr>"
+        f'<td class="child"></td><td>{_session_link(child["id"])} '
+        f"<small>↳ child — {html.escape(name)}</small></td>"
+        f"<td>{_records(child)}</td>"
+        f"<td>{_moments(child)}</td><td>{html.escape(format_span(child['last'] - child['first']))}</td>"
+        "</tr>"
+        for child, name in children
+    )
+    return "".join(rows)
+
+
+def _harness_class(harness: str) -> str:
+    """A harness's name as the page's class for its mark, where the page holds one for it."""
+    return harness if harness in HARNESS_MARKS else ""
+
+
+def unreadable_row(store: str) -> str:
+    """The index row for a store the glob found but could not read."""
+    return f'<tr><td colspan="5">{html.escape(store)} is unreadable</td></tr>'
+
+
 def index_html(directory: Path | str) -> str:
     """The index of record files: one row per session, and one per store that cannot be read.
 
-    The index carries the presentation layer and names no view of its own: opened on its own it
-    stands beside no board, so the nav, the frame band and the nav's script are the marks the
-    dashboard fills when it serves the index (`with_frame`), and absent where nothing fills them."""
+    A child session is drawn under the session that dispatched it, its dispatcher's row carrying the
+    count of the rows drawn beneath it; a child nothing dispatched, or a session whose dispatch by
+    itself would draw it twice, keeps its own place in first-moment order. The index carries the
+    presentation layer and names no view of its own: opened on its own it stands beside no board, so
+    the nav, the frame band and the nav's script are the marks the dashboard fills when it serves the
+    index (`with_frame`), and absent where nothing fills them."""
     sessions, unreadable = read_sessions(directory)
-    rows = "".join(session_row(session) for session in sorted(sessions, key=lambda session: session["first"]))
+    parent_of = dispatches(sessions)
+    children: dict[str, list[tuple[dict, str]]] = {}
+    for session in sessions:
+        dispatched = parent_of.get(session["id"])
+        if dispatched and dispatched[0] != session["id"]:
+            children.setdefault(dispatched[0], []).append((session, dispatched[1]))
+    rows = "".join(
+        session_row(
+            session,
+            children=sorted(children.get(session["id"], ()), key=lambda pair: pair[0]["first"]),
+        )
+        for session in sorted(
+            (session for session in sessions if session["id"] not in parent_of),
+            key=lambda session: session["first"],
+        )
+    )
     return string.Template(INDEX).substitute(
         unreadable="".join(unreadable_row(store) for store in unreadable),
-        rows=rows or '<tr><td colspan="4">No sessions recorded yet.</td></tr>',
+        rows=rows or '<tr><td colspan="5">No sessions recorded yet.</td></tr>',
+        **ZEBRA_MARKS,
     )
 
 
@@ -790,6 +881,13 @@ PAGE_PREFIX = "/page/"
 NAV_MARK = "<!--NAV-->"
 BAND_MARK = "<!--BAND-->"
 CHROME_MARK = "<!--CHROME-->"
+# The index's own brand marks: a harness's dot, in its brand colors, and the variable each wears.
+# They are the page's, not the site's — the dots are the only brand-marked part of a row — so they
+# live in the template's own style block beside its other rules. `ZEBRA_MARKS` is the template's
+# substitution slots: the zebra's tone, the stronger of the two the mockup weighed and shared with no
+# layer variable, and the two brand colors.
+HARNESS_MARKS = {"opencode": "#4a9eea", "claude": "#d97757"}
+ZEBRA_MARKS = {"zebra": "#191c22", **HARNESS_MARKS}
 # The index's two substitution slots, named by `index_html`: the unreadable stores' rows and the
 # session rows, in substitution's one pass — so text spliced into one slot is never read as another's.
 # The presentation layer is no substitution slot: `/*STYLE*/` stands in the template, as it does on a
@@ -808,6 +906,13 @@ th, td { text-align: left; padding: 0.4rem 1rem 0.4rem 0; border-bottom: 1px sol
 th { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
 a { color: var(--fg); }
 a:hover, a:focus-visible { color: var(--accent); }
+tr:nth-child(odd) td { background: $zebra; }
+td small { color: var(--muted); }
+tr td:first-child.child { border-left: 3px solid var(--accent); }
+tr td:first-child.child + td { padding-left: 2.4rem; }
+.harness { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; }
+.harness.opencode { background: $opencode; }
+.harness.claude { background: $claude; }
 </style>
 <body>
 <!--NAV-->
@@ -816,7 +921,7 @@ a:hover, a:focus-visible { color: var(--accent); }
 <main>
 <h1>Sessions</h1>
 <table>
-<tr><th>harness</th><th>session</th><th>records</th><th>first to last</th></tr>
+<tr><th>harness</th><th>session</th><th>records</th><th>first to last</th><th>span</th></tr>
 $unreadable$rows</table>
 </main>
 </body>

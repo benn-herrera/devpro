@@ -369,11 +369,13 @@ function drawTree() {
     if (shown) {
       const spent = c.child && spentOf(c.child);
       const hue = color(c.child && byId.has(c.child) ? c.child : c.ctx);
+      // The dispatch links to the child session's page, where the record's harness names one.
+      const name = `<b>${esc(c.name || kindWord(c.tool))}</b>`;
       h += `<div class="row" id="r${it.i}" data-i="${it.i}"><span class="muted">${clock(c.start)}</span><span class="num">${esc(took(c))}</span>`
         + `<span class="bar"><i style="width:${barWidth(c.running ? 0 : c.dur, longest)}px;background:${hue}"></i></span>`
         + (spent ? [spent.new, spent.cached, spent.out].map((n) => `<span class="num" title="${n}">${count(n)}</span>`).join('') : '<span></span><span></span><span></span>')
         + `<span class="call" style="padding-left:${pad}px"><i class="chip" style="background:${hue}"></i>`
-        + `<span><b>${esc(c.name || kindWord(c.tool))}</b>${c.name ? ` (${esc(kindWord(c.tool))})` : ''}</span>`
+        + `<span>${c.childPage ? `<a href="${esc(c.childPage)}">${name}</a>` : name}${c.name ? ` (${esc(kindWord(c.tool))})` : ''}</span>`
         + `<span class="words">${esc(words(c))}</span>${c.ok ? '' : '<span class="fail">failed</span>'}<span class="gist">${esc(gist(c))}</span></span></div>`;
       h += `<div class="detail" id="d${it.i}" hidden style="margin-left:${pad + 20}px;border-color:${color(c.ctx)}">`
         + `<b>context</b>${esc(ctxName(c.ctx))}\n`

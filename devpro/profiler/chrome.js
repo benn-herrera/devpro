@@ -8,6 +8,10 @@
 //
 // The indicator's states are colored — the brand's phosphor where the server serves, the alert's
 // where it does not — and carry the serving version as hover text, the devpro the dashboard runs.
+//
+// The index's moments are rewritten in the reader's local time, the browser's: `H:MM to H:MM` while
+// both instants share the reader's calendar day, each carrying its date where they do not. The raw
+// UTC the page served stays in the cell's title, where a hover wants the exact instant.
 
 (() => {
   const connection = document.getElementById("connection");
@@ -74,3 +78,28 @@
   poll();
   setInterval(poll, EVERY_MS);
 })();
+
+// ---------- the index's moments ----------
+
+// A moment's text the page served: `<first> UTC to <last>`, the first to the second and the last as
+// an ISO instant, which `Date` reads as the same instant either part names.
+const MOMENTS = /^(\d{4}-\d{2}-\d{2}) (\d{2}):(\d{2}):(\d{2}) UTC to (\S+)$/;
+const clock = (date) => `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
+const calendar = (date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+const dayOf = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+// The two instants in the reader's local time: the times alone where they share the reader's calendar
+// day, and each with its date where they do not, so a span across midnight reads as two days.
+const localMoments = (first, last) => {
+  const [a, b] = [new Date(first), new Date(last)];
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return null;
+  return calendar(a) === calendar(b) ? `${clock(a)} to ${clock(b)}` : `${dayOf(a)} ${clock(a)} to ${dayOf(b)} ${clock(b)}`;
+};
+
+// Each moments cell's text becomes the local reading; its title keeps the raw UTC untouched.
+document.querySelectorAll("td .moments").forEach((cell) => {
+  const [, day, hours, minutes, seconds, last] = MOMENTS.exec(cell.textContent) || [];
+  const local = day && localMoments(`${day}T${hours}:${minutes}:${seconds}Z`, last);
+  if (local) cell.textContent = local;
+});

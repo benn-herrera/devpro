@@ -32,18 +32,21 @@ import os
 import re
 import sys
 import threading
+from html import escape
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
 from typing import Any, Optional, TextIO
-from urllib.parse import unquote, urlsplit
+from urllib.parse import quote, unquote, urlsplit
 
 from devpro import __version__
 from devpro.profiler.pages import (
     LEGEND,
     PAGE_PREFIX,
+    dispatches,
     index_html,
     page_of,
+    read_sessions,
     with_frame,
 )
 from devpro.profiler.values import git_root
@@ -98,17 +101,27 @@ def chrome_script() -> str:
     return f'<script src="{PROFILER_PATH}chrome.js"></script>'
 
 
-def band_html(return_to: str | None) -> str:
+def dispatcher_html(dispatcher: tuple[str, str]) -> str:
+    """The band's dispatch line: the session that dispatched this page, linked to its page, and the
+    call that dispatched it."""
+    session, name = dispatcher
+    return (
+        '<span class="dispatched"><strong>Dispatched by</strong> '
+        f'<a href="/page/{quote(session)}">{escape(session)}</a> — {escape(name)}</span>'
+    )
+
+
+def band_html(return_to: str | None, dispatcher: tuple[str, str] | None = None) -> str:
     """The profiler view's frame band: the how-to-read legend at its top, and, on a session's page,
-    the control back to the list."""
+    the control back to the list; a page a session dispatched also heads with its dispatcher."""
     back = f'<a class="return" href="{return_to}">{RETURN_LABEL}</a>' if return_to else ""
-    return f'<div class="frame-band scanlines">{LEGEND}{back}</div>'
+    return f'<div class="frame-band scanlines">{LEGEND}{dispatcher_html(dispatcher) if dispatcher else ""}{back}</div>'
 
 
-def profiler_page(page: str, *, return_to: str | None) -> str:
+def profiler_page(page: str, *, return_to: str | None, dispatcher: tuple[str, str] | None = None) -> str:
     """A page of the profiler view as the dashboard serves it: the nav, the band and the view's own
     content, one legend on the page, and the nav's script once."""
-    return with_frame(page, nav=nav_html("profiler"), band=band_html(return_to), script=chrome_script())
+    return with_frame(page, nav=nav_html("profiler"), band=band_html(return_to, dispatcher), script=chrome_script())
 
 
 def loopback(url: str) -> bool:
@@ -175,9 +188,13 @@ class DashboardServer(ThreadingHTTPServer):
 
     def page(self, session: str) -> str | None:
         """The page at `/page/<session>`, or nothing where it names no recorded session: the render's
-        page under the nav and the band, whose return control leads back to the list."""
+        page under the nav and the band, whose return control leads back to the list and whose
+        heading names the session that dispatched it, where one did."""
         page = page_of(PAGE_PREFIX + session, self.root)
-        return None if page is None else profiler_page(page, return_to=PROFILER_PATH)
+        if page is None:
+            return None
+        sessions, _ = read_sessions(self.root)
+        return profiler_page(page, return_to=PROFILER_PATH, dispatcher=dispatches(sessions).get(session))
 
     def start(self) -> None:
         """Begin polling the board's files. Called once the server is serving, inside the try whose

@@ -237,6 +237,15 @@ function resultOf(call: Finished): string | undefined {
   return clip(mask(firstLine(textOf)), RESULT_LIMIT) || undefined
 }
 
+// childSessionOf is the session a subagent call dispatched, the host's `result.metadata.sessionID`,
+// read under the host's own string guard. Each opencode session owns its own trace file, so this id
+// names the child's page and its row in the index, never a context in the parent's file.
+function childSessionOf(call: Finished): string | undefined {
+  const metadata = isRecord(call.result) ? call.result.metadata : undefined
+  const id = isRecord(metadata) ? metadata.sessionID : undefined
+  return typeof id === "string" ? id : undefined
+}
+
 // childAgentTypeOf is the kind of subagent a parent call started, the response's `agentType` first as
 // the devpro profiler reads it — where a forked child's `fork` appears — then the call's own input, opencode's `agent`.
 function childAgentTypeOf(tool: string, input: Record<string, unknown>, call: Finished): string | undefined {
@@ -298,10 +307,9 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
     name: nameOf(raw, input) ?? (subagent ? DEFAULT_AGENT : tool),
     duration_ms: end - start,
     ok: call.status === "completed",
-    // A subagent call starts its child's context. opencode's result does name the child's session, but
-    // each opencode session owns its own trace file: a child id here would send the devpro profiler's context walk
-    // after the child's calls in this, the parent's, file, where they never are.
-    child_agent_id: null,
+    // A subagent call starts its child's context, and the host names that child's session in the
+    // result's metadata: the id goes in the slot the render groups children by.
+    child_agent_id: subagent ? (childSessionOf(call) ?? null) : null,
     child_agent_type: subagent ? (childAgentTypeOf(raw, input, call) ?? DEFAULT_AGENT) : null,
     background: false,
     child_spend: null,
