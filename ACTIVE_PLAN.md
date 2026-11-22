@@ -13,9 +13,9 @@ Entries cited, each by its heading anchor:
   stated as the code's rule, on `PROJECT_DOCS/ARCHITECTURE/subsystem-map.md`.
 - [Deployed surfaces — Shipped files](ACTIVE_DESIGN.md#deployed-surfaces--shipped-files) under
   `## Code delta` — the zebra fix held to the SPEC zebra sentence.
-- [Install — Harness profiler](ACTIVE_DESIGN.md#install--harness-profiler) under the design's
+- [Install — Harness profiler](ACTIVE_DESIGN.md#install--harness-profiler-1) under the design's
   `## Code delta` — the assembly rework and the client-gone error-path fix.
-- [Subsystem Map](ACTIVE_DESIGN.md#subsystem-map) under `## Code delta` — the show-profile `_BODY`
+- [Subsystem Map](ACTIVE_DESIGN.md#subsystem-map-1) under `## Code delta` — the show-profile `_BODY`
   correction.
 
 Every code fact the design states was verified this session and is quoted where a package acts on it.
@@ -32,8 +32,8 @@ Packages land in the order below. The dependencies that order them:
 - `quiet-client-gone` and `plain-tree-skill` are independent of `strict-fill`–`traces-feed` and may
   land at any point before `apply-arch-deltas`; they are placed last-before-docs so the leaves as
   amended are true when the deltas are applied.
-- `apply-arch-deltas` is last: both ARCHITECTURE passage pairs are applied only when the code they
-  describe stands, and `just dev-check-design-deltas-applied` verifies them byte-exact.
+- `apply-arch-deltas` is last: the seven ARCHITECTURE passage pairs are applied only when the code
+  they describe stands, and `just dev-check-design-deltas-applied` verifies them byte-exact.
 
 Each package closes in exactly one commit. Every landing commit is a checkpoint and runs the
 checkpoint gate: bound at [the-gates.md](PROJECT_DOCS/CONVENTIONS/planning-and-execution/the-gates.md)
@@ -90,7 +90,9 @@ run once at the package's end.
 ### strict-fill — one strict fill through which every fill runs
 
 Cites [Install — Harness profiler](ACTIVE_DESIGN.md#install--harness-profiler) under
-`## ARCHITECTURE delta` (the strict-fill passage pair) and under `## Code delta`. Lifetime: shipped.
+`## ARCHITECTURE delta` (the strict-fill passage pair) and
+[Install — Harness profiler](ACTIVE_DESIGN.md#install--harness-profiler-1) under `## Code delta`.
+Lifetime: shipped.
 
 **Scope.** `devpro/profiler/pages.py`: one strict fill — `strict_fill(text, fills)` — one function
 every fill the profiler's assembly makes runs through, handed every template `pages.py` reads and
@@ -221,7 +223,9 @@ removal and the assertion's rewrite land in the package's one commit, in that or
 ### traces-feed — the static index and the `/api/traces` feed
 
 Cites [Install — Harness profiler](ACTIVE_DESIGN.md#install--harness-profiler) under
-`## ARCHITECTURE delta` (the traces-index pair) and under `## Code delta`. Lifetime: shipped.
+`## ARCHITECTURE delta` (the traces-index pair) and
+[Install — Harness profiler](ACTIVE_DESIGN.md#install--harness-profiler-1) under `## Code delta`.
+Lifetime: shipped.
 
 **Scope.** `devpro/profiler/pages.py` and `devpro/dashboard/server.py`: the index's page file is
 static — no row in its text — and its script fetches the records' feed the server answers at
@@ -280,7 +284,9 @@ the same `<tr>` order the old index had — the script's read of the schema's ke
 ### quiet-client-gone — the board panel's error path quieted
 
 Cites [Install — Harness profiler](ACTIVE_DESIGN.md#install--harness-profiler) under
-`## ARCHITECTURE delta` (the client-gone pair) and under `## Code delta`. Lifetime: shipped.
+`## ARCHITECTURE delta` (the client-gone pair) and
+[Install — Harness profiler](ACTIVE_DESIGN.md#install--harness-profiler-1) under `## Code delta`.
+Lifetime: shipped.
 
 **Scope.** Two files:
 
@@ -324,7 +330,7 @@ branch.
 
 ### plain-tree-skill — the show-profile skill restated on the plain tree
 
-Cites [Subsystem Map](ACTIVE_DESIGN.md#subsystem-map) under `## Code delta`. Lifetime: shipped.
+Cites [Subsystem Map](ACTIVE_DESIGN.md#subsystem-map-1) under `## Code delta`. Lifetime: shipped.
 
 **Scope.** One file: `devpro/definitions/skills/show_profile.py` — the definition source only. The
 rendered copies under `rendered/` are `just render`'s; anything written into a project's
@@ -408,7 +414,7 @@ edited leaves.
 | plain-tree-skill | landed: commit `877b7fe`, the definition source (the retake's `rendered/` is gitignored — the plan's "runs in this package's commit" written against a tree that does not exist, a finding for the post-plan review); audited in the main session: the re-taken reference differs from the stale `latest` by exactly the two corrected sentences, the four diffs' differences being the slots' own pinned tuning identities — the plan's "stated clean" observation unachievable as written, a second finding; gate `just test` (1662 passed, 1 skipped) then `just sweep-python` clean | mechanical |
 | apply-arch-deltas | landed: commit `b441303`, two leaves; checker `pairs: 7, landed: 7, pending: 0`; doc-set searches read clean; gate `just test` (1662 passed, 1 skipped) then `just sweep-python` clean | mechanical |
 | post-plan-review | landed: commit `f74df6e`, the synthesis of three independent seat reviews (`REVIEW-{coder,architect,prompt-engineer}.md` in scratch); one blocker (R1, the subsystem-map leaf's stranded `— and`, source the design's own `Becomes` block) and seventeen findings R2-R18, each naming its seats | expert |
-| post-plan-burndown | drafted — the work list is in place (W1-W7, grouped by root cause from `ACTIVE_PLAN_REVIEW.md`'s R1-R18); the `devpro-prompt-engineer` usability review of the section is running, the session's revision follows it | expert |
+| post-plan-burndown | in progress — the items W1-W7 dispatching in order on the expert model, each its own commit under the checkpoint gate; W1 `ce32cb9`, W2 `cbfd63b`, W3 `c0ec835`, W4 `a2f0edb`, W5 `9964a84`, W6 `4047d85` (the strict fill's self-carrying mark restored and pinned — R6's unreachable premise was wrong) landed; W7 (the five document defects, the R1 blocker first) dispatched | expert |
 
 ### Post-plan review — read the design against the landed work
 

@@ -111,7 +111,9 @@ one script polls `GET /api/state` — the endpoint every view's server answers `
 while it serves, and that a closed server answers not at all — so a page that carries no payload of
 its own reads the state the board reads, and the stop posts the board panel's `/api/stop`. No file is
 written for the traces. A store the glob finds but cannot read appears in the index as unreadable —
-the server raises nothing for it. The page shows a session's calls: a session of nothing but tool
+the server raises nothing for it; a store whose files the glob finds but whose trace cannot be read
+is stated in the feed as unreadable, like the store that could not be read at all. The page shows a
+session's calls: a session of nothing but tool
 calls renders those calls as its calls content, never an empty tree under a calls header. The server
 runs until interrupted (Ctrl-C) or stopped from the page; either exits 0. The dashboard's board
 panel is the profiler's
