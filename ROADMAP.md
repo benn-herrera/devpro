@@ -18,6 +18,16 @@ client-gone behavior. Found by the UX pass's burndown executor, pre-existing.
 header alone"; the training-skill correction in `harness-profiler.md` states every tool call is
 drawn.
 
+### The modules' homes: kanban out of dicing, planform and plancheck into it
+
+The user's direction: the modules' locations correspond to usage **and to the dependency
+direction**. `devpro.dicing.kanban` — the board, the dashboard's panel — becomes `devpro.kanban`;
+`planform.py` (the workflow documents' model, built on dicerlib) and `plancheck.py` (the
+check verbs' implementation) move into `devpro.dicing`, whose verbs they serve — the reverse
+arrow `dicing.cli → .kanban.plancheck` is what blocks the clean arrangement today. The target
+arrows point one way only: `devpro.kanban` → `devpro.dicing`, `devpro.dashboard` → both,
+nothing back; `dicerlib` flattening into `devpro.dicing` is the optional half.
+
 ## Features
 
 ### Codex CLI harness support
