@@ -58,12 +58,14 @@ file.
 In two or three lines: how many records the trace holds — count the lines of that recording, where
 a record is a call or an event marker, and a call the plugin and the committed hook both recorded
 appears twice — and, for a claude session, the three most expensive contexts by duration with their
-tokens, read from `sh HP tree --verbose`: the plain tree draws only the skills, agents and
-compactions, so a session of plain tool calls prints the column header alone. An opencode session
+tokens, read from `sh HP tree --verbose`, which draws every node of the session; the plain tree
+draws the placeholder and marker nodes and the calls whose tool is in `PARENT_TOOLS` — the skills,
+agents and compactions — so a session of plain tool calls prints the column header alone on the
+plain tree. An opencode session
 records no token counts, so say so where those columns are blank. Then the URL the dashboard
 printed. Do not paste the tree.
 
-Where the verbose tree prints the column header alone, nothing was recorded: say so, and, under
+Where the plain tree prints the column header alone, nothing was recorded: say so, and, under
 claude, run `sh HP doctor`, report what it printed about the traces and the newest session, and that
 its plugin-record check cannot see the payload copy, and stop. Where `tree` instead says
 `No traces in …`, run `sh HP doctor` before answering, under claude and under opencode alike, and
