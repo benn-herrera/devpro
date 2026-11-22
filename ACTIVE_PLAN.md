@@ -314,7 +314,55 @@ its links must resolve in; no other target checks it.
 
 Lifetime: shipped. One commit closes it.
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Drafted from `ACTIVE_PLAN_REVIEW.md`. The findings group into five root causes; the review's IDs
+are cited so no seat's report is lost.
 
-**Done-line.** `just dev-check-plan`, then `just dev-check-links`, then `just
+**1. The retirement's text tail** (R7, R8, R15, R18): sites stating the retired mechanisms were
+swept only as far as the retirement pass reached — the contract rows and docstrings naming
+behavior nothing implements remain. Fix: `PROJECT_DOCS/SPEC/dicing/kanban.md`'s `:48` row and
+`:50` row re-stated to what the dashboard path does (the git-root walk falling back to the named
+directory; `CannotListen` either caught and formatted as the row states or the row re-stated to
+the traceback reality — the choice made once, code and leaf agreeing); `devpro/profiler/
+__init__.py:1`'s served-site sentence out; `board.js:6`/`:11` static title and heading brought to
+the leaf's Title-and-header contract or the leaf's row narrowed to the dynamic value. Each stated
+behavior that remains is pinned by a test (the test-precondition clause).
+
+**2. The dashboard surface under-documented** (R9, R10, R11, R12, R13, R14, R16): the new
+surface's record was written as qualifiers and retirement notes rather than as the surface's own
+statement. Fix: `README.md` gains the dashboard lead — the command line with the positional and
+the port, the board landing and the traces panel, CLI-only start, the page's stop — and the
+screenshot caption re-stated to what the root serves today; `recipes.md`'s recipe list gains
+`dev-dashboard` and drops the over-composed retirement sentence; `guide.py`'s and `docdicer.py`'s
+dashboard rows state the verb's surface and both panels; `harness-profiler.md`'s Serving section
+states landing, `--port`, stop and the board's writes, and its tree-page statements match the
+served page; `repo-layout.md` gains the `devpro/dashboard/` row and `pages.py`'s row loses the
+HTTP layer; the payload's `devpro_version` key and the panel seam documented where ARCHITECTURE
+names the panel.
+
+**3. The panel seam's structural debt** (R3, R4, R6, and the duplicated CSP, `_send`, `LOOPBACK`
+sites of R19): composition left both layers' mechanisms standing. Fix: one home for the host
+guard (the dashboard's, with the panel's guard either removed in composition or the messages
+unified — one guard, one message); `DashboardServer.stop` deleted, `/api/stop` the one stop; the
+panel's dead spoofed `BaseServer` internals out or exercised by a test stating why; the dead
+`LOOPBACK` constant out; the duplicated CSP constant and `_send` bodies unified where the
+one-presentation boundary says they meet. Every deletion's referencing files carried with the
+reference search and its answer.
+
+**4. Code defects** (R1, R2, R5): R1 — the move error path's `UnboundLocalError` fixed so the
+escaping `OSError` becomes the promised 500, pinned by a test (the test-precondition clause: it
+fails on the rebind). R2 — the long poll's `since` comparison re-stated and fixed so a client's
+stale version is served the current payload rather than waited out, pinned. R5 — the bad `--port`
+refusal a short error naming the range, not the 448 KB choices dump, pinned.
+
+**5. Small record corrections** (R17, and the housekeeping remainder of R19): the
+import-structure docstring corrected; the leftover debug print at `tests/dicing/
+test_server.py:256` out; the long spliced `README.md` line wrapped; the duplicated
+command-spawn helpers across the two suites unified or named deliberate.
+
+**Process note carried to the next design** (not this package's fix): a code package's done-line
+covered landed prose only by the link check — `just test devpro` routes `README.md` and
+`PROJECT_DOCS/` to the docs surface. The review documents it; the next plan weighing done-lines
+for packages that land prose takes it.
+
+**Done-line.** `just test devpro`, then `just lint`, then `just dev-check-links`, then `just
 dev-check-design-deltas-applied` — run once, at the package's end.
