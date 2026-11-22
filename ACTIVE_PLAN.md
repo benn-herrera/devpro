@@ -65,7 +65,7 @@ slotted into this plan.
 | --- | --- | --- | --- | --- |
 | | drafted | | | Kickoff: the stage-3 plan drafted from the design; the dashboard pair and frame/legend work left pending for the UX outcome |
 | P1 | landed | expert | shipped | the dashboard verb: one loopback server, the traces panel and the board panel, the minimal frame |
-| P1b | drafted: the PE review and revision of its text remain before it is dispatchable | expert | shipped | the dashboard verb takes a positional project directory |
+| P1b | dispatchable | expert | shipped | the dashboard verb takes a positional project directory |
 | P2 | drafted: dispatchable once P1b lands — the design entries it applies are in the design, and its kanban.md pair's becomes names the signature P1b builds | expert | shipped | the one front end: the old serving verbs retire, the record and the snippets' routing move with them |
 | PR | dispatchable | expert | shipped | Post-plan review |
 | PB | dispatchable | expert | shipped | Post-plan burndown |
@@ -178,9 +178,10 @@ uses; the board panel and the traces panel both read the resolved root, no panel
 - `git grep -n "def serve" -- devpro/dashboard/server.py` → `devpro/dashboard/server.py:195: def
   serve(port: int) -> None:` — the current signature takes the port alone. Its caller:
   `git grep -n "serve(args" -- devpro` → `devpro/dashboard/cli.py:36:    serve(args.port)`, the
-  verb's `run` dispatch — the one caller: the other `serve(` hits in `git grep -n "serve(" -- devpro
-  tests` are the profiler verb's own serve (devpro/profiler/cli.py:63, retired at P2) and the
-  dashboard suite's pytest fixture (tests/dashboard/conftest.py:114), not this function.
+  verb's `run` dispatch — the one caller: every other `serve(` hit in `git grep -n "serve(" --
+  devpro tests` is the profiler's own serve (its verb call at devpro/profiler/cli.py:63 and its
+  definition at pages.py:777, retired at P2), a test fixture named `serve`, or its call sites —
+  none this function's caller.
 - `git grep -n "def dashboard_root" -- devpro/dashboard/server.py` → `devpro/dashboard/server.py:56:
   def dashboard_root(directory: Optional[str] = None) -> str:` — the directory parameter exists
   already; the change passes the verb's positional to it, and the `git_root` walk it does
@@ -191,7 +192,9 @@ uses; the board panel and the traces panel both read the resolved root, no panel
 
 **Tests.** A test serving a *named* directory's project — fixture projects A and B (the `project`
 helper, tests/dashboard/conftest.py:31), the verb run with A named through `_serve_the_command`'s
-subprocess pattern (tests/dashboard/test_server.py:290), the served index shows A's sessions and
+subprocess pattern (tests/dashboard/test_server.py:290) with that subprocess's cwd outside A — B,
+or any directory outside A, since launched inside A a server that ignores the positional still
+serves A and the test passes vacuously — and the served index shows A's sessions and
 not B's — TEST_PRECONDITION (devpro/clauses.py:170): it fails on a server that ignores the
 positional and serves the cwd's project instead — the defect named: a `run` dispatch that passes
 nothing to `serve`, so a server launched by another process from any CWD serves the wrong project.
