@@ -45,6 +45,7 @@ import pytest
 
 from devpro.profiler.capture import mask
 from devpro.profiler.hooks import RETIRED_HOOK_FILES, launcher_resource
+from devpro.profiler.pages import SHARED_CSS
 from tests.test_devpro_install import _PROFILER, _claude_plugin, _definition_install
 
 _HERE = Path(__file__).parent
@@ -233,7 +234,9 @@ def test_the_installed_profiler_is_the_sources_bytes(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("command", ["capture", "tree"])
-def test_a_launcher_finding_an_unusable_devpro_captures_silently_and_reports_otherwise(tmp_path: Path, command: str) -> None:
+def test_a_launcher_finding_an_unusable_devpro_captures_silently_and_reports_otherwise(
+    tmp_path: Path, command: str
+) -> None:
     """With a `devpro` first on the finder's path that does not run, `capture` drains stdin and exits 0
     writing nothing, and every other subcommand names the unusable command on stderr and exits 1: a
     capture that reports or exits nonzero blocks the tool call that fired it, under the harness hook
@@ -561,7 +564,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     _write_store(project, ".profiler-opencode", "s-opencode", "2026-01-01T00:00:05.000Z", harness="opencode")
 
     with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
-        index = _fetch(url)
+        index = _fetch(f"{url}profiler/")
         page = _fetch(f"{url}page/s-claude")
 
     rows = re.findall(r"<tr>(?!<th>).*?</tr>", index)
@@ -586,7 +589,7 @@ def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_
     _write_store(foreign, ".profiler-claude", "s-elsewhere", "2026-01-01T00:00:00.000Z", harness="claude")
 
     with _serve(_launcher(tmp_path / "harness"), cwd=project, env={"CLAUDE_PROJECT_DIR": str(foreign)}) as url:
-        index = _fetch(url)
+        index = _fetch(f"{url}profiler/")
 
     assert "/page/s-here" in index
     assert "/page/s-elsewhere" not in index
@@ -605,7 +608,7 @@ def test_the_served_index_states_an_unreadable_store(tmp_path: Path) -> None:
     os.chmod(locked, 0o000)
     try:
         with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
-            index = _fetch(url)
+            index = _fetch(f"{url}profiler/")
             with pytest.raises(urllib.error.HTTPError) as missing:
                 _fetch(f"{url}page/s-broken")
     finally:
@@ -617,10 +620,10 @@ def test_the_served_index_states_an_unreadable_store(tmp_path: Path) -> None:
 
 
 def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> None:
-    """One session's `/page/<id>` is the bytes `tree --format html` prints for it, less the one
-    trailing newline `print` adds: the dashboard's traces panel shows the page the file-redirect flow
-    produces, and a served page that diverges from it — rebuilt another way, or another session's —
-    is the defect: the user's two routes would show two pages."""
+    """One session's `/page/<id>` carries the file flow's page data — `const D = …` byte for byte,
+    `tree --format html`'s, so its deep links and its records are that flow's — and the frame band is
+    the served page's own addition: a served page whose data diverges from the printed one — rebuilt
+    another way, or another session's — is the defect the user's two routes would show as two pages."""
     project = tmp_path / "project"
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
@@ -631,7 +634,43 @@ def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> Non
 
     printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
     assert printed.returncode == 0, printed.stderr
-    assert served == printed.stdout.removesuffix("\n")
+    assert _page_data(served) == _page_data(printed.stdout)
+    assert 'class="frame-band' in served and "How to read this" in served
+
+
+def test_the_standalone_render_carries_its_own_palette_and_legend(tmp_path: Path) -> None:
+    """The page `tree --format html` prints carries the presentation layer's own text — the board
+    stylesheet's brand value — and the injected legend, and names no view: the standalone page is
+    the render's own carrier of the legend, and one with a palette of its own is the second reskin
+    the shared layer forbids."""
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
+    launcher = _launcher(tmp_path / "harness")
+
+    printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
+
+    assert printed.returncode == 0, printed.stderr
+    assert "How to read this" in printed.stdout
+    assert "--brand: #e8a020" in printed.stdout and "--brand: #3cf077" in printed.stdout
+    assert 'class="site-nav' not in printed.stdout and 'class="frame-band' not in printed.stdout
+
+
+def test_the_served_index_carries_the_shared_layers_own_text(tmp_path: Path) -> None:
+    """`/profiler/` inlines the board's stylesheet as it stands — its brand value, and the dark
+    motif's — from the stylesheet's own text: a profiler page carrying a palette of its own is the
+    second reskin the design forbids, the board and the profiler showing two identities for one
+    site."""
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / ".devpro-temp").mkdir()
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
+
+    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
+        index = _fetch(f"{url}profiler/")
+
+    assert SHARED_CSS in index
+    assert "--brand: #e8a020" in index and "--brand: #3cf077" in index
 
 
 # ---------- the stores' rename, and an install's migration of them ----------

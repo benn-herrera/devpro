@@ -401,8 +401,17 @@ template `view.html` the render reads is the devpro wheel's package data
 ```
 `show-profile` skill, which renders a session's recorded activity — its skill, agent and tool calls
 with timings and token costs — as text, as a self-contained HTML page, or served over HTTP: the
-tool's `serve` subcommand renders the record files in memory behind a local server whose main page
-lists every record file it can render. The pages and the records stay local: reachable only from the
+dashboard, devpro's one loopback server for the web interface, renders the record files in memory
+as one panel of its site. The board is the landing surface: opening the dashboard's URL shows the
+kanban board — the project's actual current state — and the traces are the second view, reached
+from the nav. A simple top nav persists across every view: the `devpro` brand, then the view names
+`kanban` and `profiler`, selection switching the view — intuitive, recognizable surfaces, no
+invented paradigms, the dynamic behavior spent only where it counts. The nav and the views carry
+the phosphor pairing, the brand's callback to amber and green screen terminals inverted from the
+site — the monogram's scanlines deliberate — and the accent is the phosphor, no second brand
+color. The dark mode carries the phosphor green: brand `#3cf077`, the active view `#31c260`, 80%
+of the brand's brightness, the inactive view `#a6a6ad`. The light mode carries the warm phosphor:
+brand `#e8a020`, the active view `#d09020`, the inactive view `#63636b`. The surfaces are the
 ```
 **Becomes:**
 ```
@@ -419,30 +428,26 @@ site — the monogram's scanlines deliberate — and the accent is the phosphor,
 color. The dark mode carries the phosphor green: brand `#3cf077`, the active view `#31c260`, 80%
 of the brand's brightness, the inactive view `#a6a6ad`. The light mode carries the warm phosphor:
 brand `#e8a020`, the active view `#d09020`, the inactive view `#63636b`. The surfaces are the
+```
+
+**As it stands:**
+```
 board's own variable system — `board.css`'s `:root` and its `prefers-color-scheme` block — the
 site's surfaces not inherited; the site's accent values and its two-motif accent map are. The
-nav's grammar: the brand wordmark is monospace, heavier and about 15% larger than the nav items,
-in the motif's brand color at full brightness; both view names sit in the same smaller size, no
-underline, no visited-link styling; the active view is the brand color at 80% brightness and
-heavier weight, the inactive view a lifted gray that reads available, never deactivated. The
-site's own light-mode mapping (green) and dim value (`--accent-dim`) are superseded: the
-dashboard's light brand is the bright amber, dimmed only for the active view's smaller text.
-Retro colors, modern chrome: the phosphor accents and the scanline treatment are the whole retro
-voice — the layout, spacing and componentry are ordinary modern web, no TUI replication — and the
-scanline treatment may appear in the chrome, the nav or the frame band, never on a card surface,
-its placement the pass's executor call. The server's elements persist across every view: a
-live/idle state indicator and, when live, a stop control; starting is the CLI's alone, no served
-page starting its own server. In the profiler view the how-to-read legend sits at the top of the
-view's frame band and persists there across drill-down, the same band carrying a return-to-list
-control, its label `Return to list`, revisable at execution as a one-string change — the pass's
-second executor call; drill-down is ordinary page navigation, the trace list to the session page
-with
-`/page/<session-id>` deep links intact and no inner-frame mechanic. One presentation layer serves
-the whole presented interface: a single CSS source the board's assets and the profiler's pages
-alike consume, the palette living there, the profiler page's re-style to the kanban presentation
-made through that shared layer, never as a second reskin. The legend's text has one home and two
-carriers, one source both read: the rendering side holds it once — the standalone render injects
-it into the page it renders, the template carrying no second copy — and the dashboard's frame band
+```
+**Becomes:**
+```
+board's own variable system — `board.css`'s `:root` and its `prefers-color-scheme` block — the
+site's surfaces not inherited; the site's accent values and its two-motif accent map are. The
+```
+
+**As it stands:**
+```
+reads the same source, so the served page's legend comes from the frame. The pages and the records
+stay local: reachable only from the
+```
+**Becomes:**
+```
 reads the same source, so the served page's legend comes from the frame. The pages and the records
 stay local: reachable only from the
 ```
@@ -1473,13 +1478,15 @@ capture that fails, or finds no `devpro`, exits 0 with no output.
 
 **As it stands:**
 ```
-nothing from the network, so the records it renders never leave the machine. The URL's root is the
-traces panel, the landing page: the index of record files, every store the `.profiler-*` glob finds,
+nothing from the network, so the records it renders never leave the machine. The board is the
+dashboard's landing surface: its URL's root answers a `302` to `/board/`, so opening it shows the
+kanban board, the project's actual current state. The profiler view is the second view, at
 ```
 **Becomes:**
 ```
-nothing from the network, so the records it renders never leave the machine. The URL's root is the
-traces panel, the landing page: the index of record files, every store the `.profiler-*` glob finds,
+nothing from the network, so the records it renders never leave the machine. The board is the
+dashboard's landing surface: its URL's root answers a `302` to `/board/`, so opening it shows the
+kanban board, the project's actual current state. The profiler view is the second view, at
 ```
 
 **As it stands:**

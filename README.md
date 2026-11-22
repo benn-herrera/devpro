@@ -20,9 +20,10 @@ devpro dashboard
 
 It serves the project the command runs in, up to the nearest directory holding a `.git` entry;
 `<project-dir>` names another directory inside the project to serve from anywhere. The port is
-loopback only, `127.0.0.1`, and the system picks a free one unless `--port` names one. The URL's root
-is the traces panel — the session records the activity profiler captured, one row per session,
-each linking to that session's page — and a link line under it opens the board.
+loopback only, `127.0.0.1`, and the system picks a free one unless `--port` names one. The URL opens
+on the board — its root answers a redirect to `/board/` — and the profiler view is the second view,
+at `/profiler/`: the session records the activity profiler captured, one row per session, each
+linking to that session's page. A top nav switches between the two.
 
 The board is the project's roadmap, its active design and its active plan as a set of columns of
 cards, live: an edit to a watched file shows on the open page within about a second. Dropping a
@@ -69,7 +70,7 @@ in just over 16K lines of runtime code, including vision tower support and an Op
   under claude, one line per hook event, and `.profiler-opencode/` under opencode, one per tool call.
   The `tree` subcommand of the `devpro profiler` verb reads every `.profiler-*` store there, and the
   `show-profile` skill hands a session to the user as text or as an HTML page; the `devpro dashboard`
-  verb serves the records as its traces panel (The dashboard, above). The claude install copies the
+  verb serves the records as its profiler view (The dashboard, above). The claude install copies the
   launcher `profiler/hp.sh` and registers six hook entries in the plugin's `hooks/hooks.json`; the
   opencode install copies the launcher and the capture `profiler.ts` beside the plugin entry and
   registers no hook entries. The page template `view.html` is the devpro wheel's own package data,

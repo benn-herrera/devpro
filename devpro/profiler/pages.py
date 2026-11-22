@@ -2,7 +2,10 @@
 traces panel serves.
 
 The page template `view.html` is this package's own data, read through `importlib.resources`, so the
-render finds it wherever devpro is installed.
+render finds it wherever devpro is installed. The stylesheet the page and the index carry is the
+board's own, `devpro.dicing.kanban.assets/board.css`: the presented interface's one presentation
+layer, inlined here because the standalone page must load nothing, so its palette is the board's
+from the identical file. `SHARED_CSS` is that file's text, and is what the dashboard inlines too.
 """
 
 from __future__ import annotations
@@ -47,6 +50,52 @@ class UsageError(Exception):
 
 ANSI_COLORS = (36, 33, 35, 32, 34, 31)
 DATA_SLOT = "/*DATA*/null"
+CSS_SLOT = "/*STYLE*/"
+LEGEND_SLOT = "<!--LEGEND-->"
+
+# The how-to-read legend, once for the whole presented interface. The standalone render injects it
+# into the page it renders, and the dashboard's frame band reads this same constant for the served
+# pages — so the legend has one home and two carriers, and the template carries no second copy.
+LEGEND = (
+    '<details class="intro"><summary>How to read this</summary><p>A sequence diagram of the session. '
+    "Each vertical bar is one <b>context</b>: a conversation history the model reads. A Skill or Agent "
+    "call that opens a new context is a message to a new bar, and the dashed message back carries its "
+    "result. A new context starts with its prompt only and gets a color of its own; one that starts "
+    "with a copy of its parent's history says so and keeps the parent's color. Rows are in time order, "
+    "not to scale. To save width, a column holds one context at a time: when a context ends, a later "
+    "one can reuse its column, so five runs of the same skill one after another sit in one column as "
+    "five bars. Such a column's header is an outline with one chip per context, in time order and in "
+    "the color of its bar; a chip without a name repeats the name before it. Next to the top of a "
+    "context's bar are the tokens it spent over all its model calls, each of which sends the whole "
+    "history again: new input, input read from the prompt cache (far cheaper), and output. Hover for "
+    "the exact numbers. Click a message to see the call's arguments and result.</p>\n"
+    '<div class="symbols" style="margin-top:8px">\n'
+    '  <span><svg width="34" height="12"><line x1="0" x2="26" y1="6" y2="6" stroke="var(--c0)" '
+    'stroke-width="2"/><path d="M24 1 L34 6 L24 11 z" fill="var(--c0)"/></svg>call that starts a '
+    "context</span>\n"
+    '  <span><svg width="34" height="12"><line x1="0" x2="32" y1="6" y2="6" stroke="var(--c0)" '
+    'stroke-width="2"/><path d="M24 1 L34 6 L24 11" fill="none" stroke="var(--c0)" stroke-width="2"/>'
+    "</svg>one that runs in the background</span>\n"
+    '  <span><svg width="34" height="12"><line x1="0" x2="30" y1="6" y2="6" stroke="var(--muted)" '
+    'stroke-width="1.5" stroke-dasharray="5 4"/><path d="M26 1 L34 6 L26 11" fill="none" '
+    'stroke="var(--muted)" stroke-width="1.5"/></svg>return with the result</span>\n'
+    '  <span><svg width="14" height="14"><path d="M7 1 l6 6 l-6 6 l-6 -6 z" fill="var(--c0)"/>'
+    "</svg>skill loaded inline: its text joins this context; several in a row share one diamond, click "
+    "it to list them</span>\n"
+    '  <span><svg width="26" height="14"><rect x="1" y="1" width="24" height="12" fill="none" '
+    'stroke="var(--fg)" stroke-width="1.5"/></svg>compacted: history replaced by a summary</span>\n'
+    '  <span><svg width="10" height="16"><rect x="0" y="0" width="10" height="16" rx="2" '
+    'fill="var(--c0)" fill-opacity=".85"/></svg>context at work</span>\n'
+    "</div></details>"
+)
+
+
+def shared_css() -> str:
+    """The presentation layer's text: the board's own stylesheet, read where devpro ships it."""
+    return (files("devpro.dicing.kanban") / "assets" / "board.css").read_text(encoding="utf-8")
+
+
+SHARED_CSS = shared_css()
 
 
 def read_trace(file: Path) -> list[dict]:
@@ -506,7 +555,8 @@ def render_tree(records: list[dict], *, verbose: bool = False, color: bool = Fal
 
 
 def render_html(session: dict) -> str:
-    """One self-contained page: the package's template with the trace inlined.
+    """One self-contained page: the package's template with the presentation layer, the how-to-read
+    legend and the trace inlined.
 
     `<` is escaped so tool output in the JSON can't close the script tag."""
     calls = unique_calls(fill_context_tokens(session["records"]))
@@ -536,7 +586,8 @@ def render_html(session: dict) -> str:
         ],
     }
     template = (files(__package__) / "view.html").read_text(encoding="utf-8")
-    return template.replace(DATA_SLOT, _json(data).replace("<", "\\u003c"))
+    page = template.replace(DATA_SLOT, _json(data).replace("<", "\\u003c"))
+    return page.replace(CSS_SLOT, SHARED_CSS).replace(LEGEND_SLOT, LEGEND)
 
 
 def session_of(path: Path) -> dict:
@@ -692,33 +743,61 @@ def _link(href: str, text: str) -> str:
 
 
 def index_html(directory: Path | str) -> str:
-    """The index of record files: one row per session, and one per store that cannot be read."""
+    """The index of record files: one row per session, and one per store that cannot be read.
+
+    The index carries the presentation layer and names no view of its own: opened on its own it
+    stands beside no board, so the nav and the frame band are the marks the dashboard fills when it
+    serves the index (`with_frame`), and absent where nothing fills them."""
     sessions, unreadable = read_sessions(directory)
     rows = "".join(session_row(session) for session in sorted(sessions, key=lambda session: session["first"]))
     return string.Template(INDEX).substitute(
         unreadable="".join(unreadable_row(store) for store in unreadable),
         rows=rows or '<tr><td colspan="4">No sessions recorded yet.</td></tr>',
+        css=SHARED_CSS.replace("$", "$$"),
     )
 
 
+def with_frame(page: str, *, nav: str, band: str) -> str:
+    """The rendered page as the dashboard serves it: the presentation layer's text in place of a
+    template's own `CSS_SLOT`, nav in place of its nav mark, and band in place of its band mark.
+
+    The band is where the view's legend is served from, and the render injected its own copy into the
+    page it rendered: that copy is removed here, at the one site holding both in hand, so the served
+    page carries the legend once."""
+    return page.replace(CSS_SLOT, SHARED_CSS).replace(LEGEND, "").replace(NAV_MARK, nav).replace(BAND_MARK, band)
+
+
 PAGE_PREFIX = "/page/"
-# The index's two slots, named by `index_html`. Substitution is one pass, so text spliced into one
-# slot is never read as another slot's.
+# The index's slots, named by `index_html`: the presentation layer and the rows, in substitution's
+# one pass — so text spliced into one slot is never read as another's, and `$` in the inlined
+# stylesheet is escaped for it. The two marks the dashboard fills on the pages it serves are here
+# too, so one renderer serves both: the nav, and the profiler view's frame band.
+NAV_MARK = "<!--NAV-->"
+BAND_MARK = "<!--BAND-->"
 INDEX = """<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<title>harness-profiler — sessions</title>
+<title>Harness-profiler — sessions</title>
 <style>
-  body { font-family: system-ui, sans-serif; margin: 2rem; color: #222; }
-  table { border-collapse: collapse; }
-  th, td { text-align: left; padding: 0.3rem 1rem 0.3rem 0; border-bottom: 1px solid #ddd; }
-  th { font-weight: 600; }
-  a { color: #048; }
+/*STYLE*/
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; }
+h1 { font-size: 1.1rem; font-weight: 600; margin: 0; padding: 1rem 1rem 0.5rem; }
+table { border-collapse: collapse; margin: 0 1rem; }
+th, td { text-align: left; padding: 0.4rem 1rem 0.4rem 0; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
+a { color: var(--fg); }
+a:hover, a:focus-visible { color: var(--accent); }
 </style>
+<body>
+<!--NAV-->
+<!--BAND-->
+<main>
 <h1>Sessions</h1>
 <table>
 <tr><th>harness</th><th>session</th><th>records</th><th>first to last</th></tr>
 $unreadable$rows</table>
+</main>
+</body>
 </html>
 """
 

@@ -467,8 +467,9 @@ The `{clauses.ref(name="docdicer")}` skill routes the board.
 
 - A live board of the project's roadmap, design and plan, the dashboard's board panel.
   `devpro dashboard [<project-dir>] [--port <number>]` serves it on `127.0.0.1` and prints the URL,
-  whose root is the dashboard's traces panel — the session records, each linking to its own page —
-  with a link line to the board. `devpro dashboard --help` gives the rest.
+  which opens on the board: its root answers a redirect to `/board/`. The profiler view is the
+  second view, at `/profiler/` — the session records, each linking to its own page — reached from
+  the page's top nav. `devpro dashboard --help` gives the rest.
 - The session offers to run it as a background process; the user who would rather run it gets the
   command line. It never finishes, so a dispatched agent hands over the command line instead of
   running it. It serves until the user asks for it to stop: Ctrl-C, or the stop button beside the

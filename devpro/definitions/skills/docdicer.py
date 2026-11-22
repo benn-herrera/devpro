@@ -56,9 +56,10 @@ checking the active file under the project root — the active plan, the active 
 design's applied deltas and `ROADMAP.md` — with a direct `devpro` call for any other.
 
 `devpro dashboard [<project-dir>] [--port <number>]` serves the project's development surface on
-`127.0.0.1` and prints the URL: the board of its roadmap, design and plan is the dashboard's board
-panel at `/board/`, and its traces panel at the URL's root lists the session records, each linking
-to its own page. Offer to run it as a background process, or hand the user the command line; the
+`127.0.0.1` and prints the URL: it opens on the board of its roadmap, design and plan, the
+dashboard's board panel at `/board/` (the root answers a redirect to it), and the profiler view at
+`/profiler/` lists the session records, each linking to its own page. Offer to run it as a background
+process, or hand the user the command line; the
 user chooses. It serves until the user asks for it to stop — Ctrl-C, or the board page's stop button
 — and it never finishes, so a dispatched agent hands over the command line instead of running it.""",
     ),

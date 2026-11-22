@@ -3,13 +3,17 @@
 Neither panel's rendering is this module's. The board panel is `devpro.dicing.kanban.server`'s serve
 surface — its page, files, payload, moves and served documents, answered by the `KanbanServer` built
 over the dashboard's root — and the traces panel is `devpro.profiler.pages`' index and pages, read from
-the stores as they stand. This module adds the routes that hold them apart and the one link line the
-root carries.
+the stores as they stand. This module adds the routes that hold them apart, and the chrome the
+profiler view's pages are served with: the top nav and the frame band.
 
 Endpoints:
 
-- `GET /`: the traces index (`pages.index_html`) with the board's link line before its `</html>`.
-- `GET /page/<session-id>`: that session's page, the bytes `tree --format html` produces.
+- `GET /`: a `302` to `/board/`. The board is the landing surface, and it serves from `/board/` so its
+  page's assets, its payload and its served documents stay under that path; the redirect is the one
+  answer the root owes.
+- `GET /profiler/`: the profiler view's index — `pages.index_html` — with the nav and the band.
+- `GET /page/<session-id>`: that session's page, the render's, with the nav, the band's legend and its
+  return to the list.
 - `GET /board/` and `GET /board/<file>`: the board page and its files, the file resolved beside the
   page, so the page's relative asset names reach them.
 - `GET /<path>.md`: a served document, as the board panel serves it.
@@ -28,14 +32,21 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Optional, TextIO
 from urllib.parse import unquote, urlsplit
 
-from devpro.profiler.pages import PAGE_PREFIX, index_html, page_of
+from devpro.profiler.pages import (
+    LEGEND,
+    PAGE_PREFIX,
+    index_html,
+    page_of,
+    with_frame,
+)
 from devpro.profiler.values import git_root
 
 from ..dicing.kanban.server import HOST, KanbanServer
 from ..errors import InputError
 
 BOARD_PATH = "/board/"
-BOARD_LINK = '<p><a href="/board/">Board</a> — the project\'s kanban board</p>'
+PROFILER_PATH = "/profiler/"
+RETURN_LABEL = "Return to list"
 # The one policy both panels' pages are served under, so a page cannot load from elsewhere and no
 # page frames either.
 CONTENT_SECURITY_POLICY = "default-src 'self'; frame-ancestors 'none'"
@@ -43,10 +54,30 @@ _REFUSED_HOST = '{"error": "requests must name the host the dashboard is served 
 _NO_SUCH_PAGE = "No such page"
 
 
-def with_board_link(index: str) -> str:
-    """The traces index with the board's link line immediately before the template's closing `</html>`."""
-    head, closing, tail = index.rpartition("</html>")
-    return f"{head}\n{BOARD_LINK}{closing}{tail}"
+def nav_html(active: str) -> str:
+    """The top nav, with active — `kanban` or `profiler` — the view the page shows. The view names
+    link the routes; the page itself is where each view's live controls sit (the board page's
+    connection indicator and stop button), so this nav carries no server state of its own."""
+    views = "".join(
+        f'<a class="view{" active" if view == active else ""}" href="{href}"'
+        + (' aria-current="page"' if view == active else "")
+        + f">{view}</a>"
+        for view, href in (("kanban", BOARD_PATH), ("profiler", PROFILER_PATH))
+    )
+    return f'<nav class="site-nav scanlines"><span class="brand">devpro</span><span class="views">{views}</span></nav>'
+
+
+def band_html(return_to: str | None) -> str:
+    """The profiler view's frame band: the how-to-read legend at its top, and, on a session's page,
+    the control back to the list."""
+    back = f'<a class="return" href="{return_to}">{RETURN_LABEL}</a>' if return_to else ""
+    return f'<div class="frame-band scanlines">{LEGEND}{back}</div>'
+
+
+def profiler_page(page: str, *, return_to: str | None) -> str:
+    """A page of the profiler view as the dashboard serves it: the nav, the band and the view's own
+    content, one legend on the page."""
+    return with_frame(page, nav=nav_html("profiler"), band=band_html(return_to))
 
 
 def loopback(url: str) -> bool:
@@ -103,16 +134,19 @@ class DashboardServer(ThreadingHTTPServer):
         return self.server_address[1]
 
     def traces_index(self) -> str:
-        """The index of the stores under the root, with the board's link line.
+        """The profiler view's index, as the dashboard serves it: the store rows under the nav and the
+        band, the legend once.
 
         Read per request: a session recorded a moment ago is listed by the next page loaded.
         `CLAUDE_PROJECT_DIR` is not followed — it names the outermost claude session's launch
         directory, which for a terminal-launched server is another project."""
-        return with_board_link(index_html(self.root))
+        return profiler_page(index_html(self.root), return_to=None)
 
     def page(self, session: str) -> str | None:
-        """The page at `/page/<session>`, or nothing where it names no recorded session."""
-        return page_of(PAGE_PREFIX + session, self.root)
+        """The page at `/page/<session>`, or nothing where it names no recorded session: the render's
+        page under the nav and the band, whose return control leads back to the list."""
+        page = page_of(PAGE_PREFIX + session, self.root)
+        return None if page is None else profiler_page(page, return_to=PROFILER_PATH)
 
     def start(self) -> None:
         """Begin polling the board's files. Called once the server is serving, inside the try whose
@@ -145,6 +179,8 @@ class _Handler(BaseHTTPRequestHandler):
         url = urlsplit(self.path)
         path = unquote(url.path)
         if path in ("", "/"):
+            self._redirect(BOARD_PATH)
+        elif path == PROFILER_PATH:
             self._send(HTTPStatus.OK, self.server.traces_index().encode("utf-8"), "text/html; charset=utf-8", page=True)
         elif path.startswith(BOARD_PATH):
             self._board(self.path[len(BOARD_PATH) - 1 :])
@@ -198,6 +234,17 @@ class _Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Security-Policy", CONTENT_SECURITY_POLICY)
         self.end_headers()
         self.wfile.write(body)
+
+    def _redirect(self, location: str) -> None:
+        """Answer with a redirect to location, under the policy a page is served under: it is an
+        answer a browser follows into a page, so it carries the page's headers as the pages do."""
+        self.send_response(HTTPStatus.FOUND)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Content-Security-Policy", CONTENT_SECURITY_POLICY)
+        self.end_headers()
 
 
 # The board panel's handler takes its guard and its reply from here (`KanbanServer`'s `__init__`).

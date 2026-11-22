@@ -30,10 +30,29 @@ candidate is the devpro when `"$candidate" --version` runs and exits 0 — the f
 `profiler` runs — and the terminal line is `exec "$devpro" profiler "$@"`, the subcommand parsed
 where the verb is dispatched and the launcher's own arguments passed through unchanged.
 
-**The page template.** `view.html` is the wheel's package data, `devpro/profiler/view.html`, read by
-`pages.py` through `importlib.resources` beside the module that renders it: it is a self-contained
-page that loads nothing from the network, it ships in the wheel, and it is no install resource and no
-committed hook file.
+**The page template and its presentation layer.** `view.html` is the wheel's package data,
+`devpro/profiler/view.html`, read by `pages.py` through `importlib.resources` beside the module that
+renders it: it is a self-contained page that loads nothing from the network, it ships in the wheel,
+and it is no install resource and no committed hook file. It carries no palette of its own: its
+`<style>` opens with the `CSS_SLOT` mark, which `render_html` fills with the presentation layer's
+text — the board's own stylesheet, `devpro/dicing/kanban/assets/board.css`, read the same way and
+inlined, since a page that loads nothing cannot link it. One CSS source serves both views, and
+`pages.SHARED_CSS` is that text: the board serves the file at `/board/board.css`, the render inlines
+it into the page it prints, and the dashboard inlines it into the pages it serves. The board's
+component rules may be scoped so their selectors cannot reach the profiler page's DOM; the source
+stays one file. The template's `LEGEND_SLOT` mark is where the how-to-read legend goes:
+`pages.LEGEND` holds the legend once — its prose and its symbol key — and `render_html` injects it
+into the page it renders, so the standalone page carries the legend and no second copy exists in the
+template. The legend has one home and two carriers: the standalone render's injected copy, and the
+dashboard's frame band, which reads the same constant; `pages.with_frame` is the one site holding
+both copies in hand, and it removes the render's copy from the served page, so a served page shows
+the legend once. The index's `INDEX` template carries the same `CSS_SLOT` and two marks for the
+dashboard's chrome — `NAV_MARK` and `BAND_MARK` — which `index_html` leaves unfilled and the
+dashboard fills, so the standalone index carries the layer and no nav. The chrome itself is the
+dashboard's `nav_html` and `band_html`: the brand and the two view names, and the band's legend with
+its `Return to list` control on a session's page. The board page carries the same nav grammar,
+written in its own `index.html`, with its connection indicator and stop button in its header; it
+carries no legend.
 
 **Wiring.** `harnesses/claude.py`'s `_registration_hooks` carries the profiler's six hook entries
 beside the guardrail's and the reminder's: `PostToolUse`, `PostToolUseFailure`, `PreCompact`,
@@ -50,11 +69,19 @@ capture that fails, or finds no `devpro`, exits 0 with no output.
 [<project-dir>] [--port <number>]` verb binds `127.0.0.1` on a free port — `--port` pins one, 0
 (its default) asking the system for a free one — and prints the served URL on stdout for
 cmd-clicking. The bind is the rule, not a detail: the server listens on loopback only and loads
-nothing from the network, so the records it renders never leave the machine. The URL's root is the
-traces panel, the landing page: the index of record files, every store the `.profiler-*` glob finds,
-one row per session — harness, session id, record count, first and last moments — each linking to
-`/page/<session-id>`, which renders that session's page in memory, the bytes `tree --format html`
-produces; a link line under the index opens the board panel. No file is written for the traces. A
+nothing from the network, so the records it renders never leave the machine. The board is the
+dashboard's landing surface: its URL's root answers a `302` to `/board/`, so opening it shows the
+kanban board, the project's actual current state. The profiler view is the second view, at
+`/profiler/` (trailing slash, the board panel's convention): the index of record files, every store
+the `.profiler-*` glob finds, one row per session — harness, session id, record count, first and
+last moments — each linking to `/page/<session-id>`, which renders that session's page in memory,
+the render's page carrying the same page data `tree --format html` produces. A top nav persists
+across both views — the `devpro` brand, then `kanban` and `profiler`, the active view in the motif's
+accent and the inactive one a lifted gray — and in the profiler view a frame band sits under it,
+carrying the how-to-read legend at its top and, on a session's page, `Return to list` back to
+`/profiler/`; drill-down is ordinary page navigation, and no inner frame exists. The nav and the
+band are what the dashboard serves the view's pages with, spliced by `pages.with_frame`. No file is
+written for the traces. A
 store the glob finds but cannot read appears in the index as unreadable — the server raises nothing
 for it. The page shows a session's calls: a session of nothing but tool calls renders those calls as
 its calls content, never an empty tree under a calls header. The server runs until interrupted

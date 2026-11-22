@@ -4,11 +4,12 @@
 <title>Harness trace</title>
 <!-- Written by harness-profiler (`hp tree --format html`). Self-contained: no network, works from file://. -->
 <style>
-:root { --bg:#f7f7f5; --fg:#1d2329; --muted:#66707a; --line:#dcdfe2; --panel:#fff; --track:#f1f2f0; --fresh:#8d969e;
+/*STYLE*/
+:root { --panel:#fff; --track:#f1f2f0; --fresh:#8d969e;
   --c0:#c55e5d; --c1:#2f7f86; --c2:#b07d1f; --c3:#6c58b5; --c4:#3f8a4a; --c5:#b0517f; --c6:#3d6fb3; --c7:#8a6a4f;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --sans: system-ui, -apple-system, "Segoe UI", sans-serif; }
-@media (prefers-color-scheme: dark) { :root { --bg:#14181c; --fg:#e2e6ea; --muted:#9aa4ad; --line:#2b3238; --panel:#1b2025; --track:#20262b; --fresh:#79828a;
-  --c0:#e07d7b; --c1:#4fb0b8; --c2:#d6a542; --c3:#9b89e0; --c4:#6cc07a; --c5:#dd7fae; --c6:#6f9ee0; --c7:#c29a76; color-scheme: dark; } }
+@media (prefers-color-scheme: dark) { :root { --panel:#1b2025; --track:#20262b; --fresh:#79828a;
+  --c0:#e07d7b; --c1:#4fb0b8; --c2:#d6a542; --c3:#9b89e0; --c4:#6cc07a; --c5:#dd7fae; --c6:#6f9ee0; --c7:#c29a76; } }
 body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 var(--sans); padding:24px max(16px, 3vw); }
 h1 { font-size:18px; margin:0 0 2px; } h2 { font-size:14px; margin:22px 0 8px; }
 .sub { color:var(--muted); font:12px var(--mono); margin-bottom:10px; }
@@ -37,17 +38,11 @@ svg .spawn rect { stroke:var(--panel); stroke-width:1; }
 .detail { margin:2px 0 8px; padding:8px 10px; border-left:3px solid var(--line); white-space:pre-wrap; word-break:break-word; }
 .detail b { color:var(--muted); font-weight:500; display:inline-block; min-width:64px; }
 </style></head><body>
+<!--NAV-->
+<!--BAND-->
 <h1>Session <span id="sid"></span></h1>
 <div class="sub" id="subline"></div>
-<details class="intro"><summary>How to read this</summary><p>A sequence diagram of the session. Each vertical bar is one <b>context</b>: a conversation history the model reads. A Skill or Agent call that opens a new context is a message to a new bar, and the dashed message back carries its result. A new context starts with its prompt only and gets a color of its own; one that starts with a copy of its parent's history says so and keeps the parent's color. Rows are in time order, not to scale. To save width, a column holds one context at a time: when a context ends, a later one can reuse its column, so five runs of the same skill one after another sit in one column as five bars. Such a column's header is an outline with one chip per context, in time order and in the color of its bar; a chip without a name repeats the name before it. Next to the top of a context's bar are the tokens it spent over all its model calls, each of which sends the whole history again: new input, input read from the prompt cache (far cheaper), and output. Hover for the exact numbers. Click a message to see the call's arguments and result.</p>
-<div class="symbols" style="margin-top:8px">
-  <span><svg width="34" height="12"><line x1="0" x2="26" y1="6" y2="6" stroke="var(--c0)" stroke-width="2"/><path d="M24 1 L34 6 L24 11 z" fill="var(--c0)"/></svg>call that starts a context</span>
-  <span><svg width="34" height="12"><line x1="0" x2="32" y1="6" y2="6" stroke="var(--c0)" stroke-width="2"/><path d="M24 1 L34 6 L24 11" fill="none" stroke="var(--c0)" stroke-width="2"/></svg>one that runs in the background</span>
-  <span><svg width="34" height="12"><line x1="0" x2="30" y1="6" y2="6" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/><path d="M26 1 L34 6 L26 11" fill="none" stroke="var(--muted)" stroke-width="1.5"/></svg>return with the result</span>
-  <span><svg width="14" height="14"><path d="M7 1 l6 6 l-6 6 l-6 -6 z" fill="var(--c0)"/></svg>skill loaded inline: its text joins this context; several in a row share one diamond, click it to list them</span>
-  <span><svg width="26" height="14"><rect x="1" y="1" width="24" height="12" fill="none" stroke="var(--fg)" stroke-width="1.5"/></svg>compacted: history replaced by a summary</span>
-  <span><svg width="10" height="16"><rect x="0" y="0" width="10" height="16" rx="2" fill="var(--c0)" fill-opacity=".85"/></svg>context at work</span>
-</div></details>
+<!--LEGEND-->
 
 <div class="toolbar"><label><input type="checkbox" id="all"> every tool call</label><span>Without it: skills, subagents and compactions, like <code>harness-profiler tree</code> — or every tool call when the session has none of those.</span></div>
 <div class="panel"><svg id="tl" role="img" aria-label="Sequence diagram, one lifeline per context"></svg></div>

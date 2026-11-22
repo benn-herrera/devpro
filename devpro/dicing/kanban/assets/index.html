@@ -7,12 +7,21 @@
 <link rel="stylesheet" href="board.css">
 </head>
 <body>
+<nav class="site-nav scanlines">
+  <span class="brand">devpro</span>
+  <span class="views">
+    <a class="view active" href="/board/" aria-current="page">kanban</a>
+    <a class="view" href="/profiler/">profiler</a>
+  </span>
+  <span class="nav-server">
+    <span id="connection" role="status" aria-labelledby="connection"></span>
+    <button id="stop" class="nav-stop" type="button">Stop</button>
+  </span>
+</nav>
 <header>
-  <h1 id="page-title" tabindex="-1"></h1>
+  <h1 id="page-title" class="visually-hidden" tabindex="-1"></h1>
   <span id="release"></span>
   <span id="hardening" class="tag" hidden>hardening</span>
-  <span id="connection" role="status" aria-labelledby="connection"></span>
-  <button id="stop" type="button">Stop server</button>
 </header>
 <div id="messages">
   <p id="move-message" role="status"></p>

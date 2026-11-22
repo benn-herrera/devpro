@@ -1,9 +1,11 @@
-"""The dashboard's serve surface: the traces panel at the root and `/page/<id>`, the board panel at
-`/board/` and the root paths its script calls, the served documents, and the guards both panels carry."""
+"""The dashboard's serve surface: the board-first root, the profiler view at `/profiler/` and
+`/page/<id>`, the board panel at `/board/` and the root paths its script calls, the served documents,
+and the guards both panels carry."""
 
 import io
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -14,9 +16,14 @@ from pathlib import Path
 
 import pytest
 
-from devpro.dashboard.server import BOARD_LINK, CONTENT_SECURITY_POLICY, DashboardServer, dashboard_root, loopback
+from devpro.dashboard.server import (
+    BOARD_PATH,
+    CONTENT_SECURITY_POLICY,
+    DashboardServer,
+    dashboard_root,
+    loopback,
+)
 from devpro.dicing.kanban.board import read_board
-from devpro.profiler.pages import index_html
 
 from .conftest import PLAN, TIMEOUT, Client, project, record, store
 
@@ -27,31 +34,29 @@ def _tool_call(session: str, at: str, name: str) -> dict:
     return record(at, tool="Bash", name=name, session=session)
 
 
-def test_the_root_is_the_traces_index_with_the_board_link_before_its_close(tmp_path: Path, serve) -> None:
-    """The root is `index_html`'s page byte for byte with one line added before `</html>`, and no
-    other change: an index rendered another way — a row dropped or invented, or the link spliced
-    after the document closed — is a root that is not the traces panel plus one link."""
-    root = project(tmp_path / "proj", {})
-    store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
+def test_the_root_redirects_to_the_board_the_landing_surface(tmp_path: Path, serve) -> None:
+    """The root answers `302` to `/board/`, and following it shows the board: a root that serves the
+    traces index instead inverts the decided board-first landing, and one redirecting anywhere but
+    the board leaves the project's actual state a click away from the URL the verb prints."""
+    root = project(tmp_path / "proj", {"ROADMAP.md": "## Next\n\n### Two\n\nMore.\n"})
+    client = serve(root)
 
-    status, content_type, body = serve(root).get("")
+    status, headers = client.raw("GET", "", host=f"{client.host}:{client.port}")
 
-    index = index_html(root)
-    assert (status, content_type) == (200, "text/html")
-    assert index.endswith("</html>\n")
-    assert body == (index.rpartition("</html>")[0] + "\n" + BOARD_LINK + "</html>\n").encode("utf-8")
+    assert (status, headers["Location"]) == (302, BOARD_PATH)
+    assert client.get("")[2] == (ASSETS / "index.html").read_text(encoding="utf-8").encode("utf-8")
 
 
-def test_the_traces_panel_serves_its_index_and_its_pages(tmp_path: Path, serve) -> None:
-    """Two stores' sessions: the root lists both, each once, and `/page/<id>` renders that session's
-    own records — a dashboard that answers the routes with an empty page, or another session's, has
-    kept the routes and lost the panel."""
+def test_the_profiler_view_serves_its_list_and_its_pages(tmp_path: Path, serve) -> None:
+    """Two stores' sessions: `/profiler/` lists both, each once, and `/page/<id>` renders that
+    session's own records — a view that answers its routes with an empty page, or another session's,
+    has kept the routes and lost the view."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-claude")
     store(root, "s-two", [_tool_call("s-two", "2026-01-01T00:00:05.000Z", "cat")], directory=".profiler-opencode")
     client = serve(root)
 
-    index = client.get("")[2].decode("utf-8")
+    index = client.get("profiler/")[2].decode("utf-8")
     status, content_type, page = client.get("page/s-one")
 
     assert index.count('href="/page/s-one"') == 1 and index.count('href="/page/s-two"') == 1
@@ -61,8 +66,8 @@ def test_the_traces_panel_serves_its_index_and_its_pages(tmp_path: Path, serve) 
 
 
 def test_an_unreadable_store_is_stated_in_the_index_rather_than_failing_it(tmp_path: Path, serve) -> None:
-    """A `.profiler-*` store the dashboard cannot list is named as unreadable in the root and the
-    other store's session is still listed: the index's rule reaches the dashboard's root."""
+    """A `.profiler-*` store the dashboard cannot list is named as unreadable in the profiler view's
+    list and the other store's session is still listed: the index's rule reaches the view's page."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
     locked = store(
@@ -72,7 +77,7 @@ def test_an_unreadable_store_is_stated_in_the_index_rather_than_failing_it(tmp_p
     try:
         if not _denied(locked.parent):
             pytest.skip("chmod denies this user no read")
-        status, _, body = serve(root).get("")
+        status, _, body = serve(root).get("profiler/")
     finally:
         os.chmod(locked.parent, 0o755)
 
@@ -222,7 +227,7 @@ def test_no_other_file_is_served(tmp_path: Path, serve, path: str) -> None:
         pytest.param("GET", "api/board", b"", 200, id="payload"),
         pytest.param("GET", "board/", b"", 200, id="board-page"),
         pytest.param("GET", "board/board.js", b"", 200, id="board-script"),
-        pytest.param("GET", "", b"", 200, id="root"),
+        pytest.param("GET", "", b"", 302, id="root"),
         pytest.param("POST", "api/to-design", b"[]", 400, id="move"),
         pytest.param("POST", "api/stop", b"[]", 400, id="stop"),
     ],
@@ -251,15 +256,17 @@ def test_only_a_request_naming_the_dashboards_own_host_and_port_is_answered(
 
 def test_every_page_answer_forbids_sniffing_and_restricts_its_sources(tmp_path: Path, serve) -> None:
     """Every answer a page could be loaded from — the dashboard's pages, the board panel's, the
-    served documents and a 404 — carries `nosniff`, and each page the same Content-Security-Policy;
-    the JSON payload carries `nosniff` alone. A panel that drops the board's policy, or a refusal
-    a browser renders as a page without one, loses the guard the panels carried."""
+    served documents and a 404 — carries `nosniff`, and each page answer the same
+    Content-Security-Policy; the JSON payload carries `nosniff` alone. The board-first root answers
+    `302` and carries both headers too: a browser follows it into a page. A panel that drops the
+    policy from its pages, or a redirect that lands on a page without one, loses the guard the panels
+    carried."""
     client = serve(project(tmp_path / "proj", {"ROADMAP.md": "## Next\n"}))
     host = f"{client.host}:{client.port}"
 
-    for path in ("", "board/", "board/board.js", "ROADMAP.md"):
+    for path in ("board/", "board/board.js", "profiler/", "ROADMAP.md"):
         status, headers = client.raw("GET", path, host=host)
-        assert status == 200, path
+        assert status in (200, 404), path
         assert headers["Content-Security-Policy"] == CONTENT_SECURITY_POLICY, path
         assert headers["X-Content-Type-Options"] == "nosniff", path
     for path in ("nothing.md", "nothing.js"):
@@ -267,9 +274,41 @@ def test_every_page_answer_forbids_sniffing_and_restricts_its_sources(tmp_path: 
         assert status == 404, path
         assert headers["Content-Security-Policy"] == CONTENT_SECURITY_POLICY, path
         assert headers["X-Content-Type-Options"] == "nosniff", path
+    status, headers = client.raw("GET", "", host=host)
+    assert (status, headers["Location"]) == (302, BOARD_PATH)
+    assert headers["Content-Security-Policy"] == CONTENT_SECURITY_POLICY
+    assert headers["X-Content-Type-Options"] == "nosniff"
     _, headers = client.raw("GET", "api/board", host=host)
     assert headers["X-Content-Type-Options"] == "nosniff"
     assert "Content-Security-Policy" not in headers
+
+
+def test_the_profiler_view_carries_its_nav_and_legend_once(tmp_path: Path, serve) -> None:
+    """`/profiler/` carries the frame band — the how-to-read legend present exactly once — and the
+    nav with `profiler` the active view and `kanban` linking `/board/`: a band that drops the legend
+    loses the view's how-to-read, one that shows it twice breaks one home and two carriers, and a nav
+    naming no active view leaves the reader unable to tell which view is shown."""
+    client = serve(project(tmp_path / "proj", {}))
+    index = client.get("profiler/")[2].decode("utf-8")
+
+    assert index.count("How to read this") == 1
+    assert 'class="frame-band' in index
+    assert re.search(r'<a class="view active" href="/profiler/" aria-current="page">profiler</a>', index)
+    assert re.search(r'<a class="view" href="/board/">kanban</a>', index)
+
+
+def test_a_session_page_carries_the_bands_legend_and_the_way_back(tmp_path: Path, serve) -> None:
+    """`/page/<id>` carries the band with the legend once and `Return to list` linking `/profiler/`,
+    and its body carries no second legend: drill-down with no way back strands the reader on the
+    session, and a doubled legend shows one home where the target states two carriers."""
+    root = project(tmp_path / "proj", {})
+    store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
+    page = serve(root).get("page/s-one")[2].decode("utf-8")
+
+    assert page.count("How to read this") == 1
+    assert re.search(r'<a class="return" href="/profiler/">Return to list</a>', page)
+    assert 'class="frame-band' in page
+    assert re.search(r'<a class="view active" href="/profiler/" aria-current="page">profiler</a>', page)
 
 
 def test_dashboard_root_is_the_git_root_of_the_directory_it_runs_in(tmp_path: Path, monkeypatch) -> None:
@@ -298,7 +337,8 @@ class Served:
 
 
 def _serve_the_command(cwd: Path, *arguments: str) -> Served:
-    """`python -m devpro dashboard` with arguments, in cwd: its first line, its root fetched, then stopped."""
+    """`python -m devpro dashboard` with arguments, in cwd: its first line, its root fetched without
+    following the answer, then stopped."""
     child = subprocess.Popen(
         [sys.executable, "-m", "devpro", "dashboard", "--port", "0", *arguments],
         stdin=subprocess.DEVNULL,
@@ -311,7 +351,7 @@ def _serve_the_command(cwd: Path, *arguments: str) -> Served:
     try:
         url = child.stdout.readline().strip()
         client = Client(url)
-        status = client.get("")[0]
+        status = client.raw("GET", "", host=f"{client.host}:{client.port}")[0]
         client.post("api/stop", {})
         rest, err = child.communicate(timeout=TIMEOUT)
     finally:
@@ -323,8 +363,9 @@ def _serve_the_command(cwd: Path, *arguments: str) -> Served:
 
 def test_the_command_prints_the_loopback_url_once_and_serves_the_project_it_runs_in(tmp_path: Path) -> None:
     """`devpro dashboard` in a project's subdirectory prints one `127.0.0.1` URL and nothing else, and
-    serves that project at it, ending on the board's stop: a verb that serves another root, binds
-    elsewhere, or reports on its stream after the URL, is not the loopback server the record states."""
+    serves that project at it — the root answering its redirect to the board — ending on the board's
+    stop: a verb that serves another root, binds elsewhere, or reports on its stream after the URL,
+    is not the loopback server the record states."""
     root = project(tmp_path / "proj", {"ROADMAP.md": "## Next\n\n### Two\n\nMore.\n"})
     subdirectory = root / "PROJECT_DOCS"
     subdirectory.mkdir()
@@ -332,7 +373,7 @@ def test_the_command_prints_the_loopback_url_once_and_serves_the_project_it_runs
     served = _serve_the_command(subdirectory)
 
     assert loopback(served.url)
-    assert served.status == 200
+    assert served.status == 302
     assert (served.rest, served.stderr) == ([], "")
 
 
@@ -355,7 +396,8 @@ def test_the_command_serves_the_project_it_names_from_a_directory_outside_it(tmp
     assert child.stdout is not None and child.stderr is not None
     try:
         client = Client(child.stdout.readline().strip())
-        index = client.get("")[2].decode("utf-8")
+        index = client.get("profiler/")[2].decode("utf-8")
+
         payload = json.loads(client.get("api/board")[2])
         client.post("api/stop", {})
         child.communicate(timeout=TIMEOUT)
