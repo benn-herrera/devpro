@@ -38,6 +38,20 @@ pattern the profiler and dashboard already follow. The generic verb-registry alt
 over-engineering trap the thesis's building-blocks table names; both users of this record
 rejected it independently.
 
+### The profiler pages render unstyled under the dashboard's CSP, and their chrome script never runs
+
+The dashboard answers pages with `Content-Security-Policy: default-src 'self'`, which blocks
+inline `<style>` blocks and inline scripts. The UX pass moved the profiler pages to *inlined*
+shared CSS and an inlined chrome script — so every profiler page the dashboard serves renders
+unstyled, the indicator poll never runs and the stop is dead, while the board renders styled (it
+links `board.css` externally, which `'self'` allows). Found by rendering the served bytes from
+disk: identical bytes render styled from `file://` and unstyled over HTTP. R14's serve-path
+divergence diagnosis is corrected: the bytes were always identical — the CSP was eating the style,
+invisible to fetch-level tests. The user folds the fix into the next pass (the attribution pass):
+the shared layer and `chrome.js` served as same-origin files and linked/scripted externally — the
+board's own pattern, no CSP weakening, and the recorded feed direction's "the shared layer is
+linked rather than inlined."
+
 ## Features
 
 ### Codex CLI harness support
