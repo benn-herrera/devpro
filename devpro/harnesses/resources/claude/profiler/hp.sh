@@ -5,35 +5,34 @@
 # with a `PATH` at hook-run time that no longer matters. The repository's other shell
 # scripts are bash as well (the claude harness's hook commands name their interpreter).
 # Finds the devpro command and runs its profiler verb. Hooks may run with a bare
-# PATH, so it also looks where Homebrew and `~/.local/bin` put it; HP_DEVPRO
-# overrides the search. A candidate is used only where it runs. Without a usable
-# devpro, `capture` drains stdin and exits 0 without output — a missing profiler
-# must never block a tool call — and every other subcommand reports and exits 1.
+# PATH, so the finder extends it with where Homebrew and `~/.local/bin` put devpro
+# and runs one `command -v` over the whole thing. The one devpro it resolves is
+# probed once — `--version` — and one that fails is reported and treated as absent:
+# a broken install is never silently executed. Without a devpro, `capture` drains
+# stdin and exits 0 without output — a missing profiler must never block a tool
+# call — and every other subcommand reports and exits 1.
 
-# A devpro is usable when it runs: the probe is cheap and silent. HP_BAD records
-# an HP_DEVPRO that was set but unusable, so the not-found message can name it.
+# A devpro is usable when it runs: the probe is cheap and silent.
 devpro=
-devpro_bad=false
+unusable=
 
 function usable() {
   "${1}" --version >/dev/null 2>&1
 }
 
 function find_devpro() {
-  if [[ -n "${HP_DEVPRO+set}" ]]; then
-    if usable "${HP_DEVPRO}"; then devpro=${HP_DEVPRO}; else devpro_bad=true; fi
-    return
+  devpro=$(PATH="${PATH}:/opt/homebrew/bin:/usr/local/bin:${HOME}/.local/bin" command -v devpro 2>/dev/null) || devpro=
+  if [[ -n "${devpro}" ]] && ! usable "${devpro}"; then
+    unusable="${devpro}"
+    devpro=
   fi
-  for candidate in "$(command -v devpro 2>/dev/null)" /opt/homebrew/bin/devpro /usr/local/bin/devpro "${HOME}/.local/bin/devpro"; do
-    if usable "${candidate}"; then devpro=${candidate}; return; fi
-  done
 }
 
 function report_missing() {
-  if ${devpro_bad}; then
-    echo "hp: HP_DEVPRO is set but unusable: \"${HP_DEVPRO}\" does not run." >&2
+  if [[ -n "${unusable}" ]]; then
+    echo "hp: devpro is unusable: \"${unusable}\" does not run." >&2
   else
-    echo "hp: devpro not found on PATH, in Homebrew or ~/.local/bin. Install devpro or set HP_DEVPRO." >&2
+    echo "hp: devpro not found on PATH, in Homebrew or ~/.local/bin. Install devpro." >&2
   fi
 }
 

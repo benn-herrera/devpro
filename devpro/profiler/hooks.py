@@ -48,9 +48,9 @@ RETIRED_HOOK_FILES = ("hp.py", "view.html")
 # The harness resource the launcher is the master of: the install copies it, and `init` copies it again
 # into the repository's committed hook directory.
 HARNESS_RESOURCES = Path("harnesses") / "resources" / "claude" / "profiler"
-# The candidates the launcher's finder searches after `PATH`, in its order. `HP_DEVPRO`, where set,
-# replaces the search rather than leading it; doctor lists them here so its line names what the launcher
-# would resolve.
+# The candidates the launcher's finder searches after `PATH`, in its order: the finder extends
+# `PATH` with the Homebrew and `~/.local/bin` locations and runs one `command -v` over the whole
+# thing, so doctor lists them here and its line names what the launcher would resolve.
 DEVPRO_CANDIDATES = ("/opt/homebrew/bin/devpro", "/usr/local/bin/devpro")
 
 USAGE = """Usage:
@@ -67,11 +67,11 @@ def launcher_resource() -> Path:
 
 def devpro_executable() -> str | None:
     """The devpro command the launcher's finder would resolve here, or nothing where none is usable."""
-    override = os.environ.get("HP_DEVPRO")
-    if override is not None:
-        return override if os.access(override, os.X_OK) else None
-    found = shutil.which("devpro")
-    candidates = (found, *DEVPRO_CANDIDATES, str(Path.home() / ".local" / "bin" / "devpro"))
+    candidates = (
+        shutil.which("devpro"),
+        *DEVPRO_CANDIDATES,
+        str(Path.home() / ".local" / "bin" / "devpro"),
+    )
     return next((candidate for candidate in candidates if candidate and os.access(candidate, os.X_OK)), None)
 
 

@@ -118,7 +118,7 @@ def _run(launcher: Path, *args: str, cwd: Path, stdin: str | None = None) -> sub
         capture_output=True,
         text=True,
         cwd=cwd,
-        env={**os.environ, "HP_DEVPRO": str(_devpro_shim(cwd))},
+        env={**os.environ, "PATH": f"{_devpro_shim(cwd).parent}:{os.environ['PATH']}"},
         check=False,
     )
 
@@ -143,7 +143,7 @@ def _serve(launcher: Path, *, cwd: Path, env: dict[str, str] | None = None) -> I
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=cwd,
-        env={**os.environ, "HP_DEVPRO": str(_devpro_shim(cwd)), **(env or {})},
+        env={**os.environ, "PATH": f"{_devpro_shim(cwd).parent}:{os.environ['PATH']}", **(env or {})},
     )
     assert process.stdout is not None and process.stderr is not None
     urls: list[str] = []
@@ -233,22 +233,28 @@ def test_the_installed_profiler_is_the_sources_bytes(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("command", ["capture", "tree"])
-def test_a_launcher_finding_no_devpro_captures_silently_and_reports_otherwise(tmp_path: Path, command: str) -> None:
-    """With no devpro the finder can resolve, `capture` drains stdin and exits 0 writing nothing, and every
-    other subcommand reports on stderr and exits 1: a capture that reports or exits nonzero blocks the
-    tool call that fired it, under the harness hook error policy, and a tree that says nothing leaves the
-    operator no line naming the one dependency to install."""
+def test_a_launcher_finding_an_unusable_devpro_captures_silently_and_reports_otherwise(tmp_path: Path, command: str) -> None:
+    """With a `devpro` first on the finder's path that does not run, `capture` drains stdin and exits 0
+    writing nothing, and every other subcommand names the unusable command on stderr and exits 1: a
+    capture that reports or exits nonzero blocks the tool call that fired it, under the harness hook
+    error policy, and a tree that says nothing leaves the operator no line naming the one dependency
+    to fix."""
     launcher = _launcher(tmp_path / "harness")
     payload = json.dumps({"hook_event_name": "PostToolUse", "session_id": "s-none", "tool_name": "Bash"})
     project = tmp_path / "project"
     project.mkdir()
+    broken = tmp_path / "broken"
+    broken.mkdir()
+    script = broken / "devpro"
+    script.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+    script.chmod(0o755)
     done = subprocess.run(
         ["sh", str(launcher), command],
         input=payload,
         capture_output=True,
         text=True,
         cwd=project,
-        env={**os.environ, "HP_DEVPRO": str(tmp_path / "absent")},
+        env={**os.environ, "PATH": f"{broken}:{os.environ['PATH']}"},
         check=False,
     )
 
@@ -257,7 +263,7 @@ def test_a_launcher_finding_no_devpro_captures_silently_and_reports_otherwise(tm
     else:
         assert done.returncode == 1
         assert done.stdout == ""
-        assert "HP_DEVPRO" in done.stderr
+        assert str(script) in done.stderr
     assert not (project / ".devpro-temp").exists()
 
 
