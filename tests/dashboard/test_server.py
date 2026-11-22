@@ -501,12 +501,13 @@ def _band(page: str) -> str:
 
 
 def test_a_session_page_is_served_without_reading_the_stores_a_second_time(tmp_path: Path, serve, monkeypatch) -> None:
-    """One `/page/<id>` request walks the stores once and groups the sessions once for the band: the
-    read is the page's own, and the grouping is the dispatcher lookup, whose session the render cannot
-    name — the page holds its own records alone. What this pins is that the index's grouping over
-    every session is not built again and no second read joins the lookup: a second full grouping
-    parses and masks every trace the project holds for one name, and a page that pays for the view's
-    whole history per render has lost the cost the first read already paid."""
+    """One `/page/<id>` request walks the stores twice and groups the sessions one of those times for
+    the band: the page's read is its own, and the lookup's is beside it — the session that dispatched
+    this one is not among the records the render holds, so a page naming its dispatcher reads the
+    stores again, once. What this pins is that the index's grouping over every session is not built
+    again: a second full grouping parses and masks every trace the project holds for one name, and a
+    page that pays for the view's whole history per render has lost the cost the first read already
+    paid."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
     store(
@@ -532,10 +533,11 @@ def test_a_session_page_is_served_without_reading_the_stores_a_second_time(tmp_p
         return real_grouping(sessions)
 
     monkeypatch.setattr("devpro.profiler.pages.read_sessions", counted_read)
+    monkeypatch.setattr("devpro.dashboard.server.read_sessions", counted_read)
     monkeypatch.setattr("devpro.dashboard.server.dispatches", counted_grouping)
     page = served.get("page/s-one")[2].decode("utf-8")
 
-    assert reads == [str(root)]
+    assert reads == [str(root), str(root)]
     assert groupings == [1]
     assert re.search(r'<strong>Dispatched by</strong> <a href="/page/s-parent">s-parent</a> — devpro-coder', page)
 
