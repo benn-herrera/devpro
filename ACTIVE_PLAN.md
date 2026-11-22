@@ -331,3 +331,12 @@ names is the mutation that fails it).
 - **B11 (G2)** — the sentence lands in
   `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/harness-resources-are-copied-verbatim.md`:
   the `.ts` harness resources are held only by their tests — no type check or lint covers them.
+- **B12 (new — the user's finding during the hotfix, `c11c4d9`)** — `chrome.js` is renamed
+  `deco.js`: a name a reader meets in a failure path cannot tell apart from a platform-specific
+  resource loaded erroneously, and the confusion is a diagnosability defect — today it cost real
+  diagnostic time, and the name manufactures a question no other site answers. Sites the rename
+  touches, each verified in the change: the file and the `CHROME_SCRIPT` constant and
+  `/profiler/chrome.js` route in `server.py`, the board page's script reference, the byte pins
+  and the new one-scope compile pin, the ARCHITECTURE leaf's statement of the script, and the
+  plan's own prose. The prose term "the nav's chrome" stays where it stands: the record is the
+  name's retirement, not the concept's.
