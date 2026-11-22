@@ -540,6 +540,28 @@ def test_a_session_page_is_served_without_reading_the_stores_a_second_time(tmp_p
     assert re.search(r'<strong>Dispatched by</strong> <a href="/page/s-parent">s-parent</a> — devpro-coder', page)
 
 
+def test_the_static_index_answers_without_reading_the_stores(tmp_path: Path, serve, monkeypatch) -> None:
+    """One `/profiler/` request reads no store: the index is static — its rows are the feed's, drawn
+    client-side — and every fill it carries reads a module constant, so it has no use for a session.
+    A read left in a fill's neighbour walks every store the project holds for a result nothing draws,
+    per page load, and that the cost lands on the index rather than the feed is the defect."""
+    root = project(tmp_path / "proj", {})
+    store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
+    served = serve(root)
+    real_read = read_sessions
+    reads: list[str] = []
+
+    def counted_read(directory: object) -> tuple[list[dict], list[str]]:
+        reads.append(str(directory))
+        return real_read(directory)
+
+    monkeypatch.setattr("devpro.profiler.pages.read_sessions", counted_read)
+    monkeypatch.setattr("devpro.dashboard.server.read_sessions", counted_read)
+    served.get("profiler/")
+
+    assert reads == []
+
+
 def test_a_session_page_carries_the_bands_legend_and_the_way_back(tmp_path: Path, serve) -> None:
     """`/page/<id>` carries the band with the legend once and `Return to list` linking `/profiler/`,
     and its body carries no second legend: drill-down with no way back strands the reader on the

@@ -825,18 +825,16 @@ def _feed_entry(session: dict, dispatcher: tuple[str, str] | None) -> dict:
     return entry
 
 
-def index_html(directory: Path | str) -> str:
+def index_html() -> str:
     """The index of record files, static: its page file carries no row, and its script renders them
     from the feed `/api/traces` answers (`traces_feed`) — the board's pattern, the payload consumed
-    client-side. The directory is read for the legend's band and nothing else; the rows' order and
-    their dispatcher grouping are the feed's.
+    client-side. The rows' order and their dispatcher grouping are the feed's.
 
     The index carries the presentation layer and names no view of its own: opened on its own it
     stands beside no board, so the deco — the nav, the frame band and the decoration's script — is
     the template's own text, the band's legend filled here from its one home (the index carrying no
     dispatcher and no way back), and the layer's carriage left at its mark — filled by the serve path
     with its link (`served_page`), its one consumer, since no file flow writes the index."""
-    read_sessions(directory)
     return strict_fill(
         INDEX,
         {

@@ -1174,7 +1174,7 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     # (a) `index_html`: an `INDEX` whose `$class_claude` slot the text no longer names, still told to fill it.
     monkeypatch.setattr("devpro.profiler.pages.INDEX", INDEX.replace("$class_claude", ""))
     with pytest.raises(KeyError):
-        index_html(tmp_path)
+        index_html()
     # (a) the fill itself: `view.html` with a mark removed, still told to fill it.
     from devpro.profiler.pages import strict_fill
 
