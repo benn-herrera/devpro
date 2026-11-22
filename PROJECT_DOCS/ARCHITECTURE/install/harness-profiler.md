@@ -8,8 +8,8 @@ and carries no version stamp on it.
 
 **The code is devpro's.** The port is a devpro package, `devpro/profiler/`, standard library only,
 no dependency: `values.py` the schema, limits, masks and store facts every other module reads,
-`capture.py` the hook payload's parsing, masking and record serialization, `pages.py` the tree, page
-and HTTP render, `hooks.py` the committed hook's wiring — `init` and `doctor` — and `cli.py` the
+`capture.py` the hook payload's parsing, masking and record serialization, `pages.py` the tree and
+page render, `hooks.py` the committed hook's wiring — `init` and `doctor` — and `cli.py` the
 `profiler` verb's dispatch. The verb is dispatched lazily: registering it imports none of these
 modules, and `cli.py` imports the one whose subcommand runs. Its subcommands are `capture`, `tree`,
 `init` and `doctor`, which read exactly as they did inside `hp.py`; the records are served by the
@@ -47,18 +47,29 @@ subcommand renders — the project's scratch directory, which the project's own 
 capture that fails, or finds no `devpro`, exits 0 with no output.
 
 **Serving.** The dashboard renders in memory behind a local HTTP server: the `devpro dashboard
-[<project-dir>] [--port <number>]` verb binds `127.0.0.1` on a free port — `--port` pins one — and
-prints the served URL on stdout for cmd-clicking. The bind is the rule, not a detail: the server
-listens on loopback only and loads
-nothing from the network, so the records it renders never leave the machine. Its traces panel is the
-index of record files: every store the `.profiler-*` glob finds,
+[<project-dir>] [--port <number>]` verb binds `127.0.0.1` on a free port — `--port` pins one, 0
+(its default) asking the system for a free one — and prints the served URL on stdout for
+cmd-clicking. The bind is the rule, not a detail: the server listens on loopback only and loads
+nothing from the network, so the records it renders never leave the machine. The URL's root is the
+traces panel, the landing page: the index of record files, every store the `.profiler-*` glob finds,
 one row per session — harness, session id, record count, first and last moments — each linking to
 `/page/<session-id>`, which renders that session's page in memory, the bytes `tree --format html`
-produces. No file is written. A store the glob finds but cannot read appears in the index as
-unreadable — the server raises nothing for it. The page shows a session's calls: a session of
-nothing but tool calls renders those calls as its calls content, never an empty tree under a calls
-header. The server runs until interrupted. The dashboard's board panel is the profiler's sibling
-panel, serving the project's kanban board (SPEC.md, Dicing and Checks, Kanban).
+produces; a link line under the index opens the board panel. No file is written for the traces. A
+store the glob finds but cannot read appears in the index as unreadable — the server raises nothing
+for it. The page shows a session's calls: a session of nothing but tool calls renders those calls as
+its calls content, never an empty tree under a calls header. The server runs until interrupted
+(Ctrl-C) or stopped from the page; either exits 0. The dashboard's board panel is the profiler's
+sibling panel, `devpro.dicing.kanban.server`'s `KanbanServer` over the dashboard's root. The seam is
+`panel_handler`: the dashboard reads the request, hands it to a handler over the panel's routes, and
+answers it on its own connection, so the guard, the reply write and the Content-Security-Policy the
+page is served under are the dashboard's one of each and travel with the panel's answers. The panel
+serves the project's kanban board at `/board/` and, at the board's own root paths, its payload, its
+moves and its stop (SPEC.md, Dicing and Checks, Kanban): its two moves write the project's
+`ROADMAP.md` and the active design, and its stop button ends the server as an interrupt does. Its
+payload carries `devpro_version`, the version the board's connection indicator names, beside its
+`version`, `board`, `plan_columns` and `project` keys. A board file that cannot be read, and a port
+that cannot be bound, refuse the verb before it prints the URL: exit 2, and `error: ` before the
+message on stderr.
 
 **The skill.** `show-profile` ships as a rendered skill definition under `devpro/definitions/`, so it
 carries the generated banner and the harness's namespace (`devpro:show-profile` under claude) and
@@ -122,8 +133,9 @@ account: the capture runs in the host's process, and the hooks report no branch,
 selects no opencode session.
 
 **The stores and their rename.** Each harness's capture owns one store under the project's
-`.devpro-temp/`: claude's `.profiler-claude/`, opencode's `.profiler-opencode/`, and the `tree`
-and page reads walk every `.profiler-*` directory there — a dot name, so the stores group
+`.devpro-temp/`: claude's `.profiler-claude/`, opencode's `.profiler-opencode/`, and both readers —
+`tree`'s render, and the dashboard's traces panel, whose index and session pages read the stores per
+request — walk every `.profiler-*` directory there — a dot name, so the stores group
 and sort at the top of the scratch tree. The naming before the rename was `<store>-profiler`, and
 both `devpro install` and `devpro profiler init claude` migrate the two stores it named:
 `.devpro-temp/claude-profiler/` is renamed to `.profiler-claude` and

@@ -46,8 +46,9 @@ section ([live following](#live-following)).
 |---|---|---|---|
 | more than one argument, or an unknown option | stderr | the usage error | 2 |
 | `<project-dir>` is not a directory | stderr | the usage error `no such directory: <project-dir>` | 2 |
-| a document the board reads cannot be read as a file, at start | stderr | `cannot read: <file>`, before any URL is printed | 2 |
-| the port cannot be bound | stderr | `cannot listen: <reason>`, before any URL is printed | 2 |
+| a document the board reads cannot be read as a file, at start | stderr | `error: cannot read: <file>`, before any URL is printed | 2 |
+| a port outside 0 to 65535 | stderr | the usage error `NUMBER is not a port: 0 to 65535` | 2 |
+| the port cannot be bound | stderr | `error: cannot listen: <reason>`, before any URL is printed | 2 |
 
 ### The project's files
 
@@ -153,7 +154,10 @@ as the server serves it (**Start**, above).
 **Title and header.** The page is titled `<project> kanban`, `<project>` being the name of the
 project root's directory, in the browser's title and in the header. The header also shows the
 active plan's release (the version of its release line, displayed as written and never
-interpreted), and "hardening" where the plan's level-1 heading opens `Release hardening`.
+interpreted), and "hardening" where the plan's level-1 heading opens `Release hardening`. The page's
+own header text is the dynamic value alone: its title carries the bare word `kanban` before the
+page's script runs, and the script sets both the browser's title and the header to the title above
+when it draws the board.
 
 ### Moves between Roadmap and Design
 

@@ -4,6 +4,7 @@
 import io
 import json
 import os
+import socket
 import subprocess
 import sys
 import threading
@@ -83,6 +84,15 @@ def test_an_unreadable_store_is_stated_in_the_index_rather_than_failing_it(tmp_p
 def _denied(path: Path) -> bool:
     try:
         os.listdir(path)
+    except PermissionError:
+        return True
+    return False
+
+
+def _unreadable(path: Path) -> bool:
+    """Whether path, its permissions just removed, now refuses this user a read."""
+    try:
+        path.read_text(encoding="utf-8")
     except PermissionError:
         return True
     return False
@@ -372,7 +382,8 @@ def test_an_option_the_verb_cannot_take_is_refused_as_the_other_verbs_refuse_one
 ) -> None:
     """A port outside 0-65535, one that is not a number, and an unknown option are refused by the
     parser with exit status 2 and nothing on stdout, binding no port: the dashboard's command line
-    is read as the other verbs' are, before anything serves."""
+    is read as the other verbs' are, before anything serves. A port outside the range is refused by
+    naming the range, not by the parser's `choices` message, which would list all 65,536 values."""
     done = subprocess.run(
         [sys.executable, "-m", "devpro", "dashboard", *arguments],
         capture_output=True,
@@ -383,3 +394,77 @@ def test_an_option_the_verb_cannot_take_is_refused_as_the_other_verbs_refuse_one
 
     assert (done.returncode, done.stdout) == (2, "")
     assert "error:" in done.stderr
+    assert len(done.stderr) < 500
+
+
+@pytest.mark.parametrize(
+    "arguments, message",
+    [
+        pytest.param(
+            ["/nonexistent-dir-xyz", "--port", "0"], "no such directory: /nonexistent-dir-xyz", id="not-a-directory"
+        ),
+        pytest.param(["a-file.txt", "--port", "0"], "no such directory: a-file.txt", id="a-file-not-a-directory"),
+    ],
+)
+def test_a_project_directory_that_is_not_a_directory_is_refused(
+    tmp_path: Path, arguments: list[str], message: str
+) -> None:
+    """A named `<project-dir>` that is not a directory, an existing file among them, is refused as the
+    usage error the board verb gave, exit status 2 and nothing on stdout: a dashboard that walks up
+    from a name that is no directory serves whatever project the directory sits in instead, so a
+    mistyped project directory does not serve the wrong one's files."""
+    (tmp_path / "a-file.txt").write_text("x\n", encoding="utf-8")
+    done = subprocess.run(
+        [sys.executable, "-m", "devpro", "dashboard", *arguments],
+        capture_output=True,
+        text=True,
+        stdin=subprocess.DEVNULL,
+        cwd=tmp_path,
+    )
+
+    assert (done.returncode, done.stdout) == (2, "")
+    assert message in done.stderr
+
+
+def test_a_port_already_bound_is_refused_before_the_url(tmp_path: Path) -> None:
+    """A port another process holds refuses the verb as `error: cannot listen: <reason>` with exit
+    status 2 and nothing on stdout: the dashboard's construction is traced back to the user, so a
+    second dashboard on a taken `--port` says so instead of raising out of the command."""
+    root = project(tmp_path / "proj", {"ROADMAP.md": "## Next\n"})
+    with socket.socket() as taken:
+        taken.bind(("127.0.0.1", 0))
+        taken.listen()
+        done = subprocess.run(
+            [sys.executable, "-m", "devpro", "dashboard", str(root), "--port", str(taken.getsockname()[1])],
+            capture_output=True,
+            text=True,
+            stdin=subprocess.DEVNULL,
+            cwd=tmp_path,
+        )
+
+    assert (done.returncode, done.stdout) == (2, "")
+    assert done.stderr.startswith("error: cannot listen: ")
+
+
+def test_a_board_file_that_cannot_be_read_is_refused_before_the_url(tmp_path: Path) -> None:
+    """A file the board reads that cannot be read refuses the verb as `error: cannot read: <file>`
+    with exit status 2 and nothing on stdout, and binds no port: the board is read on construction,
+    so the refusal lands before the URL and before any request is answered."""
+    root = project(tmp_path / "proj", {"ROADMAP.md": "## Next\n\n### Two\n\nMore.\n"})
+    roadmap = root / "ROADMAP.md"
+    roadmap.chmod(0)
+    try:
+        if not _unreadable(roadmap):
+            pytest.skip("chmod denies this user no read")
+        done = subprocess.run(
+            [sys.executable, "-m", "devpro", "dashboard", str(root), "--port", "0"],
+            capture_output=True,
+            text=True,
+            stdin=subprocess.DEVNULL,
+            cwd=tmp_path,
+        )
+    finally:
+        roadmap.chmod(0o644)
+
+    assert (done.returncode, done.stdout) == (2, "")
+    assert done.stderr == f"error: cannot read: {roadmap}\n"

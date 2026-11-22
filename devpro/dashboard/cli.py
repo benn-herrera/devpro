@@ -8,7 +8,25 @@ verb dispatches to is imported by it; `run` asks its server's module for `serve`
 from __future__ import annotations
 
 import argparse
+import os
 import sys
+
+PORT_RANGE = range(0, 65536)
+
+
+def port(text: str) -> int:
+    """The port text names, 0 to 65535, refusing any other as the usage error a bad value is."""
+    number = int(text)
+    if number not in PORT_RANGE:
+        raise argparse.ArgumentTypeError(f"{text} is not a port: 0 to 65535")
+    return number
+
+
+def project_dir(text: str) -> str:
+    """The directory text names, refused as the usage error the board verb gave where it is not one."""
+    if not os.path.isdir(text):
+        raise argparse.ArgumentTypeError(f"no such directory: {text}")
+    return text
 
 
 def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
@@ -22,13 +40,13 @@ def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]")
     dashboard.add_argument(
         "project_dir",
         nargs="?",
+        type=project_dir,
         metavar="project-dir",
         help="a directory inside the project to serve; default the project the current directory is in",
     )
     dashboard.add_argument(
         "--port",
-        type=int,
-        choices=range(0, 65536),
+        type=port,
         default=0,
         metavar="NUMBER",
         help="the port to bind on 127.0.0.1, 0 to 65535; default %(default)s, a free port the system chooses",

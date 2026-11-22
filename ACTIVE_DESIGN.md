@@ -54,8 +54,10 @@ both print the same `--help`, and the same arguments install the same product, b
 The install verbs — `render`, `install`, `install-agents-file`, `render-agents-file` and the
 hidden `harness` — exit 0 on success and 2 on a refusal or an operating-system failure, printing
 `error: <message>` on
-stderr; the dicing, check and board verbs of Dicing and Checks exit 0, 1 and 2 as that section
-states. Every command that
+stderr; the dicing and check verbs of Dicing and Checks exit 0, 1 and 2 as that section
+states; the `dashboard` verb exits 0 whenever it ends a server that was serving — an interrupt and
+the page's stop alike — and 2 on a refusal before it serves, printing `error: <message>` on stderr
+as the install verbs do. Every command that
 takes components takes them as `--components=CSV`, with the default
 Deployed Surfaces, Plugins states.
 ```
@@ -67,7 +69,9 @@ The install verbs — `render`, `install`, `install-agents-file`, `render-agents
 hidden `harness` — exit 0 on success and 2 on a refusal or an operating-system failure, printing
 `error: <message>` on
 stderr; the dicing and check verbs of Dicing and Checks exit 0, 1 and 2 as that section
-states. Every command that
+states; the `dashboard` verb exits 0 whenever it ends a server that was serving — an interrupt and
+the page's stop alike — and 2 on a refusal before it serves, printing `error: <message>` on stderr
+as the install verbs do. Every command that
 takes components takes them as `--components=CSV`, with the default
 Deployed Surfaces, Plugins states.
 ```
@@ -78,12 +82,16 @@ addition and the board verb's retirement — and stay pending until that package
 **As it stands:**
 ```
 stderr; the dicing and check verbs of Dicing and Checks exit 0, 1 and 2 as that section
-states. Every command that
+states; the `dashboard` verb exits 0 whenever it ends a server that was serving — an interrupt and
+the page's stop alike — and 2 on a refusal before it serves, printing `error: <message>` on stderr
+as the install verbs do. Every command that
 ```
 **Becomes:**
 ```
 stderr; the dicing and check verbs of Dicing and Checks exit 0, 1 and 2 as that section
-states. Every command that
+states; the `dashboard` verb exits 0 whenever it ends a server that was serving — an interrupt and
+the page's stop alike — and 2 on a refusal before it serves, printing `error: <message>` on stderr
+as the install verbs do. Every command that
 ```
 
 **As it stands:**
@@ -1006,18 +1014,14 @@ retirement — and stays pending until that package lands it.*)
 **As it stands:**
 ```
 `check-design --deltas-applied`; this repository runs it as
-`just dev-check-design-deltas-applied`, over the absorbed verb. The `docdicer-repo` and `dev-dd`
-recipes, and `docdicer-repo.sh` with its test, retired with the hosted clone; the `dev-kanban`
-recipe retires with the board verb it ran — `dev-dashboard` runs the dashboard verb, the board its
-panel; the dev-check recipes run the absorbed verbs.
+`just dev-check-design-deltas-applied`, over the absorbed verb. `dev-dashboard` runs the dashboard
+verb, the board its board panel. The dev-check recipes run the absorbed verbs.
 ```
 **Becomes:**
 ```
 `check-design --deltas-applied`; this repository runs it as
-`just dev-check-design-deltas-applied`, over the absorbed verb. The `docdicer-repo` and `dev-dd`
-recipes, and `docdicer-repo.sh` with its test, retired with the hosted clone; the `dev-kanban`
-recipe retires with the board verb it ran — `dev-dashboard` runs the dashboard verb, the board its
-panel; the dev-check recipes run the absorbed verbs.
+`just dev-check-design-deltas-applied`, over the absorbed verb. `dev-dashboard` runs the dashboard
+verb, the board its board panel. The dev-check recipes run the absorbed verbs.
 ```
 
 ### [Plugins](PROJECT_DOCS/ARCHITECTURE/install/plugins.md) — two shipped rows with snippets, the retired line's cleanup
@@ -1443,13 +1447,13 @@ capture that fails, or finds no `devpro`, exits 0 with no output.
 
 **As it stands:**
 ```
-nothing from the network, so the records it renders never leave the machine. Its traces panel is the
-index of record files: every store the `.profiler-*` glob finds,
+nothing from the network, so the records it renders never leave the machine. The URL's root is the
+traces panel, the landing page: the index of record files, every store the `.profiler-*` glob finds,
 ```
 **Becomes:**
 ```
-nothing from the network, so the records it renders never leave the machine. Its traces panel is the
-index of record files: every store the `.profiler-*` glob finds,
+nothing from the network, so the records it renders never leave the machine. The URL's root is the
+traces panel, the landing page: the index of record files, every store the `.profiler-*` glob finds,
 ```
 
 **As it stands:**

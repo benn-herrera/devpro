@@ -1572,19 +1572,21 @@ def test_importing_the_entry_point_imports_no_verb_module() -> None:
     implementation — all nine, the kanban server among them — so this same parser build showed
     `devpro.install` and the dicing verbs' modules in `sys.modules`. The dicing registration chain is the
     pair of the package and its verb surface; no other `devpro.dicing` module is imported by it, the
-    board's server among them: the dashboard's verb registers without it."""
+    board's server among them. The dashboard's own pair is the same: its registration chain loads the
+    package, its verb surface and the cli's own imports, and the server it serves from is imported where
+    the verb dispatches."""
     probe = (
         "import sys\n"
         "import devpro.cli\n"
         "devpro.cli.build_parser()\n"
         "banned = ('devpro.install', 'devpro.render', 'devpro.agents_file')\n"
         "present = [name for name in banned if name in sys.modules]\n"
-        "dicing = {\n"
-        "    name\n"
-        "    for name in sys.modules\n"
-        "    if name == 'devpro.dicing' or name.startswith('devpro.dicing.')\n"
-        "}\n"
-        "present += sorted(dicing - {'devpro.dicing', 'devpro.dicing.cli'})\n"
+        "for package, surface in (('devpro.dicing', 'devpro.dicing.cli'),\n"
+        "                         ('devpro.dashboard', 'devpro.dashboard.cli')):\n"
+        "    loaded = {\n"
+        "        name for name in sys.modules if name == package or name.startswith(package + '.')\n"
+        "    }\n"
+        "    present += sorted(loaded - {package, surface})\n"
         "assert not present, present\n"
     )
     env = {**os.environ, "PYTHONPATH": str(_PACKAGE.parent)}

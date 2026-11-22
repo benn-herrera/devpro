@@ -702,7 +702,6 @@ def index_html(directory: Path | str) -> str:
 
 
 PAGE_PREFIX = "/page/"
-LOOPBACK = "127.0.0.1"
 # The index's two slots, named by `index_html`. Substitution is one pass, so text spliced into one
 # slot is never read as another slot's.
 INDEX = """<!doctype html>

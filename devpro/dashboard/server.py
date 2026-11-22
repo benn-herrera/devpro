@@ -31,7 +31,8 @@ from urllib.parse import unquote, urlsplit
 from devpro.profiler.pages import PAGE_PREFIX, index_html, page_of
 from devpro.profiler.values import git_root
 
-from ..dicing.kanban.server import HOST, CannotListen, KanbanServer
+from ..dicing.kanban.server import HOST, KanbanServer
+from ..errors import InputError
 
 BOARD_PATH = "/board/"
 BOARD_LINK = '<p><a href="/board/">Board</a> — the project\'s kanban board</p>'
@@ -68,21 +69,30 @@ class DashboardServer(ThreadingHTTPServer):
     `root` is explicit: the project whose `.profiler-*` stores and git root the traces panel reads,
     and whose files the board panel reads. The command takes it from the directory it names, or
     where it names none, from the directory it runs in; a test names it. The board panel is a
-    `KanbanServer` over the same root, which reads the board on construction and raises OSError where a
-    file it reads cannot be read; the port refuses with CannotListen. `start` begins the board's
-    polling of its files, until server_close ends it and closes the socket."""
+    `KanbanServer` over the same root, which reads the board on construction, so a board file that
+    cannot be read refuses the server as InputError naming the file — `error: cannot read: <file>`.
+    `start` begins the board's polling of its files, until server_close ends it and closes the
+    socket."""
 
     daemon_threads = True
 
     def __init__(self, root: str, *, stderr: TextIO, port: int = 0) -> None:
         self.root = root
         self._closed = threading.Event()
-        self._board_closed = threading.Event()
         try:
             super().__init__((HOST, port), _Handler)
         except OSError as e:
-            raise CannotListen(e.strerror or str(e)) from e
-        self.board = KanbanServer(root, stderr=stderr, after=self)
+            raise InputError(f"cannot listen: {e.strerror or e}") from e
+        try:
+            self.board = KanbanServer(root, stderr=stderr, after=self)
+        except OSError as e:
+            self.server_close()
+            raise InputError(f"cannot read: {e.filename if e.filename is not None else root}") from e
+
+    # The one guard and the one reply write each answer a request gets, the board panel's answers
+    # included: its `_Handler` takes both from here, once this module is loaded (`KanbanServer`'s
+    # `__init__`).
+    handler = None
 
     @property
     def url(self) -> str:
@@ -109,14 +119,6 @@ class DashboardServer(ThreadingHTTPServer):
         finally closes it, so a construction that fails half-way owns no running thread."""
         self.board.start()
 
-    def stop(self) -> None:
-        """Stop serving, as the board panel's `POST /api/stop` does: asked from the request's own
-        thread, which `shutdown` cannot serve, so the stop waits for that answer first. The panel ends
-        its polling once, here; the close that follows does not end it again."""
-        self.board.server_close()
-        self._board_closed.set()
-        threading.Thread(target=super().shutdown, daemon=True).start()
-
     def handle_error(self, request: Any, client_address: Any) -> None:
         self.board.handle_error(request, client_address)
 
@@ -126,8 +128,7 @@ class DashboardServer(ThreadingHTTPServer):
         if self._closed.is_set():
             return
         self._closed.set()
-        if hasattr(self, "board") and not self._board_closed.is_set():
-            self._board_closed.set()
+        if hasattr(self, "board"):
             self.board.server_close()
         super().server_close()
 
@@ -178,15 +179,16 @@ class _Handler(BaseHTTPRequestHandler):
         (handler.do_POST if method == "POST" else handler.do_GET)()
 
     def _local_host(self) -> bool:
-        """Refuse a request naming another host, as the board panel refuses one (DNS rebinding)."""
-        port = self.server.port
+        """Refuse a request naming a host or port other than the dashboard's own (DNS rebinding)."""
+        port = getattr(self.server, "dashboard", self.server).port
         if self.headers.get("Host") in (f"{HOST}:{port}", f"localhost:{port}"):
             return True
         self._send(HTTPStatus.FORBIDDEN, _REFUSED_HOST.encode("ascii"), "application/json")
         return False
 
     def _send(self, status: int, body: bytes, content_type: str, *, page: bool = False) -> None:
-        """Send one response; page marks an answer to a request for a page of the dashboard's own."""
+        """Send one response; page marks an answer a browser could load as a page, the dashboard's
+        own and the board panel's, which carry the policy, framed or loaded from elsewhere."""
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
@@ -198,9 +200,14 @@ class _Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
+# The board panel's handler takes its guard and its reply from here (`KanbanServer`'s `__init__`).
+DashboardServer.handler = _Handler
+
+
 def serve(directory: Optional[str], port: int) -> None:
     """Serve the dashboard of the project directory is in, or with None the project the current
-    directory is in, until interrupted or stopped, the URL printed once on stdout."""
+    directory is in, until interrupted or stopped, the URL printed once on stdout. A port that
+    cannot be bound and a board file that cannot be read refuse as InputError, before the URL."""
     server = DashboardServer(dashboard_root(directory), stderr=sys.stderr, port=port)
     try:
         print(server.url, flush=True)

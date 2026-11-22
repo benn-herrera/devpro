@@ -11,7 +11,9 @@ The install verbs — `render`, `install`, `install-agents-file`, `render-agents
 hidden `harness` — exit 0 on success and 2 on a refusal or an operating-system failure, printing
 `error: <message>` on
 stderr; the dicing and check verbs of Dicing and Checks exit 0, 1 and 2 as that section
-states. Every command that
+states; the `dashboard` verb exits 0 whenever it ends a server that was serving — an interrupt and
+the page's stop alike — and 2 on a refusal before it serves, printing `error: <message>` on stderr
+as the install verbs do. Every command that
 takes components takes them as `--components=CSV`, with the default
 Deployed Surfaces, Plugins states.
 

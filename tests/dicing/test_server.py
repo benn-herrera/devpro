@@ -5,6 +5,12 @@ The panel is `KanbanServer` over a `DashboardServer`, served at `/board/` and th
 page calls; the tests drive the dashboard, since that is the one server the project serves. The
 tests the two panels share — the board's payload over the same file, a card's move there and back —
 are the dashboard suite's (`tests/dashboard/test_server.py`), and are not repeated here.
+
+`_serve_the_command` here and the one in the dashboard suite both start `python -m devpro
+dashboard`, and neither is the other's copy: this one ends the child by the interrupt and the stop
+button, the panel's two ways to stop, so it reads the exit status and both streams; the dashboard's
+brings its own arguments and working directory and reads the root a browser lands on, so it stops
+the server through its API and returns what it served.
 """
 
 import errno
@@ -253,7 +259,6 @@ def test_a_change_to_a_watched_file_is_followed(tmp_path, serve, change):
 
     change(Path(root))
     after = client.board(since=before["version"])
-    print("\nDEBUG", client.url, after["version"], before["version"])
 
     assert after["version"] != before["version"]
     assert after["board"] == _json_round_trip(asdict(read_board(root)))

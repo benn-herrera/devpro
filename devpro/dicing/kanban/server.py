@@ -7,7 +7,9 @@ Endpoints, each answering JSON but the page's files and the served documents:
 - `GET /` and `GET /<file>`: the page's files, from the package's `assets/` directory.
 - `GET /<path>.md`: a file `board.served_files` names — its docstring gives the set — as
   `text/markdown`, read-only; any other path is 404.
-- `GET /api/board?since=<version>`: the board payload; where `since` is the version the server
+- `GET /api/board?since=<version>`: the board payload — `version`, the board as `board`'s model reads
+  it, the `plan_columns` its page draws, the `project`'s name, and `devpro_version`, the version its
+  connection indicator names; where `since` is the version the server
   holds, the answer waits until the board changes or `LONG_POLL_SECONDS` pass.
 - `POST /api/stop` `{}`: answers `{}`, then stops the server serving the panel.
 - `POST /api/to-design` `{"card": <a roadmap or parked card as served>}`: move the card's ticket into
@@ -51,7 +53,6 @@ HOST = "127.0.0.1"
 POLL_SECONDS = 0.25
 LONG_POLL_SECONDS = 25.0
 _CONTENT_TYPES = {".html": "text/html", ".js": "text/javascript", ".css": "text/css"}
-_PAGE_POLICY = "default-src 'self'; frame-ancestors 'none'"
 _UNREADABLE = "unreadable"
 
 
@@ -74,10 +75,6 @@ class BadRequest(Exception):
     """A request the server cannot act on; the message says why."""
 
 
-class CannotListen(Exception):
-    """The server's port could not be bound; the message is the reason."""
-
-
 def _unreadable(e: OSError, reading: str) -> str:
     """The file an OSError names, else reading, the path being read."""
     return e.filename if e.filename is not None else reading
@@ -88,12 +85,14 @@ class KanbanServer:
     construction, raising OSError where a file it reads cannot be read; `start` begins polling the
     files every POLL_SECONDS, until server_close.
 
-    The panel binds no socket of its own: its answers are written onto the dashboard's, and
-    server_close only ends its polling. Its own `POST /api/stop` stops the dashboard serving it."""
+    The panel binds no socket of its own: its answers are written onto the dashboard's. The dashboard
+    takes a handler over the request it has read, `panel_handler`, and answers with the panel's routes
+    the paths its page calls. Its own `POST /api/stop` stops the dashboard serving it."""
 
     def __init__(self, root: str, *, stderr: TextIO, after: Any) -> None:
-        """after is the dashboard server the panel answers onto, whose address it reports and which its
-        stop ends."""
+        """after is the dashboard server the panel answers onto, whose address it reports, which its
+        `POST /api/stop` asks to stop, which this panel's handler sends its replies through, and whose
+        guard stands before either panel's routes."""
         self.root = root
         self._stderr = stderr
         self._lock = threading.Condition()
@@ -103,12 +102,9 @@ class KanbanServer:
         self._board = read_board(root)
         self._version = 1
         self._reported: Optional[str] = None  # the unreadable file last named on stderr
-        self.panel_of = after
-        # What `shutdown` waits on and `server_close` sets, and the lock it takes: `__init__` binds
-        # both through `BaseServer.__init__`, which a panel does not run.
-        self.__is_shut_down = threading.Event()
-        self.__shutdown_request = False
-        self._BaseServer__lock = threading.Lock()
+        self.dashboard = after
+        _Handler._local_host = type(after).handler._local_host
+        _Handler._send = type(after).handler._send
 
     def panel_handler(self, request: Any, client_address: Any) -> BaseHTTPRequestHandler:
         """A handler over a request the dashboard has read, the board's own `do_` answering it."""
@@ -122,25 +118,20 @@ class KanbanServer:
     @property
     def url(self) -> str:
         """The board's URL at the dashboard serving it."""
-        return f"http://{HOST}:{self.panel_of.server_address[1]}/"
+        return f"http://{HOST}:{self.dashboard.server_address[1]}/"
 
     def shutdown(self) -> None:
         """Stop the server this board's answers are written by: the dashboard's."""
-        self.panel_of.shutdown()
+        self.dashboard.shutdown()
 
     def server_close(self) -> None:
-        """End the polling, and release a `shutdown` a caller may have waiting on it, as closing a
-        serving server does, so that `shutdown` and `server_close` end in either order. A panel binds
-        no socket and runs no loop of its own: there is nothing here to close."""
+        """End the polling. A panel binds no socket and runs no loop of its own: there is nothing
+        here to close."""
         self._stop.set()
         if self._poller.is_alive():
             self._poller.join()
         with self._lock:
             self._lock.notify_all()
-        # The attribute is `BaseServer`'s own name, written unqualified here it would mangle to this
-        # class's; a panel reaches this line without `__init__` having made one, so it is made here.
-        self._BaseServer__is_shut_down = threading.Event()
-        self._BaseServer__is_shut_down.set()
 
     def handle_error(self, request: Any, client_address: Any) -> None:
         """A client gone mid-request (a page reloaded during a long poll) is not an error; anything
@@ -254,6 +245,11 @@ def _document(root: str, url_path: str) -> Optional[tuple[bytes, str]]:
 
 class _Handler(BaseHTTPRequestHandler):
     server: KanbanServer
+    # The dashboard's guard and reply write one answer per request, its own ask answering every route
+    # of either panel before either panel's handler runs; the dashboard imports this module, so it
+    # binds these here once it is loaded (`KanbanServer`'s `__init__`).
+    _local_host: Callable[[Any], bool]
+    _send: Callable[..., None]
 
     def __init__(self, *args: Any, read_request: bool = True, **kwargs: Any) -> None:
         """A handler over a request the dashboard has already read when read_request is false: its
@@ -325,25 +321,5 @@ class _Handler(BaseHTTPRequestHandler):
             root = self.server.root
             self._send_json(500, {"error": f"cannot read: {root_relative(root, _unreadable(e, root))}"})
 
-    def _local_host(self) -> bool:
-        """Refuse a request naming another host, as a page served elsewhere would (DNS rebinding)."""
-        port = self.server.panel_of.server_address[1]
-        if self.headers.get("Host") in (f"{HOST}:{port}", f"localhost:{port}"):
-            return True
-        self._send_json(403, {"error": "requests must name the host the board is served on"})
-        return False
-
     def _send_json(self, status: int, payload: dict[str, Any], *, page: bool = False) -> None:
         self._send(status, json.dumps(payload).encode("ascii"), "application/json", page=page)
-
-    def _send(self, status: int, body: bytes, content_type: str, *, page: bool = False) -> None:
-        """Send one response; page marks an answer to a request for the page's files."""
-        self.send_response(status)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("X-Content-Type-Options", "nosniff")
-        if page:
-            self.send_header("Content-Security-Policy", _PAGE_POLICY)
-        self.end_headers()
-        self.wfile.write(body)

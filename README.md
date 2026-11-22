@@ -6,7 +6,29 @@ Mage that lets you build to last: you work with the agents to design, plan, buil
 
 ![kanban screenshot](images/kanban.webp)
 
-*Work packages on the board `devpro dashboard` serves*
+*The board panel `devpro dashboard` serves at `/board/`: the project's work packages, roadmap and
+design as cards*
+
+## The dashboard
+
+`devpro dashboard [<project-dir>] [--port <number>]` serves the project in a browser on the local
+machine and prints the URL it is served at:
+
+```sh
+devpro dashboard
+```
+
+It serves the project the command runs in, up to the nearest directory holding a `.git` entry;
+`<project-dir>` names another directory inside the project to serve from anywhere. The port is
+loopback only, `127.0.0.1`, and the system picks a free one unless `--port` names one. The URL's root
+is the traces panel — the session records the activity profiler captured, one row per session,
+each linking to that session's page — and a link line under it opens the board.
+
+The board is the project's roadmap, its active design and its active plan as a set of columns of
+cards, live: an edit to a watched file shows on the open page within about a second. Dropping a
+card moves its ticket between `ROADMAP.md` and the active design. Those moves are the board's only
+writes; the plan's columns are read-only. The stop button in the page's header ends the server, as
+Ctrl-C does. Only the command line starts it: no served page starts its own server.
 
 ## What it asks of you
 
@@ -45,12 +67,13 @@ in just over 16K lines of runtime code, including vision tower support and an Op
 - An activity profiler, shipped with a claude or opencode project install: the session's activity is
   recorded to the project's own store under `.devpro-temp/` at the project root — `.profiler-claude/`
   under claude, one line per hook event, and `.profiler-opencode/` under opencode, one per tool call.
-  The `tree` subcommand of the `devpro profiler` verb reads every `.profiler-*` store
-  there, and the `show-profile` skill hands a session to the user as text, an HTML page or a served
-  page, the serving the `devpro dashboard` verb's traces panel. The claude install copies the launcher `profiler/hp.sh` and registers six hook entries in the
-  plugin's `hooks/hooks.json`; the opencode install copies the launcher and the capture `profiler.ts`
-  beside the plugin entry and registers no hook entries. The page template `view.html` is the devpro
-  wheel's own package data, not an install resource.
+  The `tree` subcommand of the `devpro profiler` verb reads every `.profiler-*` store there, and the
+  `show-profile` skill hands a session to the user as text or as an HTML page; the `devpro dashboard`
+  verb serves the records as its traces panel (The dashboard, above). The claude install copies the
+  launcher `profiler/hp.sh` and registers six hook entries in the plugin's `hooks/hooks.json`; the
+  opencode install copies the launcher and the capture `profiler.ts` beside the plugin entry and
+  registers no hook entries. The page template `view.html` is the devpro wheel's own package data,
+  not an install resource.
 - Under mage, `show-profile` ships with no launcher and no capture, so a mage session records nothing
   and has no trace to read. A claude session on the web loads no plugin's hooks and records nothing
   there until `init` commits the hook; the skill names that `init`.
@@ -140,7 +163,9 @@ Start your coding harness, or, if a session was already open during the install,
 `/reload-plugins` or restart under Claude Code, restart under opencode, and, after installing with
 the kbase component on, restart Mage. Then ask the session agent to load the `guide` skill:
 `devpro:guide` under claude and mage, `devpro-guide` under opencode. It starts a design, explains how
-the development process runs, tells you where your work stands, and shows the board. It also
+the development process runs, tells you where your work stands, and shows the board — it runs
+`devpro dashboard`, or gives you that command line where you would rather run it yourself; a
+checkout of this repository runs it as `just dev-dashboard`. It also
 installs, updates, inspects or changes what you just installed. To see what the session did — its
 profile, trace or call tree — ask for the `show-profile` skill: `devpro:show-profile` under claude and
 mage, `devpro-show-profile` under opencode.

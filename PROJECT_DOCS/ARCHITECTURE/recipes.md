@@ -2,7 +2,7 @@
 
 `just install <target> [--components=CSV]`, `just agents`, `just render`,
 `just retake-reference`, `just install-agents-file <dir> [--harness=NAME] [--dry-run]`,
-`just tag` and `just check-wheel` reach `python3 -m devpro`: `install`,
+`just tag`, `just check-wheel` and `just dev-dashboard` reach `python3 -m devpro`: `install`,
 `agents` and `install-agents-file` each run the verb directly in
 one line; `install` takes `target *args` and `install-agents-file` takes `dir *args`,
 and each forwards all of it as `"$@"`, so `--components=CSV`, `--harness=NAME` and `--dry-run` all
@@ -41,10 +41,8 @@ kbase component riding the same floor
 checkout's venv — so no import or snippet stands between this checkout and its `docs` surface:
 `just check-links` runs the absorbed verb directly. A design's delta application is verified by
 `check-design --deltas-applied`; this repository runs it as
-`just dev-check-design-deltas-applied`, over the absorbed verb. The `docdicer-repo` and `dev-dd`
-recipes, and `docdicer-repo.sh` with its test, retired with the hosted clone; the `dev-kanban`
-recipe retires with the board verb it ran — `dev-dashboard` runs the dashboard verb, the board its
-panel; the dev-check recipes run the absorbed verbs. The `_venv`
+`just dev-check-design-deltas-applied`, over the absorbed verb. `dev-dashboard` runs the dashboard
+verb, the board its board panel. The dev-check recipes run the absorbed verbs. The `_venv`
 recipe creates `.venv`
 where its python is absent. On macOS it makes it from `/usr/bin/python3` where present, the Xcode
 command-line tools' Python 3.9.6, so the suite there runs on the Python 3.9 floor. It installs the
