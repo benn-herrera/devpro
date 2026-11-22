@@ -16,19 +16,21 @@ modules, and `cli.py` imports the one whose subcommand runs. Its subcommands are
 `dashboard` verb, below.
 
 **Resources.** One file lives in `devpro/harnesses/resources/claude/profiler/`:
-`hp.sh`, the POSIX-sh launcher, which finds the `devpro` command and runs its `profiler` verb
-(`HP_DEVPRO` overrides the search). It carries the `!INSTALLED! … devpro` banner within its first ten
-lines — the banner rule binds every harness resource — and `harness_resource_copies` lands it at the
-path it holds below the install directory, so the install directory gains `profiler/hp.sh`. The
-launcher is this harness's alone: mage ships no resources, and opencode's capture is the plugin's own
-TypeScript, below.
+`hp.sh`, the POSIX-sh launcher, which finds the `devpro` command and runs its `profiler` verb (no
+environment variable overrides the search). It carries the `!INSTALLED! … devpro` banner within its
+first ten lines — the banner rule binds every harness resource — and `harness_resource_copies` lands
+it at the path it holds below the install directory, so the install directory gains
+`profiler/hp.sh`. The launcher is this harness's alone: mage ships no resources, and opencode's
+capture is the plugin's own TypeScript, below.
 
-**The launcher's finder.** `command -v devpro`, then `/opt/homebrew/bin/devpro`,
-`/usr/local/bin/devpro` and `~/.local/bin/devpro`, since a hook may run with a `PATH` where only the
-shell's builtins are found; `HP_DEVPRO`, where set, replaces the search rather than leading it. A
-candidate is the devpro when `"$candidate" --version` runs and exits 0 — the found command is the one
-`profiler` runs — and the terminal line is `exec "$devpro" profiler "$@"`, the subcommand parsed
-where the verb is dispatched and the launcher's own arguments passed through unchanged.
+**The launcher's finder.** The finder extends `PATH` with `/opt/homebrew/bin`, `/usr/local/bin` and
+`~/.local/bin`, since a hook may run with a `PATH` where only the shell's builtins are found, and
+runs one `command -v` over the whole of it. A candidate is the devpro when it runs and exits 0 on
+`--version` — the found command is the one `profiler` runs — and the terminal line is
+`exec "$devpro" profiler "$@"`, the subcommand parsed where the verb is dispatched and the launcher's
+own arguments passed through unchanged. The one-shot finder replaced the per-candidate probe and the
+`HP_DEVPRO` override: there is no variable to set, and a found command that does not run is reported
+and treated as absent.
 
 **The page template and its presentation layer.** `view.html` is the wheel's package data,
 `devpro/profiler/view.html`, read by `pages.py` through `importlib.resources` beside the module that
@@ -40,19 +42,26 @@ inlined, since a page that loads nothing cannot link it. One CSS source serves b
 `pages.SHARED_CSS` is that text: the board serves the file at `/board/board.css`, the render inlines
 it into the page it prints, and the dashboard inlines it into the pages it serves. The board's
 component rules may be scoped so their selectors cannot reach the profiler page's DOM; the source
-stays one file. The template's `LEGEND_SLOT` mark is where the how-to-read legend goes:
-`pages.LEGEND` holds the legend once — its prose and its symbol key — and `render_html` injects it
-into the page it renders, so the standalone page carries the legend and no second copy exists in the
-template. The legend has one home and two carriers: the standalone render's injected copy, and the
-dashboard's frame band, which reads the same constant; `pages.with_frame` is the one site holding
-both copies in hand, and it removes the render's copy from the served page, so a served page shows
-the legend once. The index's `INDEX` template carries the same `CSS_SLOT` and two marks for the
-dashboard's chrome — `NAV_MARK` and `BAND_MARK` — which `index_html` leaves unfilled and the
-dashboard fills, so the standalone index carries the layer and no nav. The chrome itself is the
-dashboard's `nav_html` and `band_html`: the brand and the two view names, and the band's legend with
-its `Return to list` control on a session's page. The board page carries the same nav grammar,
-written in its own `index.html`, with its connection indicator and stop button in its header; it
-carries no legend.
+stays one file, and the template keeps its own rules — the sequence diagram's colours come from the
+palette's `--c0`…`--c7` variables, no palette of its own. The template's `LEGEND_SLOT` mark is where
+the how-to-read legend goes: `pages.LEGEND` holds the legend once — its prose and its symbol key —
+and `render_html` injects it into the page it renders, so the standalone page carries the legend and
+no second copy exists in the template. The legend has one home and two carriers: the standalone
+render's injected copy, and the dashboard's frame band, which reads the same constant;
+`pages.with_frame` is the one site holding both copies in hand, and it removes the render's copy
+from the served page, so a served page shows the legend once. The removal runs before the band's
+splice for that reason — the band carries `LEGEND` itself — and the CSS splice stands beside both,
+its mark disjoint from the legend's. The index's `INDEX` template fills the same `CSS_SLOT`, and
+carries two marks for the dashboard's chrome — `NAV_MARK` and `BAND_MARK` — which `index_html`
+leaves unfilled and the dashboard fills, so the standalone index carries the layer and no nav; the
+template's own rules are the page's alone: the layer clears the body's margin and sets the page's
+colours, and the template pads its `main`. The chrome itself is the dashboard's `nav_html` and
+`band_html`: the brand, the two view names and, right-justified at the nav's flex edge on every
+view, the server block — the live/idle indicator and the stop — whose one script
+`devpro/profiler/chrome.js` the dashboard inlines into each page it builds and the board page names
+after its own; the band's legend with its `Return to list` control on a session's page. The board
+page carries the same nav grammar, written in its own `index.html`, with the same server block in
+the nav; it carries no legend.
 
 **Wiring.** `harnesses/claude.py`'s `_registration_hooks` carries the profiler's six hook entries
 beside the guardrail's and the reminder's: `PostToolUse`, `PostToolUseFailure`, `PreCompact`,
@@ -70,18 +79,23 @@ capture that fails, or finds no `devpro`, exits 0 with no output.
 (its default) asking the system for a free one — and prints the served URL on stdout for
 cmd-clicking. The bind is the rule, not a detail: the server listens on loopback only and loads
 nothing from the network, so the records it renders never leave the machine. The board is the
-dashboard's landing surface: its URL's root answers a `302` to `/board/`, so opening it shows the
-kanban board, the project's actual current state. The profiler view is the second view, at
+dashboard's landing surface: its URL's root answers a `302` to `/board/`'s absolute URL — the one it
+prints, `http://127.0.0.1:<port>/board/` — so opening it shows the kanban board, the project's actual
+current state. The profiler view is the second view, at
 `/profiler/` (trailing slash, the board panel's convention): the index of record files, every store
 the `.profiler-*` glob finds, one row per session — harness, session id, record count, first and
 last moments — each linking to `/page/<session-id>`, which renders that session's page in memory,
 the render's page carrying the same page data `tree --format html` produces. A top nav persists
 across both views — the `devpro` brand, then `kanban` and `profiler`, the active view in the motif's
-accent and the inactive one a lifted gray — and in the profiler view a frame band sits under it,
-carrying the how-to-read legend at its top and, on a session's page, `Return to list` back to
+accent and the inactive one a lifted gray, then the server block right-justified at the nav's flex
+edge: the live/idle state indicator and the stop — and in the profiler view a frame band sits under
+it, carrying the how-to-read legend at its top and, on a session's page, `Return to list` back to
 `/profiler/`; drill-down is ordinary page navigation, and no inner frame exists. The nav and the
-band are what the dashboard serves the view's pages with, spliced by `pages.with_frame`. No file is
-written for the traces. A
+band are what the dashboard serves the view's pages with, spliced by `pages.with_frame`. The nav's
+chrome is the same on both views: its one script polls `GET /api/state` — the endpoint every view's
+server answers `{"state": "live"}` while it serves, and that a closed server answers not at all —
+so a page that carries no payload of its own reads the state the board reads, and the stop posts the
+board panel's `/api/stop`. No file is written for the traces. A
 store the glob finds but cannot read appears in the index as unreadable — the server raises nothing
 for it. The page shows a session's calls: a session of nothing but tool calls renders those calls as
 its calls content, never an empty tree under a calls header. The server runs until interrupted
@@ -135,7 +149,7 @@ carries the capture, recreated in the plugin's TypeScript against the plugin's h
 `sessionID`, `status`, `input` and `result`/`error` the after-hook reports), and the idle hook appends
 a lifecycle record the tree does not draw — writing them to its own
 `.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which
-`devpro profiler tree` and the dashboard's traces panel render beside the claude sessions', each
+`devpro profiler tree` and the dashboard's profiler view render beside the claude sessions', each
 record read from its own `.profiler-*` store.
 The model's own `todowrite` notes are not recorded: they are not activity, so the store holds one
 record per tool call that did something. A capture that fails raises nothing out of the hook. `init`
@@ -161,7 +175,7 @@ selects no opencode session.
 
 **The stores and their rename.** Each harness's capture owns one store under the project's
 `.devpro-temp/`: claude's `.profiler-claude/`, opencode's `.profiler-opencode/`, and both readers —
-`tree`'s render, and the dashboard's traces panel, whose index and session pages read the stores per
+`tree`'s render, and the dashboard's profiler view, whose index and session pages read the stores per
 request — walk every `.profiler-*` directory there — a dot name, so the stores group
 and sort at the top of the scratch tree. The naming before the rename was `<store>-profiler`, and
 both `devpro install` and `devpro profiler init claude` migrate the two stores it named:
@@ -171,13 +185,16 @@ under `.devpro-temp/` whose name only ends in `-profiler` is no store and is lef
 store's new name is already taken, the old one is left in place and named instead — the stores'
 contents are never merged, and merging or deleting the old store is the operator's call. A second
 run touches nothing. The window between the upgrade's first capture and the install that follows it
-exists: captures write `.profiler-*` while an old-pattern store still holds its traces, so `tree` cannot
-read that store until the migration runs. The skip-and-name case above is where the window does not
-close — the old store is left standing and named, and at the migration's end one store name per
-harness stands with its traces readable under it, or the operator is told which store was left behind.
+exists: captures write `.profiler-*` while an old-pattern store still holds its traces, so `tree`
+cannot read that store until the migration runs. The skip-and-name case above is where the window
+does not close — the old store is left standing and named, and at the migration's end one store name
+per harness stands with its traces readable under it, or the operator is told which store was left
+behind.
 
 **Doctor's lines.** `devpro profiler doctor` reports `devpro:` the executable the launcher's finder
-would resolve — or `not found on PATH, in Homebrew or ~/.local/bin (install devpro)` — `traces:` the
+would resolve — `devpro_executable`'s first candidate that exists and is executable, the same search
+the launcher's one `command -v` makes, and it is the launcher's own probe that finds out whether that
+command runs — or `not found on PATH, in Homebrew or ~/.local/bin (install devpro)` — `traces:` the
 claude store `tree` reads beside the `.profiler-*` pattern, `hook:` where a capture hook is
 registered here (the plugin's own records, and the committed, local and user settings files) or
 `not installed` with the install and `init` remedies, an `old:` line per pre-rename store it cannot

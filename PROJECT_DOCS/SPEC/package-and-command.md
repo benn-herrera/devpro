@@ -24,7 +24,7 @@ The command also carries the dicing and check surface: `devpro dice-doc`, `devpr
 `devpro dice-docs`, `devpro check-links`, `devpro check-tree`, `devpro check-plan`,
 `devpro check-design` and `devpro check-roadmap` (Dicing and Checks), and the
 `devpro dashboard [<project-dir>] [--port <number>]` verb — devpro's one loopback server for the
-web interface: its traces panel the rendering the retired `devpro profiler serve` drove, its board
+web interface: its profiler view the rendering the retired `devpro profiler serve` drove, its board
 panel the board the retired `devpro kanban` served. The verbs run wherever the `devpro` command
 runs; they are not part of the install product.
 

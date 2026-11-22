@@ -1,5 +1,5 @@
 """The render: the text tree, the self-contained HTML page, and the index and pages the dashboard's
-traces panel serves.
+profiler view serves.
 
 The page template `view.html` is this package's own data, read through `importlib.resources`, so the
 render finds it wherever devpro is installed. The stylesheet the page and the index carry is the
@@ -746,43 +746,53 @@ def index_html(directory: Path | str) -> str:
     """The index of record files: one row per session, and one per store that cannot be read.
 
     The index carries the presentation layer and names no view of its own: opened on its own it
-    stands beside no board, so the nav and the frame band are the marks the dashboard fills when it
-    serves the index (`with_frame`), and absent where nothing fills them."""
+    stands beside no board, so the nav, the frame band and the nav's script are the marks the
+    dashboard fills when it serves the index (`with_frame`), and absent where nothing fills them."""
     sessions, unreadable = read_sessions(directory)
     rows = "".join(session_row(session) for session in sorted(sessions, key=lambda session: session["first"]))
     return string.Template(INDEX).substitute(
         unreadable="".join(unreadable_row(store) for store in unreadable),
         rows=rows or '<tr><td colspan="4">No sessions recorded yet.</td></tr>',
-        css=SHARED_CSS.replace("$", "$$"),
     )
 
 
-def with_frame(page: str, *, nav: str, band: str) -> str:
+def with_frame(page: str, *, nav: str, band: str, script: str) -> str:
     """The rendered page as the dashboard serves it: the presentation layer's text in place of a
-    template's own `CSS_SLOT`, nav in place of its nav mark, and band in place of its band mark.
+    template's own `CSS_SLOT`, nav in place of its nav mark, band in place of its band mark, and the
+    nav's script in the page's head, where the template marks it.
 
     The band is where the view's legend is served from, and the render injected its own copy into the
     page it rendered: that copy is removed here, at the one site holding both in hand, so the served
-    page carries the legend once."""
-    return page.replace(CSS_SLOT, SHARED_CSS).replace(LEGEND, "").replace(NAV_MARK, nav).replace(BAND_MARK, band)
+    page carries the legend once. The removal comes before the band's splice because the band carries
+    `LEGEND` itself (`dashboard.server.band_html`), which a removal run afterwards would take out of
+    the band; the CSS splice stands beside both, its mark disjoint from the legend's, and the mark the
+    script goes into stands below them all, so no stylesheet text can be read as that mark."""
+    page = page.replace(CSS_SLOT, SHARED_CSS).replace(LEGEND, "")
+    return page.replace(NAV_MARK, nav).replace(BAND_MARK, band).replace(CHROME_MARK, script)
 
 
 PAGE_PREFIX = "/page/"
-# The index's slots, named by `index_html`: the presentation layer and the rows, in substitution's
-# one pass — so text spliced into one slot is never read as another's, and `$` in the inlined
-# stylesheet is escaped for it. The two marks the dashboard fills on the pages it serves are here
-# too, so one renderer serves both: the nav, and the profiler view's frame band.
+# The marks the dashboard fills on the pages it serves: the nav, the frame band, and where the nav's
+# chrome script goes — below the templates' splices, where no stylesheet text can be read as a mark.
+# The index's template carries the last two as well, and the page's all three, so one renderer
+# serves both.
 NAV_MARK = "<!--NAV-->"
 BAND_MARK = "<!--BAND-->"
+CHROME_MARK = "<!--CHROME-->"
+# The index's two substitution slots, named by `index_html`: the unreadable stores' rows and the
+# session rows, in substitution's one pass — so text spliced into one slot is never read as another's.
+# The presentation layer is no substitution slot: `/*STYLE*/` stands in the template, as it does on a
+# page, and the `CSS_SLOT` splice fills it. The three marks are the last thing before the body's own
+# content, their text no stylesheet's.
 INDEX = """<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<title>Harness-profiler — sessions</title>
+<title>devpro — profiler view: sessions</title>
 <style>
 /*STYLE*/
-body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; }
-h1 { font-size: 1.1rem; font-weight: 600; margin: 0; padding: 1rem 1rem 0.5rem; }
-table { border-collapse: collapse; margin: 0 1rem; }
+main { padding: 1rem; }
+h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem; }
+table { border-collapse: collapse; }
 th, td { text-align: left; padding: 0.4rem 1rem 0.4rem 0; border-bottom: 1px solid var(--line); }
 th { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
 a { color: var(--fg); }
@@ -791,6 +801,7 @@ a:hover, a:focus-visible { color: var(--accent); }
 <body>
 <!--NAV-->
 <!--BAND-->
+<!--CHROME-->
 <main>
 <h1>Sessions</h1>
 <table>

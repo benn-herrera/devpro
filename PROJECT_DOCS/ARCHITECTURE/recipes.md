@@ -33,16 +33,19 @@ checkout side of its install comparison, and runs the `devpro` console script on
 throwaway venv. Packaging states both.
 
 **Toolchain.** This repository's justfile needs `just` 1.27.0 or later, for the `[doc]` recipe
-attribute; a consuming project's floor is 1.33.0 or later where the devpro line ships — on every
-project install of a nested plugin — for the `import?` of the include lines, the kb line with the
-kbase component riding the same floor
-(SPEC.md, Guide and README). It runs its recipes under
+attribute; a consuming project's floor is 1.33.0 or later where the devpro line ships — the include
+line the install writes into the consuming project's runner file, on every project install — for
+the `import?` it uses, the kb line with the kbase component riding the same floor (README.md, and
+SPEC.md, Guide and README). It runs its recipes under
 `bash`. The dicing and check verbs run through the `devpro` command — `python3 -m devpro` in the
 checkout's venv — so no import or snippet stands between this checkout and its `docs` surface:
 `just check-links` runs the absorbed verb directly. A design's delta application is verified by
 `check-design --deltas-applied`; this repository runs it as
 `just dev-check-design-deltas-applied`, over the absorbed verb. `dev-dashboard` runs the dashboard
-verb, the board its board panel. The dev-check recipes run the absorbed verbs. The `_venv`
+verb with any further arguments through to it — `just dev-dashboard --port 8791` pins the port —
+and the board is the dashboard's landing surface: the URL opens on it, at `/board/`, and the
+profiler view is the second view at `/profiler/`. The
+dev-check recipes run the absorbed verbs. The `_venv`
 recipe creates `.venv`
 where its python is absent. On macOS it makes it from `/usr/bin/python3` where present, the Xcode
 command-line tools' Python 3.9.6, so the suite there runs on the Python 3.9 floor. It installs the

@@ -3,7 +3,8 @@
 // The board page. Everything shown comes from the server's payload (GET /api/board); every action
 // is a POST whose effect reaches the page through the same long poll, so the page holds no state of
 // its own beyond the version it last drew, the payload last drawn and the payload deferred during a
-// drag, the drag under way, whether the server answers and the bands it has collapsed.
+// drag, the drag under way, whether the server answers and the bands it has collapsed. The nav's
+// chrome is not this file's: `chrome.js` reads the server's state and ends it.
 
 const log = (level, message, context = {}) => console[level]({ level, message, ...context });
 
@@ -20,12 +21,10 @@ let drawn = null; // the version of the payload on the page; null after a failed
 let lastPayload = null; // the payload last drawn, which a band's collapse redraws the columns from
 const collapsed = new Set(); // the keys of the bands collapsed (bandKey), held by the page alone
 let stopped = false; // the server has not answered STOPPED_AFTER polls in a row: no drag starts
-let ended = false; // the server was stopped from the page: polling has ended for good
 const dragInfo = new WeakMap(); // card element -> its drag info
 const separatorCard = new WeakMap(); // Roadmap category separator element -> its card as served
 
 const STOPPED_AFTER = 3;
-const STOPPED_TEXT = "server stopped: restart devpro dashboard and open the URL it prints";
 const NOT_DRAWN = "board not drawn: ";
 const PARKED_BAND = "ROADMAP_DESIGNS";
 // The payload carries no card for the ROADMAP_DESIGNS band: this is what the page draws it from, and
@@ -472,63 +471,36 @@ boardEl.addEventListener("keydown", (event) => {
 
 // ---- live following ----------------------------------------------------------------------------
 
-function showConnection(text) {
-  const connection = $("connection");
-  if (connection.textContent !== text) connection.textContent = text; // an unchanged text is not re-announced
-}
-
 // Each answer carries a version; asking with it waits until the board changes. After a failure the
 // next ask carries no version, and the version drawn is forgotten, since a restarted server counts
 // versions from 1 again.
-// Polling ends for good once the server is stopped from the page (`ended`): an answer or a failure
-// arriving after that, such as the waiting poll the closing server answers, changes nothing.
+// The nav's chrome (`chrome.js`) reads the server's state and ends it: a failure here only backs off
+// and asks again, and the chrome's indicator reads the server idle where it answers nothing.
 async function follow() {
   let since = null;
   let delay = 500;
   let failures = 0;
-  while (!ended) {
+  while (true) {
     let payload;
     try {
       const response = await fetch(since === null ? "/api/board" : `/api/board?since=${since}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       payload = await response.json();
     } catch (error) {
-      if (ended) return;
       if (failures === 0) log("warn", "board connection lost", { error: String(error) });
       failures += 1;
       since = null;
       drawn = null;
-      stopped = failures >= STOPPED_AFTER;
-      showConnection(stopped ? STOPPED_TEXT : "reconnecting…");
       await new Promise((resolve) => setTimeout(resolve, delay * (0.5 + Math.random())));
       delay = Math.min(delay * 2, 8000);
       continue;
     }
-    if (ended) return;
     since = payload.version;
     delay = 500;
     failures = 0;
     stopped = false;
-    showConnection("live");
     render(payload);
   }
 }
-
-// Stop the server, with no confirmation. The button is disabled while the POST runs, so a second
-// press cannot reach a server already closing; its answer first moves focus, which the disabled
-// button drops, to the page heading, then sets the stopped state for good, so that the focus change
-// does not cut off the indicator's live-region announcement. A failed POST shows as any failed
-// action does, re-enables the button, and polling goes on.
-$("stop").addEventListener("click", async () => {
-  $("stop").disabled = true;
-  if (!(await act("/api/stop", {}))) {
-    $("stop").disabled = false;
-    return;
-  }
-  $("page-title").focus();
-  ended = true;
-  stopped = true;
-  showConnection(STOPPED_TEXT);
-});
 
 follow();

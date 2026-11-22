@@ -2,23 +2,26 @@
 
 Neither panel's rendering is this module's. The board panel is `devpro.dicing.kanban.server`'s serve
 surface — its page, files, payload, moves and served documents, answered by the `KanbanServer` built
-over the dashboard's root — and the traces panel is `devpro.profiler.pages`' index and pages, read from
-the stores as they stand. This module adds the routes that hold them apart, and the chrome the
-profiler view's pages are served with: the top nav and the frame band.
+over the dashboard's root — and the profiler view is `devpro.profiler.pages`' index and pages, read
+from the stores as they stand. This module adds the routes that hold them apart, the chrome the
+profiler view's pages are served with — the top nav and the frame band — and the state endpoint
+every view's chrome reads.
 
 Endpoints:
 
-- `GET /`: a `302` to `/board/`. The board is the landing surface, and it serves from `/board/` so its
-  page's assets, its payload and its served documents stay under that path; the redirect is the one
-  answer the root owes.
+- `GET /`: a `302` to `/board/`'s absolute URL. The board is the landing surface, and it serves from
+  `/board/` so its page's assets, its payload and its served documents stay under that path; the
+  redirect is the one answer the root owes.
 - `GET /profiler/`: the profiler view's index — `pages.index_html` — with the nav and the band.
 - `GET /page/<session-id>`: that session's page, the render's, with the nav, the band's legend and its
   return to the list.
 - `GET /board/` and `GET /board/<file>`: the board page and its files, the file resolved beside the
   page, so the page's relative asset names reach them.
 - `GET /<path>.md`: a served document, as the board panel serves it.
+- `GET /api/state`: `{"state": "live"}`, answered while the server serves, which is the answer the
+  shared chrome's indicator reads.
 - `GET /api/board`, `POST /api/to-design`, `POST /api/to-roadmap`, `POST /api/stop`: the board's
-  payload, moves and stop, at the root paths its page calls.
+  payload, moves and stop, at the root paths its page and the chrome call.
 """
 
 from __future__ import annotations
@@ -29,6 +32,7 @@ import sys
 import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from importlib.resources import files
 from typing import Any, Optional, TextIO
 from urllib.parse import unquote, urlsplit
 
@@ -46,7 +50,19 @@ from ..errors import InputError
 
 BOARD_PATH = "/board/"
 PROFILER_PATH = "/profiler/"
+STATE_PATH = "/api/state"
 RETURN_LABEL = "Return to list"
+# The chrome every view carries after its view names: the live/idle indicator and the stop, and the
+# script that gives them their behavior. That script ships as `devpro/profiler/chrome.js` and is
+# inlined where it goes — the board page's script names it instead — because the server answers no
+# static file of its own, and a page's script loads under the policy every page is served with. The
+# markup is one text both carriers substitute, so an id or a class cannot drift between the views.
+CHROME = """<span class="nav-server">
+  <span id="connection" role="status" aria-labelledby="connection"></span>
+  <button id="stop" class="nav-stop" type="button">Stop</button>
+</span>"""
+CHROME_SCRIPT = (files("devpro.profiler") / "chrome.js").read_text(encoding="utf-8")
+CHROME_MARK = "<!--CHROME-->"
 # The one policy both panels' pages are served under, so a page cannot load from elsewhere and no
 # page frames either.
 CONTENT_SECURITY_POLICY = "default-src 'self'; frame-ancestors 'none'"
@@ -56,15 +72,20 @@ _NO_SUCH_PAGE = "No such page"
 
 def nav_html(active: str) -> str:
     """The top nav, with active — `kanban` or `profiler` — the view the page shows. The view names
-    link the routes; the page itself is where each view's live controls sit (the board page's
-    connection indicator and stop button), so this nav carries no server state of its own."""
+    link the routes; the chrome after them, the live/idle indicator and the stop, is on both views."""
     views = "".join(
         f'<a class="view{" active" if view == active else ""}" href="{href}"'
         + (' aria-current="page"' if view == active else "")
         + f">{view}</a>"
         for view, href in (("kanban", BOARD_PATH), ("profiler", PROFILER_PATH))
     )
-    return f'<nav class="site-nav scanlines"><span class="brand">devpro</span><span class="views">{views}</span></nav>'
+    return f'<nav class="site-nav scanlines"><span class="brand">devpro</span><span class="views">{views}</span>{CHROME}</nav>'
+
+
+def chrome_script() -> str:
+    """The nav's one script, as the page inlines it: the server answers no static file of its own, so
+    the board page's script names its own asset and a page served in memory carries the text."""
+    return f"<script>{CHROME_SCRIPT}</script>"
 
 
 def band_html(return_to: str | None) -> str:
@@ -76,8 +97,8 @@ def band_html(return_to: str | None) -> str:
 
 def profiler_page(page: str, *, return_to: str | None) -> str:
     """A page of the profiler view as the dashboard serves it: the nav, the band and the view's own
-    content, one legend on the page."""
-    return with_frame(page, nav=nav_html("profiler"), band=band_html(return_to))
+    content, one legend on the page, and the nav's script once."""
+    return with_frame(page, nav=nav_html("profiler"), band=band_html(return_to), script=chrome_script())
 
 
 def loopback(url: str) -> bool:
@@ -97,7 +118,7 @@ class DashboardServer(ThreadingHTTPServer):
     """The dashboard serving the project at root — its stores and its board — on HOST at port, 0
     being an ephemeral one.
 
-    `root` is explicit: the project whose `.profiler-*` stores and git root the traces panel reads,
+    `root` is explicit: the project whose `.profiler-*` stores and git root the profiler view reads,
     and whose files the board panel reads. The command takes it from the directory it names, or
     where it names none, from the directory it runs in; a test names it. The board panel is a
     `KanbanServer` over the same root, which reads the board on construction, so a board file that
@@ -133,7 +154,7 @@ class DashboardServer(ThreadingHTTPServer):
     def port(self) -> int:
         return self.server_address[1]
 
-    def traces_index(self) -> str:
+    def profiler_index(self) -> str:
         """The profiler view's index, as the dashboard serves it: the store rows under the nav and the
         band, the legend once.
 
@@ -179,9 +200,13 @@ class _Handler(BaseHTTPRequestHandler):
         url = urlsplit(self.path)
         path = unquote(url.path)
         if path in ("", "/"):
-            self._redirect(BOARD_PATH)
+            self._redirect(f"http://{HOST}:{self.server.port}{BOARD_PATH}")
+        elif path == STATE_PATH:
+            self._send(HTTPStatus.OK, b'{"state": "live"}', "application/json")
         elif path == PROFILER_PATH:
-            self._send(HTTPStatus.OK, self.server.traces_index().encode("utf-8"), "text/html; charset=utf-8", page=True)
+            self._send(
+                HTTPStatus.OK, self.server.profiler_index().encode("utf-8"), "text/html; charset=utf-8", page=True
+            )
         elif path.startswith(BOARD_PATH):
             self._board(self.path[len(BOARD_PATH) - 1 :])
         elif path.startswith(PAGE_PREFIX):

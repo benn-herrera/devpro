@@ -5,7 +5,7 @@
    The light motif carries the warm phosphor, the dark the green: --brand is the phosphor, --accent
    the brand at 80% brightness (the active view's smaller text), and --view-inactive the gray a
    view wears when it is not the one shown — lifted, so it reads available rather than disabled.
-   The site's own light-mode green mapping and dim value (`--accent-dim`) are superseded: the light
+   The site's own light-mode green mapping and its dim value are superseded: the light
    brand is the bright amber, dimmed only for the active view's smaller text. No second brand color
    and no underline: the weight and the color are the selection. */
 :root {
@@ -18,7 +18,6 @@
   --line: #c9c9cf;
   --brand: #e8a020;
   --accent: #d09020;
-  --accent-dim: #b87818;
   --view-inactive: #63636b;
   --alert: #b3261e;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -35,7 +34,6 @@
     --line: #45454d;
     --brand: #3cf077;
     --accent: #31c260;
-    --accent-dim: #248f47;
     --view-inactive: #a6a6ad;
     --alert: #ff8a80;
   }
@@ -60,16 +58,19 @@
   }
 }
 
-/* The top nav: the brand, then the views. The brand is monospace, heavier and about 15% larger than
-   the view names at full brightness; a view name is the same smaller size in both states, the
-   active one the accent at a heavier weight, the inactive the lifted gray — always a link, never
-   struck through or marked visited. */
+/* The top nav: the brand, then the views, then the server block at the far edge. The brand is
+   monospace, heavier and about 15% larger than the view names at full brightness; a view name is the
+   same smaller size in both states, the active one the accent at a heavier weight, the inactive the
+   lifted gray — always a link, never struck through or marked visited. It carries no side padding of
+   its own: the page's padding is one rule for the whole page, so the nav's server block ends on the
+   same edge the board's last column does. */
 .site-nav {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.25rem 1rem;
-  padding: 0.5rem 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
   background: var(--card);
   border-bottom: 1px solid var(--line);
 }
@@ -89,14 +90,17 @@
 .view.active:hover, .view.active:focus-visible { color: var(--brand); }
 
 /* The profiler view's frame band: the how-to-read legend at the top, then the return to the list
-   once a page is open. It sits under the nav on every page of the view, and it is the dashboard's
-   decoration of a rendered page, not part of the render. */
+   once a page is open. It sits under the nav on every page of the view, its own padding the page's
+   vertical one alone, and it is the dashboard's decoration of a rendered page, not part of the
+   render. */
 .frame-band {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.4rem 1rem;
-  padding: 0.5rem 1rem;
+  margin: 0;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
   background: var(--column);
   border-bottom: 1px solid var(--line);
   color: var(--muted);
@@ -108,22 +112,28 @@
 .frame-band .return { margin-left: auto; color: var(--accent); font-weight: 600; white-space: nowrap; }
 .frame-band .return:visited { color: var(--accent); }
 
-body {
-  margin: 0;
+/* The template's own padding for the page — the nav, the band, the board's header, its messages and
+   the board — whatever the view, so the nav's server block and the board's last column end on one
+   edge. The board's column layout is scoped to a body that says so, so the profiler view's page keeps
+   its template's padding and flows its sequence diagram down the page. */
+body { margin: 0; color: var(--fg); background: var(--bg); }
+.site-nav, .frame-band, header, #messages, #board { padding-left: 1rem; padding-right: 1rem; }
+.board-root {
   height: 100vh;
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  color: var(--fg);
-  background: var(--bg);
 }
 
+/* The board page's header: the release and the hardening tag, beside the heading that only a screen
+   reader reads; its own padding is the page's vertical one alone. */
 header {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.25rem 1rem;
-  padding: 0.5rem 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 h1 { font-size: 1.1rem; margin: 0; }
@@ -147,9 +157,18 @@ h1 { font-size: 1.1rem; margin: 0; }
   font-size: 0.8rem;
 }
 
-#connection { margin-left: auto; color: var(--muted); }
+/* The nav's server block: the live/idle indicator and the stop, right-justified at the nav's flex
+   edge — its margin takes every pixel the brand and the view names leave. The block is a flex line
+   of its own, its items on the same baseline as the views'. */
+.nav-server {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+#connection { color: var(--muted); }
 
-/* The stop is a small control beside the state it ends, in the page's header. */
+/* The stop is a small control beside the state it ends, in the nav's server block. */
 #stop {
   padding: 0.1rem 0.6rem;
   border: 1px solid var(--line);
@@ -159,8 +178,14 @@ h1 { font-size: 1.1rem; margin: 0; }
   font-size: 0.8rem;
   cursor: pointer;
 }
+#stop:disabled { color: var(--muted); cursor: default; }
 
-#messages { padding: 0 1rem 0.5rem; min-height: 1.35em; }
+/* The headings a control hands focus to, when its answer would otherwise drop it: the board's hidden
+   title and the profiler view's session title carry no ring of their own. */
+h1[tabindex]:focus,
+h1[tabindex]:focus-visible { outline: none; }
+
+#messages { padding-top: 0.5rem; min-height: 1.35em; }
 #messages p { margin: 0; }
 #alert { color: var(--alert); }
 
@@ -177,7 +202,7 @@ button { font: inherit; }
   grid-auto-flow: column;
   grid-auto-columns: minmax(13rem, 1fr);
   gap: 0.5rem;
-  padding: 0 1rem 1rem;
+  padding-bottom: 1rem;
   overflow-x: auto;
 }
 

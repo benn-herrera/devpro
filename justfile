@@ -303,8 +303,8 @@ dev-devpro *args:
   @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro "${@}"
 
 [doc("serve the dashboard — the board and the session records — from the checkout's devpro")]
-dev-dashboard:
-  @just dev-devpro dashboard
+dev-dashboard *args:
+  @just dev-devpro dashboard "${@}"
 
 [doc("run ACTIVE_PLAN format compliance check")]
 dev-check-plan:

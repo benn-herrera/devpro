@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- Written by devpro's profiler (`devpro profiler tree --format html`). Self-contained: no network, works from file://. -->
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Harness trace</title>
+<title>devpro — profiler view: session</title>
 <!-- Written by harness-profiler (`hp tree --format html`). Self-contained: no network, works from file://. -->
 <style>
 /*STYLE*/
@@ -40,11 +40,12 @@ svg .spawn rect { stroke:var(--panel); stroke-width:1; }
 </style></head><body>
 <!--NAV-->
 <!--BAND-->
+<!--CHROME-->
 <h1>Session <span id="sid"></span></h1>
 <div class="sub" id="subline"></div>
 <!--LEGEND-->
 
-<div class="toolbar"><label><input type="checkbox" id="all"> every tool call</label><span>Without it: skills, subagents and compactions, like <code>harness-profiler tree</code> — or every tool call when the session has none of those.</span></div>
+<div class="toolbar"><label><input type="checkbox" id="all"> every tool call</label><span>Without it: skills, subagents and compactions, like the <code>tree</code> command — or every tool call when the session has none of those.</span></div>
 <div class="panel"><svg id="tl" role="img" aria-label="Sequence diagram, one lifeline per context"></svg></div>
 <h2>Call tree</h2>
 <div class="tree" id="tree"></div>

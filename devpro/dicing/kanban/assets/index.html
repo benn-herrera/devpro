@@ -6,7 +6,7 @@
 <title>kanban</title>
 <link rel="stylesheet" href="board.css">
 </head>
-<body>
+<body class="board-root">
 <nav class="site-nav scanlines">
   <span class="brand">devpro</span>
   <span class="views">
@@ -18,6 +18,8 @@
     <button id="stop" class="nav-stop" type="button">Stop</button>
   </span>
 </nav>
+<!-- The nav's chrome polls the server's state and ends it; board.js, below, draws the board. -->
+<script src="chrome.js"></script>
 <header>
   <h1 id="page-title" class="visually-hidden" tabindex="-1"></h1>
   <span id="release"></span>

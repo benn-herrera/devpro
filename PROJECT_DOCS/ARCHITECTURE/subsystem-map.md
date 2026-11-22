@@ -69,7 +69,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
   `.profiler-*` ones `devpro profiler tree` walks — as text, as a self-contained HTML page, or
   served over HTTP: its serve sections name the `devpro dashboard` verb, the records' serving being
-  the dashboard's traces panel now the profiler's own `serve` subcommand has retired — and
+  the dashboard's profiler view now the profiler's own `serve` subcommand has retired — and
   finds the profiler's launcher at `../../profiler/hp.sh`, the installed copy of claude's, before the
   committed `.claude/harness-profiler/hp.sh` a claude-on-web session uses; the launcher runs the
   `profiler` verb of the `devpro` command it finds (Install, Harness profiler).

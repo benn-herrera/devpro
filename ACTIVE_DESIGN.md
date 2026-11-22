@@ -110,7 +110,7 @@ The command also carries the dicing and check surface: `devpro dice-doc`, `devpr
 `devpro dice-docs`, `devpro check-links`, `devpro check-tree`, `devpro check-plan`,
 `devpro check-design` and `devpro check-roadmap` (Dicing and Checks), and the
 `devpro dashboard [<project-dir>] [--port <number>]` verb — devpro's one loopback server for the
-web interface: its traces panel the rendering the retired `devpro profiler serve` drove, its board
+web interface: its profiler view the rendering the retired `devpro profiler serve` drove, its board
 panel the board the retired `devpro kanban` served. The verbs run wherever the `devpro` command
 runs; they are not part of the install product.
 ```
@@ -368,7 +368,7 @@ skill's directory is neither its skill entry file nor one of its supporting file
 scripts package included.
 ```
 
-(Stages 2-4: the four pairs above are stage 1's; of the seven below, five landed with stage 2's plan and the launcher pair is the stage-3 plan's, its packages landing it; the dashboard pair waits for the presentation pass, its layout the user's decided target — the active plan's staging boundary is the record of that staging.)
+(Stages 2-4: the four pairs above are stage 1's; of the seven below, five landed with stage 2's plan and the launcher pair is the stage-3 plan's, its packages landing it; the dashboard pair landed with the presentation pass, its layout the user's decided target — the active plan's staging boundary is the record of that staging.)
 
 **As it stands:**
 ```
@@ -408,7 +408,7 @@ from the nav. A simple top nav persists across every view: the `devpro` brand, t
 `kanban` and `profiler`, selection switching the view — intuitive, recognizable surfaces, no
 invented paradigms, the dynamic behavior spent only where it counts. The nav and the views carry
 the phosphor pairing, the brand's callback to amber and green screen terminals inverted from the
-site — the monogram's scanlines deliberate — and the accent is the phosphor, no second brand
+nav's scanlines deliberate — and the accent is the phosphor, no second brand
 color. The dark mode carries the phosphor green: brand `#3cf077`, the active view `#31c260`, 80%
 of the brand's brightness, the inactive view `#a6a6ad`. The light mode carries the warm phosphor:
 brand `#e8a020`, the active view `#d09020`, the inactive view `#63636b`. The surfaces are the
@@ -424,7 +424,7 @@ from the nav. A simple top nav persists across every view: the `devpro` brand, t
 `kanban` and `profiler`, selection switching the view — intuitive, recognizable surfaces, no
 invented paradigms, the dynamic behavior spent only where it counts. The nav and the views carry
 the phosphor pairing, the brand's callback to amber and green screen terminals inverted from the
-site — the monogram's scanlines deliberate — and the accent is the phosphor, no second brand
+nav's scanlines deliberate — and the accent is the phosphor, no second brand
 color. The dark mode carries the phosphor green: brand `#3cf077`, the active view `#31c260`, 80%
 of the brand's brightness, the inactive view `#a6a6ad`. The light mode carries the warm phosphor:
 brand `#e8a020`, the active view `#d09020`, the inactive view `#63636b`. The surfaces are the
@@ -489,10 +489,9 @@ light steps; the record cites that directory, not its files' contents. The ident
 two details the layout left open: the palette-expansion question within the mauve family is
 answered — the accent is the phosphor, no second brand color — and the return-to-list label stands
 as `Return to list`, revisable at execution as a one-string change.
-The layout decisions are stage 3's accepted target; their build-out is not stage-3 work — it is a
-separate pass's, its own plan drafted when the user directs it after the technical base has landed —
-and the dashboard pair above, carrying the identity now, stays pending until that pass lands its
-text.
+The layout decisions are stage 3's accepted target; their build-out was the presentation pass's,
+its own plan directed by the user after the technical base landed, and the dashboard pair above,
+carrying the identity, landed with that pass.
 
 **As it stands:**
 ```
@@ -1033,10 +1032,10 @@ attribute; a consuming project's floor is 1.33.0 or later where the kbase compon
 **Becomes:**
 ```
 **Toolchain.** This repository's justfile needs `just` 1.27.0 or later, for the `[doc]` recipe
-attribute; a consuming project's floor is 1.33.0 or later where the devpro line ships — on every
-project install of a nested plugin — for the `import?` of the include lines, the kb line with the
-kbase component riding the same floor
-(SPEC.md, Guide and README). It runs its recipes under
+attribute; a consuming project's floor is 1.33.0 or later where the devpro line ships — the include
+line the install writes into the consuming project's runner file, on every project install — for
+the `import?` it uses, the kb line with the kbase component riding the same floor (README.md, and
+SPEC.md, Guide and README). It runs its recipes under
 ```
 
 (*Stage 3: the pair below is the active plan's P2 package's content — the `dev-kanban` recipe's
@@ -1052,7 +1051,9 @@ verb, the board its board panel. The dev-check recipes run the absorbed verbs.
 ```
 `check-design --deltas-applied`; this repository runs it as
 `just dev-check-design-deltas-applied`, over the absorbed verb. `dev-dashboard` runs the dashboard
-verb, the board its board panel. The dev-check recipes run the absorbed verbs.
+verb with any further arguments through to it — `just dev-dashboard --port 8791` pins the port —
+and the board is the dashboard's landing surface: the URL opens on it, at `/board/`, and the
+profiler view is the second view at `/profiler/`. The dev-check recipes run the absorbed verbs.
 ```
 
 ### [Plugins](PROJECT_DOCS/ARCHITECTURE/install/plugins.md) — two shipped rows with snippets, the retired line's cleanup
@@ -1406,7 +1407,7 @@ records' routing moving to the dashboard — and stay pending until that package
   either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
   `.profiler-*` ones `devpro profiler tree` walks — as text, as a self-contained HTML page, or
   served over HTTP: its serve sections name the `devpro dashboard` verb, the records' serving being
-  the dashboard's traces panel now the profiler's own `serve` subcommand has retired — and
+  the dashboard's profiler view now the profiler's own `serve` subcommand has retired — and
 ```
 **Becomes:**
 ```
@@ -1414,7 +1415,7 @@ records' routing moving to the dashboard — and stay pending until that package
   either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
   `.profiler-*` ones `devpro profiler tree` walks — as text, as a self-contained HTML page, or
   served over HTTP: its serve sections name the `devpro dashboard` verb, the records' serving being
-  the dashboard's traces panel now the profiler's own `serve` subcommand has retired — and
+  the dashboard's profiler view now the profiler's own `serve` subcommand has retired — and
 ```
 
 **As it stands:**
@@ -1485,8 +1486,9 @@ kanban board, the project's actual current state. The profiler view is the secon
 **Becomes:**
 ```
 nothing from the network, so the records it renders never leave the machine. The board is the
-dashboard's landing surface: its URL's root answers a `302` to `/board/`, so opening it shows the
-kanban board, the project's actual current state. The profiler view is the second view, at
+dashboard's landing surface: its URL's root answers a `302` to `/board/`'s absolute URL — the one it
+prints, `http://127.0.0.1:<port>/board/` — so opening it shows the kanban board, the project's actual
+current state. The profiler view is the second view, at
 ```
 
 **As it stands:**
@@ -1498,6 +1500,6 @@ record read from its own `.profiler-*` store.
 **Becomes:**
 ```
 `.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which
-`devpro profiler tree` and the dashboard's traces panel render beside the claude sessions', each
+`devpro profiler tree` and the dashboard's profiler view render beside the claude sessions', each
 record read from its own `.profiler-*` store.
 ```

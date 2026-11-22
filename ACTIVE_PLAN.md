@@ -24,7 +24,7 @@ surface retires, and the record lands with the code that makes it true.
 | --- | --- | --- | --- | --- |
 | U1 | landed | expert | shipped | the UX pass: the shared layer in `devpro/dicing/kanban/assets/board.css`, the nav, the board-first landing, the profiler view's frame band and legend, the profiler re-style, and the pending pair's application |
 | PR | landed | expert | shipped | Post-plan review |
-| PB | in progress | expert | shipped | Post-plan burndown |
+| PB | landed | expert | shipped | Post-plan burndown |
 
 ## U1 — the UX pass: the decided layout, one presentation layer, the record
 

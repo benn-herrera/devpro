@@ -105,7 +105,7 @@ from the nav. A simple top nav persists across every view: the `devpro` brand, t
 `kanban` and `profiler`, selection switching the view — intuitive, recognizable surfaces, no
 invented paradigms, the dynamic behavior spent only where it counts. The nav and the views carry
 the phosphor pairing, the brand's callback to amber and green screen terminals inverted from the
-site — the monogram's scanlines deliberate — and the accent is the phosphor, no second brand
+nav's scanlines deliberate — and the accent is the phosphor, no second brand
 color. The dark mode carries the phosphor green: brand `#3cf077`, the active view `#31c260`, 80%
 of the brand's brightness, the inactive view `#a6a6ad`. The light mode carries the warm phosphor:
 brand `#e8a020`, the active view `#d09020`, the inactive view `#63636b`. The surfaces are the
@@ -115,14 +115,17 @@ nav's grammar: the brand wordmark is monospace, heavier and about 15% larger tha
 in the motif's brand color at full brightness; both view names sit in the same smaller size, no
 underline, no visited-link styling; the active view is the brand color at 80% brightness and
 heavier weight, the inactive view a lifted gray that reads available, never deactivated. The
-site's own light-mode mapping (green) and dim value (`--accent-dim`) are superseded: the
+site's own light-mode mapping (green) and its dim value are superseded: the
 dashboard's light brand is the bright amber, dimmed only for the active view's smaller text.
+`board.css`'s `:root` carries the nav grammar's values — the phosphor brand, the accent at 80% of
+it, and the view's lifted gray — and no value of the superseded map: `--accent-dim`, the dim the
+active view's text once used, is gone rather than left standing unused.
 Retro colors, modern chrome: the phosphor accents and the scanline treatment are the whole retro
 voice — the layout, spacing and componentry are ordinary modern web, no TUI replication — and the
 scanline treatment may appear in the chrome, the nav or the frame band, never on a card surface,
-its placement the pass's executor call. The server's elements persist across every view: a
-live/idle state indicator and, when live, a stop control; starting is the CLI's alone, no served
-page starting its own server. In the profiler view the how-to-read legend sits at the top of the
+its placement the pass's executor call. The server's elements persist across every view, the nav's
+server block right-justified at its flex edge: a live/idle state indicator and, when live, a stop
+control; starting is the CLI's alone, no served page starting its own server. In the profiler view the how-to-read legend sits at the top of the
 view's frame band and persists there across drill-down, the same band carrying a return-to-list
 control, its label `Return to list`, revisable at execution as a one-string change — the pass's
 second executor call; drill-down is ordinary page navigation, the trace list to the session page

@@ -24,6 +24,7 @@ from devpro.dashboard.server import (
     loopback,
 )
 from devpro.dicing.kanban.board import read_board
+from devpro.profiler.pages import BAND_MARK, CHROME_MARK, CSS_SLOT, NAV_MARK, SHARED_CSS
 
 from .conftest import PLAN, TIMEOUT, Client, project, record, store
 
@@ -35,16 +36,28 @@ def _tool_call(session: str, at: str, name: str) -> dict:
 
 
 def test_the_root_redirects_to_the_board_the_landing_surface(tmp_path: Path, serve) -> None:
-    """The root answers `302` to `/board/`, and following it shows the board: a root that serves the
-    traces index instead inverts the decided board-first landing, and one redirecting anywhere but
-    the board leaves the project's actual state a click away from the URL the verb prints."""
+    """The root answers `302` to the board's absolute URL — the same `http://127.0.0.1:<port>/board/`
+    the verb prints — and following it shows the board: a root that serves the profiler view instead
+    inverts the decided board-first landing, and one answering a bare `/board/` leaves the printed
+    URL and the accepted one a redirect apart."""
     root = project(tmp_path / "proj", {"ROADMAP.md": "## Next\n\n### Two\n\nMore.\n"})
     client = serve(root)
 
     status, headers = client.raw("GET", "", host=f"{client.host}:{client.port}")
 
-    assert (status, headers["Location"]) == (302, BOARD_PATH)
+    assert (status, headers["Location"]) == (302, f"http://127.0.0.1:{client.port}{BOARD_PATH}")
     assert client.get("")[2] == (ASSETS / "index.html").read_text(encoding="utf-8").encode("utf-8")
+
+
+def test_the_state_endpoint_answers_live_while_the_server_serves(tmp_path: Path, serve) -> None:
+    """`/api/state` answers `{"state": "live"}` for the host it is served on: the nav's indicator
+    reads that answer on every view, so an endpoint answering anything else — nothing, or a payload
+    the indicator would have to dig for — leaves the profiler view's chrome reading no state."""
+    client = serve(project(tmp_path / "proj", {}))
+
+    status, content_type, body = client.get("api/state")
+
+    assert (status, content_type, json.loads(body)) == (200, "application/json", {"state": "live"})
 
 
 def test_the_profiler_view_serves_its_list_and_its_pages(tmp_path: Path, serve) -> None:
@@ -225,6 +238,7 @@ def test_no_other_file_is_served(tmp_path: Path, serve, path: str) -> None:
     "method, path, body, answered",
     [
         pytest.param("GET", "api/board", b"", 200, id="payload"),
+        pytest.param("GET", "api/state", b"", 200, id="state"),
         pytest.param("GET", "board/", b"", 200, id="board-page"),
         pytest.param("GET", "board/board.js", b"", 200, id="board-script"),
         pytest.param("GET", "", b"", 302, id="root"),
@@ -275,7 +289,7 @@ def test_every_page_answer_forbids_sniffing_and_restricts_its_sources(tmp_path: 
         assert headers["Content-Security-Policy"] == CONTENT_SECURITY_POLICY, path
         assert headers["X-Content-Type-Options"] == "nosniff", path
     status, headers = client.raw("GET", "", host=host)
-    assert (status, headers["Location"]) == (302, BOARD_PATH)
+    assert (status, headers["Location"]) == (302, f"http://127.0.0.1:{client.port}{BOARD_PATH}")
     assert headers["Content-Security-Policy"] == CONTENT_SECURITY_POLICY
     assert headers["X-Content-Type-Options"] == "nosniff"
     _, headers = client.raw("GET", "api/board", host=host)
@@ -295,6 +309,43 @@ def test_the_profiler_view_carries_its_nav_and_legend_once(tmp_path: Path, serve
     assert 'class="frame-band' in index
     assert re.search(r'<a class="view active" href="/profiler/" aria-current="page">profiler</a>', index)
     assert re.search(r'<a class="view" href="/board/">kanban</a>', index)
+
+
+@pytest.mark.parametrize(
+    "path, scripts",
+    [
+        pytest.param("profiler/", 1, id="index"),
+        pytest.param("page/s-one", 2, id="session-page"),
+    ],
+)
+def test_every_profiler_view_page_renders_the_way_the_file_flow_renders_it(
+    tmp_path: Path, serve, path: str, scripts: int
+) -> None:
+    """A served page is the page the file flow writes, with the dashboard's own chrome around it: the
+    same stylesheet inlined once, the nav once with the server block, the nav's script once — beside
+    the render's own on a session's page — and no mark the splice did not fill. A served page whose
+    layer differs from the file's, or which carries an unfilled mark or a second nav, is the page the
+    dashboard serves standing apart from the one the render writes."""
+    root = project(tmp_path / "proj", {})
+    store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
+    page = serve(root).get(path)[2].decode("utf-8")
+
+    assert page.count(SHARED_CSS) == 1
+    assert page.count('class="site-nav') == 1 and page.count('id="connection"') == 1 and page.count('id="stop"') == 1
+    assert page.count("<script>") == scripts and page.count("api/state") == 1
+    assert not [mark for mark in (CSS_SLOT, NAV_MARK, BAND_MARK, CHROME_MARK) if mark in page]
+
+
+def test_the_board_page_holds_its_chrome_once_and_the_nav_supplies_it(tmp_path: Path, serve) -> None:
+    """`/board/` carries the nav's server block — the indicator and the stop — once, and names two
+    scripts, the files the board path serves beside it: the nav's, whose text the board's own file
+    holds, and its board's. A board page writing its own copy of the block is the second chrome the
+    one nav replaced; one naming a file the board path does not serve is a page whose stop never
+    loads."""
+    page = serve(project(tmp_path / "proj", {})).get("board/")[2].decode("utf-8")
+
+    assert page.count('id="connection"') == 1 and page.count('id="stop"') == 1
+    assert re.findall(r'<script src="([^"]+)"', page) == ["chrome.js", "board.js"]
 
 
 def test_a_session_page_carries_the_bands_legend_and_the_way_back(tmp_path: Path, serve) -> None:

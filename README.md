@@ -6,8 +6,8 @@ Mage that lets you build to last: you work with the agents to design, plan, buil
 
 ![kanban screenshot](images/kanban.webp)
 
-*The board panel `devpro dashboard` serves at `/board/`: the project's work packages, roadmap and
-design as cards*
+*The board panel `devpro dashboard` serves at `/board/` — the project's work packages, roadmap and
+design as cards — in an earlier release's frame, before the top nav the two views share.*
 
 ## The dashboard
 
@@ -23,13 +23,15 @@ It serves the project the command runs in, up to the nearest directory holding a
 loopback only, `127.0.0.1`, and the system picks a free one unless `--port` names one. The URL opens
 on the board — its root answers a redirect to `/board/` — and the profiler view is the second view,
 at `/profiler/`: the session records the activity profiler captured, one row per session, each
-linking to that session's page. A top nav switches between the two.
+linking to that session's page. A top nav switches between the two: its `kanban` link is the board
+panel at `/board/`, its `profiler` link the profiler view at `/profiler/`, and at the nav's right
+edge sit the server's live/idle indicator and its stop.
 
 The board is the project's roadmap, its active design and its active plan as a set of columns of
 cards, live: an edit to a watched file shows on the open page within about a second. Dropping a
 card moves its ticket between `ROADMAP.md` and the active design. Those moves are the board's only
-writes; the plan's columns are read-only. The stop button in the page's header ends the server, as
-Ctrl-C does. Only the command line starts it: no served page starts its own server.
+writes; the plan's columns are read-only. The stop in the nav ends the server, as Ctrl-C does, from
+either view. Only the command line starts it: no served page starts its own server.
 
 ## What it asks of you
 
@@ -166,7 +168,8 @@ the kbase component on, restart Mage. Then ask the session agent to load the `gu
 `devpro:guide` under claude and mage, `devpro-guide` under opencode. It starts a design, explains how
 the development process runs, tells you where your work stands, and shows the board — it runs
 `devpro dashboard`, or gives you that command line where you would rather run it yourself; a
-checkout of this repository runs it as `just dev-dashboard`. It also
+checkout of this repository runs it as `just dev-dashboard`, which passes any further arguments
+through to the verb. It also
 installs, updates, inspects or changes what you just installed. To see what the session did — its
 profile, trace or call tree — ask for the `show-profile` skill: `devpro:show-profile` under claude and
 mage, `devpro-show-profile` under opencode.

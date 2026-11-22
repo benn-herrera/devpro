@@ -5,6 +5,19 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
+### The board panel's error path raises AttributeError instead of handling
+
+`devpro/dicing/kanban/server.py:140` calls `BaseHTTPRequestHandler.handle_error(...)`, which does
+not exist — `handle_error` is a `BaseServer` method, and the call is made from a handler. Every
+client error reaching the branch raises `AttributeError` instead of the handler's quiet
+client-gone behavior. Found by the UX pass's burndown executor, pre-existing.
+
+### The show-profile skill's verbose statement contradicts the profiler's own leaf
+
+`devpro/definitions/skills/show_profile.py:67-69` says `sh HP tree --verbose` draws "the column
+header alone"; the training-skill correction in `harness-profiler.md` states every tool call is
+drawn.
+
 ## Features
 
 ### Codex CLI harness support
