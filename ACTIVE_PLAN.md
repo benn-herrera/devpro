@@ -237,9 +237,49 @@ its links must resolve in; no other target checks it.
 
 Lifetime: shipped. One commit closes it.
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands. The burndown's synthesis
-classifies each finding against the structural design before it lists — addendum, modification,
-backtrack — and the list it lands is the final guidance, without the revision history.
+Drafted from `ACTIVE_PLAN_REVIEW.md`. The findings group into five root causes; the review's IDs
+are cited so no seat's report is lost.
 
-**Done-line.** `just dev-check-plan`, `just dev-check-links`, `just dev-check-design-deltas-applied`
-— run once, at the package's end.
+**1. The record-code boundary, reconciled** (R1, R9, R6): the landing changed the surface's
+arrangement and the records were not reconciled in the same edit. R1 is the user's decision to
+make — the accepted design says the server elements **persist across every view**; the shipped
+profiler view carries neither, for reasons the executor states and no record carries. Until the
+user decides, the burndown carries the code-side half only: R6 — the 302's `Location` absolute
+(`devpro/dashboard/server.py:182`), matching the printed URL and the `loopback()` pin; R9 —
+`harness-profiler.md:54`'s "in its header" line to the nav, whatever R1's answer makes the
+placement. R1's disposition is stated in the plan's own words at landing: either the code gains
+the persistent indicator and stop (the mechanism for a view that cannot poll, named there), or
+the record's sentence is amended to the board-only placement with the executor's reasons stated
+as the decision.
+
+**2. The mechanisms implemented past their statements** (R2, R7): the standalone index's
+`css=` substitution key is dead (`pages.py:756` — `INDEX` holds no placeholder, the served CSS
+arrives only through `with_frame`'s slot) while the docstring (`:748`) and the ARCHITECTURE leaf
+(`harness-profiler.md:49-51`) state the slot mechanism; and the splice-before-legend-removal
+order at `:767` is load-bearing and unstated. Fix: the mechanism made true or the statements
+rewritten — the dead key deleted and the docstring and leaf stating the splice mechanism, with
+the splice's order documented or the two operations made independent; the standalone-path legend
+check added (R12) so the mechanism's pin covers both carriers.
+
+**3. The chrome's own defects** (R3, R4, R5, R11): the header-scoped rules that did not follow
+the nav. `#connection`'s `margin-left: auto` re-homed to `.nav-server` (`board.css:150`), the
+stale "in the page's header" comment out, the missing `.nav-server`/`.nav-stop` rules written;
+the stop's post-`POST` focus given a `:focus-visible` home (`assets/index.html:22`); the body
+layout rules scoped to the board (`board.css:111-119`) so the profiler page's template padding
+and diagram panel stand; the dead `--accent-dim` deleted from both motifs.
+
+**4. The launcher's leaf brought current** (R8): `harness-profiler.md`'s finder lines (`:20`,
+`:26-31`) state the one-shot finder — extended `PATH`, one `command -v`, one probe, no
+`HP_DEVPRO` — and its doctor statement (`:179-181`) matches `devpro_executable()`'s
+executability check.
+
+**5. Vocabulary and test form** (R10, R13): the half-renamed docstrings ("traces panel" at
+`pages.py:2`, `dashboard/__init__.py:4`, `server.py:5`, `server.py:100`,
+`tests/test_devpro_profiler.py:133`) brought to the profiler-view vocabulary; `view.html`'s
+diagram color map and the leaf's "no palette of its own" reconciled; the two stale "pending"
+notes in `ACTIVE_DESIGN.md` corrected; the record's monogram sentence brought to what ships; the
+form pins and duplicate test (`test_devpro_profiler.py:655`, `:659`, `:673`) and the word-count
+assertions (`test_server.py:294`, `:308`) cut to behavior.
+
+**Done-line.** `just test devpro`, then `just lint`, then `just dev-check-links`, then `just
+test docs`, then `just dev-check-design-deltas-applied` — run once, at the package's end.
