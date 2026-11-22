@@ -1197,6 +1197,9 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     fills = {DATA_SLOT: "data", LAYER_MARK: "layer", BAND_LEGEND: "legend"}
     with pytest.raises(KeyError):
         strict_fill(view_text.replace(BAND_LEGEND, ""), fills)
+    # (a) the fill's own strictness: a value carrying its mark leaves it standing — refused.
+    with pytest.raises(KeyError):
+        strict_fill(f"BAND_LEGEND", {BAND_LEGEND: BAND_LEGEND})
     # (b) nothing the fill was handed is left standing, standalone or served.
     project = tmp_path / "project"
     project.mkdir()

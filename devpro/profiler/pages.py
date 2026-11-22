@@ -4,8 +4,10 @@ profiler view serves.
 The page template `view.html` is this package's own data, read through `importlib.resources`, so the
 render finds it wherever devpro is installed. The stylesheet the page and the index carry is the
 board's own, `devpro.dicing.kanban.assets/board.css`: the presented interface's one presentation
-layer, inlined here because the standalone page must load nothing, so its palette is the board's
-from the identical file. `SHARED_CSS` is that file's text, and is what the dashboard inlines too.
+layer, carried by the two flows each its own way. The standalone render inlines the layer —
+`SHARED_CSS`, that file's text — because the standalone page must load nothing, so its palette is
+the board's from the identical file; the dashboard serves the pages with the layer linked to the
+same file the board panel serves.
 """
 
 from __future__ import annotations
@@ -106,15 +108,15 @@ def strict_fill(text: str, fills: dict[str, str]) -> str:
     through `string.Template`'s own substitute, which raises on a `$name` the text carries with no
     key; a literal mark — a map key that is no identifier, the mark as it stands in the text — is
     replaced once by its value. A key whose placeholder the text does not carry raises — a plain
-    `str.replace` silently ignored an unused key and left the mark standing — and so does a mark
-    still standing in the filled output. A mark the text carries that the call names no fill for is
-    not a raise: a later stage fills it through this same fill.
+    `str.replace` silently ignored an unused key and left the mark standing — and so does a value
+    that carries its own mark, which would leave the mark standing in the output.
 
     substitute runs first, over the text's own `$name`s alone: it inserts each value without
     rescanning, so a mark value carrying a `$` is never read as a slot, and a call with no slot skips
     the scan, leaving a template of `${...}` script untouched."""
-    slots = {name: value for name, value in fills.items() if name.isidentifier()}
-    marks = {mark: value for mark, value in fills.items() if not mark.isidentifier()}
+    # Template's `idpattern` admits ASCII identifiers alone: a non-ASCII identifier is a mark.
+    slots = {name: value for name, value in fills.items() if name.isidentifier() and name.isascii()}
+    marks = {mark: value for mark, value in fills.items() if not (mark.isidentifier() and mark.isascii())}
     for name in slots:
         if f"${name}" not in text:
             raise KeyError(name)
@@ -123,6 +125,8 @@ def strict_fill(text: str, fills: dict[str, str]) -> str:
         if mark not in filled:
             raise KeyError(mark)
         filled = filled.replace(mark, value)
+        # A value carrying its own mark leaves it standing — the mark refused here, where the
+        # caller's error is.
         if mark in filled:
             raise KeyError(mark)
     return filled
@@ -1085,7 +1089,7 @@ def session_for(path: str, directory: Path | str) -> dict | None:
     return next((session for session in sessions if session["id"] == path[len(PAGE_PREFIX) :]), None)
 
 
-def profiler_page(session: dict, *, return_to: str | None, dispatcher: tuple[str, str] | None) -> str:
+def page_for(session: dict, *, return_to: str | None, dispatcher: tuple[str, str] | None) -> str:
     """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
     frame band with its legend, the decoration's script, the presentation layer linked — the band's
     per-page facts the dashboard's own lookup names, one legend on the page and the script once."""

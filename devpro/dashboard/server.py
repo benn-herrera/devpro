@@ -83,9 +83,9 @@ def dispatcher_of(session: str, root: str) -> tuple[str, str] | None:
 
 def profiler_page(session: dict, *, return_to: str | None, dispatcher: tuple[str, str] | None) -> str:
     """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
-    frame band, the decoration's script, the shared layer linked — assembled by `pages`, this module
-    adding the band's per-page facts, the way back and the dispatcher its lookup names."""
-    return pages.profiler_page(session, return_to=return_to, dispatcher=dispatcher)
+    frame band, the decoration's script, the shared layer linked — assembled by `page_for`, this
+    module adding the band's per-page facts, the way back and the dispatcher its lookup names."""
+    return pages.page_for(session, return_to=return_to, dispatcher=dispatcher)
 
 
 def loopback(url: str) -> bool:
