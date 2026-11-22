@@ -46,7 +46,20 @@ import pytest
 from devpro.dashboard.server import BOARD_PATH
 from devpro.profiler.capture import mask
 from devpro.profiler.hooks import RETIRED_HOOK_FILES, launcher_resource
-from devpro.profiler.pages import BAND_MARK, DECO_MARK, LEGEND, NAV_MARK, SHARED_CSS, _moments, format_span
+from devpro.profiler.pages import (
+    BAND_MARK,
+    CSS_SLOT,
+    DATA_SLOT,
+    DECO_MARK,
+    INDEX,
+    LEGEND,
+    LEGEND_SLOT,
+    NAV_MARK,
+    SHARED_CSS,
+    _moments,
+    format_span,
+    index_html,
+)
 from devpro.profiler.values import _epoch_ms
 from tests.test_devpro_install import _PROFILER, _claude_plugin, _definition_install
 
@@ -1038,3 +1051,48 @@ def test_a_doctor_names_a_collided_store_as_the_operators_own_merge(tmp_path: Pa
     assert f"old:     {old} is not a store tree reads; {live} already exists" in reported.stdout
     assert "devpro never merges two stores: merge or delete the old one yourself" in reported.stdout
     assert "profiler init claude and" not in reported.stdout
+
+
+def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_standing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`clauses.TEST_PRECONDITION`: a test a package adds is written for a named defect and the run
+    that fails under it before the change. The defect is the render's silent no-op `str.replace` — a
+    mark the fill is told to fill but the text no longer carries, left unfilled without a word — and
+    the run fails before the strict fill exists to raise on it.
+
+    The strict fill every profiler fill now runs through refuses a placeholder it is told to fill
+    that the text no longer carries, and leaves no mark it filled standing. `index_html`, fed an
+    `INDEX` whose `$rows` slot the text no longer names yet still told to fill it, raises — where the
+    old `string.Template.substitute` dropped the unused key in silence; `strict_fill` on `view.html`
+    with a mark removed, still told to fill it, raises the same. A rendered session page and the
+    served page and index then carry no mark the fill was handed standing. The `INDEX` swap is for
+    this check alone: `monkeypatch` reverts at the end and the serve below runs in a child process
+    that reads `INDEX` from disk, so nothing after it sees the swap."""
+    # (a) `index_html`: an `INDEX` whose `$rows` slot the text no longer names, still told to fill it.
+    monkeypatch.setattr("devpro.profiler.pages.INDEX", INDEX.replace("$rows", ""))
+    with pytest.raises(KeyError):
+        index_html(tmp_path)
+    # (a) the fill itself: `view.html` with a mark removed, still told to fill it.
+    from devpro.profiler.pages import strict_fill
+
+    view_text = (_PACKAGE_ROOT / "devpro" / "profiler" / "view.html").read_text(encoding="utf-8")
+    fills = {DATA_SLOT: "data", CSS_SLOT: "layer", LEGEND_SLOT: "legend"}
+    with pytest.raises(KeyError):
+        strict_fill(view_text.replace(LEGEND_SLOT, ""), fills)
+    # (b) nothing the fill was handed is left standing, standalone or served.
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
+    launcher = _launcher(tmp_path / "harness")
+    printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
+    assert printed.returncode == 0, printed.stderr
+    for mark in (CSS_SLOT, LEGEND_SLOT, DATA_SLOT):
+        assert mark not in printed.stdout, f"{mark} left standing in the rendered page"
+    with _serve(launcher, cwd=project) as url:
+        page = _fetch(f"{url}page/s-claude")
+        index = _fetch(f"{url}profiler/")
+    for mark in (CSS_SLOT, NAV_MARK, BAND_MARK, DECO_MARK):
+        assert mark not in page, f"{mark} left standing in the served page"
+        assert mark not in index, f"{mark} left standing in the served index"
+    assert "$rows" not in index

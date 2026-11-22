@@ -98,6 +98,33 @@ def shared_css() -> str:
 SHARED_CSS = shared_css()
 
 
+def strict_fill(text: str, fills: dict[str, str]) -> str:
+    """One strict fill every fill the profiler's assembly makes runs through. A `$name` slot goes
+    through `string.Template`'s own substitute, which raises on a `$name` the text carries with no
+    key; a literal mark — a map key that is no identifier, the mark as it stands in the text — is
+    replaced once by its value. A key whose placeholder the text does not carry raises — a plain
+    `str.replace` silently ignored an unused key and left the mark standing — and so does a mark
+    still standing in the filled output. A mark the text carries that the call names no fill for is
+    not a raise: a later stage fills it through this same fill.
+
+    substitute runs first, over the text's own `$name`s alone: it inserts each value without
+    rescanning, so a mark value carrying a `$` is never read as a slot, and a call with no slot skips
+    the scan, leaving a template of `${...}` script untouched."""
+    slots = {name: value for name, value in fills.items() if name.isidentifier()}
+    marks = {mark: value for mark, value in fills.items() if not mark.isidentifier()}
+    for name in slots:
+        if f"${name}" not in text:
+            raise KeyError(name)
+    filled = string.Template(text).substitute(slots) if slots else text
+    for mark, value in marks.items():
+        if mark not in filled:
+            raise KeyError(mark)
+        filled = filled.replace(mark, value)
+        if mark in filled:
+            raise KeyError(mark)
+    return filled
+
+
 def read_trace(file: Path) -> list[dict]:
     """The records a trace holds: a torn line is skipped."""
     records = []
@@ -606,8 +633,14 @@ def render_html(session: dict) -> str:
         ],
     }
     template = (files(__package__) / "view.html").read_text(encoding="utf-8")
-    page = template.replace(DATA_SLOT, _json(data).replace("<", "\\u003c"))
-    return page.replace(CSS_SLOT, SHARED_CSS).replace(LEGEND_SLOT, LEGEND)
+    return strict_fill(
+        template,
+        {
+            DATA_SLOT: _json(data).replace("<", "\\u003c"),
+            CSS_SLOT: SHARED_CSS,
+            LEGEND_SLOT: LEGEND,
+        },
+    )
 
 
 def session_of(path: Path) -> dict:
@@ -860,10 +893,13 @@ def index_html(directory: Path | str) -> str:
             key=lambda session: session["first"],
         )
     )
-    return string.Template(INDEX).substitute(
-        unreadable="".join(unreadable_row(store) for store in unreadable),
-        rows=rows or '<tr><td colspan="5">No sessions recorded yet.</td></tr>',
-        **ZEBRA_MARKS,
+    return strict_fill(
+        INDEX,
+        {
+            "unreadable": "".join(unreadable_row(store) for store in unreadable),
+            "rows": rows or '<tr><td colspan="5">No sessions recorded yet.</td></tr>',
+            **ZEBRA_MARKS,
+        },
     )
 
 
@@ -890,7 +926,7 @@ def with_frame(page: str, *, nav: str, band: str, script: str) -> str:
     else:
         page = page.replace("<style>\n" + CSS_SLOT, f"{layer_link}<style>", 1)
     page = page.replace(LEGEND, "")
-    return page.replace(NAV_MARK, nav).replace(BAND_MARK, band).replace(DECO_MARK, script)
+    return strict_fill(page, {NAV_MARK: nav, BAND_MARK: band, DECO_MARK: script})
 
 
 PAGE_PREFIX = "/page/"
