@@ -36,9 +36,6 @@ set positional-arguments
 [doc("show help on devpro just recipes")]
 devpro-help:
     @just --justfile "{{justfile()}}" --list | grep -E '^[ \t]+devpro'
-
-[doc("print the devpro command's help")]
-devpro:
     @devpro --help
 
 [doc("check the active plan's status form, as the board reads it")]

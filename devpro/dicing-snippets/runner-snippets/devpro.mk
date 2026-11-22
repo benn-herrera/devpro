@@ -28,7 +28,6 @@
 #
 # Targets:
 #   devpro-help:                          show help on devpro make targets
-#   devpro:                               print the devpro command's help
 #   devpro-check-plan:                    check the active plan's status form, as the board reads it
 #   devpro-check-design:                  check the active design's final form and its delta pairs
 #   devpro-check-design-deltas-applied:   check that the active design's pending doc deltas were applied
@@ -42,9 +41,7 @@ DEVPRO_SNIPPET_FILE := $(lastword $(MAKEFILE_LIST))
 
 devpro-help:
 	@grep '^#   devpro' "$(DEVPRO_SNIPPET_FILE)" | sed 's:^#: :'
-
-devpro:
-	@$(DEVPRO) --help
+	@devpro --help
 
 devpro-check-plan:
 	@$(DEVPRO) check-plan
