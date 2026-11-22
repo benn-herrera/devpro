@@ -1,4 +1,4 @@
-# dicing check recipes. This file is installed at
+# kanban check recipes. This file is installed at
 # <harness-relpath>/skills/docdicer/dicing-snippets/runner-snippets/ — <harness-relpath>
 # being the install directory relative to the project root:
 # .claude/skills/devpro under claude, .opencode/plugins/devpro under opencode — and is
