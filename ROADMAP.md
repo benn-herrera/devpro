@@ -117,7 +117,29 @@ never type-checked: there is no `tsconfig` and no recipe. A recipe needs a decla
 ### No shell lint
 
 No recipe runs `shellcheck` over `devtools/scripts/*.sh`,
-`devpro/harnesses/resources/*/hooks/*.sh` or `devpro/development-tools/cold-read.sh`.
+`devpro/harnesses/resources/*/hooks/*.sh`, `devpro/harnesses/resources/claude/profiler/hp.sh` or
+`devpro/development-tools/cold-read.sh`. The user directs it: the sources need to be lintable,
+shell included — the resources are shipped code.
+
+### The HTML templates' slot fills are never checked
+
+`devpro/profiler/view.html`'s placeholders (`/*STYLE*/`, `<!--LEGEND-->`, the nav and band marks)
+and every Python-spliced fragment have no check that a render leaves no placeholder standing: the
+UX review found a literal `${0}` in every served session page and a dead `/*STYLE*/` key —
+byte-level failures no test of the splices catches, because the splices are what the tests
+assert. The check the render needs: a fill that refuses an unknown or unfilled placeholder, and a
+test running it over every template — the same refusal the definitions' `filled_text` already
+makes.
+
+### The pages assemble by string splices
+
+The dashboard's and profiler's pages are assembled by Python string splices — templates with
+placeholder slots filled by `replace`, fragments spliced in order-dependent sequences. The UX
+review's findings (the dead `/*STYLE*/` key, the load-bearing splice order, the serve path
+diverging from the file path, the literal `${0}`) are one failure class, and the burndown's fixes
+make the assembly path one and pin it byte-for-byte. If the class keeps biting, the candidate
+step is Python's `string.Template` — standard library, strict fill, unknown keys raising instead
+of surviving as literals. A dependency decision for the design that takes it, not this pass.
 
 ### Browser-driven visual verification
 
