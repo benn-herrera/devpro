@@ -68,7 +68,7 @@ slotted into this plan.
 | P1b | landed | expert | shipped | the dashboard verb takes a positional project directory |
 | P2 | landed | expert | shipped | the one front end: the old serving verbs retire, the record and the snippets' routing move with them |
 | PR | landed | expert | shipped | Post-plan review |
-| PB | dispatchable | expert | shipped | Post-plan burndown |
+| PB | drafted: the PE review and revision of its work list remain before it is dispatchable | expert | shipped | Post-plan burndown |
 
 ## P1 — the dashboard verb: one server, two panels, the minimal frame
 
