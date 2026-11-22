@@ -53,7 +53,7 @@ and never on cards; production entry points only. The findings below are the def
   and no comment or test states it. Order documented, or the two operations made independent.
   (coder, architect)
 - **R8 — Warning.** `harness-profiler.md` still describes the pre-`6481c9e` finder and a live
-  `HP_DEVPRO` (`:26-31`, `:20`), and the doctor statement (`:179-181`) says the finder probes
+  `HP_DEVPRO` (`:26-31`, `:20`), and the finder paragraph (`:29`) says the finder probes
   `--version` where `hooks.py`'s `devpro_executable()` checks executability only — the leaf is a
   version behind the launcher's simplification. (coder)
 - **R9 — Warning.** `harness-profiler.md:54` still places the board's indicator and stop **"in its
@@ -72,6 +72,31 @@ and never on cards; production entry points only. The findings below are the def
   sentence describing an object that does not ship; test cuts that pin form rather than behavior
   (`test_devpro_profiler.py:655`, `:673`; a duplicate at `:659`; `test_server.py:294`, `:308`
   counting words where `class="intro"` is the behavior). (architect, coder)
+
+## Addendum — the tech-writer seat's report, landed after the synthesis
+
+The seat's review completed after the synthesis above; its findings join the burndown's groups
+and are recorded here as delivered.
+
+- **R14 — Critical.** The **served session page is unstyled with an empty legend**: the served
+  `<style>` carries 11,594 chars against `SHARED_CSS`'s 8,170 — the serve path serves different
+  CSS than the file holds — while identical bytes from disk render correctly, reproduced on two
+  live servers from `curl` and a screenshot. The one-text mechanism's serve half is broken:
+  the page the dashboard serves is not the page the file flow writes. (tech-writer)
+- **R15 — Critical.** `view.html:47` renders a literal **`${0}`** into every session page's
+  toolbar. (tech-writer)
+- **R16 — Warning.** `repo-layout.md:16` still routes `/` as a traces route;
+  `harness-profiler.md:138`, `:164` keep "traces panel" after the rename; the layer paragraph
+  never states that the board *links* the shared layer while the profiler pages *inline* it; and
+  the checkout's installed `.claude`/`.opencode` skill trees still carry the pre-pass text
+  (definitions reworded, trees not re-rendered — the next install re-renders them).
+  (tech-writer)
+- **R17 — Warning.** `images/kanban.webp` is the 0.17.1 frame captioned as the current `/board/`;
+  and the Firefox headless caveat: the pass's own baseline screenshot shows an empty board, the
+  drawn board being script-only. (tech-writer)
+- **R18 — Note.** `just dev-dashboard` cannot pass `--port`; the nav labels `kanban`/`profiler`
+  are never mapped to the prose's "board panel"/"profiler view"; `recipes.md:35-38` predates the
+  include-line rework (pre-existing). (tech-writer)
 
 ## Process notes
 
