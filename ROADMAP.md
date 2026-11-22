@@ -29,7 +29,14 @@ workflow documents' model they validate against) become `devpro.doccheck`** — 
 world — whose model `devpro.kanban` consumes. `dicing.cli`'s reverse arrow
 (`.kanban.plancheck`) is what blocks the clean arrangement today. The target arrows point one way
 only: `devpro.kanban` → `devpro.doccheck` → `devpro.dicing`, `devpro.dashboard` → the front
-ends, nothing back; `dicerlib` flattening into `devpro.dicing` is the optional half.
+ends, nothing back; `dicerlib` flattening into `devpro.dicing` is the optional half. The CLI layer follows the same
+line: **doccheck owns its commands' argparse and dispatch** (`check-plan`/`check-design`/
+`check-roadmap`, lazy, the verb-entry pattern — the invariant test's exemption tuple gains it),
+`devpro.dicing.cli` keeps the dicing verbs including `check-links`/`check-tree` (the dicing
+operations' own verification), and `devpro/cli.py` composes the fourth `add_verbs` — the house
+pattern the profiler and dashboard already follow. The generic verb-registry alternative is the
+over-engineering trap the thesis's building-blocks table names; both users of this record
+rejected it independently.
 
 ## Features
 
