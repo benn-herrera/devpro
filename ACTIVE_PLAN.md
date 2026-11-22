@@ -41,7 +41,7 @@ nothing to build against while the capture lands. No verb, route or file retires
 | --- | --- | --- | --- | --- |
 | A1 | landed: the delta gate reports 80 landed, 0 pending | expert | shipped | the attribution pass: the opencode capture's child-session extraction, the index's grouping, zebra and brand marks, the moments in local time with the span as a datum, the child page's dispatch band, the Agent-row links, and the pending pair's application |
 | PR | landed: the review document committed | expert | shipped | Post-plan review |
-| PB | drafted | expert | shipped | Post-plan burndown |
+| PB | dispatchable: the PE review's findings revised in; B2's hold gates the dispatch | expert | shipped | Post-plan burndown |
 
 ## A1 — the attribution pass
 
@@ -270,41 +270,64 @@ pair landed.
 Lifetime: shipped. The reviewers are given the project documents and the design, not the plan,
 and review the changes and their tests against the project's standards and fitness for purpose.
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+The review landed as `ACTIVE_PLAN_REVIEW.md` (commit `d63e4c5`) — four seats, one entry per
+de-duplicated defect.
 
 ## PB — Post-plan burndown
 
-Lifetime: shipped. Drafted from `ACTIVE_PLAN_REVIEW.md` (landed), grouped by root cause; each item
-cites its finding's ID.
+Lifetime: shipped. Drafted from `ACTIVE_PLAN_REVIEW.md` (landed `d63e4c5`), grouped by root cause;
+each item cites its finding's ID. The package's done-line, run once at its end:
+`just test devpro && just lint && just dev-check-links && just test docs` — every item's check is
+inside those runs; B5's new test's failing run is `just test devpro` (the claude-guard removal it
+names is the mutation that fails it).
 
 - **B1 (F1)** — the zebra's tone gets a motif-aware carrier: a shared-layer variable the
   board.css `:root`/dark pair owns, or a second `prefers-color-scheme` block in the template's own
-  style — dark keeps `#191c22`, light takes `#e7e7eb` (proposed; strike where wrong); the zebra
-  test pins re-point to the carrier, not the literal declaration.
-- **B2 (F2)** — nested dispatch chains: HELD for the user's decision (walk the chain, or scope
-  both leaves to one level with the tree as the deep view).
-- **B3 (F3)** — the self-dispatch exclusion is one fact (`dispatches` drops the self-naming, or
-  the admissible children computed once); the `index_html` docstring states what the code does;
-  the `childPage` docstring's rationale matches its guard's shape.
-- **B4 (F4)** — one read serves both the page and the dispatcher (`page_of` returns the session,
-  or a sibling lookup takes the sessions in hand); `server.py`'s second full read goes.
+  style — dark keeps `#191c22`, light takes `#e7e7eb` (proposed; strike where wrong). The zebra
+  test pins stop asserting the literal declaration (F1: the literal spelling is not the contract)
+  and assert the carrier's effect instead: the odd-row rule reaches the served page, and the
+  harness cell carries its class.
+- **B2 (F2)** — nested dispatch chains: HELD for the user's decision. If the word is *walk*:
+  `index_html` draws each dispatcher's subtree and the count covers every row beneath. If the word
+  is *one level*: the code stands and both leaves gain the clause "a dispatch's child one level
+  deep; deeper chains read on the session's page, whose tree draws every dispatch as a context."
+- **B3 (F3)** — the self-dispatch exclusion is one fact: `dispatches` drops a session named as its
+  own child before returning (or the admissible children are computed once and both the filter and
+  the grouping derive from them). The `index_html` docstring states what the code now does, and
+  the `childPage` docstring's rationale matches its guard's shape. Observable and pinned: a
+  fixture record naming its own session draws exactly one row — the test's defect: a self-naming
+  record drops the session from the index or draws it twice.
+- **B4 (F4)** — one read serves both the page and the dispatcher: `page_of` returns the session
+  beside the page, or a sibling lookup takes the sessions in hand; `server.py`'s second full
+  `read_sessions` goes.
 - **B5 (F5)** — a test pins the claude guard: a claude store whose record's `child_agent_id`
-  equals another session's id groups nothing and emits no `childPage` link.
-- **B6 (F6)** — the moments' format authority moves to `_moments` (`<time datetime="…">` the
-  script reads, the regex going) or, minimally, the docstring states the fallback and a runner
+  equals another session's id groups nothing and emits no `childPage` link. Defect: removing
+  `record.get("harness") == "opencode"` groups a claude-named session and links a page that does
+  not exist — this test is what fails under it.
+- **B6 (F6)** — decided, not branched: the moments' format authority moves to `_moments`, which
+  emits `<time datetime="…">` elements the script reads — the `MOMENTS` regex goes — and a runner
   test loads `chrome.js` over same-day and cross-day cells asserting the rewrite, the untouched
-  title, and the fallback.
-- **B7 (F7)** — the real-host evidence becomes a re-examinable artifact (a captured real
-  `subagent` `execute.after` payload beside the `a1-*.log` evidence), and `childSessionOf`'s
-  docstring names the version range and the valid no-metadata state.
-- **B8 (F8)** — the notes bundle: the count pluralized (`1 dispatched agent`, re-pinned), the
-  stale substitution-slot comment reworded, the href builder shared by all three sites,
-  `calendar` replaced by a `sameDay` predicate, the `view.html` 404 note, the band helper's
-  coupling named in its docstring.
-- **B9 (G3)** — `pyproject.toml` gains `profiler/chrome.js` as package data; `just test`
-  (whole tree) green again.
-- **B10 (G1)** — the proposed CONVENTIONS rule lands: "Evidence commands run before they ship" —
-  a command a plan states as re-runnable evidence is run when the document is written, and its
-  stated output is what the run returned (`PROJECT_DOCS/CONVENTIONS/planning-and-execution/`).
-- **B11 (G2)** — the CONVENTIONS sentence naming what holds the `.ts` harness resources
-  mechanically: nothing today — they are held only by their tests, stated plainly.
+  title, and the unmatched-cell fallback. Defect: a moment cell whose served format drifts parses
+  to nothing and keeps raw UTC silently — this test is what fails under it.
+- **B7 (F7)** — the code carries what no act can produce as a file today: `childSessionOf`'s
+  docstring names the version range the field holds from and states that a result with no record
+  metadata is a valid no-child state. The machine-hold gap — nothing re-checks the host fact on
+  the next point release — becomes a ROADMAP ticket (a captured real `subagent` payload as a
+  re-examinable artifact), not a pretend file in gitignored scratch.
+- **B8 (F8)** — the notes bundle, each at its site: the count reads `1 dispatched agent`
+  (`session_row`, pages.py:790) and the pin re-expects singular (`test_devpro_profiler.py`);
+  the older substitution-slot comment (`pages.py:891-892`) is reworded to name the row slots it
+  describes; the href builder is exported and shared by `render_html`'s `childPage`,
+  `dispatcher_html`, and `_session_link`; `calendar` is replaced by a `sameDay` predicate
+  (`chrome.js:88`, `:97`) with `dayOf` for display only; `view.html:372-378` gains a note that the
+  link's target answers the existing 404 where no child page is served; the band test helper
+  `_band()` (tests/dashboard/test_server.py) names its return-label coupling in its docstring.
+- **B9 (G3)** — `pyproject.toml` gains `profiler/chrome.js` as package data; `just test` (whole
+  tree) green again.
+- **B10 (G1)** — the proposed CONVENTIONS rule lands as
+  `PROJECT_DOCS/CONVENTIONS/planning-and-execution/evidence-commands-run-before-they-ship.md`:
+  "Evidence commands run before they ship. A command a plan or design states as re-runnable
+  evidence is run when the document is written, and its stated output is what the run returned."
+- **B11 (G2)** — the sentence lands in
+  `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/harness-resources-are-copied-verbatim.md`:
+  the `.ts` harness resources are held only by their tests — no type check or lint covers them.
