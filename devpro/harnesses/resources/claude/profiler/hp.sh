@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # !INSTALLED! from devpro/harnesses/resources/claude/profiler/hp.sh — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
-# POSIX sh, not bash: the hook entries invoke it as `sh`, and a hook may run
-# with a `PATH` where `bash` is not found.
+# Bash, invoked as `/bin/bash`: the hook entries name the interpreter absolutely, so the
+# script runs under the shell its shebang names on every platform the hooks ship to,
+# with a `PATH` at hook-run time that no longer matters. The repository's other shell
+# scripts are bash as well (the claude harness's hook commands name their interpreter).
 # Finds the devpro command and runs its profiler verb. Hooks may run with a bare
 # PATH, so it also looks where Homebrew and `~/.local/bin` put it; HP_DEVPRO
 # overrides the search. A candidate is used only where it runs. Without a usable
@@ -42,4 +44,4 @@ if [[ -z "${devpro}" ]]; then
     *) report_missing; exit 1 ;;
   esac
 fi
-exec "$devpro" profiler "$@"
+exec "${devpro}" profiler "${@}"

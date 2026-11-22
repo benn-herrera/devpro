@@ -77,7 +77,7 @@ def devpro_executable() -> str | None:
 
 def _hook_command(launcher: str) -> str:
     """The command a committed hook runs: this launcher, under the repository's `.claude/`."""
-    return f'sh "$CLAUDE_PROJECT_DIR/.claude/harness-profiler/{launcher}" capture claude'
+    return f'/bin/bash "$CLAUDE_PROJECT_DIR/.claude/harness-profiler/{launcher}" capture claude'
 
 
 HOOK_COMMAND = _hook_command(LAUNCHER)

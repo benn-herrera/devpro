@@ -419,7 +419,7 @@ _PROFILER_EVENTS = (
     "SessionStart",
     "SubagentStop",
 )
-_PROFILER_COMMAND = 'sh "${CLAUDE_PLUGIN_ROOT}/profiler/hp.sh" capture claude'
+_PROFILER_COMMAND = '/bin/bash "${CLAUDE_PLUGIN_ROOT}/profiler/hp.sh" capture claude'
 _SHOW_PROFILE = "skills/show-profile/SKILL.md"
 
 

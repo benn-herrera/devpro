@@ -71,7 +71,7 @@ _PLUGIN_REMINDER_COMMAND = _hook_command(interpreter="bash", script=_REMINDER_SC
 # out of band and short, and its launcher exits 0 where it finds no devpro, so neither a failed
 # capture nor a missing toolchain blocks the call that fired it.
 _PROFILER_SCRIPT = "profiler/hp.sh"
-_PROFILER_COMMAND = f'sh "${{CLAUDE_PLUGIN_ROOT}}/{_PROFILER_SCRIPT}" capture claude'
+_PROFILER_COMMAND = f'/bin/bash "${{CLAUDE_PLUGIN_ROOT}}/{_PROFILER_SCRIPT}" capture claude'
 _PROFILER_TIMEOUT = 5
 _PROFILER_EVENTS = (
     "PostToolUse",
