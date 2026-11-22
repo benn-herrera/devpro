@@ -101,6 +101,10 @@ def shared_css() -> str:
 
 
 SHARED_CSS = shared_css()
+# The standalone page's own layer element: the shared layer's text in a style block of its own,
+# placed where the mark stands — before the template's own style block, so the layer's rules cascade
+# first and the template's own rules override them.
+LAYER_INLINE = "<style>\n" + SHARED_CSS + "\n</style>"
 
 
 def strict_fill(text: str, fills: dict[str, str]) -> str:
@@ -635,7 +639,7 @@ def render_html(session: dict) -> str:
         template,
         {
             DATA_SLOT: _json(session_data(session)).replace("<", "\\u003c"),
-            LAYER_MARK: SHARED_CSS,
+            LAYER_MARK: LAYER_INLINE,
             **band_fills(dispatcher=None, return_to=None),
         },
     )
@@ -917,8 +921,8 @@ INDEX = """<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
 <title>devpro — profiler view: sessions</title>
-<style>
 <!--LAYER-->
+<style>
 main { padding: 1rem; }
 h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem; }
 table { border-collapse: collapse; }

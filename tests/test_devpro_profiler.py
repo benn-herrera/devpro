@@ -52,6 +52,7 @@ from devpro.profiler.pages import (
     DISPATCHED_MARK,
     INDEX,
     LAYER_MARK,
+    LAYER_INLINE,
     LEGEND,
     RETURN_MARK,
     SHARED_CSS,
@@ -211,7 +212,7 @@ def _without_deco(served: str) -> str:
     is left where the render has nothing. The band comes out bare — the render's own band, its legend
     removed in the comparison, is bare too."""
     lines = served.splitlines()
-    lines[lines.index(LAYER_LINK)] = SHARED_CSS
+    lines[lines.index(LAYER_LINK)] = LAYER_INLINE
     page = "\n".join(lines) + "\n"
     band = page[
         page.find('<div class="frame-band') : page.find("Return to list</a></div>") + len("Return to list</a></div>")
