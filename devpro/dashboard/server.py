@@ -147,7 +147,7 @@ class DashboardServer(ThreadingHTTPServer):
 
         `CLAUDE_PROJECT_DIR` is not followed — it names the outermost claude session's launch
         directory, which for a terminal-launched server is another project."""
-        return pages.link_layer(pages.index_html(self.root))
+        return pages.served_page(pages.index_html(self.root))
 
     def traces(self) -> bytes:
         """The index's feed as the JSON answer `/api/traces` serves: `pages.traces_feed`'s entries,

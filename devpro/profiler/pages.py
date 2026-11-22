@@ -49,7 +49,10 @@ class UsageError(Exception):
 
 ANSI_COLORS = (36, 33, 35, 32, 34, 31)
 DATA_SLOT = "/*DATA*/null"
-CSS_SLOT = "/*STYLE*/"
+# The shared layer's carriage, the one thing the standalone page and the served page hold differently:
+# the render fills it with the layer's text, the serve path with the link to the board panel's own file.
+LAYER_MARK = "<!--LAYER-->"
+LAYER_LINK = '<link rel="stylesheet" href="/board/board.css">'
 
 # The how-to-read legend, once for the whole presented interface. Its one home, filled by the strict
 # fill into the frame band both profiler templates carry — the standalone render's and the served
@@ -628,7 +631,7 @@ def render_html(session: dict) -> str:
         template,
         {
             DATA_SLOT: _json(session_data(session)).replace("<", "\\u003c"),
-            CSS_SLOT: SHARED_CSS,
+            LAYER_MARK: SHARED_CSS,
             **band_fills(dispatcher=None, return_to=None),
         },
     )
@@ -831,28 +834,25 @@ def index_html(directory: Path | str) -> str:
     The index carries the presentation layer and names no view of its own: opened on its own it
     stands beside no board, so the deco — the nav, the frame band and the decoration's script — is
     the template's own text, the band's legend filled here from its one home (the index carrying no
-    dispatcher and no way back), and the layer filled for the serve path to link (`link_layer`),
-    absent where nothing serves it."""
+    dispatcher and no way back), and the layer's carriage left at its mark — filled by the serve path
+    with its link (`served_page`), its one consumer, since no file flow writes the index."""
     read_sessions(directory)
     return strict_fill(
         INDEX,
         {
             **ZEBRA_MARKS,
-            CSS_SLOT: SHARED_CSS,
             **band_fills(dispatcher=None, return_to=None),
         },
     )
 
 
-def link_layer(page: str) -> str:
-    """The assembled page as the dashboard serves it: the presentation layer **linked** — the
+def served_page(text: str) -> str:
+    """A page as the dashboard serves it: the presentation layer **linked** at its carriage mark — the
     dashboard's Content-Security-Policy refuses an inline stylesheet, and the one source is the board
-    panel's own file, which the board page and the profiler's pages link alike. The render's carrier
-    is the inline — a standalone page being self-contained — so the serve path strips the inline copy
-    and names the file where the style block stood; the template's own style block stands, its rules
-    the page's own, served and written alike."""
-    layer_link = '<link rel="stylesheet" href="/board/board.css">'
-    return page.replace(SHARED_CSS, "").replace("<style>\n", f"{layer_link}<style>", 1)
+    panel's own file, which the board page and the profiler's pages link alike. The render's carrier is
+    the inline — a standalone page being self-contained — so the serve path fills the page's carriage
+    mark with the link where the render filled the layer's text, and a mark left standing refuses."""
+    return strict_fill(text, {LAYER_MARK: LAYER_LINK})
 
 
 def _link(href: str, text: str) -> str:
@@ -908,15 +908,16 @@ ZEBRA_MARKS = {f"class_{harness}": harness for harness in HARNESS_MARKS} | HARNE
 # The index's template: static. The rows' table is the one the script fills (`index.js`, the feed
 # `/api/traces` as its payload), and its script's read of the feed is what the page's body carries;
 # the script is the template's own text, as the deco is, and served under the pages' policy.
-# The presentation layer is no substitution slot: `/*STYLE*/` stands in the template, as it does on a
-# page, and the `CSS_SLOT` fill inserts it. The three marks are the last thing before the body's own
-# content, their text no stylesheet's.
+# The presentation layer is no substitution slot: `<!--LAYER-->` stands in the template, as it does on a
+# page, and the serve path fills it with the link (`served_page`) — the render's own carrier for a page
+# being the layer's text. The three marks are the last thing before the body's own content, their text
+# no stylesheet's.
 INDEX = """<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
 <title>devpro — profiler view: sessions</title>
 <style>
-/*STYLE*/
+<!--LAYER-->
 main { padding: 1rem; }
 h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem; }
 table { border-collapse: collapse; }
@@ -1092,13 +1093,11 @@ def profiler_page(session: dict, *, return_to: str | None, dispatcher: tuple[str
     """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
     frame band with its legend, the decoration's script, the presentation layer linked — the band's
     per-page facts the dashboard's own lookup names, one legend on the page and the script once."""
-    return link_layer(
-        strict_fill(
-            (files(__package__) / "view.html").read_text(encoding="utf-8"),
-            {
-                DATA_SLOT: _json(session_data(session)).replace("<", "\\u003c"),
-                CSS_SLOT: SHARED_CSS,
-                **band_fills(dispatcher=dispatcher, return_to=return_to),
-            },
-        )
+    return strict_fill(
+        (files(__package__) / "view.html").read_text(encoding="utf-8"),
+        {
+            DATA_SLOT: _json(session_data(session)).replace("<", "\\u003c"),
+            LAYER_MARK: LAYER_LINK,
+            **band_fills(dispatcher=dispatcher, return_to=return_to),
+        },
     )

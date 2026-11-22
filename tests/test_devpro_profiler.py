@@ -48,10 +48,10 @@ from devpro.profiler.capture import mask
 from devpro.profiler.hooks import RETIRED_HOOK_FILES, launcher_resource
 from devpro.profiler.pages import (
     BAND_LEGEND,
-    CSS_SLOT,
     DATA_SLOT,
     DISPATCHED_MARK,
     INDEX,
+    LAYER_MARK,
     LEGEND,
     RETURN_MARK,
     SHARED_CSS,
@@ -211,7 +211,7 @@ def _without_deco(served: str) -> str:
     is left where the render has nothing. The band comes out bare — the render's own band, its legend
     removed in the comparison, is bare too."""
     lines = served.splitlines()
-    lines[lines.index('<link rel="stylesheet" href="/board/board.css"><style>')] = "<style>\n" + SHARED_CSS
+    lines[lines.index(LAYER_LINK)] = SHARED_CSS
     page = "\n".join(lines) + "\n"
     band = page[
         page.find('<div class="frame-band') : page.find("Return to list</a></div>") + len("Return to list</a></div>")
@@ -1179,7 +1179,7 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     from devpro.profiler.pages import strict_fill
 
     view_text = (_PACKAGE_ROOT / "devpro" / "profiler" / "view.html").read_text(encoding="utf-8")
-    fills = {DATA_SLOT: "data", CSS_SLOT: "layer", BAND_LEGEND: "legend"}
+    fills = {DATA_SLOT: "data", LAYER_MARK: "layer", BAND_LEGEND: "legend"}
     with pytest.raises(KeyError):
         strict_fill(view_text.replace(BAND_LEGEND, ""), fills)
     # (b) nothing the fill was handed is left standing, standalone or served.
@@ -1189,12 +1189,12 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     launcher = _launcher(tmp_path / "harness")
     printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
     assert printed.returncode == 0, printed.stderr
-    for mark in (CSS_SLOT, DATA_SLOT, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
+    for mark in (LAYER_MARK, DATA_SLOT, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
         assert mark not in printed.stdout, f"{mark} left standing in the rendered page"
     with _serve(launcher, cwd=project) as url:
         page = _fetch(f"{url}page/s-claude")
         index = _fetch(f"{url}profiler/")
-    for mark in (CSS_SLOT, DATA_SLOT, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
+    for mark in (LAYER_MARK, DATA_SLOT, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
         assert mark not in page, f"{mark} left standing in the served page"
         assert mark not in index, f"{mark} left standing in the served index"
     assert "$rows" not in index and "$class_claude" not in index
