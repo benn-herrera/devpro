@@ -37,29 +37,30 @@ and treated as absent.
 renders it: it is a self-contained page that loads nothing from the network, it ships in the wheel,
 and it is no install resource and no committed hook file. It carries no palette of its own: its
 `<style>` opens with the `CSS_SLOT` mark, which `render_html` fills with the presentation layer's
-text — the board's own stylesheet, `devpro/dicing/kanban/assets/board.css`, read the same way and
-inlined, since a page that loads nothing cannot link it. One CSS source serves both views, and
-`pages.SHARED_CSS` is that text: the board serves the file at `/board/board.css`, the render inlines
-it into the page it prints, and the dashboard inlines it into the pages it serves. The board's
+text — the board's own stylesheet, `devpro/dicing/kanban/assets/board.css`, read the same way — for
+the standalone page alone, which loads nothing from the network and so cannot link it. One CSS
+source serves both views, and `pages.SHARED_CSS` is that text: the board serves the file at
+`/board/board.css`, the render inlines it into the page it prints, and the dashboard links the same
+file into the pages it serves, the layer fetched from the server's own origin, which the site's
+content-security policy allows. The board's
 component rules may be scoped so their selectors cannot reach the profiler page's DOM; the source
 stays one file, and the template keeps its own rules — the sequence diagram's colours come from the
 palette's `--c0`…`--c7` variables, no palette of its own. The template's `LEGEND_SLOT` mark is where
 the how-to-read legend goes: `pages.LEGEND` holds the legend once — its prose and its symbol key —
-and `render_html` injects it into the page it renders, so the standalone page carries the legend and
+and `render_html` fills it into the page it renders, so the standalone page carries the legend and
 no second copy exists in the template. The legend has one home and two carriers: the standalone
-render's injected copy, and the dashboard's frame band, which reads the same constant;
-`pages.with_frame` is the one site holding both copies in hand, and it removes the render's copy
-from the served page, so a served page shows the legend once. The removal runs before the band's
-splice for that reason — the band carries `LEGEND` itself — and the CSS splice stands beside both,
-its mark disjoint from the legend's. The index's `INDEX` template fills the same `CSS_SLOT`, and
-carries three marks for the dashboard's deco — `NAV_MARK`, `BAND_MARK` and `DECO_MARK` — which `index_html`
-leaves unfilled and the dashboard fills, so the standalone index carries the layer and no nav; the
+render's filled copy, and the dashboard's frame band, which reads the same constant. Every fill is
+strict: a fill that finds an unknown or unfilled placeholder in the template's text refuses —
+raises — instead of leaving the mark standing, one fill through which every fill the profiler's
+assembly makes runs, and a test walks what that fill is handed — `view.html` and the `INDEX`
+template — so no page, rendered or served, carries a placeholder standing. The index's `INDEX` template fills the same `CSS_SLOT`, and the deco is the templates' own text:
+the brand, the two view names and, right-justified at the nav's flex edge on every view, the server
+block — the live/idle indicator and the stop — is template text with each view's active state known
+statically, the standalone render and the served page alike carrying what the template holds; the
 template's own rules are the page's alone: the layer clears the body's margin and sets the page's
-colours, and the template pads its `main`. The deco itself is the dashboard's `nav_html` and
-`band_html`: the brand, the two view names and, right-justified at the nav's flex edge on every
-view, the server block — the live/idle indicator and the stop — whose one script
-`devpro/profiler/deco.js` the dashboard inlines into each page it builds and the board page names
-after its own; the band's legend with its `Return to list` control on a session's page. The board
+colours, and the template pads its `main`. The deco's one script is named by the board page as
+its own file, and the profiler's pages link the same file; the band's legend with its `Return to
+list` control on a session's page. The board
 page carries the same nav grammar, written in its own `index.html`, with the same server block in
 the nav; it carries no legend.
 
@@ -84,9 +85,13 @@ prints, `http://127.0.0.1:<port>/board/` — so opening it shows the kanban boar
 current state. The profiler view is the second view, at
 `/profiler/` (trailing slash, the board panel's convention): the index of record files, every store
 the `.profiler-*` glob finds, one row per session — harness, session id, record count, first and
-last moments, and the span between them — each linking to `/page/<session-id>`, which renders that
+last moments, and the span between them — each linking to `/page/<session-id>`, which serves that
 session's page in memory, the render's page carrying the same page data `tree --format html`
-produces. A session an opencode record names as its dispatch's child is drawn under the session that
+produces. The index's page file is static — no row is in its text — and its script fetches the
+records' feed the server answers at `/api/traces`, one JSON entry per session with the columns
+above, the stores the glob finds but cannot read among them as unreadable, and renders the rows
+client-side — the board's pattern, the payload consumed client-side. The session page's embedded
+payload is unchanged: it is, and stays, the feed the page's script reads. A session an opencode record names as its dispatch's child is drawn under the session that
 dispatched it — a dispatch's child one level deep; deeper chains read on the session's page, whose
 tree draws every dispatch as a context — that session's row carrying the count of the rows beneath
 it and each child's naming the call that dispatched it; the rows alternate their tone, and each
@@ -100,8 +105,8 @@ session's page answers. A top nav persists across both views — the `devpro` br
 server block right-justified at the nav's flex edge: the live/idle state indicator and the stop —
 and in the profiler view a frame band sits under it, carrying the how-to-read legend at its top and,
 on a session's page, `Return to list` back to `/profiler/`; drill-down is ordinary page navigation,
-and no inner frame exists. The nav and the band are what the dashboard serves the view's pages with,
-spliced by `pages.with_frame`. The nav's server block is the same on both views: the decoration's
+and no inner frame exists. The nav and the band are the view's pages' own text, assembled with the page by the one strict
+fill; the dashboard serves the assembled page and changes nothing in it. The nav's server block is the same on both views: the decoration's
 one script polls `GET /api/state` — the endpoint every view's server answers `{"state": "live"}`
 while it serves, and that a closed server answers not at all — so a page that carries no payload of
 its own reads the state the board reads, and the stop posts the board panel's `/api/stop`. No file is
@@ -113,7 +118,9 @@ panel is the profiler's
 sibling panel, `devpro.dicing.kanban.server`'s `KanbanServer` over the dashboard's root. The seam is
 `panel_handler`: the dashboard reads the request, hands it to a handler over the panel's routes, and
 answers it on its own connection, so the guard, the reply write and the Content-Security-Policy the
-page is served under are the dashboard's one of each and travel with the panel's answers. The panel
+page is served under are the dashboard's one of each and travel with the panel's answers. A client
+gone mid-request — a page reloaded during a long poll — is not an error; anything else gets the
+default traceback. The panel
 serves the project's kanban board at `/board/` and, at the board's own root paths, its payload, its
 moves and its stop (SPEC.md, Dicing and Checks, Kanban): its two moves write the project's
 `ROADMAP.md` and the active design, and its stop button ends the server as an interrupt does. Its
