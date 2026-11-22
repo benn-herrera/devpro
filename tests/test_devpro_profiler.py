@@ -46,7 +46,8 @@ import pytest
 from devpro.dashboard.server import BOARD_PATH
 from devpro.profiler.capture import mask
 from devpro.profiler.hooks import RETIRED_HOOK_FILES, launcher_resource
-from devpro.profiler.pages import BAND_MARK, CHROME_MARK, LEGEND, NAV_MARK, SHARED_CSS, format_span
+from devpro.profiler.pages import BAND_MARK, DECO_MARK, LEGEND, NAV_MARK, SHARED_CSS, _moments, format_span
+from devpro.profiler.values import _epoch_ms
 from tests.test_devpro_install import _PROFILER, _claude_plugin, _definition_install
 
 # The serve path's carrier of the shared layer: the one file the board panel serves, which the pages
@@ -206,7 +207,7 @@ def _without_chrome(served: str) -> str:
     page = page.replace(nav + "\n", "", 1)
     lines = page.splitlines()
     lines[lines.index('<link rel="stylesheet" href="/board/board.css"><style>')] = "<style>\n" + SHARED_CSS
-    lines[lines.index('<h1>Session <span id="sid"></span></h1>') : 0] = [NAV_MARK, BAND_MARK, CHROME_MARK]
+    lines[lines.index('<h1>Session <span id="sid"></span></h1>') : 0] = [NAV_MARK, BAND_MARK, DECO_MARK]
     return "\n".join(lines) + "\n"
 
 
@@ -301,7 +302,12 @@ def test_a_launcher_finding_an_unusable_devpro_captures_silently_and_reports_oth
 def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Path) -> None:
     """A session in each harness's store under one project, and one `tree <id>` per store renders it:
     the read that walks every `.profiler-*` store, whose revert to claude's alone loses the opencode
-    session silently."""
+    session silently.
+
+    The opencode dispatch's record draws the context words claude's dispatch draws for the same
+    fields — `new context <id>`, and `copy of <caller>` on the host's `fork` kind. A tree reading the
+    context a call started from claude's `agent_id` alone draws the opencode dispatch with no child
+    context, the two harnesses' dispatches differing on records that state one fact."""
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
@@ -406,6 +412,49 @@ def _run_ts(script: Path, *, directory: Path, arg: str | None = None) -> subproc
     )
     assert done.returncode == 0, done.stderr
     return done
+
+
+def _session(first: str, last: str) -> dict:
+    """A session's window, the shape the index's cells read: its first moment and its last."""
+    return {"first": _epoch_ms(first), "last": _epoch_ms(last)}
+
+
+def test_the_decoration_script_reads_every_moments_cell_the_render_writes(tmp_path: Path) -> None:
+    """`deco.js` over the moments cells `_moments` serves: a cell whose two instants share the
+    reader's calendar day reads `H:MM to H:MM` in the reader's zone, one whose instants fall on two
+    days carries each date, a second-precision instant keeps its second of it, and the cell's title
+    keeps the raw UTC to the byte; a cell with no `<time>` element keeps the text it served, the
+    render's own fallback where a cell's instants cannot be read. The script parses no cell text, so
+    a moment whose rendered form moves still reads: a script that parses the served text instead
+    stops matching at the first format change and leaves the raw UTC with nothing saying so."""
+    cells = [
+        _moments(_session("2026-01-01T00:00:01.250Z", "2026-01-01T00:00:02.500Z")),
+        _moments(_session("2026-01-01T06:00:00.000Z", "2026-01-01T18:30:00.000Z")),
+        '<span class="moments" title="2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z">'
+        "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z</span>",
+    ]
+    done = subprocess.run(
+        [_bun(), str(_HERE / "profiler_deco_runner.ts")],
+        input=json.dumps({"cells": cells}),
+        capture_output=True,
+        encoding="utf-8",
+        env={**os.environ, "TZ": "America/Los_Angeles"},
+        timeout=120,
+        check=False,
+    )
+    assert done.returncode == 0, done.stderr
+    readings = json.loads(done.stdout)
+
+    assert readings["readings"] == [
+        "16:00 to 16:00",
+        "2025-12-31 22:00 to 2026-01-01 10:30",
+        "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z",
+    ]
+    assert readings["titles"] == [
+        "2026-01-01 00:00:01 UTC to 2026-01-01T00:00:02.500Z",
+        "2026-01-01 06:00:00 UTC to 2026-01-01T18:30:00.000Z",
+        "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z",
+    ]
 
 
 def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
@@ -623,7 +672,9 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     count of the children drawn under it, each child's row follows with the accent bar's cell, the
     link naming the call that dispatched it, and the rows alternate their tone with each harness
     carrying its own mark. The moments' cell states the raw UTC as its text and in its title, which
-    a hover carries with no script run, and the span is its own cell."""
+    a hover carries with no script run, and hands the script the instants as `<time>` elements, the
+    span is its own cell, and the odd-row rule's tone is the layer's own variable, which carries a
+    light value beside its dark one: a literal there is one motif's ink on the other's ground."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
@@ -652,21 +703,26 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
         "s-child",
     ]
     assert "claude" in rows[0] and "2 records" in rows[0]
+    # The moments' cell: the raw UTC as its text, that same string in its title, and each instant as
+    # the `<time>` element the script reads.
     assert (
-        'title="2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z">2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z<'
-        in rows[0]
+        'title="2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z">'
+        '<time datetime="2026-01-01T00:00:00Z">2026-01-01 00:00:00 UTC</time> to '
+        '<time datetime="2026-01-01T00:00:01.000Z">2026-01-01T00:00:01.000Z</time></span>' in rows[0]
     )
-    assert "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z" in rows[0]
     assert "opencode" in rows[1] and "1 records" in rows[1]
     assert "2026-01-01 00:00:05 UTC to 2026-01-01T00:00:05.000Z" in rows[1]
     # The dispatcher's row and the child's, drawn under it with the accent bar's empty cell.
-    assert "1 dispatched agents" in rows[2]
+    assert "1 dispatched agent<" in rows[2]
     assert '<td class="child"></td>' in rows[3]
     assert "↳ child — devpro-coder" in rows[3]
-    # Each harness's own mark, the zebra's rule and the span's own cell, in the template's style.
+    # Each harness's own mark, the zebra's motif-aware tone and the span's own cell, in the template.
     assert '<span class="harness claude"></span>claude' in rows[0]
     assert '<span class="harness opencode"></span>opencode' in rows[1]
-    assert re.search(r"tr:nth-child\(odd\) td \{ background: #191c22; \}", index)
+    assert re.search(r"tr:nth-child\(odd\) td \{ background: var\(--column\); \}", index)
+    assert re.search(
+        r"@media \(prefers-color-scheme: dark\) \{ tr:nth-child\(odd\) td \{ background: #191c22; \} \}", index
+    )
     assert re.search(r"\.harness\.opencode \{ background: #4a9eea; \}", index)
     assert re.search(r"\.harness\.claude \{ background: #d97757; \}", index)
     # The span: the dispatch's own second on its row, the child's one-second store on its own, its
@@ -674,6 +730,63 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     assert re.search(r"<th>first to last</th><th>span</th>", index)
     assert re.findall(r"<td>([\dhm s]+)</td></tr>", index) == ["1s", "0s", "0s", "1s"]
     assert _page_data(page)["session"] == "s-claude"
+
+
+def test_a_session_naming_itself_as_a_child_is_drawn_once_in_its_own_place(tmp_path: Path) -> None:
+    """A session whose own opencode record carries its own id as `child_agent_id`: the index draws it
+    once, top-level, carrying no dispatched count. A grouping that reads the self-naming as a
+    dispatch drops the session from the index's top level and draws it under itself, its count
+    naming a row for a session that dispatched nothing."""
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / ".devpro-temp").mkdir()
+    _write_store(
+        project,
+        ".profiler-opencode",
+        "s-self",
+        "2026-01-01T00:00:00.000Z",
+        harness="opencode",
+        records=1,
+        extra={"tool": "Agent", "name": "devpro-coder", "child_agent_id": "s-self"},
+    )
+
+    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
+        index = _fetch(f"{url}profiler/")
+
+    rows = re.findall(r"<tr>(?!<th>).*?</tr>", index)
+    assert len(rows) == 1
+    assert 'href="/page/s-self"' in rows[0] and "dispatched agent" not in rows[0]
+    assert 'td class="child"' not in rows[0]
+
+
+def test_a_claude_child_agent_id_groups_no_session(tmp_path: Path) -> None:
+    """A claude store whose record's `child_agent_id` equals another session's id: the index draws that
+    session as a stranger, top-level, and the claude page's call renders its name with no child-page
+    link. Claude's `child_agent_id` is an agent id, and claude records its subagents' calls in the
+    parent's file — grouping on it draws a page no session stands behind."""
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / ".devpro-temp").mkdir()
+    _write_store(
+        project,
+        ".profiler-claude",
+        "s-claude",
+        "2026-01-01T00:00:00.000Z",
+        harness="claude",
+        records=1,
+        extra={"tool": "Agent", "name": "devpro-coder", "child_agent_id": "s-named"},
+    )
+    _write_store(project, ".profiler-claude", "s-named", "2026-01-01T00:00:05.000Z", harness="claude")
+
+    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
+        index = _fetch(f"{url}profiler/")
+        page = _fetch(f"{url}page/s-claude")
+
+    rows = re.findall(r"<tr>(?!<th>).*?</tr>", index)
+    assert [re.search(r'href="[^"]*/page/([^"]+)"', row).group(1) for row in rows] == ["s-claude", "s-named"]
+    assert not any("dispatched agent" in row or 'td class="child"' in row for row in rows)
+    assert _page_data(page)["calls"][0]["child"] == "s-named"
+    assert _page_data(page)["calls"][0]["childPage"] is None
 
 
 @pytest.mark.parametrize(

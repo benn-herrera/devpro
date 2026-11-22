@@ -745,16 +745,28 @@ def _link(href: str, text: str) -> str:
     return f'<a href="{html.escape(href)}">{html.escape(text)}</a>'
 
 
+def session_href(identifier: str) -> str:
+    """A session's page, at the path the dashboard serves it."""
+    return PAGE_PREFIX + quote(identifier)
+
+
 def _session_link(identifier: str) -> str:
     """A session id, as a link to its page."""
-    return _link(f"/page/{quote(identifier)}", identifier)
+    return _link(session_href(identifier), identifier)
 
 
 def _moments(session: dict) -> str:
-    """A session's first and last moments, UTC: the cell's text where no script runs, and its hover
-    text after the script has rewritten the text in the reader's local time."""
+    """A session's first and last moments: the raw UTC as the cell's text where no script runs, and in
+    its title where a hover wants the exact instant, and each instant as a `<time>` element the
+    reader's local time is written from — the data, never the cell's own text, parsed."""
     text = html.escape(f"{stamp(session)} to {_iso(_utc(session['last']))}")
-    return f'<span class="moments" title="{text}">{text}</span>'
+    first = html.escape(_utc(session["first"]).strftime("%Y-%m-%dT%H:%M:%SZ"))
+    last = html.escape(_iso(_utc(session["last"])))
+    return (
+        f'<span class="moments" title="{text}">'
+        f'<time datetime="{first}">{html.escape(stamp(session))}</time> to '
+        f'<time datetime="{last}">{last}</time></span>'
+    )
 
 
 def dispatches(sessions: list[dict]) -> dict[str, tuple[str, str]]:
@@ -762,14 +774,21 @@ def dispatches(sessions: list[dict]) -> dict[str, tuple[str, str]]:
 
     Only an opencode record names a session: its `child_agent_id` is a session id. A claude record's
     is an agent id, and claude records its subagents' calls in the parent's own file, so no claude
-    session is ever a child here. A child two sessions name keeps the first in list order."""
+    session is ever a child here. A child two sessions name keeps the first in list order, and a
+    session naming itself is no child: it would be dropped from the index's top level and drawn as
+    its own child."""
     found: dict[str, tuple[str, str]] = {}
     for session in sessions:
         for record in session["records"]:
             child = record.get("child_agent_id")
-            if record.get("harness") == "opencode" and child:
+            if record.get("harness") == "opencode" and child and str(child) != session["id"]:
                 found.setdefault(str(child), (session["id"], str(record.get("name") or "")))
     return found
+
+
+def _count_of(count: int) -> str:
+    """How many sessions a dispatcher's row says it dispatched, in the singular where it is one."""
+    return "1 dispatched agent" if count == 1 else f"{count} dispatched agents"
 
 
 def _records(session: dict) -> str:
@@ -787,7 +806,7 @@ def session_row(session: dict, *, children: list[tuple[dict, str]] = ()) -> str:
         f'<td><span class="harness {html.escape(_harness_class(session_harness(session)))}">'
         f"</span>{html.escape(session_harness(session))}</td>"
         f"<td>{_session_link(session['id'])}"
-        + (f" <small>— {len(children)} dispatched agents</small>" if children else "")
+        + (f" <small>— {_count_of(len(children))}</small>" if children else "")
         + f"</td><td>{_records(session)}</td>"
         f"<td>{_moments(session)}</td><td>{html.escape(format_span(session['last'] - session['first']))}</td>"
         "</tr>"
@@ -818,17 +837,18 @@ def index_html(directory: Path | str) -> str:
     """The index of record files: one row per session, and one per store that cannot be read.
 
     A child session is drawn under the session that dispatched it, its dispatcher's row carrying the
-    count of the rows drawn beneath it; a child nothing dispatched, or a session whose dispatch by
-    itself would draw it twice, keeps its own place in first-moment order. The index carries the
-    presentation layer and names no view of its own: opened on its own it stands beside no board, so
-    the nav, the frame band and the nav's script are the marks the dashboard fills when it serves the
-    index (`with_frame`), and absent where nothing fills them."""
+    count of the rows drawn beneath it; a session no other dispatched keeps its own place in
+    first-moment order. A session naming itself dispatches nothing (`dispatches` drops it), so it is
+    no child and keeps that place. The index carries the presentation layer and names no view of its
+    own: opened on its own it stands beside no board, so the nav, the frame band and the
+    decoration's script are the marks the dashboard fills when it serves the index (`with_frame`),
+    and absent where nothing fills them."""
     sessions, unreadable = read_sessions(directory)
     parent_of = dispatches(sessions)
     children: dict[str, list[tuple[dict, str]]] = {}
     for session in sessions:
         dispatched = parent_of.get(session["id"])
-        if dispatched and dispatched[0] != session["id"]:
+        if dispatched:
             children.setdefault(dispatched[0], []).append((session, dispatched[1]))
     rows = "".join(
         session_row(
@@ -855,8 +875,8 @@ def with_frame(page: str, *, nav: str, band: str, script: str) -> str:
     the page carries it and names the file where the style block stood; a session's page arrives
     through the render first and carries the inline copy, an index does not. The template's own
     style block stands: its rules are the page's own, served and written alike. The nav in place of
-    its nav mark, band in place of its band mark, and the nav's script named where the template
-    marks it — a linked script, for the same CSP.
+    its nav mark, band in place of its band mark, and the decoration's script named where the
+    template marks it — a linked script, for the same CSP.
 
     The band is where the view's legend is served from, and the render injected its own copy into the
     page it rendered: that copy is removed here, at the one site holding both in hand, so the served
@@ -870,26 +890,31 @@ def with_frame(page: str, *, nav: str, band: str, script: str) -> str:
     else:
         page = page.replace("<style>\n" + CSS_SLOT, f"{layer_link}<style>", 1)
     page = page.replace(LEGEND, "")
-    return page.replace(NAV_MARK, nav).replace(BAND_MARK, band).replace(CHROME_MARK, script)
+    return page.replace(NAV_MARK, nav).replace(BAND_MARK, band).replace(DECO_MARK, script)
 
 
 PAGE_PREFIX = "/page/"
-# The marks the dashboard fills on the pages it serves: the nav, the frame band, and where the nav's
-# chrome script goes — below the templates' splices, where no stylesheet text can be read as a mark.
-# The index's template carries the last two as well, and the page's all three, so one renderer
+# The marks the dashboard fills on the pages it serves: the nav, the frame band, and where the
+# decoration's script goes — below the templates' splices, where no stylesheet text can be read as a
+# mark. The index's template carries the last two as well, and the page's all three, so one renderer
 # serves both.
 NAV_MARK = "<!--NAV-->"
 BAND_MARK = "<!--BAND-->"
-CHROME_MARK = "<!--CHROME-->"
+DECO_MARK = "<!--DECO-->"
 # The index's own brand marks: a harness's dot, in its brand colors, and the variable each wears.
 # They are the page's, not the site's — the dots are the only brand-marked part of a row — so they
 # live in the template's own style block beside its other rules. `ZEBRA_MARKS` is the template's
-# substitution slots: the zebra's tone, the stronger of the two the mockup weighed and shared with no
-# layer variable, and the two brand colors.
+# substitution slots: the two harness class names and the two brand colors. The zebra's tones are no
+# slot: their carrier is the template's own motif pair below it, whose light value is the shared
+# layer's `--column` and whose dark value stands beside it as the layer's pair stands.
 HARNESS_MARKS = {"opencode": "#4a9eea", "claude": "#d97757"}
-ZEBRA_MARKS = {"zebra": "#191c22", **HARNESS_MARKS}
-# The index's two substitution slots, named by `index_html`: the unreadable stores' rows and the
-# session rows, in substitution's one pass — so text spliced into one slot is never read as another's.
+ZEBRA_MARKS = {
+    **{f"class_{harness}": _harness_class(harness) for harness in HARNESS_MARKS},
+    **HARNESS_MARKS,
+}
+# The index's substitution slots, named by `index_html`: the unreadable stores' rows, the session
+# rows, the harness class each row's mark carries and the two brand colors — in substitution's one
+# pass, so text spliced into one slot is never read as another's.
 # The presentation layer is no substitution slot: `/*STYLE*/` stands in the template, as it does on a
 # page, and the `CSS_SLOT` splice fills it. The three marks are the last thing before the body's own
 # content, their text no stylesheet's.
@@ -906,18 +931,19 @@ th, td { text-align: left; padding: 0.4rem 1rem 0.4rem 0; border-bottom: 1px sol
 th { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
 a { color: var(--fg); }
 a:hover, a:focus-visible { color: var(--accent); }
-tr:nth-child(odd) td { background: $zebra; }
+tr:nth-child(odd) td { background: var(--column); }
+@media (prefers-color-scheme: dark) { tr:nth-child(odd) td { background: #191c22; } }
 td small { color: var(--muted); }
 tr td:first-child.child { border-left: 3px solid var(--accent); }
 tr td:first-child.child + td { padding-left: 2.4rem; }
 .harness { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; }
-.harness.opencode { background: $opencode; }
-.harness.claude { background: $claude; }
+.harness.$class_opencode { background: $opencode; }
+.harness.$class_claude { background: $claude; }
 </style>
 <body>
 <!--NAV-->
 <!--BAND-->
-<!--CHROME-->
+<!--DECO-->
 <main>
 <h1>Sessions</h1>
 <table>

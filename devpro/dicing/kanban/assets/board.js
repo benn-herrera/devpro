@@ -4,7 +4,7 @@
 // is a POST whose effect reaches the page through the same long poll, so the page holds no state of
 // its own beyond the version it last drew, the payload last drawn and the payload deferred during a
 // drag, the drag under way, whether the server answers and the bands it has collapsed. The nav's
-// chrome is not this file's: `chrome.js` reads the server's state and ends it.
+// server block is not this file's: `deco.js` reads the server's state and ends it.
 
 const log = (level, message, context = {}) => console[level]({ level, message, ...context });
 
@@ -474,8 +474,8 @@ boardEl.addEventListener("keydown", (event) => {
 // Each answer carries a version; asking with it waits until the board changes. After a failure the
 // next ask carries no version, and the version drawn is forgotten, since a restarted server counts
 // versions from 1 again.
-// The nav's chrome (`chrome.js`) reads the server's state and ends it: a failure here only backs off
-// and asks again, and the chrome's indicator reads the server idle where it answers nothing.
+// The nav's server block (`deco.js`) reads the server's state and ends it: a failure here only backs
+// off and asks again, and the indicator reads the server idle where it answers nothing.
 async function follow() {
   let since = null;
   let delay = 500;

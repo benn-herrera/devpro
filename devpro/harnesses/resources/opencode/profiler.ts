@@ -240,6 +240,10 @@ function resultOf(call: Finished): string | undefined {
 // childSessionOf is the session a subagent call dispatched, the host's `result.metadata.sessionID`,
 // read under the host's own string guard. Each opencode session owns its own trace file, so this id
 // names the child's page and its row in the index, never a context in the parent's file.
+// The subagent tool carries the field from opencode 2.3.0, the floor this plugin is written for
+// (2.3.2), and renaming the tool `task` to `subagent` did not move it; a result with no `metadata` —
+// a `task`-spelled dispatch among them, and a dispatch whose after-hook never fires — is a valid
+// no-child state, and the record keeps `null`.
 function childSessionOf(call: Finished): string | undefined {
   const metadata = isRecord(call.result) ? call.result.metadata : undefined
   const id = isRecord(metadata) ? metadata.sessionID : undefined

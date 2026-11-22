@@ -19,14 +19,14 @@ import pytest
 from devpro import __version__
 from devpro.dashboard.server import (
     BOARD_PATH,
-    CHROME_SCRIPT,
     CONTENT_SECURITY_POLICY,
+    DECO_SCRIPT,
     DashboardServer,
     dashboard_root,
     loopback,
 )
 from devpro.dicing.kanban.board import read_board
-from devpro.profiler.pages import BAND_MARK, CHROME_MARK, CSS_SLOT, NAV_MARK, SHARED_CSS
+from devpro.profiler.pages import BAND_MARK, CSS_SLOT, DECO_MARK, NAV_MARK, SHARED_CSS, dispatches, read_sessions
 
 from .conftest import PLAN, TIMEOUT, Client, project, record, store
 
@@ -347,8 +347,8 @@ def test_every_profiler_view_page_renders_the_way_the_file_flow_renders_it(
     assert SHARED_CSS not in page
     assert page.count('class="site-nav') == 1 and page.count('id="connection"') == 1 and page.count('id="stop"') == 1
     assert page.count("<script>") == scripts
-    assert page.count('<script src="/profiler/chrome.js">') == 1 and page.count("api/state") == 0
-    assert not [mark for mark in (CSS_SLOT, NAV_MARK, BAND_MARK, CHROME_MARK) if mark in page]
+    assert page.count('<script src="/profiler/deco.js">') == 1 and page.count("api/state") == 0
+    assert not [mark for mark in (CSS_SLOT, NAV_MARK, BAND_MARK, DECO_MARK) if mark in page]
 
 
 def test_the_pages_csp_admits_the_pages_own_blocks(tmp_path: Path, serve) -> None:
@@ -362,14 +362,14 @@ def test_the_pages_csp_admits_the_pages_own_blocks(tmp_path: Path, serve) -> Non
     assert "frame-ancestors 'none'" in CONTENT_SECURITY_POLICY
 
 
-def test_the_profiler_chrome_is_served_as_the_file_its_pages_name(tmp_path: Path, serve) -> None:
-    """`/profiler/chrome.js` answers the shipped script's bytes as JavaScript: the profiler pages name
+def test_the_decoration_script_is_served_as_the_file_its_pages_name(tmp_path: Path, serve) -> None:
+    """`/profiler/deco.js` answers the shipped script's bytes as JavaScript: the profiler pages name
     that file for the nav's behavior — the poll that keeps the indicator true and the stop that ends
     the server — and the CSP refuses the script inline. A page naming a file the dashboard serves
     nowhere is a nav whose stop never loads and whose indicator is idle forever."""
-    served = serve(project(tmp_path / "proj", {})).get("profiler/chrome.js")
+    served = serve(project(tmp_path / "proj", {})).get("profiler/deco.js")
     assert served[0] == 200
-    assert served[2].decode("utf-8") == CHROME_SCRIPT
+    assert served[2].decode("utf-8") == DECO_SCRIPT
     assert served[1] == "text/javascript"
 
 
@@ -394,13 +394,57 @@ def test_the_board_page_holds_its_chrome_once_and_the_nav_supplies_it(tmp_path: 
     page = serve(project(tmp_path / "proj", {})).get("board/")[2].decode("utf-8")
 
     assert page.count('id="connection"') == 1 and page.count('id="stop"') == 1
-    assert re.findall(r'<script src="([^"]+)"', page) == ["/profiler/chrome.js", "board.js"]
+    assert re.findall(r'<script src="([^"]+)"', page) == ["/profiler/deco.js", "board.js"]
 
 
 def _band(page: str) -> str:
-    """A served page's frame band, up to the return control it ends with."""
+    """A session page's frame band: from the band's opening div to its close.
+
+    The close is the band's own closing tag on its own line, never the legend's first `</div>`: the
+    legend carries its symbols' div, and a band cut there holds no dispatch line and no return
+    control, so every check over the band would read an empty string and assert nothing it names."""
     start = page.find('<div class="frame-band')
-    return page[start : page.find("Return to list</a></div>", start) + len("Return to list</a></div>")]
+    return page[start : page.find("</div>\n", start) + len("</div>")] if start >= 0 else ""
+
+
+def test_a_session_page_is_served_without_reading_the_stores_a_second_time(tmp_path: Path, serve, monkeypatch) -> None:
+    """One `/page/<id>` request walks the stores once and groups the sessions once for the band: the
+    read is the page's own, and the grouping is the dispatcher lookup, whose session the render cannot
+    name — the page holds its own records alone. What this pins is that the index's grouping over
+    every session is not built again and no second read joins the lookup: a second full grouping
+    parses and masks every trace the project holds for one name, and a page that pays for the view's
+    whole history per render has lost the cost the first read already paid."""
+    root = project(tmp_path / "proj", {})
+    store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
+    store(
+        root,
+        "s-parent",
+        [
+            record("2026-01-01T00:00:00.000Z", tool="Agent", name="devpro-coder", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "s-one"}
+        ],
+        directory=".profiler-opencode",
+    )
+    served = serve(root)
+    real_read, real_grouping = read_sessions, dispatches
+    reads: list[str] = []
+    groupings: list[int] = []
+
+    def counted_read(directory: object) -> tuple[list[dict], list[str]]:
+        reads.append(str(directory))
+        return real_read(directory)
+
+    def counted_grouping(sessions: list[dict]) -> dict[str, tuple[str, str]]:
+        groupings.append(len(sessions))
+        return real_grouping(sessions)
+
+    monkeypatch.setattr("devpro.profiler.pages.read_sessions", counted_read)
+    monkeypatch.setattr("devpro.dashboard.server.dispatches", counted_grouping)
+    page = served.get("page/s-one")[2].decode("utf-8")
+
+    assert reads == [str(root)]
+    assert groupings == [1]
+    assert re.search(r'<strong>Dispatched by</strong> <a href="/page/s-parent">s-parent</a> — devpro-coder', page)
 
 
 def test_a_session_page_carries_the_bands_legend_and_the_way_back(tmp_path: Path, serve) -> None:
@@ -432,14 +476,15 @@ def test_a_session_page_carries_the_bands_legend_and_the_way_back(tmp_path: Path
     assert re.search(r'<a class="view active" href="/profiler/" aria-current="page">profiler</a>', page)
     assert re.search(r'<strong>Dispatched by</strong> <a href="/page/s-parent">s-parent</a> — devpro-coder', page)
     assert _band(page).index("Dispatched by") < _band(page).index("Return to list")
+    assert _band(page).endswith("Return to list</a></div>")
     assert "Dispatched by" not in undispatched
     assert re.search(r'<a class="return" href="/profiler/">Return to list</a>', undispatched)
 
 
-def test_the_chromes_script_and_the_pages_script_share_one_scope(tmp_path: Path, serve) -> None:
-    """The nav's script and a session page's own script are both classic scripts in the page's one
-    global scope: a name both declare kills the page's script at parse — the page serves, styles,
-    and draws nothing, the session content blank while the nav's own chrome still runs. The two
+def test_the_decoration_and_the_pages_script_share_one_scope(tmp_path: Path, serve) -> None:
+    """The decoration's script and a session page's own script are both classic scripts in the page's
+    one global scope: a name both declare kills the page's script at parse — the page serves, styles,
+    and draws nothing, the session content blank while the nav's own script still runs. The two
     compile together, which is the hold a render-side check cannot give: each script compiles alone.
 
     A skip without bun is the fixture's own: the compile needs an engine, and the engines a test
@@ -453,10 +498,10 @@ def test_the_chromes_script_and_the_pages_script_share_one_scope(tmp_path: Path,
     served = serve(root)
     page = served.get("page/s-one")[2].decode("utf-8")
     blocks = re.findall(r"<script>(.*?)</script>", page, re.S)
-    chrome = (files("devpro.profiler") / "chrome.js").read_text(encoding="utf-8")
+    deco = (files("devpro.profiler") / "deco.js").read_text(encoding="utf-8")
 
     script = tmp_path / "scope.js"
-    script.write_text(chrome + "\n" + "\n".join(blocks), encoding="utf-8")
+    script.write_text(deco + "\n" + "\n".join(blocks), encoding="utf-8")
     compile_with = subprocess.run(
         ["bun", "-e", f"new Function(require('fs').readFileSync({str(script)!r}, 'utf8'))"],
         capture_output=True,

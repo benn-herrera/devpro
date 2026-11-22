@@ -52,13 +52,13 @@ render's injected copy, and the dashboard's frame band, which reads the same con
 from the served page, so a served page shows the legend once. The removal runs before the band's
 splice for that reason — the band carries `LEGEND` itself — and the CSS splice stands beside both,
 its mark disjoint from the legend's. The index's `INDEX` template fills the same `CSS_SLOT`, and
-carries two marks for the dashboard's chrome — `NAV_MARK` and `BAND_MARK` — which `index_html`
+carries three marks for the dashboard's chrome — `NAV_MARK`, `BAND_MARK` and `DECO_MARK` — which `index_html`
 leaves unfilled and the dashboard fills, so the standalone index carries the layer and no nav; the
 template's own rules are the page's alone: the layer clears the body's margin and sets the page's
 colours, and the template pads its `main`. The chrome itself is the dashboard's `nav_html` and
 `band_html`: the brand, the two view names and, right-justified at the nav's flex edge on every
 view, the server block — the live/idle indicator and the stop — whose one script
-`devpro/profiler/chrome.js` the dashboard inlines into each page it builds and the board page names
+`devpro/profiler/deco.js` the dashboard inlines into each page it builds and the board page names
 after its own; the band's legend with its `Return to list` control on a session's page. The board
 page carries the same nav grammar, written in its own `index.html`, with the same server block in
 the nav; it carries no legend.
@@ -87,27 +87,29 @@ the `.profiler-*` glob finds, one row per session — harness, session id, recor
 last moments, and the span between them — each linking to `/page/<session-id>`, which renders that
 session's page in memory, the render's page carrying the same page data `tree --format html`
 produces. A session an opencode record names as its dispatch's child is drawn under the session that
-dispatched it, that session's row carrying the count of the rows beneath it and each child's naming
-the call that dispatched it; the rows alternate their tone, and each carries its harness's mark. The
-moments are the raw UTC where no script runs and the reader's local time where the page's chrome
-script does, the raw string kept in the cell's title, and the span is its own column. A session's
-page carries its dispatcher in the frame band, linked to that session's page, where one dispatched
-it, and an Agent row links to the child session's page where the record names one: a child's page
-the dashboard does not serve answers the 404 any unrecorded session's page answers. A top nav persists
-across both views — the `devpro` brand, then `kanban` and `profiler`, the active view in the motif's
-accent and the inactive one a lifted gray, then the server block right-justified at the nav's flex
-edge: the live/idle state indicator and the stop — and in the profiler view a frame band sits under
-it, carrying the how-to-read legend at its top and, on a session's page, `Return to list` back to
-`/profiler/`; drill-down is ordinary page navigation, and no inner frame exists. The nav and the
-band are what the dashboard serves the view's pages with, spliced by `pages.with_frame`. The nav's
-chrome is the same on both views: its one script polls `GET /api/state` — the endpoint every view's
-server answers `{"state": "live"}` while it serves, and that a closed server answers not at all —
-so a page that carries no payload of its own reads the state the board reads, and the stop posts the
-board panel's `/api/stop`. No file is written for the traces. A
-store the glob finds but cannot read appears in the index as unreadable — the server raises nothing
-for it. The page shows a session's calls: a session of nothing but tool calls renders those calls as
-its calls content, never an empty tree under a calls header. The server runs until interrupted
-(Ctrl-C) or stopped from the page; either exits 0. The dashboard's board panel is the profiler's
+dispatched it — a dispatch's child one level deep; deeper chains read on the session's page, whose
+tree draws every dispatch as a context — that session's row carrying the count of the rows beneath
+it and each child's naming the call that dispatched it; the rows alternate their tone, and each
+carries its harness's mark. The moments are the raw UTC where no script runs and the reader's local
+time where the page's decoration script does, the raw string kept in the cell's title, and the span
+is its own column. A session's page carries its dispatcher in the frame band, linked to that
+session's page, where one dispatched it, and an Agent row links to the child session's page where
+the record names one: a child's page the dashboard does not serve answers the 404 any unrecorded
+session's page answers. A top nav persists across both views — the `devpro` brand, then `kanban` and
+`profiler`, the active view in the motif's accent and the inactive one a lifted gray, then the
+server block right-justified at the nav's flex edge: the live/idle state indicator and the stop —
+and in the profiler view a frame band sits under it, carrying the how-to-read legend at its top and,
+on a session's page, `Return to list` back to `/profiler/`; drill-down is ordinary page navigation,
+and no inner frame exists. The nav and the band are what the dashboard serves the view's pages with,
+spliced by `pages.with_frame`. The nav's server block is the same on both views: the decoration's
+one script polls `GET /api/state` — the endpoint every view's server answers `{"state": "live"}`
+while it serves, and that a closed server answers not at all — so a page that carries no payload of
+its own reads the state the board reads, and the stop posts the board panel's `/api/stop`. No file is
+written for the traces. A store the glob finds but cannot read appears in the index as unreadable —
+the server raises nothing for it. The page shows a session's calls: a session of nothing but tool
+calls renders those calls as its calls content, never an empty tree under a calls header. The server
+runs until interrupted (Ctrl-C) or stopped from the page; either exits 0. The dashboard's board
+panel is the profiler's
 sibling panel, `devpro.dicing.kanban.server`'s `KanbanServer` over the dashboard's root. The seam is
 `panel_handler`: the dashboard reads the request, hands it to a handler over the panel's routes, and
 answers it on its own connection, so the guard, the reply write and the Content-Security-Policy the
@@ -160,8 +162,9 @@ a lifecycle record the tree does not draw — writing them to its own
 `devpro profiler tree` and the dashboard's profiler view render beside the claude sessions', each
 record read from its own `.profiler-*` store. A `subagent` or `task` call also records the child
 session it dispatched, the host's `result.metadata.sessionID` read under the host's own string
-guard: that id fills the record's `child_agent_id`, where the render groups the child under its
-dispatcher and links the dispatch to the child's page. The stores stay flat — the child's id reaches
+guard: that id fills the record's `child_agent_id`, where the index groups the child one level
+under its dispatcher — the tree, on the session's page, drawing the dispatch as a context — and the
+dispatch links to the child's page. The stores stay flat — the child's id reaches
 no capture as a parent key, the hierarchy being what the parent's records state — and a dispatch
 whose result carries no metadata records no child.
 The model's own `todowrite` notes are not recorded: they are not activity, so the store holds one

@@ -23,3 +23,7 @@ profiler's code is the `devpro/profiler/` package, which is a devpro module like
 `just lint`'s paths by the same rule, so adding or deleting a resource no longer changes what the
 lint gate covers. A resource written in Python again would pass black, isort and flake8 as well as
 carrying its banner — the gate it is subject to is the module it becomes.
+
+A resource written in TypeScript, `opencode/profiler.ts` among them, is held only by its tests: no
+type check and no lint covers it, since there is no `tsconfig.json`, no package and no `just lint`
+path over the tree, and the file ships verbatim.

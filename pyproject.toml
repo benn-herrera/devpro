@@ -29,6 +29,7 @@ devpro = [
     "development-tools/**/*",
     "dicing/kanban/assets/**/*",
     "profiler/view.html",
+    "profiler/deco.js",
 ]
 
 [tool.setuptools.dynamic]

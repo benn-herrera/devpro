@@ -40,7 +40,7 @@ svg .spawn rect { stroke:var(--panel); stroke-width:1; }
 </style></head><body>
 <!--NAV-->
 <!--BAND-->
-<!--CHROME-->
+<!--DECO-->
 <h1>Session <span id="sid"></span></h1>
 <div class="sub" id="subline"></div>
 <!--LEGEND-->
@@ -369,7 +369,8 @@ function drawTree() {
     if (shown) {
       const spent = c.child && spentOf(c.child);
       const hue = color(c.child && byId.has(c.child) ? c.child : c.ctx);
-      // The dispatch links to the child session's page, where the record's harness names one.
+      // The dispatch links to the child session's page, where the record's harness names one; a page
+      // the dashboard serves nothing at answers its 404 like any unrecorded session's.
       const name = `<b>${esc(c.name || kindWord(c.tool))}</b>`;
       h += `<div class="row" id="r${it.i}" data-i="${it.i}"><span class="muted">${clock(c.start)}</span><span class="num">${esc(took(c))}</span>`
         + `<span class="bar"><i style="width:${barWidth(c.running ? 0 : c.dur, longest)}px;background:${hue}"></i></span>`

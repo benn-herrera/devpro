@@ -13,7 +13,8 @@ Endpoints:
   `/board/` so its page's assets, its payload and its served documents stay under that path; the
   redirect is the one answer the root owes.
 - `GET /profiler/`: the profiler view's index — `pages.index_html` — with the nav and the band,
-  the shared layer linked at `/board/board.css` and the nav's script linked at `/profiler/chrome.js`.
+  the shared layer linked at `/board/board.css` and the decoration's script linked at
+  `/profiler/deco.js`.
 - `GET /page/<session-id>`: that session's page, the render's, with the nav, the band's legend and its
   return to the list.
 - `GET /board/` and `GET /board/<file>`: the board page and its files, the file resolved beside the
@@ -37,12 +38,13 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
 from typing import Any, Optional, TextIO
-from urllib.parse import quote, unquote, urlsplit
+from urllib.parse import unquote, urlsplit
 
 from devpro import __version__
 from devpro.profiler.pages import (
     LEGEND,
     PAGE_PREFIX,
+    _session_link,
     dispatches,
     index_html,
     page_of,
@@ -59,17 +61,18 @@ PROFILER_PATH = "/profiler/"
 STATE_PATH = "/api/state"
 RETURN_LABEL = "Return to list"
 # The chrome every view carries after its view names: the live/idle indicator and the stop, and the
-# script that gives them their behavior. That script ships as `devpro/profiler/chrome.js` and is
+# script that gives them their behavior. That script ships as `devpro/profiler/deco.js` and is
 # inlined where it goes — the board page's script names it instead — because the server answers no
 # static file of its own, and a page's script loads under the policy every page is served with. The
 # markup is one text both carriers substitute, so an id or a class cannot drift between the views.
-CHROME = """<span class="nav-server">
+NAV_SERVER = """<span class="nav-server">
   <span class="dot"></span>
   <span id="connection" role="status" aria-labelledby="connection"></span>
   <button id="stop" class="nav-stop" type="button">Stop</button>
 </span>"""
-CHROME_SCRIPT = (files("devpro.profiler") / "chrome.js").read_text(encoding="utf-8")
-CHROME_MARK = "<!--CHROME-->"
+DECO_SCRIPT = (files("devpro.profiler") / "deco.js").read_text(encoding="utf-8")
+# The profiler path's name for that script, as the pages name it: one file, served from the one path.
+DECO_SCRIPT_PATH = "deco.js"
 # The one policy both panels' pages are served under, so a page cannot load from elsewhere and no
 # page frames either.
 # The templates' own style and script blocks are inline, and the served pages carry them: the
@@ -92,23 +95,29 @@ def nav_html(active: str) -> str:
         + f">{view}</a>"
         for view, href in (("kanban", BOARD_PATH), ("profiler", PROFILER_PATH))
     )
-    return f'<nav class="site-nav scanlines"><span class="brand">devpro</span><span class="views">{views}</span>{CHROME}</nav>'
+    return f'<nav class="site-nav scanlines"><span class="brand">devpro</span><span class="views">{views}</span>{NAV_SERVER}</nav>'
 
 
-def chrome_script() -> str:
-    """The nav's one script, as the page names it: the script's one source is the shipped file, which
-    the dashboard serves at the profiler path the way the board page names its own beside it."""
-    return f'<script src="{PROFILER_PATH}chrome.js"></script>'
+def deco_script() -> str:
+    """The decoration's one script, as the page names it: the script's one source is the shipped file,
+    which the dashboard serves at the profiler path the way the board page names its own beside it."""
+    return f'<script src="{PROFILER_PATH}{DECO_SCRIPT_PATH}"></script>'
+
+
+def dispatcher_of(session: str, root: str) -> tuple[str, str] | None:
+    """The session that dispatched `session`, and the call that did, for the band it heads.
+
+    The page's render holds this session's records alone, so a dispatcher named among them is found
+    in the stores' other sessions: the band's one fact costs a read beside the page's own."""
+    sessions, _ = read_sessions(root)
+    return dispatches([other for other in sessions if other["id"] != session]).get(session)
 
 
 def dispatcher_html(dispatcher: tuple[str, str]) -> str:
     """The band's dispatch line: the session that dispatched this page, linked to its page, and the
     call that dispatched it."""
     session, name = dispatcher
-    return (
-        '<span class="dispatched"><strong>Dispatched by</strong> '
-        f'<a href="/page/{quote(session)}">{escape(session)}</a> — {escape(name)}</span>'
-    )
+    return f'<span class="dispatched"><strong>Dispatched by</strong> {_session_link(session)} — {escape(name)}</span>'
 
 
 def band_html(return_to: str | None, dispatcher: tuple[str, str] | None = None) -> str:
@@ -120,8 +129,8 @@ def band_html(return_to: str | None, dispatcher: tuple[str, str] | None = None) 
 
 def profiler_page(page: str, *, return_to: str | None, dispatcher: tuple[str, str] | None = None) -> str:
     """A page of the profiler view as the dashboard serves it: the nav, the band and the view's own
-    content, one legend on the page, and the nav's script once."""
-    return with_frame(page, nav=nav_html("profiler"), band=band_html(return_to, dispatcher), script=chrome_script())
+    content, one legend on the page, and the decoration's script once."""
+    return with_frame(page, nav=nav_html("profiler"), band=band_html(return_to, dispatcher), script=deco_script())
 
 
 def loopback(url: str) -> bool:
@@ -189,12 +198,14 @@ class DashboardServer(ThreadingHTTPServer):
     def page(self, session: str) -> str | None:
         """The page at `/page/<session>`, or nothing where it names no recorded session: the render's
         page under the nav and the band, whose return control leads back to the list and whose
-        heading names the session that dispatched it, where one did."""
+        heading names the session that dispatched it, where one did.
+
+        The store read is the page's own; the dispatcher its band names is looked up beside it, once.
+        The page of the session that named this one is a second render, never a second index."""
         page = page_of(PAGE_PREFIX + session, self.root)
         if page is None:
             return None
-        sessions, _ = read_sessions(self.root)
-        return profiler_page(page, return_to=PROFILER_PATH, dispatcher=dispatches(sessions).get(session))
+        return profiler_page(page, return_to=PROFILER_PATH, dispatcher=dispatcher_of(session, self.root))
 
     def start(self) -> None:
         """Begin polling the board's files. Called once the server is serving, inside the try whose
@@ -238,8 +249,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(
                 HTTPStatus.OK, self.server.profiler_index().encode("utf-8"), "text/html; charset=utf-8", page=True
             )
-        elif path == PROFILER_PATH + "chrome.js":
-            self._send(HTTPStatus.OK, CHROME_SCRIPT.encode("utf-8"), "text/javascript")
+        elif path == PROFILER_PATH + DECO_SCRIPT_PATH:
+            self._send(HTTPStatus.OK, DECO_SCRIPT.encode("utf-8"), "text/javascript")
         elif path.startswith(BOARD_PATH):
             self._board(self.path[len(BOARD_PATH) - 1 :])
         elif path.startswith(PAGE_PREFIX):
