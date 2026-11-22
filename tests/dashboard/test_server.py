@@ -436,6 +436,36 @@ def test_a_session_page_carries_the_bands_legend_and_the_way_back(tmp_path: Path
     assert re.search(r'<a class="return" href="/profiler/">Return to list</a>', undispatched)
 
 
+def test_the_chromes_script_and_the_pages_script_share_one_scope(tmp_path: Path, serve) -> None:
+    """The nav's script and a session page's own script are both classic scripts in the page's one
+    global scope: a name both declare kills the page's script at parse — the page serves, styles,
+    and draws nothing, the session content blank while the nav's own chrome still runs. The two
+    compile together, which is the hold a render-side check cannot give: each script compiles alone.
+
+    A skip without bun is the fixture's own: the compile needs an engine, and the engines a test
+    environment carries are the ones the profiler's own fixtures already require."""
+    import shutil
+
+    if shutil.which("bun") is None:
+        pytest.skip("bun is not installed")
+    root = project(tmp_path / "proj", {})
+    store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
+    served = serve(root)
+    page = served.get("page/s-one")[2].decode("utf-8")
+    blocks = re.findall(r"<script>(.*?)</script>", page, re.S)
+    chrome = (files("devpro.profiler") / "chrome.js").read_text(encoding="utf-8")
+
+    script = tmp_path / "scope.js"
+    script.write_text(chrome + "\n" + "\n".join(blocks), encoding="utf-8")
+    compile_with = subprocess.run(
+        ["bun", "-e", f"new Function(require('fs').readFileSync({str(script)!r}, 'utf8'))"],
+        capture_output=True,
+        text=True,
+    )
+
+    assert compile_with.returncode == 0, compile_with.stderr
+
+
 def test_dashboard_root_is_the_git_root_of_the_directory_it_runs_in(tmp_path: Path, monkeypatch) -> None:
     """`dashboard_root` takes the directory the command runs in up to the git root, as the profiler's
     `serve` took its project: a dashboard started in a project's subdirectory serves that project,

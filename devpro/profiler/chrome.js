@@ -84,7 +84,7 @@
 // A moment's text the page served: `<first> UTC to <last>`, the first to the second and the last as
 // an ISO instant, which `Date` reads as the same instant either part names.
 const MOMENTS = /^(\d{4}-\d{2}-\d{2}) (\d{2}):(\d{2}):(\d{2}) UTC to (\S+)$/;
-const clock = (date) => `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
+const momentClock = (date) => `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
 const calendar = (date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 const dayOf = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -94,7 +94,7 @@ const dayOf = (date) =>
 const localMoments = (first, last) => {
   const [a, b] = [new Date(first), new Date(last)];
   if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return null;
-  return calendar(a) === calendar(b) ? `${clock(a)} to ${clock(b)}` : `${dayOf(a)} ${clock(a)} to ${dayOf(b)} ${clock(b)}`;
+  return calendar(a) === calendar(b) ? `${momentClock(a)} to ${momentClock(b)}` : `${dayOf(a)} ${momentClock(a)} to ${dayOf(b)} ${momentClock(b)}`;
 };
 
 // Each moments cell's text becomes the local reading; its title keeps the raw UTC untouched.
