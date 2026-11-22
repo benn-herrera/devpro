@@ -63,7 +63,7 @@ for each category, and may add text at anchors but never replace or remove a def
 ## The process it ships
 
 The agent set devpro ships carries a development process, and that process is designed around
-one principle: remediation opportunities — the checks, reviews and decision points — are placed
+a principle: remediation opportunities — the checks, reviews and decision points — are placed
 where the applicable working context is most available to the combined human-agent collaboration.
 A defect found while the context that produced it is still live is cheap to fix; the same defect
 found post-hoc, reconstructed from artifacts alone, is expensive, and the reconstruction is where
