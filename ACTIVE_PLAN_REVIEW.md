@@ -90,6 +90,25 @@ tests pin what the documents promise. The findings below are the defects.
   seam; duplicated command-spawn helpers across the two test suites. (tech-writer, architect,
   coder)
 
+## Corrections
+
+Made during the burndown's PE usability review, each verified against the tree by the session
+before the burndown's revision accepted it:
+
+- **R1 is a phantom defect.** The `except OSError` branch (`devpro/dicing/kanban/server.py:323-326`)
+  assigns `root` from `self.server.root` before any use, so no `UnboundLocalError` is reachable;
+  `test_a_file_a_move_cannot_read_is_named_from_the_root` (`tests/dicing/test_server.py:401`)
+  exercises exactly this path and passes, and a composed HTTP probe returned the promised
+  `500 {"error": "cannot read: …"}`. The seat's evidence printed the branch's source but never
+  observed the error. The original claim attributed to the seat is withdrawn.
+- **R2 is a phantom defect.** `payload` (`devpro/dicing/kanban/server.py:151-155`) answers
+  immediately whenever the client's `since` differs from the server's version
+  (`wait_for(lambda: str(self._version) != since …)` returns at once) — a stale client is served
+  the current payload without waiting. The seat misread its own probe's output. Withdrawn.
+- **R18's cite is corrected**: the static `<title>` and `<h1>` are
+  `devpro/dicing/kanban/assets/index.html:6` and `:11`, not `board.js:6`/`:11` (there a comment
+  and a constant). The defect itself stands.
+
 ## Process notes
 
 - The stage's done-line covered the prose it landed only by `dev-check-links`:
