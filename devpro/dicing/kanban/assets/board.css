@@ -43,7 +43,7 @@
 
 [hidden] { display: none !important; }
 
-/* The chrome's scanline treatment: the rhythm of an amber or green screen, in the nav and the frame
+/* The deco's scanline treatment: the rhythm of an amber or green screen, in the nav and the frame
    band alone — a card surface never carries it. Decoration, so it stays behind the text. */
 .scanlines {
   background-image: repeating-linear-gradient(

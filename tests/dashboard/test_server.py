@@ -64,7 +64,7 @@ def test_the_root_redirects_to_the_board_the_landing_surface(tmp_path: Path, ser
 
 def test_the_state_endpoint_answers_live_while_the_server_serves(tmp_path: Path, serve) -> None:
     """`/api/state` answers the server's state — `live`, and the version the dashboard runs, the
-    hover text the indicator carries — while it serves, so the chrome's poll shows the phosphor and
+    hover text the indicator carries — while it serves, so the deco's poll shows the phosphor and
     names the devpro serving it. An endpoint answering without the version is an indicator whose
     hover text is empty: the operator cannot tell what is serving."""
     client = serve(project(tmp_path / "proj", {}))
@@ -339,7 +339,7 @@ def test_the_profiler_view_carries_its_nav_and_legend_once(tmp_path: Path, serve
 def test_every_profiler_view_page_renders_the_way_the_file_flow_renders_it(
     tmp_path: Path, serve, path: str, scripts: int
 ) -> None:
-    """A served page is the page the file flow writes, with the dashboard's own chrome around it:
+    """A served page is the page the file flow writes, with the dashboard's own deco around it:
     the shared layer linked once to the board panel's own file — the CSP refuses an inline
     stylesheet, and one source serves both carriers — the nav once with the server block, the nav's
     script linked once — beside the render's own scripts on a session's page — and no mark the
@@ -393,10 +393,10 @@ def test_the_served_pages_link_a_shared_layer_whose_bytes_are_the_one_homes(tmp_
     assert LAYER_LINK in page
 
 
-def test_the_board_page_holds_its_chrome_once_and_the_nav_supplies_it(tmp_path: Path, serve) -> None:
+def test_the_board_page_holds_its_deco_once_and_the_nav_supplies_it(tmp_path: Path, serve) -> None:
     """`/board/` carries the nav's server block — the indicator and the stop — once, and names two
     scripts, the files the board path serves beside it: the nav's, whose text the board's own file
-    holds, and its board's. A board page writing its own copy of the block is the second chrome the
+    holds, and its board's. A board page writing its own copy of the block is the second deco the
     one nav replaced; one naming a file the board path does not serve is a page whose stop never
     loads."""
     page = serve(project(tmp_path / "proj", {})).get("board/")[2].decode("utf-8")

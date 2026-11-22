@@ -878,7 +878,7 @@ def index_html(directory: Path | str) -> str:
     count of the rows drawn beneath it; a session no other dispatched keeps its own place in
     first-moment order. A session naming itself dispatches nothing (`dispatches` drops it), so it is
     no child and keeps that place. The index carries the presentation layer and names no view of its
-    own: opened on its own it stands beside no board, so the chrome — the nav, the frame band and the
+    own: opened on its own it stands beside no board, so the deco — the nav, the frame band and the
     decoration's script — is the template's own text, the band's legend filled here from its one home
     (the index carrying no dispatcher and no way back), and the layer filled for the serve path to
     link (`link_layer`), absent where nothing serves it."""
@@ -944,7 +944,7 @@ def band_fills(*, dispatcher: tuple[str, str] | None, return_to: str | None) -> 
 PAGE_PREFIX = "/page/"
 # The frame band's fills, in the order the band reads them — the how-to-read legend from its one home
 # `LEGEND`, then the dispatch line, then the way back — as marks the strict fill replaces. They sit
-# inside the band both profiler templates carry as their own text, so one fill assembles the chrome
+# inside the band both profiler templates carry as their own text, so one fill assembles the deco
 # the dashboard once spliced; a mark the fill is told to leave empty comes out empty, not standing.
 BAND_LEGEND = "<!--LEGEND-->"
 DISPATCHED_MARK = "<!--DISPATCHED-->"

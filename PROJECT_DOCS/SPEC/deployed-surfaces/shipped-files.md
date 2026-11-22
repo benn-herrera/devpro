@@ -120,9 +120,9 @@ dashboard's light brand is the bright amber, dimmed only for the active view's s
 `board.css`'s `:root` carries the nav grammar's values — the phosphor brand, the accent at 80% of
 it, and the view's lifted gray — and no value of the superseded map: `--accent-dim`, the dim the
 active view's text once used, is gone rather than left standing unused.
-Retro colors, modern chrome: the phosphor accents and the scanline treatment are the whole retro
+Retro colors, modern deco: the phosphor accents and the scanline treatment are the whole retro
 voice — the layout, spacing and componentry are ordinary modern web, no TUI replication — and the
-scanline treatment may appear in the chrome, the nav or the frame band, never on a card surface,
+scanline treatment may appear in the deco, the nav or the frame band, never on a card surface,
 its placement the pass's executor call. The server's elements persist across every view, the nav's
 server block right-justified at its flex edge: a live/idle state indicator and, when live, a stop
 control; starting is the CLI's alone, no served page starting its own server. In the profiler view the how-to-read legend sits at the top of the
@@ -222,4 +222,3 @@ missing module or an error in the script, reports on stderr and does not block t
 Opencode's guardrail is run by the plugin entry, which imports `guardrail.ts` from the install
 directory: the install writes no settings entry for it. A user-level install copies no
 `guardrail.ts`, and the plugin entry then runs none.
-

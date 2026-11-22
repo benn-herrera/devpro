@@ -4,7 +4,7 @@ Neither panel's rendering is this module's. The board panel is `devpro.dicing.ka
 surface — its page, files, payload, moves and served documents, answered by the `KanbanServer` built
 over the dashboard's root — and the profiler view is `devpro.profiler.pages`' index and pages, read
 from the stores as they stand. This module adds the routes that hold them apart and the state
-endpoint every view's chrome reads; the view's chrome — the top nav and the frame band — is the
+endpoint every view's deco reads; the view's deco — the top nav and the frame band — is the
 templates' own text, this module adding only the band's per-page facts, the way back and the
 dispatcher its lookup names.
 
@@ -22,9 +22,9 @@ Endpoints:
   page, so the page's relative asset names reach them.
 - `GET /<path>.md`: a served document, as the board panel serves it.
 - `GET /api/state`: `{"state": "live"}`, answered while the server serves, which is the answer the
-  shared chrome's indicator reads.
+  shared deco's indicator reads.
 - `GET /api/board`, `POST /api/to-design`, `POST /api/to-roadmap`, `POST /api/stop`: the board's
-  payload, moves and stop, at the root paths its page and the chrome call.
+  payload, moves and stop, at the root paths its page and the deco call.
 """
 
 from __future__ import annotations

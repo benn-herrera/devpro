@@ -52,10 +52,10 @@ render's injected copy, and the dashboard's frame band, which reads the same con
 from the served page, so a served page shows the legend once. The removal runs before the band's
 splice for that reason — the band carries `LEGEND` itself — and the CSS splice stands beside both,
 its mark disjoint from the legend's. The index's `INDEX` template fills the same `CSS_SLOT`, and
-carries three marks for the dashboard's chrome — `NAV_MARK`, `BAND_MARK` and `DECO_MARK` — which `index_html`
+carries three marks for the dashboard's deco — `NAV_MARK`, `BAND_MARK` and `DECO_MARK` — which `index_html`
 leaves unfilled and the dashboard fills, so the standalone index carries the layer and no nav; the
 template's own rules are the page's alone: the layer clears the body's margin and sets the page's
-colours, and the template pads its `main`. The chrome itself is the dashboard's `nav_html` and
+colours, and the template pads its `main`. The deco itself is the dashboard's `nav_html` and
 `band_html`: the brand, the two view names and, right-justified at the nav's flex edge on every
 view, the server block — the live/idle indicator and the stop — whose one script
 `devpro/profiler/deco.js` the dashboard inlines into each page it builds and the board page names

@@ -200,7 +200,7 @@ def _page_data(page: str) -> dict:
     return json.loads(page.split("const D = ", 1)[1].split(";\n", 1)[0])
 
 
-def _without_chrome(served: str) -> str:
+def _without_deco(served: str) -> str:
     """A served page reduced to the file flow's page, so the served and the printed stand apart on
     the layer's carriage and nothing else: the shared layer's link stands back as the inline text the
     render writes there, and the band's per-page facts — the way back this page carries and the
@@ -885,12 +885,12 @@ def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> Non
     # The serve path names the layer's one file where the file flow inlines its text: one source, two
     # carriers, and the page else the same to the byte.
     assert served.count(LAYER_LINK) == 1 and SHARED_CSS not in served
-    assert _without_chrome(served) == printed.stdout.replace(LEGEND, "").rstrip("\n") + "\n"
+    assert _without_deco(served) == printed.stdout.replace(LEGEND, "").rstrip("\n") + "\n"
 
 
 def test_the_standalone_render_carries_the_shared_layer_and_the_legend_once(tmp_path: Path) -> None:
     """The page `tree --format html` prints carries the presentation layer's own text, inlined whole,
-    and the frame band's legend exactly once — the chrome the served page carries as its own text,
+    and the frame band's legend exactly once — the deco the served page carries as its own text,
     here the render's: the standalone page names no view active to a live dashboard, so its band
     heads with the legend alone, no dispatcher and no way back. A render that inlines a second layer,
     or carries the legend twice, is the reskin the shared layer forbids."""

@@ -14,7 +14,7 @@
 // writes, so no served text is parsed here. A cell whose text is no reading — one with no pair of
 // cells — keeps its raw text.
 
-// The nav's chrome on every view.
+// The nav's deco on every view.
 (() => {
   const connection = document.getElementById("connection");
   const stop = document.getElementById("stop");
