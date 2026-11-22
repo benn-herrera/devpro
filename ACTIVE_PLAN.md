@@ -290,7 +290,10 @@ remainder: nothing else is left.
 
 **Done-line.** `just test devpro`, then `just lint`, then `just dev-check-links`, then `just
 dev-check-design`, then `just dev-check-design-deltas-applied` — run once, at the package's end,
-the last two over the design's technical entries P2 applies.
+the last two over the design's technical entries P2 applies. Applying the pairs owes the design a
+re-anchor pass in the same edit — every pair the application displaces re-anchored to what its
+target holds from then on, per the design's chain rule — and `dev-check-design`'s problem count is
+compared against the pre-package baseline, not to zero; for this package that baseline is 42.
 
 ## PR — Post-plan review
 
