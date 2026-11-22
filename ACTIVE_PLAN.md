@@ -408,7 +408,7 @@ edited leaves.
 | plain-tree-skill | landed: commit `877b7fe`, the definition source (the retake's `rendered/` is gitignored — the plan's "runs in this package's commit" written against a tree that does not exist, a finding for the post-plan review); audited in the main session: the re-taken reference differs from the stale `latest` by exactly the two corrected sentences, the four diffs' differences being the slots' own pinned tuning identities — the plan's "stated clean" observation unachievable as written, a second finding; gate `just test` (1662 passed, 1 skipped) then `just sweep-python` clean | mechanical |
 | apply-arch-deltas | landed: commit `b441303`, two leaves; checker `pairs: 7, landed: 7, pending: 0`; doc-set searches read clean; gate `just test` (1662 passed, 1 skipped) then `just sweep-python` clean | mechanical |
 | post-plan-review | landed: commit `f74df6e`, the synthesis of three independent seat reviews (`REVIEW-{coder,architect,prompt-engineer}.md` in scratch); one blocker (R1, the subsystem-map leaf's stranded `— and`, source the design's own `Becomes` block) and seventeen findings R2-R18, each naming its seats | expert |
-| post-plan-burndown | drafted — the work list is in place (W1-W7, grouped by root cause from `ACTIVE_PLAN_REVIEW.md`'s R1-R18); the `devpro-prompt-engineer` usability review of this section, then the session's revision, before it is `dispatchable` | expert |
+| post-plan-burndown | drafted — the work list is in place (W1-W7, grouped by root cause from `ACTIVE_PLAN_REVIEW.md`'s R1-R18); the `devpro-prompt-engineer` usability review of the section is running, the session's revision follows it | expert |
 
 ### Post-plan review — read the design against the landed work
 
@@ -420,56 +420,74 @@ checkpoint gate runs at its commit.
 ### Post-plan burndown
 
 The review's findings, grouped by root cause — one item per cause, the IDs
-[`ACTIVE_PLAN_REVIEW.md`](ACTIVE_PLAN_REVIEW.md) names.
+[`ACTIVE_PLAN_REVIEW.md`](ACTIVE_PLAN_REVIEW.md) names. The review's Observations section is not
+work: those entries state facts already true of the tree, and nothing here edits them.
 
-**W1 — the layer's carriage is still a silent fill** *(R4, R15)*. `link_layer`'s global
-`SHARED_CSS` strip and whitespace-keyed `<style>` replace route outside the strict fill, and the
-`INDEX` template's dark zebra rule is a no-op duplicate beside a comment describing a motif pair
-the template does not carry. Edit `pages.py` and the `INDEX` template: the layer splice runs
-through `strict_fill` (its `CSS_SLOT` mark the splice's one site), the dead dark rule and the stale
-comment go. The ARCHITECTURE claim (`harness-profiler.md:52-56`) becomes true by the edit, not by
-a doc change. Test: the byte pin stays green.
+**W1 — the layer's carriage is still a silent fill** *(R4, R15's comment half)*. `link_layer`'s
+global `SHARED_CSS` strip and whitespace-keyed `<style>` replace route outside the strict fill.
+Edit `devpro/profiler/pages.py`: the layer splice runs through `strict_fill` — the served page's
+`CSS_SLOT` holds the link, the standalone's the layer text, the carriage the one difference — and
+the false docstring sentence about reading for the legend's band goes with the R3 edit in W2. The
+ARCHITECTURE claim (`harness-profiler.md:52-56`) becomes true by the edit, not by a doc change.
+Tests staying green: the byte pin (`test_the_served_page_is_the_html_the_file_flow_writes`) and
+`test_the_served_index_links_the_shared_layers_own_text`.
 
-**W2 — the feed and the index pay for work the static index does not need** *(R2, R3)*. The feed
-answers without the `page=True` policy flag, and every `/profiler/` request reads and parses every
-store and discards the result. Edit `dashboard/server.py` (one keyword on the feed branch) and
-`pages.py` (`index_html` reads nothing per request — the band's fills read module constants; drop
-the false docstring sentence). Test: `tests/dashboard/test_server.py`'s CSP pin stays green; the
-profiler index answers without a store read.
+**W2 — the feed and the index pay for work the static index does not need** *(R2, R3)*. Edit
+`devpro/dashboard/server.py`: the `/api/traces` branch answers with `page=True` — one keyword, the
+policy the branch four lines above sets. Edit `pages.py`: `index_html` reads no store per request
+(the band's fills read module constants); its docstring loses the read sentence with W1's edit. A
+new test in `tests/dashboard/test_server.py`
+(`test_the_static_index_answers_without_reading_the_stores`) pins it: with both
+`read_sessions` bindings monkeypatched to counted stubs, a `/profiler/` fetch records zero calls —
+defect it fails on before: the index reads every store per request, the counter naming them.
 
-**W3 — false confidence in the read-count test** *(R9)*. The test pins one store read per
-`/page/` request; the code performs two and the monkeypatch counts one binding. Edit the test to
-count both bindings (or the code to read once — the design does not name the count, the test's
-property does): the pinned property must hold because it is true, not because the counter missed a
-binding.
+**W3 — the read-count test pins a property the code does not have** *(R9)*. Test-only fix, scope
+named: `test_a_session_page_is_served_without_reading_the_stores_a_second_time` counts both
+bindings — monkeypatch `pages.read_sessions` and `dashboard.server.read_sessions` with counted
+stubs — and pins the property that is true: exactly two reads (the page's own, the dispatcher
+lookup's), the index's grouping built once. No code changes in this item.
 
-**W4 — the skill's unreachable and unobservable paths** *(R11, R12, R13)*. The `No traces in …`
-fallback reads stderr the model was told to read stdout for; the record count asks the model to
-count with no tool carrying it; the mage slot's skill always stops at its finder. Edit
-`show_profile.py`'s `_BODY`: the fallback names stderr and the failing exit; the count sentence
-names what to ask for (or drops it); the mage case is stated as the finder's stop. The rendered
-references re-take after.
+**W4 — the skill's unreachable and unobservable paths** *(R11, R12, R13)*. Edit
+`show_profile.py`'s `_BODY`, three sentences, the choices settled here: the `No traces in …`
+fallback names stderr and the failing exit (`where `tree` exits 1 saying so on stderr`); the
+count sentence drops the counting instruction — the records' count is the profiler's own output,
+the skill reports it from there rather than counting lines; the mage case is stated as the
+finder's stop (`under mage, where no launcher is installed, say so and stop`). The reference
+retake runs in this item's commit: `just retake-reference` after the edit is verified, the four
+`just render-diff` outputs read — the observable is the one-difference check (each reference's
+show-profile SKILL.md differs from the stale `latest` by exactly the changed sentences),
+`render-diff` exits 0 on a difference.
 
-**W5 — the retired carriage claims survive in comments and headers** *(R8, R7, R18)*. `deco.js`'s
-header still says the dashboard inlines it (R8); the moments sweep races the index's fetch with no
-test pinning the ordering (R7); the row-rendering script's `console.warn` logs an object (R18).
-Edit `deco.js`'s comment, re-order or observe the sweep's trigger in the runner test, make the
-warn a string.
+**W5 — retired claims and dead text in the shipped surfaces** *(R8, R15, R18)*. Edit
+`devpro/profiler/deco.js`: the header's "the dashboard inlines this text" retires — the pages
+link the file, the dashboard serves it. Edit the `INDEX` template in `pages.py`: the dark zebra
+rule deletes (a no-op duplicate — the layer's `--zebra` switches with the scheme already) and its
+motif-pair comment goes with it; the row-rendering script's `console.warn` logs the message
+string, not an object. Tests updated in scope: the dark-rule assertion in
+`test_the_served_index_lists_every_recorded_session:760-767` goes with the rule. The moments
+sweep's race (R7) is observed, not assumed: the runner test draws the rows, then applies the
+deco's sweep, and asserts the moments cells rewritten — the sweep's trigger ordering is the fix
+itself.
 
-**W6 — assembly-internals hygiene** *(R5, R6)*. `profiler_page` is declared twice, the dashboard's
-copy a bare delegation; `strict_fill`'s internals carry an unreachable check with a misleading
-`KeyError`, duplicated existence walks, a nonexistent "later stage" sentence, and `isidentifier()`
-admitting Unicode ids `string.Template` rejects. Edit `pages.py` and `server.py`: one
-`profiler_page`, the strict fill's checks collapsed to the ones that can fire, the docstring
-truthful, the slot test `name.isidentifier() and name.isascii()` or the Template-equivalent.
+**W6 — assembly-internals hygiene** *(R5, R6)*. One `profiler_page`: the dashboard's wrapper
+(`server.py`) is the single name, the `pages.py` implementation of the same name renames to
+`page_for` — the wrapper's call site updates with it. `strict_fill`'s internals: the
+mark-still-standing check after a mark replace deletes (unreachable; the existence check already
+refuses), the docstring's "later stage" sentence goes, the slot test becomes the Template-
+equivalent check (`name.isidentifier() and name.isascii()` — Template rejects non-ASCII ids).
+Tests staying green: the strict-fill test, the byte pin.
 
-**W7 — the review's document-side defects** *(R1, R10, R14, R16, R17, R13's mage statement)*. The
-blocker first: the subsystem-map leaf's stranded `— and` clause reads as the plain tree finding the
-profiler's launcher — fix the leaf (and the design's `Becomes` block while it survives). The plan's
-Code-delta anchors get `-1` fragments; the Sequencing count reads seven; `view.html`'s
-"works from file://" narrows to what the page survives; the leaf's store-level unreadable case
-gains the file-level one or names it; the mage statement lands with W4's finder fix.
+**W7 — the review's document-side defects** *(R1, R10, R14, R16, R17)*. The blocker first: the
+subsystem-map leaf's stranded `— and` clause reads as the plain tree finding the profiler's
+launcher — the clause re-ends `… `PARENT_TOOLS` — and finds the launcher next to the tree in the
+session page's link …`, the plain tree's drawing rule ending at the `PARENT_TOOLS` call list; the
+design's `Becomes` block gains the same fix while it survives. The plan's Code-delta anchors get
+`-1` fragments (`#install--harness-profiler-1`, `#subsystem-map-1`); the Sequencing count reads
+seven; `view.html:2`'s overstatement narrows to the sentence the page survives — *the standalone
+render fetches nothing and runs from the file the flow wrote*; the leaf's unreadable case states
+the file level — *a store whose files the glob finds but whose trace cannot be read is stated in
+the feed as unreadable, like the store that could not be read at all*.
 
 Each work item lands in its own commit under the checkpoint gate (`just test`, then
-`just sweep-python`); the item's tests are the ones it changes, plus the byte pin where the
-assembly is touched.
+`just sweep-python`); the item's named tests are the ones it changes, plus the byte pin where the
+assembly is touched. W1 and W6 touch the same files and run serially, W1 first.
