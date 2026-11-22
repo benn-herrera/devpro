@@ -28,7 +28,7 @@ surface retires, and the record lands with the code that makes it true.
 
 ## U1 — the UX pass: the decided layout, one presentation layer, the record
 
-Lifetime: not yet under way. One commit closes it — the shared layer, both panels' re-style, the
+Lifetime: shipped. One commit closes it — the shared layer, both panels' re-style, the
 band and the record are one presentation change with no shippable middle state.
 
 **What does not change.** No verb, no route and no endpoint is added beyond the layout's own
@@ -36,9 +36,14 @@ needs — the nav's profiler link (the `/profiler/` index) and the frame band's 
 ordinary navigation, no inner frames. The board panel is `devpro.dicing.kanban.server`'s serve
 surface and the traces panel `devpro.profiler.pages`' rendering, exactly as the dashboard module
 docstring states (devpro/dashboard/server.py:1-7); no rendering logic moves between the packages.
-The board's payload, moves, served documents, host guard and CSP are untouched: every test that
-pins them (tests/dashboard/test_server.py:123-135, :138-159, :177-216, :219-249, :252-272;
-tests/dicing/test_server.py:138-216, :490-513) keeps passing unedited.
+The board's payload, moves, served documents, host guard and CSP are untouched. The tests that
+pin them keep passing: the board-panel suites unedited (tests/dashboard/test_server.py:123-135,
+:138-159, :177-216; tests/dicing/test_server.py:138-216, :490-513), and the host guard
+(tests/dashboard/test_server.py:219-249) unedited except its `id="root"` case (:225), re-expected
+at `302` — its assertion pins the status only, and a `302` still answers the dashboard's own
+host. Three tests the root redirect moves are not unedited; the test scope below names their
+retargeting: the unreadable-store test (:63-81), the outside-it command test (:339-368), and the
+CSP test (:252-272).
 
 **The URL arrangement — the executor call, stated.** The root `/` answers `302` with
 `Location: /board/`, and the traces index answers at `/profiler/` (trailing slash, the board
@@ -56,7 +61,9 @@ is still listed by the next page loaded
 **The shared presentation layer — the executor call, stated.** The layer lives where the design
 puts it: the board's own stylesheet, `devpro/dicing/kanban/assets/board.css`, extended with the
 phosphor identity — the brand, active-view and inactive-view values in both motifs, the nav
-grammar and the scanline utility — superseding the board's blue `--accent` and `--accent-dim`
+grammar and the scanline utility — superseding the board's blue `--accent` (board.css:9, :22 — the board's stylesheet defines no
+`--accent-dim`) and superseding the ux-pass mockups' light-mode dim value — `--accent-dim` lives
+in `.devpro-temp/ux-pass/` (`#b795ba`), not in `board.css`
 (the pair's `becomes` states the values and the grammar; this plan does not restate them). The
 board's surfaces keep the board's own variable system, `board.css`'s `:root` and its
 `prefers-color-scheme` block (board.css:1-25), as the design's `becomes` says; the accent values
@@ -80,13 +87,16 @@ profiler page's DOM; the source stays one file either way.
 alone: view.html:42-50 carries the whole how-to-read block (the summary, the prose paragraph and
 the symbols list), and `grep -rn "How to read" devpro tests README.md PROJECT_DOCS` returns
 view.html:42 and nothing else — one copy, no pin on its text. The rendering side becomes its one
-home: `devpro/profiler/pages.py` holds the legend once (its markup included), `view.html` carries
-a slot in its place — the `DATA_SLOT` pattern pages.py:49 and :539 already uses — and
-`render_html` fills the slot. The dashboard's frame band imports the same constant. Two carriers,
-one source: the standalone render's page carries the legend injected; the dashboard's band
-carries it on the served pages. The served session page therefore does not show the body's
-injected legend — the render's filling is the standalone carrier's, and the band's is the served
-page's — so a served page never shows the legend twice.
+home: `devpro/profiler/pages.py` holds the legend once as a module constant (its markup
+included), `view.html` carries a slot in its place — the `DATA_SLOT` pattern pages.py:49 and
+:539 already uses — and `render_html` fills the slot from the constant on every call. The choice
+that keeps the served page never-twice is stated here, not left an executor call: the dashboard's
+`page_of` path (server.py:113-115) runs the same `render_html` with no suppressing flag, so the
+rendered body carries the injected legend, and the band splice — the one site that decorates —
+removes that copy from the body and carries the constant in the band instead. Two carriers, one
+source: the standalone render's page carries the legend injected; the dashboard's band carries it
+on the served pages. A served page never shows the legend twice because the splice is the single
+place that holds both copies in hand, and it cannot leave one behind in the body.
 
 **The frame band.** The dashboard decorates the profiler view's pages — the `/profiler/` index and
 each `/page/<session-id>` page — with the band, spliced into the served page the way
@@ -138,12 +148,14 @@ supersedes; each is updated in the same change:
   the bytes `tree --format html` prints. The old whole-bytes pin would fail on the band the
   decided target adds — that is the stated behavior change.
 - `test_every_page_answer_forbids_sniffing_and_restricts_its_sources`
-  (tests/dashboard/test_server.py:252) — extended to the new pages' answers; the redirect's
-  headers follow the same rule (the executor keeps one policy for both panels' pages,
-  server.py:39-41).
+  (tests/dashboard/test_server.py:252) — extended to the new pages' answers; its root fetch
+  re-expects `302` in place of the `200` it pins today (:262, fetched through the no-follow
+  `raw`), the redirect answer carrying the same policy headers (the executor keeps one policy
+  for both panels' pages, server.py:39-41).
 - `test_the_board_page_and_the_files_it_names_resolve_under_the_board_path`
-  (:109) and the host-guard, payload, moves and documents tests — no edit: they compare served
-  bytes to the assets on disk or pin panel behavior the pass does not touch.
+  (:109) and the host-guard (its `id="root"` case excepted, re-expected above), payload, moves
+  and documents tests — no edit: they compare served bytes to the assets on disk or pin panel
+  behavior the pass does not touch.
 
 **New tests, each named for its defect** (devpro/clauses.py:170 — the run that fails under the
 defect, before the change):
@@ -173,8 +185,9 @@ The bind, unreadable-store, calls-only-page and stop statements in the same sect
 — this package changes none of them.
 
 **Facts.**
-- `git log --oneline -3` → `89f80b5` (the phosphor identity), `5a19a77`, `ddf0e5f` (stage 3's
-  landing). The base this plan rests on.
+- `git log --oneline -3` as of HEAD, re-run at this revision → `d3ba2de` (this plan's own
+  commit), `4cd3953` (the profiler launcher's), `89f80b5` (the phosphor identity); stage 3's
+  landing `ddf0e5f` stands one below the three. The base this plan rests on.
 - The pending mark: ACTIVE_DESIGN.md:371 — "the dashboard pair waits for the presentation pass,
   its layout the user's decided target — the active plan's staging boundary is the record of that
   staging." The pair's `becomes` is ACTIVE_DESIGN.md:400-448.
@@ -206,7 +219,7 @@ last over the pair this package applies.
 
 ## PR — Post-plan review
 
-Lifetime: not yet under way. One commit closes it — the one that adds the review document.
+Lifetime: shipped. One commit closes it — the one that adds the review document.
 
 The reviewers receive the project documents and the design, not this plan, and review the changes
 and their tests against the project's standards and fitness for purpose: the coder seat for the
@@ -222,7 +235,7 @@ its links must resolve in; no other target checks it.
 
 ## PB — Post-plan burndown
 
-Lifetime: not yet under way. One commit closes it.
+Lifetime: shipped. One commit closes it.
 
 Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands. The burndown's synthesis
 classifies each finding against the structural design before it lists — addendum, modification,
