@@ -7,6 +7,8 @@
 // beside the claude sessions'. The record's fields and their meanings are `devpro/profiler/capture.py`'s,
 // because the same render reads both, and the masking is its masking: this file is that record rebuilt
 // against opencode's hook surface, which reports different things than claude's hooks do.
+// The floor is behavioral: the child's session id, which the dispatch's tie to its child is read from,
+// is `result.output.sessionID` on 2.3.2 and `result.metadata.sessionID` on 2.3.0, and the read covers both.
 //
 // `execute.before` carries no result, so it is where a call's start is taken; `execute.after` is where
 // the record is written. A capture that fails raises nothing out of a hook and says nothing, save the
@@ -237,20 +239,24 @@ function resultOf(call: Finished): string | undefined {
   return clip(mask(firstLine(textOf)), RESULT_LIMIT) || undefined
 }
 
-// childSessionOf is the session a subagent call dispatched, the host's `result.output.sessionID`,
-// read under the host's own string guard. Each opencode session owns its own trace file, so this id
-// names the child's page and its row in the index, never a context in the parent's file.
-// opencode 2.3.2 reports the dispatched child's session id there; a result whose output carries no
-// session id — a `task`-spelled dispatch's bare output string among them, and a result with none —
-// is a valid no-child state, and the record keeps `null`.
+// childSessionOf is the session a subagent call dispatched: the host's `result.output.sessionID` first,
+// then opencode 2.3.0's `result.metadata.sessionID`, which the floor still covers, each read under the
+// host's own string guard. Each opencode session owns its own trace file, so this id names the child's
+// page and its row in the index, never a context in the parent's file.
+// opencode 2.3.2 reports the dispatched child's session id in the output and 2.3.0 reported it in the
+// metadata; a result carrying neither — a bare output string among them, and a result with none — is a
+// valid no-child state, and the record keeps `null`.
 function childSessionOf(call: Finished): string | undefined {
-  const output = isRecord(call.result) ? call.result.output : undefined
-  const id = isRecord(output) ? output.sessionID : undefined
+  const { output, metadata } = isRecord(call.result) ? call.result : {}
+  const id = (isRecord(output) ? output.sessionID : undefined) ?? (isRecord(metadata) ? metadata.sessionID : undefined)
   return typeof id === "string" ? id : undefined
 }
 
 // childAgentTypeOf is the kind of subagent a parent call started, the response's `agentType` first as
 // the devpro profiler reads it — where a forked child's `fork` appears — then the call's own input, opencode's `agent`.
+// The two places here are the ones the host was observed reporting a kind in. The mirror of
+// `childSessionOf`: a kind the host reports elsewhere — beside the child's session id in `output` —
+// would record as the call's own input, and no live observation has shown it there.
 function childAgentTypeOf(tool: string, input: Record<string, unknown>, call: Finished): string | undefined {
   const { result, metadata } = isRecord(call.result) ? call.result : {}
   const kind =
@@ -311,7 +317,7 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
     duration_ms: end - start,
     ok: call.status === "completed",
     // A subagent call starts its child's context, and the host names that child's session in the
-    // result's output: the id goes in the slot the render groups children by.
+    // result's output, or in 2.3.0's metadata: the id goes in the slot the render groups children by.
     child_agent_id: subagent ? (childSessionOf(call) ?? null) : null,
     child_agent_type: subagent ? (childAgentTypeOf(raw, input, call) ?? DEFAULT_AGENT) : null,
     background: false,

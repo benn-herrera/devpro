@@ -627,11 +627,12 @@ def test_the_session_pages_header_reads_in_the_readers_clock(tmp_path: Path) -> 
 
 def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
     """The shipped `profiler.ts` through a stub plugin context: a completed call, a failed one, a
-    skill call, a subagent dispatch and the session's idle each append their record; the failed call's
+    skill call, subagent dispatches and the session's idle each append their record; the failed call's
     text is its `Tool.Error`'s message, the skill and subagent carry the host's own names, a dispatch
     carries the kind its response reports or else its own agent, under either of the host's spellings
-    for the tool, the child session its result's output names, and the one call whose `execute.after`
-    never fires drops its start at the idle."""
+    for the tool, the child session its result names — in the output the host observed, and in the
+    metadata 2.3.0 reported, which the floor covers — and the one call whose `execute.after` never fires
+    drops its start at the idle."""
     project = tmp_path / "project"
     project.mkdir()
     run = _run_ts(_HERE / "profiler_capture_runner.ts", directory=project)
@@ -646,6 +647,7 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
         ("Agent", "devpro-python-coder"),
         ("Agent", "devpro-architect"),
         ("Agent", "devpro-tech-writer"),
+        ("Agent", "devpro-go-coder"),
     ]
     assert calls[0]["result"] == "hi"
     assert calls[1]["ok"] is False
@@ -655,11 +657,14 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
     assert calls[3]["child_agent_id"] == "ses_child"
     assert calls[3]["child_agent_type"] == "devpro-python-coder"
     assert calls[4]["child_agent_id"] == "ses_fork"
-    assert calls[4]["child_agent_type"] == "fork"
-    # The task spelling's after-hook reports a bare `output` string with no child session id, so it
-    # records none.
-    assert calls[5]["child_agent_id"] is None
+    assert calls[4]["child_agent_type"] == "devpro-architect"
+    assert calls[5]["child_agent_id"] == "ses_task"
     assert calls[5]["child_agent_type"] == "devpro-tech-writer"
+    # opencode 2.3.0's shape, the floor's: the id rides the result's metadata and a bare `output` string
+    # refuses the preferred read, so the fallback is what names this child.
+    assert calls[6]["result"] == "ses_floor"
+    assert calls[6]["child_agent_id"] == "ses_floor"
+    assert calls[6]["child_agent_type"] == "devpro-go-coder"
     assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"]
     assert (out["startedBeforeIdle"], out["startedAfterIdle"]) == (1, 0)
 
@@ -667,16 +672,32 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
 def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path) -> None:
     """`serialize` holds every line to `LINE_LIMIT`, which the torn-tail read relies on: a record whose
     fixed `session` alone is longer than the bound is fitted by clipping that field too, and a line
-    already inside the bound is left as it stands."""
+    already inside the bound is left as it stands. The record measured is one the capture wrote, so the
+    two bounds are the dispatch record's own field lengths."""
     line_limit = 4096
     first, second = tmp_path / "first", tmp_path / "second"
     first.mkdir()
     second.mkdir()
-    over = json.loads(_run_ts(_HERE / "profiler_serialize_runner.ts", directory=first, arg="4090").stdout)
+    over = json.loads(
+        _run_ts(
+            _HERE / "profiler_serialize_runner.ts",
+            directory=first,
+            stdin=json.dumps({"directory": str(first), "sessionLength": 4090}),
+        ).stdout
+    )
     assert over["bytes"] <= line_limit
     assert over["session"] < 4090
-    inside = json.loads(_run_ts(_HERE / "profiler_serialize_runner.ts", directory=second, arg="200").stdout)
-    assert inside == {"bytes": 338, "session": 0}
+    inside = json.loads(
+        _run_ts(
+            _HERE / "profiler_serialize_runner.ts",
+            directory=second,
+            stdin=json.dumps({"directory": str(second), "sessionLength": 200}),
+        ).stdout
+    )
+    # A line inside the bound keeps its session whole: the field the over case clips is untouched here,
+    # which is what says the runner measured the length it was given.
+    assert inside["session"] == 200
+    assert inside["bytes"] <= line_limit
 
 
 def test_the_two_masks_redact_alike(tmp_path: Path) -> None:

@@ -3,9 +3,12 @@
 // Usage: bun tests/profiler_capture_runner.ts
 // Stdin: JSON {directory}: a project root whose `.devpro-temp/.profiler-opencode/` receives the records.
 // Stdout: JSON {records, startedBeforeIdle, startedAfterIdle} — the records the shipped `profiler.ts`
-// wrote, through the plugin context stub, for a completed call, a failed one, a skill call, a subagent
-// dispatch, a remark and a call whose `execute.after` never fires; and the in-flight start map's size
+// wrote, through the plugin context stub, for a completed call, a failed one, a skill call, two subagent
+// dispatches, a remark and a call whose `execute.after` never fires; and the in-flight start map's size
 // around the session's idle, which drops the never-finished call's entry.
+//
+// `profiler_serialize_runner.ts` measures a record from this same run rather than inventing one, so the
+// record's carried fields have one home in the tests.
 
 import "./opencode_plugin_stub.ts"
 import { readFileSync } from "node:fs"
@@ -64,12 +67,12 @@ await fire("execute.after", {
   result: { output: { sessionID: "ses_child", status: "running" } },
 })
 
-// A dispatch the host reports as a fork: the response's `agentType` is the kind hp.py draws the context by.
+// A second dispatch, as the host observed it too: the child's id in `output` and nowhere else.
 await fire("execute.before", base("call_7", "subagent", { agent: "devpro-architect", description: "fork it", prompt: "fork" }))
 await fire("execute.after", {
   ...base("call_7", "subagent", { agent: "devpro-architect", description: "fork it", prompt: "fork" }),
   status: "completed",
-  result: { output: { sessionID: "ses_fork", status: "running" }, metadata: { agentType: "fork" } },
+  result: { output: { sessionID: "ses_fork", status: "running" } },
 })
 
 // The same dispatch under opencode 2.3.0's spelling of the tool, which its floor range covers.
@@ -77,7 +80,16 @@ await fire("execute.before", base("call_8", "task", { agent: "devpro-tech-writer
 await fire("execute.after", {
   ...base("call_8", "task", { agent: "devpro-tech-writer", description: "write it", prompt: "write" }),
   status: "completed",
-  result: { output: "ses_task" },
+  result: { output: { sessionID: "ses_task", status: "running" } },
+})
+
+// opencode 2.3.0's result shape, which the floor covers: the child's id rides `metadata`, and the
+// output's bare string refuses the id's read, so the fallback is what names this child.
+await fire("execute.before", base("call_9", "subagent", { agent: "devpro-go-coder", description: "port it", prompt: "go" }))
+await fire("execute.after", {
+  ...base("call_9", "subagent", { agent: "devpro-go-coder", description: "port it", prompt: "go" }),
+  status: "completed",
+  result: { output: "ses_floor", metadata: { sessionID: "ses_floor" } },
 })
 
 // A remark the capture skips, a call whose `execute.after` never fires, and the session's idle.
