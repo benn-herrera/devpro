@@ -16,7 +16,6 @@ import html
 import json
 import math
 import re
-import string
 from importlib.resources import files
 from pathlib import Path
 from urllib.parse import quote
@@ -50,7 +49,7 @@ class UsageError(Exception):
 
 
 ANSI_COLORS = (36, 33, 35, 32, 34, 31)
-DATA_SLOT = "/*DATA*/null"
+DATA_MARK = "/*DATA*/null"
 # The shared layer's carriage, the one thing the standalone page and the served page hold differently:
 # the render fills it with the layer's text, the serve path with the link to the board panel's own file.
 LAYER_MARK = "<!--LAYER-->"
@@ -108,32 +107,22 @@ LAYER_INLINE = "<style>\n" + SHARED_CSS + "\n</style>"
 
 
 def strict_fill(text: str, fills: dict[str, str]) -> str:
-    """One strict fill every fill the profiler's assembly makes runs through. A `$name` slot goes
-    through `string.Template`'s own substitute, which raises on a `$name` the text carries with no
-    key; a literal mark — a map key that is no identifier, the mark as it stands in the text — is
-    replaced once by its value. A key whose placeholder the text does not carry raises — a plain
-    `str.replace` silently ignored an unused key and left the mark standing — and so does a value
-    that carries its own mark, which would leave the mark standing in the output.
-
-    substitute runs first, over the text's own `$name`s alone: it inserts each value without
-    rescanning, so a mark value carrying a `$` is never read as a slot, and a call with no slot skips
-    the scan, leaving a template of `${...}` script untouched."""
-    # Template's `idpattern` admits ASCII identifiers alone: a non-ASCII identifier is a mark.
-    slots = {name: value for name, value in fills.items() if name.isidentifier() and name.isascii()}
-    marks = {mark: value for mark, value in fills.items() if not (mark.isidentifier() and mark.isascii())}
-    for name in slots:
-        if f"${name}" not in text:
-            raise KeyError(name)
-    filled = string.Template(text).substitute(slots) if slots else text
-    for mark, value in marks.items():
-        if mark not in filled:
+    """One strict fill every fill the profiler's assembly makes runs through. Each key is a literal
+    mark — text inert in its host language, `<!--NAME-->` in HTML or `/*NAME*/` in CSS or JS, as it
+    stands in the text — and every place it stands is replaced by its value, in one pass that never
+    reads a value for a mark. A mark the text does not carry raises, and so does a value carrying any
+    mark of the same fill, its own included, which would otherwise stand in the output or be read as
+    the mark it carries."""
+    for mark, value in fills.items():
+        if mark not in text:
             raise KeyError(mark)
-        filled = filled.replace(mark, value)
-        # A value carrying its own mark leaves it standing — the mark refused here, where the
-        # caller's error is.
-        if mark in filled:
-            raise KeyError(mark)
-    return filled
+        if carried := next((other for other in fills if other in value), None):
+            raise KeyError(carried)
+    if not fills:
+        return text
+    # Longest first, so a mark that contains another is matched whole.
+    pattern = "|".join(re.escape(mark) for mark in sorted(fills, key=len, reverse=True))
+    return re.sub(pattern, lambda match: fills[match.group()], text)
 
 
 def read_trace(file: Path) -> list[dict]:
@@ -593,7 +582,7 @@ def render_tree(records: list[dict], *, verbose: bool = False, color: bool = Fal
 
 
 def session_data(session: dict) -> dict:
-    """The page data `view.html` inlines at its data slot: the session's calls as the file flow
+    """The page data `view.html` inlines at its data mark: the session's calls as the file flow
     draws them, one source for the standalone render and the served page alike. `<` is escaped so
     tool output in the JSON can't close the script tag."""
     calls = unique_calls(fill_context_tokens(session["records"]))
@@ -638,7 +627,7 @@ def render_html(session: dict) -> str:
     return strict_fill(
         template,
         {
-            DATA_SLOT: _json(session_data(session)).replace("<", "\\u003c"),
+            DATA_MARK: _json(session_data(session)).replace("<", "\\u003c"),
             LAYER_MARK: LAYER_INLINE,
             **band_fills(dispatcher=None, return_to=None),
         },
@@ -843,13 +832,7 @@ def index_html() -> str:
     the template's own text, the band's legend filled here from its one home (the index carrying no
     dispatcher and no way back), and the layer's carriage left at its mark — filled by the serve path
     with its link (`served_page`), its one consumer, since no file flow writes the index."""
-    return strict_fill(
-        INDEX,
-        {
-            **ZEBRA_MARKS,
-            **band_fills(dispatcher=None, return_to=None),
-        },
-    )
+    return strict_fill(INDEX, band_fills(dispatcher=None, return_to=None))
 
 
 def served_page(text: str) -> str:
@@ -882,7 +865,7 @@ def dispatcher_html(dispatcher: tuple[str, str]) -> str:
 
 def band_fills(*, dispatcher: tuple[str, str] | None, return_to: str | None) -> dict[str, str]:
     """The frame band's per-page fills for the strict fill: the legend from its one home `LEGEND`,
-    the dispatch line, and the way back. A fact this page carries none of fills its slot empty — the
+    the dispatch line, and the way back. A fact this page carries none of fills its mark empty — the
     dispatcher where none dispatched it, the way back where there is no list to return to — and the
     strict fill does not raise on an empty value, so a page with neither carries the band bare."""
     return {
@@ -900,23 +883,16 @@ PAGE_PREFIX = "/page/"
 BAND_LEGEND = "<!--LEGEND-->"
 DISPATCHED_MARK = "<!--DISPATCHED-->"
 RETURN_MARK = "<!--RETURN-->"
-# The index's own brand marks: a harness's dot, in its brand colors, and the variable each wears.
-# They are the page's, not the site's — the dots are the only brand-marked part of a row — so they
-# live in the template's own style block beside its other rules. `ZEBRA_MARKS` is the template's
-# substitution slots: the two harness class names and the two brand colors — in substitution's one
-# pass, so text spliced into one slot is never read as another's. The zebra's tones are no slot: the
-# page reads the layer's `--zebra` alone, which the layer already switches with the color scheme. The
-# harness class is the name the feed's entry carries where the page holds a dot for it, and no class
-# where it holds none.
-HARNESS_MARKS = {"opencode": "#4a9eea", "claude": "#d97757"}
-ZEBRA_MARKS = {f"class_{harness}": harness for harness in HARNESS_MARKS} | HARNESS_MARKS
 # The index's template: static. The rows' table is the one the script fills (`index.js`, the feed
 # `/api/traces` as its payload), and its script's read of the feed is what the page's body carries;
 # the script is the template's own text, as the deco is, and served under the pages' policy.
-# The presentation layer is no substitution slot: `<!--LAYER-->` stands in the template, as it does on a
-# page, and the serve path fills it with the link (`served_page`) — the render's own carrier for a page
-# being the layer's text. The three marks are the last thing before the body's own content, their text
-# no stylesheet's.
+# `<!--LAYER-->` stands in the template, as it does on a page, and the serve path fills it with the
+# link (`served_page`) — the render's own carrier for a page being the layer's text. The three band
+# marks are the last thing before the body's own content, their text no stylesheet's.
+# A harness's dot wears its brand color, the page's own rule rather than the site's — the dots are
+# the only brand-marked part of a row — and its class is the name the feed's entry carries where the
+# script's `HARNESS_MARKS` holds a dot for it, so the style block's harness names and that list
+# change together.
 INDEX = """<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
@@ -935,8 +911,8 @@ td small { color: var(--muted); }
 tr td:first-child.child { border-left: 3px solid var(--accent); }
 tr td:first-child.child + td { padding-left: 2.4rem; }
 .harness { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; }
-.harness.$class_opencode { background: $opencode; }
-.harness.$class_claude { background: $claude; }
+.harness.opencode { background: #4a9eea; }
+.harness.claude { background: #d97757; }
 </style>
 <nav class="site-nav scanlines"><span class="brand">devpro</span><span class="views"><a class="view" href="/board/">kanban</a><a class="view active" href="/profiler/" aria-current="page">profiler</a></span><span class="nav-server">
   <span class="dot"></span>
@@ -1100,7 +1076,7 @@ def page_for(session: dict, *, return_to: str | None, dispatcher: tuple[str, str
     return strict_fill(
         (files(__package__) / "view.html").read_text(encoding="utf-8"),
         {
-            DATA_SLOT: _json(session_data(session)).replace("<", "\\u003c"),
+            DATA_MARK: _json(session_data(session)).replace("<", "\\u003c"),
             LAYER_MARK: LAYER_LINK,
             **band_fills(dispatcher=dispatcher, return_to=return_to),
         },

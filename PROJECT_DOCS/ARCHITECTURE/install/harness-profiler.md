@@ -45,15 +45,14 @@ file into the pages it serves, the layer fetched from the server's own origin, w
 content-security policy allows. The board's
 component rules may be scoped so their selectors cannot reach the profiler page's DOM; the source
 stays one file, and the template keeps its own rules — the sequence diagram's colours come from the
-palette's `--c0`…`--c7` variables, no palette of its own. The template's `LEGEND_SLOT` mark is where
-the how-to-read legend goes: `pages.LEGEND` holds the legend once — its prose and its symbol key —
+palette's `--c0`…`--c7` variables, no palette of its own. The frame band's `<!--LEGEND-->` mark is where the how-to-read legend goes: `pages.LEGEND` holds the legend once — its prose and its symbol key —
 and `render_html` fills it into the page it renders, so the standalone page carries the legend and
 no second copy exists in the template. The legend has one home and two carriers: the standalone
 render's filled copy, and the dashboard's frame band, which reads the same constant. Every fill is
 strict: a fill that finds an unknown or unfilled placeholder in the template's text refuses —
 raises — instead of leaving the mark standing, one fill through which every fill the profiler's
 assembly makes runs, and a test walks what that fill is handed — `view.html` and the `INDEX`
-template — so no page, rendered or served, carries a placeholder standing. The index's `INDEX` template fills the same `CSS_SLOT`, and the deco is the templates' own text:
+template — so no page, rendered or served, carries a placeholder standing. The index's `INDEX` template carries the same `<!--LAYER-->` mark, and the deco is the templates' own text:
 the brand, the two view names and, right-justified at the nav's flex edge on every view, the server
 block — the live/idle indicator and the stop — is template text with each view's active state known
 statically, the standalone render and the served page alike carrying what the template holds; the

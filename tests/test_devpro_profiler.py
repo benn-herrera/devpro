@@ -48,11 +48,11 @@ from devpro.profiler.capture import mask
 from devpro.profiler.hooks import RETIRED_HOOK_FILES, launcher_resource
 from devpro.profiler.pages import (
     BAND_LEGEND,
-    DATA_SLOT,
+    DATA_MARK,
     DISPATCHED_MARK,
     INDEX,
-    LAYER_MARK,
     LAYER_INLINE,
+    LAYER_MARK,
     LEGEND,
     RETURN_MARK,
     SHARED_CSS,
@@ -1181,26 +1181,25 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
 
     The strict fill every profiler fill now runs through refuses a placeholder it is told to fill
     that the text no longer carries, and leaves no mark it filled standing. `index_html`, fed an
-    `INDEX` whose `$class_claude` slot the text no longer names yet still told to fill it, raises —
-    where the old `string.Template.substitute` dropped the unused key in silence; `strict_fill` on
-    `view.html` with a mark removed, still told to fill it, raises the same. A rendered session page
+    `INDEX` whose legend mark the text no longer carries yet still told to fill it, raises;
+    `strict_fill` on `view.html` with a mark removed, still told to fill it, raises the same. A rendered session page
     and the served page and index then carry no mark the fill was handed standing. The `INDEX` swap
     is for this check alone: `monkeypatch` reverts at the end and the serve below runs in a child
     process that reads `INDEX` from disk, so nothing after it sees the swap."""
-    # (a) `index_html`: an `INDEX` whose `$class_claude` slot the text no longer names, still told to fill it.
-    monkeypatch.setattr("devpro.profiler.pages.INDEX", INDEX.replace("$class_claude", ""))
+    # (a) `index_html`: an `INDEX` whose legend mark the text no longer carries, still told to fill it.
+    monkeypatch.setattr("devpro.profiler.pages.INDEX", INDEX.replace(BAND_LEGEND, ""))
     with pytest.raises(KeyError):
         index_html()
     # (a) the fill itself: `view.html` with a mark removed, still told to fill it.
     from devpro.profiler.pages import strict_fill
 
     view_text = (_PACKAGE_ROOT / "devpro" / "profiler" / "view.html").read_text(encoding="utf-8")
-    fills = {DATA_SLOT: "data", LAYER_MARK: "layer", BAND_LEGEND: "legend"}
+    fills = {DATA_MARK: "data", LAYER_MARK: "layer", BAND_LEGEND: "legend"}
     with pytest.raises(KeyError):
         strict_fill(view_text.replace(BAND_LEGEND, ""), fills)
     # (a) the fill's own strictness: a value carrying its mark leaves it standing — refused.
     with pytest.raises(KeyError):
-        strict_fill(f"BAND_LEGEND", {BAND_LEGEND: BAND_LEGEND})
+        strict_fill(BAND_LEGEND, {BAND_LEGEND: BAND_LEGEND})
     # (b) nothing the fill was handed is left standing, standalone or served.
     project = tmp_path / "project"
     project.mkdir()
@@ -1208,12 +1207,22 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     launcher = _launcher(tmp_path / "harness")
     printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
     assert printed.returncode == 0, printed.stderr
-    for mark in (LAYER_MARK, DATA_SLOT, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
+    for mark in (LAYER_MARK, DATA_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
         assert mark not in printed.stdout, f"{mark} left standing in the rendered page"
     with _serve(launcher, cwd=project) as url:
         page = _fetch(f"{url}page/s-claude")
         index = _fetch(f"{url}profiler/")
-    for mark in (LAYER_MARK, DATA_SLOT, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
+    for mark in (LAYER_MARK, DATA_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
         assert mark not in page, f"{mark} left standing in the served page"
         assert mark not in index, f"{mark} left standing in the served index"
-    assert "$rows" not in index and "$class_claude" not in index
+    assert "$rows" not in index
+
+
+def test_the_strict_fill_refuses_a_value_carrying_another_marks_mark() -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a fill that refuses a value carrying its own mark
+    only, so a value carrying a later mark is read as that mark and filled. A value is inserted as
+    it stands, never read for a mark of the same fill, so such a value is refused, not filled."""
+    from devpro.profiler.pages import strict_fill
+
+    with pytest.raises(KeyError):
+        strict_fill(f"{BAND_LEGEND}{RETURN_MARK}", {BAND_LEGEND: RETURN_MARK, RETURN_MARK: "back"})
