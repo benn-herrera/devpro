@@ -228,16 +228,15 @@ writes there or removes it, and Mage loads it beside `~/Mage/Skills/devpro/` —
 and agents, and, with the kbase component on, a `kbase` MCP server from each `.mcp.json` — until
 you remove `~/Mage/Skills/kbase/` once, before or after the install, which stops the second load.
 
-## Third Party Acknowledgments
+## Acknowledgments
 
-Credit to Jason Coleman (https://github.com/sangrail) for the kanban-from-markdown idea
+Credit to [Jason Coleman](https://github.com/sangrail) for the kanban-from-markdown idea
 
-Credit to Aleksandr Furmanov for his [harness-profiler](https://github.com/afurmanov/harness-profiler) Claude Code plugin, whose source was adapted for our own activity profiler.
+Credit to Aleksandr Furmanov for his [harness-profiler](https://github.com/afurmanov/harness-profiler)
+Claude Code plugin, whose source was adapted for our own activity profiler.
 
-- **pytest** (the pytest developers, MIT): Python test runner
-- **black** (Łukasz Langa and contributors, MIT): Python formatter
-- **isort** (Timothy Crosley and contributors, MIT): Python import sorter
-- **flake8** (Tarek Ziadé and contributors, Python Code Quality Authority, MIT): Python linter
-- **docdicer** (Benn Herrera, MIT): the source the dicer, the checks and the kanban board were ported
-  from; they are devpro's own code under `devpro/dicing`, and the package itself is no longer installed
-- **kbase** (Benn Herrera, MIT): the knowledge-base program and MCP server the kbase component drives
+- [pytest](https://github.com/pytest-dev/pytest) (the pytest developers, MIT): Python test runner
+- [black](https://github.com/psf/black) (Łukasz Langa and contributors, MIT): Python formatter
+- [isort](https://github.com/pycqa/isort) (Timothy Crosley and contributors, MIT): Python import sorter
+- [flake8](https://github.com/PyCQA/flake8-import-order) (Tarek Ziadé and contributors, Python Code Quality Authority, MIT): Python linter
+- [kbase](https://github.com/benn-herrera/kbase) (Benn Herrera, MIT): the knowledge-base program and MCP server the kbase component drives
