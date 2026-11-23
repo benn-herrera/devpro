@@ -497,6 +497,12 @@ def _bun() -> str:
     return "bun"
 
 
+# A moment's reading is pinned on the reader's zone and locale both: a runner's ICU settings decide a
+# clock's separator and digits where the page's own code does not, so a test that pins only `TZ`
+# asserts on the runner rather than on the deco.
+_MOMENT_LOCALE = {"TZ": "America/Los_Angeles", "LC_ALL": "de_DE.UTF-8"}
+
+
 def _run_ts(
     script: Path,
     *,
@@ -562,7 +568,7 @@ def test_the_decoration_script_reads_every_moments_cell_the_index_draws(tmp_path
         input=json.dumps({"cells": cells}),
         capture_output=True,
         encoding="utf-8",
-        env={**os.environ, "TZ": "America/Los_Angeles"},
+        env={**os.environ, **_MOMENT_LOCALE},
         timeout=120,
         check=False,
     )
@@ -578,6 +584,19 @@ def test_the_decoration_script_reads_every_moments_cell_the_index_draws(tmp_path
         "2026-01-01 00:00:01 UTC to 2026-01-01T00:00:02.500Z",
         "2026-01-01 06:00:00 UTC to 2026-01-01T18:30:00Z",
         "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z",
+    ]
+    # The machine form the served page promises survives the sweep: each moment's `<time>` elements
+    # still stand, each at its own `datetime`, with only their text replaced — a sweep that writes the
+    # cell's text whole takes the elements and their datetimes with it.
+    assert readings["markup"] == [
+        '<span class="moments" title="2026-01-01 00:00:01 UTC to 2026-01-01T00:00:02.500Z">'
+        '<time datetime="2026-01-01T00:00:01.250Z">16:00</time> to '
+        '<time datetime="2026-01-01T00:00:02.500Z">16:00</time></span>',
+        '<span class="moments" title="2026-01-01 06:00:00 UTC to 2026-01-01T18:30:00Z">'
+        '<time datetime="2026-01-01T06:00:00Z">2025-12-31 22:00</time> to '
+        '<time datetime="2026-01-01T18:30:00Z">10:30</time></span>',
+        '<span class="moments" title="2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z">'
+        "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z</span>",
     ]
 
 
@@ -599,7 +618,7 @@ def test_the_session_pages_header_reads_in_the_readers_clock(tmp_path: Path) -> 
         _HERE / "profiler_deco_runner.ts",
         directory=tmp_path,
         stdin=json.dumps({"page": page}),
-        env={**os.environ, "TZ": "America/Los_Angeles"},
+        env={**os.environ, **_MOMENT_LOCALE},
     )
     stamped = json.loads(run.stdout)["stamped"]
 
@@ -1041,6 +1060,9 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
     for markup, reading in swept["drawn"]:
         assert re.search(r'title="\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC to ', markup), markup
         assert reading and "UTC" not in reading, reading
+        # The machine form stands through the sweep as the title does: the cell's two `<time>` elements
+        # are still there, each at its own `datetime`, where a whole-text write would leave neither.
+        assert markup.count("<time datetime=") == 2, markup
 
     # The span's own rendering, at every scale the server-side span test covered — seconds below a
     # minute, minutes alone, and the hour forms — fed the runner a crafted feed so the scale is known

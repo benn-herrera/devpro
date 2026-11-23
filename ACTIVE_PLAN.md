@@ -143,8 +143,126 @@ Done when: `ACTIVE_PLAN_REVIEW.md` exists with every seat's findings reconciled.
 
 ### P6 — Post-plan burndown
 
-Rating: expert. Drafted from `ACTIVE_PLAN_REVIEW.md` once P5 lands, replacing this paragraph.
-Gets `devpro-prompt-engineer` usability review, then this session's revision, before it is
-`dispatchable`. The review document is deleted in the commit that lands the plan.
+Rating: expert throughout; B5 relabelled expert by its usability review. The work list is drafted
+from `ACTIVE_PLAN_REVIEW.md` (landed at `56899a2`); findings are cited by that document's IDs.
+Packages run serially, shared tree, B1 → B2 → B3 → B4 → B5; B4 consumes B2's hand-built clock;
+B5's `:799` edit follows B1's landed widening of the same docstring.
 
-Done when: every finding P5 reports is landed or tracked.
+Deferred to the user, not packaged: the leaf-wording amendments (R16, and R17's leaf halves —
+"an Agent row", the unreadable statement, `repo-layout.md`'s grain, and B1's R12 leaf branch).
+They amend the accepted design's landed pairs, and the machine check `dev-check-design-deltas-applied`
+holds those pairs; amending accepted text is the user's decision. B1 and B4 take the code side
+only and their done-lines assert the pairs stand untouched.
+
+| Package | State | Rating |
+| --- | --- | --- |
+| B1 | landed: commit dc8b6b1; test_server.py widening accepted as the schema change's consequence | expert |
+| B2 | landed: the deco keeps what the leaf promises; deco.js, the deco runner and its tests | expert |
+| B3 | dispatchable | expert |
+| B4 | dispatchable | expert |
+| B5 | dispatchable | expert |
+
+#### B1 — the index reads true
+
+Rating: expert. Findings: R1, R3, R6, R11, R12 (code side), R14, R19, R20, R17's union comment.
+
+Scope, by symbol: `devpro/profiler/pages.py`'s index script — the sort (`:1086-1090`), `hides()`
+(`:1067-1069`), `tops` (`:1086`), the no-records row (`:1092-1098`), the notice (`:1128-1132`),
+the sort-cycle machine (`:1107-1120`), the harness-union comment (`:898-901`); the controls'
+markup (`:940-941`); the feed entry `_feed_entry` (`:816-828`) and the schema comment at `:799`;
+`tests/test_devpro_profiler.py` and `tests/profiler_index_runner.ts`.
+
+The work: the feed entry carries the dispatched-agent count, the schema comment at `:799` and the
+runner's `keys` assertion widen with it, and the `data-agents` second copy is deleted (R1); the
+driven test gets a feed where two dispatchers hold different children counts, a descending press,
+and the keys assertion after the press (R1). A missing harness box means visible, and `draw()`'s
+body is wrapped so a page defect stops reporting as a feed failure (R3). A session is hidden only
+on its own harness or (child-rows off and it has a dispatcher), orphans promoted (R6). The notice
+test drives the page's composed message with real failure shapes — the runner's `{fail}` carries
+the status and body — and asserts hidden-before (R11). The no-records row makes the three
+distinctions in code — zero-record store, no store, controls-hidden (R12's code side). The sort
+cycle's comment states the three-press machine the code implements; the arrow's absence on
+`aria-sort="none"` is correct and stands (R14). The span table asserts the row's last `<td>`
+structurally (R19). The control state is honest for a harness pair that hides nothing (R20). The
+harness-union comment counts its three spellings (R17's `pages.py` half).
+
+Done when: `just test devpro` passes, `just dev-check-design-deltas-applied` passes — the pairs
+stand untouched — and the two pre-existing foreign pins (`devpro-dashboard` in
+`devpro/runner-snippets/devpro.just` and `devpro.mk`) are the only other failures; any other
+failure is this package's.
+
+#### B2 — the deco keeps what the leaf promises
+
+Rating: expert. Findings: R2, R8, R10, R22.
+
+Scope, by symbol: `devpro/profiler/deco.js`'s `readMoments` (`:115-121`), `momentClock`/`dayOf`
+(`:90-93`), the selectors (`:122`); `tests/profiler_deco_runner.ts` (`:35`, `:174`, `:222-229`).
+
+The work: the local reading is written into each `<time>`'s own text, the elements kept (R2); the
+clock is built by hand — `padStart`, as `dayOf` writes it — not inherited from the reader's
+locale, and the deco tests pin the locale alongside `TZ` (R8); the deco runner reads its selectors
+from `deco.js`'s own `MOMENTS` constant, the readings initialize to something a sweep-over-nothing
+is distinguishable from, and the deco runner's dead `.sort`/`.controls input` branches go with it
+(R10, R22 — the runner's branches; the index page's own `.controls input` query stays).
+
+Done when: `just test devpro` passes, `just dev-check-design-deltas-applied` passes — the pairs
+stand untouched — and the two pre-existing foreign pins are the only other failures.
+
+#### B3 — the capture honors its floor
+
+Rating: expert. Findings: R4 (first branch), R5, R9, R15, R21.
+
+Scope, by symbol: `devpro/harnesses/resources/opencode/profiler.ts`'s `childSessionOf`
+(`:250-254`), `childAgentTypeOf` (`:256-265`), line 3's floor statement;
+`tests/profiler_capture_runner.ts`, `tests/profiler_serialize_runner.ts`.
+
+The work: B3 takes R4's first branch — `childSessionOf` reads `output.sessionID` first and falls
+back to `metadata.sessionID`, keeping the 2.3.0 floor true; the floor statement and the comments
+say the fallback covers 2.3.0's metadata shape, and no leaf edit is needed — R21 resolves there
+(R4, R21). One observed result per fixture, the record's `result` and the agent type read from
+where the host puts them (R5). The opencode resources type-check against the host's published
+declarations — vendored or installed — through a new `just` recipe joined to the devpro surface;
+the recipe carries no runner-snippet copy, so no third pin arises (R9). The record's fields have
+one home in the tests: the serialize runner imports the record the capture runner wrote — one run,
+both inputs — as `_RECORD_FIELDS` already does on the Python side (R15).
+
+Done when: `just test devpro` passes, `just dev-check-design-deltas-applied` passes — the pairs
+stand untouched — and the two pre-existing foreign pins are the only other failures.
+
+#### B4 — the pages' lone stamps
+
+Rating: expert. Findings: R7, R8's lone-stamp side.
+
+Scope, by symbol: `devpro/profiler/view.html`'s header stamp and `deco.js`'s `localMoment`
+(`:106-109`).
+
+The work: a lone moment reads with its date, using B2's hand-built clock — a `toLocaleTimeString`
+must not leak back into `localMoment` (R7). B4 edits no leaf: the wording amendments R16 and
+R17's leaf halves need are deferred to the user above.
+
+Done when: `just test devpro` passes, `just dev-check-design-deltas-applied` passes — the pairs
+stand untouched — and the two pre-existing foreign pins are the only other failures.
+
+#### B5 — the python surface's stale text and one discriminator
+
+Rating: expert (relabeled by the usability review: R13 is a signature change).
+
+Scope, by symbol: `devpro/doccheck/plancheck.py`'s `_report` (`:163-179`) and the `from __future__`
+import (`:6`); `devpro/profiler/pages.py`'s comments (`:799`, `:892`) — the `:799` edit follows
+B1's landed widening of that docstring.
+
+The work: `_report` takes the summary formatter beside the reader — or names its two concrete
+returns in the docstring — and the annotations import goes with the union if it leaves; the
+`index.js` name leaves both comments.
+
+Done when: `just test devpro` passes, `just dev-check-design-deltas-applied` passes — the pairs
+stand untouched — and the two pre-existing foreign pins are the only other failures.
+
+Tracked, not packaged: the `UNREADABLE` twin (`plancheck.py:70`, `kanban/server.py:55`) is
+pre-existing; the three proposed CONVENTIONS leaves (R23, R24, R25 — the JS stand-in's fidelity,
+the shipped resource's host check, the locale pin) go to the next design when one opens; the
+installed plugin payload's `dicerlib` imports are cleared by a reinstall, not a commit; the
+leaf-wording amendments R16 and R17's leaf halves wait for the user. On the user's direction: once
+the plan lands and before the installation is updated, the forensic child-tie repair runs one last
+time over the profiler records the still-old installed plugin wrote since the last repair — the
+capture fix makes every edge after that written correctly.

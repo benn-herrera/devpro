@@ -9,10 +9,11 @@
 // The indicator's states are colored — the brand's phosphor where the server serves, the alert's
 // where it does not — and carry the serving version as hover text, the devpro the dashboard runs.
 //
-// A moment's text the page served is the raw UTC, kept in the cell's title where a hover wants the
-// exact instant; the instants themselves reach this script as `<time datetime>` elements the render
-// writes, so no served text is parsed here. A cell whose text is no reading — one with no pair of
-// cells — keeps its raw text.
+// A moment's text the page served is the raw UTC, kept in the element's own title where a hover wants
+// the exact instant — the cell's title stating the pair, a lone stamp's its own — and the cell's
+// second `<time>` element, the last instant's machine form, keeps that form as its text. The instants
+// themselves reach this script as `<time datetime>` elements the render writes, so no served text is
+// parsed here. A cell whose text is no reading — one with no pair of cells — keeps its raw text.
 
 // The nav's deco on every view.
 (() => {
@@ -84,13 +85,12 @@
 
 // ---------- the index's moments ----------
 
-// A clock reading in the reader's local time, 24-hour: `toLocaleTimeString`'s 24-hour form says the
-// reader's own hour separator and no clock leaves its hour's leading zero off, the minutes always two
-// digits.
-const momentClock = (date) =>
-  date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-const dayOf = (date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+// A clock reading in the reader's local time, 24-hour: built from the date's own fields, so the
+// separator and the digits are this page's rather than the reader's locale's — `toLocaleTimeString`
+// reads the ICU settings of whatever browser it runs in.
+const pad = (n) => String(n).padStart(2, "0");
+const momentClock = (date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+const dayOf = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 const sameDay = (a, b) => dayOf(a) === dayOf(b);
 
 // The two instants in the reader's local time: the times alone where they share the reader's calendar
@@ -109,15 +109,21 @@ const localMoment = (stamp) => {
 };
 
 // A moments cell's text becomes the local reading and a lone moment's its own; each keeps its title,
-// the raw UTC untouched. The index draws its rows after this script loads, so the sweep runs on the
-// rows container's own changes as well as on what stands at load: a cell drawn later is read when it
-// arrives. A cell is two `<time>` elements, a lone moment one, and the sweep tells them by the count.
+// the raw UTC untouched, and the `<time>` elements themselves — their `datetime` attributes are the
+// machine form the served page promises. The index draws its rows after this script loads, so the
+// sweep runs on the rows container's own changes as well as on what stands at load: a cell drawn
+// later is read when it arrives. A cell is two `<time>` elements, a lone moment one, and the sweep
+// tells them by the count.
 const readMoments = (cell) => {
-  const stamps = Array.from(cell.querySelectorAll("time")).map((time) => time.getAttribute("datetime"));
-  const local = stamps.length === 1 ? localMoment(stamps[0]) : stamps.length === 2 ? localMoments(stamps[0], stamps[1]) : null;
-  // The local reading moves the cell's text but never its `<time>` instants: rewriting it changes
-  // nothing this sweep reads, so the observation it fires comes round to the same text and stops.
-  if (local && cell.textContent !== local) cell.textContent = local;
+  const stamps = Array.from(cell.querySelectorAll("time"));
+  const instants = stamps.map((time) => time.getAttribute("datetime"));
+  const reading = instants.length === 1 ? localMoment(instants[0]) : instants.length === 2 ? localMoments(instants[0], instants[1]) : null;
+  // The local reading lands in each `<time>`'s own text, where the raw UTC stood: rewriting the
+  // elements' text changes nothing this sweep reads, so the observation it fires comes round to the
+  // same text and stops.
+  if (!reading || cell.textContent === reading) return;
+  const ends = reading.split(" to ");
+  stamps.forEach((time, index) => (time.textContent = ends[index]));
 };
 const MOMENTS = ".moments, #subline time";
 document.querySelectorAll(MOMENTS).forEach(readMoments);
