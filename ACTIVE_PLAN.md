@@ -17,7 +17,7 @@ and the user owns their fate. Any other failure belongs to the package being don
 | P2 | landed | expert | workaround code the 3.11 floor orphans; its pins verdict superseded by P4 |
 | P3 | landed: commit fbb8e04 | expert | the annotation standard for the 3.11 floor |
 | P4 | landed: commit ee87157 | expert | the dev toolchain lives in pyproject; pins move to latest 3.11 lines |
-| R1 | drafted | expert | the changed code and documents reviewed |
+| R1 | landed: this commit adds the review document | expert | the changed code and documents reviewed |
 | R2 | drafted | expert | drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands |
 
 ### P1 — the floor states 3.11
