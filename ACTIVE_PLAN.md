@@ -8,7 +8,7 @@ Design: [ACTIVE_DESIGN/entry-point.md](ACTIVE_DESIGN/entry-point.md). Every pack
 | Package | State | Rating | Agent |
 |---|---|---|---|
 | P1 | landed | expert | `devpro:python-coder` |
-| P2 | dispatchable | expert | `devpro:python-coder` |
+| P2 | landed | expert | `devpro:python-coder` |
 | P3 | dispatchable | expert | `devpro:python-coder` |
 | P4a | dispatchable | expert | `devpro:python-coder` |
 | P4b | dispatchable | expert | `devpro:shell-dsl-coder` |

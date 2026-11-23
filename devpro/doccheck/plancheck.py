@@ -9,7 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Optional, TextIO
 
-from ..dicerlib.textfile import read_text
+from ..dicing.dicerlib.textfile import read_text
 from .planform import (
     ACTIVE_DESIGN,
     ACTIVE_PLAN,

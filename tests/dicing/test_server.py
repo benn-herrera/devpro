@@ -38,9 +38,9 @@ from urllib.parse import urlsplit
 import pytest
 
 from devpro.dashboard.server import DashboardServer
-from devpro.dicing.kanban import board as board_module
-from devpro.dicing.kanban import server as server_module
-from devpro.dicing.kanban.board import read_board
+from devpro.kanban import board as board_module
+from devpro.kanban import server as server_module
+from devpro.kanban.board import read_board
 
 _PLAN = (
     "# Plan\n\nRelease: 9.9.9\n\n## Status\n\n| Package | Rating | State |\n|---|---|---|\n"
@@ -151,7 +151,7 @@ def test_the_board_page_is_drawn_under_the_board_path(tmp_path, serve):
     status, _, body = client.get("board/")
 
     assert status == 200
-    assets = files("devpro.dicing.kanban") / "assets"
+    assets = files("devpro.kanban") / "assets"
     assert body == (assets / "index.html").read_text(encoding="utf-8").encode("utf-8")
     assert client.get("board/nothing.js")[0] == 404
 

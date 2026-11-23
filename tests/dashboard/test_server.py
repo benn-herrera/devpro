@@ -25,7 +25,7 @@ from devpro.dashboard.server import (
     dashboard_root,
     loopback,
 )
-from devpro.dicing.kanban.board import read_board
+from devpro.kanban.board import read_board
 from devpro.profiler.pages import (
     BAND_LEGEND,
     DISPATCHED_MARK,
@@ -38,7 +38,7 @@ from devpro.profiler.pages import (
 
 from .conftest import PLAN, TIMEOUT, Client, project, record, store
 
-ASSETS = Path(str(files("devpro.dicing.kanban") / "assets"))
+ASSETS = Path(str(files("devpro.kanban") / "assets"))
 # The serve path's carrier of the shared layer: the board panel's own file, named by the pages the
 # dashboard serves in place of the inline text `SHARED_CSS` holds.
 LAYER_LINK = f'<link rel="stylesheet" href="{BOARD_PATH}board.css">'

@@ -10,8 +10,8 @@ import pytest
 
 from devpro.dicing.dicerlib.linkcheck import prose_links
 from devpro.dicing.dicerlib.textfile import split_lines
-from devpro.dicing.kanban import board as board_module
-from devpro.dicing.kanban.board import (
+from devpro.kanban import board as board_module
+from devpro.kanban.board import (
     INSTRUCTION,
     DesignCard,
     MoveRefused,

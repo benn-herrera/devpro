@@ -1,6 +1,6 @@
 """The dashboard: the project's board and the profiler's records, one server on 127.0.0.1.
 
-Neither panel's rendering is this module's. The board panel is `devpro.dicing.kanban.server`'s serve
+Neither panel's rendering is this module's. The board panel is `devpro.kanban.server`'s serve
 surface — its page, files, payload, moves and served documents, answered by the `KanbanServer` built
 over the dashboard's root — and the profiler view is `devpro.profiler.pages`' index and pages, read
 from the stores as they stand. This module adds the routes that hold them apart and the state
@@ -47,8 +47,8 @@ from devpro.profiler import pages
 from devpro.profiler.pages import PAGE_PREFIX, dispatches, read_sessions
 from devpro.profiler.values import git_root
 
-from ..dicing.kanban.server import HOST, KanbanServer
 from ..errors import InputError
+from ..kanban.server import HOST, KanbanServer
 
 BOARD_PATH = "/board/"
 PROFILER_PATH = "/profiler/"

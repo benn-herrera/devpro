@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from devpro.dicing.kanban import planform
-from devpro.dicing.kanban.planform import (
+from devpro.doccheck import planform
+from devpro.doccheck.planform import (
     ACTIVE_DESIGN,
     ACTIVE_PLAN,
     PARKED_DESIGNS,

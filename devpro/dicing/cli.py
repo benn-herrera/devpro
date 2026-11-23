@@ -1,6 +1,6 @@
 """The dicing verbs' argparse surface and dispatch: `devpro <verb>` for each of them.
 
-`add_verbs` adds the eight verbs to `devpro.cli.build_parser`'s subparsers; `run` dispatches one and
+`add_verbs` adds the five verbs to `devpro.cli.build_parser`'s subparsers; `run` dispatches one and
 returns its exit status: 0 on success, 1 when a check or step fails, 2 on a refusal. A verb's
 implementation is imported where that verb is dispatched, so registering the verbs imports none.
 """
@@ -34,7 +34,7 @@ def _add_split_level(parser: argparse.ArgumentParser) -> None:
 
 
 def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
-    """Add the eight dicing verbs to subparsers, each refusing abbreviations."""
+    """Add the five dicing verbs to subparsers, each refusing abbreviations."""
     dice_one = subparsers.add_parser(
         "dice-doc", help="dice one document, then check it reassembles and its links resolve", allow_abbrev=False
     )
@@ -70,42 +70,6 @@ def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]")
         allow_abbrev=False,
     )
     tree.add_argument("roots", nargs="+", metavar="root", help="a diced tree's directory, holding its entry-point.md")
-
-    plan = subparsers.add_parser(
-        "check-plan", help="check a plan's status form, as the board reads it", allow_abbrev=False
-    )
-    plan.add_argument(
-        "plan",
-        nargs="?",
-        help="the plan, or a diced plan's entry-point.md; default the active plan of the project the current"
-        " directory is in",
-    )
-
-    checked_design = subparsers.add_parser(
-        "check-design",
-        help="check a design's final form and its delta pairs against their targets",
-        allow_abbrev=False,
-    )
-    checked_design.add_argument(
-        "--deltas-applied",
-        action="store_true",
-        help="check the design's delta claims as applied: every pair must have landed",
-    )
-    checked_design.add_argument(
-        "design",
-        nargs="?",
-        help="the design, or a diced design's entry-point.md; default the active design of the project the"
-        " current directory is in",
-    )
-
-    checked_roadmap = subparsers.add_parser(
-        "check-roadmap", help="check ROADMAP.md's ticket layout, as the board reads it", allow_abbrev=False
-    )
-    checked_roadmap.add_argument(
-        "roadmap",
-        nargs="?",
-        help="the roadmap's markdown file; default ROADMAP.md of the project the current directory is in",
-    )
 
 
 def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
@@ -158,26 +122,4 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
         except OSError as e:
             print(f"cannot read: {e.filename if e.filename is not None else ', '.join(args.roots)}", file=err)
             return 2
-    if verb == "check-plan":
-        if args.plan is not None and not os.path.isfile(args.plan):
-            parser.error(
-                f"no such plan file: {args.plan} (name a plan's markdown file, or a diced plan's entry-point.md)"
-            )
-        from .kanban.plancheck import check_plan
-
-        return check_plan(args.plan, start=run_dir, stdout=out, stderr=err)
-    if verb == "check-design":
-        if args.design is not None and not os.path.isfile(args.design):
-            parser.error(
-                f"no such design file: {args.design} (name a design's markdown file, or a diced design's entry-point.md)"
-            )
-        from .kanban.plancheck import check_design
-
-        return check_design(args.design, start=run_dir, stdout=out, stderr=err, deltas_applied=args.deltas_applied)
-    if verb == "check-roadmap":
-        if args.roadmap is not None and not os.path.isfile(args.roadmap):
-            parser.error(f"no such roadmap file: {args.roadmap} (name a roadmap's markdown file)")
-        from .kanban.plancheck import check_roadmap
-
-        return check_roadmap(args.roadmap, start=run_dir, stdout=out, stderr=err)
     raise AssertionError(f"{verb} is no dicing verb")

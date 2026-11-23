@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from devpro.cli import DICING_VERBS
+from devpro.cli import CHECK_VERBS, DICING_VERBS
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -28,6 +28,6 @@ def _help() -> bytes:
     ).stdout
 
 
-@pytest.mark.parametrize("verb", DICING_VERBS)
+@pytest.mark.parametrize("verb", DICING_VERBS + CHECK_VERBS)
 def test_help_lists_each_dicing_verb(verb: str) -> None:
     assert verb.encode() in _help()

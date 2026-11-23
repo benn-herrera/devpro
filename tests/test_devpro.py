@@ -1508,7 +1508,8 @@ def test_every_import_is_at_module_level() -> None:
     # imports each verb's implementation where it dispatches that verb. The profiler's entry point is
     # the third: its verb is one remainder the dispatch resolves, and its `run` imports the subcommands'
     # modules so the `devpro --help` build pays for none of them. The dashboard's entry point is the
-    # fourth, for the same reason: its `run` imports the server where it dispatches.
+    # fourth, for the same reason: its `run` imports the server where it dispatches. The check verbs'
+    # entry point is the fifth: its `run` imports the checks' implementation where it dispatches each.
     # The profiler's hook wiring is the one other module, and the same reason one level down: the
     # hook-run capture imports it, so the renderer's imports live in `show_skill_text`, the function that
     # renders the skill a hook writes, rather than at module scope, and the renderer never reaches the
@@ -1517,7 +1518,14 @@ def test_every_import_is_at_module_level() -> None:
     offenders = [
         f"{path}:{node.lineno}"
         for path, tree in _modules()
-        if path not in ("devpro/cli.py", "devpro/dicing/cli.py", "devpro/profiler/cli.py", "devpro/dashboard/cli.py")
+        if path
+        not in (
+            "devpro/cli.py",
+            "devpro/dicing/cli.py",
+            "devpro/doccheck/cli.py",
+            "devpro/profiler/cli.py",
+            "devpro/dashboard/cli.py",
+        )
         for node in ast.walk(tree)
         if isinstance(node, (ast.Import, ast.ImportFrom))
         and node not in tree.body
@@ -1582,6 +1590,7 @@ def test_importing_the_entry_point_imports_no_verb_module() -> None:
         "banned = ('devpro.install', 'devpro.render', 'devpro.agents_file')\n"
         "present = [name for name in banned if name in sys.modules]\n"
         "for package, surface in (('devpro.dicing', 'devpro.dicing.cli'),\n"
+        "                         ('devpro.doccheck', 'devpro.doccheck.cli'),\n"
         "                         ('devpro.dashboard', 'devpro.dashboard.cli')):\n"
         "    loaded = {\n"
         "        name for name in sys.modules if name == package or name.startswith(package + '.')\n"

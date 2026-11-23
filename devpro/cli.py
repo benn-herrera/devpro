@@ -35,11 +35,11 @@ DICING_VERBS = (
     "dice-docs",
     "check-links",
     "check-tree",
-    "check-plan",
-    "check-design",
-    "check-roadmap",
 )
 """The dicing verbs, added by `devpro.dicing.cli.add_verbs` and dispatched to its `run`."""
+
+CHECK_VERBS = ("check-plan", "check-design", "check-roadmap")
+"""The check verbs, added by `devpro.doccheck.cli.add_verbs` and dispatched to its `run`."""
 
 PROFILER_VERB = "profiler"
 """The profiler verb, added by `devpro.profiler.cli.add_verbs` and dispatched to its `run`."""
@@ -79,15 +79,16 @@ def _add_components(verb: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     """One verb, required: `render --out DIR` and `install TARGET [--subdir DIR] [--verbose] [--dry-run]`,
     each with the tuning flags; `install-agents-file DIR [--harness NAME] [--dry-run]`;
-    `render-agents-file HARNESS OUT`; the eight dicing verbs `devpro.dicing.cli.add_verbs` adds, the
-    `profiler` verb `devpro.profiler.cli.add_verbs` adds, the `dashboard` verb
+    `render-agents-file HARNESS OUT`; the five dicing verbs `devpro.dicing.cli.add_verbs` adds, the
+    three check verbs `devpro.doccheck.cli.add_verbs` adds, the `profiler` verb `devpro.profiler.cli.add_verbs` adds, the `dashboard` verb
     `devpro.dashboard.cli.add_verbs` adds; and one maintainer helper hidden from `--help`:
     `harness NAME KEY`.
-    Each verb but `harness`, `install-agents-file`, the dicing verbs, `profiler` and `dashboard` takes
+    Each verb but `harness`, `install-agents-file`, the dicing and check verbs, `profiler` and `dashboard` takes
     `[--components=CSV]`, turning no optional component on by default. The top-level `--version` prints the bare version. allow_abbrev=False on every parser.
     """
     from devpro.dashboard.cli import add_verbs as add_dashboard_verbs
     from devpro.dicing.cli import add_verbs
+    from devpro.doccheck.cli import add_verbs as add_check_verbs
     from devpro.profiler.cli import add_verbs as add_profiler_verbs
 
     parser = argparse.ArgumentParser(prog="devpro", allow_abbrev=False)
@@ -140,6 +141,7 @@ def build_parser() -> argparse.ArgumentParser:
     query.add_argument("name", metavar="NAME")
     query.add_argument("key", choices=[key(part) for part in HarnessText], metavar="KEY")
     add_verbs(verbs)
+    add_check_verbs(verbs)
     add_profiler_verbs(verbs)
     add_dashboard_verbs(verbs)
     hidden = {"harness"}
@@ -231,6 +233,10 @@ def _run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> None:
         from devpro.dicing.cli import run as run_dicing
 
         sys.exit(run_dicing(args, parser=parser))
+    elif args.verb in CHECK_VERBS:
+        from devpro.doccheck.cli import run as run_checks
+
+        sys.exit(run_checks(args, parser=parser))
     elif args.verb == PROFILER_VERB:
         from devpro.profiler.cli import run as run_profiler
 

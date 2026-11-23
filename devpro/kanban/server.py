@@ -33,8 +33,8 @@ from importlib.resources import files
 from typing import Any, Callable, Optional, TextIO
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from ... import __version__
-from ..dicerlib.textfile import read_text
+from .. import __version__
+from ..dicing.dicerlib.textfile import read_text
 from .board import (
     PLAN_COLUMNS,
     MoveRefused,

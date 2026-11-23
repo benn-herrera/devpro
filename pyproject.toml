@@ -27,7 +27,7 @@ devpro = [
     "dicing-snippets/**/*",
     "harnesses/resources/**/*",
     "development-tools/**/*",
-    "dicing/kanban/assets/**/*",
+    "kanban/assets/**/*",
     "profiler/view.html",
     "profiler/deco.js",
 ]

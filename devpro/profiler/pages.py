@@ -3,7 +3,7 @@ profiler view serves.
 
 The page template `view.html` is this package's own data, read through `importlib.resources`, so the
 render finds it wherever devpro is installed. The stylesheet the page and the index carry is the
-board's own, `devpro.dicing.kanban.assets/board.css`: the presented interface's one presentation
+board's own, `devpro.kanban.assets/board.css`: the presented interface's one presentation
 layer, carried by the two flows each its own way. The standalone render inlines the layer —
 `SHARED_CSS`, that file's text — because the standalone page must load nothing, so its palette is
 the board's from the identical file; the dashboard serves the pages with the layer linked to the
@@ -96,7 +96,7 @@ RETURN_LABEL = "Return to list"
 
 def shared_css() -> str:
     """The presentation layer's text: the board's own stylesheet, read where devpro ships it."""
-    return (files("devpro.dicing.kanban") / "assets" / "board.css").read_text(encoding="utf-8")
+    return (files("devpro.kanban") / "assets" / "board.css").read_text(encoding="utf-8")
 
 
 SHARED_CSS = shared_css()

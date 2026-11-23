@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from devpro.dicing.kanban import plancheck, planform
-from devpro.dicing.kanban.plancheck import check_design, check_plan, check_roadmap
-from devpro.dicing.kanban.planform import BreachKind, read_design, read_plan, read_roadmap
+from devpro.doccheck import plancheck, planform
+from devpro.doccheck.plancheck import check_design, check_plan, check_roadmap
+from devpro.doccheck.planform import BreachKind, read_design, read_plan, read_roadmap
 
 _TABLE = "| Package | State | Rating |\n|---|---|---|\n"
 _CONFORMING = "# Plan\n\n## Status\n\n" + _TABLE + "| P1 | landed | expert |\n"

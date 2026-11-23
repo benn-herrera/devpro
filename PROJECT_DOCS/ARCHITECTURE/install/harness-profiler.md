@@ -35,10 +35,11 @@ and treated as absent.
 **The page template and its presentation layer.** `view.html` is the wheel's package data,
 `devpro/profiler/view.html`, read by `pages.py` through `importlib.resources` beside the module that
 renders it: it is a self-contained page that loads nothing from the network, it ships in the wheel,
-and it is no install resource and no committed hook file. It carries no palette of its own: its
-`<style>` opens with the `CSS_SLOT` mark, which `render_html` fills with the presentation layer's
-text — the board's own stylesheet, `devpro/dicing/kanban/assets/board.css`, read the same way — for
-the standalone page alone, which loads nothing from the network and so cannot link it. One CSS
+and it is no install resource and no committed hook file. It carries no palette of its own: its head carries the layer's mark, `<!--LAYER-->`
+(`LAYER_MARK`), which `render_html` fills with the presentation layer's text inline — the board's
+own stylesheet, `devpro/kanban/assets/board.css`, read the same way — for the standalone page,
+which loads nothing from the network and so cannot link it, and which the serve path
+(`served_page`) fills with a link to that stylesheet. One CSS
 source serves both views, and `pages.SHARED_CSS` is that text: the board serves the file at
 `/board/board.css`, the render inlines it into the page it prints, and the dashboard links the same
 file into the pages it serves, the layer fetched from the server's own origin, which the site's
@@ -116,7 +117,7 @@ session's calls: a session of nothing but tool
 calls renders those calls as its calls content, never an empty tree under a calls header. The server
 runs until interrupted (Ctrl-C) or stopped from the page; either exits 0. The dashboard's board
 panel is the profiler's
-sibling panel, `devpro.dicing.kanban.server`'s `KanbanServer` over the dashboard's root. The seam is
+sibling panel, `devpro.kanban.server`'s `KanbanServer` over the dashboard's root. The seam is
 `panel_handler`: the dashboard reads the request, hands it to a handler over the panel's routes, and
 answers it on its own connection, so the guard, the reply write and the Content-Security-Policy the
 page is served under are the dashboard's one of each and travel with the panel's answers. A client
