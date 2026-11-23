@@ -14,7 +14,7 @@ Design: [ACTIVE_DESIGN/entry-point.md](ACTIVE_DESIGN/entry-point.md). Every pack
 | P4b | landed | expert | `devpro:shell-dsl-coder` |
 | P4c | landed | expert | `devpro:prompt-engineer` |
 | P5 | landed | mechanical | `devpro:tech-writer` |
-| P6 | dispatchable | expert | post-plan reviewers |
+| P6 | landed | expert | post-plan reviewers |
 | P7 | drafted | expert | per the burndown |
 
 ## Common to every package
