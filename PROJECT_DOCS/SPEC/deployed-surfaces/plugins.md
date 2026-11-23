@@ -102,7 +102,7 @@ The devpro plugin, the kbase component included, is supported on macOS and Linux
 provides kbase as `benn-herrera/tap/kbase`; native Windows is unsupported for it, and no install
 refuses or warns on Windows.
 
-devpro, the generator, needs Python 3.9 or later on the host; the kbase component's toolchain is the
+devpro, the generator, needs Python 3.11 or later on the host; the kbase component's toolchain is the
 `kbase` executable the operator installs, which needs no Python.
 Everything else the kbase component needs (pandoc 3.12, git, a way to reach a model) is kbase's own
 requirement, which the operator meets.

@@ -22,8 +22,7 @@ The skill carries two reference pages, which the session reads when its starting
 
 - **Installation** covers every harness, including a user-level install:
   - running devpro: devpro installed with Homebrew from the `benn-herrera/tap` tap, else, on a
-    machine without Homebrew, installed by hand with pipx or into a venv, and why a bare
-    `pip install` fails on most hosts;
+    machine without Homebrew, installed by hand with pipx or into a venv;
   - updating: upgrade the installed devpro, through Homebrew or by installing the next release into
     the same venv, preview with `--dry-run`, then rerun the same install; this holds under every
     harness;

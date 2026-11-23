@@ -53,11 +53,13 @@ _venv:
     # The project's scratch directory, so a recipe that needs it finds it.
     mkdir -p "{{PROJECT_ROOT}}/.devpro-temp"
     tools=("pytest~=8.4.2" "isort~=6.1.0" "black~=25.11.0" "flake8~=7.3.0" "setuptools~=82.0.1" "build~=1.4.4")
+    # The floor's one home. Parsed with a regex, not tomllib: the python that runs this recipe is
+    # not yet known to be new enough to read it.
+    floor="$(sed -n 's/^requires-python *= *">=\([0-9]*\.[0-9]*\)".*/\1/p' "{{PROJECT_ROOT}}/pyproject.toml")"
+    if [[ -x {{VENV_PYTHON}} ]] && ! {{VENV_PYTHON}} -c "import sys; sys.exit(sys.version_info < tuple(map(int, '${floor}'.split('.'))))" 2>/dev/null; then
+        command rm -rf "{{VENV}}"
+    fi
     if [[ ! -x {{VENV_PYTHON}} ]]; then
-        # if /usr/bin/python3 is installed it is the crappy 3.9.6 from xcode command line tools
-        # that is actually our minspec, so use it to ensure we're not using any features
-        # beyond its ken
-        [[ "$(uname)" == Darwin ]] && export PATH=/usr/bin/:${PATH} || true
         python3 -m venv --upgrade-deps "{{VENV}}"
     fi
     if [[ "$(cat "{{TOOLS_RECORD}}" 2>/dev/null || true)" != "$(printf '%s\n' "${tools[@]}")" ]]; then
@@ -89,11 +91,11 @@ build: _venv
     @{{VENV_PYTHON}} -m build --no-isolation --outdir "{{PROJECT_ROOT}}/dist" "{{PROJECT_ROOT}}"
 
 # Proves the wheel's package data equals the non-.py files under devpro/ that git tracks or would
-# track, and that, installed into a throwaway venv made from <python> (default /usr/bin/python3),
+# track, and that, installed into a throwaway venv made from <python> (default python3),
 # it imports from that venv, runs as the devpro console script, installs byte-identically to the
 # checkout, and writes the mage install's agents file outside a checkout.
 [doc("[dev] build, then prove the wheel")]
-check-wheel python="/usr/bin/python3": build
+check-wheel python="python3": build
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" PYBIN="{{PYBIN}}" EXE="{{EXE}}" ./devtools/scripts/check-wheel.sh "$@"
 
 # Renders the install product at its one slot project rendered/<slug>/devpro/, with the kbase

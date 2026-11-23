@@ -56,10 +56,8 @@ On a machine without Homebrew, install devpro by hand, from a release tag:
 - with pipx: `pipx install "git+<repository>@v<version>"`, then `pipx ensurepath` and a new shell;
 - into a venv: `python3 -m venv <dir>`, then `<dir>/bin/pip install "git+<repository>@v<version>"`.
 
-A bare `pip install` outside a venv fails on most hosts: Homebrew's and most distributions' Python
-refuse it as `externally-managed-environment`, and Apple's `/usr/bin/python3` puts the command in
-`~/Library/Python/3.9/bin`, which is not on `PATH`. Every later `devpro` command runs as the `devpro`
-of that install: `devpro` on `PATH` for Homebrew and pipx, `<dir>/bin/devpro` for a venv.
+Every later `devpro` command runs as the `devpro` of that install: `devpro` on `PATH` for Homebrew
+and pipx, `<dir>/bin/devpro` for a venv.
 
 `devpro install TARGET` installs into the existing directory TARGET, with `--harness=claude`,
 `opencode` or `mage` where TARGET does not settle the harness. A claude or opencode project install

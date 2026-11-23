@@ -1841,8 +1841,8 @@ def test_an_install_run_from_an_installations_copy_into_that_installation_is_ref
 def test_a_wrapper_whose_recorded_python_is_gone_runs_the_first_python3_on_path_or_names_the_floor(
     tmp_path: Path,
 ) -> None:
-    """The first `python3` on PATH runs the copy where it is 3.9 or later; where it is older the wrapper
-    looks no further — a 3.9 later on PATH included — and exits non-zero naming the floor. Defect: an
+    """The first `python3` on PATH runs the copy where it is 3.11 or later; where it is older the wrapper
+    looks no further — a 3.11 later on PATH included — and exits non-zero naming the floor. Defect: an
     installed tree whose install-time Python was removed could not run devpro, no wrapper being
     written."""
     project = tmp_path / "project"
@@ -1861,7 +1861,7 @@ def test_a_wrapper_whose_recorded_python_is_gone_runs_the_first_python3_on_path_
     assert (ran.returncode, ran.stdout) == (0, f"{__version__}\n"), ran.stderr
     refused = _run_wrapper(wrapper, path=f"{too_old}:{usable}:{_NO_DEVPRO_PATH}", home=tmp_path)
     assert refused.returncode != 0 and refused.stdout == ""
-    assert "Python 3.9 or later" in refused.stderr
+    assert "Python 3.11 or later" in refused.stderr
 
 
 def test_reinstalling_over_a_copy_of_another_version_reports_both_versions(tmp_path: Path, capsys) -> None:

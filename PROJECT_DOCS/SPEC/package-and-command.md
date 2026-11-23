@@ -1,6 +1,6 @@
 ## Package and Command
 
-The devpro package installs on Python 3.9 or later, with no third-party runtime dependency. It has
+The devpro package installs on Python 3.11 or later, with no third-party runtime dependency. It has
 two install sources: a release tag's git URL,
 `git+https://github.com/benn-herrera/devpro@v<version>`, or a built wheel. No package index publishes
 it. A Homebrew tap is a distribution channel for that release archive, not a package index.

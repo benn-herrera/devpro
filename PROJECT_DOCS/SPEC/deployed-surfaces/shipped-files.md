@@ -58,8 +58,8 @@ directly under the install directory, inside no skill's directory. It holds:
 - `tools/devpro.sh`, the wrapper, carrying the installed banner below its shebang, which runs that
   copy as `python3 -m devpro` does, its arguments passed through: under the base interpreter that
   ran the install — that Python's own executable, never a virtual environment's — where that path
-  exists; otherwise under the first `python3` on `PATH`, where it is Python 3.9 or later; otherwise
-  it exits non-zero, saying devpro needs Python 3.9 or later. It looks for no other interpreter;
+  exists; otherwise under the first `python3` on `PATH`, where it is Python 3.11 or later; otherwise
+  it exits non-zero, saying devpro needs Python 3.11 or later. It looks for no other interpreter;
 - `tools/runner-snippets/`, the runner snippets, not an importable package, read by the consuming
   project through the same runner include line.
 

@@ -42,7 +42,7 @@ in just over 16K lines of runtime code, including vision tower support and an Op
 - Platforms: macOS and Linux. Native Windows is unsupported; no install refuses it.
 - Harness: claude, opencode, or mage; `--harness` takes these three names.
 - Homebrew, or pipx on a machine without it, to install devpro.
-- Python 3.9 or later, which runs devpro and the wrapper each install writes into the project; the
+- Python 3.11 or later, which runs devpro and the wrapper each install writes into the project; the
   wrapper exits non-zero, saying so, where it finds none.
 - `just` 1.27.0 or later, where the project's runner is a justfile, and 1.33.0 or later there wherever the devpro line ships: every project install of a nested plugin writes that line, an `import?`, which earlier `just` rejects; the `kb` include line an install with the kbase component also writes rides the same floor. No install checks the version.
 - `perl` with core `JSON::PP` for the claude guardrail: without them the install skips the hook, says so in one line, and installs everything else.

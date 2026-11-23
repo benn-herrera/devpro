@@ -46,8 +46,8 @@ and the board is the dashboard's landing surface: the URL opens on it, at `/boar
 profiler view is the second view at `/profiler/`. The
 dev-check recipes run the absorbed verbs. The `_venv`
 recipe creates `.venv`
-where its python is absent. On macOS it makes it from `/usr/bin/python3` where present, the Xcode
-command-line tools' Python 3.9.6, so the suite there runs on the Python 3.9 floor. It installs the
+where its python is absent or older than the floor, from the first `python3` on `PATH`. It installs
+the
 pinned tools with pip, so the first run needs the network. The suite needs `bun`, `perl` and
 `kbase` (at least `KBASE_MIN_VERSION`) on `PATH`. `tests/test_guardrail.py`,
 `tests/test_opencode_entry.py` and `tests/test_kbase_surface.py` fail rather than skip without
