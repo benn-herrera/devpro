@@ -19,7 +19,7 @@ import os
 import shutil
 from pathlib import Path
 
-from devpro.install_base import PACKAGE_ROOT
+from devpro.install_base import PACKAGE_ROOT, WRAPPER
 
 from .pages import UsageError, list_sessions
 from .stores import OLD_STORE_SUFFIX, old_store_name, rename_stores
@@ -50,6 +50,10 @@ RETIRED_SKILL = Path("skills") / "show-profile"
 # The harness resource the launcher is the master of: the install copies it, and `init` copies it again
 # into the repository's committed hook directory.
 HARNESS_RESOURCES = Path("harnesses") / "resources" / "claude" / "profiler"
+# The installation's wrapper in a repository, the launcher's first candidate: the one file both claude
+# launchers there resolve — the committed hook's and a project install's — under the claude plugin's
+# install directory, `.claude/skills/devpro/`.
+INSTALLED_WRAPPER = Path(".claude") / "skills" / "devpro" / WRAPPER
 # The candidates the launcher's finder searches after `PATH`, in its order: the finder extends
 # `PATH` with the Homebrew and `~/.local/bin` locations and runs one `command -v` over the whole
 # thing, so doctor lists them here and its line names what the launcher would resolve.
@@ -67,9 +71,11 @@ def launcher_resource() -> Path:
     return PACKAGE_ROOT / HARNESS_RESOURCES / LAUNCHER
 
 
-def devpro_executable() -> str | None:
-    """The devpro command the launcher's finder would resolve here, or nothing where none is usable."""
+def devpro_executable(repo: Path) -> str | None:
+    """The devpro the launcher's finder would resolve in `repo`, or nothing where none is usable: the
+    installation's wrapper first, then the `devpro` command's search."""
     candidates = (
+        str(repo / INSTALLED_WRAPPER),
         shutil.which("devpro"),
         *DEVPRO_CANDIDATES,
         str(Path.home() / ".local" / "bin" / "devpro"),
@@ -239,7 +245,10 @@ def doctor(cwd: Path | str) -> str:
     installed = (
         ", ".join(sources) if sources else "not installed (install the plugin, or run devpro profiler init claude)"
     )
-    devpro = devpro_executable() or "not found on PATH, in Homebrew or ~/.local/bin (install devpro)"
+    devpro = (
+        devpro_executable(repo)
+        or "not found in the installation, on PATH, in Homebrew or ~/.local/bin (install devpro)"
+    )
     lines = [
         f"devpro:  {devpro}",
         f"traces:  {claude_store} (tree reads {Path(directory) / TRACE_DIR.parent / TRACE_GLOB})",

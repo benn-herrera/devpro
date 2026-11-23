@@ -10,10 +10,11 @@ devpro project root is the whole build configuration.
   `devpro.__version__`. `pyproject.toml` holds no version literal (CONVENTIONS.md, Version has one
   home).
 - **Package data.** `[tool.setuptools.package-data]` lists six patterns, `kb-tools/**/*`,
-  `harnesses/resources/**/*`, `development-tools/**/*`, `dicing-snippets/**/*`,
-  `profiler/view.html` and `dicing/kanban/assets/**/*`: the trees `install.py`
+  `harnesses/resources/**/*`, `development-tools/**/*`, `runner-snippets/**/*`,
+  `profiler/view.html` and `kanban/assets/**/*`: the trees `install.py`
   reads through `PACKAGE_ROOT` (`HARNESS_RESOURCES_SOURCE` and each `SHIPPED_PACKAGES` source,
-  the kb-tools, development-tools and dicing-snippets trees), the board's assets (Repo Layout) and
+  the kb-tools, development-tools and runner-snippets trees, and the package itself, which the
+  devpro tools package copies), the board's assets (Repo Layout) and
   the profiler's page template (Harness profiler), which `importlib.resources` serves. A glob
   sweeps in whatever sits
   under its tree, so `just check-wheel` holds the list equal to the tree: the wheel's non-`.py`

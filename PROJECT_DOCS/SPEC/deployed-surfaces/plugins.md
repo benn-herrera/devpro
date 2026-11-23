@@ -38,30 +38,31 @@ A component naming a definition that does not exist refuses every render, `dev-r
 destination); a component changes what it holds, never where it is.
 
 A supporting artifact is delivered with the definition that uses it, and only where that definition
-ships. The development scripts package goes to its destination inside the
-`development` skill's, and the dicing snippets package inside the `docdicer` skill's; both ship with
-every install. The dicing verbs — the `kanban` board, `check-plan` and plan dicing included — ship
-with the `devpro` command itself (Package and Command, Dicing and Checks); the dicing snippets
-package carries only their runner shortcuts. The kbase component also delivers
+ships. The development scripts package goes to its destination inside the `development` skill's,
+and ships with every install. The devpro tools package — the installation's own copy of devpro, its
+wrapper and the runner snippets — is the plugin's own, inside no definition's directory, and ships
+with every install (Shipped files). The dicing and check verbs — `check-plan` and plan dicing
+included — are verbs of the `devpro` command (Package and Command, Dicing and Checks); the runner
+snippets carry only their runner shortcuts. The kbase component also delivers
 the kb-tools package (runner snippets: `justfile` and `Makefile` fragments a project includes,
 inside the `kbase` skill's own directory) and the harness's `kbase` MCP entry. The MCP entry is the
 `.mcp.json` in the install directory under claude and mage (Install destination), and a
 record in the registry `registry.json` under opencode (Write Safety states which settings files no
-install writes). A user-level install delivers no package.
+install writes). A user-level install delivers the devpro tools package alone.
 
 Where the `kbase` skill ships, the `docdicer` skill states that `kb-root/` and everything under it
 belongs to kbase, and that docdicer does not dice, undice or link-check it unless the user directs
 that for it specifically. Where it does not ship, the skill carries no such statement.
 
 A **runner include line** is the line that includes one package's runner snippets in the project's
-**runner file**, its `justfile` or `Makefile`. Two packages carry snippets: the dicing snippets
+**runner file**, its `justfile` or `Makefile`. Two packages carry snippets: the devpro tools
 package, a set called `devpro`, and the kb-tools, a set called `kb`. Every project install of a
 nested plugin writes the `devpro` line; one with the kbase component also writes the `kb` line. Only
 a project install under a harness whose plugin
 nests in the project (claude, opencode) writes one; a mage install writes no runner include line and
 creates no `Makefile`, and nothing is written into this repository's own runner file. A line names
 the snippets inside the installed tree (under claude,
-`.claude/skills/devpro/skills/docdicer/dicing-snippets/runner-snippets/` or
+`.claude/skills/devpro/tools/runner-snippets/` or
 `.claude/skills/devpro/skills/kbase/kb-tools/runner-snippets/`; under opencode, the same below
 `.opencode/plugins/devpro/`). The line does nothing where the snippets are absent: `import? '<path>'`
 in a justfile, `-include <path>` in a Makefile. A project with neither runner file gets a `Makefile`
@@ -97,9 +98,9 @@ themselves, as the `kbase` skill's `references/installing.md` walks a session th
 bare command `kbase`, resolved from `PATH`, with the argument `mcp` and no KB path; under mage the
 entry keeps its `--project-dir-required` argument, and Mage gives the servers it starts access to
 system tools, so `kbase` resolves there. Version 0.11.1 is the minimum kbase this product is written for, and nothing checks it.
-The kbase component is supported on macOS and Linux, where Homebrew provides kbase as
-`benn-herrera/tap/kbase`; native Windows is unsupported for it, and no install refuses or warns on
-Windows.
+The devpro plugin, the kbase component included, is supported on macOS and Linux, where Homebrew
+provides kbase as `benn-herrera/tap/kbase`; native Windows is unsupported for it, and no install
+refuses or warns on Windows.
 
 devpro, the generator, needs Python 3.9 or later on the host; the kbase component's toolchain is the
 `kbase` executable the operator installs, which needs no Python.

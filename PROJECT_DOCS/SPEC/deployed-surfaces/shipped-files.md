@@ -5,13 +5,10 @@ installed at its **package destination**, a fixed directory under the install di
 installed copy is stamped where Installed tree says: the installed banner, not the generated
 banner. A package ships with the definition it belongs to, and only where that definition ships
 (Plugins). Every install delivers the **development scripts package**, `skills/development/scripts/`,
-inside the `development` skill's own directory (below), and the **dicing snippets package**
-(below), under mage as under claude and opencode. An
-install with the kbase component also delivers the kb-tools package (below). A user-level install
-delivers none (SPEC.md,
-Deployed Surfaces, Install destination). No dicing code ships in a package: the dicing, check and
-board verbs run as verbs of the `devpro` command (Package and Command, Dicing and Checks); the
-dicing snippets package holds only their runner shortcuts.
+inside the `development` skill's own directory (below), and the **devpro tools package**, `tools/`
+(below), under mage as under claude and opencode. An install with the kbase component also delivers
+the kb-tools package (below). A user-level install delivers the devpro tools package alone (SPEC.md,
+Deployed Surfaces, Install destination).
 
 A `.venv` directly under a package destination is not install output.
 

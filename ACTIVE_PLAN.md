@@ -10,7 +10,7 @@ Design: [ACTIVE_DESIGN/entry-point.md](ACTIVE_DESIGN/entry-point.md). Every pack
 | P1 | landed | expert | `devpro:python-coder` |
 | P2 | landed | expert | `devpro:python-coder` |
 | P3 | landed | expert | `devpro:python-coder` |
-| P4a | dispatchable | expert | `devpro:python-coder` |
+| P4a | landed | expert | `devpro:python-coder` |
 | P4b | dispatchable | expert | `devpro:shell-dsl-coder` |
 | P4c | dispatchable | expert | `devpro:prompt-engineer` |
 | P5 | dispatchable | mechanical | `devpro:tech-writer` |
@@ -262,7 +262,9 @@ Agent `devpro:python-coder`; expert (the wrapper's text, the ownerless rows, the
     `../skills/devpro/tools/devpro.sh`, a project install's `.claude/skills/devpro/profiler/hp.sh`
     by `../tools/devpro.sh` (claude's `plugin_dir="skills/{plugin}"`, `devpro/harnesses/claude.py`).
     `devpro_executable` takes that root;
-  - `tests/test_devpro_install.py`, `tests/test_devpro_profiler.py`, `tests/test_plugins.py`.
+  - `tests/test_devpro_install.py`, `tests/test_devpro_profiler.py`, `tests/test_plugins.py`,
+  `devtools/scripts/check-wheel.sh` (its checkout-side install runs under the venv interpreter, so
+  the wrapper's recorded interpreter is the same on both sides of its comparison).
 - **Facts:**
   - `git grep -l -F dicing-snippets -- ':!ACTIVE_DESIGN' ':!PROJECT_DOCS'` →
     `devpro/dicing-snippets/runner-snippets/devpro.just devpro/dicing-snippets/runner-snippets/devpro.mk

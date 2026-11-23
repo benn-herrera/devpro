@@ -6,9 +6,11 @@ a rendered-definition or harness-resource destination it refuses and writes noth
 Write Safety). A package destination belongs to this repository entire, and no file there is for local
 edit.
 
-An installed tree needs no devpro installation: removing the devpro package, or replacing it with
-another version, changes nothing any installed file does, and only the next `devpro install` needs
-the package. The devpro set adds no machine-level dependency: beyond the harness, it runs only
+An installed tree needs no devpro installation: it runs its own copy of devpro, in the devpro tools
+package (Shipped files), so removing the devpro package, or replacing it with another version,
+changes nothing any installed file does, and only the next `devpro install` needs the package. That
+install replaces the copy whichever of the two versions is the newer, and its report names the
+version it replaces and the version it installs. The devpro set adds no machine-level dependency: beyond the harness, it runs only
 what installing the devpro package already requires. What a component needs beyond that is the
 operator's to install, as Plugins states for each.
 
@@ -19,9 +21,8 @@ generated banner (Generated files), which says where the file was rendered from 
 for local edit, and the tuning line (Rendering). A skill's supporting file has no frontmatter, so it
 carries the same two lines as HTML comments — its first two lines, above a blank line and the body
 — and nothing about how the file is read depends on them. Under opencode every rendered file is
-written without frontmatter and carries the two lines as those comments. A copied package file of a script or
-build-file type (`.py`, `.sh`, `.mk`, `.just`)
-carries an installed banner at its top, below its shebang where it has one. Both banners say to
+written without frontmatter and carries the two lines as those comments. A copied package file of a script or build-file type (`.py`, `.sh`, `.mk`, `.just`), the devpro
+copy's files excepted, carries an installed banner at its top, below its shebang where it has one. Both banners say to
 request changes from the devpro project and that local needs belong in the consuming project's
 CONVENTIONS.md. An installed banner names the source file it was copied from. A copied package
 file lands with the mode the process umask gives a new file, plus its source's execute bits, and a
@@ -33,8 +34,8 @@ registration — carries no banner; its **ownership marker**, a fixed string in 
 its origin: `"name": "devpro"` in the plugin manifest, `"command": "kbase"` in `.mcp.json`,
 `"plugin": "devpro"` in `registry.json`, and `no readable script at` in
 `hooks/hooks.json`. No banner sits where it changes how
-the file is read. Every other copied file — a package's `.gitignore` among them — and every harness
-resource is installed byte-verbatim.
+the file is read. Every other copied file — a package's `.gitignore` and every file of the devpro copy among them —
+and every harness resource is installed byte-verbatim.
 
 A definition body names no installed path below the harness directory for a session to run or edit. A
 script inside a skill's own directory is named relative to that directory: the

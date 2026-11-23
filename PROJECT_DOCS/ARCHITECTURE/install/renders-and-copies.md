@@ -14,12 +14,12 @@ its banner. `prune` walks the three surfaces (`_files_below`) of the install dir
 else, and the upward walk visits only a stale file's ancestors and stops at the install directory.
 The walk is one install directory's: under claude the install directory
 (`.claude/skills/devpro/`) sits inside the harness directory's `skills/` beside what the project
-keeps there, so a walk wider than the install directory would delete a neighbor's. That walk needs no carve-out for a package
-destination: the three `SHIPPED_PACKAGES` rows, the development scripts
-package, the dicing snippets package and the kb-tools package, all sit inside the install directory's `skills/` —
-`skills/development/scripts/`, `skills/docdicer/dicing-snippets/` and `skills/kbase/kb-tools/`, each in its
-skill's own directory — where every file they hold is stamped installed or left unstamped, never
-generated, so every file under those trees is still either ours or untouched. A `.venv` directly
+keeps there, so a walk wider than the install directory would delete a neighbor's. That walk needs no carve-out for a package destination: the development scripts package and the
+kb-tools package sit inside the install directory's `skills/` — `skills/development/scripts/` and
+`skills/kbase/kb-tools/`, each in its skill's own directory — where every file they hold is stamped
+installed or left unstamped, never generated, and the devpro tools package sits at `tools/`,
+outside the three surfaces the walk visits, so every file under those trees is still either ours or
+untouched. A `.venv` directly
 under a package destination is outside what `_shipped` admits too, so its files
 never enter the stale list. A definition of ours that this run did not write, such as one its plugin
 does not ship, is stale and goes — every one of its files, a skill's included. Every definition is
@@ -32,8 +32,8 @@ The copy exclusions are `_shipped`'s vocabulary, matched at any depth: a directo
 `CLAUDE.md`. Every copy skips what it excludes — the package copy, which writes each file with the mode the
 process umask gives a new file plus the source's execute bits, and the harness resource copy, which
 borrows the same vocabulary (below) — and `prune`
-removes nothing `_shipped` excludes, so a file outside it is never stale. A copied file takes the
-installed banner when its suffix is in `STAMPED_SUFFIXES` (`.py`, `.sh`, `.mk`, `.just`) or its name
+removes nothing `_shipped` excludes, so a file outside it is never stale. A copied file outside the devpro copy (`tools/devpro/`, copied byte-verbatim) takes the installed
+banner when its suffix is in `STAMPED_SUFFIXES` (`.py`, `.sh`, `.mk`, `.just`) or its name
 is in `STAMPED_NAMES`; `stamped` places the banner below a shebang. Any other file — a package's
 `.gitignore`
 among them — is copied byte-verbatim.
@@ -53,6 +53,16 @@ frontmatter holding the record's description, its model where present, the mode 
 directory names and the instruction names; `tests/test_cold_read_tools.py` holds the names against
 `Harness.project_harness_dir` and every harness's `agents_file`. Mage's install of the devpro plugin ships the
 file too, since `development` ships there, and there it refuses.
+
+The devpro tools package takes the same package copy for its two rows — `runner-snippets` to
+`tools/runner-snippets/`, and the running package, `PACKAGE_ROOT`, to `tools/devpro/` through
+`_shipped` and unstamped — and adds one written file, the wrapper `tools/devpro.sh`: a POSIX-sh
+script carrying the installed banner below its shebang, holding the path of the running
+interpreter's base executable — the Python a virtual environment was made from, where the install
+runs in one — and running the copy as SPEC.md, Shipped files states. A changed interpreter path is
+a changed file to the preflight's comparison, as any other. The version change the install report
+names is read from the replaced copy's `tools/devpro/__init__.py` and the running package's
+`__version__`.
 
 The harness resource copy borrows `_shipped` and nothing else from the package path:
 `harness_resource_copies` reads `resources/<harness>/` — and, for opencode, the render payload's

@@ -76,7 +76,7 @@ for side in from-wheel from-checkout; do
   : > "${side}/project/justfile"
 done
 from_wheel "${venv}/${PYBIN}/devpro${EXE}" install "${scratch}/from-wheel/project" --components=kbase > /dev/null
-PYTHONPATH="${PROJECT_ROOT}" python3 -m "${GEN}" install "${scratch}/from-checkout/project" --components=kbase > /dev/null
+PYTHONPATH="${PROJECT_ROOT}" "${venv}/${PYBIN}/python${EXE}" -m "${GEN}" install "${scratch}/from-checkout/project" --components=kbase > /dev/null
 diff -r from-wheel from-checkout || fail "the wheel's install differs from the checkout's"
 
 mkdir plugins

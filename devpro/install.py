@@ -2,9 +2,11 @@
 harness directory and the project root from TARGET. The set is written into ROOT, the harness's
 `plugin_dir` below the harness directory — the harness directory itself where that is empty: every
 definition the selection ships rendered into ROOT's agents/, commands/ and skills/, each of the two
-shipped packages whose owning definition rendered copied to its stated destination — the development
-scripts inside the development skill's directory, the kb-tools package inside the kbase skill's, with the
-`kbase` MCP entry — and, for each copied package carrying runner snippets, its include line in the
+skill-owned shipped packages whose owning definition rendered copied to its stated destination — the
+development scripts inside the development skill's directory, the kb-tools package inside the kbase
+skill's, with the `kbase` MCP entry — the devpro tools package in ROOT's tools/ on every install: the
+running package's own copy, the wrapper that runs it, and the runner snippets — the dicing snippets
+package's retired home removed — and, for each copied package carrying runner snippets, its include line in the
 consumer's runner file, a line an earlier release wrote for the retired docdicer package removed there;
 each file the installing harness ships copied into ROOT as it stands,
 the harness's hooks registered in a file of their own under ROOT, its guardrail's entry only where one
@@ -24,15 +26,17 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import shutil
 import stat
 import subprocess
+import sys
 from collections.abc import Callable, Iterable, Mapping
 from functools import partial
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
-from devpro import clauses, install_base
+from devpro import __version__, clauses, install_base
 from devpro.agents_file import (
     AgentsFileWrite,
     FollowedAgentsFile,
@@ -45,7 +49,7 @@ from devpro.components import NAME
 from devpro.context import HarnessSettings, MapSupply, Render, harness_named
 from devpro.errors import InputError
 from devpro.harness import KBASE_OWNER, GuardrailHook, Harness, HarnessFile
-from devpro.install_base import KB_TOOLS_DIR, PACKAGE_ROOT, VENV_DIR, report_left_alone
+from devpro.install_base import KB_TOOLS_DIR, PACKAGE_ROOT, TOOLS_DIR, VENV_DIR, WRAPPER, report_left_alone
 from devpro.install_target import (
     require_existing_target,
     require_outside_package_source,
@@ -88,35 +92,40 @@ DEVELOPMENT_SCRIPTS_PACKAGE = "skills/development/scripts"
 
 
 class ShippedPackage(NamedTuple):
-    """A package an install copies: its source directory in this package, its destination below ROOT,
-    the definition it ships with, and the runner snippets it carries, their directory below the
-    destination, whose include line a project install writes into the project's runner file."""
+    """A package an install copies: its source directory in this package (`.` for the package itself),
+    its destination below ROOT, the definition it ships with — none for the plugin's own, which ships on
+    every install — and the runner snippets it carries, their directory below the destination, whose
+    include line a project install writes into the project's runner file."""
 
     source: str
     destination: str
-    owner: str
+    owner: str | None
     snippets: SnippetSet | None = None
 
     def installed_snippets(self) -> SnippetSet | None:
         """`snippets` with its directory below ROOT, as an include line names it."""
         if self.snippets is None:
             return None
-        return self.snippets._replace(directory=f"{self.destination}/{self.snippets.directory}")
+        return self.snippets._replace(directory=PurePosixPath(self.destination, self.snippets.directory).as_posix())
 
 
-# Every package a project install may ship, each where its owner renders; a user-level install ships
-# none. A destination is a consumer contract — a skill names its own tools relative to its directory,
-# and an installed runner line names its snippets directory — so each is stated, never derived.
+# Below ROOT: the installation's own copy of the running package, which the wrapper runs.
+DEVPRO_COPY = f"{TOOLS_DIR}/devpro"
+# Every package an install may ship: an owned one where its owner renders, on a project install alone,
+# and an ownerless one — the devpro tools package's — on every install, user-level included. A
+# destination is a consumer contract — a skill names its own tools relative to its directory, and an
+# installed runner line names its snippets directory — so each is stated, never derived.
 # `package_copies`, the `!INSTALLED!` stamping, the destination replacement and the runner include
 # lines all read this table; the include lines land in its order.
 SHIPPED_PACKAGES: tuple[ShippedPackage, ...] = (
     ShippedPackage("development-tools", DEVELOPMENT_SCRIPTS_PACKAGE, "development"),
     ShippedPackage(
-        "dicing-snippets",
-        "skills/docdicer/dicing-snippets",
-        "docdicer",
-        SnippetSet("devpro", "runner-snippets", {"just": "devpro.just", "make": "devpro.mk"}),
+        "runner-snippets",
+        f"{TOOLS_DIR}/runner-snippets",
+        None,
+        SnippetSet("devpro", ".", {"just": "devpro.just", "make": "devpro.mk"}),
     ),
+    ShippedPackage(".", DEVPRO_COPY, None),
     ShippedPackage(
         "kb-tools",
         KB_TOOLS_DIR,
@@ -124,6 +133,9 @@ SHIPPED_PACKAGES: tuple[ShippedPackage, ...] = (
         SnippetSet("kb", "runner-snippets", {"just": "kb.just", "make": "kb.mk"}),
     ),
 )
+# The dicing snippets package's home before it joined the devpro tools package: an install removes it
+# whole, since its files carry the installed banner, which `prune` leaves be.
+RETIRED_PACKAGE_DIR = "skills/docdicer/dicing-snippets"
 # The snippet set of the docdicer tools package, retired with the absorbed dicing verbs: no row ships
 # it, and a project install removes the line an earlier release wrote for it. Its shape is all that is
 # left of it — the directory name and the snippet per runner an include line ended in.
@@ -173,6 +185,63 @@ _INSTALLED_MARK = "!INSTALLED!"
 _INSTALLED_NOTICE = GENERATED_NOTICE
 _RESOURCE_BANNER = re.compile(re.escape(_INSTALLED_MARK).encode("utf-8") + rb" .* devpro")
 _RESOURCE_BANNER_LINES = 10
+
+
+# The wrapper `tools/devpro.sh`, its `@INTERPRETER@` slot filled with the shell-quoted path of the
+# Python that ran the install. `${@+"${@}"}` because bash 3.2, macOS's `/bin/bash`, reads an empty
+# `"${@}"` as unbound under `set -u`.
+_WRAPPER_TEXT = """\
+#!/usr/bin/env bash
+# Runs this installation's own copy of devpro, the `devpro/` beside this file, as `python3 -m devpro`
+# runs it: under the Python that ran the install while that path exists, else under the first
+# `python3` on PATH where it is Python 3.9 or later. It looks for no other interpreter.
+set -euo pipefail
+
+recorded=@INTERPRETER@
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+function supported() {
+  "${1}" -c 'import sys; sys.exit(sys.version_info < (3, 9))' >/dev/null 2>&1
+}
+
+if [[ -x "${recorded}" ]]; then
+  python="${recorded}"
+elif python=$(command -v python3) && supported "${python}"; then
+  :
+else
+  echo "devpro needs Python 3.9 or later: ${recorded} is gone, and no python3 on PATH is 3.9 or later" >&2
+  exit 1
+fi
+export PYTHONPATH="${here}${PYTHONPATH:+:${PYTHONPATH}}"
+exec "${python}" -m devpro ${@+"${@}"}
+"""
+
+
+def base_interpreter() -> str:
+    """The Python running this process as it stands outside any virtual environment: a venv's python is
+    gone with the venv, while the interpreter it was made from outlives it. Before 3.11,
+    `sys._base_executable` names the venv's own python on POSIX; that python is a link to the base, so
+    it is resolved where it still sits inside the venv."""
+    executable = getattr(sys, "_base_executable", sys.executable)
+    if sys.prefix != sys.base_prefix and Path(executable).is_relative_to(sys.prefix):
+        return os.path.realpath(executable)
+    return executable
+
+
+def wrapper_text(interpreter: str) -> str:
+    """The wrapper's text, recording `interpreter` as the Python it runs the copy under."""
+    return _WRAPPER_TEXT.replace("@INTERPRETER@", shlex.quote(interpreter))
+
+
+def _installed_version(init: Path) -> str | None:
+    """The `__version__` an installed copy's `__init__.py` assigns, or None where it holds none or
+    cannot be read."""
+    try:
+        text = init.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+    match = re.search(r'^__version__ = "([^"]*)"$', text, re.MULTILINE)
+    return match.group(1) if match else None
 
 
 def _shipped(relative: Path) -> bool:
@@ -312,8 +381,8 @@ def prune(root: Path, *, keep: set[Path]) -> list[Path]:
     ship, and is ours; then each directory that leaves empty, walking upward from the file to the first
     directory that still holds anything, the surface included and ROOT never.
 
-    Package destinations sit inside the skills surface — `skills/kbase/kb-tools/` and
-    `skills/development/scripts/` — and no destination is carved out by
+    The skill-owned package destinations sit inside the skills surface — `skills/kbase/kb-tools/` and
+    `skills/development/scripts/` — the devpro tools package outside every surface, and no destination is carved out by
     name. None needs to be: a copied package file carries the `!INSTALLED!` banner or none, never the
     generated one `_is_ours` reads, so it is untouched here rather than pruned, and a `.venv` below a
     destination is outside the would-ship vocabulary, so its files never enter the stale list. Every file under a surface is thus either ours
@@ -441,6 +510,15 @@ def _clear_package_destination(destination: Path) -> None:
         destination.unlink(missing_ok=True)
 
 
+def _write_created(target: Path, data: bytes, *, mode: int) -> None:
+    """Write `data` to `target`, its parents created, asking for `mode` at creation: a `chmod` after the
+    write would ignore the umask."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
+    with os.fdopen(descriptor, "wb") as handle:
+        handle.write(data)
+
+
 def _package_copy_mode(source: Path) -> int:
     """The mode a package copy asks the OS for when it creates a file from `source`: a new file's, plus
     `source`'s execute bits. Group and other bits are left to the process umask, which a `chmod` after
@@ -502,7 +580,11 @@ def install(
     # overwrite, the runner file where a shipped package carries runner snippets, and the agents file's.
     # ROOT itself is created only after all of them.
     renders = render_all(ctx)
-    packages = [] if user_level else [package for package in SHIPPED_PACKAGES if ctx.plugin.ships(package.owner)]
+    packages = [
+        package
+        for package in SHIPPED_PACKAGES
+        if package.owner is None or (not user_level and ctx.plugin.ships(package.owner))
+    ]
     package_files = package_copies(root, packages)
     resource_files = _resource_copies(root, harness=ctx.harness, user_level=user_level)
     guardrail = _guardrail_in_play(ctx.bound_harness, user_level=user_level)
@@ -558,17 +640,22 @@ def install(
         )
 
     root.mkdir(parents=True, exist_ok=True)
+    replaced_version = _installed_version(root / DEVPRO_COPY / "__init__.py")
     for package in packages:
         _clear_package_destination(root / package.destination)
     for source, target in package_files:
         data = source.read_bytes()
-        if source.suffix in STAMPED_SUFFIXES or source.name in STAMPED_NAMES:
+        stamps = not target.is_relative_to(root / DEVPRO_COPY)
+        if stamps and (source.suffix in STAMPED_SUFFIXES or source.name in STAMPED_NAMES):
             data = stamped(data, origin=source.relative_to(PACKAGE_ROOT.parent).as_posix())
-        target.parent.mkdir(parents=True, exist_ok=True)
-        # Asked for at creation: a `chmod` after the write would ignore the umask.
-        descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, _package_copy_mode(source))
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(data)
+        _write_created(target, data, mode=_package_copy_mode(source))
+    wrapper = root / WRAPPER
+    wrapper_data = wrapper_text(base_interpreter()).encode("utf-8")
+    _write_created(wrapper, stamped(wrapper_data, origin=f"{PACKAGE_ROOT.name}/install.py"), mode=0o777)
+    retired_package = root / RETIRED_PACKAGE_DIR
+    retired_package_found = retired_package.is_dir()
+    if retired_package_found:
+        shutil.rmtree(retired_package)
     for source, target in resource_files:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, target)
@@ -581,10 +668,17 @@ def install(
 
     pruned = prune(root, keep={*written, *(target for _, target in copies)})
     print(f"installed: {len(written)} rendered files, {len(copies)} copied files → {root}")
+    copy_dir = root / DEVPRO_COPY
+    if replaced_version is None:
+        print(f"devpro {__version__} installed → {copy_dir}")
+    else:
+        print(f"devpro {replaced_version} replaced by devpro {__version__} → {copy_dir}")
+    if retired_package_found:
+        print(f"removed {retired_package}")
     for path in pruned:
         print(f"pruned {path}")
     if verbose:
-        for path in [*(target for _, target in copies), *written]:
+        for path in [*(target for _, target in copies), wrapper, *written]:
             print(f"wrote {path}")
     if touches_runner_file:
         install_include_lines(
@@ -630,6 +724,8 @@ def _install_managed_paths(
     under_root = [
         *SURFACES,
         *(package.destination for package in SHIPPED_PACKAGES),
+        WRAPPER,
+        RETIRED_PACKAGE_DIR,
         *(
             target.relative_to(root).as_posix()
             for _, target in _resource_copies(root, harness=harness, user_level=user_level)

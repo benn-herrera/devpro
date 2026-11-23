@@ -1,6 +1,6 @@
 """The agents-file render and installer, and the definition install, each case checked against values
 the code under test did not compute: the marker span, the bytes kept outside it, the refusals that
-write nothing, the redirects, the kb-tools and dicing-snippets packages and their banners, the kb
+write nothing, the redirects, the kb-tools and devpro tools packages and their banners, the kb
 install path, the kbase `.mcp.json`, the runner include line, the harness resources a harness ships as
 they stand, the umask a package copy lands under, the prune, the refusal to overwrite a file without
 this repository's banner, the claude guardrail hook's probe and registration, the removal of entries
@@ -16,9 +16,11 @@ import dataclasses
 import json
 import os
 import re
+import shlex
 import shutil
 import stat
 import subprocess
+import sys
 from collections.abc import Callable, Iterator
 from pathlib import Path, PurePosixPath
 
@@ -43,10 +45,12 @@ from devpro.install import (
     SHIPPED_PACKAGES,
     ShippedPackage,
     _is_our_resource,
+    _shipped,
     harness_resource_copies,
     install,
     preflighted_install,
     uncommitted_sources,
+    wrapper_text,
 )
 from devpro.install_base import PACKAGE_ROOT, REPO_ROOT, checkout_root
 from devpro.loading import load
@@ -65,7 +69,7 @@ _SNIPPET_SETS = {
     package.source: snippets for package in SHIPPED_PACKAGES if (snippets := package.installed_snippets()) is not None
 }
 _KB_SNIPPETS = _SNIPPET_SETS["kb-tools"]
-_DEVPRO_SNIPPETS = _SNIPPET_SETS["dicing-snippets"]
+_DEVPRO_SNIPPETS = _SNIPPET_SETS["runner-snippets"]
 
 _BEGIN = " <!-- vvv-devpro do not edit at or between marker lines. devpro-vvv -->"
 """The begin marker line an earlier, unstamped revision wrote: a block of no plugin."""
@@ -405,8 +409,8 @@ _REMINDER = "hooks/state-table-reminder.sh"
 _SETTINGS = ".claude/settings.json"
 # A claude install writes its set into its plugin directory, below the harness directory it is given.
 _CLAUDE_PLUGIN_RELPATH = f".claude/{CLAUDE.bound(NAME).plugin_dir}"
-# The dicing snippets package's line: the one every project install of a nested plugin writes.
-_DEVPRO_SET_LINE = f"import? '{_CLAUDE_PLUGIN_RELPATH}/skills/docdicer/dicing-snippets/runner-snippets/devpro.just'"
+# The devpro tools package's line: the one every project install of a nested plugin writes.
+_DEVPRO_SET_LINE = f"import? '{_CLAUDE_PLUGIN_RELPATH}/tools/runner-snippets/devpro.just'"
 # The activity profiler: the launcher the claude install copies beside the hooks, the skill that finds
 # it, and the registration entries that feed it.
 _PROFILER = "profiler"
@@ -560,7 +564,7 @@ def test_a_duplicate_output_is_refused_even_when_the_selection_ships_neither_def
 
 
 _DEVELOPMENT_SCRIPTS = "skills/development/scripts/cold-read.sh"
-_DEVPRO_PACKAGE = "skills/docdicer/dicing-snippets/runner-snippets/devpro.just"
+_DEVPRO_PACKAGE = "tools/runner-snippets/devpro.just"
 _KBASE_PACKAGE = "skills/kbase/kb-tools/runner-snippets/kb.just"
 _OPENCODE_SETTINGS_NAMES = {"opencode.json", "opencode.jsonc"}
 
@@ -588,7 +592,7 @@ def _delivers_the_kbase_server(project: Path, root: Path) -> bool:
 def test_supporting_artifacts_ship_with_the_definition_that_owns_them(
     tmp_path: Path, harness: str, root_of: Callable[[Path], Path], components: Components, flag: list[str]
 ) -> None:
-    """Both selections carry the development scripts and the dicing snippets, and every project install
+    """Both selections carry the development scripts and the runner snippets, and every project install
     writes the devpro runner include line; only with the kbase component on does the install carry the
     kbase toolchain: the kb-tools package, the kbase MCP entry and the kb runner include line, in the
     same runner file. No install writes a project's opencode settings file."""
@@ -604,7 +608,7 @@ def test_supporting_artifacts_ship_with_the_definition_that_owns_them(
     assert _delivers_the_kbase_server(project, root) is kbase
     assert not any(path.name in _OPENCODE_SETTINGS_NAMES for path in project.rglob("*"))
     justfile = (project / "justfile").read_text(encoding="utf-8")
-    assert "dicing-snippets/runner-snippets/devpro.just" in justfile
+    assert "tools/runner-snippets/devpro.just" in justfile
     assert ("runner-snippets/kb.just" in justfile) is kbase
     assert not (project / "Makefile").exists()
 
@@ -646,11 +650,11 @@ def test_a_kbase_install_writes_the_kbase_skill_the_package_the_mcp_entry_and_th
     assert kb_just[0].startswith("# !INSTALLED! from devpro/kb-tools/runner-snippets/kb.just — ")
     assert kb_just[1:] == source_just
     assert kb_mk[0].startswith("# !INSTALLED! from devpro/kb-tools/runner-snippets/kb.mk — ")
-    dicing = plugin / "skills/docdicer/dicing-snippets/runner-snippets"
+    snippets = plugin / "tools/runner-snippets"
     for name in ("devpro.just", "devpro.mk"):
-        installed = (dicing / name).read_text(encoding="utf-8").split("\n")
-        source = (PACKAGE_ROOT / f"dicing-snippets/runner-snippets/{name}").read_text(encoding="utf-8").split("\n")
-        assert installed[0].startswith(f"# !INSTALLED! from devpro/dicing-snippets/runner-snippets/{name} — ")
+        installed = (snippets / name).read_text(encoding="utf-8").split("\n")
+        source = (PACKAGE_ROOT / f"runner-snippets/{name}").read_text(encoding="utf-8").split("\n")
+        assert installed[0].startswith(f"# !INSTALLED! from devpro/runner-snippets/{name} — ")
         assert installed[1:] == source
     assert json.loads((plugin / ".mcp.json").read_text(encoding="utf-8")) == {
         "mcpServers": {"kbase": {"command": "kbase", "args": ["mcp"]}}
@@ -1409,14 +1413,14 @@ def test_a_retired_docdicer_line_is_removed_and_reported(tmp_path: Path, capsys)
 def test_a_project_install_without_the_kbase_component_writes_the_devpro_include_line_only(
     tmp_path: Path,
 ) -> None:
-    """The devpro line rides the dicing snippets package, which every selection ships: without the kbase
+    """The devpro line rides the devpro tools package, which every selection ships: without the kbase
     component the plain install writes it and no kb line, so the argumentless gates are reachable in the
     default install. A project with neither runner file gets a `Makefile` holding that one line."""
     root = tmp_path / ".claude"
     root.mkdir()
     _definition_install(root, _CLAUDE_RENDER, project_root=tmp_path)
     text = (tmp_path / "Makefile").read_text(encoding="utf-8")
-    assert "-include .claude/skills/devpro/skills/docdicer/dicing-snippets/runner-snippets/devpro.mk" in text
+    assert "-include .claude/skills/devpro/tools/runner-snippets/devpro.mk" in text
     assert "kb-tools/runner-snippets/kb.mk" not in text
     assert not (tmp_path / "justfile").exists()
 
@@ -1464,7 +1468,7 @@ def test_a_devpro_set_line_survives_the_retired_docdicer_lines_cleanup(tmp_path:
     otherwise have been appended the run after. The docdicer line beside it goes; the devpro line
     stands, under whatever tree it spells, and is reported left alone where it already names the
     installed snippets."""
-    devpro_just = f"import? '{_CLAUDE_PLUGIN_RELPATH}/skills/docdicer/dicing-snippets/runner-snippets/devpro.just'"
+    devpro_just = f"import? '{_CLAUDE_PLUGIN_RELPATH}/tools/runner-snippets/devpro.just'"
     docdicer_just = f"import? '{_CLAUDE_PLUGIN_RELPATH}/skills/docdicer/tools/runner-snippets/docdicer.just'"
     (tmp_path / "justfile").write_text(f"default:\n  @echo hi\n\n{devpro_just}\n{docdicer_just}\n", encoding="utf-8")
     install_include_lines(tmp_path, [], harness_relpath=".claude", retired_set=RETIRED_SNIPPET_SET)
@@ -1476,7 +1480,7 @@ def test_a_devpro_set_line_survives_the_retired_docdicer_lines_cleanup(tmp_path:
 def test_the_retired_cleanup_leaves_a_devpro_set_line_alone_in_a_makefile(tmp_path: Path) -> None:
     """The `-include` form is recognized on the same shape, so the Makefile side is the same defect: a
     line ending `runner-snippets/devpro.mk` is not a retired docdicer line."""
-    devpro_mk = "-include .opencode/plugins/devpro/skills/docdicer/dicing-snippets/runner-snippets/devpro.mk"
+    devpro_mk = "-include .opencode/plugins/devpro/tools/runner-snippets/devpro.mk"
     docdicer_mk = "-include .opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.mk"
     (tmp_path / "Makefile").write_text(f"all:\n\t@echo hi\n\n{devpro_mk}\n{docdicer_mk}\n", encoding="utf-8")
     install_include_lines(tmp_path, [], harness_relpath=".opencode", retired_set=RETIRED_SNIPPET_SET)
@@ -1511,7 +1515,7 @@ def test_the_shipped_devpro_snippets_list_the_same_five_recipes_in_both_runners(
     project.mkdir()
     for name in ("devpro.just", "devpro.mk"):
         (project / name).write_text(
-            (PACKAGE_ROOT / "dicing-snippets/runner-snippets" / name).read_text(encoding="utf-8"), encoding="utf-8"
+            (PACKAGE_ROOT / "runner-snippets" / name).read_text(encoding="utf-8"), encoding="utf-8"
         )
     line = "import? 'devpro.just'" if runner == "just" else "-include devpro.mk"
     runner_file = "justfile" if runner == "just" else "Makefile"
@@ -1554,7 +1558,7 @@ def test_an_argument_after_a_devpro_recipe_is_refused_before_the_command_runs(tm
     shell's command lookup and `devpro help` runs the help page instead of the check."""
     if shutil.which("just") is None:
         pytest.skip("just is not installed")
-    snippet = PACKAGE_ROOT / "dicing-snippets/runner-snippets/devpro.just"
+    snippet = PACKAGE_ROOT / "runner-snippets/devpro.just"
     (tmp_path / "devpro.just").write_text(snippet.read_text(encoding="utf-8"), encoding="utf-8")
     (tmp_path / "justfile").write_text("all:\n  @echo hi\n\nimport? 'devpro.just'\n", encoding="utf-8")
     devpro = tmp_path / "devpro"
@@ -1735,6 +1739,115 @@ def test_a_user_level_install_ships_no_cold_read_script(_home: Path) -> None:
     root = _home / ".claude"
     install(root, _CLAUDE_RENDER, verbose=False, project_root=_home, uncommitted=_committed)
     assert _installed_cold_reads(_home) == []
+
+
+# The devpro tools package: the installation's own copy of devpro and the wrapper that runs it, at
+# ROOT's `tools/` on every install.
+
+# The environment an installed wrapper runs in where no devpro is on PATH and nothing is importable
+# from this checkout.
+_NO_DEVPRO_PATH = "/usr/bin:/bin"
+
+
+def _run_wrapper(wrapper: Path, *, path: str, home: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [str(wrapper), "--version"],
+        env={"PATH": path, "HOME": str(home)},
+        cwd=home,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+        stdin=subprocess.DEVNULL,
+        timeout=60,
+    )
+
+
+def test_a_project_install_writes_the_devpro_copy_and_a_wrapper_that_runs_it(tmp_path: Path) -> None:
+    """The copy is the package less what no install ships, byte for byte, and the wrapper runs it with no
+    devpro on PATH, under an interpreter outside any virtual environment. Defect: before the devpro tools
+    package no copy was installed, so an installed tree could not run devpro once the system's was
+    removed."""
+    project = tmp_path / "project"
+    project.mkdir()
+    main(["install", str(project), "--harness=claude"])
+    tools = _claude_plugin(project / ".claude") / "tools"
+    expected = {relative: data for relative, data in _files(PACKAGE_ROOT).items() if _shipped(Path(relative))}
+    assert _files(tools / "devpro") == expected
+    wrapper = tools / "devpro.sh"
+    recorded = re.search(r"^recorded=(.*)$", wrapper.read_text(encoding="utf-8"), re.MULTILINE)
+    assert recorded is not None
+    in_a_venv = sys.prefix != sys.base_prefix
+    assert not (in_a_venv and Path(shlex.split(recorded.group(1))[0]).is_relative_to(sys.prefix))
+    ran = _run_wrapper(wrapper, path=_NO_DEVPRO_PATH, home=tmp_path)
+    assert (ran.returncode, ran.stdout) == (0, f"{__version__}\n"), ran.stderr
+
+
+def test_a_wrapper_whose_recorded_python_is_gone_runs_the_first_python3_on_path_or_names_the_floor(
+    tmp_path: Path,
+) -> None:
+    """The first `python3` on PATH runs the copy where it is 3.9 or later; where it is older the wrapper
+    looks no further — a 3.9 later on PATH included — and exits non-zero naming the floor. Defect: an
+    installed tree whose install-time Python was removed could not run devpro, no wrapper being
+    written."""
+    project = tmp_path / "project"
+    project.mkdir()
+    main(["install", str(project), "--harness=claude"])
+    wrapper = _claude_plugin(project / ".claude") / "tools/devpro.sh"
+    wrapper.write_text(wrapper_text(str(tmp_path / "gone" / "python3")), encoding="utf-8")
+    usable = tmp_path / "usable"
+    usable.mkdir()
+    (usable / "python3").symlink_to(os.path.realpath(sys.executable))
+    too_old = tmp_path / "too-old"
+    too_old.mkdir()
+    (too_old / "python3").write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+    (too_old / "python3").chmod(0o755)
+    ran = _run_wrapper(wrapper, path=f"{usable}:{_NO_DEVPRO_PATH}", home=tmp_path)
+    assert (ran.returncode, ran.stdout) == (0, f"{__version__}\n"), ran.stderr
+    refused = _run_wrapper(wrapper, path=f"{too_old}:{usable}:{_NO_DEVPRO_PATH}", home=tmp_path)
+    assert refused.returncode != 0 and refused.stdout == ""
+    assert "Python 3.9 or later" in refused.stderr
+
+
+def test_reinstalling_over_a_copy_of_another_version_reports_both_versions(tmp_path: Path, capsys) -> None:
+    """Defect: before the devpro tools package nothing named a version change."""
+    project = tmp_path / "project"
+    project.mkdir()
+    argv = ["install", str(project), "--harness=claude"]
+    main(argv)
+    init = _claude_plugin(project / ".claude") / "tools/devpro/__init__.py"
+    init.write_text(
+        init.read_text(encoding="utf-8").replace(f'__version__ = "{__version__}"', '__version__ = "0.0.1"'),
+        encoding="utf-8",
+    )
+    capsys.readouterr()
+    main(argv)
+    assert any("0.0.1" in line and __version__ in line for line in capsys.readouterr().out.splitlines())
+
+
+def test_a_user_level_install_writes_the_devpro_tools_package_and_no_other(_home: Path) -> None:
+    """Defect: before the devpro tools package a user-level install wrote no package."""
+    root = _home / ".claude"
+    install(root, _KBASE_CLAUDE_RENDER, verbose=False, project_root=_home, uncommitted=_committed)
+    plugin = _claude_plugin(root)
+    for package in SHIPPED_PACKAGES:
+        assert (plugin / package.destination).is_dir() is (package.owner is None), package.destination
+    assert os.access(plugin / "tools/devpro.sh", os.X_OK)
+
+
+@pytest.mark.usefixtures("_no_uncommitted")
+def test_an_install_removes_the_dicing_snippets_package_an_earlier_install_left(tmp_path: Path, capsys) -> None:
+    """The dry run names the removal the install then makes. Defect: the retired home's files carry the
+    installed banner, which `prune` leaves be, so they survived the move to the devpro tools package."""
+    project = tmp_path / "project"
+    project.mkdir()
+    argv = ["install", str(project), "--harness=claude"]
+    main(argv)
+    retired = _claude_plugin(project / ".claude") / "skills/docdicer/dicing-snippets"
+    _plant(retired / "runner-snippets/devpro.just", "# !INSTALLED! from devpro/dicing-snippets/x — y\n")
+    groups = _assert_dry_run_predicts(argv, project=project, capsys=capsys)
+    assert not retired.exists()
+    assert f"{retired.relative_to(project).as_posix()}/" in groups["removed"]
 
 
 def test_the_cold_read_script_installed_under_mage_refuses(tmp_path: Path) -> None:

@@ -30,7 +30,7 @@ The command also carries the dicing and check surface: `devpro dice-doc`, `devpr
 `devpro dashboard [<project-dir>] [--port <number>]` verb — devpro's one loopback server for the
 web interface: its profiler view the rendering the retired `devpro profiler serve` drove, its board
 panel the board the retired `devpro kanban` served. The verbs run wherever the `devpro` command
-runs; they are not part of the install product.
+runs, and from an installation's own copy of devpro (Deployed Surfaces, Shipped files).
 
 A check that protects or assumes a checkout holds only when devpro runs from one. A worktree and
 an editable install of a clone count as one. The devpro package installed into a Python

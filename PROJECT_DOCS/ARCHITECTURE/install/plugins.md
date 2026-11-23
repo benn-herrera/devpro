@@ -12,17 +12,20 @@ the skill's directory is never created by a run that omits it. `discover()` is t
 every member name is checked against. The install filters nothing of its
 own and reads no component's name: everything below is keyed on a definition's name, the owner.
 
-**Owners.** A supporting artifact ships iff the definition that uses it ships. Each package is a row
-of `SHIPPED_PACKAGES` (`devpro/install.py`), a `ShippedPackage` of source, destination, owner and `snippets` (a `runner_file.SnippetSet`, or none):
+**Owners.** A supporting artifact ships iff the definition that uses it ships; the devpro tools
+package is the plugin's own, and its rows name no owner. Each package is a row of `SHIPPED_PACKAGES`
+(`devpro/install.py`), a `ShippedPackage` of source, destination, owner (or none) and `snippets` (a
+`runner_file.SnippetSet`, or none):
 
 | source in `devpro/` | destination below the install directory | owner |
 |---|---|---|
 | `development-tools` | `skills/development/scripts` | `development` |
-| `dicing-snippets` | `skills/docdicer/dicing-snippets` | `docdicer` |
 | `kb-tools` | `skills/kbase/kb-tools` | `kbase` |
+| `runner-snippets` | `tools/runner-snippets` | none |
+| the package itself, `PACKAGE_ROOT` | `tools/devpro` | none |
 
-`install` takes the rows whose owner the selection's `ships(name)` admits, and none on a user-level
-install. Those rows are
+`install` takes the rows whose owner the selection's `ships(name)` admits and every row with no
+owner, and on a user-level install the rows with no owner alone. Those rows are
 what `package_copies` copies and `_clear_package_destination` empties before the copy, so the
 destination is emptied in place while the skill's `SKILL.md` and supporting files beside it are not
 touched. A harness-rendered file is owned the same way: `HarnessFile.owner` names a definition, and
@@ -46,14 +49,13 @@ renders it like any other harness-rendered file.
 
 **The runner include lines**, appended to the project's justfile or Makefile, follow the shipped
 packages that carry snippets: a `ShippedPackage` row's `snippets` field is a `runner_file.SnippetSet`
-(label, snippets directory below the package's destination, snippet name per runner), set on the
-dicing snippets row (`devpro`) and the kb-tools row (`kb`). The lines are written where the install
+(label, snippets directory below the package's destination, snippet name per runner), set on the runner-snippets row (`devpro`) and the kb-tools row (`kb`). The lines are written where the install
 ships at least one such row and is a project install of a nested plugin
 (`_is_project_install_of_a_nested_plugin`), so every project install writes the devpro line and one
 with the kbase component also writes the kb line. `ShippedPackage.installed_snippets()` joins the destination to the set's directory, and a line names the
 installed snippets at `<harness-relpath>/<destination>/<set directory>/<snippet>`, `harness_relpath` being the install directory
 relative to the project root, so under claude
-`.claude/skills/devpro/skills/docdicer/dicing-snippets/runner-snippets/devpro.just` and
+`.claude/skills/devpro/tools/runner-snippets/devpro.just` and
 `.claude/skills/devpro/skills/kbase/kb-tools/runner-snippets/kb.just`, and under opencode the same
 below `.opencode/plugins/devpro/`. `runner_file.install_include_lines` writes them, in the
 table's order, judging each set alone (`_with_include_line`) and writing the runner file once when

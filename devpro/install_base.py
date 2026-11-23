@@ -1,5 +1,6 @@
 """What the install modules share: where this package and its checkout sit, the kbase skill's directory
-and the kb-tools package's destination inside it, the virtual-environment directory an install leaves be, UTF-8 text reading that keeps each line's ending, and
+and the kb-tools package's destination inside it, the devpro tools package's directory and its wrapper,
+the virtual-environment directory an install leaves be, UTF-8 text reading that keeps each line's ending, and
 the stderr report of what an install left alone."""
 
 from __future__ import annotations
@@ -26,6 +27,10 @@ REPO_ROOT = checkout_root(PACKAGE_ROOT)
 KBASE_SKILL_DIR = "skills/kbase"
 # Below ROOT: where the kb-tools package is delivered, inside the kbase skill's own directory.
 KB_TOOLS_DIR = f"{KBASE_SKILL_DIR}/kb-tools"
+# Below ROOT: the devpro tools package — the installation's own copy of devpro and the runner snippets
+# — and the wrapper that runs that copy, which every installed launcher names relative to itself.
+TOOLS_DIR = "tools"
+WRAPPER = f"{TOOLS_DIR}/devpro.sh"
 # A virtual environment a shipped tool builds beside its package: not install output, so it is neither
 # shipped nor copied into the preflight's scratch copy, never compared, so its presence alone never makes
 # an install proceed, and kept when the install clears the package's destination.

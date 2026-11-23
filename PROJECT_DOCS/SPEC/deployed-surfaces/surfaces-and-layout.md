@@ -12,12 +12,12 @@ The supported harnesses are `claude` (Claude Code), `opencode` and `mage` (Mage,
 `--harness` takes these names. The supported model families are `claude`, the default, `gemma-4` and
 `qwen3`; `--family` takes these names (Rendering). `skills/` holds one directory per definition of
 the skill kind — `skills/<name>/SKILL.md`, the **skill entry file**, then its supporting files,
-beneath that directory and nowhere else. A project install places each shipped package in the
-directory of the skill it belongs to, where that skill ships:
+beneath that directory and nowhere else.
+A project install places each skill-owned shipped package in the directory of the skill it belongs
+to, where that skill ships, and the devpro tools package at the install directory's `tools/`
+(Shipped files):
 - the development scripts package — a script that runs one agent on a brief with no tools — in the
   `development` skill's;
-- the dicing snippets package — the absorbed dicing verbs' runner shortcuts (Shipped files) — in the
-  `docdicer` skill's;
 - the kb-tools package in the `kbase` skill's.
 
 None is a supporting file of its skill; what each is and where it sits is in SPEC.md, Deployed
