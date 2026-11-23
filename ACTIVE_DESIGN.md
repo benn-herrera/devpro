@@ -32,14 +32,16 @@ The devpro package installs on Python 3.11 or later, with no third-party runtime
 
 **As it stands:**
 ```
-exists; otherwise under the first `python3` on `PATH`, where it is Python 3.9 or later; otherwise
-  it exits non-zero, saying devpro needs Python 3.9 or later. It looks for no other interpreter;
+exists; otherwise under the first `python3` on `PATH`, where it is Python 3.11 or later; otherwise
+  it exits non-zero, saying devpro needs Python 3.11 or later. It looks for no other interpreter;
 ```
 
 **Becomes:**
 ```
-exists; otherwise under the first `python3` on `PATH`, where it is Python 3.11 or later; otherwise
-  it exits non-zero, saying devpro needs Python 3.11 or later. It looks for no other interpreter;
+exists; otherwise under the first `python3` on `PATH`. The wrapper checks no version itself: the
+  entry point it starts refuses where the interpreter is below the floor — exit 1, saying devpro
+  needs Python 3.11 or later and naming the interpreter it ran under — and it refuses before any
+  other module of the copy is imported. It looks for no other interpreter;
 ```
 
 ### [Plugins](PROJECT_DOCS/SPEC/deployed-surfaces/plugins.md)

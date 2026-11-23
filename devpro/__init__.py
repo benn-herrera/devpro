@@ -52,4 +52,15 @@ the text of every file is a function of the definition, the components, the harn
 the family and the category map, and of nothing else.
 """
 
+# The floor, checked before any other module of this package is imported: every module after this one
+# may use the floor's syntax, and this one must not. `sys` is built in, so it is here with no import of
+# this package above it; an interpreter older than the floor runs only the version test, whose
+# `version_info` is read with `getattr` so no syntax but this statement's is on the path to the refusal.
+import sys
+
+if getattr(sys, "version_info") < (3, 11):
+    _running = "%s.%s.%s" % tuple(sys.version_info[:3])
+    sys.stderr.write("error: devpro needs Python 3.11 or later, running under %s (%s)\n" % (_running, sys.executable))
+    sys.exit(1)
+
 __version__ = "0.18.0"

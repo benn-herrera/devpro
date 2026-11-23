@@ -196,28 +196,26 @@ _RESOURCE_BANNER_LINES = 10
 # first and run a `devpro` package there in the copy's place; a separate bootstrap script would be one
 # more installed file. The bash lines must hold no `'''` and no backslash. `${@+"${@}"}` because bash
 # 3.2, macOS's `/bin/bash`, reads an empty `"${@}"` as unbound under `set -u`.
+#
+# The wrapper states no floor: `devpro/__init__.py` refuses below it before any other module of the
+# copy is imported. An interpreter older than 3.12 reads the bash lines as the literal's own text,
+# consuming each backslash escape: the bash lines round it carry no `\` and no `%`. One consequence of
+# that read: an interpreter older than 3.12 reached some way the entry point could not refuse prints
+# bash's own `import: command not found`, not a floor message.
 _WRAPPER_TEXT = """\
 #!/usr/bin/env bash
 ''':'
 # Runs this installation's own copy of devpro, the `devpro/` beside this file, as `python3 -m devpro`
 # runs it: under the Python that ran the install while that path exists, else under the first
-# `python3` on PATH where it is Python 3.11 or later. It looks for no other interpreter.
+# `python3` on PATH. It looks for no other interpreter.
 set -euo pipefail
 
 recorded=@INTERPRETER@
 here=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-
-function supported() {
-  "${1}" -c 'import sys; sys.exit(sys.version_info < (3, 11))' >/dev/null 2>&1
-}
-
 if [[ -x "${recorded}" ]]; then
   python="${recorded}"
-elif python=$(command -v python3) && supported "${python}"; then
-  :
 else
-  echo "devpro needs Python 3.11 or later: ${recorded} is gone, and no python3 on PATH is 3.11 or later" >&2
-  exit 1
+  python=$(command -v python3)
 fi
 export PYTHONPATH="${here}${PYTHONPATH:+:${PYTHONPATH}}"
 exec "${python}" "${BASH_SOURCE[0]}" ${@+"${@}"}

@@ -48,7 +48,6 @@ from devpro.install import (
     install,
     preflighted_install,
     uncommitted_sources,
-    wrapper_text,
 )
 from devpro.install_base import PACKAGE_ROOT, REPO_ROOT, checkout_root
 from devpro.loading import load
@@ -1834,32 +1833,6 @@ def test_an_install_run_from_an_installations_copy_into_that_installation_is_ref
     assert exited.value.code == 2
     assert (copy / "__init__.py").is_file()
     assert _files(project) == before
-
-
-def test_a_wrapper_whose_recorded_python_is_gone_runs_the_first_python3_on_path_or_names_the_floor(
-    tmp_path: Path,
-) -> None:
-    """The first `python3` on PATH runs the copy where it is 3.11 or later; where it is older the wrapper
-    looks no further — a 3.11 later on PATH included — and exits non-zero naming the floor. Defect: an
-    installed tree whose install-time Python was removed could not run devpro, no wrapper being
-    written."""
-    project = tmp_path / "project"
-    project.mkdir()
-    main(["install", str(project), "--harness=claude"])
-    wrapper = _claude_plugin(project / ".claude") / "tools/devpro.sh"
-    wrapper.write_text(wrapper_text(str(tmp_path / "gone" / "python3")), encoding="utf-8")
-    usable = tmp_path / "usable"
-    usable.mkdir()
-    (usable / "python3").symlink_to(os.path.realpath(sys.executable))
-    too_old = tmp_path / "too-old"
-    too_old.mkdir()
-    (too_old / "python3").write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
-    (too_old / "python3").chmod(0o755)
-    ran = _run_wrapper(wrapper, path=f"{usable}:{_NO_DEVPRO_PATH}", home=tmp_path)
-    assert (ran.returncode, ran.stdout) == (0, f"{__version__}\n"), ran.stderr
-    refused = _run_wrapper(wrapper, path=f"{too_old}:{usable}:{_NO_DEVPRO_PATH}", home=tmp_path)
-    assert refused.returncode != 0 and refused.stdout == ""
-    assert "Python 3.11 or later" in refused.stderr
 
 
 def test_reinstalling_over_a_copy_of_another_version_reports_both_versions(tmp_path: Path, capsys) -> None:
