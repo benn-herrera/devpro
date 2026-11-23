@@ -158,9 +158,9 @@ only and their done-lines assert the pairs stand untouched.
 | --- | --- | --- |
 | B1 | landed: commit dc8b6b1; test_server.py widening accepted as the schema change's consequence | expert |
 | B2 | landed: the deco keeps what the leaf promises; deco.js, the deco runner and its tests | expert |
-| B3 | dispatchable | expert |
-| B4 | dispatchable | expert |
-| B5 | dispatchable | expert |
+| B3 | landed: commit 0b822bf; reduced scope as discovered, R9 tracked to the host's V2 declarations | expert |
+| B4 | landed: commit 27e90b0; lone stamps carry their date, pairs untouched | expert |
+| B5 | in progress: dispatched to devpro-python-coder | expert |
 
 #### B1 — the index reads true
 
@@ -210,21 +210,28 @@ stand untouched — and the two pre-existing foreign pins are the only other fai
 
 #### B3 — the capture honors its floor
 
-Rating: expert. Findings: R4 (first branch), R5, R9, R15, R21.
+Rating: expert. Findings: R4 (first branch), R21, R15; R5 reduced to documenting the read sites.
+
+B3 was reduced on discovery (the first dispatch stopped, reporting): R9's type-check premise is
+false — `@opencode-ai/plugin` on npm is the V1 surface and no release carries the V2
+`ctx.tool.hook` API the resources use, so a check against published declarations cannot converge
+and a hand-written ambient declaration would only pin our own transcription. R9 moves to the
+tracked block below, blocked on the host publishing V2 declarations. R5's fork-marker premise does
+not hold on the live host: `childAgentTypeOf` already reads at the observed sites (`:256-265`),
+and its mirror hole is named in a code comment, not exercised by an assembled fixture.
 
 Scope, by symbol: `devpro/harnesses/resources/opencode/profiler.ts`'s `childSessionOf`
-(`:250-254`), `childAgentTypeOf` (`:256-265`), line 3's floor statement;
+(`:250-254`), line 3's floor statement and the comments naming the read order;
 `tests/profiler_capture_runner.ts`, `tests/profiler_serialize_runner.ts`.
 
 The work: B3 takes R4's first branch — `childSessionOf` reads `output.sessionID` first and falls
 back to `metadata.sessionID`, keeping the 2.3.0 floor true; the floor statement and the comments
 say the fallback covers 2.3.0's metadata shape, and no leaf edit is needed — R21 resolves there
-(R4, R21). One observed result per fixture, the record's `result` and the agent type read from
-where the host puts them (R5). The opencode resources type-check against the host's published
-declarations — vendored or installed — through a new `just` recipe joined to the devpro surface;
-the recipe carries no runner-snippet copy, so no third pin arises (R9). The record's fields have
-one home in the tests: the serialize runner imports the record the capture runner wrote — one run,
-both inputs — as `_RECORD_FIELDS` already does on the Python side (R15).
+(R4, R21). One observed result per fixture: the two dispatch fixtures carry only what the host
+observed — the child session id in `output` — and the agent type stays at its observed read sites,
+the mirror hole named in a comment (R5, reduced). The record's fields have one home in the tests:
+the serialize runner imports the record the capture runner wrote — one run, both inputs — as
+`_RECORD_FIELDS` already does on the Python side (R15).
 
 Done when: `just test devpro` passes, `just dev-check-design-deltas-applied` passes — the pairs
 stand untouched — and the two pre-existing foreign pins are the only other failures.
@@ -262,7 +269,15 @@ Tracked, not packaged: the `UNREADABLE` twin (`plancheck.py:70`, `kanban/server.
 pre-existing; the three proposed CONVENTIONS leaves (R23, R24, R25 — the JS stand-in's fidelity,
 the shipped resource's host check, the locale pin) go to the next design when one opens; the
 installed plugin payload's `dicerlib` imports are cleared by a reinstall, not a commit; the
-leaf-wording amendments R16 and R17's leaf halves wait for the user. On the user's direction: once
+leaf-wording amendments R16 and R17's leaf halves wait for the user; R9's type-check of the
+opencode resources waits on upstream — the runtime context the host injects (`ctx.tool.hook`) is
+wider than any types it publishes or installs client-side (`@opencode-ai/plugin`'s V2
+`PluginContext` has no `tool` domain, verified against npm 1.19.6 and the config-dir install
+1.18.30), and the host source carries it (`../opencode/packages/plugin` 2.4.0,
+`effect/plugin.ts:56`). When upstream publishes the surface its runtime provides, the check is
+two lines resolving the specifier the way the host resolves it — no devpro-owned types. On the
+user's
+direction: once
 the plan lands and before the installation is updated, the forensic child-tie repair runs one last
 time over the profiler records the still-old installed plugin wrote since the last repair — the
 capture fix makes every edge after that written correctly.

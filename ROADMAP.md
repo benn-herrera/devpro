@@ -7,6 +7,30 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Features
 
+### A live agents panel on the dashboard
+
+A starting refinement, not a design: the placement, grouping and join below are the requester's
+noodlings, and the design's session is welcome to input during the ticket's final design phase —
+what stands here is intent, and the design owns the decisions.
+
+The hooks capture activity as it happens and the dashboard reads the stores per request, so the
+profiler view can answer what agents are active now: sessions whose latest record is fresh, per
+harness, refreshed on the live state the nav's indicator already polls. What "fresh" means, the
+panel's surface and its place among the views are the design's questions.
+
+The user's placement: on the kanban board, as a running-agents column. The board's plan columns
+are the four states (`PLAN_COLUMNS = STATE_WORDS`), and only four carry cards at a time — and the
+modes decide which: planning uses roadmap → drafted → dispatchable (beside the design column),
+execution uses design + dispatchable → landed. The roadmap column is not needed during execution —
+nothing drags from the roadmap to a running design — so the board renders the columns its mode
+uses, and the running-agents column is the fifth in both modes. In execution mode the
+in-progress column and the running-agents column are a visibly grouped pair — the agents beside
+the tasks their session-id join names, the group on the right of the working columns — with
+`landed` still the board's far right. The card's data is the capture's:
+the dispatching session, the agent, the model, and the link to the session's page; the join is
+the session id the plan's dispatch note carries, written at dispatch time, never inferred from
+brief text — agents with no package show unjoined.
+
 ### Codex CLI harness support
 
 Add the ability to install as a codex plugin. Feasible with gaps
