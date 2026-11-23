@@ -17,6 +17,23 @@ function fail() {
   exit 1
 }
 
+# The floor is enforced on the interpreter handed in, before any venv or wheel work: a below-floor
+# interpreter would build its venv to fail the wheel's install, reporting a wheel defect where the
+# cause is the interpreter. It is read from pyproject.toml's requires-python, the floor's one home,
+# parsed as `_venv` parses it — the first X.Y a `>=`, `~=` or `==` specifier names — and a spelling
+# that yields no floor is refused rather than skipped.
+floor="$(sed -n 's/^requires-python *= *"\([^"]*\)".*/\1/p' "${PROJECT_ROOT}/pyproject.toml" | sed -En 's/.*(>=|~=|==)([0-9]+\.[0-9]+).*/\2/p' | head -n 1)"
+[[ -n "${floor}" ]] || fail "${PROJECT_ROOT}/pyproject.toml names no Python floor: requires-python must name a version as >=X.Y, ~=X.Y or ==X.Y"
+# One run reads the version and executable together: an interpreter that cannot run at all fails
+# here, naming it, instead of dying inside a substitution with no message.
+handed="$("${python}" -c 'import sys; print("%d.%d %s" % (*sys.version_info[:2], sys.executable))')" \
+  || fail "cannot run '${python} -c' — check-wheel needs a working Python ${floor} or later interpreter as its argument"
+handed_floor="${handed%% *}"
+if ! "${python}" -c "import sys; sys.exit(sys.version_info < tuple(map(int, '${floor}'.split('.'))))"; then
+  # A bare name is reported as the interpreter it resolved to, which is the file the reader acts on.
+  fail "the interpreter handed in, ${handed#* }, is Python ${handed_floor}: check-wheel needs Python ${floor} or later"
+fi
+
 ver="$(PYTHONPATH="${PROJECT_ROOT}" python3 -m "${GEN}" --version)"
 wheel="${PROJECT_ROOT}/dist/${GEN}-${ver}-py3-none-any.whl"
 sdist="${PROJECT_ROOT}/dist/${GEN}-${ver}.tar.gz"
