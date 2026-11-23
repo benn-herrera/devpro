@@ -30,20 +30,20 @@
 [doc("show help on devpro just recipes")]
 devpro-help:
     @just --justfile "{{justfile()}}" --list | grep -E '^[ \t]+devpro'
-    @{{source_directory()}}/../devpro.sh --help
+    @{{quote(source_directory() / ".." / "devpro.sh")}} --help
 
 [doc("check the active plan's status form, as the board reads it")]
 devpro-check-plan:
-    @{{source_directory()}}/../devpro.sh check-plan
+    @{{quote(source_directory() / ".." / "devpro.sh")}} check-plan
 
 [doc("check the active design's final form and its delta pairs")]
 devpro-check-design:
-    @{{source_directory()}}/../devpro.sh check-design
+    @{{quote(source_directory() / ".." / "devpro.sh")}} check-design
 
 [doc("check that the active design's pending doc deltas were applied")]
 devpro-check-design-deltas-applied:
-    @{{source_directory()}}/../devpro.sh check-design --deltas-applied
+    @{{quote(source_directory() / ".." / "devpro.sh")}} check-design --deltas-applied
 
 [doc("check ROADMAP.md's ticket layout, as the board reads it")]
 devpro-check-roadmap:
-    @{{source_directory()}}/../devpro.sh check-roadmap
+    @{{quote(source_directory() / ".." / "devpro.sh")}} check-roadmap

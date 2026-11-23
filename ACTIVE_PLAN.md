@@ -17,8 +17,8 @@ Design: [ACTIVE_DESIGN/entry-point.md](ACTIVE_DESIGN/entry-point.md). Every pack
 | P6 | landed | expert | post-plan reviewers |
 | P7a | landed | expert | `devpro:python-coder` |
 | P7b | landed: R6 keeps its literal, per the finding's own fallback | expert | `devpro:python-coder` |
-| P7c | in progress | expert | `devpro:shell-dsl-coder` |
-| P7d | dispatchable | expert | `devpro:prompt-engineer` |
+| P7c | landed | expert | `devpro:shell-dsl-coder` |
+| P7d | in progress | expert | `devpro:prompt-engineer` |
 | P7e | landed | expert | `devpro:tech-writer` |
 
 ## Common to every package

@@ -17,8 +17,8 @@ prints the version bare and nothing else, so the `v` of `v<version>` is the reci
 Scripts read a harness's `HarnessText` values through `python3 -m devpro harness NAME KEY`: the
 maintainer scripts' reader, and not part of the consumer CLI. It, `dev-render` and
 `render-agents-file` are registered at parser build only where `DEVPRO_DEV` is `1` (SPEC.md,
-Package and Command); each script that runs one of them — `render.sh`, `_render-slot.sh`,
-`render-agents-file.sh`, `_harness-value.sh` — exports `DEVPRO_DEV=1` once. The `{plugin}`-templated keys
+Package and Command); each script that runs one of them — `render-agents-file.sh` and
+`_harness-value.sh` — exports `DEVPRO_DEV=1` once. The `{plugin}`-templated keys
 bind to the one plugin, so `harness` takes no selection flag. `devtools/scripts/_harness-value.sh` is the one shell reader of harness
 values, for `_render-slot.sh`. The
 version is read through `python3 -m devpro --version`. `just tag` reads it there to create the signed annotated tag `v<version>`: it refuses while
@@ -26,9 +26,10 @@ version is read through `python3 -m devpro --version`. `just tag` reads it there
 CONVENTIONS.md states where the version is written down, and the order a bump takes against its tag.
 
 `just build` runs `python -m build --no-isolation` in `.venv` and runs no devpro.
-`just check-wheel` reaches `python3 -m devpro` from the working tree for the version and for the
-checkout side of its install comparison, and runs the `devpro` console script only from its
-throwaway venv. Packaging states both.
+`just check-wheel` reaches `python3 -m devpro` from the working tree for the version, and the
+throwaway venv's Python with `PYTHONPATH` at the working tree for the checkout side of its install
+comparison, so the wrapper records one interpreter on both sides; it runs the `devpro` console
+script only from that throwaway venv. Packaging states both.
 
 **Toolchain.** This repository's justfile needs `just` 1.27.0 or later, for the `[doc]` recipe
 attribute; a consuming project's floor is 1.33.0 or later where the devpro line ships — the include
@@ -50,4 +51,5 @@ command-line tools' Python 3.9.6, so the suite there runs on the Python 3.9 floo
 pinned tools with pip, so the first run needs the network. The suite needs `bun`, `perl` and
 `kbase` (at least `KBASE_MIN_VERSION`) on `PATH`. `tests/test_guardrail.py`,
 `tests/test_opencode_entry.py` and `tests/test_kbase_surface.py` fail rather than skip without
-them, because a skip would hide drift.
+them, because a skip would hide drift. `just lint` needs `shellcheck` on `PATH`, and where it is
+absent the recipe fails, naming it, rather than skip the shell check.

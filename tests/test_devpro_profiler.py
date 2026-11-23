@@ -352,6 +352,33 @@ def test_a_launcher_finding_an_unusable_devpro_captures_silently_and_reports_oth
     assert not (project / ".devpro-temp").exists()
 
 
+def test_a_launcher_whose_wrapper_lacks_the_execute_bit_runs_no_devpro_from_path(tmp_path: Path) -> None:
+    """A wrapper that exists without its execute bit is a wrapper that does not run: the probe rules it
+    unusable, so a capture exits 0 with nothing run, though a `devpro` stands on PATH. Defect: the finder
+    tested `-x`, skipped the wrapper, and ran the `devpro` on PATH."""
+    launcher = _launcher(tmp_path / "harness")
+    (launcher.parent / ".." / "tools" / "devpro.sh").chmod(0o644)
+    on_path = tmp_path / "on-path"
+    on_path.mkdir()
+    foreign = on_path / "devpro"
+    foreign.write_text('#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$PROBE_LOG"\n', encoding="utf-8")
+    foreign.chmod(0o755)
+    log = tmp_path / "log"
+    project = tmp_path / "project"
+    project.mkdir()
+    done = subprocess.run(
+        ["sh", str(launcher), "capture", "claude"],
+        input=_PAYLOAD,
+        capture_output=True,
+        text=True,
+        cwd=project,
+        env={**os.environ, "PATH": f"{on_path}:/usr/bin:/bin", "PROBE_LOG": str(log)},
+        check=False,
+    )
+    assert (done.returncode, done.stdout, done.stderr) == (0, "", "")
+    assert not log.exists()
+
+
 def test_a_launcher_runs_the_wrapper_beside_it_with_no_devpro_on_path(tmp_path: Path) -> None:
     """The finder's first candidate is the installation's wrapper, beside the launcher, and it runs
     before any PATH search: a capture through it writes the record, with no `devpro` on PATH at all —

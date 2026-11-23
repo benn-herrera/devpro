@@ -23,7 +23,7 @@ input="${input%%'"tool_input"'*}"
 # The first field of the input named ${1}, as Claude Code writes it: what follows the first `"${1}"`
 # up to its closing quote. A field the input does not carry prints nothing.
 function field() {
-  local rest="${input#*\"${1}\"}"
+  local rest="${input#*\""${1}"\"}"
   if [[ "${rest}" == "${input}" ]]; then
     return 0
   fi

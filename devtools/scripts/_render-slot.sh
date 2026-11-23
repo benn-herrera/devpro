@@ -18,7 +18,6 @@ set -euo pipefail
 : "${PROJECT_ROOT:?PROJECT_ROOT is empty or unset — run this script through its justfile recipe}"
 : "${RENDERED_DIR:?RENDERED_DIR is empty or unset — run this script through its justfile recipe}"
 : "${GEN:?GEN is empty or unset — run this script through its justfile recipe}"
-export DEVPRO_DEV=1
 
 slug="${1}"
 shift

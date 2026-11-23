@@ -7,7 +7,7 @@ cd "${PROJECT_ROOT}"
 ver_file="./devpro/__init__.py"
 ver=$(awk '/^__version__[ \t]*=/ { gsub(/\"/, ""); print $NF; }' "${ver_file}")
 old_ver=${ver}
-ver=(${ver//\./ })
+IFS=. read -r -a ver <<< "${ver}"
 M=${ver[0]}
 m=${ver[1]}
 p=${ver[2]}

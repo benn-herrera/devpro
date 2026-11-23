@@ -13,7 +13,8 @@
 # but does not run is the fault to name, not a reason to run a foreign devpro.
 # Without a devpro, `capture` drains stdin and exits 0 without output — a missing
 # profiler must never block a tool call — and every other subcommand reports and
-# exits 1.
+# exits 1. The script sets no `set -euo pipefail`: `capture` must exit 0 on every path, and
+# `-e` or `-u` would turn an unforeseen failure into a nonzero exit that blocks the tool call.
 
 # A devpro is usable when it runs: the probe is cheap and silent.
 devpro=
@@ -30,9 +31,10 @@ function find_devpro() {
   # the one that stands is the wrapper and the other does not exist. A wrapper that runs is the
   # devpro; a wrapper that exists and does not run is the fault to report, not a reason to run a
   # foreign devpro from PATH. Only when no wrapper stands does the search fall to PATH, below.
-  here=$(cd "$(dirname "$0")" && pwd)
+  local here candidate
+  here=$(CDPATH='' cd -- "$(dirname -- "${0}")" && pwd)
   for candidate in "${here}/../tools/devpro.sh" "${here}/../skills/devpro/tools/devpro.sh"; do
-    [[ -x "${candidate}" ]] || continue
+    [[ -e "${candidate}" ]] || continue
     if usable "${candidate}"; then
       devpro="${candidate}"
       return

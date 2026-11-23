@@ -1563,11 +1563,13 @@ def test_an_installed_runner_snippet_runs_the_check_through_the_wrapper_without_
     beside the snippet file's installed directory — never `devpro` on PATH: the wrapper stands at
     `<plugin>/tools/devpro.sh`, one file above the snippet, and a bare PATH still records the check.
     Defect: before the snippets named the install, a project whose system `devpro` was removed could
-    not run any of the checks its own Makefile or justfile exposed."""
+    not run any of the checks its own Makefile or justfile exposed. The project's directory name holds a
+    space. Defect: the just snippet interpolated the wrapper's absolute path unquoted, so the shell split
+    it and every `devpro-*` recipe exited 127."""
     runner = shutil.which(entry)
     if runner is None:
         pytest.skip(f"{entry} is not installed")
-    project = tmp_path / "project"
+    project = tmp_path / "a project"
     project.mkdir()
     if entry == "just":
         # An empty justfile is where the install writes the just include line; with neither runner
