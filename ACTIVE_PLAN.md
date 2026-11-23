@@ -14,7 +14,7 @@ and the user owns their fate. Any other failure belongs to the package being don
 | Package | State | Rating | Note |
 | --- | --- | --- | --- |
 | P1 | landed | expert | the floor states 3.11 everywhere it is stated or enforced |
-| P2 | dispatchable | expert | workaround code the 3.11 floor orphans |
+| P2 | landed | expert | workaround code the 3.11 floor orphans |
 | P3 | dispatchable | expert | the annotation standard for the 3.11 floor |
 | R1 | drafted | expert | the changed code and documents reviewed |
 | R2 | drafted | expert | drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands |
@@ -126,6 +126,32 @@ Scope: compat code and version-bound tooling under `devpro/`, `justfile`'s tool 
 3. Discovery beyond the greps is in scope — that is why this package is expert — and returns its
    site and reason like any finding. A change that alters behavior beyond orphaned-compat removal
    is out of scope and reported instead.
+
+**Result** (landed, executed against the P1 tree):
+
+- *Pins: none moves.* All six `_venv` tools sit on the last release that admits Python 3.9 —
+  verified against PyPI's version index and the `.venv` dist-info, which agree on every one. Each
+  therefore has a newer line the floor excluded, so the plan's first clause is met six times; the
+  second clause is what decides them, and it is the justfile's own range rule (`justfile:45-49`):
+  a `~=X.Y.Z` takes the newest patch of the named line, and "a minor or major bump is an edit to
+  that line, visible in the diff." Every candidate move is such a bump (`pytest` 9, `black` 25.12,
+  `flake8` 7.4, `setuptools` 83, `build` 1.5, `isort` 7). The floor's removal restores the choice
+  of line to the maintainer and leaves that rule untouched; no pin is an orphaned-compat artefact.
+  `packaging.md` names only `setuptools` and `build`, neither moving, so it is unchanged.
+  `flake8~=7.3.0` is named separately: its newest line, 7.5.0, is the first to require `>=3.11`,
+  now choosable; it remains a minor bump under the same rule.
+- *Greps: the expected one hit each* — `devpro/install.py:213`, the P1-updated wrapper check.
+  Nothing existed only for 3.9.
+- *Discovery: one finding, deleted.* `devpro/install.py:233` (`base_interpreter`, called only from
+  the generator at `:684`) carried a `getattr(sys, "_base_executable", ...)` fallback and a
+  symlink-following `while` loop, both reachable only below 3.11: on 3.11 a venv's
+  `_base_executable` is the base interpreter, outside `sys.prefix`, where on 3.9 it is the venv's
+  own python. Both are deleted — the body is now `str(Path(sys._base_executable))` — under the
+  owner's rule that workaround code leaves by deletion, not by a rewritten branch. Proved
+  behavior-identical first, on four states (in a venv, outside one, `venv --copies`,
+  `venv --symlinks`), and that the recorded interpreter still outlives the venv it was made from.
+  The docstring's "Before 3.11" clause went with the branch it documented. `just test`'s wheel
+  step installs and runs the wrapper from the built wheel, exercising the new form end to end.
 
 **Done-line**: `just lint`, `just test devpro`.
 

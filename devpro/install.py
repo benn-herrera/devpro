@@ -232,17 +232,8 @@ runpy.run_module("devpro", run_name="__main__", alter_sys=True)
 
 def base_interpreter() -> str:
     """The Python running this process as it stands outside any virtual environment: a venv's python is
-    gone with the venv, while the interpreter it was made from outlives it. Before 3.11,
-    `sys._base_executable` names the venv's own python on POSIX; that python is a link to the base, so
-    its links are followed only while they stay inside the venv: the first path outside it is the base
-    as the venv names it, where the end of the chain — a versioned build directory, say — can go with a
-    patch upgrade."""
-    executable = Path(getattr(sys, "_base_executable", sys.executable))
-    if sys.prefix == sys.base_prefix:
-        return str(executable)
-    while executable.is_relative_to(sys.prefix) and executable.is_symlink():
-        executable = Path(os.path.normpath(executable.parent / executable.readlink()))
-    return str(executable)
+    gone with the venv, while the interpreter it was made from outlives it."""
+    return str(Path(sys._base_executable))
 
 
 def wrapper_text(interpreter: str) -> str:
