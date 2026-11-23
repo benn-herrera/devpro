@@ -13,8 +13,8 @@ Packages run serially in the shared tree, in the order P1, P2, P3, P4.
 | P2 | landed: commit 3d4f058; done-lines green but for the two foreign runner-snippet pins | mechanical |
 | P3 | landed: commit 0bcae3a; third pair reads landed in deltas-applied | mechanical |
 | P4 | landed: commit 25bc0c4; all three done-lines green but for the two foreign runner-snippet pins | expert |
-| P5 | in progress: the review's five seats dispatching — python, typescript, browser, architect, prompt-engineer | expert |
-| P6 | drafted | expert |
+| P5 | landed: the five seats' synthesis | expert |
+| P6 | in progress: drafting the burndown from ACTIVE_PLAN_REVIEW.md | expert |
 
 ### P1 — one check body and one report builder in doccheck
 
