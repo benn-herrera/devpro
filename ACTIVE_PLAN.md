@@ -22,7 +22,7 @@ and the user owns their fate. Any other failure belongs to the package being don
 | B1 | landed: commit e845d82 | expert | `_venv` refuses what it cannot parse |
 | B2 | landed: commit a0e50a6 | mechanical | the wheel surface asserts the clean claim |
 | B3 | landed: commit 8997a13 | mechanical | check-wheel checks the floor on the interpreter it is handed |
-| B4 | in progress: dispatched to devpro-python-coder | expert | the wrapper enforces the floor on both branches |
+| B4 | in progress: re-dispatched on the entry-point approach | expert | the entry point enforces the floor; the wrapper stops checking versions |
 | B5 | dispatchable — serial after B4 | mechanical | the wording debts |
 
 ### P1 — the floor states 3.11
@@ -331,16 +331,39 @@ before any venv or wheel work: below the floor, exit non-zero with the floor mes
 done-line proves both the happy path and the guard's position: `just test wheel`, and `just
 check-wheel /usr/bin/python3`, which must fail with the floor message — not a wheel defect.
 
-#### B4 — the wrapper enforces the floor on both branches
+#### B4 — the entry point enforces the floor
 
-Scope: `devpro/install.py`
-(`_WRAPPER_TEXT`), `tests/test_devpro_install.py`. The recorded branch runs `supported` before
-trusting the recorded interpreter; the refusal message has two branch-dependent forms — the
-recorded-path form and the PATH form — and both name what the reader can act on (the recorded
-path, or the `python3` found and rejected). A new test case pins the recorded-branch refusal: a
-recorded path that exists and is below the floor, modeled on the `too_old` fixture, is refused,
-not run — the case does not exist today and would otherwise go unpinned. Done-line: `just lint`,
-`just test devpro`.
+The owner's decision, superseding the bash-branch approach mid-flight: the wrapper stops checking
+versions entirely — recorded interpreter or first `python3` on `PATH`, then exec — and the floor
+check lives in the Python entry point, refusing as its first act, before any other module of the
+copy is imported. Nothing has been imported yet at that point, so the check is nearly free; the
+tree evaluates modern syntax eagerly (P3), so the *position* is what makes the refusal clean — a
+below-floor interpreter that imports past the check dies in a class-definition `TypeError`
+instead. The check code itself stays museum-grade Python: it must run on any interpreter the copy
+might meet. The wrapper's `supported` check — a Python start and exit on every wrapper run —
+leaves with the branch it served.
+
+Scope: `devpro/__init__.py` (the executor verifies the import chain puts it first),
+`devpro/install.py` (`_WRAPPER_TEXT`), `tests/test_devpro_install.py`, and the design's pending
+shipped-files pair.
+
+**Work**:
+
+1. The entry-point check: `sys.version_info` below the floor writes
+   `error: devpro needs Python 3.11 or later, running under <version> (<executable>)` to stderr
+   and exits 1 — before any other import or statement that could fail on an old interpreter.
+2. `_WRAPPER_TEXT`: `supported()`, the refusal branch and its strings leave; the wrapper resolves
+   the recorded interpreter, else the first `python3` on `PATH`, and execs — unconditionally. The
+   `elif`-assignment shell structure the shell-dsl seat verified sound dissolves with the branch.
+3. Apply the design's pending shipped-files pair to its target.
+4. `tests/test_devpro_install.py`: the wrapper-level tests re-shape to interpreter resolution
+   (recorded exists → recorded used; gone → PATH) — the floor refusal is pinned at the Python
+   level, the check called with a synthetic below-floor version asserting the exit and the
+   message; the bash-level refusal scenarios that relied on `supported` change shape or leave
+   with it.
+
+**Done-line**: `just lint`, `just test devpro`, and `just dev-check-design-deltas-applied`
+reporting 8 pairs landed, 0 pending, problems 0.
 
 #### B5 — the wording debts
 
