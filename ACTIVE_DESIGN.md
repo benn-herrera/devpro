@@ -27,23 +27,70 @@ browser does. On the user's direction:
 the forensic child-tie repair runs one last time over the profiler records written since the last
 repair, before the installation is updated — the capture fix makes every edge after that correct.
 
-### The index's column headers do not sit over their columns
+## ARCHITECTURE delta
 
-The header row drifts out of alignment with the body's columns — "records", "dispatched agents",
-"first to last" and "span" do not sit over the cells they name. The header is likely a separate
-element from the body's rows (the body is drawn by script into its own `tbody`), so whatever widths
-the body's cells take are not shared with the header's.
+### [Recipes](PROJECT_DOCS/ARCHITECTURE/recipes.md)
 
-### The index's controls and sort reset when the view leaves and returns
+**As it stands:**
 
-The selector checkboxes (child rows, claude, opencode) and the column sort do not stick: going into
-a session's details view and coming back brings the index back to its defaults. The controls' state
-lives only in the page's script, so a re-navigation re-draws the page and reads nothing — the state
-wants either persistence (the URL's query, or `sessionStorage`) or the view to survive the
-round-trip.
+```
+`just lint` needs `shellcheck` on
+`PATH`, and where it is absent the recipe fails, naming it, rather than skip the shell check.
+```
 
-### No TypeScript type check
+**Becomes:**
 
-`devpro/harnesses/resources/opencode/index.ts`, `guardrail.ts` and the `tests/*.ts` runners are
-never type-checked: there is no `tsconfig` and no recipe. A recipe needs a declaration stub for
-`@opencode/plugin`.
+```
+`just lint` needs `shellcheck` on
+`PATH`, and where it is absent the recipe fails, naming it, rather than skip the shell check.
+`just lint` also type-checks what ships: the opencode harness's shipped TypeScript resources
+(`index.ts`, `guardrail.ts`) through `bunx tsc --noEmit` under a `tsconfig`, with a declaration
+stub for `@opencode/plugin`. The compiler rides unpinned — `bunx` takes the latest at run time,
+and pinning it is a later decision the project has not yet needed. The check's mandate is what
+ships: the test runners' TypeScript is dev-time only and outside it.
+```
+
+### [Harness profiler](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)
+
+**As it stands:**
+
+```
+the index of record files, every store
+the `.profiler-*` glob finds, one row per session — harness, session id, record count, first and
+last moments, and the span between them — each linking to `/page/<session-id>`, which serves that
+session's page in memory, the render's page carrying the same page data `tree --format html`
+produces.
+```
+
+**Becomes:**
+
+```
+the index of record files, every store
+the `.profiler-*` glob finds, one row per session — harness, session id, record count, first and
+last moments, and the span between them — each linking to `/page/<session-id>`, which serves that
+session's page in memory, the render's page carrying the same page data `tree --format html`
+produces. The header row and the body's rows take their column widths from one source, so every
+header sits over the column it names at every width the data produces.
+```
+
+**As it stands:**
+
+```
+The index carries simple
+controls — child-record rows on and off, claude and opencode on and off separately, and column
+heads sorting on the dispatched-agent count, the record count, the time and the span — and a
+failed feed names itself: an in-page notice naming the feed's failure, distinct from the
+no-records state a zero-record store renders.
+```
+
+**Becomes:**
+
+```
+The index carries simple
+controls — child-record rows on and off, claude and opencode on and off separately, and column
+heads sorting on the dispatched-agent count, the record count, the time and the span — and a
+failed feed names itself: an in-page notice naming the feed's failure, distinct from the
+no-records state a zero-record store renders. The controls' state and the sort in force live in
+the index page's URL — its query carries what the reader chose, so leaving the view and returning
+restores it — and the URL is a link the reader can copy.
+```
