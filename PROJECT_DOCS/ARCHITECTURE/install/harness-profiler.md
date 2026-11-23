@@ -16,12 +16,12 @@ modules, and `cli.py` imports the one whose subcommand runs. Its subcommands are
 `dashboard` verb, below.
 
 **Resources.** One file lives in `devpro/harnesses/resources/claude/profiler/`:
-`hp.sh`, the POSIX-sh launcher, which finds a devpro — the installation's own wrapper first — and
+`hp.sh`, the bash launcher, which finds a devpro — the installation's own wrapper first — and
 runs its `profiler` verb (no environment variable overrides the search). It carries the `!INSTALLED! … devpro` banner within its
 first ten lines — the banner rule binds every harness resource — and `harness_resource_copies` lands
 it at the path it holds below the install directory, so the install directory gains
-`profiler/hp.sh`. The launcher is this harness's alone: mage ships no resources, and opencode's
-capture is the plugin's own TypeScript, below.
+`profiler/hp.sh`. Its source is claude's: mage ships no resources, and an opencode install carries
+the same file, below, though opencode's capture is the plugin's own TypeScript.
 
 **The launcher's finder.** Its first candidate is the installation's wrapper (SPEC.md, Deployed
 Surfaces, Shipped files), resolved from the launcher's own location: `../tools/devpro.sh` from

@@ -99,15 +99,18 @@ it already installs with. This holds under every harness, mage included.
 
 A project installed by 0.17.x upgrades in two runs, as the repository's README states that walk under
 *Updating* ({clauses.REPOSITORY_URL}): the first prunes the retired docdicer tools, the docdicer
-skill's earlier files and the include line that named them, and writes the dicing snippets package's
-own include line into the same runner file; the second reports nothing. The launcher's `.venv` under
+skill's earlier files and the include line that named them, and writes the include line of the
+devpro tools package's runner snippets into the same runner file; the second reports nothing. The launcher's `.venv` under
 `skills/docdicer/tools/` survives both, inert, and the operator deletes `skills/docdicer/tools/` once.
 
 Where a project's `.devpro-temp/` holds a profiler store from before the `.profiler-*` rename —
 `claude-profiler/` or `opencode-profiler/` — the install renames it in place and prints
 `renamed <old> → <new>`; where the new name already stands it leaves the old store alone and says so,
-never merging the two, and merging or deleting it is the operator's. `../../tools/devpro.sh profiler doctor` names a
-store the rename left behind, with the move to make.
+never merging the two, and merging or deleting it is the operator's.
+
+{clauses.WRAPPER}
+
+`DP profiler doctor` names a store the rename left behind, with the move to make.
 
 ## Inspecting
 
@@ -463,17 +466,8 @@ above follows one plan, this one looks at what many plans have left behind.
 
 ## The board
 
-The `{clauses.ref(name="docdicer")}` skill routes the board.
-
-- A live board of the project's roadmap, design and plan, the dashboard's board panel.
-  `../../tools/devpro.sh dashboard [<project-dir>] [--port <number>]` serves it on `127.0.0.1` and prints the URL,
-  which opens on the board: its root answers a redirect to `/board/`. The profiler view is the
-  second view, at `/profiler/` — the session records, each linking to its own page — reached from
-  the page's top nav. `../../tools/devpro.sh dashboard --help` gives the rest.
-- The session offers to run it as a background process; the user who would rather run it gets the
-  command line. It never finishes, so a dispatched agent hands over the command line instead of
-  running it. It serves until the user asks for it to stop: Ctrl-C, or the stop button beside the
-  board's connection indicator.
+The `{clauses.ref(name="docdicer")}` skill routes the board: a live board of the project's roadmap,
+design and plan, the dashboard's board panel, beside its profiler view of the session records.
 
 
 ## Where work stands

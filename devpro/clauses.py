@@ -23,6 +23,7 @@ MCP_TOOL_PREFIX = "@!hrn-mcp-tool-prefix!@"
 SCRATCH_RULE = "@!hrn-scratch-rule!@"
 MEMORY_FILE = "@!hrn-memory-file!@"
 PLUGIN_NAME = "@!plg-name!@"
+PROJECT_WRAPPER = "@!plg-project-wrapper!@"
 RECIPE_RULE = "@!hrn-recipe-rule!@"
 KBASE_PROJECT_RULE = "@!hrn-kbase-project-rule!@"
 RELOAD_RULE = "@!hrn-reload-rule!@"
@@ -368,6 +369,13 @@ LOGS_NOT_STDOUT = """Never write logs to stdout when stdout carries data — std
 APPLE_PROJECT_FILES = """Info.plist, entitlements, Package.swift, Xcode project settings"""
 APPLE_BUILD_TOOLS = """`xcodebuild`, `swift build`, or `swift test`"""
 APPLE_VIOLATION_LEVEL = """as warnings/errors with structured metadata"""
+
+# ─── Running devpro from a skill ─────────────────────────────────────────────
+
+_WRAPPER_FROM_SKILL = "`../../tools/devpro.sh` resolved from this skill's own directory to an absolute path"
+_WRAPPER_RUN = "Run it with the project root as the working directory."
+WRAPPER = f"""`DP` below is the installation's wrapper, {_WRAPPER_FROM_SKILL}. {_WRAPPER_RUN}"""
+WRAPPER_PROFILER = f"""`DP` below is the installation's wrapper, the first of these that exists: {_WRAPPER_FROM_SKILL}, or `{PROJECT_WRAPPER}` at the project root. {_WRAPPER_RUN}"""
 
 # ─── Critical gotchas ────────────────────────────────────────────────────────
 

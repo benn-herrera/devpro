@@ -243,7 +243,7 @@ plan the same way.
   settled the package's text looks. `in progress`: dispatched and not landed. `landed`: accepted and
   committed.
 - Each package's `Rating` cell opens with `mechanical` or `expert`, rated as *Dispatch* rates its
-  dispatch; anything after the word is a note, its content bounded by *Dispatch*. *Purpose:* whoever reads the table sees which work runs on the
+  dispatch; anything after the word is a note, and names no model (*Dispatch*). *Purpose:* whoever reads the table sees which work runs on the
   {STEP_DOWN_MODEL_TERM}.
 - The post-plan review and the post-plan burndown (*Post-plan review*) are packages, each with its
   own ID and row; the review's title opens with `Post-plan review`, the burndown's with
@@ -324,10 +324,8 @@ approved can run as approved.
   its model; expert runs on the agent's own model. *Purpose:* settled work costs less, and judgment
   keeps the model it needs.
 - A plan states a package's rating, never its model: the {STEP_DOWN_MODEL_TERM} is resolved when the
-  dispatch is made, from the model set the dispatch runs under, not written into the plan — a
-  `Rating` cell's note names neither a model nor a step-down binding. *Purpose:* a model recorded in
-  a plan is a pin the plan cannot keep current; resolution made ahead of time is stale by the time
-  the dispatch reads it.
+  dispatch is made, as *Terms* states, not written into the plan. *Purpose:* a model recorded in a
+  plan is a pin the plan cannot keep current.
 - Before dispatching, state the agent count and model. More than one agent at once on the most
   capable model the installed agents name waits for a go that names the count. *Purpose:* a
   fan-out's cost shows only once it is spent.

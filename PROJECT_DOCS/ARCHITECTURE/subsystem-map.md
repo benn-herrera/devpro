@@ -50,18 +50,18 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
 - **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered by every
   install.
   `docdicer.py` routes the session to devpro's dicing verbs — `dice-doc`, `undice` and the check
-  verbs — run from the command line through the installation's wrapper, `../../tools/devpro.sh`
-  from the skill's directory (SPEC.md, Deployed Surfaces, Installed tree), and does not restate their
+  verbs — run from the command line through the installation's wrapper, which `clauses.WRAPPER`
+  names: `../../tools/devpro.sh` resolved from the skill's directory (SPEC.md, Deployed Surfaces,
+  Installed tree), run with the project root as working directory. It does not restate the verbs'
   `--help` (CONVENTIONS.md, A skill omits its tool's offered surface). The skill carries no install
-  step. Its runner instruction is back, naming the recipes of the `devpro` snippet set: where the
-  project's runner includes that set, the checks run through the recipes (by name
-  `devpro-help`, `devpro-check-plan`, `devpro-check-design`,
-  `devpro-check-design-deltas-applied` and `devpro-check-roadmap`), the four gates argumentless,
-  each checking the active file under the project root — the active plan, the active design, the
-  active design's applied deltas and `ROADMAP.md` — with a direct call through the wrapper for any other
-  (Plugins). Its board paragraph names the `dashboard` verb, run through the wrapper, for the board — the board is the
-  dashboard's panel, the `devpro kanban` verb retired with it — offering to run it as a background
-  process or handing over the command line, the user choosing.
+  step. Its runner instruction names the recipes of the `devpro` snippet set: where the project's
+  runner includes that set, the checks run through the recipes — `devpro-help`, and the four gates
+  `devpro-check-plan`, `devpro-check-design`, `devpro-check-design-deltas-applied` and
+  `devpro-check-roadmap`, which take no argument, each checking the active file under the project
+  root — the active plan, the active design, the active design's applied deltas and `ROADMAP.md` —
+  with a direct call through the wrapper for any other (Plugins). Its board paragraph names the
+  `dashboard` verb, run through the wrapper, for the board, the dashboard's panel, offering to run
+  it as a background process or handing over the command line, the user choosing.
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
   `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it
   renders only where kbase ships.
@@ -69,8 +69,10 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   supporting files, delivered under every harness. It renders the newest session's trace — read from
   either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
   `.profiler-*` ones `devpro profiler tree` walks — as text, as a self-contained HTML page, or
-  served over HTTP: its serve sections name the `dashboard` verb, run through the installation's wrapper, the records' serving being
-  the dashboard's profiler view now the profiler's own `serve` subcommand has retired, and the
+  served over HTTP by the dashboard's profiler view: its serve section names the `dashboard` verb,
+  run through the installation's wrapper, which `clauses.WRAPPER_PROFILER` names with a second
+  candidate, the bound harness's project wrapper at the project root (Rendering, Placeholders), for
+  the copy of the skill `profiler init` writes outside the install directory. The
   tree's drawing is the code's rule: `tree --verbose` draws every node of the session, and the
   plain tree draws the placeholder and marker nodes and the calls whose tool is in `PARENT_TOOLS`.
   The skill finds the profiler's launcher at `../../profiler/hp.sh`, the installed copy of claude's,
@@ -79,13 +81,14 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   (Install, Harness profiler).
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
-  under every harness. Its board section routes the board to the `dashboard` verb, run through the installation's
-  wrapper — the board is the dashboard's panel — and names no recipe; its install, update and
+  under every harness. Its board section routes the board to the `docdicer` skill and names no
+  command and no recipe; `references/installing.md` runs `profiler doctor` through the wrapper
+  `clauses.WRAPPER` names; its install, update and
   version commands name the `devpro` command on `PATH` (SPEC.md, Deployed Surfaces, Shipped files). The description names the uses SPEC.md, Guide and README lists, and
   says it is not for a change to the consuming project's own code. `SKILL.md` is a route, as the
   `development` skill's *Route* table is: one row per starting place SPEC.md, Guide and README
-  lists, under the never-edit rule it states. The `development` and `docdicer` rows name their skill
-  by a plain reference (`clauses.ref`), safe because every install carries both.
+  lists, under the never-edit rule it states. The `development`, `docdicer` and `profiler` rows name
+  their skill by a plain reference (`clauses.ref`), safe because every install carries all three.
   `references/installing.md` carries everything else about the installed set. That includes three
   paragraphs of its own, each dropped where its value is empty:
   - the `reload_rule` placeholder (Rendering, Placeholders), which says to run `/reload-plugins`

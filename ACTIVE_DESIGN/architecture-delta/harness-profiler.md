@@ -10,7 +10,7 @@ environment variable overrides the search).
 **Becomes:**
 
 ```
-`hp.sh`, the POSIX-sh launcher, which finds a devpro — the installation's own wrapper first — and
+`hp.sh`, the bash launcher, which finds a devpro — the installation's own wrapper first — and
 runs its `profiler` verb (no environment variable overrides the search).
 ```
 

@@ -1,5 +1,5 @@
 """docdicer: the skill that dices markdown into trees of small linked files, and undices them, routing
-to the dicing verbs of the `devpro` command."""
+to the dicing verbs of the installation's wrapper."""
 
 from devpro import clauses
 from devpro.definition import Definition
@@ -44,19 +44,19 @@ dice, undice or link-check any of it unless the user directs that for it specifi
 
 ## The verbs
 
-Dice, undice and check through the dicing verbs, run from the command line through the installation's
-wrapper, `../../tools/devpro.sh` from the skill's directory: `../../tools/devpro.sh dice-doc`,
-`../../tools/devpro.sh undice` and the check verbs (`check-links`, `check-tree`, `check-plan`,
-`check-design`, `check-roadmap`). The verbs' `--help` is the command list, and this skill does not
-restate it.
+{clauses.WRAPPER}
 
-Where the project's runner includes the `devpro` snippet set, the checks run through its recipes
-(by name `devpro-help`, `devpro-check-plan`, `devpro-check-design`,
-`devpro-check-design-deltas-applied` and `devpro-check-roadmap`), the four gates argumentless, each
+Dice, undice and check through the dicing verbs, run from the command line through `DP`: `DP dice-doc`,
+`DP undice` and the check verbs (`check-links`, `check-tree`, `check-plan`, `check-design`,
+`check-roadmap`). The verbs' `--help` is the command list, and this skill does not restate it.
+
+Where the project's runner includes the `devpro` snippet set, the checks run through its recipes:
+`devpro-help`, and the four gates `devpro-check-plan`, `devpro-check-design`,
+`devpro-check-design-deltas-applied` and `devpro-check-roadmap`, which take no argument, each
 checking the active file under the project root — the active plan, the active design, the active
-design's applied deltas and `ROADMAP.md` — with a direct call through the wrapper for any other.
+design's applied deltas and `ROADMAP.md` — with a direct call through `DP` for any other.
 
-`../../tools/devpro.sh dashboard [<project-dir>] [--port <number>]` serves the project's development surface on
+`DP dashboard [<project-dir>] [--port <number>]` serves the project's development surface on
 `127.0.0.1` and prints the URL: it opens on the board of its roadmap, design and plan, the
 dashboard's board panel at `/board/` (the root answers a redirect to it), and the profiler view at
 `/profiler/` lists the session records, each linking to its own page. Offer to run it as a background

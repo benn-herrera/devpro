@@ -143,7 +143,7 @@ def _run(
     if path is None:
         path = f"{_devpro_shim(cwd).parent}:{os.environ['PATH']}"
     return subprocess.run(
-        ["sh", str(launcher), *args],
+        ["bash", str(launcher), *args],
         input=stdin,
         capture_output=True,
         text=True,
@@ -334,7 +334,7 @@ def test_a_launcher_finding_an_unusable_devpro_captures_silently_and_reports_oth
         script.chmod(0o755)
         environment = {**os.environ, "PATH": f"{broken}:/usr/bin:/bin"}
     done = subprocess.run(
-        ["sh", str(launcher), command],
+        ["bash", str(launcher), command],
         input=payload,
         capture_output=True,
         text=True,
@@ -367,7 +367,7 @@ def test_a_launcher_whose_wrapper_lacks_the_execute_bit_runs_no_devpro_from_path
     project = tmp_path / "project"
     project.mkdir()
     done = subprocess.run(
-        ["sh", str(launcher), "capture", "claude"],
+        ["bash", str(launcher), "capture", "claude"],
         input=_PAYLOAD,
         capture_output=True,
         text=True,

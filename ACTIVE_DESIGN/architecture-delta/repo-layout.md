@@ -49,8 +49,9 @@ The three deployed surfaces are absent from this listing:
 **Becomes:**
 
 ```
-The package's modules depend one way: `kanban/` imports `doccheck/` and `dicing/`, `doccheck/`
-imports `dicing/`, `dashboard/` imports the panels it serves, and none of them imports a module that imports it.
+The package's modules depend one way: `kanban/` imports `doccheck/` and `dicing.dicerlib`,
+`doccheck/` imports `dicing.dicerlib`, `profiler/` reads `kanban/`'s stylesheet as package data,
+`dashboard/` imports the panels it serves, and none of them depends on a module that depends on it.
 
 The three deployed surfaces are absent from this listing:
 ```

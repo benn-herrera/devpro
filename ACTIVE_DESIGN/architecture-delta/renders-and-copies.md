@@ -51,7 +51,7 @@ file too, since `development` ships there, and there it refuses.
 
 The devpro tools package takes the same package copy for its two rows — `runner-snippets` to
 `tools/runner-snippets/`, and the running package, `PACKAGE_ROOT`, to `tools/devpro/` through
-`_shipped` and unstamped — and adds one written file, the wrapper `tools/devpro.sh`: a POSIX-sh
+`_shipped` and unstamped — and adds one written file, the wrapper `tools/devpro.sh`: a bash
 script carrying the installed banner below its shebang, holding the path of the running
 interpreter's base executable — the Python a virtual environment was made from, where the install
 runs in one — and running the copy as SPEC.md, Shipped files states. A changed interpreter path is

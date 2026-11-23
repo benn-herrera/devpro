@@ -13,11 +13,7 @@ in-page notice naming the feed's failure), not a console line no dashboard reade
 
 ### claude profiler records not being captured
 
-Have not seen any new records for claude under the profiler and have run claude code more than once.
-
-### devpro runner-snippets import line not installing
-
-`just agents` in this  repo should add the `import?` line to justfile but does not
+A claude project session writes no record to `.devpro-temp/.profiler-claude/`.
 
 ## Features
 
@@ -105,9 +101,14 @@ previous layer left.
 
 ## Maintenance
 
-### Profiler time stamps in local
+### Profiler pages show timestamps in UTC, not local time
 
-They are currently in UTC which no one reads in their head
+The trace list and the session page show their timestamps in UTC.
+
+### Bump python req to >=3.11
+
+Simplifies a bunch of code. Probably saves on hook startup time.
+Brew installation eliminates the bulk of the 'breadth of usability' problem that <=3.9 was addressing.
 
 ### dicing.dicerlib is pointless nesting
 

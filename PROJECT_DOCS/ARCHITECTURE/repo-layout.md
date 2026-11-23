@@ -42,8 +42,9 @@ devtools/               repository-maintenance tooling — never installed; impo
 tests/                  the root test suite, the `devpro` package's tests and the repository-wide checks, run as the `devpro` test surface (`just test devpro`) — never installed
 ```
 
-The package's modules depend one way: `kanban/` imports `doccheck/` and `dicing/`, `doccheck/`
-imports `dicing/`, `dashboard/` imports the panels it serves, and none of them imports a module that imports it.
+The package's modules depend one way: `kanban/` imports `doccheck/` and `dicing.dicerlib`,
+`doccheck/` imports `dicing.dicerlib`, `profiler/` reads `kanban/`'s stylesheet as package data,
+`dashboard/` imports the panels it serves, and none of them depends on a module that depends on it.
 
 The three deployed surfaces are absent from this listing: no rendered definition is checked in, so
 there is no copy to serve from, compare against or drift from; each is rendered to order into the

@@ -38,7 +38,7 @@ the file is read. Every other copied file — a package's `.gitignore` and every
 and every harness resource is installed byte-verbatim.
 
 A definition body names no installed path below the harness directory for a session to run or edit. A
-script inside a skill's own directory is named relative to that directory: the
+script the install places is named relative to the directory of the skill that names it: the
 profiler's launcher sits in the install directory's `profiler/` and is named relative to the skill's
 directory (`../../profiler/hp.sh`), and so is the installation's wrapper, in its `tools/`
 (`../../tools/devpro.sh`; Shipped files states which commands run through it). The

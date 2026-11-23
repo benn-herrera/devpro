@@ -11,8 +11,9 @@
 
 ```
 `docdicer.py` routes the session to devpro's dicing verbs — `dice-doc`, `undice` and the check
-  verbs — run from the command line through the installation's wrapper, `../../tools/devpro.sh`
-  from the skill's directory (SPEC.md, Deployed Surfaces, Installed tree),
+  verbs — run from the command line through the installation's wrapper, which `clauses.WRAPPER`
+  names: `../../tools/devpro.sh` resolved from the skill's directory (SPEC.md, Deployed Surfaces,
+  Installed tree), run with the project root as working directory.
 ```
 
 **As it stands:**
@@ -38,8 +39,8 @@ served over HTTP: its serve sections name the `devpro dashboard` verb,
 **Becomes:**
 
 ```
-served over HTTP: its serve sections name the `dashboard` verb, run through the installation's
-  wrapper,
+served over HTTP by the dashboard's profiler view: its serve section names the `dashboard` verb,
+  run through the installation's wrapper,
 ```
 
 **As it stands:**
@@ -68,8 +69,9 @@ Its board section routes the board to the `devpro dashboard` verb — the
 **Becomes:**
 
 ```
-Its board section routes the board to the `dashboard` verb, run through the installation's
-  wrapper — the board is the dashboard's panel — and names no recipe; its install, update and
+Its board section routes the board to the `docdicer` skill and names no
+  command and no recipe; `references/installing.md` runs `profiler doctor` through the wrapper
+  `clauses.WRAPPER` names; its install, update and
   version commands name the `devpro` command on `PATH` (SPEC.md, Deployed Surfaces, Shipped files).
 ```
 
@@ -83,7 +85,7 @@ project's runner includes that set, the checks run through the recipes (`devpro`
 **Becomes:**
 
 ```
-project's runner includes that set, the checks run through the recipes (by name `devpro-help`,
+runner includes that set, the checks run through the recipes — `devpro-help`, and the four gates
 ```
 
 **As it stands:**
