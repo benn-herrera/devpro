@@ -350,7 +350,9 @@ not run — the case does not exist today and would otherwise go unpinned. Done-
 7. `devpro/install.py`'s `base_interpreter` docstring: states the CPython guarantee the code
    relies on (`D12`).
 8. `devpro/doccheck/planform.py:410`: the stale `"re.Pattern[str]"` quote is unquoted (`D14`).
-Done-line: `just lint`, `just test devpro`, `just test docs`.
+Done-line: `just lint`. The prose items' truth is the enumeration grep and the acceptance audit;
+the gate's unscoped run already carries item 8's import-time evaluation and the docs surface — a
+done-line restating it would be git-verification, not a test.
 
 Out of scope, noted: `D11` (the tap's unversioned `depends_on` — tap-side work); the installed
 copies' staleness (the owner's reinstall, after the plan lands); the two foreign recipe-pin
