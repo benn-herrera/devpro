@@ -3,8 +3,6 @@ form a design holds, or of the ticket layout a roadmap holds, each reported with
 text found there and the form accepted in its place, so that the fix can be made from the message.
 """
 
-from __future__ import annotations
-
 import os
 import re
 from collections.abc import Callable
@@ -160,22 +158,23 @@ def _check(
     return report.status
 
 
-def _report(path: str, *, reader: Callable[[str], Plan | Layout]) -> _Report:
-    """The report the plan or roadmap at path gives: the plan's, its work packages counted, where the
-    reader reads a plan; the roadmap's, its tickets counted, where it reads a roadmap. Each reports the
-    document's breaches, a summary line, and its status, 1 on any breach and 0 otherwise."""
+def _report(path: str, *, reader: Callable[[str], Plan], summary: Callable[[Plan, str], str]) -> _Report:
+    """The report the plan at path gives: the document's breaches, the summary line summary makes of it
+    and path, and its status, 1 on any breach and 0 otherwise."""
     document = reader(path)
-    if isinstance(document, Plan):
-        return _Report(
-            document.breaches,
-            f"plan checked: {path}, work packages: {len(document.packages)}, problems: {len(document.breaches)}",
-            1 if document.breaches else 0,
-        )
-    return _Report(
-        document.breaches,
-        f"roadmap checked: {path}, tickets: {sum(part.kind == TICKET for part in document.parts)},"
-        f" problems: {len(document.breaches)}",
-        1 if document.breaches else 0,
+    return _Report(document.breaches, summary(document, path), 1 if document.breaches else 0)
+
+
+def _plan_summary(plan: Plan, path: str) -> str:
+    """The plan's summary line, its work packages counted."""
+    return f"plan checked: {path}, work packages: {len(plan.packages)}, problems: {len(plan.breaches)}"
+
+
+def _roadmap_summary(roadmap: Layout, path: str) -> str:
+    """The roadmap's summary line, its tickets counted."""
+    return (
+        f"roadmap checked: {path}, tickets: {sum(part.kind == TICKET for part in roadmap.parts)},"
+        f" problems: {len(roadmap.breaches)}"
     )
 
 
@@ -305,7 +304,7 @@ def check_plan(plan: Optional[str], *, start: str, stdout: TextIO, stderr: TextI
         noun="plan",
         find=lambda root: active_document(root, ACTIVE_PLAN),
         absent="active plan",
-        read=lambda path: _report(path, reader=read_plan),
+        read=lambda path: _report(path, reader=read_plan, summary=_plan_summary),
         empty="cell",
         start=start,
         stdout=stdout,
@@ -348,7 +347,7 @@ def check_roadmap(roadmap: Optional[str], *, start: str, stdout: TextIO, stderr:
         noun="roadmap",
         find=roadmap_file,
         absent="roadmap",
-        read=lambda path: _report(path, reader=read_roadmap),
+        read=lambda path: _report(path, reader=read_roadmap, summary=_roadmap_summary),
         empty="line",
         start=start,
         stdout=stdout,

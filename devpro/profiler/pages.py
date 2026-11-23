@@ -802,7 +802,7 @@ def traces_feed(directory: Path | str) -> list[dict]:
     unreadable store, it is one `{stores: <count>}` entry: the stores the glob found, none of which
     held a record to draw — the count a zero-record store renders, which no session and no
     unreadable store would otherwise tell apart from a tree with no store at all. This is the
-    schema's one definition: the index script renders the rows from exactly these keys."""
+    schema's one definition: the index's own script renders the rows from exactly these keys."""
     sessions, unreadable = read_sessions(directory)
     dispatched = dispatches(sessions)
     children: dict[str, list[dict]] = {}
@@ -900,8 +900,8 @@ PAGE_PREFIX = "/page/"
 BAND_LEGEND = "<!--LEGEND-->"
 DISPATCHED_MARK = "<!--DISPATCHED-->"
 RETURN_MARK = "<!--RETURN-->"
-# The index's template: static. The rows' table is the one the script fills (`index.js`, the feed
-# `/api/traces` as its payload), and its script's read of the feed is what the page's body carries;
+# The index's template: static. The rows' table is the one the template's own script fills (the feed
+# `/api/traces` as its payload), and that script's read of the feed is what the page's body carries;
 # the script is the template's own text, as the deco is, and served under the pages' policy.
 # `<!--LAYER-->` stands in the template, as it does on a page, and the serve path fills it with the
 # link (`served_page`) — the render's own carrier for a page being the layer's text. The three band
