@@ -498,7 +498,12 @@ def _bun() -> str:
 
 
 def _run_ts(
-    script: Path, *, directory: Path, arg: str | None = None, stdin: str | None = None
+    script: Path,
+    *,
+    directory: Path,
+    arg: str | None = None,
+    stdin: str | None = None,
+    env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """One of the TypeScript runners under `tests/`, given the scratch directory it writes into, and
     the JSON payload it reads where it takes one: a runner given none is handed the directory."""
@@ -509,6 +514,7 @@ def _run_ts(
         encoding="utf-8",
         timeout=120,
         check=False,
+        env=env,
     )
     assert done.returncode == 0, done.stderr
     return done
@@ -538,8 +544,9 @@ def _moments(first: str, last: str) -> str:
 def test_the_decoration_script_reads_every_moments_cell_the_index_draws(tmp_path: Path) -> None:
     """`deco.js` over the moments cells the index's script writes — its `<time>` elements' datetimes
     the feed's epoch milliseconds, its text and title the raw UTC: a cell whose two instants share the
-    reader's calendar day reads `H:MM to H:MM` in the reader's zone, one whose instants fall on two
-    days carries each date, a second-precision instant keeps its second of it, and the cell's title
+    reader's calendar day reads `HH:MM to HH:MM` in the reader's zone, 24-hour with the hour's leading
+    zero kept; one whose instants fall on two days carries the date on its first end alone, the finish
+    being the next day's; a second-precision instant keeps its second of it, and the cell's title
     keeps the raw UTC to the byte; a cell with no `<time>` element keeps the text it served, the
     fallback where a cell's instants cannot be read. The script parses no cell text, so a moment
     whose rendered form moves still reads: a script that parses the served text instead stops
@@ -564,7 +571,7 @@ def test_the_decoration_script_reads_every_moments_cell_the_index_draws(tmp_path
 
     assert readings["readings"] == [
         "16:00 to 16:00",
-        "2025-12-31 22:00 to 2026-01-01 10:30",
+        "2025-12-31 22:00 to 10:30",
         "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z",
     ]
     assert readings["titles"] == [
@@ -572,6 +579,31 @@ def test_the_decoration_script_reads_every_moments_cell_the_index_draws(tmp_path
         "2026-01-01 06:00:00 UTC to 2026-01-01T18:30:00Z",
         "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z",
     ]
+
+
+def test_the_session_pages_header_reads_in_the_readers_clock(tmp_path: Path) -> None:
+    """The session page's header stamp is a moment like any the pages show: the page's own script
+    writes the first call's instant as a `<time>` in the subline — the raw UTC its text where no script
+    runs and the machine form its `datetime` — and the deco's sweep, loaded before that script as the
+    served page loads it, reads the stamp in the reader's local time, 24-hour, the raw UTC kept in its
+    title. A header left as a bare `toISOString` string is a moment in neither the reader's clock nor
+    a `<time>`, and no sweep can reach it."""
+    project = tmp_path / "project"
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:01.250Z", harness="claude")
+    launcher = _launcher(tmp_path / "harness")
+
+    with _serve(launcher, cwd=project) as url:
+        page = _fetch(f"{url}page/s-claude")
+
+    run = _run_ts(
+        _HERE / "profiler_deco_runner.ts",
+        directory=tmp_path,
+        stdin=json.dumps({"page": page}),
+        env={**os.environ, "TZ": "America/Los_Angeles"},
+    )
+    stamped = json.loads(run.stdout)["stamped"]
+
+    assert stamped == [["16:00", "2026-01-01 00:00 UTC"]]
 
 
 def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
@@ -907,7 +939,19 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     # row states, each harness's mark, and the zebra's one rule — the layer's `--zebra`, which the
     # layer switches with the color scheme itself, so the template carries no second rule for it.
     assert '<tbody id="rows"></tbody>' in index and 'href="/page/' not in index
-    assert re.search(r"<th>harness</th><th>session</th><th>records</th><th>first to last</th><th>span</th>", index)
+    assert re.search(
+        r'<th>harness</th><th>session</th><th aria-sort="none"><button type="button" class="sort" data-sort="records">'
+        r'records</button></th><th aria-sort="none"><button type="button" class="sort" data-sort="agents">'
+        r'dispatched agents</button></th><th aria-sort="none"><button type="button" class="sort" data-sort="first">'
+        r'first to last</button></th><th aria-sort="none"><button type="button" class="sort" data-sort="span">'
+        r"span</button></th>",
+        index,
+    )
+    # The controls: a box for the child rows and one per harness, each checked so the page opens on
+    # every row, and the notice a failed feed names itself in, standing empty and hidden.
+    for control in ('id="child-rows"', 'id="harness-claude"', 'id="harness-opencode"'):
+        assert re.search(rf'<input type="checkbox" {control} checked>', index), control
+    assert re.search(r'<p id="notice" class="notice" role="alert" hidden></p>', index)
     assert re.search(r"tr:nth-child\(odd\) td \{ background: var\(--zebra\); \}", index)
     assert "prefers-color-scheme: dark" not in index.split("<style>", 1)[1].split("</style>", 1)[0]
     assert re.search(r"\.harness\.opencode \{ background: #4a9eea; \}", index)
@@ -1004,6 +1048,9 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
         stdin=json.dumps({"index": index, "feed": crafted}),
     )
     drawn = json.loads(run.stdout)
+    # Every crafted entry draws a row: a zip that silently paired fewer rows would pass with the
+    # scale never checked, so the count is stated before the pairing.
+    assert len(drawn["rows"]) == len(crafted)
     for entry, cell in zip(
         drawn["rows"], ("<td>59s</td>", "<td>1m 30s</td>", "<td>2m</td>", "<td>1h</td>", "<td>1h 30m</td>")
     ):
@@ -1016,6 +1063,80 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
     drawn = json.loads(run.stdout)
     assert len(drawn["rows"]) == 1
     assert "No sessions recorded yet" in drawn["rows"][0] and "is unreadable" not in drawn["rows"][0]
+
+    # The controls, driven over the same served page: the child-rows box takes the dispatched rows out
+    # and leaves their dispatcher, naming the agents the feed holds; a harness's box takes its own
+    # sessions out; and a column head sorts the rows on its column — ascending on the first press and
+    # descending on the second — the dispatcher's children following it as they always do.
+
+    def driven(feed_in: list[dict], actions: list[dict]) -> list[str]:
+        run = _run_ts(
+            _HERE / "profiler_index_runner.ts",
+            directory=tmp_path,
+            stdin=json.dumps({"index": index, "feed": feed_in, "actions": actions}),
+        )
+        return json.loads(run.stdout)["rows"]
+
+    # A row's session id, in the order the rows stand; a full-width store row carries no link.
+    def ids(rows: list[str]) -> list[str]:
+        return [match.group(1) for row in rows if (match := re.search(r'href="/page/([^"]+)"', row))]
+
+    hidden_children = driven(json.loads(feed), [{"toggle": "child-rows"}])
+    assert ids(hidden_children) == ["s-claude", "s-p1", "s-p2"]
+    assert any("1 dispatched agent" in row for row in hidden_children)
+    assert ids(driven(json.loads(feed), [{"toggle": "harness-opencode"}])) == ["s-claude"]
+    assert ids(driven(json.loads(feed), [{"toggle": "harness-claude"}])) == ["s-p1", "s-p2", "s-child"]
+    # One feed in a known first-moment order, drawn in it: the records, the first moment and the span
+    # each order the rows differently, so a sort that reads no key leaves the feed's own order.
+    by_first = [
+        {"harness": "opencode", "id": "s-late", "records": 3, "first": 30, "last": 40, "span": 10},
+        {"harness": "claude", "id": "s-early", "records": 1, "first": 10, "last": 20, "span": 40},
+        {"harness": "opencode", "id": "s-mid", "records": 2, "first": 20, "last": 30, "span": 20},
+    ]
+    assert ids(driven(by_first, [])) == ["s-late", "s-early", "s-mid"]
+    assert ids(driven(by_first, [{"sort": "records"}])) == ["s-early", "s-mid", "s-late"]
+    assert ids(driven(by_first, [{"sort": "records"}, {"sort": "records"}])) == ["s-late", "s-mid", "s-early"]
+    assert ids(driven(by_first, [{"sort": "first"}])) == ["s-early", "s-mid", "s-late"]
+    assert ids(driven(by_first, [{"sort": "span"}])) == ["s-late", "s-mid", "s-early"]
+    # The arrow the reader sees is the head's `aria-sort`: ascending on the first press, descending on
+    # the second, and every other head back to none, so the table says which order it stands in.
+
+    def sorts_state(actions: list[dict]) -> list[list[str]]:
+        run = _run_ts(
+            _HERE / "profiler_index_runner.ts",
+            directory=tmp_path,
+            stdin=json.dumps({"index": index, "feed": by_first, "actions": actions}),
+        )
+        return json.loads(run.stdout)["sorts"]
+
+    assert sorts_state([]) == [["records", "none"], ["agents", "none"], ["first", "none"], ["span", "none"]]
+    assert sorts_state([{"sort": "span"}]) == [
+        ["records", "none"],
+        ["agents", "none"],
+        ["first", "none"],
+        ["span", "ascending"],
+    ]
+    assert sorts_state([{"sort": "span"}, {"sort": "span"}]) == [
+        ["records", "none"],
+        ["agents", "none"],
+        ["first", "none"],
+        ["span", "descending"],
+    ]
+    # The dispatched-agent count sorts on a dispatcher's children, which `by_first` holds none of: the
+    # head sorts, and its ties keep the feed's order.
+    assert ids(driven(by_first, [{"sort": "agents"}])) == ["s-late", "s-early", "s-mid"]
+
+    # A feed that fails names itself: the page shows the notice, in the feed's own words, and draws no
+    # row — the no-records reading standing for a feed that answered with nothing to draw, not one
+    # that answered nothing at all.
+    run = _run_ts(
+        _HERE / "profiler_index_runner.ts",
+        directory=tmp_path,
+        stdin=json.dumps({"index": index, "feed": [], "actions": [{"fail": "boom"}]}),
+    )
+    failed = json.loads(run.stdout)
+    assert failed["rows"] == []
+    assert failed["notices"] == ["The traces feed could not be read: HTTP 500."]
 
 
 def test_a_session_naming_itself_as_a_child_is_drawn_once_in_its_own_place(tmp_path: Path) -> None:

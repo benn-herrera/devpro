@@ -95,14 +95,22 @@ session's page in memory, the render's page carrying the same page data `tree --
 produces. The index's page file is static — no row is in its text — and its script fetches the
 records' feed the server answers at `/api/traces`, one JSON entry per session with the columns
 above, the stores the glob finds but cannot read among them as unreadable, and renders the rows
-client-side — the board's pattern, the payload consumed client-side. The session page's embedded
+client-side — the board's pattern, the payload consumed client-side. The index carries simple
+controls — child-record rows on and off, claude and opencode on and off separately, and column
+heads sorting on the dispatched-agent count, the record count, the time and the span — and a
+failed feed names itself: an in-page notice naming the feed's failure, distinct from the
+no-records state a zero-record store renders. The session page's embedded
 payload is unchanged: it is, and stays, the feed the page's script reads. A session an opencode record names as its dispatch's child is drawn under the session that
 dispatched it — a dispatch's child one level deep; deeper chains read on the session's page, whose
 tree draws every dispatch as a context — that session's row carrying the count of the rows beneath
 it and each child's naming the call that dispatched it; the rows alternate their tone, and each
-carries its harness's mark. The moments are the raw UTC where no script runs and the reader's local
-time where the page's decoration script does, the raw string kept in the cell's title, and the span
-is its own column. A session's page carries its dispatcher in the frame band, linked to that
+carries its harness's mark. The moments are the raw UTC where no script runs; with it, every moment the pages and their
+headers show — the moments cells, the index's first-to-last line, the session page's header stamp —
+reads in the reader's local time, 24-hour, one notation, the machine form only in the `<time>`
+elements' `datetime` attributes and the raw UTC in the titles. A first-to-last whose ends share the
+reader's day reads as two times with no date; one crossing midnight reads with the date on its
+first end alone and the finish end time only, the next day's being obvious. The span is its own
+column. A session's page carries its dispatcher in the frame band, linked to that
 session's page, where one dispatched it, and an Agent row links to the child session's page where
 the record names one: a child's page the dashboard does not serve answers the 404 any unrecorded
 session's page answers. A top nav persists across both views — the `devpro` brand, then `kanban` and

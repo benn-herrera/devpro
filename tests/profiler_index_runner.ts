@@ -1,18 +1,25 @@
 // Runs the served index's own row-rendering script over a feed, for tests/test_devpro_profiler.py.
 //
 // Usage: bun tests/profiler_index_runner.ts
-// Stdin: JSON {index}: the served `/profiler/` page.
-// Stdout: JSON {rows, keys, fetches}: each row the script drew as its markup, the feed-entry keys the
-// script read, and the paths it fetched, in order.
+// Stdin: JSON {index, feed, actions?}: the served `/profiler/` page, the feed its script reads, and
+// optionally the controls a reader drives after the feed settles — each `{toggle: <input id>}` a
+// checkbox's `change`, each `{sort: <head data-sort>}` a column head's `click`, and `{fail: <text>}`
+// a feed that answers `HTTP 500` instead of the feed.
+// Stdout: JSON {rows, keys, fetches, notices}: each row the script drew as its markup, the feed-entry
+// keys the script read, the paths it fetched in order, and the notices the page showed.
 //
 // The page's script is run against a document that is what the template says it is — the `#rows`
-// body and the element factory — and a `fetch` that answers the feed the test hands it. The keys the
-// script reads are recorded by wrapping each parsed entry in a proxy, so the run names the schema
-// the script consumes rather than the one a reader of the script believes.
+// body, the empty notice, the static controls and column heads its text carries, and the element
+// factory — and a `fetch` that answers the feed the test hands it. The keys the script reads are
+// recorded by wrapping each parsed entry in a proxy, so the run names the schema the script consumes
+// rather than the one a reader of the script believes. The controls are read from the served page's
+// own markup, so a page whose controls the script names differently from the template is a state no
+// press reaches.
 
 import { readFileSync } from "node:fs"
 
-type Input = { index: string; feed: object[] }
+type Action = { toggle?: string; sort?: string; fail?: string }
+type Input = { index: string; feed: object[]; actions?: Action[] }
 
 const input: Input = JSON.parse(await Bun.stdin.text())
 const BLOCK = /<script>([\s\S]*?)<\/script>/g
@@ -25,6 +32,16 @@ class Node {
   attrs: Record<string, string> = {}
   childNodes: (Node | string)[] = []
   className = ""
+  listeners: Record<string, (() => void)[]> = {}
+  // A checkbox's state, the property the page's script reads and a press switches.
+  checked = false
+  // The `<th>` a column head's button stands in, where it stands in one: the cell `closest('th')`
+  // finds, and the one `aria-sort` belongs on.
+  cell: Node | null = null
+
+  closest(selector: string): Node | null {
+    return selector === "th" ? this.cell : null
+  }
 
   constructor(tag: string) {
     this.tag = tag
@@ -32,6 +49,10 @@ class Node {
 
   set textContent(text: string) {
     this.childNodes = [text]
+  }
+
+  get textContent(): string {
+    return this.childNodes.map((child) => (typeof child === "string" ? child : child.textContent)).join("")
   }
 
   set href(href: string) {
@@ -46,8 +67,36 @@ class Node {
     this.attrs.colspan = String(span)
   }
 
+  set hidden(hidden: boolean) {
+    this.attrs.hidden = String(hidden)
+  }
+
+  get hidden(): boolean {
+    return this.attrs.hidden === "true"
+  }
+
+  get dataset(): Record<string, string> {
+    return { sort: this.attrs["data-sort"] ?? "" }
+  }
+
   setAttribute(name: string, value: string) {
     this.attrs[name] = value
+  }
+
+  removeAttribute(name: string) {
+    delete this.attrs[name]
+  }
+
+  getAttribute(name: string) {
+    return this.attrs[name] ?? null
+  }
+
+  addEventListener(event: string, listener: () => void) {
+    ;(this.listeners[event] ??= []).push(listener)
+  }
+
+  fire(event: string) {
+    for (const listener of this.listeners[event] ?? []) listener()
   }
 
   append(...nodes: (Node | string)[]) {
@@ -60,6 +109,7 @@ class Node {
 
   html(): string {
     const attrs = Object.entries({ ...this.attrs, ...(this.className ? { class: this.className } : {}) })
+      .filter(([, value]) => value !== undefined)
       .map(([name, value]) => ` ${name}="${value}"`)
       .join("")
     const inner = this.childNodes.map((child) => (typeof child === "string" ? child : child.html())).join("")
@@ -68,8 +118,29 @@ class Node {
 }
 
 const body = new Node("tbody")
+const notice = new Node("p")
+notice.hidden = true
 const keys = new Set<string>()
 const fetches: string[] = []
+
+// The page's static controls and column heads, built from the served markup in document order, so
+// the ids and `data-sort` keys the script binds are the page's own. A `<th>` that holds a button
+// joins it as the cell the press takes, the way the page's own `closest('th')` does.
+const staticNodes = (html: string): Node[] => {
+  const found: Node[] = []
+  let head: Node | null = null
+  for (const [, tag, attrs] of html.matchAll(/<(th|input|button)\b([^>]*)>/g)) {
+    if (tag === "th") head = new Node("th")
+    const node = new Node(tag)
+    for (const [, name, value] of attrs.matchAll(/([\w-]+)(?:="([^"]*)")?/g)) node.attrs[name] = value ?? ""
+    if (tag === "input") node.checked = "checked" in node.attrs
+    if (tag === "button" && head) node.cell = head
+    if (tag !== "th") found.push(node)
+  }
+  return found
+}
+const statics = staticNodes(input.index)
+const byId = new Map(statics.filter((node) => node.attrs.id).map((node) => [node.attrs.id, node]))
 
 // Every property the script reads on a feed entry, at any depth, is the key it reads.
 const watched = (value: unknown): unknown => {
@@ -83,15 +154,21 @@ const watched = (value: unknown): unknown => {
   })
 }
 
+let failure: string | null = null
+
 Object.assign(globalThis, {
   document: {
     createElement: (tag: string) => new Node(tag),
-    getElementById: (id: string) => (id === "rows" ? body : null),
+    getElementById: (id: string) => (id === "rows" ? body : id === "notice" ? notice : (byId.get(id) ?? null)),
     querySelector: () => null,
-    querySelectorAll: () => [],
+    querySelectorAll: (selector: string) =>
+      selector === ".sort"
+        ? statics.filter((node) => node.tag === "button" && node.cell !== null)
+        : statics.filter((node) => node.tag === "input"),
   },
   fetch: async (path: string) => {
     fetches.push(path)
+    if (failure !== null) return { ok: false, status: 500, json: async () => ({}) }
     return { ok: true, status: 200, json: async () => watched(input.feed) }
   },
   setInterval: () => 0,
@@ -104,6 +181,32 @@ const rows = () => body.childNodes.map((child) => (typeof child === "string" ? c
 new Function(scripts[0])()
 // The script's fetch is a promise chain; one turn of the microtask queue settles it.
 await new Promise((resolve) => setTimeout(resolve, 0))
+
+// The reader's own presses, in the order the test names them: a control's switch and a head's press.
+for (const action of input.actions ?? []) {
+  if (action.fail !== undefined) {
+    failure = action.fail
+    body.childNodes = []
+    await new Function(scripts[0])()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  } else if (action.toggle) {
+    const control = byId.get(action.toggle)
+    if (!control) throw new Error(`the page carries no control ${action.toggle}`)
+    control.checked = !control.checked
+    control.fire("change")
+  } else if (action.sort) {
+    const head = statics.find((node) => node.tag === "button" && node.attrs["data-sort"] === action.sort)
+    if (!head) throw new Error(`the page carries no head sorting on ${action.sort}`)
+    head.fire("click")
+  }
+}
 globalThis.console = running
 
-running.log(JSON.stringify({ rows: rows(), keys: [...keys].sort(), fetches }))
+// Each column head's sort state, read off the `<th>` the press marks: the cell's `aria-sort`, or
+// `none` where the page does not say.
+const sorts = statics
+  .filter((node) => node.tag === "button" && node.cell !== null)
+  .map((node) => [node.attrs["data-sort"], (node.cell as Node).attrs["aria-sort"] ?? "none"])
+running.log(
+  JSON.stringify({ rows: rows(), keys: [...keys].sort(), fetches, sorts, notices: notice.hidden ? [] : [notice.textContent] }),
+)

@@ -97,10 +97,18 @@ const words = (call) => {
 document.getElementById('sid').textContent = D.session.slice(0, 8);
 const starts = D.calls.map((c) => c.start).concat(D.markers.map((m) => m.at));
 const first = Math.min(...starts);
-document.getElementById('subline').textContent = [
-  Number.isFinite(first) ? new Date(first).toISOString().slice(0, 16).replace('T', ' ') + ' UTC' : '',
-  D.branch ? `branch ${D.branch}` : '', `${D.calls.length} calls`, `${D.contexts.length} contexts`,
-].filter(Boolean).join(' · ');
+// The header's stamp is the session's first call as a `<time>`: the raw UTC serves its text where no
+// script runs, where the deco's one sweep reads it in the reader's own time, and the machine form
+// stands in its `datetime`, as it does on every moment the pages show.
+const head = document.getElementById('subline');
+if (Number.isFinite(first)) {
+  const moment = document.createElement('time');
+  moment.dateTime = new Date(first).toISOString();
+  moment.textContent = new Date(first).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+  moment.title = moment.textContent;
+  head.append(moment);
+}
+head.append([head.childNodes.length ? ' · ' : '', D.branch ? `branch ${D.branch}` : '', `${D.calls.length} calls`, `${D.contexts.length} contexts`].filter(Boolean).join(' · '));
 
 // ---------- sequence diagram: one lifeline per context ----------
 

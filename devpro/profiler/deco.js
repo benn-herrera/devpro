@@ -84,34 +84,52 @@
 
 // ---------- the index's moments ----------
 
-// A clock reading in the reader's local time: the hour alone where this reader leaves the hour's
-// leading zero off its clock, as `toLocaleTimeString` says, and the minutes always two digits.
-const momentClock = (date) => `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
+// A clock reading in the reader's local time, 24-hour: `toLocaleTimeString`'s 24-hour form says the
+// reader's own hour separator and no clock leaves its hour's leading zero off, the minutes always two
+// digits.
+const momentClock = (date) =>
+  date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 const dayOf = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 const sameDay = (a, b) => dayOf(a) === dayOf(b);
 
 // The two instants in the reader's local time: the times alone where they share the reader's calendar
-// day, and each with its date where they do not, so a span across midnight reads as two days.
+// day, and where they do not the date on the first end alone — the finish being the next day's is
+// obvious — so a span across midnight reads as one day and one clock running into the next.
 const localMoments = (first, last) => {
   const [a, b] = [new Date(first), new Date(last)];
   if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return null;
-  return sameDay(a, b) ? `${momentClock(a)} to ${momentClock(b)}` : `${dayOf(a)} ${momentClock(a)} to ${dayOf(b)} ${momentClock(b)}`;
+  return sameDay(a, b) ? `${momentClock(a)} to ${momentClock(b)}` : `${dayOf(a)} ${momentClock(a)} to ${momentClock(b)}`;
 };
 
-// Each moments cell's text becomes the local reading; its title keeps the raw UTC untouched. The
-// index draws its rows after this script loads, so the sweep runs on the rows container's own
-// changes as well as on what stands at load: a cell drawn later is read when it arrives.
+// One moment standing alone — the session page's header stamp — is its clock reading alone.
+const localMoment = (stamp) => {
+  const at = new Date(stamp);
+  return Number.isNaN(at.getTime()) ? null : momentClock(at);
+};
+
+// A moments cell's text becomes the local reading and a lone moment's its own; each keeps its title,
+// the raw UTC untouched. The index draws its rows after this script loads, so the sweep runs on the
+// rows container's own changes as well as on what stands at load: a cell drawn later is read when it
+// arrives. A cell is two `<time>` elements, a lone moment one, and the sweep tells them by the count.
 const readMoments = (cell) => {
-  const [first, last] = Array.from(cell.querySelectorAll("time")).map((time) => time.getAttribute("datetime"));
-  const local = first && last ? localMoments(first, last) : null;
+  const stamps = Array.from(cell.querySelectorAll("time")).map((time) => time.getAttribute("datetime"));
+  const local = stamps.length === 1 ? localMoment(stamps[0]) : stamps.length === 2 ? localMoments(stamps[0], stamps[1]) : null;
   // The local reading moves the cell's text but never its `<time>` instants: rewriting it changes
   // nothing this sweep reads, so the observation it fires comes round to the same text and stops.
   if (local && cell.textContent !== local) cell.textContent = local;
 };
-document.querySelectorAll("td .moments").forEach(readMoments);
+const MOMENTS = ".moments, #subline time";
+document.querySelectorAll(MOMENTS).forEach(readMoments);
 const rows = document.getElementById("rows");
 if (rows)
-  new MutationObserver(() => rows.querySelectorAll("td .moments").forEach(readMoments)).observe(rows, {
+  new MutationObserver(() => rows.querySelectorAll(".moments").forEach(readMoments)).observe(rows, {
+    childList: true,
+  });
+// The session page's header stamp is written by the page's own script, which loads after this one:
+// the subline's changes carry it in.
+const subline = document.getElementById("subline");
+if (subline)
+  new MutationObserver(() => subline.querySelectorAll("time").forEach(readMoments)).observe(subline, {
     childList: true,
   });

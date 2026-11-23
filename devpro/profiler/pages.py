@@ -919,6 +919,12 @@ tr td:first-child.child + td { padding-left: 2.4rem; }
 .harness { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; }
 .harness.opencode { background: #4a9eea; }
 .harness.claude { background: #d97757; }
+.controls { display: flex; gap: 1rem; margin: 0 0 0.6rem; font-size: 0.9rem; color: var(--muted); }
+.sort { font: inherit; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }
+.sort:hover, .sort:focus-visible { color: var(--accent); }
+th[aria-sort="ascending"] .sort::after { content: " ▲"; }
+th[aria-sort="descending"] .sort::after { content: " ▼"; }
+.notice { color: var(--fg); border-left: 3px solid var(--c0); padding: 0.3rem 0 0.3rem 0.6rem; margin: 0 0 0.6rem; }
 </style>
 <nav class="site-nav scanlines"><span class="brand">devpro</span><span class="views"><a class="view" href="/board/">kanban</a><a class="view active" href="/profiler/" aria-current="page">profiler</a></span><span class="nav-server">
   <span class="dot"></span>
@@ -929,8 +935,14 @@ tr td:first-child.child + td { padding-left: 2.4rem; }
 <script src="/profiler/deco.js"></script>
 <main>
 <h1>Sessions</h1>
+<div class="controls">
+<label><input type="checkbox" id="child-rows" checked> child rows</label>
+<label><input type="checkbox" id="harness-claude" checked> claude</label>
+<label><input type="checkbox" id="harness-opencode" checked> opencode</label>
+</div>
+<p id="notice" class="notice" role="alert" hidden></p>
 <table>
-<thead><tr><th>harness</th><th>session</th><th>records</th><th>first to last</th><th>span</th></tr></thead>
+<thead><tr><th>harness</th><th>session</th><th aria-sort="none"><button type="button" class="sort" data-sort="records">records</button></th><th aria-sort="none"><button type="button" class="sort" data-sort="agents">dispatched agents</button></th><th aria-sort="none"><button type="button" class="sort" data-sort="first">first to last</button></th><th aria-sort="none"><button type="button" class="sort" data-sort="span">span</button></th></tr></thead>
 <tbody id="rows"></tbody>
 </table>
 </main>
@@ -983,25 +995,35 @@ const isoStamp = (ms) => {
   return day(d) + 'T' + clock(d) + fraction + 'Z';
 };
 
-// The moments' cell: the raw UTC to the reader with no script run, that same reading as the cell's
-// title, and each instant as a `<time>` element the deco rewrites to the reader's own clock — the
-// data, never the cell's text, read.
+// A moment as the index draws one: the machine form in the `<time>` element's `datetime`, the raw UTC
+// in its title and — where no script runs — its text. The deco finds a moment by this tag, wherever
+// it stands: a moments cell's two ends and the index's first-to-last line are the same element.
+const moment = (ms) => {
+  const node = el('time', utcStamp(ms));
+  node.setAttribute('datetime', isoStamp(ms));
+  node.title = utcStamp(ms);
+  return node;
+};
+
+// The two moments' cell. The first to the second and the last with its milliseconds are the moments'
+// raw UTC reading, the one the cell's text serves and its title states.
 const moments = (session) => {
   const cell = el('span', undefined, 'moments');
   cell.title = utcStamp(session.first) + ' to ' + isoStamp(session.last);
-  const first = el('time', utcStamp(session.first));
-  first.setAttribute('datetime', isoStamp(session.first));
-  const last = el('time', isoStamp(session.last));
-  last.setAttribute('datetime', isoStamp(session.last));
-  cell.append(first, ' to ', last);
+  cell.append(moment(session.first), ' to ', moment(session.last));
   return cell;
 };
 
 // One row: a dispatcher's carries the count of the children drawn beneath it; a child's carries the
 // accent bar's empty cell and names the call that dispatched it. Both carry the harness with its
-// mark where the page holds one, their own count, moments and span.
-const row = ({ session, dispatched }) => {
+// mark where the page holds one, their own count, moments and span. A row's sort keys are the
+// entry's own: the dispatcher's children count, its record count, its first moment and its span.
+const row = ({ session, dispatched, children = 0 }) => {
   const tr = el('tr');
+  tr.setAttribute('data-agents', String(children));
+  tr.setAttribute('data-records', String(session.records));
+  tr.setAttribute('data-first', String(session.first));
+  tr.setAttribute('data-span', String(session.span));
   const harness = el('td');
   const mark = HARNESS_MARKS.includes(session.harness) ? session.harness : '';
   harness.append(el('span', undefined, ('harness ' + mark).trim()), session.harness);
@@ -1009,8 +1031,8 @@ const row = ({ session, dispatched }) => {
   id.append(link(session.id));
   if (dispatched) {
     id.append(' ', el('small', '↳ child — ' + dispatched.name));
-  } else if (session.children) {
-    const count = session.children === 1 ? '1 dispatched agent' : session.children + ' dispatched agents';
+  } else if (children) {
+    const count = children === 1 ? '1 dispatched agent' : children + ' dispatched agents';
     id.append(' ', el('small', '— ' + count));
   }
   const window = el('td');
@@ -1023,32 +1045,90 @@ const row = ({ session, dispatched }) => {
 // where the feed holds no session to draw.
 const wideRow = (text) => {
   const cell = el('td', text);
-  cell.colSpan = 5;
+  cell.colSpan = 6;
   const tr = el('tr');
   tr.append(cell);
   return tr;
 };
-const unreadable = (store) => wideRow(store + ' is unreadable');
 const empty = () => wideRow('No sessions recorded yet: run a session with the hook installed.');
+const unreadable = (store) => wideRow(store + ' is unreadable');
 
-const show = (feed) => {
+// What the page holds: every session the feed drew, in the feed's order, each with its children
+// counted and the call that dispatched it where one did — and every store the feed could not read.
+// The controls read this, and a control's change redraws the table from it rather than fetching the
+// feed again. No control hides a store: a store that could not be read is named wherever it stands.
+let held = [];
+let stores = [];
+let order = null; // the column the heads were last sorted on, and now ascending or descending
+
+// A session the page hides: the child-rows control takes every dispatched session out, and each
+// harness's control its own sessions. A dispatcher whose children are hidden keeps its row, and its
+// count names the agents the feed holds rather than the rows on screen.
+const hides = (session) =>
+  (!document.getElementById('child-rows').checked && session.dispatcher) ||
+  !document.getElementById('harness-' + session.harness).checked;
+
+// The table from what the page holds: the feed's order, or the sorted order where a head was chosen,
+// each dispatcher's row followed by its own visible children, and each unread store beside them. A
+// dispatcher's count is the agents the feed holds beneath it, whether or not the page is showing them.
+const draw = () => {
+  const visible = held.filter((session) => !hides(session));
+  const counted = new Map();
   const children = new Map();
-  for (const entry of feed) {
-    if (entry.unreadable || !entry.dispatcher) continue;
-    if (!children.has(entry.dispatcher.session)) children.set(entry.dispatcher.session, []);
-    children.get(entry.dispatcher.session).push(entry);
+  for (const session of held) {
+    if (!session.dispatcher) continue;
+    const parent = session.dispatcher.session;
+    counted.set(parent, (counted.get(parent) || 0) + 1);
+    if (hides(session)) continue;
+    if (!children.has(parent)) children.set(parent, []);
+    children.get(parent).push(session);
+  }
+  const tops = visible.filter((session) => !session.dispatcher);
+  if (order) {
+    const s = order.descending ? -1 : 1;
+    tops.sort((a, b) => s * (a[order.key] < b[order.key] ? -1 : a[order.key] > b[order.key] ? 1 : 0));
   }
   const drawn = [];
-  for (const entry of feed) {
-    if (entry.unreadable) {
-      drawn.push(unreadable(entry.unreadable));
-    } else if (!entry.dispatcher) {
-      const kids = children.get(entry.id) || [];
-      drawn.push(row({ session: { ...entry, children: kids.length } }));
-      for (const kid of kids) drawn.push(row({ session: kid, dispatched: kid.dispatcher }));
-    }
+  for (const session of tops) {
+    const kids = children.get(session.id) || [];
+    drawn.push(row({ session, children: counted.get(session.id) || 0 }));
+    for (const kid of kids) drawn.push(row({ session: kid, dispatched: kid.dispatcher }));
   }
+  for (const store of stores) drawn.push(unreadable(store));
   document.getElementById('rows').replaceChildren(...(drawn.length ? drawn : [empty()]));
+};
+
+const show = (feed) => {
+  held = feed.filter((entry) => !entry.unreadable);
+  stores = feed.filter((entry) => entry.unreadable).map((entry) => entry.unreadable);
+  draw();
+};
+
+// Column heads: a head's first press sorts ascending, its next descending, the arrow on the head
+// saying which, and a third press on the same head returns the feed's own order. A head's `data-sort`
+// is the feed entry's own key its column sorts on. The sort state is the column head's own —
+// `aria-sort` on the `<th>`, where a table's sort belongs — so the button is the label and the
+// press, and the cell announces the order.
+for (const label of document.querySelectorAll('.sort')) {
+  label.addEventListener('click', () => {
+    const cell = label.closest('th');
+    const key = label.dataset.sort;
+    if (order === null || order.key !== key) order = { key, descending: false };
+    else if (!order.descending) order = { key, descending: true };
+    else order = null;
+    for (const other of document.querySelectorAll('.sort')) other.closest('th').setAttribute('aria-sort', 'none');
+    if (order) cell.setAttribute('aria-sort', order.descending ? 'descending' : 'ascending');
+    draw();
+  });
+}
+for (const control of document.querySelectorAll('.controls input')) control.addEventListener('change', draw);
+
+// The feed's failure names itself in the page, in the feed's own words, and is no session's absence:
+// the no-records reading stands for a feed that answered with nothing to draw.
+const notice = (error) => {
+  const line = document.getElementById('notice');
+  line.textContent = 'The traces feed could not be read: ' + String(error.message || error) + '.';
+  line.hidden = false;
 };
 
 fetch(FEED, { cache: 'no-store' })
@@ -1057,9 +1137,10 @@ fetch(FEED, { cache: 'no-store' })
     return response.json();
   })
   .then(show)
-  .catch((error) =>
-    console.warn('the traces feed could not be read: ' + String(error)),
-  );
+  .catch((error) => {
+    console.warn('the traces feed could not be read: ' + String(error));
+    notice(error);
+  });
 </script>
 </body>
 </html>
