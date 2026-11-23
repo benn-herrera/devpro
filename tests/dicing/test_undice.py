@@ -12,8 +12,8 @@ from typing import Optional
 
 import pytest
 
-from devpro.dicing.dicerlib.dicedoc import _all_reproduced
-from devpro.dicing.dicerlib.outline import DEEPEST_SPLIT_LEVEL, plan_sections
+from devpro.dicing.dicedoc import _all_reproduced
+from devpro.dicing.outline import DEEPEST_SPLIT_LEVEL, plan_sections
 
 # Planned as entry-point.md (line 1), alpha.md (lines 2-3), beta.md (line 4).
 MONOLITH = ["# Doc", "## Alpha", "text", "## Beta"]

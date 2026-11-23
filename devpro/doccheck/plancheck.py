@@ -11,7 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Optional, TextIO
 
-from ..dicing.dicerlib.textfile import read_text
+from ..dicing.textfile import read_text
 from .planform import (
     ACTIVE_DESIGN,
     ACTIVE_PLAN,

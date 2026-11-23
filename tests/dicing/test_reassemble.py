@@ -1,6 +1,6 @@
 import pytest
 
-from devpro.dicing.dicerlib.reassemble import contents_cut, own_end
+from devpro.dicing.reassemble import contents_cut, own_end
 
 
 @pytest.mark.parametrize(

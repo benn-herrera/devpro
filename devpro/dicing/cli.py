@@ -13,7 +13,7 @@ from typing import TextIO
 
 def _refuse_unreadable(roots: list[str], *, err: TextIO) -> bool:
     """Report each markdown file under roots that cannot be read as a file; True if any."""
-    from .dicerlib.linkcheck import markdown_files
+    from .linkcheck import markdown_files
 
     unreadable = [f for f in markdown_files(roots) if not (os.path.isfile(f) and os.access(f, os.R_OK))]
     for f in unreadable:
@@ -82,17 +82,17 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
     run_dir = os.getcwd()  # the one read of the working directory: every pass below is given it
     verb = args.verb
     if verb == "dice-doc":
-        from .dicerlib.dicedoc import dice_doc
+        from .dicedoc import dice_doc
 
         return dice_doc(
             args.monolith, args.out, args.map, root=run_dir, stdout=out, stderr=err, deepest=int(args.split_level)
         )
     if verb == "undice":
-        from .dicerlib.dicedoc import undice
+        from .dicedoc import undice
 
         return undice(args.tree, args.monolith, root=run_dir, stdout=out, stderr=err, deepest=int(args.split_level))
     if verb == "dice-docs":
-        from .dicerlib.manifest import dice_docs
+        from .manifest import dice_docs
 
         return dice_docs(args.manifest, args.src, args.work, root=run_dir, stdout=out, stderr=err)
     if verb == "check-links":
@@ -101,7 +101,7 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
             parser.error(f"no such root: {', '.join(missing)}")
         if _refuse_unreadable(args.roots, err=err):
             return 2
-        from .dicerlib.linkcheck import check_markdown_links
+        from .linkcheck import check_markdown_links
 
         try:
             return 0 if check_markdown_links(args.roots, out=out, err=err) else 1
@@ -115,7 +115,7 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
             parser.error(f"no such directory: {', '.join(missing)}")
         if _refuse_unreadable(args.roots, err=err):
             return 2
-        from .dicerlib.treecheck import check_trees
+        from .treecheck import check_trees
 
         try:
             return 0 if check_trees(args.roots, out=out, err=err) else 1

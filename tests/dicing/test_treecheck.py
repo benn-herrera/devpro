@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from devpro.dicing.dicerlib.treecheck import check_tree
+from devpro.dicing.treecheck import check_tree
 
 
 def _tree(root: Path, files: dict[str, str]) -> None:

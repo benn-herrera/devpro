@@ -14,13 +14,13 @@ from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Optional
 
-from ..dicing.dicerlib.anchors import heading_anchor_list
-from ..dicing.dicerlib.heads import ENTRY_POINT, HEADS
-from ..dicing.dicerlib.linkcheck import markdown_files
-from ..dicing.dicerlib.linkrewrite import URL_SCHEME, never_rebased
-from ..dicing.dicerlib.linkscan import link_targets, plain_text
-from ..dicing.dicerlib.reassemble import own_end
-from ..dicing.dicerlib.textfile import fence_flags, is_blank, read_text, split_lines
+from ..dicing.anchors import heading_anchor_list
+from ..dicing.heads import ENTRY_POINT, HEADS
+from ..dicing.linkcheck import markdown_files
+from ..dicing.linkrewrite import URL_SCHEME, never_rebased
+from ..dicing.linkscan import link_targets, plain_text
+from ..dicing.reassemble import own_end
+from ..dicing.textfile import fence_flags, is_blank, read_text, split_lines
 
 ACTIVE_DESIGN = "ACTIVE_DESIGN.md"
 ACTIVE_PLAN = "ACTIVE_PLAN.md"

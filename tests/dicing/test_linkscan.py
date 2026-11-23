@@ -1,6 +1,6 @@
 import pytest
 
-from devpro.dicing.dicerlib.linkscan import link_targets, plain_text
+from devpro.dicing.linkscan import link_targets, plain_text
 
 
 @pytest.mark.parametrize(

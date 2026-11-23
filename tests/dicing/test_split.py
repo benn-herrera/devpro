@@ -1,7 +1,7 @@
 import io
 
-from devpro.dicing.dicerlib.outline import Outline, plan_sections
-from devpro.dicing.dicerlib.split import contents_block
+from devpro.dicing.outline import Outline, plan_sections
+from devpro.dicing.split import contents_block
 
 
 def _outline(lines):

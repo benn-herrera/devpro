@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from devpro.dicing.dicerlib.outline import Outline, plan_sections, section_name, slug, split_number
+from devpro.dicing.outline import Outline, plan_sections, section_name, slug, split_number
 
 
 def _numbers(line):

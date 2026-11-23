@@ -1,6 +1,6 @@
 import io
 
-from devpro.dicing.dicerlib import manifest
+from devpro.dicing import manifest
 
 
 def test_title_is_the_plain_heading_text(tmp_path):

@@ -18,13 +18,13 @@ from dataclasses import asdict, dataclass, replace
 from typing import Any, Optional, TypeVar, Union
 from urllib.parse import quote
 
-from ..dicing.dicerlib.heads import CONTENTS, ENTRY_POINT, HEADS, INDEX, contents_line, directory_head
-from ..dicing.dicerlib.linkcheck import markdown_files, prose_links
-from ..dicing.dicerlib.linkrewrite import never_rebased, rel
-from ..dicing.dicerlib.linkscan import link_targets, scan
-from ..dicing.dicerlib.outline import contents_text, section_name, split_number
-from ..dicing.dicerlib.reassemble import contents_cut
-from ..dicing.dicerlib.textfile import fence_flags, is_blank, read_text, replace_lines
+from ..dicing.heads import CONTENTS, ENTRY_POINT, HEADS, INDEX, contents_line, directory_head
+from ..dicing.linkcheck import markdown_files, prose_links
+from ..dicing.linkrewrite import never_rebased, rel
+from ..dicing.linkscan import link_targets, scan
+from ..dicing.outline import contents_text, section_name, split_number
+from ..dicing.reassemble import contents_cut
+from ..dicing.textfile import fence_flags, is_blank, read_text, replace_lines
 from ..doccheck.planform import (
     ACTIVE_DESIGN,
     ACTIVE_PLAN,

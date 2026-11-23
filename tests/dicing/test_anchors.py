@@ -1,6 +1,6 @@
 import pytest
 
-from devpro.dicing.dicerlib.anchors import github_anchor, heading_anchor_list
+from devpro.dicing.anchors import github_anchor, heading_anchor_list
 
 
 @pytest.mark.parametrize(

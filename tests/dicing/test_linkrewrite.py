@@ -6,8 +6,8 @@ from typing import Optional
 
 import pytest
 
-from devpro.dicing.dicerlib.linkrewrite import Linker, LinkMap, Tree, rel
-from devpro.dicing.dicerlib.outline import Outline, plan_sections
+from devpro.dicing.linkrewrite import Linker, LinkMap, Tree, rel
+from devpro.dicing.outline import Outline, plan_sections
 
 # Diced as: entry-point.md (1-2), 1-alpha.md (3-5), 2-beta/index.md (6), 2-beta/the-walk-step.md (7),
 # 2-beta/another-walk.md (8), 2-beta/2.1-gamma.md (9-10).

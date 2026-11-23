@@ -8,8 +8,8 @@ from typing import Optional
 
 import pytest
 
-from devpro.dicing.dicerlib.linkcheck import prose_links
-from devpro.dicing.dicerlib.textfile import split_lines
+from devpro.dicing.linkcheck import prose_links
+from devpro.dicing.textfile import split_lines
 from devpro.kanban import board as board_module
 from devpro.kanban.board import (
     INSTRUCTION,

@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from devpro.dicing.dicerlib import textfile
-from devpro.dicing.dicerlib.textfile import fence_flags, join_lines, read_lines, replace_lines, split_lines, write_lines
+from devpro.dicing import textfile
+from devpro.dicing.textfile import fence_flags, join_lines, read_lines, replace_lines, split_lines, write_lines
 
 
 @pytest.mark.parametrize(
