@@ -5,26 +5,6 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
-### A failed `/api/traces` fetch leaves the index's table empty, silently
-
-The index's row-rendering script catches the feed failure and logs a console line only — the
-operator sees an empty table with no state naming why. The failure wants a user-visible state (an
-in-page notice naming the feed's failure), not a console line no dashboard reader opens.
-
-### claude profiler records not being captured
-
-A claude project session writes no record to `.devpro-temp/.profiler-claude/`.
-
-### DRY violation in doccheck
-
-devpro/doccheck/plancheck.py has two copy-paste duplicates:
-- check_plan, check_design and check_roadmap (:295, :313, :338) have the same body. Each could be a call to one shared function, given the reader and report for
-  its document type.
-- _plan_report and _roadmap_report (:159, :168) are the same function, differing only in the reader they call.
-
-Optionally, the verb name check-roadmap is defined twice: CHECK_ROADMAP_COMMAND in devpro/definitions/skills/development.py:35, and CHECK_ROADMAP in
-devpro/doccheck/cli.py:15.
-
 ## Features
 
 ### Codex CLI harness support
@@ -40,6 +20,15 @@ imports and a 32 KiB cap; agents, skills, hooks and MCP live in separate places,
 
 Expand the model category map assignment scheme to allow specifying a specific model
 to a specific agent. Allow globbing for agent names, e.g. *-coder
+
+### Dashboard doc state indicator
+
+When roadmap, design, or plan are not kanban compliant an indication should show on the kanban
+board or in the nav area - maybe an 'errors' top level nav
+
+### Dashboard config editor
+
+Settings top nav for letting you edit the supported config fields (some design needed around the globbable keys)
 
 ### Change-case analysis process
 
@@ -111,27 +100,10 @@ previous layer left.
 
 ## Maintenance
 
-### Profiler pages show timestamps in UTC, not local time
-
-The trace list and the session page show their timestamps in UTC.
-
 ### Bump python req to >=3.11
 
 Simplifies a bunch of code. Probably saves on hook startup time.
 Brew installation eliminates the bulk of the 'breadth of usability' problem that <=3.9 was addressing.
-
-### dicing.dicerlib is pointless nesting
-
-None of the other modules separate out just cli with everything else in a submodule.
-Move all the source files up to dicing/ - inconsistency is agent distraction.
-
-### A test harness re-implementing the browser's DOM starts from a verified-empty state
-
-The bun runners re-implement a minimal DOM in-process. A harness whose asserted subject is absent
-(say the selector misses) can pass a vacuous run silently — W5's probe caught the deco reading
-nothing through `document` while the run reported green. One definition sentence, shipped with the
-clauses: a run whose asserted subject is absent is a failure, not a pass. Carried by the next plan
-touching the harnesses or the clauses.
 
 ### (STICKY) Periodic load-bearing-ness pruning pass
 
@@ -161,15 +133,6 @@ per harness.
 
 ## Testing
 
-### A `check-links` duplicate-heading check — a shared heading's citations must name their `-N` fragment
-
-`check_markdown_links` collects a document's anchors into a set, so two `###` headings with the
-same text (the design's `## ARCHITECTURE delta` and `## Code delta` carrying the same
-`Install — Harness profiler` heading) produce one anchor, and a citation's `-1` fragment is
-indistinguishable from the first heading — nothing machine-checks which section a reader lands on.
-The check refuses a document whose duplicate headings carry citations not naming the `-N` variant
-(the post-plan review's R10 tooling gap).
-
 ### A shared sentence written out inside a longer paragraph is not checked for double delivery
 
 `tests/test_devpro.py` `_double_paragraphs` compares whole prose units and never splits them into
@@ -185,13 +148,6 @@ harnesses' text go unchecked.
 `devpro/harnesses/resources/opencode/index.ts`, `guardrail.ts` and the `tests/*.ts` runners are
 never type-checked: there is no `tsconfig` and no recipe. A recipe needs a declaration stub for
 `@opencode/plugin`.
-
-### No shell lint
-
-No recipe runs `shellcheck` over `devtools/scripts/*.sh`,
-`devpro/harnesses/resources/*/hooks/*.sh`, `devpro/harnesses/resources/claude/profiler/hp.sh` or
-`devpro/development-tools/cold-read.sh`. The user directs it: the sources need to be lintable,
-shell included — the resources are shipped code.
 
 ### Browser-driven visual verification
 
