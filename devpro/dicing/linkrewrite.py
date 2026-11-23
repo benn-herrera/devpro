@@ -9,7 +9,6 @@ path; "<target>\t<heading>\t<path>" sends a link whose following text quotes tha
 import posixpath
 import re
 from dataclasses import dataclass, field
-from typing import Optional
 
 from .anchors import heading_anchor_list
 from .linkscan import OnLink, OnRef, scan
@@ -92,7 +91,7 @@ class Linker:
     """Rewrites lines of one diced document; counts the section references it resolved and the
     ones it could not."""
 
-    def __init__(self, outline: Outline, tree: Tree, lines: Optional[list[str]] = None) -> None:
+    def __init__(self, outline: Outline, tree: Tree, lines: list[str] | None = None) -> None:
         self.outline = outline
         self.tree = tree
         self.resolved = 0

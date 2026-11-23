@@ -10,8 +10,6 @@ syntax trees.
 The package is imported from the repository root, which `just test` puts on PYTHONPATH.
 """
 
-from __future__ import annotations
-
 import ast
 import dataclasses
 import importlib.util

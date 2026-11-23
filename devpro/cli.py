@@ -4,8 +4,6 @@ The report is `print`: a short-lived CLI whose exit code is its contract, where
 a logging setup would be a second reporting regime.
 """
 
-from __future__ import annotations
-
 import argparse
 import os
 import sys

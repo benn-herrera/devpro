@@ -18,8 +18,6 @@ takes the plugin's name as a string and knows nothing of its members. The manife
 plugin-form harness renders is here, its name and marker the bound plugin's.
 """
 
-from __future__ import annotations
-
 import dataclasses
 import json
 import re
@@ -145,7 +143,7 @@ class McpEntryBuilder(Protocol):
     def __call__(self, *, command: str) -> dict[str, str | list[str]]: ...
 
 
-def mcp_json(entry: McpEntryBuilder) -> HarnessFile:
+def mcp_json(entry: McpEntryBuilder) -> "HarnessFile":
     """The plugin's own `.mcp.json` at ROOT, rendered whole where `KBASE_OWNER` ships: the `kbase` server
     alone under `mcpServers`, its entry from `entry`. JSON admits no comment, so the marker is the
     command the entry names, with `json.dumps`'s space after the colon."""
@@ -242,7 +240,7 @@ class Harness:
                 "registrations a path, builder and marker"
             )
 
-    def bound(self, plugin_name: str) -> Harness:
+    def bound(self, plugin_name: str) -> "Harness":
         """This harness for the plugin `plugin_name`: every `{plugin}` template — the plugin directory, the
         project harness directory, the reference and MCP tool prefixes, and the marker of each rendered
         file, of the registry and of the guardrail registration — filled with it."""

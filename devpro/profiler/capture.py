@@ -6,8 +6,6 @@ so the launcher exits 0 with no output where the devpro command is missing, and 
 swallows every error.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import re

@@ -3,8 +3,6 @@ frontmatter values, and its body text; and the `SkillFile` values a skill's
 supporting files are. Harness-neutral: no harness spellings, no model names, no
 I/O, no rendering."""
 
-from __future__ import annotations
-
 import re
 from dataclasses import dataclass
 from pathlib import PurePosixPath

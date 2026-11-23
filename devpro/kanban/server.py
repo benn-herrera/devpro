@@ -27,10 +27,11 @@ Endpoints, each answering JSON but the page's files and the served documents:
 import json
 import os
 import threading
+from collections.abc import Callable
 from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler
 from importlib.resources import files
-from typing import Any, Callable, Optional, TextIO
+from typing import Any, TextIO
 from urllib.parse import parse_qs, unquote, urlsplit
 
 from .. import __version__
@@ -55,10 +56,10 @@ _CONTENT_TYPES = {".html": "text/html", ".js": "text/javascript", ".css": "text/
 _UNREADABLE = "unreadable"
 
 
-def _snapshot(root: str) -> dict[str, Optional[str]]:
+def _snapshot(root: str) -> dict[str, str | None]:
     """Each watched file's content digest; None where it is not a file, `_UNREADABLE` where it is
     one that cannot be read."""
-    snapshot: dict[str, Optional[str]] = {}
+    snapshot: dict[str, str | None] = {}
     for path in watched_files(root):
         if not os.path.isfile(path):
             snapshot[path] = None
@@ -100,7 +101,7 @@ class KanbanServer:
         self._snapshot = _snapshot(root)
         self._board = read_board(root)
         self._version = 1
-        self._reported: Optional[str] = None  # the unreadable file last named on stderr
+        self._reported: str | None = None  # the unreadable file last named on stderr
         self.dashboard = after
         _Handler._local_host = type(after).handler._local_host
         _Handler._send = type(after).handler._send
@@ -132,7 +133,7 @@ class KanbanServer:
         with self._lock:
             self._lock.notify_all()
 
-    def payload(self, since: Optional[str]) -> dict[str, Any]:
+    def payload(self, since: str | None) -> dict[str, Any]:
         """The board payload, once its version differs from since; at most LONG_POLL_SECONDS late."""
         with self._lock:
             if since is not None:
@@ -209,7 +210,7 @@ def _field(body: dict[str, Any], name: str, kind: type) -> Any:
     return value
 
 
-def _asset(name: str) -> Optional[tuple[bytes, str]]:
+def _asset(name: str) -> tuple[bytes, str] | None:
     """The page file name, as served, and its content type; None where the page has no such file."""
     content_type = _CONTENT_TYPES.get(os.path.splitext(name)[1])
     if content_type is None:
@@ -220,7 +221,7 @@ def _asset(name: str) -> Optional[tuple[bytes, str]]:
     return None
 
 
-def _document(root: str, url_path: str) -> Optional[tuple[bytes, str]]:
+def _document(root: str, url_path: str) -> tuple[bytes, str] | None:
     """The served file url_path, percent-decoded (a byte that is not UTF-8 decoded as a name holds
     it), names, and its content type; None where it names none or that file cannot be read. The file
     read is the one `served_files` names, an absolute path this function never derives from

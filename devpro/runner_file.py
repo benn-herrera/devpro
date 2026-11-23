@@ -3,8 +3,6 @@ project can reach the runner snippets its shipped packages carry, and the cleanu
 retired package left there. Which snippet sets exist is the caller's: each function here takes the
 sets it is given."""
 
-from __future__ import annotations
-
 import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path, PurePosixPath

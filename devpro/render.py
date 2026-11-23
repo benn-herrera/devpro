@@ -3,8 +3,6 @@ files a harness renders beside them, and the writer. Holds no prose, knows no
 individual definition, fills a body's placeholders in one pass and never rescans
 what it filled, and writes the rendered definitions and harness files."""
 
-from __future__ import annotations
-
 import dataclasses
 import functools
 import re

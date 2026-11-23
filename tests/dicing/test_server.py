@@ -28,11 +28,11 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from dataclasses import asdict
 from email.message import Message
 from importlib.resources import files
 from pathlib import Path
-from typing import Callable, Optional
 from urllib.parse import urlsplit
 
 import pytest
@@ -119,7 +119,7 @@ def serve():
     """Start a dashboard, its board panel over a project's root; every one started is stopped."""
     started = []
 
-    def start(root: str, *, stderr: Optional[io.StringIO] = None) -> _Client:
+    def start(root: str, *, stderr: io.StringIO | None = None) -> _Client:
         server = DashboardServer(root, stderr=stderr if stderr is not None else io.StringIO())
         server.start()
         thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})

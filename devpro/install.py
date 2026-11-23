@@ -23,8 +23,6 @@ a path it writes: the consumer's git is the record of what an install changed. W
 settings file names harnesses and `--harness` is not given, `install_selected` drives one install per
 harness it names, each rendered from that harness's settings-file map and component list."""
 
-from __future__ import annotations
-
 import json
 import os
 import re

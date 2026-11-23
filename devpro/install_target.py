@@ -16,8 +16,6 @@ package was imported from — is refused: an install there writes the set into t
 and an editable install then serves that set as the package's own.
 """
 
-from __future__ import annotations
-
 import os
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath

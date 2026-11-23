@@ -1,7 +1,5 @@
 """The claude harness: the set written as one skills-directory plugin below the harness directory."""
 
-from __future__ import annotations
-
 import json
 import re
 from collections.abc import Sequence

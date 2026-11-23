@@ -20,8 +20,6 @@ the gate paths or only a design gets silence, and that the reminder JSON carries
 names and the sentence naming the table and its upkeep.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import re

@@ -9,8 +9,6 @@ earlier installs registered, and the checkout premise with the checks that stand
 The package is imported from the repository root, which `just test` puts on PYTHONPATH.
 """
 
-from __future__ import annotations
-
 import argparse
 import dataclasses
 import json

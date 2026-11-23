@@ -29,8 +29,6 @@ Endpoints:
   payload, moves and stop, at the root paths its page and the deco call.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import re
@@ -39,7 +37,7 @@ import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
-from typing import Any, Optional, TextIO
+from typing import Any, TextIO
 from urllib.parse import unquote, urlsplit
 
 from devpro import __version__
@@ -93,7 +91,7 @@ def loopback(url: str) -> bool:
     return re.fullmatch(r"http://127\.0\.0\.1:\d+/", url) is not None
 
 
-def dashboard_root(directory: Optional[str] = None) -> str:
+def dashboard_root(directory: str | None = None) -> str:
     """The project the dashboard serves: the directory the command names, or where it names none,
     the directory the command runs in, either up to the nearest directory at or above it holding a
     `.git` entry, which is itself where there is none."""
@@ -285,7 +283,7 @@ class _Handler(BaseHTTPRequestHandler):
 DashboardServer.handler = _Handler
 
 
-def serve(directory: Optional[str], port: int) -> None:
+def serve(directory: str | None, port: int) -> None:
     """Serve the dashboard of the project directory is in, or with None the project the current
     directory is in, until interrupted or stopped, the URL printed once on stdout. A port that
     cannot be bound and a board file that cannot be read refuse as InputError, before the URL."""

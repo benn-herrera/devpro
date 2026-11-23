@@ -14,8 +14,6 @@ functions: at most three keyword-only parameters, one returned string over the p
 constants, and no call.
 """
 
-from __future__ import annotations
-
 import ast
 from collections.abc import Iterator
 from dataclasses import dataclass

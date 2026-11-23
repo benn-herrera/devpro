@@ -3,8 +3,6 @@ and the kb-tools package's destination inside it, the devpro tools package's dir
 the virtual-environment directory an install leaves be, UTF-8 text reading that keeps each line's ending, and
 the stderr report of what an install left alone."""
 
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 

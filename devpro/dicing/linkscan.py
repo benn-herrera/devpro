@@ -2,7 +2,7 @@
 and the collection of a line's link targets."""
 
 import re
-from typing import Callable, Optional
+from collections.abc import Callable
 
 _SECTION_REF = re.compile(r"§[0-9]+(?:\.[0-9]+)*")
 
@@ -12,7 +12,7 @@ OnLink = Callable[[str, str, str, str], str]
 OnRef = Callable[[str, str, int, str], tuple[str, int]]
 
 
-def scan(s: str, on_link: OnLink, on_ref: Optional[OnRef] = None) -> str:
+def scan(s: str, on_link: OnLink, on_ref: OnRef | None = None) -> str:
     """Rewrite the prose of one line: code spans pass through, each `[text](target)` is replaced by
     on_link and, given on_ref, each `§N` reference by on_ref."""
     if "](" not in s and (on_ref is None or "§" not in s):

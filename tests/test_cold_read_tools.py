@@ -3,8 +3,6 @@ harness directory of its own project, under opencode the copy a real install shi
 and the session markers set only where the case sets them. No case makes a model call.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import re

@@ -3,10 +3,8 @@ overlay anchors, definition kinds, the harness text a definition's prose may
 name, and the placeholder spelling for both. Imports nothing from the package,
 so every module may import it."""
 
-from __future__ import annotations
-
 from enum import Enum
-from typing import Literal, Union
+from typing import Literal
 
 IDENTIFIER = r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
 """Output, family and harness names, and each folder part: strict kebab, letter-led segments joined by single hyphens."""
@@ -51,7 +49,7 @@ class Unrestricted(Enum):
 
 
 ALL = Unrestricted.ALL
-Tools = Union[tuple[Tool, ...], Unrestricted]
+Tools = tuple[Tool, ...] | Unrestricted
 """An authored allowlist in authored order, or ALL. ALL emits no tools field on any harness,
 which is not the same as a tuple naming all nine tools."""
 
@@ -127,7 +125,7 @@ class PluginText(Enum):
     PROJECT_WRAPPER = "project_wrapper"
 
 
-RenderValue = Union[HarnessText, OptionalHarnessText, Anchor, AgentsFileText, TuningText, PluginText]
+RenderValue = HarnessText | OptionalHarnessText | Anchor | AgentsFileText | TuningText | PluginText
 
 
 def key(name: RenderValue) -> str:

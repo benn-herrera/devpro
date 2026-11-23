@@ -21,6 +21,7 @@ Contents:
 - [Agents file changes explicitly](agents-file-changes-explicitly.md)
 - [Version has one home](version-has-one-home.md)
 - [Annotations on the floor](annotations-on-the-floor.md)
+- [No version-conditional code paths](no-version-conditional-code-paths.md)
 - [Obviated code is deleted, not parked](obviated-code-is-deleted-not-parked.md)
 - [A devtools tool joins the tests](a-devtools-tool-joins-the-tests.md)
 - [A lint recipe is read-only](a-lint-recipe-is-read-only.md)

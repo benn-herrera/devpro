@@ -5,8 +5,6 @@ the real install runs. The install itself decides what is written, run where its
 the target; `install._install_managed_paths` names where it may write, and the tests'
 `_assert_dry_run_predicts` holds the two together."""
 
-from __future__ import annotations
-
 import contextlib
 import filecmp
 import glob

@@ -2,7 +2,6 @@
 
 import io
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
@@ -30,7 +29,7 @@ MAP = LinkMap(
 )
 
 
-def _linker(tmp_path: Path, link_map: Optional[LinkMap] = None) -> Linker:
+def _linker(tmp_path: Path, link_map: LinkMap | None = None) -> Linker:
     """A Linker for DOC diced into <tmp_path>/out, run from tmp_path."""
     sections, ok = plan_sections(DOC, err=io.StringIO())
     assert ok

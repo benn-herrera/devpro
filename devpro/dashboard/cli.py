@@ -5,8 +5,6 @@ returns its exit status. `devpro.cli` imports `add_verbs` while building its par
 verb dispatches to is imported by it; `run` asks its server's module for `serve` where it dispatches.
 """
 
-from __future__ import annotations
-
 import argparse
 import os
 import sys

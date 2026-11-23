@@ -4,8 +4,6 @@ record and a project root take without spawning git. The stores' rename and the 
 are `stores`'s, which reads this module and nothing else of the package.
 """
 
-from __future__ import annotations
-
 import json
 import math
 import os

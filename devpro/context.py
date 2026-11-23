@@ -1,8 +1,6 @@
 """`Render`, the one parameter a render receives, the selection and the devpro settings file that
 build it, and the settings file's reader, its validation and the map's parse. Composes no text."""
 
-from __future__ import annotations
-
 import configparser
 import functools
 from collections.abc import Mapping

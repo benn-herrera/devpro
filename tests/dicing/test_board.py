@@ -4,7 +4,6 @@ give, the moves of a ticket between ROADMAP.md and the active design and their g
 import os
 from dataclasses import asdict
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
@@ -71,7 +70,7 @@ def _to_design(root: str, title: str) -> list[str]:
     return move_to_design(root, _card(root, title), read=read_board(root).sha256)
 
 
-def _to_roadmap(root: str, title: str, target: Optional[str] = None) -> list[str]:
+def _to_roadmap(root: str, title: str, target: str | None = None) -> list[str]:
     """Move the design card titled title, target naming the roadmap separator the page sends."""
     board = read_board(root)
     card = asdict(next(c for c in board.design if c.title == title))

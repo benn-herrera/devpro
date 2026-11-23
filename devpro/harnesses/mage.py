@@ -1,8 +1,6 @@
 """The mage harness: the shared frontmatter emitter and recipe rule from `devpro.harness`, the rest of
 claude's vocabulary copied, and the plugin manifest."""
 
-from __future__ import annotations
-
 import re
 
 from devpro import clauses

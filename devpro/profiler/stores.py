@@ -3,8 +3,6 @@ make from the naming before the rename. Imports the store facts alone, so the in
 every run, pays for no other module of the package.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 from .values import NEW_STORE_PREFIX, TRACE_DIR

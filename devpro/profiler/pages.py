@@ -10,8 +10,6 @@ the board's from the identical file; the dashboard serves the pages with the lay
 same file the board panel serves.
 """
 
-from __future__ import annotations
-
 import html
 import json
 import math

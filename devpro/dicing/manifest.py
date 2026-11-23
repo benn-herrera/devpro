@@ -18,7 +18,7 @@ import os
 import posixpath
 import shutil
 from dataclasses import dataclass
-from typing import Optional, TextIO
+from typing import TextIO
 
 from .dicedoc import dice_doc, verify
 from .heads import CONTENTS, ENTRY_POINT, INDEX, contents_line, directory_head
@@ -92,7 +92,7 @@ def _purpose(monolith: str) -> str:
     return text[: end + 1] if end >= 0 else text
 
 
-def _link_map_rows(volumes: list[_Volume], entry: Optional[_Entry], *, err: TextIO) -> list[str]:
+def _link_map_rows(volumes: list[_Volume], entry: _Entry | None, *, err: TextIO) -> list[str]:
     """Each document's entry point, and the leaf of each of its headings (first of a title wins)."""
     rows = []
     if entry:
@@ -166,7 +166,7 @@ def dice_docs(manifest: str, src: str, work: str, *, root: str, stdout: TextIO, 
     os.makedirs(work, exist_ok=True)
 
     volumes: list[_Volume] = []
-    entry: Optional[_Entry] = None
+    entry: _Entry | None = None
     for file, out, flags, label in _read_manifest(manifest):
         source = f"{src}/{file}"
         if not os.path.isfile(source):

@@ -12,8 +12,6 @@ store facts alone — and none of those reads a rendered definition. The package
 module scope from `install_base`, which imports nothing of the renderer's.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import shutil

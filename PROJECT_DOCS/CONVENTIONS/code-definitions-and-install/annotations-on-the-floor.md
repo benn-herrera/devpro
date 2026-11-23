@@ -1,11 +1,15 @@
 ### Annotations on the floor
 
-The Python floor is 3.9, and a union written `X | Y` does not evaluate there. A module that
-annotates with a PEP 604 union opens with `from __future__ import annotations`, which keeps its
-annotations unevaluated. A union evaluated at runtime, outside an annotation, is spelled
-`typing.Union`; `Tools` and `RenderValue` in `devpro/vocabulary.py` are the two such. Nothing reads annotations at
-runtime, so lazy annotations change no behavior.
+The floor is 3.11: an annotation evaluates as written, and a union written `X | Y` evaluates there.
+`from __future__ import annotations` is cruft on this floor — do not add it, and remove it from code
+you touch.
 
-On macOS `just test` checks the floor (`justfile`'s `_venv`); elsewhere the venv runs on whatever
-`python3` is installed, and nothing checks the floor. Running from a checkout needs Python 3.9 or
-later, not 3.9 itself.
+A genuine forward reference — a type named before it is defined, or a class's own name inside its
+body or a self-referential field — is that single annotation quoted as a string (`x: "LaterType"`),
+and only it. Quote the annotation, never make the import the fix: the import defers every
+module's annotations to serve one.
+
+A value evaluated at runtime — a type alias, an `isinstance` argument, anything that is not an
+annotation — is spelled the same way, `X | Y`; the type aliases in `devpro/vocabulary.py` are the
+worked case. `typing` keeps the names with no builtin or `collections.abc` form: `TextIO`,
+`Protocol`, `TypeVar`, `Literal`, `NamedTuple`, `cast`.

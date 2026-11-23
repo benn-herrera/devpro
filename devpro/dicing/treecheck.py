@@ -8,7 +8,7 @@ head; the root's entry point has none.
 
 import os
 from collections import deque
-from typing import Optional, TextIO
+from typing import TextIO
 
 from .heads import ENTRY_POINT, HEADS, INDEX
 from .linkcheck import markdown_files, prose_links
@@ -16,7 +16,7 @@ from .linkrewrite import URL_SCHEME
 from .textfile import read_lines
 
 
-def _head(directory: str) -> Optional[str]:
+def _head(directory: str) -> str | None:
     for name in HEADS:
         path = os.path.join(directory, name)
         if os.path.isfile(path):

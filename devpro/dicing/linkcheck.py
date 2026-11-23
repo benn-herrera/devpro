@@ -3,7 +3,8 @@ every relative link in a set of markdown files names an existing path and, given
 heading of the target whose GitHub anchor equals it."""
 
 import os
-from typing import Iterator, TextIO
+from collections.abc import Iterator
+from typing import TextIO
 
 from .anchors import heading_anchors
 from .linkrewrite import URL_SCHEME, Tree, parent_dir

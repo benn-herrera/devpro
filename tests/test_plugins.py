@@ -4,8 +4,6 @@ discovery, an out-of-set reference refuses while an optional one drops its parag
 file reads the same whichever components are on.
 """
 
-from __future__ import annotations
-
 import dataclasses
 import re
 

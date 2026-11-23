@@ -17,7 +17,6 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from email.message import Message
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urlsplit
 
 import pytest
@@ -90,7 +89,7 @@ class Client:
         except urllib.error.HTTPError as error:
             return error.code, json.loads(error.read())
 
-    def raw(self, method: str, path: str, *, body: bytes = b"", host: Optional[str] = None) -> tuple[int, Message]:
+    def raw(self, method: str, path: str, *, body: bytes = b"", host: str | None = None) -> tuple[int, Message]:
         """The status and headers of a request sent with exactly the host given, where one is."""
         headers = {"Content-Type": "application/json"}
         if host is not None:

@@ -22,8 +22,6 @@ user-global agents file where that already holds a marker line, removing the pro
 the span; and otherwise in the project's AGENTS.md.
 """
 
-from __future__ import annotations
-
 import os
 import re
 import shutil

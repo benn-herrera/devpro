@@ -15,7 +15,7 @@ import posixpath
 import re
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass, replace
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 from urllib.parse import quote
 
 from ..dicing.heads import CONTENTS, ENTRY_POINT, HEADS, INDEX, contents_line, directory_head
@@ -64,14 +64,14 @@ _GONE = "the card is no longer on the board"
 _ITEM = re.compile(r" *[-*+] ")  # a list item, as a Contents block's lines are
 
 # A file a move writes, as (path, lines); lines is None for a leaf the move deletes.
-_Change = tuple[str, Optional[list[str]]]
+_Change = tuple[str, list[str] | None]
 
 
 @dataclass
 class RoadmapCard:
     title: str  # the Part's
     text: str  # the lines below its heading, blank lines at either end dropped; "" for a separator
-    href: Optional[str]  # the URL path of the file holding its heading, then `#` and its anchor; None for a separator
+    href: str | None  # the URL path of the file holding its heading, then `#` and its anchor; None for a separator
     parked: list[str]  # the files of the parked work the ticket links, relative to the project root
     kind: str  # the Part's: CATEGORY (drawn as a separator) or TICKET
     occurrence: int  # the number of cards before it in Board.roadmap equal to it in every other field
@@ -89,9 +89,9 @@ class DesignCard:
     title: str  # the Part's
     text: str  # as RoadmapCard's
     path: str  # the file holding the part, relative to the project root
-    href: Optional[str]  # as RoadmapCard's
-    parked: Optional[list[str]]  # the parked work's files where the ticket is its link ticket; else None
-    parked_hrefs: Optional[list[str]]  # the URL path of each of parked, in the same order; None where it is
+    href: str | None  # as RoadmapCard's
+    parked: list[str] | None  # the parked work's files where the ticket is its link ticket; else None
+    parked_hrefs: list[str] | None  # the URL path of each of parked, in the same order; None where it is
     kind: str  # the Part's: CATEGORY or DELTA (drawn as separators), TICKET or ENTRY
     occurrence: int  # as RoadmapCard's, in Board.design
 
@@ -119,14 +119,14 @@ class Notice:
 
 @dataclass
 class Board:
-    release: Optional[str]  # the active plan's; None where it names none or there is no active plan
+    release: str | None  # the active plan's; None where it names none or there is no active plan
     hardening: bool
     roadmap: list[RoadmapCard]  # one per part of ROADMAP.md, separators included, in document order
     parked: list[ParkedCard]  # parked work neither linked nor in the design, below the roadmap cards
     design: list[DesignCard]  # one per part of the design, separators included, in document order
     packages: list[PackageCard]  # the active plan's work packages, each in the column its state names
     notices: list[Notice]  # the breaches of ROADMAP.md, then the layout breaches of the design
-    sha256: dict[str, Optional[str]]  # each file a move may write, relative to the root: its digest, None if absent
+    sha256: dict[str, str | None]  # each file a move may write, relative to the root: its digest, None if absent
 
 
 class MoveRefused(Exception):
@@ -151,13 +151,13 @@ class _Read:
     roadmap_parts: list[Part]
     roadmap_cards: list[RoadmapCard]  # one per roadmap part, in the same order
     parked: list[ParkedCard]
-    design: Optional[str]  # the active design's file: the monolith or the tree's entry point
+    design: str | None  # the active design's file: the monolith or the tree's entry point
     diced: bool  # the active design is a diced tree
     lines: dict[str, list[str]]  # each design file's lines, in design_files order
     design_parts: list[Part]
     design_cards: list[DesignCard]  # one per design part, in the same order
     notices: list[Notice]
-    sha256: dict[str, Optional[str]]
+    sha256: dict[str, str | None]
 
 
 def read_board(root: str) -> Board:
@@ -210,7 +210,7 @@ def served_files(root: str) -> list[str]:
     return sorted({os.path.abspath(p) for p in paths})
 
 
-def move_to_design(root: str, card: dict[str, Any], *, read: dict[str, Optional[str]]) -> list[str]:
+def move_to_design(root: str, card: dict[str, Any], *, read: dict[str, str | None]) -> list[str]:
     """Move the ticket of card, a roadmap ticket's or a parked card as served, to the end of the
     active design's `## Drafts` category: a roadmap ticket's lines leave `ROADMAP.md`, a parked card's
     work gets a link ticket. In a diced design whose `## Drafts` opens an `index.md`, or that has
@@ -259,8 +259,8 @@ def move_to_roadmap(
     root: str,
     card: dict[str, Any],
     *,
-    target: Optional[dict[str, Any]],
-    read: dict[str, Optional[str]],
+    target: dict[str, Any] | None,
+    read: dict[str, str | None],
 ) -> list[str]:
     """Move the ticket of card, a design ticket's card as served, out of the active design and,
     unless it is a link ticket, into `ROADMAP.md` at the end of the category of target, the roadmap
@@ -317,7 +317,7 @@ def _directory(root: str, path: str) -> str:
 
 
 def _read(root: str) -> _Read:
-    digests: dict[str, Optional[str]] = {ROADMAP: None}
+    digests: dict[str, str | None] = {ROADMAP: None}
     notices: list[Notice] = []
     roadmap_path = roadmap_file(root)
     roadmap: list[str] = []
@@ -432,7 +432,7 @@ def _file_hrefs(root: str, files: list[str]) -> list[str]:
     return [_href(root, os.path.join(root, f), "") for f in files]
 
 
-def _ticket_at(cards: Sequence[Union[RoadmapCard, DesignCard]], card: dict[str, Any]) -> Optional[int]:
+def _ticket_at(cards: Sequence[RoadmapCard | DesignCard], card: dict[str, Any]) -> int | None:
     """The index of the ticket card among cards that equals card as served; None where none does."""
     return next((k for k, c in enumerate(cards) if c.kind == TICKET and asdict(c) == card), None)
 
@@ -443,9 +443,7 @@ def _opens_an_index(now: _Read, head: int) -> bool:
     return os.path.basename(part.path) == INDEX and all(is_blank(line) for line in now.lines[part.path][: part.first])
 
 
-def _new_leaf(
-    root: str, now: _Read, head: Optional[int], title: str, ticket: Callable[[str], list[str]]
-) -> list[_Change]:
+def _new_leaf(root: str, now: _Read, head: int | None, title: str, ticket: Callable[[str], list[str]]) -> list[_Change]:
     """The writes adding a ticket titled title to a diced design as a new leaf: beside the `index.md`
     that the `## Drafts` part now.design_parts[head] opens, else, head being None, in a `drafts`
     directory beside the entry point, with its `index.md`. ticket gives its lines for a file's path.
@@ -555,7 +553,7 @@ def _items_added(lines: list[str], items: list[str]) -> list[str]:
     return [*lines[: cut + 1], "", *items, *([""] if first < len(lines) else []), *lines[first:]]
 
 
-def _listed(lines: list[str], leaf: str, text: str) -> Optional[list[str]]:
+def _listed(lines: list[str], leaf: str, text: str) -> list[str] | None:
     """The entry point's lines with the line `- [<text>](<leaf>)` added to its full listing, leaf
     being the path from the entry point's directory: two spaces deeper than the line linking the
     leaf's directory's `index.md`, after it and the lines below it indented deeper; at the listing's
@@ -630,7 +628,7 @@ def _removed(lines: list[str], part: Part) -> list[str]:
     return lines[:first] + lines[part.last + 1 :]
 
 
-def _write(root: str, changes: list[_Change], read: dict[str, Optional[str]]) -> list[str]:
+def _write(root: str, changes: list[_Change], read: dict[str, str | None]) -> list[str]:
     """Check every file changes names against read, then write each in order: a file whose lines
     are None is deleted, and a new file's missing directory is made just before it."""
     for path, _ in changes:

@@ -23,8 +23,6 @@ runs whatever `devpro` it resolves, and no test relies on one installed on the h
 shim running this checkout into the directory it runs in and points `HP_DEVPRO` at it.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import re

@@ -12,8 +12,6 @@ Role nouns ("hand that to the architect") and `kbase` as its program ("Run `kbas
 itself") are prose, and stay bare.
 """
 
-from __future__ import annotations
-
 import re
 from collections.abc import Collection, Iterable
 from typing import cast

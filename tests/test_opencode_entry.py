@@ -12,8 +12,6 @@ gate path at the project root it injects no reminder. A missing `bun` fails rath
 `tests/test_guardrail.py`.
 """
 
-from __future__ import annotations
-
 import functools
 import json
 import shutil

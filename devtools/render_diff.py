@@ -26,8 +26,6 @@ Output and exit contract: prints `diff -rq`'s two line forms, `Only in <dir>: <n
 not exist.
 """
 
-from __future__ import annotations
-
 import filecmp
 import os
 import re

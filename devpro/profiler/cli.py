@@ -5,8 +5,6 @@ returns its exit status. The verb's subcommand line is parsed where it is dispat
 verb imports only this module.
 """
 
-from __future__ import annotations
-
 import argparse
 import os
 import sys

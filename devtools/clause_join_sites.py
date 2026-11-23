@@ -20,8 +20,6 @@ Paths name definition modules relative to the repository root. With none, every 
 over is read, in sorted path order.
 """
 
-from __future__ import annotations
-
 import ast
 import importlib
 import sys

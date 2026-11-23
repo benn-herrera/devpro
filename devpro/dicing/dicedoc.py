@@ -3,7 +3,7 @@
 import io
 import os
 import posixpath
-from typing import Optional, TextIO
+from typing import TextIO
 
 from .heads import ENTRY_POINT, HEADS
 from .linkcheck import check_links, markdown_files
@@ -73,7 +73,7 @@ def _own_and_contents(out: str, path: str) -> tuple[list[str], list[str]]:
     return lines[:end], lines[end:]
 
 
-def _undiced_lines(tree: Tree, *, err: TextIO, deepest: int) -> tuple[list[str], bool, list[tuple[str, Optional[int]]]]:
+def _undiced_lines(tree: Tree, *, err: TextIO, deepest: int) -> tuple[list[str], bool, list[tuple[str, int | None]]]:
     """The entry point, then each file its Contents block lists, Contents dropped, links restored
     at split level deepest;
     whether every listed file could be read (each that could not is reported to err); and, for
@@ -115,7 +115,7 @@ def _restored(parts: list[tuple[str, list[str]]], tree: Tree, lines: list[str], 
 def _all_reproduced(
     out: str,
     sections: list[Section],
-    reads: list[tuple[str, Optional[int]]],
+    reads: list[tuple[str, int | None]],
     *,
     err: TextIO,
     deepest: int,

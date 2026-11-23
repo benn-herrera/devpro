@@ -2,8 +2,6 @@
 bodies without frontmatter and its metadata in one registry, `registry.json`, the wire format this module
 owns and the copied entry reads."""
 
-from __future__ import annotations
-
 import json
 import re
 from collections.abc import Sequence

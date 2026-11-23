@@ -8,7 +8,6 @@ it and the tree's entry point.
 import io
 import re
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
@@ -45,7 +44,7 @@ ASSIGNED = ["entry-point.md", "alpha.md", "beta.md"]
     ],
 )
 def test_all_reproduced(
-    tmp_path: Path, extra: list[str], reads: list[tuple[str, Optional[int]]], reports: list[list[str]]
+    tmp_path: Path, extra: list[str], reads: list[tuple[str, int | None]], reports: list[list[str]]
 ) -> None:
     out = tmp_path / "out"
     for name in ASSIGNED + extra:

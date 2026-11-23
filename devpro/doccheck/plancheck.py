@@ -3,13 +3,11 @@ form a design holds, or of the ticket layout a roadmap holds, each reported with
 text found there and the form accepted in its place, so that the fix can be made from the message.
 """
 
-from __future__ import annotations
-
 import os
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Optional, TextIO
+from typing import TextIO
 
 from ..dicing.textfile import read_text
 from .planform import (
@@ -79,7 +77,7 @@ def _found(text: str, *, empty: str) -> str:
     return f"found {fence} {text} {fence}"
 
 
-def _both_forms_refusal(root: str, monolith: str, noun: str) -> Optional[str]:
+def _both_forms_refusal(root: str, monolith: str, noun: str) -> str | None:
     """The message refusing to choose between the two forms of the document named monolith under
     root: its monolith and its diced tree's entry point, where both are files; None where either is
     not a file."""
@@ -109,17 +107,17 @@ class _Report:
 
 
 def _check(
-    document: Optional[str],
+    document: str | None,
     *,
     noun: str,
-    find: Callable[[str], Optional[str]],
+    find: Callable[[str], str | None],
     absent: str,
     read: Callable[[str], _Report],
     empty: str,
     start: str,
     stdout: TextIO,
     stderr: TextIO,
-    monolith: Optional[str] = None,
+    monolith: str | None = None,
 ) -> int:
     """The check driver of check_plan, check_design and check_roadmap: noun names the document kind,
     find gives its default document under a project root or None, absent names the document where
@@ -190,7 +188,7 @@ def _first_line(text: str) -> str:
     return text.split("\n", 1)[0]
 
 
-def _target_text(path: str, cache: dict[str, Optional[str]]) -> Optional[str]:
+def _target_text(path: str, cache: dict[str, str | None]) -> str | None:
     """The target's text, read once per path; None where it cannot be read."""
     if path not in cache:
         try:
@@ -200,7 +198,7 @@ def _target_text(path: str, cache: dict[str, Optional[str]]) -> Optional[str]:
     return cache[path]
 
 
-def _pair_state(pair: Pair, target: Optional[str]) -> str:
+def _pair_state(pair: Pair, target: str | None) -> str:
     """The pair's state against its target's text: pending, landed, drifted or conflicting; unreadable
     where the target cannot be read. A becomes text that contains its from text is an addition: its
     becomes' presence is the applied state, and its absence leaves the from pending while the from
@@ -268,7 +266,7 @@ def _design_report(path: str, *, deltas_applied: bool) -> _Report:
     design = read_design(path)
     order = _document_order(design.files)
     pairs = [pair for part in design.parts if part.kind == ENTRY for pair in part.pairs]
-    targets: dict[str, Optional[str]] = {}
+    targets: dict[str, str | None] = {}
     if not deltas_applied:
         breaches = list(design.breaches)
         for pair in pairs:
@@ -297,7 +295,7 @@ def _design_report(path: str, *, deltas_applied: bool) -> _Report:
     return _Report(breaches, summary, 0 if not breaches and counts[LANDED] == len(states) else 1, lines)
 
 
-def check_plan(plan: Optional[str], *, start: str, stdout: TextIO, stderr: TextIO) -> int:
+def check_plan(plan: str | None, *, start: str, stdout: TextIO, stderr: TextIO) -> int:
     """Check the plan at plan, or with None the active plan of the project the directory start is
     in; 0 when it holds no breach or there is no active plan, 1 on any breach, 2 when the project
     root is not found, both forms of the active plan exist, or a file of the plan cannot be read."""
@@ -316,7 +314,7 @@ def check_plan(plan: Optional[str], *, start: str, stdout: TextIO, stderr: TextI
 
 
 def check_design(
-    design: Optional[str], *, start: str, stdout: TextIO, stderr: TextIO, deltas_applied: bool = False
+    design: str | None, *, start: str, stdout: TextIO, stderr: TextIO, deltas_applied: bool = False
 ) -> int:
     """Check the design at design, or with None the active design of the project the directory start
     is in; without deltas_applied every pair's from must match its target, with it every pair must
@@ -340,7 +338,7 @@ def check_design(
     )
 
 
-def check_roadmap(roadmap: Optional[str], *, start: str, stdout: TextIO, stderr: TextIO) -> int:
+def check_roadmap(roadmap: str | None, *, start: str, stdout: TextIO, stderr: TextIO) -> int:
     """Check the roadmap at roadmap, or with None the `ROADMAP.md` of the project the directory start
     is in; 0 when it holds no breach or there is no `ROADMAP.md`, 1 on any breach, 2 when the project
     root is not found or the roadmap cannot be read."""

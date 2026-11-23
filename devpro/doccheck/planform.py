@@ -12,7 +12,6 @@ import os
 import re
 from dataclasses import dataclass, field, replace
 from enum import Enum
-from typing import Optional
 
 from ..dicing.anchors import heading_anchor_list
 from ..dicing.heads import ENTRY_POINT, HEADS
@@ -103,27 +102,27 @@ class Breach:
     found: str  # the text as the plan or design holds it
     accepted: str  # the form the rule accepts there
     # A stderr line printed after this breach's, where the rule that fires states one; None where it states none.
-    interference: Optional[str] = None
+    interference: str | None = None
 
 
 @dataclass
 class WorkPackage:
     id: str
     title: str  # from the heading opening with the ID; "" where none does
-    state: Optional[str]  # one of STATE_WORDS; None where the State cell opens with no word, a breach
+    state: str | None  # one of STATE_WORDS; None where the State cell opens with no word, a breach
     note: str  # the State cell after its state word; the whole cell where it has none
-    lifetime: Optional[str]  # None where the status table has no Lifetime column
-    rating: Optional[str]  # one of RATING_WORDS; None where unrated
+    lifetime: str | None  # None where the status table has no Lifetime column
+    rating: str | None  # one of RATING_WORDS; None where unrated
     rating_note: str  # the Rating cell after its rating word; the whole cell where it has none
     path: str  # the file holding the package's status row
     line: int
-    heading: Optional["Heading"]  # the heading its title is read from; None where untitled
+    heading: "Heading | None"  # the heading its title is read from; None where untitled
 
 
 @dataclass
 class Plan:
     title: str  # the H1 heading's text; "" where there is none
-    release: Optional[str]  # None where the plan names no release
+    release: str | None  # None where the plan names no release
     hardening: bool
     packages: list[WorkPackage] = field(default_factory=list)
     breaches: list[Breach] = field(default_factory=list)
@@ -151,13 +150,13 @@ class Part:
     last: int
     # A category's first line of text above its first ticket, in its file or a later one, as (path, 1-based
     # line): non-blank, outside fenced code and no layout breach; None for a ticket or a category without one.
-    first_text: Optional[tuple[str, int]]
+    first_text: tuple[str, int] | None
     # A ticket's: its text continues into a later file, a non-blank line there coming before any heading
     # of level 3 or less.
     runs_on: bool = False
     # An entry's target file, resolved relative to its own file; None for a category, a ticket, or an
     # entry whose heading gives no target.
-    target: Optional[str] = None
+    target: str | None = None
     # An entry's pairs, in line order; empty for a category, a ticket or an entry with no target.
     pairs: list[Pair] = field(default_factory=list)
 
@@ -234,7 +233,7 @@ def design_files(path: str) -> list[PlanFile]:
     files: list[PlanFile] = []
     seen: set[str] = set()
 
-    def add(p: str) -> Optional[PlanFile]:
+    def add(p: str) -> PlanFile | None:
         key = os.path.realpath(p)
         if key in seen:
             return None
@@ -312,7 +311,7 @@ class _StatusTable:
     rows: list[tuple[int, list[str]]]
 
 
-def _status_table(files: list[PlanFile], headings: list[Heading]) -> Optional[_StatusTable]:
+def _status_table(files: list[PlanFile], headings: list[Heading]) -> _StatusTable | None:
     """The first table under a `## Status` heading whose headers include Package and State; None
     where there is none."""
     for f in files:
@@ -328,12 +327,12 @@ def _status_table(files: list[PlanFile], headings: list[Heading]) -> Optional[_S
     return None
 
 
-def h1_line(lines: list[str], fenced: list[bool]) -> Optional[int]:
+def h1_line(lines: list[str], fenced: list[bool]) -> int | None:
     """The 1-based line of the first `# ` heading outside fenced code; None where there is none."""
     return next((no for no, (line, f) in enumerate(zip(lines, fenced), 1) if not f and line.startswith("# ")), None)
 
 
-def _release(f: PlanFile, h1: Optional[tuple[str, int]], breaches: list[Breach]) -> Optional[str]:
+def _release(f: PlanFile, h1: tuple[str, int] | None, breaches: list[Breach]) -> str | None:
     """The release f names in the plan's release slot, the first non-blank line after the plan's H1
     heading, h1 being that heading's (path, line) or None where the plan has none; reports misplaced
     and empty `Release:` lines. Only the file that opens the plan holds the plan's H1, so in any
@@ -365,7 +364,7 @@ def _release(f: PlanFile, h1: Optional[tuple[str, int]], breaches: list[Breach])
     return release
 
 
-def _title(package_id: str, headings: list[Heading]) -> tuple[str, Optional[Heading]]:
+def _title(package_id: str, headings: list[Heading]) -> tuple[str, Heading | None]:
     """The title of the first heading opening with the ID, and that heading; "" and None where none
     does."""
     opening = re.compile(re.escape(package_id) + _ID_END)
@@ -408,7 +407,7 @@ def _after_separator(text: str) -> str:
     return text[_SEPARATOR.match(text).end() :]
 
 
-def _opening_word(words: "re.Pattern[str]", cell: str) -> tuple[Optional[str], str]:
+def _opening_word(words: "re.Pattern[str]", cell: str) -> tuple[str | None, str]:
     """The word of words that cell opens with and the note after it; (None, cell) where it opens
     with none."""
     m = words.match(cell)
@@ -513,8 +512,8 @@ def read_layout(files: list[PlanFile], *, cut: bool = False) -> Layout:
     document order."""
     layout = Layout()
     in_category = False
-    ticket: Optional[Part] = None  # the ticket whose text the reading is in
-    awaiting: Optional[Part] = None  # the category whose first_text is still to be found
+    ticket: Part | None = None  # the ticket whose text the reading is in
+    awaiting: Part | None = None  # the category whose first_text is still to be found
     for f in files:
         end = own_end(f.path, f.lines) if cut else len(f.lines)
         headings = [h for h in file_headings(f) if h.line <= end]
@@ -585,7 +584,7 @@ def _section_breach(part: Part, line: str) -> Breach:
     return Breach(BreachKind.NOT_A_DELTA, part.path, part.first + 1, line, accepted)
 
 
-def _delta_breach(part: Part, line: str, deltas: dict[str, Part]) -> Optional[Breach]:
+def _delta_breach(part: Part, line: str, deltas: dict[str, Part]) -> Breach | None:
     """The breach of the delta headed by part, deltas being the deltas met before it, each first
     occurrence in document order; None where it is in place."""
     earlier = deltas.get(part.heading)
@@ -622,7 +621,7 @@ def _next_nonblank(lines: list[str], start: int, end: int) -> int:
     return i
 
 
-def _entry_target(heading: str, path: str) -> Optional[str]:
+def _entry_target(heading: str, path: str) -> str | None:
     """The file an entry heading's one link names, resolved relative to path's directory; None where
     the heading carries no link or more than one, or its link is a URL, empty or fragment-only."""
     targets = link_targets(heading)
@@ -738,7 +737,7 @@ def design_from_files(files: list[PlanFile]) -> Design:
     return design
 
 
-def find_project_root(start: str) -> Optional[str]:
+def find_project_root(start: str) -> str | None:
     """The nearest of start and its ancestors holding an entry named `.git`; None where none does."""
     directory = os.path.abspath(start)
     while True:
@@ -759,7 +758,7 @@ def document_locations(root: str, monolith: str) -> tuple[str, str]:
     )
 
 
-def active_document(root: str, monolith: str) -> Optional[str]:
+def active_document(root: str, monolith: str) -> str | None:
     """The file to read for the project document named monolith (ACTIVE_PLAN, ACTIVE_DESIGN): the
     monolith where it exists, else its diced tree's entry point, else None."""
     path, entry = document_locations(root, monolith)
@@ -768,7 +767,7 @@ def active_document(root: str, monolith: str) -> Optional[str]:
     return entry if os.path.isfile(entry) else None
 
 
-def roadmap_file(root: str) -> Optional[str]:
+def roadmap_file(root: str) -> str | None:
     """`ROADMAP.md` under root where it is a file; else None."""
     path = os.path.join(root, ROADMAP)
     return path if os.path.isfile(path) else None
