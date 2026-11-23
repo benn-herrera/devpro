@@ -39,7 +39,7 @@ The skill carries two reference pages, which the session reads when its starting
     every project install of a nested plugin — for the `import?` of the include lines, the kb line
     with the kbase component riding the same floor; `perl` with core `JSON::PP` for the claude
     guardrail; and the
-    `show-profile` skill's recording of a claude or opencode project install, which needs no more
+    `profiler` skill's recording of a claude or opencode project install, which needs no more
     than what delivers it (Shipped files, the activity profiler), and ships nothing under mage;
   - what the operator sets up for a cold read: `DEVPRO_COLD_READ_DIR`;
   - rendering for another model family: it names the flag and leaves its grammar to SPEC.md,
@@ -107,7 +107,7 @@ The repository's `README.md` holds these things:
     harness; then, for the project the development process runs in, the claude or opencode install
     this path gives — the mage install alone installing into no project;
 - what to do next: ask your agent, which loads the `guide` skill, invoked as SPEC.md, Deployed
-  Surfaces, Install destination spells it, or the `show-profile` skill for a session's profile; and,
+  Surfaces, Install destination spells it, or the `profiler` skill for a session's profile; and,
   after a mage install alone, the claude or opencode install into the project first: the guide's
   getting-started step for a project with nothing yet creates the project documents in the directory
   the session runs in, and a mage session starts outside any project the install reached;

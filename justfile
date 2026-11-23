@@ -28,24 +28,6 @@ GEN := "devpro"
 default:
     @just --list
 
-# Flags: [--components=CSV] [--harness=NAME] [--subdir=DIR] [--dry-run] [tuning flags]. An up-to-date
-# target is left untouched; --dry-run prints what would be created, changed and removed and writes
-# nothing. SPEC.md, Install destination has the rules.
-[doc("install devpro into an existing target")]
-install target *args:
-    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m "{{GEN}}" install "$@"
-
-# Replaces only the devpro block and keeps everything outside it: replaces the block in a file holding
-# one ordered marker pair, appends it to a file with no marker line, writes an absent file whole, and
-# refuses any other file. <dir> is ~/.claude, ~/.config/opencode, or a project root. [--harness NAME]
-# (claude, opencode — the two whose user-harness-dir is absolute) is inferred when <dir> is that
-# harness's user directory and required otherwise; a relative user-harness-dir, as mage's is, is never
-# an inference basis. An up-to-date file is left untouched; [--dry-run] prints whether the agents file
-# and any redirect would be created or changed and writes nothing.
-[doc("install the devpro agents file into <dir>")]
-install-agents-file dir *args:
-    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m "{{GEN}}" install-agents-file "$@"
-
 # venv layout differs by OS: POSIX puts executables in .venv/bin, Windows in
 # .venv/Scripts with .exe suffixes. Resolved here via just's os() builtin.
 

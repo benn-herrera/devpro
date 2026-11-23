@@ -28,6 +28,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -503,7 +504,7 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
     assert [(record["tool"], record["name"]) for record in calls] == [
         ("shell", "printf 'hi\\n'"),
         ("shell", "rm -rf /"),
-        ("Skill", "show-profile"),
+        ("Skill", "profiler"),
         ("Agent", "devpro-python-coder"),
         ("Agent", "devpro-architect"),
         ("Agent", "devpro-tech-writer"),
@@ -572,8 +573,41 @@ def test_init_lays_down_the_launcher_and_clears_an_older_runs_files(tmp_path: Pa
     assert [path.name for path in sorted(hook_dir.iterdir())] == ["hp.sh"]
     assert (hook_dir / "hp.sh").read_bytes() == launcher_resource().read_bytes()
     assert os.access(hook_dir / "hp.sh", os.X_OK)
-    assert (project / ".claude" / "skills" / "show-profile" / "SKILL.md").is_file()
+    assert (project / ".claude" / "skills" / "profiler" / "SKILL.md").is_file()
     assert "harness-profiler/hp.sh" in (project / ".claude" / "settings.json").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("beside", [[], ["notes.md"]], ids=["alone", "beside-a-file"])
+def test_init_removes_the_skill_an_older_init_rendered_under_its_former_name(tmp_path: Path, beside: list[str]) -> None:
+    """A repository holding a committed `.claude/skills/show-profile/SKILL.md`, the skill under its name
+    before `profiler`: a re-run removes it, and its directory where nothing else is left in it, and the
+    `git add` line it prints stages that removal. Without the unlink the older skill stands beside the
+    renamed one, two skills answering the same request; without the path in the printed line, following
+    it commits the new skill and leaves the old one in the repository."""
+    project = tmp_path / "project"
+    project.mkdir()
+    git = ["git", "-c", "user.name=test", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false"]
+    subprocess.run([*git, "init", "-q"], cwd=project, check=True)
+    retired = project / ".claude" / "skills" / "show-profile"
+    retired.mkdir(parents=True)
+    for name in ("SKILL.md", *beside):
+        (retired / name).write_text("an older init's copy\n", encoding="utf-8")
+    subprocess.run([*git, "add", "."], cwd=project, check=True)
+    subprocess.run([*git, "commit", "-q", "-m", "an older init"], cwd=project, check=True)
+
+    done = _profiler_init(project)
+
+    assert done.returncode == 0, done.stderr
+    assert not (retired / "SKILL.md").exists()
+    assert retired.is_dir() is bool(beside)
+    assert all((retired / name).is_file() for name in beside)
+    assert (project / ".claude" / "skills" / "profiler" / "SKILL.md").is_file()
+    add_line = next(line.strip() for line in done.stdout.splitlines() if line.strip().startswith("git add "))
+    subprocess.run(shlex.split(add_line), cwd=project, check=True)
+    staged = subprocess.run(
+        ["git", "diff", "--cached", "--name-status"], cwd=project, check=True, capture_output=True, text=True
+    ).stdout.splitlines()
+    assert "D\t.claude/skills/show-profile/SKILL.md" in staged
 
 
 def test_a_rename_leaves_a_directory_that_is_no_profiler_store_alone(tmp_path: Path) -> None:

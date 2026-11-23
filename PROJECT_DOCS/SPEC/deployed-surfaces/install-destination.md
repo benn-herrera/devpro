@@ -83,7 +83,7 @@ argument names the supported
 harness whose values the definitions are rendered with, and whose metadata they carry — in the
 frontmatter under claude and mage, in the registry under opencode: each
 field in the spelling that harness reads, and absent where that harness has no use for it; an
-unsupported name is refused before anything is written. `render` defaults it to `claude`; install
+unsupported name is refused before anything is written. `dev-render` defaults it to `claude`; install
 has no default, and resolves its harness as this section's first paragraph states. The devpro
 settings file's `install` setting replaces that resolution where the file names the harness. The
 file names a harness when either of its sections exists; each named harness installs per its
@@ -111,8 +111,8 @@ directory (create that directory where absent). The report is made on a dry run 
 up-to-date run as on a changing one. The refusal of a target that is not an existing directory,
 and of a `--subdir` outside it, precedes this report where both fire. The file is validated
 before anything is written (SPEC.md, Rendering); an `install` value outside the three is refused
-naming them, where the file selects the harnesses — `--harness` given, and `render`, do not judge
-it.
+naming them, where the file selects the harnesses — `--harness` given, and `dev-render`, do not
+judge it.
 
 An install directory may be any directory prepared to receive the install product. `--subdir`
 names a directory inside the target: an absolute path, or one that leaves the target, is refused

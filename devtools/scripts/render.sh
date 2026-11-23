@@ -37,6 +37,7 @@
 # project (`mage`) carries no runner include line and no `Makefile`, its harness writing neither.
 set -euo pipefail
 : "${PROJECT_ROOT:?PROJECT_ROOT is empty or unset — run this script through its justfile recipe}"
+export DEVPRO_DEV=1
 
 slug="latest"
 args=()

@@ -2,8 +2,8 @@
 
 The repository exposes exactly three deployed surfaces, `agents/`, `commands/` and `skills/`: the
 trees of rendered definitions, and one part of the install product (below). Every definition is
-produced to order into the output root an invocation names: `devpro render --out <dir>
-[--components=CSV]` renders the plugin's definitions with the named components on (Plugins) and the
+produced to order into the output root an invocation names: `devpro dev-render --out <dir>
+[--components=CSV]`, a maintainer verb (Package and Command), renders the plugin's definitions with the named components on (Plugins) and the
 harness-rendered files it writes
 (Shipped files) into `<dir>`, an existing directory, and `install` renders into its install
 directory (Install destination). `agents/` holds one file per agent and per

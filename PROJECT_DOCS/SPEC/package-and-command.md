@@ -7,10 +7,14 @@ it. A Homebrew tap is a distribution channel for that release archive, not a pac
 
 The installed package provides the `devpro` command. `python3 -m devpro` is the same command:
 both print the same `--help`, and the same arguments install the same product, byte for byte.
-The install verbs — `render`, `install`, `install-agents-file`, `render-agents-file` and the
-hidden `harness` — exit 0 on success and 2 on a refusal or an operating-system failure, printing
-`error: <message>` on
-stderr; the dicing and check verbs of Dicing and Checks exit 0, 1 and 2 as that section
+
+Three maintainer verbs — `dev-render`, `render-agents-file` and `harness` — exist only where the
+environment variable `DEVPRO_DEV` is `1`. Elsewhere they are absent from `--help` and refused as an
+invalid choice, as any verb the command does not have is; no README, guide or installed definition
+names them.
+
+The install verbs — `install` and `install-agents-file` — and the maintainer verbs exit 0 on success
+and 2 on a refusal or an operating-system failure, printing `error: <message>` on stderr; the dicing and check verbs of Dicing and Checks exit 0, 1 and 2 as that section
 states; the `dashboard` verb exits 0 whenever it ends a server that was serving — an interrupt and
 the page's stop alike — and 2 on a refusal before it serves, printing `error: <message>` on stderr
 as the install verbs do. Every command that

@@ -1,12 +1,12 @@
 """The committed hook's wiring: the command string, `init`, and `doctor`.
 
-`init` writes the launcher and the show-profile skill into a repository's `.claude/` and registers the
+`init` writes the launcher and the profiler skill into a repository's `.claude/` and registers the
 capture on every event it records, for a session that loads no plugin's hooks. `doctor` says whether
 capture works in a repository, and why not. Both apply the stores' rename: an install and an `init` move
 the `claude-profiler` and `opencode-profiler` stores under the project's `.devpro-temp/` to their
 `.profiler-*` names.
 
-The renderer and the package's root are imported where they are used, in `show_skill_text` and
+The renderer and the package's root are imported where they are used, in `profiler_skill_text` and
 `launcher_resource`: the hook-run capture reaches this module for `doctor` and `init`, and the install
 for `rename_stores` — from `stores`, which imports the store facts alone — and none of those reads a
 rendered definition or a package path.
@@ -25,7 +25,7 @@ from .pages import UsageError, list_sessions
 from .stores import OLD_STORE_SUFFIX, old_store_name, rename_stores
 from .values import (
     CAPTURED_EVENTS,
-    SHOW_SKILL,
+    PROFILER_SKILL,
     TRACE_DIR,
     TRACE_GLOB,
     _iso,
@@ -45,6 +45,8 @@ HOOK_DIR = Path(".claude") / "harness-profiler"
 HOOK_FILES = (LAUNCHER,)
 # The files an older `init` copied beside the launcher, which no install ships any more.
 RETIRED_HOOK_FILES = ("hp.py", "view.html")
+# The skill directory an older `init` rendered, under the skill's name before `profiler`.
+RETIRED_SKILL = Path("skills") / "show-profile"
 # The harness resource the launcher is the master of: the install copies it, and `init` copies it again
 # into the repository's committed hook directory.
 HARNESS_RESOURCES = Path("harnesses") / "resources" / "claude" / "profiler"
@@ -118,13 +120,13 @@ def merge_hooks(settings: dict) -> dict:
     return merged
 
 
-def show_skill_text() -> str:
-    """The show-profile skill as a claude project install renders it."""
+def profiler_skill_text() -> str:
+    """The profiler skill as a claude project install renders it."""
     from devpro.context import build_render
     from devpro.render import render_all
 
     ctx = build_render(harness="claude", components="", family="claude", supply=None)
-    return dict(render_all(ctx))[SHOW_SKILL / "SKILL.md"]
+    return dict(render_all(ctx))[PROFILER_SKILL / "SKILL.md"]
 
 
 def init(argv: list[str], cwd: Path | str) -> str:
@@ -148,9 +150,17 @@ def init(argv: list[str], cwd: Path | str) -> str:
     (target / LAUNCHER).chmod(0o755)
     for name in (OLD_LAUNCHER, *RETIRED_HOOK_FILES):
         (target / name).unlink(missing_ok=True)
-    skill = repo / ".claude" / SHOW_SKILL
+    retired_skill = repo / ".claude" / RETIRED_SKILL
+    removed_retired_skill = (retired_skill / "SKILL.md").is_file()
+    (retired_skill / "SKILL.md").unlink(missing_ok=True)
+    if retired_skill.is_dir() and not any(retired_skill.iterdir()):
+        retired_skill.rmdir()
+    skill = repo / ".claude" / PROFILER_SKILL
     skill.mkdir(parents=True, exist_ok=True)
-    (skill / "SKILL.md").write_text(show_skill_text(), encoding="utf-8")
+    (skill / "SKILL.md").write_text(profiler_skill_text(), encoding="utf-8")
+    staged = [HOOK_DIR, Path(".claude") / PROFILER_SKILL, Path(".claude") / "settings.json"]
+    if removed_retired_skill:
+        staged.insert(2, Path(".claude") / RETIRED_SKILL)
 
     settings_file = repo / ".claude" / "settings.json"
     settings = json.loads(settings_file.read_text(encoding="utf-8")) if settings_file.exists() else {}
@@ -160,10 +170,10 @@ def init(argv: list[str], cwd: Path | str) -> str:
     return "\n".join(
         [
             f"Copied the hook to {target.relative_to(repo)}/, registered it in .claude/settings.json,"
-            " and added the show-profile skill.",
+            " and added the profiler skill.",
             *rename_stores(repo),
             "Commit them; Claude Code on the web picks the hook up in the next session:",
-            "  git add .claude/harness-profiler .claude/skills/show-profile .claude/settings.json",
+            "  git add " + " ".join(path.as_posix() for path in staged),
         ]
     )
 

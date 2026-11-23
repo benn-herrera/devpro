@@ -96,7 +96,7 @@ hook files refer back to devpro wherever they ran the profiler's script, with th
 contract — a failed or interpreterless capture exits 0 with no output — unchanged. The page
 template `view.html` the render reads is the devpro wheel's package data
 (`devpro/profiler/view.html`, read by the rendering module), not an install resource; and the
-`show-profile` skill, which renders a session's recorded activity — its skill, agent and tool calls
+`profiler` skill, which renders a session's recorded activity — its skill, agent and tool calls
 with timings and token costs — as text, as a self-contained HTML page, or served over HTTP: the
 dashboard, devpro's one loopback server for the web interface, renders the record files in memory
 as one panel of its site. The board is the landing surface: opening the dashboard's URL shows the

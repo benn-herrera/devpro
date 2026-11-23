@@ -34,13 +34,17 @@ or a family overlay anchor, filled once by `render.filled_body`.
 Usage, where `python3 -m devpro` is the same command as `devpro`; a checkout
 runs it from the repository root with that root on PYTHONPATH:
 
-    devpro render --out DIR [--components=CSV] [--harness NAME] [--family NAME]
-        [--config-file=FILE]
     devpro install TARGET [--components=CSV] [--subdir DIR] [--verbose]
-        [--dry-run] [the same tuning flags]
+        [--dry-run] [--harness NAME] [--family NAME] [--config-file=FILE]
     devpro install-agents-file DIR [--harness NAME] [--dry-run]
-    devpro render-agents-file HARNESS OUT [--components=CSV]
     devpro --version
+
+and, only where the environment's DEVPRO_DEV is 1, the maintainer verbs:
+
+    devpro dev-render --out DIR [--components=CSV] [--harness NAME] [--family NAME]
+        [--config-file=FILE]
+    devpro render-agents-file HARNESS OUT [--components=CSV]
+    devpro harness NAME KEY
 
 The one name is `components.NAME`: every install writes it, and every `{plugin}` template fills it.
 `--components` turns optional components on, comma-separated. The render is deterministic:

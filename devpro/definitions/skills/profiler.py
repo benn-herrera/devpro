@@ -76,7 +76,7 @@ which `tree` cannot read — where it prints none, say the repository holds no r
 
 DEFINITIONS = (
     Definition(
-        name="show-profile",
+        name="profiler",
         kind=Kind.SKILL,
         description=_DESCRIPTION,
         body=_BODY,

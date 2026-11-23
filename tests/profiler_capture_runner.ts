@@ -50,9 +50,9 @@ await fire("execute.after", {
   error: Object.assign(new Error("The user rejected this tool call"), { _tag: "Tool.Error" }),
 })
 
-await fire("execute.before", base("call_3", "skill", { id: "show-profile" }))
+await fire("execute.before", base("call_3", "skill", { id: "profiler" }))
 await fire("execute.after", {
-  ...base("call_3", "skill", { id: "show-profile" }),
+  ...base("call_3", "skill", { id: "profiler" }),
   status: "completed",
   result: { content: [{ type: "text", text: "loaded" }] },
 })

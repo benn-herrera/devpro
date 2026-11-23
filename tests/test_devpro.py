@@ -199,17 +199,18 @@ def test_a_settings_file_naming_no_harness_names_nothing_but_is_not_no_file(tmp_
     assert settings is not None
 
 
-def test_a_render_takes_its_components_from_the_flag_alone(tmp_path: Path) -> None:
+def test_a_render_takes_its_components_from_the_flag_alone(tmp_path: Path, monkeypatch) -> None:
     """`components` is the install's selection: a flagless render that read the file's value turned the
     component on and made the flag's "default none" help false wherever a settings file existed."""
+    monkeypatch.setenv("DEVPRO_DEV", "1")
     settings = settings_file(tmp_path, "[claude]\ncomponents = kbase\n")
     from_file = tmp_path / "from-file"
     from_file.mkdir()
-    main(["render", "--out", str(from_file), "--harness=claude", f"--config-file={settings}"])
+    main(["dev-render", "--out", str(from_file), "--harness=claude", f"--config-file={settings}"])
     assert not (from_file / "skills/kbase/SKILL.md").exists()
     from_flag = tmp_path / "from-flag"
     from_flag.mkdir()
-    main(["render", "--out", str(from_flag), "--components=kbase", "--harness=claude"])
+    main(["dev-render", "--out", str(from_flag), "--components=kbase", "--harness=claude"])
     assert (from_flag / "skills/kbase/SKILL.md").is_file()
 
 
@@ -1467,13 +1468,13 @@ _HOOK_WIRING_IMPORTS = ("from devpro.context import build_render", "from devpro.
 
 def _hook_wiring_imports(tree: ast.Module) -> set[tuple[str, str]]:
     """The `(path, statement)` pairs the hook wiring's carve-out admits: the renderer's two imports, held
-    inside `show_skill_text`, the function that renders the skill a hook writes. `tree` is the module's
+    inside `profiler_skill_text`, the function that renders the skill a hook writes. `tree` is the module's
     own, so the carve-out is read against the file it exempts and admits nothing the file does not hold
     there."""
     held = {
         ast.unparse(stmt)
         for function in tree.body
-        if isinstance(function, ast.FunctionDef) and function.name == "show_skill_text"
+        if isinstance(function, ast.FunctionDef) and function.name == "profiler_skill_text"
         for stmt in function.body
         if isinstance(stmt, (ast.Import, ast.ImportFrom))
     }
@@ -1481,11 +1482,11 @@ def _hook_wiring_imports(tree: ast.Module) -> set[tuple[str, str]]:
 
 
 def test_the_hook_wiring_carve_out_admits_only_its_two_imports_in_the_writer() -> None:
-    """The carve-out is not a hole: the renderer's two imports are admitted where `show_skill_text` holds
+    """The carve-out is not a hole: the renderer's two imports are admitted where `profiler_skill_text` holds
     them, and neither is admitted anywhere else — a third import in the writer, or either import in
     another function, reads as the offender it is."""
     source = (
-        "def show_skill_text():\n"
+        "def profiler_skill_text():\n"
         "    from devpro.render import render_all\n"
         "    from devpro.context import build_render\n"
         "    import json\n"
@@ -1511,7 +1512,7 @@ def test_every_import_is_at_module_level() -> None:
     # fourth, for the same reason: its `run` imports the server where it dispatches. The check verbs'
     # entry point is the fifth: its `run` imports the checks' implementation where it dispatches each.
     # The profiler's hook wiring is the one other module, and the same reason one level down: the
-    # hook-run capture imports it, so the renderer's imports live in `show_skill_text`, the function that
+    # hook-run capture imports it, so the renderer's imports live in `profiler_skill_text`, the function that
     # renders the skill a hook writes, rather than at module scope, and the renderer never reaches the
     # every-tool-call capture path. `_hook_wiring_imports` reads them from the module, so an import
     # moved back to module scope leaves nothing carved out and reads as the offender it would be.

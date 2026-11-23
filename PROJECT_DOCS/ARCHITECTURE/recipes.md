@@ -1,12 +1,8 @@
 ## Recipes
 
-`just install <target> [--components=CSV]`, `just agents`, `just render`,
-`just retake-reference`, `just install-agents-file <dir> [--harness=NAME] [--dry-run]`,
-`just tag`, `just check-wheel` and `just dev-dashboard` reach `python3 -m devpro`: `install`,
-`agents` and `install-agents-file` each run the verb directly in
-one line; `install` takes `target *args` and `install-agents-file` takes `dir *args`,
-and each forwards all of it as `"$@"`, so `--components=CSV`, `--harness=NAME` and `--dry-run` all
-reach the verb, which defaults the components to none;
+`just agents`, `just render`, `just retake-reference`, `just tag`, `just check-wheel` and
+`just dev-dashboard` reach `python3 -m devpro`; no recipe stands in front of `install` or
+`install-agents-file`, which are reached as verbs of the command alone (Install, Install entry).
 `agents` installs the devpro set into this checkout in one line — the target alone, no
 `--components` and no `--harness` flag, the harness left to the install's own inference;
 `render` and `retake-reference` go through the private `_render-slot.sh`, which calls
@@ -18,9 +14,11 @@ earlier revision's copy run inside that revision's worktree, where that worktree
 supplies `GEN` and the worktree holds the package `GEN` names. `tag` goes through `--version`, which
 prints the version bare and nothing else, so the `v` of `v<version>` is the recipe's;
 `check-wheel` through `--version` and through `install` (see the paragraph on `build` below).
-Scripts read a harness's `HarnessText` values through
-`python3 -m devpro harness NAME KEY`: the maintainer
-scripts' reader, hidden from `--help` and not part of the consumer CLI. The `{plugin}`-templated keys
+Scripts read a harness's `HarnessText` values through `python3 -m devpro harness NAME KEY`: the
+maintainer scripts' reader, and not part of the consumer CLI. It, `dev-render` and
+`render-agents-file` are registered at parser build only where `DEVPRO_DEV` is `1` (SPEC.md,
+Package and Command); each script that runs one of them — `render.sh`, `_render-slot.sh`,
+`render-agents-file.sh`, `_harness-value.sh` — exports `DEVPRO_DEV=1` once. The `{plugin}`-templated keys
 bind to the one plugin, so `harness` takes no selection flag. `devtools/scripts/_harness-value.sh` is the one shell reader of harness
 values, for `_render-slot.sh`. The
 version is read through `python3 -m devpro --version`. `just tag` reads it there to create the signed annotated tag `v<version>`: it refuses while

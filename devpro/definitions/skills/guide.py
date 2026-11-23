@@ -34,7 +34,7 @@ change goes.
 | starting a design | the `{clauses.ref(name="development")}` skill's *Design* | — |
 | how the development process runs, or where the user's work stands | this skill | `references/using.md` |
 | showing the project's board | the `{clauses.ref(name="docdicer")}` skill's `dashboard` | — |
-| what a session did: its profile, trace, call tree, or what its skills and agents cost | the `{clauses.ref(name="show-profile")}` skill | — |
+| what a session did: its profile, trace, call tree, or what its skills and agents cost | the `{clauses.ref(name="profiler")}` skill | — |
 | installing, updating, inspecting or changing the installed set | this skill | `references/installing.md` |
 | the project's own design: what it does, how it is built, its house rules | the project's contract documents | its SPEC.md, ARCHITECTURE.md and CONVENTIONS.md, or their trees |
 

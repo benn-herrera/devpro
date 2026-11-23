@@ -7,6 +7,7 @@ a logging setup would be a second reporting regime.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -76,15 +77,33 @@ def _add_components(verb: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_maintainer_verbs(verbs: argparse._SubParsersAction) -> None:
+    """`dev-render --out DIR` with the tuning flags, `render-agents-file HARNESS OUT` and
+    `harness NAME KEY`: the repository's own scripts' verbs."""
+    render = verbs.add_parser("dev-render", help="render the definitions into DIR", allow_abbrev=False)
+    _add_components(render)
+    render.add_argument("--out", required=True, type=Path, metavar="DIR", help="an existing output root")
+    _add_tuning_flags(render, harness_default=DEFAULT_HARNESS, harness_help="the harness to render for")
+    fresh = verbs.add_parser("render-agents-file", help="write a fresh agents file to OUT", allow_abbrev=False)
+    _add_components(fresh)
+    fresh.add_argument("harness", metavar="HARNESS")
+    fresh.add_argument("out", type=Path, metavar="OUT")
+    query = verbs.add_parser("harness", help="print a harness's KEY value", allow_abbrev=False)
+    query.add_argument("name", metavar="NAME")
+    query.add_argument("key", choices=[key(part) for part in HarnessText], metavar="KEY")
+
+
 def build_parser() -> argparse.ArgumentParser:
-    """One verb, required: `render --out DIR` and `install TARGET [--subdir DIR] [--verbose] [--dry-run]`,
-    each with the tuning flags; `install-agents-file DIR [--harness NAME] [--dry-run]`;
-    `render-agents-file HARNESS OUT`; the five dicing verbs `devpro.dicing.cli.add_verbs` adds, the
-    three check verbs `devpro.doccheck.cli.add_verbs` adds, the `profiler` verb `devpro.profiler.cli.add_verbs` adds, the `dashboard` verb
-    `devpro.dashboard.cli.add_verbs` adds; and one maintainer helper hidden from `--help`:
-    `harness NAME KEY`.
-    Each verb but `harness`, `install-agents-file`, the dicing and check verbs, `profiler` and `dashboard` takes
-    `[--components=CSV]`, turning no optional component on by default. The top-level `--version` prints the bare version. allow_abbrev=False on every parser.
+    """One verb, required: `install TARGET [--subdir DIR] [--verbose] [--dry-run]` with the tuning flags;
+    `install-agents-file DIR [--harness NAME] [--dry-run]`; the five dicing verbs
+    `devpro.dicing.cli.add_verbs` adds, the three check verbs `devpro.doccheck.cli.add_verbs` adds, the
+    `profiler` verb `devpro.profiler.cli.add_verbs` adds, the `dashboard` verb
+    `devpro.dashboard.cli.add_verbs` adds; and, only where the environment's `DEVPRO_DEV` is `1`, the
+    maintainer verbs `dev-render`, `render-agents-file` and `harness`. Elsewhere argparse refuses those
+    as it does any verb the command lacks.
+    `install`, `dev-render` and `render-agents-file` take `[--components=CSV]`, turning no optional
+    component on by default. The top-level `--version` prints the bare version. allow_abbrev=False on
+    every parser.
     """
     from devpro.dashboard.cli import add_verbs as add_dashboard_verbs
     from devpro.dicing.cli import add_verbs
@@ -93,14 +112,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(prog="devpro", allow_abbrev=False)
     parser.add_argument("--version", action="version", version=__version__)
-    # The hidden verbs are added without help, and the verb list is set below from every other: argparse
-    # (3.9) still prints a subparser added with help=SUPPRESS, as "==SUPPRESS==", and lists every choice
-    # in the usage line.
     verbs = parser.add_subparsers(dest="verb", required=True)
-    render = verbs.add_parser("render", help="render the definitions into DIR", allow_abbrev=False)
-    _add_components(render)
-    render.add_argument("--out", required=True, type=Path, metavar="DIR", help="an existing output root")
-    _add_tuning_flags(render, harness_default=DEFAULT_HARNESS, harness_help="the harness to render for")
     installing = verbs.add_parser(
         "install", help="render the set into its install directory and copy its packages", allow_abbrev=False
     )
@@ -133,19 +145,12 @@ def build_parser() -> argparse.ArgumentParser:
     agents_file.add_argument(
         "--dry-run", action="store_true", help="print which files the install would create or change; write nothing"
     )
-    fresh = verbs.add_parser("render-agents-file", help="write a fresh agents file to OUT", allow_abbrev=False)
-    _add_components(fresh)
-    fresh.add_argument("harness", metavar="HARNESS")
-    fresh.add_argument("out", type=Path, metavar="OUT")
-    query = verbs.add_parser("harness", allow_abbrev=False)
-    query.add_argument("name", metavar="NAME")
-    query.add_argument("key", choices=[key(part) for part in HarnessText], metavar="KEY")
     add_verbs(verbs)
     add_check_verbs(verbs)
     add_profiler_verbs(verbs)
     add_dashboard_verbs(verbs)
-    hidden = {"harness"}
-    verbs.metavar = "{" + ",".join(name for name in verbs.choices if name not in hidden) + "}"
+    if os.environ.get("DEVPRO_DEV") == "1":
+        _add_maintainer_verbs(verbs)
     return parser
 
 
@@ -162,7 +167,7 @@ def _supply(settings: dict[str, HarnessSettings] | None, harness: str) -> MapSup
 
 
 def _run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> None:
-    if args.verb == "render":
+    if args.verb == "dev-render":
         from devpro.render import render_all, write_renders
 
         settings, _ = read_settings(args.config_file)

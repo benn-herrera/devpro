@@ -131,15 +131,15 @@ payload carries `devpro_version`, the version the board's connection indicator n
 that cannot be bound, refuse the verb before it prints the URL: exit 2, and `error: ` before the
 message on stderr.
 
-**The skill.** `show-profile` ships as a rendered skill definition under `devpro/definitions/`, so it
-carries the generated banner and the harness's namespace (`devpro:show-profile` under claude) and
+**The skill.** `profiler` ships as a rendered skill definition under `devpro/definitions/`, so it
+carries the generated banner and the harness's namespace (`devpro:profiler` under claude) and
 renders under every harness. Its finder's first candidate, `../../profiler/hp.sh` from
 the skill's directory, resolves to `<install-dir>/profiler/hp.sh` where the payload landed — the
 launcher that then finds `devpro` — and its second, the committed `.claude/harness-profiler/hp.sh`,
 covers a repository where the hook was committed for claude-on-web; where neither stands, the skill
 says the tool is not installed. A user-level install renders the skill and copies no resource, so
 there it is the committed copy or the absence. `init` renders the same skill into the repository's
-`.claude/skills/show-profile/SKILL.md` from the definition, beside the launcher it copies.
+`.claude/skills/profiler/SKILL.md` from the definition, beside the launcher it copies.
 
 **Limits, stated.** The `doctor` subcommand greps the name `harness-profiler` in claude's
 installed-plugin records and will not recognize the payload copy; its committed-hook and
@@ -153,8 +153,9 @@ and the skill into the repository's `.claude/` and merging the six entries into 
 `.claude/harness-profiler/hp.sh` — the harness resource the devpro package ships, readable as
 `devpro.profiler.hooks.launcher_resource()` and marked executable — and the rendered skill, then
 unlinks the files an older `init` left beside the launcher: `hp.py` and `view.html`, which no install
-ships any more. A hook committed by an older `init` therefore keeps working: it runs `hp.sh`, which
-finds `devpro`. `doctor`'s `update` line names a committed hook that lacks an event, is not `async`,
+ships any more — and the skill an older `init` rendered under its former name,
+`.claude/skills/show-profile/SKILL.md`, with its directory where that leaves it empty.
+A hook committed by an older `init` therefore keeps working: it runs `hp.sh`, which finds `devpro`. `doctor`'s `update` line names a committed hook that lacks an event, is not `async`,
 or differs by a byte from the launcher's resource the devpro package ships — that resource is the
 master, and the compare reads it without needing an install directory.
 

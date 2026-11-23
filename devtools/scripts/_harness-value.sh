@@ -4,6 +4,7 @@
 set -euo pipefail
 : "${PROJECT_ROOT:?PROJECT_ROOT is empty or unset — run this script through its justfile recipe}"
 : "${GEN:?GEN is empty or unset — run this script through its justfile recipe}"
+export DEVPRO_DEV=1
 : "${1:?the first argument is the harness name}"
 : "${2:?the second argument is the harness key}"
 

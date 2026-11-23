@@ -420,7 +420,7 @@ _PROFILER_EVENTS = (
     "SubagentStop",
 )
 _PROFILER_COMMAND = '/bin/bash "${CLAUDE_PLUGIN_ROOT}/profiler/hp.sh" capture claude'
-_SHOW_PROFILE = "skills/show-profile/SKILL.md"
+_PROFILER_SKILL = "skills/profiler/SKILL.md"
 
 
 def _claude_plugin(harness_dir: Path) -> Path:
@@ -496,7 +496,7 @@ def test_the_profile_skill_renders_under_every_harness() -> None:
     """The skill is a rendered definition, not a claude payload: a harness that ships no profiler still
     renders it, so its committed-copy fallback can be reached there."""
     for ctx in (_CLAUDE_RENDER, _OPENCODE_RENDER, _MAGE_RENDER):
-        assert PurePosixPath(_SHOW_PROFILE) in dict(render_all(ctx)), ctx.harness.name
+        assert PurePosixPath(_PROFILER_SKILL) in dict(render_all(ctx)), ctx.harness.name
 
 
 def test_a_second_install_leaves_the_copied_plugin_standing_and_prunes_only_the_stale_render(
@@ -679,7 +679,8 @@ def test_version_is_refused_as_a_verb(capsys) -> None:
     assert "invalid choice" in capsys.readouterr().err
 
 
-def test_an_operating_system_failure_is_reported_as_an_error_and_exits_2(tmp_path: Path, capsys) -> None:
+def test_an_operating_system_failure_is_reported_as_an_error_and_exits_2(tmp_path: Path, capsys, monkeypatch) -> None:
+    monkeypatch.setenv("DEVPRO_DEV", "1")
     out = tmp_path / "missing" / "AGENTS.md"
     with pytest.raises(SystemExit) as exited:
         main(["render-agents-file", "claude", str(out)])
@@ -706,14 +707,39 @@ def test_the_agents_file_script_ignores_a_third_argument(tmp_path: Path) -> None
     assert two.read_bytes() == three.read_bytes()
 
 
-def test_the_help_usage_line_lists_every_verb_but_the_hidden_one(capsys) -> None:
+def test_the_help_usage_line_lists_every_verb(capsys) -> None:
     with pytest.raises(SystemExit):
         main(["--help"])
     usage = capsys.readouterr().out.split("\n\n")[0]
     listed = re.search(r"\{([^}]*)\}", usage)
     assert listed is not None
     verbs = next(action for action in build_parser()._actions if isinstance(action, argparse._SubParsersAction))
-    assert listed.group(1).split(",") == [name for name in verbs.choices if name != "harness"]
+    assert listed.group(1).split(",") == list(verbs.choices)
+
+
+_MAINTAINER_VERBS = ("dev-render", "render-agents-file", "harness")
+
+
+@pytest.mark.parametrize("value", [None, "0"], ids=["unset", "zero"])
+def test_the_maintainer_verbs_exist_only_where_devpro_dev_is_1(capsys, monkeypatch, value: str | None) -> None:
+    """Without `DEVPRO_DEV=1` the maintainer verbs are absent from `--help` and refused as an invalid
+    choice; before the gate `--help` listed `render` and `render-agents-file`, and `harness` ran."""
+    if value is None:
+        monkeypatch.delenv("DEVPRO_DEV", raising=False)
+    else:
+        monkeypatch.setenv("DEVPRO_DEV", value)
+    with pytest.raises(SystemExit):
+        main(["--help"])
+    help_text = capsys.readouterr().out
+    choices = re.search(r"\{([^}]*)\}", help_text)
+    assert choices is not None
+    listed = {*choices.group(1).split(","), *re.findall(r"^ {4}(\S+)", help_text, flags=re.MULTILINE)}
+    assert listed.isdisjoint({*_MAINTAINER_VERBS, "render"})
+    for verb in (*_MAINTAINER_VERBS, "render"):
+        with pytest.raises(SystemExit) as exited:
+            main([verb, "claude", "agents-file"])
+        assert exited.value.code == 2
+        assert "invalid choice" in capsys.readouterr().err, verb
 
 
 def _renders_the_kbase_skill(out: Path) -> bool:
@@ -727,16 +753,17 @@ def _installs_the_kbase_skill(out: Path) -> bool:
 @pytest.mark.parametrize(
     ("verb", "args", "ships"),
     [
-        ("render", ["--out", "{out}"], _renders_the_kbase_skill),
+        ("dev-render", ["--out", "{out}"], _renders_the_kbase_skill),
         ("install", ["{out}", "--harness=claude"], _installs_the_kbase_skill),
     ],
-    ids=["render", "install"],
+    ids=["dev-render", "install"],
 )
 def test_the_components_flag_turns_the_component_on(
-    tmp_path: Path, verb: str, args: list[str], ships: Callable[[Path], bool]
+    tmp_path: Path, monkeypatch, verb: str, args: list[str], ships: Callable[[Path], bool]
 ) -> None:
     """`--components=kbase` is the whole of turning the kbase skill on: before the flag existed argparse
     refused it as unknown and no render or install could carry the component."""
+    monkeypatch.setenv("DEVPRO_DEV", "1")
     for name, flag in (("with-kbase", ["--components=kbase"]), ("plain", [])):
         out = tmp_path / name
         out.mkdir()
@@ -801,22 +828,24 @@ def test_the_cli_plugin_argument_installs_the_kbase_skill_files_and_the_skill_kb
     assert (snippets / "kb.just").is_file() and (snippets / "kb.mk").is_file()
 
 
-def test_the_settings_file_reaches_the_render(tmp_path: Path) -> None:
+def test_the_settings_file_reaches_the_render(tmp_path: Path, monkeypatch) -> None:
     """Only a call through `main([...])` proves the file reaches the render: every category inherits, so
     the agent's frontmatter line reads `model: inherit`."""
+    monkeypatch.setenv("DEVPRO_DEV", "1")
     out = tmp_path / "out"
     out.mkdir()
     settings = settings_file(tmp_path, "[claude-model-map]\n*=inherit\n")
-    main(["render", "--out", str(out), "--harness=claude", f"--config-file={settings}"])
+    main(["dev-render", "--out", str(out), "--harness=claude", f"--config-file={settings}"])
     assert "\nmodel: inherit\n" in (out / "agents/python-coder.md").read_text(encoding="utf-8")
 
 
-def test_the_settings_file_refuses_a_glob_naming_no_category(tmp_path: Path, capsys) -> None:
+def test_the_settings_file_refuses_a_glob_naming_no_category(tmp_path: Path, capsys, monkeypatch) -> None:
+    monkeypatch.setenv("DEVPRO_DEV", "1")
     out = tmp_path / "out"
     out.mkdir()
     settings = settings_file(tmp_path, "[claude-model-map]\nnope=x\n")
     with pytest.raises(SystemExit) as exited:
-        main(["render", "--out", str(out), "--harness=claude", f"--config-file={settings}"])
+        main(["dev-render", "--out", str(out), "--harness=claude", f"--config-file={settings}"])
     assert exited.value.code == 2
     assert (
         f"--config-file {settings}, section '[claude-model-map]': 'nope=x' names no category" in capsys.readouterr().err
@@ -1579,7 +1608,7 @@ def test_a_user_level_claude_install_renders_the_profile_skill_and_copies_no_res
     root.mkdir(parents=True)
     install(root, _CLAUDE_RENDER, verbose=False, project_root=_home, uncommitted=_committed)
     plugin = _claude_plugin(root)
-    assert (plugin / _SHOW_PROFILE).is_file()
+    assert (plugin / _PROFILER_SKILL).is_file()
     assert not (plugin / _PROFILER).exists()
     assert not (plugin / _REGISTRATION).exists()
 
@@ -1980,7 +2009,7 @@ def test_an_opencode_install_copies_the_profiler_payload_while_a_mage_one_does_n
     """The profiler's hooks are claude's, but its render payload is harness-neutral, so opencode's copy
     list carries it: opencode's project install holds `profiler/` with exactly the launcher and registers
     nothing, while mage's copy list gains nothing and so its install holds neither the payload nor a
-    registration. Both carry the show-profile skill that finds the payload."""
+    registration. Both carry the profiler skill that finds the payload."""
     opencode = tmp_path / "opencode"
     (opencode / ".opencode").mkdir(parents=True)
     _definition_install(opencode / ".opencode", _OPENCODE_RENDER, project_root=opencode)
@@ -1994,7 +2023,7 @@ def test_an_opencode_install_copies_the_profiler_payload_while_a_mage_one_does_n
     assert not (mage_plugin / _PROFILER).exists()
     for plugin in (opencode_plugin, mage_plugin):
         assert not (plugin / _REGISTRATION).exists()
-        assert (plugin / _SHOW_PROFILE).is_file()
+        assert (plugin / _PROFILER_SKILL).is_file()
 
 
 @pytest.mark.parametrize("subdir", ["tools/agents", ".", 'a"b $c'], ids=["subdir", "project-root", "shell-syntax"])

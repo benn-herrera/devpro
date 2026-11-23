@@ -13,11 +13,11 @@ definition of the plugin's set, the named components included.
 
 The devpro settings file's `[<harness>]` section carries `components` beside `install`: the CSV of
 optional components that harness's install turns on. `--components` given is a hard override — it
-replaces the file's value, never adds to it — and `render` takes components from its `--components`
-alone.
+replaces the file's value, never adds to it — and `dev-render` takes components from its
+`--components` alone.
 
 The plugin delivers every definition the repository holds: the coding, platform and specialist
-agents, the `development`, `docdicer`, `guide` and `show-profile` skills (SPEC.md, Guide and README)
+agents, the `development`, `docdicer`, `guide` and `profiler` skills (SPEC.md, Guide and README)
 and the rest. The optional **kbase component** adds, and only adds:
 
 - the `kbase` skill, which drives kbase, a separately installed knowledge-base program and MCP
@@ -33,8 +33,8 @@ and the rest. The optional **kbase component** adds, and only adds:
 A project with the component on carries the full process with it: the component is an addition to
 the whole set, not a smaller install of it.
 
-A component naming a definition that does not exist refuses every render, `render` and `install`
-alike, naming the component and the names. There is one install directory per harness (Install
+A component naming a definition that does not exist refuses every render, `dev-render` and
+`install` alike, naming the component and the names. There is one install directory per harness (Install
 destination); a component changes what it holds, never where it is.
 
 A supporting artifact is delivered with the definition that uses it, and only where that definition

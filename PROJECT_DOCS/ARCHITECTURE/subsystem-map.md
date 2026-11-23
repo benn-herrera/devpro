@@ -64,7 +64,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
   `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it
   renders only where kbase ships.
-- **Profile skill** — `show-profile` (`definitions/show_profile.py`): one `SKILL.md` with no
+- **Profile skill** — `profiler` (`definitions/profiler.py`): one `SKILL.md` with no
   supporting files, delivered under every harness. It renders the newest session's trace — read from
   either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
   `.profiler-*` ones `devpro profiler tree` walks — as text, as a self-contained HTML page, or

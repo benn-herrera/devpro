@@ -8,6 +8,7 @@
 set -euo pipefail
 : "${PROJECT_ROOT:?PROJECT_ROOT is empty or unset — run this script through its justfile recipe}"
 : "${GEN:?GEN is empty or unset — run this script through its justfile recipe}"
+export DEVPRO_DEV=1
 
 : "${1:?usage: render-agents-file.sh HARNESS OUT [PLUGIN, ignored]}"
 : "${2:?usage: render-agents-file.sh HARNESS OUT [PLUGIN, ignored]}"
