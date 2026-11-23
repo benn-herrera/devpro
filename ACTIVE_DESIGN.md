@@ -1,34 +1,14 @@
-# ACTIVE DESIGN
+# The profiler's pages read true and the toolchain checks what ships
 
-## Drafts
+The profiler's served pages show what the records hold: moments read the reader's local time in
+one notation, drawn where the data is born; the index's headers sit over their columns and its
+controls survive navigation; a dispatch's child edges form on the host's moving shape, and the
+standing records recover theirs. The shipped TypeScript resources are type-checked against the
+host's published surface — by `just lint`, which cannot pass a page the browser would reject — for
+the maintainer reading the board and the traces it serves.
 
-### The profiler's post-plan leftovers
-
-The items the active plan deferred as it landed, collected where a later reader finds them: R9's
-type-check of the opencode resources — upstream's own packaging lags its runtime (`ctx.tool.hook`
-is wider than any published or client-installed surface; the host source's `packages/plugin` has
-`tool: ToolDomain`), and the check lands when the host publishes what its runtime provides, with
-no devpro-owned types — deferred to the host's move, R24's rule carrying the doctrine
-meanwhile; R17's halves closed into the entries below at the owner's smallest-wording
-call; R16's leaf catch-up is sequenced after this plan's code-shaping packages land, drafted from
-measurement — the owner's call; R23/R24/R25, the three proposed CONVENTIONS leaves, ruled: R24 lands as
-its own package — a shipped resource naming a host version is type-checked against that host's
-published declarations, never against a devpro-owned stub for a published package, the rule
-binding future resources while R9's enforcement waits for the host to publish; R23 rides the
-runner-fidelity package, R25 rides R16's leaf catch-up; and the capture's third
-host shape: on opencode 2.4.1 the dispatch result carries the child's id at the result's top level
-(`result.sessionID`, beside an `output` array — `packages/core/src/tool/plugin/subagent.ts:19-26,47-49`),
-where the capture reads `output.sessionID` first and `metadata.sessionID` beside it (2.3.2 and
-2.3.0). Live records on 2.4.1 record no child, the id surviving only in the result text — R9's
-type-check against the host source would have flagged the move the day it happened. And the second
-instance of the runners' shared-scope blindness: B2's `pad` helper in `deco.js` redeclared the
-inline scripts' `pad` — classic scripts share one global scope, so the index and session pages
-threw `redeclaration` and drew nothing, invisible to runners that execute one script each. The fix
-the design owns: each page script's body wrapped in an IIFE (module-private helpers, a deliberate
-surface only), and the runners executing all of a page's scripts in one shared scope the way the
-browser does. On the user's direction:
-the forensic child-tie repair runs one last time over the profiler records written since the last
-repair, before the installation is updated — the capture fix makes every edge after that correct.
+The preceding is a summary of the detailed design below. Summaries are unavoidably lossy. The
+summary text is not to be consistency checked. The design is authoritative.
 
 ## ARCHITECTURE delta
 
