@@ -13,9 +13,10 @@ and the user owns their fate. Any other failure belongs to the package being don
 
 | Package | State | Rating | Note |
 | --- | --- | --- | --- |
-| P1 | landed | expert | the floor states 3.11 everywhere it is stated or enforced |
+| P1 | landed: commit e9d0b89 | expert | the floor states 3.11 everywhere it is stated or enforced |
 | P2 | landed | expert | workaround code the 3.11 floor orphans |
-| P3 | dispatchable | expert | the annotation standard for the 3.11 floor |
+| P3 | in progress: dispatched to devpro-python-coder | expert | the annotation standard for the 3.11 floor |
+| P4 | drafted | expert | the dev toolchain lives in pyproject; pins move to latest 3.11 lines |
 | R1 | drafted | expert | the changed code and documents reviewed |
 | R2 | drafted | expert | drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands |
 
@@ -122,7 +123,12 @@ Scope: compat code and version-bound tooling under `devpro/`, `justfile`'s tool 
    reach that are not this package's: `devpro/definitions/agents/python_coder.py` (its definition
    text states the mechanism for any floor and stays) and
    `devpro/definitions/skills/guide.py` (P1 deletes that site; present means P1 incomplete, not
-   P2 work). Every finding, grep or discovered, returns its site and its reason.
+   P2 work). Every finding, grep or discovered, returns its site and its reason. Removal is
+   straight-up deletion: a version check that exists as compat logic leaves together with its
+   alternate path — not rewritten as a `3.11` check that branches the other way. Nothing here is
+   complicated enough to justify version-conditional code paths on a 3.11 floor. The wrapper's
+   `supported()` check is floor *enforcement* — a refusal below the floor is a statement of
+   support — and stays as P1 landed it.
 3. Discovery beyond the greps is in scope — that is why this package is expert — and returns its
    site and reason like any finding. A change that alters behavior beyond orphaned-compat removal
    is out of scope and reported instead.
@@ -142,6 +148,10 @@ Scope: compat code and version-bound tooling under `devpro/`, `justfile`'s tool 
   now choosable; it remains a minor bump under the same rule.
 - *Greps: the expected one hit each* — `devpro/install.py:213`, the P1-updated wrapper check.
   Nothing existed only for 3.9.
+
+(Supersession: the owner's P4 decision moves the pins to the `dev` dependency group at the latest
+3.11-supporting lines — the "no pin moves" answer above is dead; P4 is its successor, not its
+echo.)
 - *Discovery: one finding, deleted.* `devpro/install.py:233` (`base_interpreter`, called only from
   the generator at `:684`) carried a `getattr(sys, "_base_executable", ...)` fallback and a
   symlink-following `while` loop, both reachable only below 3.11: on 3.11 a venv's
@@ -160,7 +170,10 @@ Scope: compat code and version-bound tooling under `devpro/`, `justfile`'s tool 
 Scope: every `devpro/`, `tests/` and `devtools/` module carrying `from __future__ import
 annotations` or an old-style annotation; the CONVENTIONS leaf
 `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/annotations-on-the-floor.md`, rewritten
-whole; nothing else.
+whole; and a new CONVENTIONS leaf beside it,
+`code-definitions-and-install/no-version-conditional-code-paths.md`, created per the owner's
+decision (the version-conditional rule's own home), with its entry added to the tree's index;
+nothing else.
 
 **Facts acted on**:
 
@@ -192,8 +205,59 @@ whole; nothing else.
    natively in an annotation and at runtime; the `__future__` import is cruft — not added, and
    removed from code touched; a genuine forward reference is that annotation quoted as a string.
    The leaf's macOS-venv sentence is gone — the recipes statement owns it.
+4. Create the new CONVENTIONS leaf `no-version-conditional-code-paths.md` — the owner's rule, its
+   own home: no version-conditional code paths — compat code leaves by deletion, never a
+   rewritten check; the floor's features are used presumptively, nothing 3.11 provides withheld
+   and nothing the later versions take away (3.12 through 3.15 remove nothing); a version branch
+   would be one more path to test for the same task, and a new mechanism must win outrageously to
+   be worth a second path; the floor's one home is enforcement (`requires-python`, the wrapper's
+   refusal) — a statement of support, not a compat branch. Add the leaf to the tree's index. Its
+   shape is the tree's house shape: a `###` heading naming the rule, then the prose argument. It
+   states the version rule only — the annotations leaf's rewrite carries the annotation rules,
+   and neither leaf restates the other's.
 
 **Done-line**: `just lint`, `just test` (unscoped — every module imports), `just sweep-python`.
+
+### P4 — the dev toolchain lives in pyproject
+
+The owner's decision, superseding P2's pins answer (its "no pin moves" reading is moot: the move
+happens here, not as a compat removal): the hand-held version pins in the justfile are a bad
+holdover — `pyproject.toml` declares dev-only dependencies as a PEP 735 dependency group, which
+pip installs cleanly and which no wheel of the package can drag in, a Homebrew local wheel build
+included. The pins move to that group at the latest lines supporting Python 3.11.
+
+Scope: `pyproject.toml` (`[dependency-groups]`), `justfile` (`_venv`'s tools list, the
+range-rule comment beside it, and its tools-record), and the two pending design pairs
+([packaging](ACTIVE_DESIGN.md#packaging), [recipes](ACTIVE_DESIGN.md#recipes)).
+
+**Facts acted on**:
+
+- `.venv/bin/pip` is 26.3, which supports `pip install --group` (verified: the `--group` option in
+  its `install --help`).
+- The six tools and their floor-era lines, from the justfile's tools list:
+  `pytest~=8.4.2`, `isort~=6.1.0`, `black~=25.11.0`, `flake8~=7.3.0`, `setuptools~=82.0.1`,
+  `build~=1.4.4`.
+- PEP 735: a dependency group is development-only and never distribution metadata — the wheel
+  `python -m build` produces carries nothing of it, so nothing exists for a brew local wheel build
+  to drag in.
+
+**Work**:
+
+1. Declare a `dev` group in `pyproject.toml` holding the six tools at the latest lines supporting
+   Python 3.11 — verify each line's Requires-Python against PyPI's index, not memory. The jumps
+   are multi-major: the candidates are `isort` 9, `black` 26, `pytest` 9, `setuptools` 84,
+   `build` 1.6 — not P2's first-excluded lines, which understate the move. Each tool's line is
+   named with a compatible-release specifier (`~=X.Y`) — the range policy's home now that the
+   justfile's range-rule comment dies with its list. `flake8` moves to 7.5.0, the first line to
+   require 3.11 (P2's finding). A `black` line move may reformat files; any such reformat rides
+   this package's commit.
+2. `_venv` installs the group — `pip install --group dev` from the project root — and its
+   tools-record stays honest about when a reinstall is due (the record mechanism is the
+   executor's call; the hand-held list and the range-rule comment beside it are deleted).
+3. Apply the two pending design pairs.
+
+**Done-line**: `just lint`, `just test devpro`, `just test wheel`, and
+`just dev-check-design-deltas-applied` reporting 8 pairs landed, 0 pending, problems 0.
 
 ### R1 — Post-plan review
 
