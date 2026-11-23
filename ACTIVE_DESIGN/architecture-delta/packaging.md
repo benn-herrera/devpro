@@ -34,7 +34,7 @@ the verbs themselves import nothing: `devpro.cli` and the dicing verbs' `dicing/
 the verbs themselves import nothing: `devpro.cli`, the dicing verbs' `dicing/cli.py`, the check
   verbs' `doccheck/cli.py`, `profiler/cli.py` and `dashboard/cli.py` import each verb's
   implementation where they dispatch it, which are their only function-level imports and the
-  module-level-import house rule's one exception, the five `tests/test_devpro.py` exempts by name.
-  `devpro/cli.py` composes each one's `add_verbs`.
+  module-level-import house rule's one exception, the five modules `tests/test_devpro.py` exempts by
+  name. `devpro/cli.py` composes the other four's `add_verbs`.
 ```
 

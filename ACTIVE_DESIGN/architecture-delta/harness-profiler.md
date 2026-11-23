@@ -49,7 +49,7 @@ the standalone page alone, which loads nothing from the network and so cannot li
 **Becomes:**
 
 ```
-It carries no palette of its own: its head carries the layer's carriage mark, `<!--LAYER-->`
+It carries no palette of its own: its head carries the layer's mark, `<!--LAYER-->`
 (`LAYER_MARK`), which `render_html` fills with the presentation layer's text inline — the board's
 own stylesheet, `devpro/kanban/assets/board.css`, read the same way — for the standalone page,
 which loads nothing from the network and so cannot link it, and which the serve path

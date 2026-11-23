@@ -11,7 +11,7 @@ the package.
 **Becomes:**
 
 ```
-An installed tree needs no devpro installation: it runs its own copy of devpro, the devpro tools
+An installed tree needs no devpro installation: it runs its own copy of devpro, in the devpro tools
 package (Shipped files), so removing the devpro package, or replacing it with another version,
 changes nothing any installed file does, and only the next `devpro install` needs the package. That
 install replaces the copy whichever of the two versions is the newer, and its report names the
@@ -59,8 +59,6 @@ directory (`../../profiler/hp.sh`).
 ```
 profiler's launcher sits in the install directory's `profiler/` and is named relative to the skill's
 directory (`../../profiler/hp.sh`), and so is the installation's wrapper, in its `tools/`
-(`../../tools/devpro.sh`). A command a definition gives a session to run devpro runs it through
-that wrapper, never the `devpro` command from `PATH` — except the commands that install, update or
-report the version that installs, which are the installing `devpro` command's (Package and Command).
+(`../../tools/devpro.sh`; Shipped files states which commands run through it).
 ```
 

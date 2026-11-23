@@ -49,7 +49,10 @@ directly under the install directory, inside no skill's directory. It holds:
 - `tools/runner-snippets/`, the runner snippets, not an importable package, read by the consuming
   project through the same runner include line.
 
-Every installed file that runs devpro runs it through the wrapper, never the `devpro` command from
+Every installed file that runs devpro, and every command a definition gives a session to run
+devpro, runs it through the wrapper, never the `devpro` command from `PATH` — except
+`devpro install`, `devpro install-agents-file` and `devpro --version`, which install, update by
+installing again, and report the version that would install, and so name the `devpro` command on
 `PATH`. The `devpro` command on `PATH` never hands off to an installation's copy, and only an
 install replaces the copy. The snippets define the recipes `devpro-help`, `devpro-check-plan`,
 `devpro-check-design`, `devpro-check-design-deltas-applied` and `devpro-check-roadmap`:

@@ -37,6 +37,6 @@ Scripts read a harness's `HarnessText` values through `python3 -m devpro harness
 maintainer scripts' reader, and not part of the consumer CLI. It, `dev-render` and
 `render-agents-file` are registered at parser build only where `DEVPRO_DEV` is `1` (SPEC.md,
 Package and Command); each script that runs one of them — `render.sh`, `_render-slot.sh`,
-`render-agents-file.sh` — exports `DEVPRO_DEV=1` once.
+`render-agents-file.sh`, `_harness-value.sh` — exports `DEVPRO_DEV=1` once.
 ```
 

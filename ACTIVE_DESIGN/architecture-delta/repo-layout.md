@@ -15,6 +15,18 @@ the board panel `devpro/kanban`'s (Install, Harness profiler)
 **As it stands:**
 
 ```
+the walk is repeated rather than shared, so the dashboard loads nothing of the check seam.
+```
+
+**Becomes:**
+
+```
+the walk is repeated rather than shared, so the dashboard's root walk calls nothing of the check seam; through its board panel the dashboard loads `doccheck/`'s model, and runs none of the check verbs.
+```
+
+**As it stands:**
+
+```
   dicing/               the absorbed dicing package — the docdicer project's dicer, checks and board as devpro code, run as devpro's dicing and check verbs (Dicing and Checks); importable Python, the board's assets (kanban/assets/) the package data it ships (Packaging), the absorbed project's contract documents carried into Dicing and Checks, its tests joining the devpro test surface
   dicing-snippets/      shipped package, owned by `docdicer` and so delivered by every project install — the runner snippets (devpro.just, devpro.mk) a project install writes the consuming project's include line for, which run the `devpro` command from `PATH`; nothing importable; installed under <install-dir>/skills/docdicer/dicing-snippets/, inside the docdicer skill's own directory (the `SHIPPED_PACKAGES` row, devpro/install.py)
 ```
@@ -38,7 +50,7 @@ The three deployed surfaces are absent from this listing:
 
 ```
 The package's modules depend one way: `kanban/` imports `doccheck/` and `dicing/`, `doccheck/`
-imports `dicing/`, `dashboard/` imports the panels it serves, and none of them is imported back.
+imports `dicing/`, `dashboard/` imports the panels it serves, and none of them imports a module that imports it.
 
 The three deployed surfaces are absent from this listing:
 ```

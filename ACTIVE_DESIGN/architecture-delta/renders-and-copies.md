@@ -56,7 +56,7 @@ script carrying the installed banner below its shebang, holding the path of the 
 interpreter's base executable — the Python a virtual environment was made from, where the install
 runs in one — and running the copy as SPEC.md, Shipped files states. A changed interpreter path is
 a changed file to the preflight's comparison, as any other. The version change the install report
-names is read from the replaced copy's `devpro/__init__.py` and the running package's
+names is read from the replaced copy's `tools/devpro/__init__.py` and the running package's
 `__version__`.
 ```
 

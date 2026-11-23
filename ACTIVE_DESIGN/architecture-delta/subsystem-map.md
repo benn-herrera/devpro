@@ -61,15 +61,16 @@ the launcher
 
 ```
 Its board section routes the board to the `devpro dashboard` verb — the
-  board is the dashboard's panel —
+  board is the dashboard's panel — and names no launcher path or recipe: the launcher paths and
+  recipes it named are retired with the docdicer tools package (Plugins).
 ```
 
 **Becomes:**
 
 ```
 Its board section routes the board to the `dashboard` verb, run through the installation's
-  wrapper — the board is the dashboard's panel — and its install, update and version commands name
-  the installing `devpro` command (SPEC.md, Deployed Surfaces, Installed tree),
+  wrapper — the board is the dashboard's panel — and names no recipe; its install, update and
+  version commands name the `devpro` command on `PATH` (SPEC.md, Deployed Surfaces, Shipped files).
 ```
 
 **As it stands:**
@@ -94,6 +95,6 @@ project's runner includes that set, the checks run through the recipes (by name 
 **Becomes:**
 
 ```
-- **Profile skill** — `profiler` (`definitions/skills/profiler.py`):
+- **Profile skill** — `profiler` (`definitions/profiler.py`):
 ```
 
