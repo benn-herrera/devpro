@@ -49,16 +49,17 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   applied-mathematician carries the `fam-ask-vs-stipulate` anchor.
 - **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered by every
   install.
-  `docdicer.py` routes the session to devpro's dicing verbs — `devpro dice-doc`, `devpro undice`
-  and the check verbs — run from the command line, and does not restate their
+  `docdicer.py` routes the session to devpro's dicing verbs — `dice-doc`, `undice` and the check
+  verbs — run from the command line through the installation's wrapper, `../../tools/devpro.sh`
+  from the skill's directory (SPEC.md, Deployed Surfaces, Installed tree), and does not restate their
   `--help` (CONVENTIONS.md, A skill omits its tool's offered surface). The skill carries no install
   step. Its runner instruction is back, naming the recipes of the `devpro` snippet set: where the
   project's runner includes that set, the checks run through the recipes (by name
   `devpro-help`, `devpro-check-plan`, `devpro-check-design`,
   `devpro-check-design-deltas-applied` and `devpro-check-roadmap`), the four gates argumentless,
   each checking the active file under the project root — the active plan, the active design, the
-  active design's applied deltas and `ROADMAP.md` — with a direct `devpro` call for any other
-  (Plugins). Its board paragraph names the `devpro dashboard` verb for the board — the board is the
+  active design's applied deltas and `ROADMAP.md` — with a direct call through the wrapper for any other
+  (Plugins). Its board paragraph names the `dashboard` verb, run through the wrapper, for the board — the board is the
   dashboard's panel, the `devpro kanban` verb retired with it — offering to run it as a background
   process or handing over the command line, the user choosing.
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
@@ -68,7 +69,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   supporting files, delivered under every harness. It renders the newest session's trace — read from
   either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
   `.profiler-*` ones `devpro profiler tree` walks — as text, as a self-contained HTML page, or
-  served over HTTP: its serve sections name the `devpro dashboard` verb, the records' serving being
+  served over HTTP: its serve sections name the `dashboard` verb, run through the installation's wrapper, the records' serving being
   the dashboard's profiler view now the profiler's own `serve` subcommand has retired, and the
   tree's drawing is the code's rule: `tree --verbose` draws every node of the session, and the
   plain tree draws the placeholder and marker nodes and the calls whose tool is in `PARENT_TOOLS`.
@@ -78,9 +79,9 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   (Install, Harness profiler).
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
-  under every harness. Its board section routes the board to the `devpro dashboard` verb — the
-  board is the dashboard's panel — and names no launcher path or recipe: the launcher paths and
-  recipes it named are retired with the docdicer tools package (Plugins). The description names the uses SPEC.md, Guide and README lists, and
+  under every harness. Its board section routes the board to the `dashboard` verb, run through the installation's
+  wrapper — the board is the dashboard's panel — and names no recipe; its install, update and
+  version commands name the `devpro` command on `PATH` (SPEC.md, Deployed Surfaces, Shipped files). The description names the uses SPEC.md, Guide and README lists, and
   says it is not for a change to the consuming project's own code. `SKILL.md` is a route, as the
   `development` skill's *Route* table is: one row per starting place SPEC.md, Guide and README
   lists, under the never-edit rule it states. The `development` and `docdicer` rows name their skill

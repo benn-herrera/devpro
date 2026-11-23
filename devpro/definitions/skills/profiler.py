@@ -40,12 +40,13 @@ Call the launcher `HP` below and run it with `sh`.
 
 ## Serve the trace
 
-The records are served by the dashboard, the `devpro dashboard` verb: it opens on the project's
+The records are served by the dashboard, the `dashboard` verb, run through the installation's
+wrapper: it opens on the project's
 board, and its profiler view at `/profiler/` — reached from the page's top nav — is this
 repository's recorded sessions, each linking to its page.
 
 ```
-devpro dashboard
+../../tools/devpro.sh dashboard
 ```
 
 Run it in the repository the trace belongs to. It prints the URL it serves on stdout and runs until
