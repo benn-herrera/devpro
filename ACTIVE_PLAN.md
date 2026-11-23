@@ -23,7 +23,7 @@ and the user owns their fate. Any other failure belongs to the package being don
 | B2 | landed: commit a0e50a6 | mechanical | the wheel surface asserts the clean claim |
 | B3 | landed: commit 8997a13 | mechanical | check-wheel checks the floor on the interpreter it is handed |
 | B4 | landed: commit 6073b6b | expert | the entry point enforces the floor; the wrapper stops checking versions |
-| B5 | dispatchable | mechanical | the wording debts |
+| B5 | in progress: dispatched to devpro-python-coder | mechanical | the wording debts |
 
 ### P1 — the floor states 3.11
 
