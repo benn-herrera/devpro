@@ -8,7 +8,8 @@ The items the active plan deferred as it landed, collected where a later reader 
 type-check of the opencode resources — upstream's own packaging lags its runtime (`ctx.tool.hook`
 is wider than any published or client-installed surface; the host source's `packages/plugin` has
 `tool: ToolDomain`), and the check lands when the host publishes what its runtime provides, with
-no devpro-owned types; R17's halves closed into the entries below at the owner's smallest-wording
+no devpro-owned types — deferred to the host's move, R24's rule carrying the doctrine
+meanwhile; R17's halves closed into the entries below at the owner's smallest-wording
 call; R16's leaf catch-up is sequenced after this plan's code-shaping packages land, drafted from
 measurement — the owner's call; R23/R24/R25, the three proposed CONVENTIONS leaves, ruled: R24 lands as
 its own package — a shipped resource naming a host version is type-checked against that host's
@@ -143,6 +144,25 @@ at write time.
 **As it stands:**
 
 ```
+The deco's one script is named by the board page as
+its own file, and the profiler's pages link the same file; the band's legend with its
+`Return to list` control on a session's page.
+```
+
+**Becomes:**
+
+```
+The deco's one script is named by the board page as
+its own file, and the profiler's pages link the same file; the band's legend with its
+`Return to list` control on a session's page. Every script the pages run — the deco's and the
+templates' own — wraps its body in an IIFE: its helpers are module-private, and the deliberate
+surface is only what the page calls, because classic scripts share one global scope and a helper
+redeclared across scripts is a page that drew nothing.
+```
+
+**As it stands:**
+
+```
 A session's page carries its dispatcher in the frame band, linked to that
 session's page, where one dispatched it, and an Agent row links to the child session's page where
 the record names one:
@@ -169,6 +189,26 @@ is stated in the feed as unreadable, like the store that could not be read at al
 ```
 A store the glob finds but cannot read appears in the index as unreadable —
 the server raises nothing for it.
+```
+
+### [Why there is no verification verb](PROJECT_DOCS/ARCHITECTURE/why-there-is-no-verification-verb.md)
+
+**As it stands:**
+
+```
+(`tests/guardrail_ts_runner.ts` loads the opencode guardrail outside
+`bun test`, with its package import stubbed), and asserts each implementation's reason equals the
+table's.
+```
+
+**Becomes:**
+
+```
+(`tests/guardrail_ts_runner.ts` loads the opencode guardrail outside
+`bun test`, with its package import stubbed), and asserts each implementation's reason equals the
+table's. A runner that runs a page's scripts runs them all in one shared scope, the way the
+browser executes a page — classic scripts share one global scope — so a redeclaration the browser
+throws on, the run throws on too.
 ```
 
 ### [Repo layout](PROJECT_DOCS/ARCHITECTURE/repo-layout.md)
@@ -205,3 +245,13 @@ child's id where the host reports it — `result.sessionID` first, then `output.
 statement. The one-shot repair is written to the scope the leaf states: every standing record,
 once, before the installation updates, idempotent over a record whose id is already right; its
 mechanics are the plan's.
+
+The pages' scripts — the deco's and the templates' own — wrap their bodies in an IIFE: helpers
+module-private, the deliberate surface only what the page calls. The board's and the profiler's
+served pages draw as before; the leaf's new sentence holds.
+
+### [Why there is no verification verb](PROJECT_DOCS/ARCHITECTURE/why-there-is-no-verification-verb.md)
+
+The profiler pages' runners execute all of a page's scripts in one shared scope, the way the
+browser executes a page — classic scripts share one global scope — so a redeclaration the browser
+throws on, the run throws on too. The leaf's new sentence holds.
