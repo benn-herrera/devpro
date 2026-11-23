@@ -19,7 +19,7 @@ and the user owns their fate. Any other failure belongs to the package being don
 | P4 | landed: commit ee87157 | expert | the dev toolchain lives in pyproject; pins move to latest 3.11 lines |
 | R1 | landed: commit c089c10 | expert | the changed code and documents reviewed |
 | R2 | drafted | expert | the burndown, its items below; drafted from ACTIVE_PLAN_REVIEW.md |
-| B1 | drafted | expert | `_venv` refuses what it cannot parse |
+| B1 | in progress: dispatched to devpro-shell-dsl-coder | expert | `_venv` refuses what it cannot parse |
 | B2 | drafted | mechanical | the wheel surface asserts the clean claim |
 | B3 | drafted | mechanical | check-wheel checks the floor on the interpreter it is handed |
 | B4 | drafted | expert | the wrapper enforces the floor on both branches |
@@ -297,41 +297,63 @@ of failure on the others; enforcement lives in the tools, and a prose statement 
 | B4 | D9 | expert |
 | B5 | D4, D5, D6, D7, D10, D12, D13, D14 | mechanical |
 
-**B1 — `_venv` refuses what it cannot parse.** Scope: `justfile`'s `_venv` recipe. Between parse
-and act: refuse an empty `${floor}` and an empty `${group}` with the recipe's own error naming
-which; widen the floor regex to the spellings `requires-python` actually takes (`>=3.11,<4`,
-`>=3.11.0`, `==3.11.*`); stop dropping the rebuild guard's stderr. Reading the values with the
-venv python's `tomllib` instead of `sed` is the executor's call — the floor-first sequencing note
-in the review holds either way. Re-run `shell-dsl-coder`'s probe variants
-(`.devpro-temp/probe/`) as the verification. Done-line: `just lint`, `just test devpro`.
+**B1 — `_venv` refuses what it cannot parse.** Scope: `justfile`'s `_venv` recipe. Every parse
+feeds an act only after refusing an empty or unexpected result with the recipe's own error naming
+which parse failed: the floor parse refuses `""` — widened to the spellings `requires-python`
+actually takes (`>=3.11,<4`, `>=3.11.0`, `==3.11.*`) — before the version test and before any
+deletion; the group parse refuses `""` before the record comparison; the rebuild guard's failure
+is visible and stops the recipe — a below-floor or unverifiable venv is never silently kept, its
+message reaching the user. Reading the values with the builder python's `tomllib` instead of
+`sed` is the executor's call, bounded by: tomllib needs a ≥3.11 reader and the builder python is
+only known ≥3.11 after the floor check passes — the refusals are required under either choice.
+The refusals are floor enforcement, not version branches; the version leaf's rule is not
+implicated. Verification, direct on a copy of the tree: the three layout variants (a comment
+above `dev = [`, a same-line list, a renamed table) each error naming the cause; an unchanged
+group stays a no-op; a below-floor venv is refused, not kept. Done-line: `just lint`, `just test
+devpro`.
 
 **B2 — the wheel surface asserts the clean claim.** Scope: `devtools/scripts/check-wheel.sh`. One
-`grep -q '^Requires-Dist'` check on the wheel's METADATA, failing the check when the dev group
-leaks, so "no wheel carries the dev group" is read where it is claimed. Done-line: `just test
-wheel`.
+check on the built wheel's METADATA: it carries no `Requires-Dist` entry at all — the package
+declares no runtime dependencies — failing the check otherwise, so "no wheel carries the dev
+group" is read where it is claimed instead of inferred from `--no-index` resolution. Done-line:
+`just test wheel`.
 
 **B3 — `check-wheel` checks the floor on the interpreter it is handed.** Scope:
-`devtools/scripts/check-wheel.sh`. One guard beside the existing ones: an interpreter below the
-floor exits with the floor message, before any wheel work. Done-line: `just test wheel`.
+`devtools/scripts/check-wheel.sh`. A guard immediately after the interpreter is resolved and
+before any venv or wheel work: below the floor, exit non-zero with the floor message. The
+done-line proves both the happy path and the guard's position: `just test wheel`, and `just
+check-wheel /usr/bin/python3`, which must fail with the floor message — not a wheel defect.
 
 **B4 — the wrapper enforces the floor on both branches.** Scope: `devpro/install.py`
 (`_WRAPPER_TEXT`), `tests/test_devpro_install.py`. The recorded branch runs `supported` before
-trusting the recorded interpreter; the refusal names both the recorded path and the `python3`
-found, so the reader can act; the test pins move with the message. The asymmetry's reach is
-narrow but the fix is two lines and the pin update is in scope. Done-line: `just lint`, `just
-test devpro`.
+trusting the recorded interpreter; the refusal message has two branch-dependent forms — the
+recorded-path form and the PATH form — and both name what the reader can act on (the recorded
+path, or the `python3` found and rejected). A new test case pins the recorded-branch refusal: a
+recorded path that exists and is below the floor, modeled on the `too_old` fixture, is refused,
+not run — the case does not exist today and would otherwise go unpinned. Done-line: `just lint`,
+`just test devpro`.
 
-**B5 — the wording debts.** Scope: documents and one docstring, each enumerated:
-`annotations-on-the-floor.md`'s `typing` list states itself as open (`D4`);
-`no-version-conditional-code-paths.md` drops the dated parenthetical (`D5`); `pyproject.toml`'s
-group comment drops to a pointer, packaging leaf the home (`D6`); the annotations leaf's floor
-list gains `plugins.md`'s statement (`D7`); README:45's bullet names pip's refusal and its
-enforcement (`D10`); `packaging.md` names `tools.txt` and the reinstall-on-group-edit half
-(`D13`); `install.py`'s `base_interpreter` docstring states the CPython guarantee the code relies
-on (`D12`); `planform.py:410`'s stale quote is unquoted (`D14`). Done-line: `just lint`, `just
-test devpro`, `just dev-check-design-deltas-applied` (0 problems), plus the docs surface in the
-gate.
+**B5 — the wording debts.** Scope: documents and one code file, each enumerated:
+1. `annotations-on-the-floor.md`'s `typing` list: complete it to the set the tree actually
+   imports — enumerate with a grep over `typing` imports in `devpro`, `tests` and `devtools`,
+   then name exactly those (`D4`).
+2. `no-version-conditional-code-paths.md`: drop the dated parenthetical "3.12 through 3.15 remove
+   nothing" (`D5`).
+3. `pyproject.toml`'s group comment: drop to a pointer at the packaging leaf, the rule's home
+   (`D6`).
+4. `annotations-on-the-floor.md`'s floor list: gains `plugins.md`'s host-requirement statement
+   (`D7`).
+5. `README.md:45`'s bullet: names pip's `Requires-Python` refusal beside the wrapper's, and
+   states its enforcement like its `just` and `perl` neighbours (`D10`).
+6. `packaging.md`: names `tools.txt` and the reinstall-on-group-edit half of the invariant
+   (`D13`).
+7. `devpro/install.py`'s `base_interpreter` docstring: states the CPython guarantee the code
+   relies on (`D12`).
+8. `devpro/doccheck/planform.py:410`: the stale `"re.Pattern[str]"` quote is unquoted (`D14`).
+Done-line: `just lint`, `just test devpro`, `just test docs`.
 
 Out of scope, noted: `D11` (the tap's unversioned `depends_on` — tap-side work); the installed
 copies' staleness (the owner's reinstall, after the plan lands); the two foreign recipe-pin
-failures (the owner's); `D8` dissolved by the owner's decision above.
+failures (the owner's); `D8` dissolved by the owner's decision above; tech-writer's F6 (no test
+ties README's line to `pyproject.toml` — prose is read only by the spellings sweep), left as
+noted. The seats' full notes stay in their review files under `.devpro-temp/`.
