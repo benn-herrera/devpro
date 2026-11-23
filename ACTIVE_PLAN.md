@@ -19,7 +19,7 @@ and the user owns their fate. Any other failure belongs to the package being don
 | P4 | landed: commit ee87157 | expert | the dev toolchain lives in pyproject; pins move to latest 3.11 lines |
 | R1 | landed: commit c089c10 | expert | the changed code and documents reviewed |
 | R2 | in progress: B1 executing, B2–B5 dispatchable | expert | the burndown, its items below; drafted from ACTIVE_PLAN_REVIEW.md |
-| B1 | in progress: dispatched to devpro-shell-dsl-coder | expert | `_venv` refuses what it cannot parse |
+| B1 | landed: commit 52eb107 | expert | `_venv` refuses what it cannot parse |
 | B2 | dispatchable — serial after B1 (gate shares its files) | mechanical | the wheel surface asserts the clean claim |
 | B3 | dispatchable — dispatches with B2 (same file, two commits) | mechanical | check-wheel checks the floor on the interpreter it is handed |
 | B4 | dispatchable — serial after B2/B3 (shares install.py with B5) | expert | the wrapper enforces the floor on both branches |

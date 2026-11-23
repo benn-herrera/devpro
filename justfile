@@ -44,22 +44,49 @@ TOOLS_RECORD := VENV / "tools.txt"
 # and recorded again, and when it does, this runs no pip. A half-built venv is repaired by deleting
 # .venv and re-running. `pip` is not in the group: it installs, it does not produce output a change
 # depends on.
+#
+# Every read of pyproject.toml refuses an empty or unexpected result, naming the read that missed,
+# before anything acts on it: a silent empty group would install nothing, and a silent empty floor
+# would be read as "too old" and rebuild the venv from whatever `python3` is first on PATH.
 _venv:
     #!/usr/bin/env bash
     set -euo pipefail
     # The project's scratch directory, so a recipe that needs it finds it.
     mkdir -p "{{PROJECT_ROOT}}/.devpro-temp"
-    # The floor's one home. Parsed with a regex, not tomllib: the python that runs this recipe is
+    # The floor's one home, read as the first X.Y a `>=`, `~=` or `==` specifier names: `>=3.11`,
+    # `>=3.11,<4`, `>=3.11.0` and `==3.11.*` all yield 3.11, and a spelling this misses is refused
+    # rather than acted on. Parsed with a regex, not tomllib: the python that runs this recipe is
     # not yet known to be new enough to read it.
-    floor="$(sed -n 's/^requires-python *= *">=\([0-9]*\.[0-9]*\)".*/\1/p' "{{PROJECT_ROOT}}/pyproject.toml")"
-    if [[ -x {{VENV_PYTHON}} ]] && ! {{VENV_PYTHON}} -c "import sys; sys.exit(sys.version_info < tuple(map(int, '${floor}'.split('.'))))" 2>/dev/null; then
+    floor="$(sed -n 's/^requires-python *= *"\([^"]*\)".*/\1/p' "{{PROJECT_ROOT}}/pyproject.toml" | sed -En 's/.*(>=|~=|==)([0-9]+\.[0-9]+).*/\2/p' | head -n 1)"
+    if [[ -z "${floor}" ]]; then
+        printf '%s\n' "error: _venv found no floor in {{PROJECT_ROOT}}/pyproject.toml: requires-python must name a version as >=X.Y, ~=X.Y or ==X.Y" >&2
+        exit 1
+    fi
+    # Runs `${1}` against the floor above; a venv that exists, or one just built, must pass it. A
+    # below-floor venv is deleted and rebuilt once from `python3`, and a rebuild that lands below
+    # the floor again (or an interpreter that fails the test) is refused rather than kept.
+    below_floor() {
+        ! "$1" -c "import sys; sys.exit(sys.version_info < tuple(map(int, '${floor}'.split('.'))))"
+    }
+    if [[ -x {{VENV_PYTHON}} ]] && below_floor {{VENV_PYTHON}}; then
+        printf '%s\n' "note: _venv rebuilds {{VENV}}: its interpreter is below the ${floor} floor" >&2
         command rm -rf "{{VENV}}"
     fi
     if [[ ! -x {{VENV_PYTHON}} ]]; then
         python3 -m venv --upgrade-deps "{{VENV}}"
     fi
-    # The record is the group's text, read from pyproject.toml — never a second copy of the list.
+    if below_floor {{VENV_PYTHON}}; then
+        printf '%s\n' "error: _venv rebuilt {{VENV}} from $(python3 -c 'import sys; print(sys.executable)') but it is below the ${floor} floor: put a Python ${floor} or later first on PATH" >&2
+        exit 1
+    fi
+    # The record is the group's text, read from pyproject.toml — never a second copy of the list. A
+    # non-empty group is also required because an empty one equals the missing-record fallback: the
+    # comparison below would read a group the parse lost as "unchanged" and install nothing.
     group="$(sed -n '/^\[dependency-groups\]/,/^\[/p' "{{PROJECT_ROOT}}/pyproject.toml" | sed '1d;$d' | sed -n '/^dev = \[/,/^\]/p' | sed '1d;$d')"
+    if [[ -z "${group}" ]]; then
+        printf '%s\n' "error: _venv found no dev group in {{PROJECT_ROOT}}/pyproject.toml: [dependency-groups] must hold dev = [...] with one entry per line" >&2
+        exit 1
+    fi
     if [[ "$(cat "{{TOOLS_RECORD}}" 2>/dev/null || true)" != "${group}" ]]; then
         (cd "{{PROJECT_ROOT}}" && {{VENV_PYTHON}} -m pip install --group dev > /dev/null)
         printf '%s\n' "${group}" > "{{TOOLS_RECORD}}"
