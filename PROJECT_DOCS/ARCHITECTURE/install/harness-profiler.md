@@ -16,17 +16,22 @@ modules, and `cli.py` imports the one whose subcommand runs. Its subcommands are
 `dashboard` verb, below.
 
 **Resources.** One file lives in `devpro/harnesses/resources/claude/profiler/`:
-`hp.sh`, the POSIX-sh launcher, which finds the `devpro` command and runs its `profiler` verb (no
-environment variable overrides the search). It carries the `!INSTALLED! … devpro` banner within its
+`hp.sh`, the POSIX-sh launcher, which finds a devpro — the installation's own wrapper first — and
+runs its `profiler` verb (no environment variable overrides the search). It carries the `!INSTALLED! … devpro` banner within its
 first ten lines — the banner rule binds every harness resource — and `harness_resource_copies` lands
 it at the path it holds below the install directory, so the install directory gains
 `profiler/hp.sh`. The launcher is this harness's alone: mage ships no resources, and opencode's
 capture is the plugin's own TypeScript, below.
 
-**The launcher's finder.** The finder extends `PATH` with `/opt/homebrew/bin`, `/usr/local/bin` and
-`~/.local/bin`, since a hook may run with a `PATH` where only the shell's builtins are found, and
-runs one `command -v` over the whole of it. A candidate is the devpro when it runs and exits 0 on
-`--version` — the found command is the one `profiler` runs — and the terminal line is
+**The launcher's finder.** Its first candidate is the installation's wrapper (SPEC.md, Deployed
+Surfaces, Shipped files), resolved from the launcher's own location: `../tools/devpro.sh` from
+`<install-dir>/profiler/hp.sh`, and `../skills/devpro/tools/devpro.sh` from the committed
+`.claude/harness-profiler/hp.sh`. Its fallback extends `PATH` with `/opt/homebrew/bin`,
+`/usr/local/bin` and `~/.local/bin`, since a hook may run with a `PATH` where only the shell's
+builtins are found, and runs one `command -v` over the whole of it. A candidate, the wrapper as any
+other, is the devpro when it runs and exits 0 on `--version`, so a wrapper that finds no usable
+Python is treated as absent and the capture still exits 0 with no output — the found command is the
+one `profiler` runs — and the terminal line is
 `exec "$devpro" profiler "$@"`, the subcommand parsed where the verb is dispatched and the launcher's
 own arguments passed through unchanged. The one-shot finder replaced the per-candidate probe and the
 `HP_DEVPRO` override: there is no variable to set, and a found command that does not run is reported
@@ -182,10 +187,10 @@ record per tool call that did something. A capture that fails raises nothing out
 and `doctor` stay claude-facing: opencode has no committed-hook concept. The install ships the
 profiler's launcher under opencode too: `_CROSS_HARNESS_SOURCES` carries claude's
 `claude/profiler` directory to opencode's `profiler/`, so an opencode project install holds
-`profiler/hp.sh` beside the plugin's `profiler.ts`, and the show-profile skill's first finder
+`profiler/hp.sh` beside the plugin's `profiler.ts`, and the profiler skill's first finder
 candidate resolves it. The payload is copied, not wired: opencode registers no hook entry, so no
-committed copy arises, and the store the plugin writes is read by `devpro profiler tree` run from the
-`devpro` command's `PATH`. One line holds one record, and the limits that keep it so are
+committed copy arises, and the store the plugin writes is read by `profiler tree` run through the
+launcher, whose finder takes the installation's wrapper first. One line holds one record, and the limits that keep it so are
 `devpro/profiler/values.py`'s: `NAME_LIMIT`,
 `ARGS_LIMIT` and `RESULT_LIMIT` clip a field's text as the Python capture clips it, and `LINE_LIMIT`
 bounds the written line in bytes, `name` and `session` clipped at the root before `result` and `args`

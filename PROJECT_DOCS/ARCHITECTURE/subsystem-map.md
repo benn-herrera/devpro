@@ -53,7 +53,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   and the check verbs — run from the command line, and does not restate their
   `--help` (CONVENTIONS.md, A skill omits its tool's offered surface). The skill carries no install
   step. Its runner instruction is back, naming the recipes of the `devpro` snippet set: where the
-  project's runner includes that set, the checks run through the recipes (`devpro`, and by name
+  project's runner includes that set, the checks run through the recipes (by name
   `devpro-help`, `devpro-check-plan`, `devpro-check-design`,
   `devpro-check-design-deltas-applied` and `devpro-check-roadmap`), the four gates argumentless,
   each checking the active file under the project root — the active plan, the active design, the
@@ -74,7 +74,8 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   plain tree draws the placeholder and marker nodes and the calls whose tool is in `PARENT_TOOLS`.
   The skill finds the profiler's launcher at `../../profiler/hp.sh`, the installed copy of claude's,
   before the committed `.claude/harness-profiler/hp.sh` a claude-on-web session uses; the launcher
-  runs the `profiler` verb of the `devpro` command it finds (Install, Harness profiler).
+  runs the `profiler` verb of the devpro its finder resolves, the installation's wrapper first
+  (Install, Harness profiler).
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
   under every harness. Its board section routes the board to the `devpro dashboard` verb — the

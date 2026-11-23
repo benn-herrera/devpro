@@ -1,14 +1,14 @@
 # kanban check recipes. This file is installed at
-# <harness-relpath>/skills/docdicer/dicing-snippets/runner-snippets/ — <harness-relpath>
+# <harness-relpath>/tools/runner-snippets/ — <harness-relpath>
 # being the install directory relative to the project root:
 # .claude/skills/devpro under claude, .opencode/plugins/devpro under opencode — and is
 # imported from the consuming project's justfile by one installed line (never
 # copied into it):
 #
-#     import? '<harness-relpath>/skills/docdicer/dicing-snippets/runner-snippets/devpro.just'
+#     import? '<harness-relpath>/tools/runner-snippets/devpro.just'
 #
 # A consumer running make instead gets the `-include` line pointing at
-# `<harness-relpath>/skills/docdicer/dicing-snippets/runner-snippets/devpro.mk`.
+# `<harness-relpath>/tools/runner-snippets/devpro.mk`.
 #
 # `import?` requires just >= 1.33; the optional form is deliberate: if the
 # installed tree is absent — not yet installed, or removed — the consumer's
@@ -18,8 +18,9 @@
 # Every check finds the active file from the working directory, so these recipes
 # run from the repo root.
 #
-# The recipes run the `devpro` command from PATH; the user installs it
-# themselves — the `guide` skill's references/installing.md walks through it.
+# The recipes run the installation's wrapper, `../devpro.sh` beside this snippet file's installed
+# directory — located from the file's own directory, not the recipe's working directory, the repo
+# root — never `devpro` from PATH, so each check runs the install's own copy of devpro.
 #
 # Recipe names carry a `devpro-` prefix, so they cannot collide with a project's
 # own check/help. Plain recipe lines, no `set shell` — nothing here
@@ -36,20 +37,20 @@ set positional-arguments
 [doc("show help on devpro just recipes")]
 devpro-help:
     @just --justfile "{{justfile()}}" --list | grep -E '^[ \t]+devpro'
-    @devpro --help
+    @{{source_directory()}}/../devpro.sh --help
 
 [doc("check the active plan's status form, as the board reads it")]
 devpro-check-plan:
-    @devpro check-plan
+    @{{source_directory()}}/../devpro.sh check-plan
 
 [doc("check the active design's final form and its delta pairs")]
 devpro-check-design:
-    @devpro check-design
+    @{{source_directory()}}/../devpro.sh check-design
 
 [doc("check that the active design's pending doc deltas were applied")]
 devpro-check-design-deltas-applied:
-    @devpro check-design --deltas-applied
+    @{{source_directory()}}/../devpro.sh check-design --deltas-applied
 
 [doc("check ROADMAP.md's ticket layout, as the board reads it")]
 devpro-check-roadmap:
-    @devpro check-roadmap
+    @{{source_directory()}}/../devpro.sh check-roadmap

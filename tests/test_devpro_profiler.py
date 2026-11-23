@@ -130,14 +130,25 @@ def _devpro_shim(project: Path) -> Path:
     return shim
 
 
-def _run(launcher: Path, *args: str, cwd: Path, stdin: str | None = None) -> subprocess.CompletedProcess[str]:
+def _run(
+    launcher: Path,
+    *args: str,
+    cwd: Path,
+    stdin: str | None = None,
+    path: str | None = None,
+) -> subprocess.CompletedProcess[str]:
+    """Runs the launcher with a `devpro` shim of this checkout on PATH, unless `path` is given, which
+    sets PATH whole — a bare PATH, or one with no devpro — where the finder's own resolution, the
+    installation's wrapper beside the launcher, is what the test puts to the proof."""
+    if path is None:
+        path = f"{_devpro_shim(cwd).parent}:{os.environ['PATH']}"
     return subprocess.run(
         ["sh", str(launcher), *args],
         input=stdin,
         capture_output=True,
         text=True,
         cwd=cwd,
-        env={**os.environ, "PATH": f"{_devpro_shim(cwd).parent}:{os.environ['PATH']}"},
+        env={**os.environ, "PATH": path},
         check=False,
     )
 
@@ -272,31 +283,45 @@ def test_the_installed_profiler_is_the_sources_bytes(tmp_path: Path) -> None:
     assert launcher.read_bytes() == launcher_resource().read_bytes()
 
 
-@pytest.mark.parametrize("command", ["capture", "tree"])
+@pytest.mark.parametrize(
+    "command,unusable_kind",
+    [("capture", "wrapper"), ("tree", "wrapper"), ("capture", "path"), ("tree", "path")],
+)
 def test_a_launcher_finding_an_unusable_devpro_captures_silently_and_reports_otherwise(
-    tmp_path: Path, command: str
+    tmp_path: Path, command: str, unusable_kind: str
 ) -> None:
-    """With a `devpro` first on the finder's path that does not run, `capture` drains stdin and exits 0
-    writing nothing, and every other subcommand names the unusable command on stderr and exits 1: a
-    capture that reports or exits nonzero blocks the tool call that fired it, under the harness hook
-    error policy, and a tree that says nothing leaves the operator no line naming the one dependency
-    to fix."""
+    """A devpro the finder resolves that does not run: `capture` drains stdin and exits 0 writing
+    nothing, and every other subcommand names the unusable command on stderr and exits 1 — whether it
+    is the installation's wrapper, the finder's first candidate, or a `devpro` on PATH reached only
+    where no wrapper stands. A capture that reports or exits nonzero blocks the tool call that fired
+    it, under the harness hook error policy, and a tree that says nothing leaves the operator no line
+    naming the one dependency to fix."""
     launcher = _launcher(tmp_path / "harness")
     payload = json.dumps({"hook_event_name": "PostToolUse", "session_id": "s-none", "tool_name": "Bash"})
     project = tmp_path / "project"
     project.mkdir()
-    broken = tmp_path / "broken"
-    broken.mkdir()
-    script = broken / "devpro"
-    script.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
-    script.chmod(0o755)
+    if unusable_kind == "wrapper":
+        script = launcher.parent / ".." / "tools" / "devpro.sh"
+        script.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+        script.chmod(0o755)
+        environment = {**os.environ, "PATH": "/usr/bin:/bin"}
+    else:
+        # No wrapper stands: remove the install's, so the finder falls through to PATH.
+        script = launcher.parent / ".." / "tools" / "devpro.sh"
+        script.unlink(missing_ok=True)
+        broken = tmp_path / "broken"
+        broken.mkdir()
+        script = broken / "devpro"
+        script.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+        script.chmod(0o755)
+        environment = {**os.environ, "PATH": f"{broken}:/usr/bin:/bin"}
     done = subprocess.run(
         ["sh", str(launcher), command],
         input=payload,
         capture_output=True,
         text=True,
         cwd=project,
-        env={**os.environ, "PATH": f"{broken}:{os.environ['PATH']}"},
+        env=environment,
         check=False,
     )
 
@@ -307,6 +332,23 @@ def test_a_launcher_finding_an_unusable_devpro_captures_silently_and_reports_oth
         assert done.stdout == ""
         assert str(script) in done.stderr
     assert not (project / ".devpro-temp").exists()
+
+
+def test_a_launcher_runs_the_wrapper_beside_it_with_no_devpro_on_path(tmp_path: Path) -> None:
+    """The finder's first candidate is the installation's wrapper, beside the launcher, and it runs
+    before any PATH search: a capture through it writes the record, with no `devpro` on PATH at all —
+    the wrapper is the whole of what the launcher finds, so the search never reaches PATH. Defect:
+    before the launcher named its own installation, a hook run with a bare PATH found no devpro and the
+    capture wrote nothing, though the install's copy stood one file away."""
+    launcher = _launcher(tmp_path / "harness")
+    assert (launcher.parent / ".." / "tools" / "devpro.sh").is_file(), "the install writes the wrapper"
+    project = tmp_path / "project"
+    project.mkdir()
+    done = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD, path="/usr/bin:/bin")
+    assert done.returncode == 0, done.stderr
+    trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
+    [record] = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
+    assert record["tool"] == "Bash" and record["args"] == "ls"
 
 
 def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Path) -> None:

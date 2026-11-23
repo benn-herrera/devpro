@@ -1508,7 +1508,10 @@ def test_the_shipped_devpro_snippets_list_the_same_five_recipes_in_both_runners(
     define; a gate carrying an argument would check a file the consumer did not name."""
     if shutil.which(runner) is None:
         pytest.skip(f"{runner} is not installed")
-    devpro = tmp_path / "devpro"
+    # The recipes run the installation's wrapper, `../devpro.sh` beside the snippet file's directory —
+    # `project/` here, so `../devpro.sh` is this shim — not `devpro` on PATH: the shim stands where the
+    # recipe's own path resolves it, recording each invocation.
+    devpro = tmp_path / "devpro.sh"
     devpro.write_text('#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$PROBE_LOG"\n', encoding="utf-8")
     devpro.chmod(0o755)
     project = tmp_path / "project"
@@ -1561,7 +1564,9 @@ def test_an_argument_after_a_devpro_recipe_is_refused_before_the_command_runs(tm
     snippet = PACKAGE_ROOT / "runner-snippets/devpro.just"
     (tmp_path / "devpro.just").write_text(snippet.read_text(encoding="utf-8"), encoding="utf-8")
     (tmp_path / "justfile").write_text("all:\n  @echo hi\n\nimport? 'devpro.just'\n", encoding="utf-8")
-    devpro = tmp_path / "devpro"
+    # The recipe runs the wrapper `../devpro.sh` beside the snippet, not `devpro` on PATH: the shim
+    # stands where that path resolves it, so a run would log and its absence still proves no run.
+    devpro = tmp_path / "devpro.sh"
     devpro.write_text('#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$PROBE_LOG"\n', encoding="utf-8")
     devpro.chmod(0o755)
     environment = {**os.environ, "PATH": f"{tmp_path}:{os.environ['PATH']}", "PROBE_LOG": str(tmp_path / "log")}
@@ -1571,6 +1576,51 @@ def test_an_argument_after_a_devpro_recipe_is_refused_before_the_command_runs(tm
         )
         assert refused.returncode != 0 and "does not contain recipe" in refused.stderr
     assert not (tmp_path / "log").exists()
+
+
+@pytest.mark.parametrize("entry", ["make", "just"])
+def test_an_installed_runner_snippet_runs_the_check_through_the_wrapper_without_devpro_on_path(
+    tmp_path: Path, entry: str
+) -> None:
+    """An installed runner snippet runs its check through the installation's wrapper, `../devpro.sh`
+    beside the snippet file's installed directory — never `devpro` on PATH: the wrapper stands at
+    `<plugin>/tools/devpro.sh`, one file above the snippet, and a bare PATH still records the check.
+    Defect: before the snippets named the install, a project whose system `devpro` was removed could
+    not run any of the checks its own Makefile or justfile exposed."""
+    runner = shutil.which(entry)
+    if runner is None:
+        pytest.skip(f"{entry} is not installed")
+    project = tmp_path / "project"
+    project.mkdir()
+    if entry == "just":
+        # An empty justfile is where the install writes the just include line; with neither runner
+        # file present the install reaches for a Makefile, and `just` finds no justfile at all.
+        (project / "justfile").touch()
+    main(["install", str(project), "--harness=claude"])
+    plugin = _claude_plugin(project / ".claude")
+    assert (plugin / "tools" / "devpro.sh").is_file()
+    snippet = plugin / ("tools/runner-snippets/devpro.mk" if entry == "make" else "tools/runner-snippets/devpro.just")
+    assert snippet.is_file()
+    recorded = tmp_path / "recorded"
+    environment = {
+        **os.environ,
+        # No devpro on PATH: the wrapper is what the recipe's own path resolves, not a lookup.
+        "PATH": _NO_DEVPRO_PATH,
+        "HOME": str(tmp_path),
+        "DEVPRO_PROBE_LOG": str(recorded),
+    }
+    # The recipe runs the wrapper with the environment it was fired in, so the probe reaches the log
+    # whatever the runner keeps of it: make passes its own environment through, and just keeps an
+    # unset variable unset rather than dropping it.
+    environment.pop("DEVPRO_PROBE_LOG", None)
+    environment["DEVPRO_PROBE_LOG"] = str(recorded)
+    wrapper = plugin / "tools" / "devpro.sh"
+    wrapper.write_text('#!/bin/sh\nprintf \'%s\\n\' "$@" >> "$DEVPRO_PROBE_LOG"\n', encoding="utf-8")
+    wrapper.chmod(0o755)
+    verb = "devpro-check-plan"
+    done = subprocess.run([runner, verb], cwd=project, env=environment, capture_output=True, text=True, check=False)
+    assert done.returncode == 0, done.stderr
+    assert recorded.read_text(encoding="utf-8").splitlines() == ["check-plan"]
 
 
 def test_a_shipped_package_leaves_its_tests_and_documents_behind(
