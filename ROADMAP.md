@@ -11,6 +11,14 @@ The index's row-rendering script catches the feed failure and logs a console lin
 operator sees an empty table with no state naming why. The failure wants a user-visible state (an
 in-page notice naming the feed's failure), not a console line no dashboard reader opens.
 
+### claude profiler records not being captured
+
+Have not seen any new records for claude under the profiler and have run claude code more than once.
+
+### devpro runner-snippets import line not installing
+
+`just agents` in this  repo should add the `import?` line to justfile but does not
+
 ## Features
 
 ### Codex CLI harness support
@@ -96,6 +104,15 @@ after the attribution pass: capability layers land in order, each on the clean f
 previous layer left.
 
 ## Maintenance
+
+### Profiler time stamps in local
+
+They are currently in UTC which no one reads in their head
+
+### dicing.dicerlib is pointless nesting
+
+None of the other modules separate out just cli with everything else in a submodule.
+Move all the source files up to dicing/ - inconsistency is agent distraction.
 
 ### A test harness re-implementing the browser's DOM starts from a verified-empty state
 
