@@ -153,6 +153,20 @@ previous layer left.
 
 ## Maintenance
 
+### Git Flow light: publish the rework history
+
+Move development from squash-style landing to Git Flow light — work branches with granular
+history, landed by merge commit, branches public — because the rework record is data: the
+catch-rate and escape metrics for the review process read it, and public rework history is part
+of the transparency the project exercises. Tonight's losses motivate it: a squashed correction, a
+README amend, and a recalled branch left only reflog archaeology where the measurement wants plain
+history.
+
+The process consequence: the "one commit closes a package" rule was written for squash landing —
+its purpose survives (a package's row names the commit that carries its work; a merge commit can
+be that commit), its form changes, and the rule lives in the process skill and the agent
+definitions, so the change is a definitions-and-CONVENTIONS amendment, not a habit.
+
 ### The profiler's post-plan leftovers
 
 The items the active plan deferred as it landed, collected where a later reader finds them: R9's
