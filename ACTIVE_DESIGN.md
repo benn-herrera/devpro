@@ -14,8 +14,7 @@ measurement — the owner's call; R23/R24/R25, the three proposed CONVENTIONS le
 its own package — a shipped resource naming a host version is type-checked against that host's
 published declarations, never against a devpro-owned stub for a published package, the rule
 binding future resources while R9's enforcement waits for the host to publish; R23 rides the
-runner-fidelity package, R25 rides R16's leaf catch-up; the
-installed plugin payload's `dicerlib` imports, cleared by a reinstall; and the capture's third
+runner-fidelity package, R25 rides R16's leaf catch-up; and the capture's third
 host shape: on opencode 2.4.1 the dispatch result carries the child's id at the result's top level
 (`result.sessionID`, beside an `output` array — `packages/core/src/tool/plugin/subagent.ts:19-26,47-49`),
 where the capture reads `output.sessionID` first and `metadata.sessionID` beside it (2.3.2 and
