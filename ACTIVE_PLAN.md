@@ -22,7 +22,7 @@ and the user owns their fate. Any other failure belongs to the package being don
 | B1 | landed: commit e845d82 | expert | `_venv` refuses what it cannot parse |
 | B2 | landed: commit a0e50a6 | mechanical | the wheel surface asserts the clean claim |
 | B3 | landed: commit 8997a13 | mechanical | check-wheel checks the floor on the interpreter it is handed |
-| B4 | dispatchable — serial after B2/B3 (shares install.py with B5) | expert | the wrapper enforces the floor on both branches |
+| B4 | in progress: dispatched to devpro-python-coder | expert | the wrapper enforces the floor on both branches |
 | B5 | dispatchable — serial after B4 | mechanical | the wording debts |
 
 ### P1 — the floor states 3.11
