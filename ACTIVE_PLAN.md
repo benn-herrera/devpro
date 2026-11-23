@@ -344,7 +344,7 @@ not run — the case does not exist today and would otherwise go unpinned. Done-
 
 #### B5 — the wording debts
 
-Scope: documents and one code file, each enumerated:
+Scope: documents and three code files, each enumerated:
 1. `annotations-on-the-floor.md`'s `typing` list: complete it to the set the tree actually
    imports — enumerate with a grep over `typing` imports in `devpro`, `tests` and `devtools`,
    then name exactly those (`D4`).
@@ -363,11 +363,14 @@ Scope: documents and one code file, each enumerated:
 8. `devpro/doccheck/planform.py:410`: the stale `"re.Pattern[str]"` quote is unquoted (`D14`).
 9. `packaging.md`'s "Check." bullet: names the two new guards — the METADATA `Requires-Dist`
    check and the floor guard on the handed interpreter (`D2`, `D3`).
-10. `PROJECT_DOCS/ARCHITECTURE/recipes.md`'s check-wheel sentence: names the floor guard (`D3`).
-11. `recipes.md`'s "through `install`" claim: the script reaches devpro only via `--version`
-    (B2/B3 report, noted) — the sentence reads what the script does.
-12. `justfile:124`'s `[doc]` prose: "installs byte-identically to the checkout" reads as the
-    rendered-output comparison it actually performs (B2/B3 report, noted).
+10. `PROJECT_DOCS/ARCHITECTURE/recipes.md`'s check-wheel paragraph — the throwaway-venv sentence:
+    states the floor guard explicitly, which it currently only implies (`D3`).
+11. the same leaf's comparison sentence: "through `install`" names which install — the
+    comparison side reaches devpro via `--version`, the install side through the throwaway
+    venv's interpreter (B2/B3 report, noted).
+12. `justfile:120-121`'s "installs byte-identically to the checkout": reads as the
+    rendered-output comparison it actually performs, worded to agree with item 9's packaging
+    sentence (B2/B3 report, noted).
 Done-line: `just lint`. The prose items' truth is the enumeration grep and the acceptance audit;
 the gate's unscoped run already carries item 8's import-time evaluation and the docs surface — a
 done-line restating it would be git-verification, not a test.
@@ -376,6 +379,8 @@ Out of scope, noted: `D11` (the tap's unversioned `depends_on` — tap-side work
 copies' staleness (the owner's reinstall, after the plan lands); the two foreign recipe-pin
 failures (the owner's); `D8` dissolved by the owner's decision above; tech-writer's F6 (no test
 ties README's line to `pyproject.toml` — prose is read only by the spellings sweep), left as
-noted; the PATH-`python3`-too-old raw death at `check-wheel.sh:34` — inherent in the justfile
-`build` dependency, which needs an interpreter before any check runs (B2/B3 report). The seats'
+noted; the PATH-`python3`-too-old raw death at `check-wheel.sh:37` — that read takes PATH's
+interpreter, not the handed argument the guard checks, so a too-old interpreter dies raw under
+`set -e`; inherent in the justfile `build` dependency, which needs an interpreter before any
+check runs (B2/B3 report). The seats'
 full notes stay in their review files under `.devpro-temp/`.
