@@ -20,8 +20,8 @@ and the user owns their fate. Any other failure belongs to the package being don
 | R1 | landed: commit c089c10 | expert | the changed code and documents reviewed |
 | R2 | in progress: B1 executing, B2–B5 dispatchable | expert | the burndown, its items below; drafted from ACTIVE_PLAN_REVIEW.md |
 | B1 | landed: commit e845d82 | expert | `_venv` refuses what it cannot parse |
-| B2 | dispatchable — serial after B1 (gate shares its files) | mechanical | the wheel surface asserts the clean claim |
-| B3 | dispatchable — dispatches with B2 (same file, two commits) | mechanical | check-wheel checks the floor on the interpreter it is handed |
+| B2 | in progress: dispatched with B3 to devpro-shell-dsl-coder | mechanical | the wheel surface asserts the clean claim |
+| B3 | in progress: dispatched with B2 to devpro-shell-dsl-coder | mechanical | check-wheel checks the floor on the interpreter it is handed |
 | B4 | dispatchable — serial after B2/B3 (shares install.py with B5) | expert | the wrapper enforces the floor on both branches |
 | B5 | dispatchable — serial after B4 | mechanical | the wording debts |
 
@@ -309,8 +309,9 @@ message reaching the user. Reading the values with the builder python's `tomllib
 `sed` is the executor's call, bounded by: tomllib needs a ≥3.11 reader and the builder python is
 only known ≥3.11 after the floor check passes — the refusals are required under either choice.
 The refusals are floor enforcement, not version branches; the version leaf's rule is not
-implicated. Verification, direct on a copy of the tree: the three layout variants (a comment
-above `dev = [`, a same-line list, a renamed table) each error naming the cause; an unchanged
+implicated. Verification, direct on a copy of the tree: the two layout variants that yield an empty group (a
+same-line list, a renamed table) each error naming the cause — a comment above `dev = [` parses
+fine and must stay harmless, as B1's measurements showed. An unchanged
 group stays a no-op; a below-floor venv is refused, not kept. Done-line: `just lint`, `just test
 devpro`.
 
