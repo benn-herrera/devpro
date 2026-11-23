@@ -1,4 +1,4 @@
-# kanban check targets. This file is installed at
+# kanban check targets and dashaboard runner. This file is installed at
 # <harness-relpath>/tools/runner-snippets/ — <harness-relpath>
 # being the install directory relative to the project root:
 # .claude/skills/devpro under claude, .opencode/plugins/devpro under opencode — and is
@@ -34,6 +34,7 @@
 #   devpro-check-design:                  check the active design's final form and its delta pairs
 #   devpro-check-design-deltas-applied:   check that the active design's pending doc deltas were applied
 #   devpro-check-roadmap:                 check ROADMAP.md's ticket layout, as the board reads it
+#   devpro-dashboard:                     manually run the devpro dashboard http server (blocks)
 
 # dicing checks
 # Recipes run from the consumer's repo root, so the wrapper is located from this snippet file's own
@@ -42,7 +43,7 @@
 DEVPRO_SNIPPET_FILE := $(lastword $(MAKEFILE_LIST))
 DEVPRO := $(dir $(DEVPRO_SNIPPET_FILE))../devpro.sh
 
-.PHONY: devpro-help devpro-check-plan devpro-check-design devpro-check-design-deltas-applied devpro-check-roadmap
+.PHONY: devpro-help devpro-check-plan devpro-check-design devpro-check-design-deltas-applied devpro-check-roadmap devpro-dashboard
 
 devpro-help:
 	@grep '^#   devpro' "$(DEVPRO_SNIPPET_FILE)" | sed 's:^#: :'
@@ -59,3 +60,6 @@ devpro-check-design-deltas-applied:
 
 devpro-check-roadmap:
 	@$(DEVPRO) check-roadmap
+
+devpro-dashboard:
+	@$(DEVPRO) dashboard

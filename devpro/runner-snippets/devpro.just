@@ -1,4 +1,4 @@
-# kanban check recipes. This file is installed at
+# kanban check recipes and dashaboard runner. This file is installed at
 # <harness-relpath>/tools/runner-snippets/ — <harness-relpath>
 # being the install directory relative to the project root:
 # .claude/skills/devpro under claude, .opencode/plugins/devpro under opencode — and is
@@ -47,3 +47,7 @@ devpro-check-design-deltas-applied:
 [doc("check ROADMAP.md's ticket layout, as the board reads it")]
 devpro-check-roadmap:
     @{{quote(source_directory() / ".." / "devpro.sh")}} check-roadmap
+
+[doc("manually launch the devpro dashboard http server (blocks)")]
+devpro-dashboard:
+    @{{quote(source_directory() / ".." / "devpro.sh")}} dashboard
