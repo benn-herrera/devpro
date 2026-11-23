@@ -13,7 +13,7 @@ Design: [ACTIVE_DESIGN/entry-point.md](ACTIVE_DESIGN/entry-point.md). Every pack
 | P4a | landed | expert | `devpro:python-coder` |
 | P4b | landed | expert | `devpro:shell-dsl-coder` |
 | P4c | landed | expert | `devpro:prompt-engineer` |
-| P5 | dispatchable | mechanical | `devpro:tech-writer` |
+| P5 | landed | mechanical | `devpro:tech-writer` |
 | P6 | dispatchable | expert | post-plan reviewers |
 | P7 | drafted | expert | per the burndown |
 
@@ -385,8 +385,9 @@ Agent `devpro:prompt-engineer`; expert (which sentences give a session a command
 
 ## P5 README: the profiler skill and the supported platforms
 
-Agent `devpro:tech-writer`; mechanical, step-down `comm-mechanical=haiku` through the dispatch's
-`model` parameter.
+Agent `devpro:tech-writer`; mechanical, step-down `reaper/Qwen3.8-Flash-Next` through the dispatch's
+`model` parameter. (The plan's first form named `comm-mechanical=haiku`, a literal model name from a
+stale pin set — no such model on the menu.)
 
 - **Scope:** `README.md`, these edits only:
   - `:74` and `:80`: `show-profile` → `profiler`;

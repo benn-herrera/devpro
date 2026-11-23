@@ -71,13 +71,13 @@ in just over 16K lines of runtime code, including vision tower support and an Op
   recorded to the project's own store under `.devpro-temp/` at the project root — `.profiler-claude/`
   under claude, one line per hook event, and `.profiler-opencode/` under opencode, one per tool call.
   The `tree` subcommand of the `devpro profiler` verb reads every `.profiler-*` store there, and the
-  `show-profile` skill hands a session to the user as text or as an HTML page; the `devpro dashboard`
+  `profiler` skill hands a session to the user as text or as an HTML page; the `devpro dashboard`
   verb serves the records as its profiler view (The dashboard, above). The claude install copies the
   launcher `profiler/hp.sh` and registers six hook entries in the plugin's `hooks/hooks.json`; the
   opencode install copies the launcher and the capture `profiler.ts` beside the plugin entry and
   registers no hook entries. The page template `view.html` is the devpro wheel's own package data,
   not an install resource.
-- Under mage, `show-profile` ships with no launcher and no capture, so a mage session records nothing
+- Under mage, `profiler` ships with no launcher and no capture, so a mage session records nothing
   and has no trace to read. A claude session on the web loads no plugin's hooks and records nothing
   there until `init` commits the hook; the skill names that `init`.
 
@@ -157,8 +157,8 @@ a project, install into that project as above, under claude or opencode. The kba
 optional: `--components=kbase` adds the `kbase` skill and the `.mcp.json` entry Mage starts the
 `kbase` executable from. No devpro install provides, runs or checks that executable: on macOS and
 Linux, install it with `brew install benn-herrera/tap/kbase` (0.11.1 or later); native Windows is
-unsupported for the component. Restart Mage after installing or upgrading kbase, so it starts the
-server.
+unsupported for the devpro plugin, the component included. Restart Mage after installing or
+upgrading kbase, so it starts the server.
 
 ## Next: ask your agent
 
@@ -171,8 +171,8 @@ the development process runs, tells you where your work stands, and shows the bo
 checkout of this repository runs it as `just dev-dashboard`, which passes any further arguments
 through to the verb. It also
 installs, updates, inspects or changes what you just installed. To see what the session did — its
-profile, trace or call tree — ask for the `show-profile` skill: `devpro:show-profile` under claude and
-mage, `devpro-show-profile` under opencode.
+profile, trace or call tree — ask for the `profiler` skill: `devpro:profiler` under claude and
+mage, `devpro-profiler` under opencode.
 
 Where the guide's setup step covers a project with nothing yet, it creates that project's documents
 in the directory the session runs in. A mage install reaches no project, so after one, install into
