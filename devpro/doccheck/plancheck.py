@@ -3,6 +3,8 @@ form a design holds, or of the ticket layout a roadmap holds, each reported with
 text found there and the form accepted in its place, so that the fix can be made from the message.
 """
 
+from __future__ import annotations
+
 import os
 import re
 from collections.abc import Callable
@@ -158,7 +160,7 @@ def _check(
     return report.status
 
 
-def _report(path: str, *, reader: Callable[[str], Plan], summary: Callable[[Plan, str], str]) -> _Report:
+def _report(path: str, *, reader: Callable[[str], Plan | Layout], summary: Callable[[Plan, str], str]) -> _Report:
     """The report the plan at path gives: the document's breaches, the summary line summary makes of it
     and path, and its status, 1 on any breach and 0 otherwise."""
     document = reader(path)

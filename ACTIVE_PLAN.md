@@ -160,7 +160,7 @@ only and their done-lines assert the pairs stand untouched.
 | B2 | landed: the deco keeps what the leaf promises; deco.js, the deco runner and its tests | expert |
 | B3 | landed: commit 0b822bf; reduced scope as discovered, R9 tracked to the host's V2 declarations | expert |
 | B4 | landed: commit 27e90b0; lone stamps carry their date, pairs untouched | expert |
-| B5 | in progress: dispatched to devpro-python-coder | expert |
+| B5 | landed: commit 61f647b; the annotation truth corrected in the landing commit — the union stays, the type-test does not return | expert |
 
 #### B1 — the index reads true
 
