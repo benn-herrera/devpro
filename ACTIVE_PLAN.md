@@ -18,12 +18,12 @@ and the user owns their fate. Any other failure belongs to the package being don
 | P3 | landed: commit fbb8e04 | expert | the annotation standard for the 3.11 floor |
 | P4 | landed: commit ee87157 | expert | the dev toolchain lives in pyproject; pins move to latest 3.11 lines |
 | R1 | landed: commit c089c10 | expert | the changed code and documents reviewed |
-| R2 | in progress: B1 executing, B2–B5 dispatchable | expert | the burndown, its items below; drafted from ACTIVE_PLAN_REVIEW.md |
+| R2 | in progress: B1–B4 landed, B5 dispatchable | expert | the burndown, its items below; drafted from ACTIVE_PLAN_REVIEW.md |
 | B1 | landed: commit e845d82 | expert | `_venv` refuses what it cannot parse |
 | B2 | landed: commit a0e50a6 | mechanical | the wheel surface asserts the clean claim |
 | B3 | landed: commit 8997a13 | mechanical | check-wheel checks the floor on the interpreter it is handed |
-| B4 | in progress: re-dispatched on the entry-point approach | expert | the entry point enforces the floor; the wrapper stops checking versions |
-| B5 | dispatchable — serial after B4 | mechanical | the wording debts |
+| B4 | landed: commit 6073b6b | expert | the entry point enforces the floor; the wrapper stops checking versions |
+| B5 | dispatchable | mechanical | the wording debts |
 
 ### P1 — the floor states 3.11
 
