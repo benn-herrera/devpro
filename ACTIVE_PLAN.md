@@ -361,6 +361,13 @@ Scope: documents and one code file, each enumerated:
 7. `devpro/install.py`'s `base_interpreter` docstring: states the CPython guarantee the code
    relies on (`D12`).
 8. `devpro/doccheck/planform.py:410`: the stale `"re.Pattern[str]"` quote is unquoted (`D14`).
+9. `packaging.md`'s "Check." bullet: names the two new guards — the METADATA `Requires-Dist`
+   check and the floor guard on the handed interpreter (`D2`, `D3`).
+10. `PROJECT_DOCS/ARCHITECTURE/recipes.md`'s check-wheel sentence: names the floor guard (`D3`).
+11. `recipes.md`'s "through `install`" claim: the script reaches devpro only via `--version`
+    (B2/B3 report, noted) — the sentence reads what the script does.
+12. `justfile:124`'s `[doc]` prose: "installs byte-identically to the checkout" reads as the
+    rendered-output comparison it actually performs (B2/B3 report, noted).
 Done-line: `just lint`. The prose items' truth is the enumeration grep and the acceptance audit;
 the gate's unscoped run already carries item 8's import-time evaluation and the docs surface — a
 done-line restating it would be git-verification, not a test.
@@ -369,4 +376,6 @@ Out of scope, noted: `D11` (the tap's unversioned `depends_on` — tap-side work
 copies' staleness (the owner's reinstall, after the plan lands); the two foreign recipe-pin
 failures (the owner's); `D8` dissolved by the owner's decision above; tech-writer's F6 (no test
 ties README's line to `pyproject.toml` — prose is read only by the spellings sweep), left as
-noted. The seats' full notes stay in their review files under `.devpro-temp/`.
+noted; the PATH-`python3`-too-old raw death at `check-wheel.sh:34` — inherent in the justfile
+`build` dependency, which needs an interpreter before any check runs (B2/B3 report). The seats'
+full notes stay in their review files under `.devpro-temp/`.
