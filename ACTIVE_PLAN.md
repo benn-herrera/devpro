@@ -297,7 +297,9 @@ of failure on the others; enforcement lives in the tools, and a prose statement 
 | B4 | D9 | expert |
 | B5 | D4, D5, D6, D7, D10, D12, D13, D14 | mechanical |
 
-**B1 — `_venv` refuses what it cannot parse.** Scope: `justfile`'s `_venv` recipe. Every parse
+#### B1 — `_venv` refuses what it cannot parse
+
+Scope: `justfile`'s `_venv` recipe. Every parse
 feeds an act only after refusing an empty or unexpected result with the recipe's own error naming
 which parse failed: the floor parse refuses `""` — widened to the spellings `requires-python`
 actually takes (`>=3.11,<4`, `>=3.11.0`, `==3.11.*`) — before the version test and before any
@@ -312,19 +314,25 @@ above `dev = [`, a same-line list, a renamed table) each error naming the cause;
 group stays a no-op; a below-floor venv is refused, not kept. Done-line: `just lint`, `just test
 devpro`.
 
-**B2 — the wheel surface asserts the clean claim.** Scope: `devtools/scripts/check-wheel.sh`. One
+#### B2 — the wheel surface asserts the clean claim
+
+Scope: `devtools/scripts/check-wheel.sh`. One
 check on the built wheel's METADATA: it carries no `Requires-Dist` entry at all — the package
 declares no runtime dependencies — failing the check otherwise, so "no wheel carries the dev
 group" is read where it is claimed instead of inferred from `--no-index` resolution. Done-line:
 `just test wheel`.
 
-**B3 — `check-wheel` checks the floor on the interpreter it is handed.** Scope:
+#### B3 — `check-wheel` checks the floor on the interpreter it is handed
+
+Scope:
 `devtools/scripts/check-wheel.sh`. A guard immediately after the interpreter is resolved and
 before any venv or wheel work: below the floor, exit non-zero with the floor message. The
 done-line proves both the happy path and the guard's position: `just test wheel`, and `just
 check-wheel /usr/bin/python3`, which must fail with the floor message — not a wheel defect.
 
-**B4 — the wrapper enforces the floor on both branches.** Scope: `devpro/install.py`
+#### B4 — the wrapper enforces the floor on both branches
+
+Scope: `devpro/install.py`
 (`_WRAPPER_TEXT`), `tests/test_devpro_install.py`. The recorded branch runs `supported` before
 trusting the recorded interpreter; the refusal message has two branch-dependent forms — the
 recorded-path form and the PATH form — and both name what the reader can act on (the recorded
@@ -333,7 +341,9 @@ recorded path that exists and is below the floor, modeled on the `too_old` fixtu
 not run — the case does not exist today and would otherwise go unpinned. Done-line: `just lint`,
 `just test devpro`.
 
-**B5 — the wording debts.** Scope: documents and one code file, each enumerated:
+#### B5 — the wording debts
+
+Scope: documents and one code file, each enumerated:
 1. `annotations-on-the-floor.md`'s `typing` list: complete it to the set the tree actually
    imports — enumerate with a grep over `typing` imports in `devpro`, `tests` and `devtools`,
    then name exactly those (`D4`).
