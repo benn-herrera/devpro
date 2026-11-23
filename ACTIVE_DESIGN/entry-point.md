@@ -20,6 +20,7 @@ Contents:
   - [Guide and README](spec-delta/guide-and-readme.md)
 - [ARCHITECTURE delta](architecture-delta/index.md)
   - [Install entry](architecture-delta/install-entry.md)
+  - [Installing this repository](architecture-delta/installing-this-repository.md)
   - [Recipes](architecture-delta/recipes.md)
   - [Plugins](architecture-delta/plugins.md)
   - [Renders and copies](architecture-delta/renders-and-copies.md)

@@ -121,3 +121,15 @@ provides kbase as `benn-herrera/tap/kbase`; native Windows is unsupported for it
 refuses or warns on Windows.
 ```
 
+**As it stands:**
+
+```
+creates no `Makefile`, and nothing is written into this repository's own runner file. A line names
+```
+
+**Becomes:**
+
+```
+creates no `Makefile`. A line names
+```
+

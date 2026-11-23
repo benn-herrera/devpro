@@ -15,7 +15,11 @@ Design: [ACTIVE_DESIGN/entry-point.md](ACTIVE_DESIGN/entry-point.md). Every pack
 | P4c | landed | expert | `devpro:prompt-engineer` |
 | P5 | landed | mechanical | `devpro:tech-writer` |
 | P6 | landed | expert | post-plan reviewers |
-| P7 | drafted | expert | per the burndown |
+| P7a | in progress | expert | `devpro:python-coder` |
+| P7b | dispatchable | expert | `devpro:python-coder` |
+| P7c | dispatchable | expert | `devpro:shell-dsl-coder` |
+| P7d | dispatchable | expert | `devpro:prompt-engineer` |
+| P7e | in progress | expert | `devpro:tech-writer` |
 
 ## Common to every package
 
@@ -42,24 +46,26 @@ Design: [ACTIVE_DESIGN/entry-point.md](ACTIVE_DESIGN/entry-point.md). Every pack
 ## Pair assignment
 
 Each SPEC and ARCHITECTURE pair is cited by its design leaf and its ordinal among that leaf's
-`**As it stands:**` blocks. 61 pairs: 25 SPEC, 36 ARCHITECTURE.
+`**As it stands:**` blocks. 67 pairs: 27 SPEC, 40 ARCHITECTURE. The table below assigns P1–P4c's
+61; P7's table assigns the six P7 added and the two whose Becomes P7 amended.
 
 | Design leaf | P1 | P2 | P3 | P4a | P4b | P4c |
 |---|---|---|---|---|---|---|
 | [spec-delta/package-and-command](ACTIVE_DESIGN/spec-delta/package-and-command.md) (2) | | | 1 | 2 | | |
 | [spec-delta/surfaces-and-layout](ACTIVE_DESIGN/spec-delta/surfaces-and-layout.md) (2) | | | 1 | 2 | | |
-| [spec-delta/plugins](ACTIVE_DESIGN/spec-delta/plugins.md) (8) | | | 1, 2, 3 | 4, 5, 6, 7, 8 | | |
+| [spec-delta/plugins](ACTIVE_DESIGN/spec-delta/plugins.md) (9) | | | 1, 2, 3 | 4, 5, 6, 7, 8 | | |
 | [spec-delta/install-destination](ACTIVE_DESIGN/spec-delta/install-destination.md) (3) | | | 2, 3 | 1 | | |
-| [spec-delta/installed-tree](ACTIVE_DESIGN/spec-delta/installed-tree.md) (4) | | | | 1, 2, 3 | | 4 |
+| [spec-delta/installed-tree](ACTIVE_DESIGN/spec-delta/installed-tree.md) (5) | | | | 1, 2, 3 | | 4 |
 | [spec-delta/shipped-files](ACTIVE_DESIGN/spec-delta/shipped-files.md) (3) | | | 3 | 1 | | 2 |
 | [spec-delta/guide-and-readme](ACTIVE_DESIGN/spec-delta/guide-and-readme.md) (2) | | | 1, 2 | | | |
 | [spec-delta/write-safety](ACTIVE_DESIGN/spec-delta/write-safety.md) (1) | | | | 1 | | |
 | [architecture-delta/harness-profiler](ACTIVE_DESIGN/architecture-delta/harness-profiler.md) (12) | 4, 5 | 3, 6 | 7, 8, 9 | 11, 12 | 1, 2, 10 | |
-| [architecture-delta/install-entry](ACTIVE_DESIGN/architecture-delta/install-entry.md) (1) | | | 1 | | | |
-| [architecture-delta/packaging](ACTIVE_DESIGN/architecture-delta/packaging.md) (2) | | 2 | | 1 | | |
+| [architecture-delta/install-entry](ACTIVE_DESIGN/architecture-delta/install-entry.md) (2) | | | 1 | | | |
+| [architecture-delta/installing-this-repository](ACTIVE_DESIGN/architecture-delta/installing-this-repository.md) (1) | | | | | | |
+| [architecture-delta/packaging](ACTIVE_DESIGN/architecture-delta/packaging.md) (3) | | 2 | | 1 | | |
 | [architecture-delta/plugins](ACTIVE_DESIGN/architecture-delta/plugins.md) (4) | | | | 1, 2, 3, 4 | | |
 | [architecture-delta/recipes](ACTIVE_DESIGN/architecture-delta/recipes.md) (2) | | | 1, 2 | | | |
-| [architecture-delta/renders-and-copies](ACTIVE_DESIGN/architecture-delta/renders-and-copies.md) (3) | | | | 1, 2, 3 | | |
+| [architecture-delta/renders-and-copies](ACTIVE_DESIGN/architecture-delta/renders-and-copies.md) (4) | | | | 1, 2, 3 | | |
 | [architecture-delta/repo-layout](ACTIVE_DESIGN/architecture-delta/repo-layout.md) (4) | | 1, 2, 4 | | 3 | | |
 | [architecture-delta/structural-rules](ACTIVE_DESIGN/architecture-delta/structural-rules.md) (1) | | | 1 | | | |
 | [architecture-delta/subsystem-map](ACTIVE_DESIGN/architecture-delta/subsystem-map.md) (7) | | | 7 | | 4, 6 | 1, 2, 3, 5 |
@@ -409,4 +415,222 @@ the commit that adds it.
 
 ## P7 Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Each item is a finding in [ACTIVE_PLAN_REVIEW.md](ACTIVE_PLAN_REVIEW.md), cited by its ID; the
+finding carries its evidence and its fix, and the package applies that fix. Line numbers are at
+`2369903`.
+
+New or amended pairs, added to the design for R1, R11, R15 and U1, cited by leaf and ordinal as
+*Pair assignment* cites them. An amended pair's target holds its earlier Becomes; the package
+replaces that text with the pair's current Becomes.
+
+| Design leaf | pair | package |
+|---|---|---|
+| spec-delta/package-and-command | 1 (its Becomes amended for R11) | P7a |
+| spec-delta/shipped-files | 2 (its Becomes amended for R1) | P7a |
+| spec-delta/plugins | 9 | P7a |
+| architecture-delta/install-entry | 2 | P7a |
+| architecture-delta/renders-and-copies | 4 | P7a |
+| architecture-delta/installing-this-repository | 1 | P7a |
+| architecture-delta/packaging | 3 | P7a |
+| spec-delta/installed-tree | 5 | P7d |
+
+Until P7d lands, `just dev-check-design-deltas-applied` fails only on spec-delta/installed-tree
+pair 5; any other pair it reports is the package's failure.
+
+### P7a Post-plan burndown: the install
+
+Agent `devpro:python-coder`; expert (the wrapper's bootstrap form, within R2's bound below, and the
+refusal's placement are the agent's call).
+
+- **Items:**
+  - R1 (its SPEC half is spec-delta/shipped-files pair 2, not Install destination; the refusal's
+    scope is that pair's: an install run from an installation's own copy into the installation
+    holding that copy);
+  - R2, bounded: the bootstrap adds no installed path. SPEC Shipped files names `tools/`'s contents
+    whole (`tools/devpro/`, `tools/devpro.sh`, `tools/runner-snippets/`), so what the wrapper runs
+    is the wrapper itself or lives inside `tools/devpro/`;
+  - R3; R8 (the `_WRAPPER_TEXT` half: its `cd`, `devpro/install.py:201`, runs with `CDPATH=`);
+  - U1 (this repository's runner file gets its include lines as any project's does);
+  - R11 (the SPEC pair only); R27; R28; R30 (`base_interpreter`, the `install.py` module docstring,
+    the dead `pop` and reassignment in `tests/test_devpro_install.py`).
+- **Applies:** the seven P7a pairs above. The two amended pairs' earlier Becomes stand in their
+  targets, so each lands as an edit to that text:
+  - spec-delta/package-and-command pair 1: in `PROJECT_DOCS/SPEC/package-and-command.md:9`, the
+    clause "and the same arguments install the same product, byte for byte." is replaced by the
+    pair's Becomes from "and the same arguments under the same Python" through "(Deployed
+    Surfaces, Shipped files)."; the rest of the pair's Becomes already stands.
+  - spec-delta/shipped-files pair 2: in `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:70-71`,
+    the sentence "An install run from an installation's own copy, …, as the one that installs." is
+    inserted after "and only an install replaces the copy."; the rest already stands.
+- **Scope:** `devpro/install.py`, `devpro/install_target.py`, `devpro/install_base.py` (the
+  `PACKAGE_ROOT` docstring, where R1 changes what the guard refuses), `devpro/runner_file.py`,
+  `tests/test_devpro_install.py`, `tests/test_install_target.py`.
+- **Facts:**
+  - `git grep -n require_outside_package_source -- devpro` → `devpro/install.py:55`, `:879`;
+    `devpro/install_base.py:23`; `devpro/install_target.py:89`, `:156`.
+  - `git grep -n "REPO_ROOT" -- devpro/runner_file.py` → `:231`, the U1 skip.
+  - `git grep -l "_WRAPPER_TEXT" -- devpro tests` → `devpro/install.py` (`:193`).
+  - `git grep -l ShippedPackage -- devpro tests` → `devpro/install.py tests/test_devpro_install.py`.
+  - R28's stamping exemption is `devpro/install.py:648`
+    (`stamps = not target.is_relative_to(root / DEVPRO_COPY)`); R27's count line is `:670`.
+- **Tests pinning the behavior** (in scope):
+  - R1: `test_an_install_into_the_running_packages_own_source_tree_is_refused`
+    (`tests/test_install_target.py:161`).
+  - R2, R28: in `tests/test_devpro_install.py`,
+    `test_a_project_install_writes_the_devpro_copy_and_a_wrapper_that_runs_it` (`:1816`, the copy
+    byte-equal to the package), `test_a_wrapper_whose_recorded_python_is_gone_runs_the_first_python3_on_path_or_names_the_floor`
+    (`:1836`), `test_install_writes_every_render_and_stamps_the_packages_once` (`:1941`).
+  - R3: `test_a_hand_written_file_at_a_render_target_is_refused_with_nothing_written` (`:1987`),
+    `test_a_directory_at_a_render_target_is_refused_with_nothing_written` (`:1998`),
+    `test_every_failing_target_is_named_in_one_refusal` (`:2009`).
+  - R27: none pins the count line's counts; `:2436` pins its absence on an up-to-date run.
+  - U1, rewritten to pin the include line written: `:1374`
+    (`test_the_repositorys_own_project_root_gets_no_include_line`), `:1381`
+    (`test_the_exemption_creates_no_runner_file_in_a_project_holding_none`), `:2398`
+    (`_the_repository_as_project`, used at `:2421`); and `:298`
+    (`test_outside_a_checkout_a_project_at_site_packages_gets_its_include_line`), which pins the
+    outside-a-checkout stand-down packaging pair 3 removes.
+- **New tests, each failing before its fix:** R1, a second install whose `PACKAGE_ROOT` is the
+  first install's copy leaves `tools/devpro/__init__.py` in place and exits 2; R2, the wrapper run
+  from a directory holding a `devpro` package imports the copy; R3, a `tools/devpro.sh` in the
+  install directory that carries no installed banner refuses the install with nothing written; U1,
+  an install whose project is `REPO_ROOT` writes the `devpro` include line.
+- **Done-line:** `just test`, `just lint`, `just dev-check-links`,
+  `just dev-check-design-deltas-applied`.
+- **After acceptance:** the session runs `just agents`, and the closing commit carries the
+  include line it writes into this repository's `justfile` with the rest of that install's changes.
+
+### P7b Post-plan burndown: the profiler and the verbs
+
+Agent `devpro:python-coder`; expert (how doctor walks the launcher's candidates, and the
+placeholder's name and namespace, are the agent's call).
+
+- **Items:**
+  - R4 (the `hooks.py` half: `devpro_executable` and `doctor`);
+  - R5 (the fill only; P7d writes the wording that uses it): a placeholder, in the closed set
+    `PROJECT_DOCS/ARCHITECTURE/rendering/placeholders.md` describes, filled from the bound harness
+    with the path, relative to the project root, of the wrapper a project install under that
+    harness writes — claude's `.claude/skills/devpro/tools/devpro.sh`. R6's derived
+    `INSTALLED_WRAPPER` and this fill come from one derivation;
+  - R6 (the derivation only; no test, below); R26; R29 (`CHECK_VERBS` only);
+  - R30 (`hooks.py` positional insert; the duplicated assignment in `tests/test_devpro_profiler.py`).
+- **Scope:** `devpro/profiler/hooks.py`, `devpro/profiler/pages.py`, `devpro/cli.py`,
+  `devpro/doccheck/cli.py`; `devpro/vocabulary.py`, `devpro/harness.py`, `devpro/render.py` and
+  `devpro/harnesses/` where the fill needs them; `tests/test_devpro_profiler.py`,
+  `tests/dicing/test_cli_surface.py`, `tests/test_devpro.py`;
+  `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md` where its account of doctor or the
+  wrapper's path changes, and `PROJECT_DOCS/ARCHITECTURE/rendering/placeholders.md` where its
+  account of the closed set changes.
+- **Facts:**
+  - `git grep -n "INSTALLED_WRAPPER\|devpro_executable" -- devpro tests` →
+    `devpro/profiler/hooks.py:56`, `:74`, `:78`, `:249`.
+  - `git grep -n CHECK_VERBS -- devpro tests` → `devpro/cli.py:42`, `:241`;
+    `tests/dicing/test_cli_surface.py:15` (the import), `:31` (the parametrize).
+  - `hp.sh:34`, the launcher's candidates:
+    `"${here}/../tools/devpro.sh" "${here}/../skills/devpro/tools/devpro.sh"`.
+  - No placeholder reaches the plugin directory today: `git grep -n plugin_dir -- devpro/vocabulary.py`
+    → nothing; `HarnessText` (`devpro/vocabulary.py:84-90`) holds seven members. `plugin_dir` is
+    claude's `"skills/{plugin}"` (`devpro/harnesses/claude.py:149`), opencode's
+    `"plugins/{plugin}"` (`devpro/harnesses/opencode.py:97`), `""` by default
+    (`devpro/harness.py:202`). An unknown placeholder is refused at render (`devpro/render.py:188`).
+  - `profiler init` writes the body a claude install renders (`profiler_skill_text`,
+    `devpro/profiler/hooks.py:129-135`), so the fill reaches the skill `init` writes.
+- **Tests pinning the behavior** (in scope):
+  - R4: in `tests/test_devpro_profiler.py`,
+    `test_doctor_reports_a_committed_launcher_that_differs_from_the_resource` (`:712`),
+    `test_a_doctor_names_an_old_pattern_store_and_its_remedy` (`:1209`),
+    `test_a_doctor_names_a_collided_store_as_the_operators_own_merge` (`:1232`).
+  - R5's fill: in `tests/test_devpro.py`, `test_a_harness_text_placeholder_fills_with_the_harness_string`
+    (`:882`), `test_an_unknown_placeholder_is_refused_at_render` (`:898`),
+    `test_the_text_module_spells_each_render_placeholder_as_the_renderer_fills_it` (`:906`).
+  - R26: in `tests/test_devpro_profiler.py`, `test_a_capture_writes_the_record_the_page_and_tree_read`
+    (`:235`), `test_the_served_page_is_the_html_the_file_flow_writes` (`:1058`),
+    `test_the_standalone_render_carries_the_shared_layer_and_the_legend_once` (`:1085`),
+    `test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_standing` (`:1250`).
+  - R29: `test_help_lists_each_dicing_verb` (`tests/dicing/test_cli_surface.py:31-33`).
+  - R30: `test_init_lays_down_the_launcher_and_clears_an_older_runs_files`
+    (`tests/test_devpro_profiler.py:600`).
+- **New tests, each failing before its fix:** R4, doctor given a launcher-relative wrapper that
+  does not run reports it unusable; R5, a body carrying the fill renders
+  `.claude/skills/devpro/tools/devpro.sh` under claude — today the closed set has no such
+  placeholder, and the render refuses it; R26, a session whose output holds `/*DATA*/null` renders.
+  R6's equality test is not written: `INSTALLED_WRAPPER` (`hooks.py:56`) already equals `hp.sh:34`'s
+  second candidate taken from `HOOK_DIR`, so the test passes before the change and names no defect
+  it fails on (`clauses.TEST_PRECONDITION`).
+- **Done-line:** `just test`, `just lint`, `just dev-check-links`,
+  `just dev-check-design-deltas-applied`.
+
+### P7c Post-plan burndown: the shell
+
+Agent `devpro:shell-dsl-coder`; expert (the quoting form is the agent's call).
+
+- **Items:**
+  - R7;
+  - R4 (the `hp.sh` half: `hp.sh:35`'s `-x` test becomes an existence test, and the probe decides);
+  - R8 (the `hp.sh` half; P7a carries `_WRAPPER_TEXT`'s), done when `find_devpro`'s `here` and
+    `candidate` are `local`, its `cd` (`hp.sh:33`) runs with `CDPATH=`, and either the script sets
+    `set -euo pipefail` or its header states why it does not. The choice is the agent's; either way
+    `capture` still exits 0 on every path;
+  - R9; R11 (the ARCHITECTURE Recipes sentence on check-wheel's checkout side).
+- **Scope:** `devpro/runner-snippets/devpro.just`, `devpro/harnesses/resources/claude/profiler/hp.sh`,
+  `devtools/scripts/render.sh`, `devtools/scripts/_render-slot.sh`,
+  `PROJECT_DOCS/ARCHITECTURE/recipes.md`, `tests/test_devpro_install.py` (R7),
+  `tests/test_devpro_profiler.py` (R4).
+- **Facts:**
+  - `grep -n 'source_directory()' devpro/runner-snippets/devpro.just` → `:33`, `:37`, `:41`, `:45`,
+    `:49`.
+  - `grep -n 'DEVPRO_DEV' devtools/scripts/*.sh` → `_harness-value.sh:7`, `_render-slot.sh:21`,
+    `render.sh:40`, `render-agents-file.sh:11`; R9's are `render.sh:40` and `_render-slot.sh:21`.
+- **Tests pinning the behavior** (in scope):
+  - R7: in `tests/test_devpro_install.py`,
+    `test_an_installed_runner_snippet_runs_the_check_through_the_wrapper_without_devpro_on_path`
+    (`:1582`), `test_the_shipped_devpro_snippets_list_the_same_five_recipes_in_both_runners` (`:1502`).
+  - R4, R8: in `tests/test_devpro_profiler.py`,
+    `test_a_launcher_finding_an_unusable_devpro_captures_silently_and_reports_otherwise` (`:290`),
+    `test_a_launcher_runs_the_wrapper_beside_it_with_no_devpro_on_path` (`:337`).
+  - R9: none; `git grep -n -E 'render\.sh|_render-slot' -- tests` → nothing.
+- **New tests, each failing before its fix:**
+  - R7: `test_an_installed_runner_snippet_runs_the_check_through_the_wrapper_without_devpro_on_path`'s
+    `just` case, run from a project directory whose name holds a space. Defect: the unquoted
+    `{{source_directory()}}` path splits, and the recipe exits 127.
+  - R4: a launcher whose installed wrapper exists without the execute bit, with a `devpro` on `PATH`,
+    records nothing (the probe rules the wrapper unusable). Defect: today `[[ -x ]]` skips it and the
+    launcher runs the `devpro` on `PATH`.
+- **Done-line:** `just test`, `just lint`, `just dev-check-links`,
+  `just dev-check-design-deltas-applied`.
+
+### P7d Post-plan burndown: definitions and project documents
+
+Agent `devpro:prompt-engineer`; expert (the wrapper clause's wording is the agent's call).
+
+- **Items:**
+  - R5 (the wording: the clause in `devpro/clauses.py`, composed into `docdicer.py`, `profiler.py`
+    and `guide.py`; its second candidate, for the skill `profiler init` writes, is P7b's fill);
+  - R12, R13, R14, R15, R16, R17 (`subsystem-map.md:87-88`: `guide.py:37` gives the `profiler` row
+    a `clauses.ref` too; the `packaging.md` claim holds), R18 (all but README), R19 (the prose),
+    R20;
+  - U1's ROADMAP ticket, "devpro runner-snippets import line not installing" (`ROADMAP.md:18`),
+    leaves the roadmap, accomplished by P7a;
+  - U1's two tickets that record surroundings rather than the fact: "claude profiler records not
+    being captured" (`ROADMAP.md:14`), whose body becomes "A claude project session writes no record
+    to `.devpro-temp/.profiler-claude/`."; and "Profiler time stamps in local" (`ROADMAP.md:108`),
+    whose heading becomes "Profiler pages show timestamps in UTC, not local time" and whose body
+    names the surfaces, the trace list and the session page.
+- **Applies:** spec-delta/installed-tree pair 5.
+- **Scope:** `devpro/clauses.py`, `devpro/definitions/skills/{docdicer,profiler,guide,development}.py`,
+  the PROJECT_DOCS leaves the items name,
+  `PROJECT_DOCS/CONVENTIONS/adding-definitions/a-skill-omits-its-tool-s-offered-surface.md`,
+  `ROADMAP.md`.
+- **Facts:** `git grep -n -F '../../tools/devpro.sh' -- devpro` → `docdicer.py:48`, `:49`, `:59`;
+  `profiler.py:49`; `guide.py:109`, `:469`, `:472`.
+- **Done-line:** `just test`, `just lint`, `just dev-check-links`, `just dev-check-roadmap`,
+  `just dev-check-design-deltas-applied`, which passes from here on.
+
+### P7e Post-plan burndown: the README
+
+Agent `devpro:tech-writer`; expert (R21's wording and R25's order are the agent's call).
+
+- **Items:** R18 (the README sites), R21, R22, R23, R24, R25.
+- **Scope:** `README.md`.
+- **Done-line:** `just dev-check-links`; `git grep -c -i 'dicing snippets' README.md` answers
+  nothing.

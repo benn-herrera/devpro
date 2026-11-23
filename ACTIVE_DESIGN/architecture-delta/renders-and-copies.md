@@ -60,3 +60,19 @@ names is read from the replaced copy's `tools/devpro/__init__.py` and the runnin
 `__version__`.
 ```
 
+**As it stands:**
+
+```
+because three decisions compare a written path with a fixed location and a
+  scratch copy would decide them differently: whether the harness directory is user-level, whether
+  the project is `REPO_ROOT` (the include lines are skipped there), and the agents file's
+```
+
+**Becomes:**
+
+```
+because two decisions compare a written path with a fixed location and a
+  scratch copy would decide them differently: whether the harness directory is user-level, and the
+  agents file's
+```
+

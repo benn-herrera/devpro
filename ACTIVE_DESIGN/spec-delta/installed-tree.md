@@ -62,3 +62,17 @@ directory (`../../profiler/hp.sh`), and so is the installation's wrapper, in its
 (`../../tools/devpro.sh`; Shipped files states which commands run through it).
 ```
 
+**As it stands:**
+
+```
+A
+script inside a skill's own directory is named relative to that directory: the
+```
+
+**Becomes:**
+
+```
+A
+script the install places is named relative to the directory of the skill that names it: the
+```
+

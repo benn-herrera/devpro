@@ -15,3 +15,17 @@ installed `devpro install` is the same verb (Packaging). The verb takes TARGET,
 TARGET,
 ```
 
+**As it stands:**
+
+```
+`install` uses the project root as spelled, and resolves it
+only to compare it with this checkout (`REPO_ROOT`, `runner_file.install_include_lines`), so
+two spellings of the checkout compare equal. The install directory's
+```
+
+**Becomes:**
+
+```
+`install` uses the project root as spelled. The install directory's
+```
+

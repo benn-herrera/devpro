@@ -38,3 +38,20 @@ the verbs themselves import nothing: `devpro.cli`, the dicing verbs' `dicing/cli
   name. `devpro/cli.py` composes the other four's `add_verbs`.
 ```
 
+**As it stands:**
+
+```
+| check | in a checkout | outside |
+|---|---|---|
+| `install_include_lines`: no include lines for the repository itself, written by a project install | skips that project | stands down: writes the lines for any project |
+| `uncommitted_sources`, before an agents-file write into a user harness directory | refuses on uncommitted sources; a failed `git status` refuses with `InputError` | returns `()` without running git |
+```
+
+**Becomes:**
+
+```
+| check | in a checkout | outside |
+|---|---|---|
+| `uncommitted_sources`, before an agents-file write into a user harness directory | refuses on uncommitted sources; a failed `git status` refuses with `InputError` | returns `()` without running git |
+```
+

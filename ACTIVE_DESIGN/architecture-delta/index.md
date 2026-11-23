@@ -3,6 +3,7 @@
 Contents:
 
 - [Install entry](install-entry.md)
+- [Installing this repository](installing-this-repository.md)
 - [Recipes](recipes.md)
 - [Plugins](plugins.md)
 - [Renders and copies](renders-and-copies.md)
