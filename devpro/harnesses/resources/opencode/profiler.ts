@@ -237,16 +237,15 @@ function resultOf(call: Finished): string | undefined {
   return clip(mask(firstLine(textOf)), RESULT_LIMIT) || undefined
 }
 
-// childSessionOf is the session a subagent call dispatched, the host's `result.metadata.sessionID`,
+// childSessionOf is the session a subagent call dispatched, the host's `result.output.sessionID`,
 // read under the host's own string guard. Each opencode session owns its own trace file, so this id
 // names the child's page and its row in the index, never a context in the parent's file.
-// The subagent tool carries the field from opencode 2.3.0, the floor this plugin is written for
-// (2.3.2), and renaming the tool `task` to `subagent` did not move it; a result with no `metadata` —
-// a `task`-spelled dispatch among them, and a dispatch whose after-hook never fires — is a valid
-// no-child state, and the record keeps `null`.
+// opencode 2.3.2 reports the dispatched child's session id there; a result whose output carries no
+// session id — a `task`-spelled dispatch's bare output string among them, and a result with none —
+// is a valid no-child state, and the record keeps `null`.
 function childSessionOf(call: Finished): string | undefined {
-  const metadata = isRecord(call.result) ? call.result.metadata : undefined
-  const id = isRecord(metadata) ? metadata.sessionID : undefined
+  const output = isRecord(call.result) ? call.result.output : undefined
+  const id = isRecord(output) ? output.sessionID : undefined
   return typeof id === "string" ? id : undefined
 }
 
@@ -312,7 +311,7 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
     duration_ms: end - start,
     ok: call.status === "completed",
     // A subagent call starts its child's context, and the host names that child's session in the
-    // result's metadata: the id goes in the slot the render groups children by.
+    // result's output: the id goes in the slot the render groups children by.
     child_agent_id: subagent ? (childSessionOf(call) ?? null) : null,
     child_agent_type: subagent ? (childAgentTypeOf(raw, input, call) ?? DEFAULT_AGENT) : null,
     background: false,

@@ -579,7 +579,7 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
     skill call, a subagent dispatch and the session's idle each append their record; the failed call's
     text is its `Tool.Error`'s message, the skill and subagent carry the host's own names, a dispatch
     carries the kind its response reports or else its own agent, under either of the host's spellings
-    for the tool, the child session its result's metadata names, and the one call whose `execute.after`
+    for the tool, the child session its result's output names, and the one call whose `execute.after`
     never fires drops its start at the idle."""
     project = tmp_path / "project"
     project.mkdir()
@@ -600,12 +600,13 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
     assert calls[1]["ok"] is False
     assert calls[1]["result"] == "The user rejected this tool call"
     assert calls[2]["result"] == "loaded"
-    assert calls[3]["result"] == "ses_child"
+    assert calls[3]["result"] is None
     assert calls[3]["child_agent_id"] == "ses_child"
     assert calls[3]["child_agent_type"] == "devpro-python-coder"
     assert calls[4]["child_agent_id"] == "ses_fork"
     assert calls[4]["child_agent_type"] == "fork"
-    # The task spelling's after-hook carries no `metadata`, so its bare `output` names no session.
+    # The task spelling's after-hook reports a bare `output` string with no child session id, so it
+    # records none.
     assert calls[5]["child_agent_id"] is None
     assert calls[5]["child_agent_type"] == "devpro-tech-writer"
     assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"]

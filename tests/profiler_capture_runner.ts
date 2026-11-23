@@ -61,7 +61,7 @@ await fire("execute.before", base("call_4", "subagent", { agent: "devpro-python-
 await fire("execute.after", {
   ...base("call_4", "subagent", { agent: "devpro-python-coder", description: "port it", prompt: "port hp.py" }),
   status: "completed",
-  result: { output: "ses_child", metadata: { sessionID: "ses_child" } },
+  result: { output: { sessionID: "ses_child", status: "running" } },
 })
 
 // A dispatch the host reports as a fork: the response's `agentType` is the kind hp.py draws the context by.
@@ -69,7 +69,7 @@ await fire("execute.before", base("call_7", "subagent", { agent: "devpro-archite
 await fire("execute.after", {
   ...base("call_7", "subagent", { agent: "devpro-architect", description: "fork it", prompt: "fork" }),
   status: "completed",
-  result: { output: "ses_fork", metadata: { sessionID: "ses_fork", agentType: "fork" } },
+  result: { output: { sessionID: "ses_fork", status: "running" }, metadata: { agentType: "fork" } },
 })
 
 // The same dispatch under opencode 2.3.0's spelling of the tool, which its floor range covers.

@@ -175,13 +175,13 @@ carries the capture, recreated in the plugin's TypeScript against the plugin's h
 a lifecycle record the tree does not draw — writing them to its own
 `.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which
 `devpro profiler tree` and the dashboard's profiler view render beside the claude sessions', each
-record read from its own `.profiler-*` store. A `subagent` or `task` call also records the child
-session it dispatched, the host's `result.metadata.sessionID` read under the host's own string
-guard: that id fills the record's `child_agent_id`, where the index groups the child one level
-under its dispatcher — the tree, on the session's page, drawing the dispatch as a context — and the
-dispatch links to the child's page. The stores stay flat — the child's id reaches
-no capture as a parent key, the hierarchy being what the parent's records state — and a dispatch
-whose result carries no metadata records no child.
+record read from its own `.profiler-*` store. A `subagent` or `task` call also records the child session it dispatched, the child's session id
+read from the host's result where the host reports it — opencode 2.3.2's `result.output.sessionID`
+is that place: that id fills the record's `child_agent_id`, where the index groups the child one
+level under its dispatcher — the tree, on the session's page, drawing the dispatch as a context —
+and the dispatch links to the child's page. The stores stay flat — the child's id reaches no
+capture as a parent key, the hierarchy being what the parent's records state — and a dispatch that
+fails before creating a child, or whose result reports no child session, records none.
 The model's own `todowrite` notes are not recorded: they are not activity, so the store holds one
 record per tool call that did something. A capture that fails raises nothing out of the hook. `init`
 and `doctor` stay claude-facing: opencode has no committed-hook concept. The install ships the
