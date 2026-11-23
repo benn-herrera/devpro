@@ -3,10 +3,11 @@
 // Usage: bun tests/profiler_index_runner.ts
 // Stdin: JSON {index, feed, actions?}: the served `/profiler/` page, the feed its script reads, and
 // optionally the controls a reader drives after the feed settles — each `{toggle: <input id>}` a
-// checkbox's `change`, each `{sort: <head data-sort>}` a column head's `click`, and `{fail: <text>}`
-// a feed that answers `HTTP 500` instead of the feed.
-// Stdout: JSON {rows, keys, fetches, notices}: each row the script drew as its markup, the feed-entry
-// keys the script read, the paths it fetched in order, and the notices the page showed.
+// checkbox's `change`, each `{sort: <head data-sort>}` a column head's `click`, and `{fail: {status,
+// body}}` a feed that answers that status instead of the feed, its body read where the status is ok.
+// Stdout: JSON {rows, keys, fetches, notices, controls}: each row the script drew as its markup, the
+// feed-entry keys the script read, the paths it fetched in order, the notices the page showed, and
+// each control's state after the presses.
 //
 // The page's script is run against a document that is what the template says it is — the `#rows`
 // body, the empty notice, the static controls and column heads its text carries, and the element
@@ -18,7 +19,7 @@
 
 import { readFileSync } from "node:fs"
 
-type Action = { toggle?: string; sort?: string; fail?: string }
+type Action = { toggle?: string; sort?: string; fail?: { status: number; body?: unknown } }
 type Input = { index: string; feed: object[]; actions?: Action[] }
 
 const input: Input = JSON.parse(await Bun.stdin.text())
@@ -73,6 +74,11 @@ class Node {
 
   get hidden(): boolean {
     return this.attrs.hidden === "true"
+  }
+
+  set disabled(disabled: boolean) {
+    if (disabled) this.attrs.disabled = ""
+    else delete this.attrs.disabled
   }
 
   get dataset(): Record<string, string> {
@@ -154,7 +160,7 @@ const watched = (value: unknown): unknown => {
   })
 }
 
-let failure: string | null = null
+let failure: { status: number; body: unknown } | null = null
 
 Object.assign(globalThis, {
   document: {
@@ -168,7 +174,7 @@ Object.assign(globalThis, {
   },
   fetch: async (path: string) => {
     fetches.push(path)
-    if (failure !== null) return { ok: false, status: 500, json: async () => ({}) }
+    if (failure !== null) return { ok: failure.status < 400, status: failure.status, json: async () => watched(failure.body ?? {}) }
     return { ok: true, status: 200, json: async () => watched(input.feed) }
   },
   setInterval: () => 0,
@@ -178,11 +184,17 @@ Object.assign(globalThis, {
 const running = console
 globalThis.console = { warn: () => {}, log: () => {} }
 const rows = () => body.childNodes.map((child) => (typeof child === "string" ? child : child.html()))
+// What the page shows before any press: the notice hidden and its text empty, and no row drawn. A
+// test asserting the notice a failed feed raises needs the state it was raised from, since a notice
+// the page opened with is no feed's failure.
+const before = { hidden: notice.hidden, text: notice.textContent, rows: rows() }
 new Function(scripts[0])()
 // The script's fetch is a promise chain; one turn of the microtask queue settles it.
 await new Promise((resolve) => setTimeout(resolve, 0))
 
 // The reader's own presses, in the order the test names them: a control's switch and a head's press.
+// A `{fail}` re-runs the page's script against a feed answering that status, the page's notice then
+// holding the message its own failure path composed.
 for (const action of input.actions ?? []) {
   if (action.fail !== undefined) {
     failure = action.fail
@@ -207,6 +219,20 @@ globalThis.console = running
 const sorts = statics
   .filter((node) => node.tag === "button" && node.cell !== null)
   .map((node) => [node.attrs["data-sort"], (node.cell as Node).attrs["aria-sort"] ?? "none"])
+// Each control's state as the page leaves it: checked, and disabled where it can hide nothing.
+const controls = Object.fromEntries(
+  statics
+    .filter((node) => node.tag === "input")
+    .map((node) => [node.attrs.id, { checked: node.checked, disabled: "disabled" in node.attrs }]),
+)
 running.log(
-  JSON.stringify({ rows: rows(), keys: [...keys].sort(), fetches, sorts, notices: notice.hidden ? [] : [notice.textContent] }),
+  JSON.stringify({
+    rows: rows(),
+    keys: [...keys].sort(),
+    fetches,
+    sorts,
+    controls,
+    before,
+    notices: notice.hidden ? [] : [notice.textContent],
+  }),
 )

@@ -124,7 +124,7 @@ def test_an_unreadable_store_is_stated_in_the_feed_rather_than_failing_it(tmp_pa
     assert [entry.get("id") for entry in entries if "unreadable" not in entry] == ["s-one"]
 
 
-SESSION_KEYS = {"harness", "id", "records", "first", "last", "span"}
+SESSION_KEYS = {"harness", "id", "records", "agents", "first", "last", "span"}
 DISPATCHED_KEYS = SESSION_KEYS | {"dispatcher"}
 
 
@@ -175,6 +175,7 @@ def test_the_traces_feed_answers_one_entry_per_session_and_names_unreadable_stor
             "harness": "claude",
             "id": "s-one",
             "records": 1,
+            "agents": 0,
             "first": 1767225600000,
             "last": 1767225600000,
             "span": 0,
@@ -183,6 +184,7 @@ def test_the_traces_feed_answers_one_entry_per_session_and_names_unreadable_stor
             "harness": "opencode",
             "id": "s-parent",
             "records": 1,
+            "agents": 1,
             "first": 1767225605000,
             "last": 1767225605000,
             "span": 0,
@@ -191,6 +193,7 @@ def test_the_traces_feed_answers_one_entry_per_session_and_names_unreadable_stor
             "harness": "opencode",
             "id": "s-child",
             "records": 1,
+            "agents": 0,
             "first": 1767225607000,
             "last": 1767225607000,
             "span": 0,

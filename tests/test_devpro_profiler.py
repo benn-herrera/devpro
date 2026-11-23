@@ -905,6 +905,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "harness": "claude",
             "id": "s-claude",
             "records": 2,
+            "agents": 0,
             "first": _epoch_ms("2026-01-01T00:00:00.000Z"),
             "last": _epoch_ms("2026-01-01T00:00:01.000Z"),
             "span": 1,
@@ -913,6 +914,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "harness": "opencode",
             "id": "s-opencode",
             "records": 1,
+            "agents": 0,
             "first": _epoch_ms("2026-01-01T00:00:05.000Z"),
             "last": _epoch_ms("2026-01-01T00:00:05.000Z"),
             "span": 0,
@@ -921,6 +923,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "harness": "opencode",
             "id": "s-dispatcher",
             "records": 1,
+            "agents": 1,
             "first": _epoch_ms("2026-01-01T00:00:06.000Z"),
             "last": _epoch_ms("2026-01-01T00:00:06.000Z"),
             "span": 0,
@@ -929,6 +932,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "harness": "opencode",
             "id": "s-child",
             "records": 2,
+            "agents": 0,
             "first": _epoch_ms("2026-01-01T00:00:07.000Z"),
             "last": _epoch_ms("2026-01-01T00:00:08.000Z"),
             "span": 1,
@@ -999,12 +1003,18 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
     assert "claude" in drawn["rows"][0] and "2 records" in drawn["rows"][0]
     assert "1 dispatched agent" in drawn["rows"][2]
     assert 'class="child"' in drawn["rows"][3] and "↳ child — devpro-coder" in drawn["rows"][3]
-    # The keys the script reads are the schema's: a session entry's six, the dispatcher pair, and an
-    # unreadable store's one — no key the feed builder does not write, and none it writes unread.
+    # The dispatched-agent count is the entry's own, and the row carries no second copy of it: a
+    # `data-agents` attribute beside the feed's key is the one the script's sort would read had the
+    # entry not carried it.
+    assert "data-agents" not in "".join(drawn["rows"])
+    # The keys the script reads are the schema's: a session entry's seven, the dispatcher pair, an
+    # unreadable store's one, and the `{stores}` marker's one — no key the feed builder does not
+    # write, and none it writes unread.
     assert set(drawn["keys"]) == {
         "harness",
         "id",
         "records",
+        "agents",
         "first",
         "last",
         "span",
@@ -1012,6 +1022,7 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
         "session",
         "name",
         "unreadable",
+        "stores",
     }
     assert drawn["fetches"] == ["/api/traces"]
 
@@ -1033,8 +1044,8 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
 
     # The span's own rendering, at every scale the server-side span test covered — seconds below a
     # minute, minutes alone, and the hour forms — fed the runner a crafted feed so the scale is known
-    # by construction; and the table's own empty reading, where the feed holds no session to draw and
-    # no store to name, a full-width row that is no store's unreadable state.
+    # by construction; the table's own empty reading is asserted below, where its three distinctions
+    # are driven.
     crafted = [
         {"harness": "claude", "id": "s-59", "records": 1, "first": 0, "last": 0, "span": 59},
         {"harness": "claude", "id": "s-90", "records": 1, "first": 0, "last": 0, "span": 90},
@@ -1049,20 +1060,54 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
     )
     drawn = json.loads(run.stdout)
     # Every crafted entry draws a row: a zip that silently paired fewer rows would pass with the
-    # scale never checked, so the count is stated before the pairing.
+    # scale never checked, so the count is stated before the pairing, and each row's span is asserted
+    # where the table puts it — the row's last cell — so a span cell moved a column or a row drawn out
+    # of order fails rather than satisfying a substring's somewhere.
     assert len(drawn["rows"]) == len(crafted)
-    for entry, cell in zip(
-        drawn["rows"], ("<td>59s</td>", "<td>1m 30s</td>", "<td>2m</td>", "<td>1h</td>", "<td>1h 30m</td>")
-    ):
-        assert cell in entry, f"{cell} not the span cell of the row drawn for its entry"
-    run = _run_ts(
-        _HERE / "profiler_index_runner.ts",
-        directory=tmp_path,
-        stdin=json.dumps({"index": index, "feed": []}),
+    for row, reading in zip(drawn["rows"], ("59s", "1m 30s", "2m", "1h", "1h 30m")):
+        cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
+        assert cells[-1] == reading, f"{reading!r} not the last cell of {row}"
+
+    # The table's own empty reading makes three distinctions: a feed holding sessions the controls
+    # hid, a feed whose stores stand but hold no record to draw, and a feed from a tree with no store
+    # at all — an empty feed being no store found, since a store the server reads answers a session
+    # entry or an `{unreadable}` one, and the stores it finds but holds no record for answer neither.
+    def empty_reading(feed_in: list[dict], actions: list[dict]) -> str:
+        run = _run_ts(
+            _HERE / "profiler_index_runner.ts",
+            directory=tmp_path,
+            stdin=json.dumps({"index": index, "feed": feed_in, "actions": actions}),
+        )
+        rows = json.loads(run.stdout)["rows"]
+        assert len(rows) == 1, rows
+        return rows[0]
+
+    assert "No session store found yet" in empty_reading([{"stores": 0}], [])
+    assert "No sessions recorded yet" in empty_reading([{"stores": 2}], [])
+    pair = [
+        {"harness": "opencode", "id": "s-p", "records": 1, "agents": 1, "first": 0, "last": 0, "span": 0},
+        {
+            "harness": "opencode",
+            "id": "s-kid",
+            "records": 1,
+            "agents": 0,
+            "first": 0,
+            "last": 0,
+            "span": 0,
+            "dispatcher": {"session": "s-p", "name": "x"},
+        },
+    ]
+    assert "No sessions shown" in empty_reading(pair, [{"toggle": "child-rows"}, {"toggle": "harness-opencode"}])
+    # The feed a served tree with stores but no record answers is one `{stores: <count>}` entry, and
+    # the key it reads is the schema's own.
+    served_empty = json.loads(
+        _run_ts(
+            _HERE / "profiler_index_runner.ts",
+            directory=tmp_path,
+            stdin=json.dumps({"index": index, "feed": [{"stores": 2}]}),
+        ).stdout
     )
-    drawn = json.loads(run.stdout)
-    assert len(drawn["rows"]) == 1
-    assert "No sessions recorded yet" in drawn["rows"][0] and "is unreadable" not in drawn["rows"][0]
+    assert served_empty["keys"] == ["stores", "unreadable"] and "No sessions recorded yet" in served_empty["rows"][0]
 
     # The controls, driven over the same served page: the child-rows box takes the dispatched rows out
     # and leaves their dispatcher, naming the agents the feed holds; a harness's box takes its own
@@ -1086,6 +1131,45 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
     assert any("1 dispatched agent" in row for row in hidden_children)
     assert ids(driven(json.loads(feed), [{"toggle": "harness-opencode"}])) == ["s-claude"]
     assert ids(driven(json.loads(feed), [{"toggle": "harness-claude"}])) == ["s-p1", "s-p2", "s-child"]
+    # A harness the controls carry no box for — a hand-written store's name — is drawn, and the page
+    # reports no failure: a feed that answered is not reported as one that could not be read, and a
+    # box other than the feed's own harnesses hides nothing.
+    stranger = [
+        {"harness": "mage", "id": "s-mage", "records": 1, "agents": 0, "first": 0, "last": 0, "span": 0},
+        {"harness": "claude", "id": "s-claude", "records": 1, "agents": 0, "first": 1, "last": 1, "span": 0},
+    ]
+    run = _run_ts(
+        _HERE / "profiler_index_runner.ts",
+        directory=tmp_path,
+        stdin=json.dumps({"index": index, "feed": stranger}),
+    )
+    unboxed = json.loads(run.stdout)
+    assert ids(unboxed["rows"]) == ["s-mage", "s-claude"] and unboxed["notices"] == []
+    # The control state is honest for the pair that hides nothing: the feed holds no opencode session,
+    # so its box is disabled rather than checked while filtering nothing.
+    assert unboxed["controls"] == {
+        "child-rows": {"checked": True, "disabled": False},
+        "harness-claude": {"checked": True, "disabled": False},
+        "harness-opencode": {"checked": True, "disabled": True},
+    }
+    # R6: a child whose dispatcher its harness's box hides is drawn at its dispatcher's level — an
+    # orphan promoted, not a row drawn nowhere. An opencode dispatch records a claude child; with
+    # opencode off the dispatcher is hidden, and its claude child, whose own box is on, stands.
+    orphan = [
+        {"harness": "opencode", "id": "s-parent", "records": 1, "agents": 1, "first": 0, "last": 0, "span": 0},
+        {
+            "harness": "claude",
+            "id": "s-orphan",
+            "records": 1,
+            "agents": 0,
+            "first": 1,
+            "last": 1,
+            "span": 0,
+            "dispatcher": {"session": "s-parent", "name": "x"},
+        },
+    ]
+    assert ids(driven(orphan, [])) == ["s-parent", "s-orphan"]
+    assert ids(driven(orphan, [{"toggle": "harness-opencode"}])) == ["s-orphan"]
     # One feed in a known first-moment order, drawn in it: the records, the first moment and the span
     # each order the rows differently, so a sort that reads no key leaves the feed's own order.
     by_first = [
@@ -1122,21 +1206,43 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
         ["first", "none"],
         ["span", "descending"],
     ]
+    # The dispatched-agent count sorts on the entry's own `agents`, the count of the children the feed
+    # holds: two dispatchers of different counts order the rows by it, the feed's order being neither
+    # the ascending nor the descending one, so a head reading a key no entry carries leaves the order
+    # it opened in. `by_first` holds no dispatcher, so its ties are the all-zero sort's own case.
+    by_agents = [
+        {"harness": "opencode", "id": "s-two", "records": 1, "agents": 2, "first": 30, "last": 40, "span": 10},
+        {"harness": "opencode", "id": "s-none", "records": 1, "agents": 0, "first": 10, "last": 20, "span": 10},
+        {"harness": "opencode", "id": "s-five", "records": 1, "agents": 5, "first": 20, "last": 30, "span": 10},
+    ]
+    assert ids(driven(by_agents, [])) == ["s-two", "s-none", "s-five"]
+    assert ids(driven(by_agents, [{"sort": "agents"}])) == ["s-none", "s-two", "s-five"]
+    assert ids(driven(by_agents, [{"sort": "agents"}, {"sort": "agents"}])) == ["s-five", "s-two", "s-none"]
+
     # The dispatched-agent count sorts on a dispatcher's children, which `by_first` holds none of: the
     # head sorts, and its ties keep the feed's order.
     assert ids(driven(by_first, [{"sort": "agents"}])) == ["s-late", "s-early", "s-mid"]
 
-    # A feed that fails names itself: the page shows the notice, in the feed's own words, and draws no
-    # row — the no-records reading standing for a feed that answered with nothing to draw, not one
-    # that answered nothing at all.
+    # A feed that fails names itself: the page's own composed message, from the feed's status, and
+    # draws no row — the no-records reading standing for a feed that answered with nothing to draw,
+    # not one that answered nothing at all. The notice is hidden and empty before the failure, so the
+    # notice the reader sees is the one this failure raised.
     run = _run_ts(
         _HERE / "profiler_index_runner.ts",
         directory=tmp_path,
-        stdin=json.dumps({"index": index, "feed": [], "actions": [{"fail": "boom"}]}),
+        stdin=json.dumps({"index": index, "feed": [], "actions": [{"fail": {"status": 503}}]}),
     )
     failed = json.loads(run.stdout)
+    assert failed["before"] == {"hidden": True, "text": "", "rows": []}
     assert failed["rows"] == []
-    assert failed["notices"] == ["The traces feed could not be read: HTTP 500."]
+    assert failed["notices"] == ["The traces feed could not be read: HTTP 503."]
+    run = _run_ts(
+        _HERE / "profiler_index_runner.ts",
+        directory=tmp_path,
+        stdin=json.dumps({"index": index, "feed": [], "actions": [{"fail": {"status": 200, "body": [{"stores": 0}]}}]}),
+    )
+    failed = json.loads(run.stdout)
+    assert failed["notices"] == [] and "No session store found yet" in failed["rows"][0]
 
 
 def test_a_session_naming_itself_as_a_child_is_drawn_once_in_its_own_place(tmp_path: Path) -> None:
@@ -1236,6 +1342,7 @@ def test_the_served_feed_states_an_unreadable_store(tmp_path: Path) -> None:
             "harness": "claude",
             "id": "s-claude",
             "records": 1,
+            "agents": 0,
             "first": _epoch_ms("2026-01-01T00:00:00.000Z"),
             "last": _epoch_ms("2026-01-01T00:00:00.000Z"),
             "span": 0,

@@ -743,18 +743,20 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
 # ---------- the served index and pages ----------
 
 
+def store_directories(directory: Path | str) -> list[Path]:
+    """The `TRACE_GLOB` stores under the project's scratch directory, in the order they are read."""
+    return sorted(store for store in (Path(directory) / TRACE_DIR.parent).glob(TRACE_GLOB) if store.is_dir())
+
+
 def read_sessions(directory: Path | str) -> tuple[list[dict], list[str]]:
     """`list_sessions`'s sessions, and the stores it cannot read, named as such rather than raised.
 
     One read over all of them cannot tell an unreadable store from an empty tree: `iterdir` raises
     out of it, so the index walks the stores one at a time, building each session the shape
     `list_sessions` builds, and states the store it cannot list in place of the session it lost."""
-    stores = Path(directory) / TRACE_DIR.parent
     sessions: list[dict] = []
     unreadable: list[str] = []
-    for store in sorted(stores.glob(TRACE_GLOB)):
-        if not store.is_dir():
-            continue
+    for store in store_directories(directory):
         try:
             traces = [path for path in store.iterdir() if path.name.endswith(".jsonl")]
         except OSError:
@@ -791,12 +793,16 @@ def traces_feed(directory: Path | str) -> list[dict]:
     """The feed `/api/traces` answers, the index's rows' one source: one JSON entry per recorded
     session, in the order the index draws them, then one per store the glob found but could not read.
 
-    A session's entry carries its harness, its id, its record count, its first and last moments as
-    epoch milliseconds and its span in seconds, and — where an opencode record names a dispatcher for
-    it — that dispatcher's session id and the dispatching call's name, the two halves `dispatches`
-    holds; an entry so dispatched follows its dispatcher's, so the feed is in the order the index
-    draws the rows. An unreadable store's entry is `{unreadable: <store name>}` and carries no other
-    key. This is the schema's one definition: `index.js` renders the rows from exactly these keys."""
+    A session's entry carries its harness, its id, its record count, the count of the dispatched
+    agents it holds, its first and last moments as epoch milliseconds and its span in seconds, and —
+    where an opencode record names a dispatcher for it — that dispatcher's session id and the
+    dispatching call's name, the two halves `dispatches` holds; an entry so dispatched follows its
+    dispatcher's, so the feed is in the order the index draws the rows. An unreadable store's entry
+    is `{unreadable: <store name>}` and carries no other key. Where the feed holds no session and no
+    unreadable store, it is one `{stores: <count>}` entry: the stores the glob found, none of which
+    held a record to draw — the count a zero-record store renders, which no session and no
+    unreadable store would otherwise tell apart from a tree with no store at all. This is the
+    schema's one definition: the index script renders the rows from exactly these keys."""
     sessions, unreadable = read_sessions(directory)
     dispatched = dispatches(sessions)
     children: dict[str, list[dict]] = {}
@@ -807,18 +813,23 @@ def traces_feed(directory: Path | str) -> list[dict]:
     for session in sorted(
         (session for session in sessions if session["id"] not in dispatched), key=lambda session: session["first"]
     ):
-        entries.append(_feed_entry(session, dispatched.get(session["id"])))
+        entries.append(_feed_entry(session, dispatched.get(session["id"]), len(children.get(session["id"], ()))))
         for child in sorted(children.get(session["id"], ()), key=lambda session: session["first"]):
             entries.append(_feed_entry(child, dispatched.get(child["id"])))
-    return entries + [{"unreadable": store} for store in unreadable]
+    entries += [{"unreadable": store} for store in unreadable]
+    if not entries:
+        return [{"stores": len(store_directories(directory))}]
+    return entries
 
 
-def _feed_entry(session: dict, dispatcher: tuple[str, str] | None) -> dict:
-    """One session's entry in the feed, `dispatcher` left out where none dispatched it."""
+def _feed_entry(session: dict, dispatcher: tuple[str, str] | None, agents: int = 0) -> dict:
+    """One session's entry in the feed, `agents` the count of the sessions `dispatcher` and its
+    siblings name as children, and `dispatcher` itself left out where none dispatched the session."""
     entry = {
         "harness": session_harness(session),
         "id": session["id"],
         "records": len(session["records"]),
+        "agents": agents,
         "first": int(session["first"]),
         "last": int(session["last"]),
         "span": _round_half_up((session["last"] - session["first"]) / 1000),
@@ -897,7 +908,7 @@ RETURN_MARK = "<!--RETURN-->"
 # marks are the last thing before the body's own content, their text no stylesheet's.
 # A harness's dot wears its brand color, the page's own rule rather than the site's — the dots are
 # the only brand-marked part of a row — and its class is the name the feed's entry carries where the
-# script's `HARNESS_MARKS` holds a dot for it, so the style block's harness names and that list
+# script's `HARNESSES` holds that harness, so the style block's two harness rules and that list
 # change together.
 INDEX = """<!doctype html>
 <html lang="en">
@@ -954,10 +965,14 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 // dispatcher's row carrying the count of the children beneath it. The moments are epoch
 // milliseconds and become the row's `<time>` elements, whose local reading the deco writes and whose
 // titles keep the raw UTC for a hover. Reads the entry's own keys and nothing else: `harness`, `id`,
-// `records`, `first`, `last`, `span`, `dispatcher`, and `unreadable` on a store's entry.
+// `records`, `agents`, `first`, `last`, `span`, `dispatcher`, `unreadable` on a store's entry, and
+// `stores` on a feed that drew nothing, naming how many stores the glob found.
 const FEED = '/api/traces';
 const PAGE = '/page/';
-const HARNESS_MARKS = ['opencode', 'claude'];
+// The harnesses the controls carry a box for, in the page's own order: a box's id is this name
+// behind `harness-`, and a row's dot classes it where the harness is one of these — the feed's name,
+// the controls' boxes and the style block's two rules changing together.
+const HARNESSES = ['claude', 'opencode'];
 
 const el = (tag, text, className) => {
   const node = document.createElement(tag);
@@ -1017,15 +1032,14 @@ const moments = (session) => {
 // One row: a dispatcher's carries the count of the children drawn beneath it; a child's carries the
 // accent bar's empty cell and names the call that dispatched it. Both carry the harness with its
 // mark where the page holds one, their own count, moments and span. A row's sort keys are the
-// entry's own: the dispatcher's children count, its record count, its first moment and its span.
+// entry's own: the dispatched-agent count, the record count, the first moment and the span.
 const row = ({ session, dispatched, children = 0 }) => {
   const tr = el('tr');
-  tr.setAttribute('data-agents', String(children));
   tr.setAttribute('data-records', String(session.records));
   tr.setAttribute('data-first', String(session.first));
   tr.setAttribute('data-span', String(session.span));
   const harness = el('td');
-  const mark = HARNESS_MARKS.includes(session.harness) ? session.harness : '';
+  const mark = HARNESSES.includes(session.harness) ? session.harness : '';
   harness.append(el('span', undefined, ('harness ' + mark).trim()), session.harness);
   const id = el('td', undefined, dispatched ? 'child' : undefined);
   id.append(link(session.id));
@@ -1041,8 +1055,8 @@ const row = ({ session, dispatched, children = 0 }) => {
   return tr;
 };
 
-// A full-width row: a store's name where the feed could not read it, the table's own empty reading
-// where the feed holds no session to draw.
+// A full-width row: a store's name where the feed could not read it, or the table's own reading where
+// it draws no session.
 const wideRow = (text) => {
   const cell = el('td', text);
   cell.colSpan = 6;
@@ -1050,7 +1064,15 @@ const wideRow = (text) => {
   tr.append(cell);
   return tr;
 };
-const empty = () => wideRow('No sessions recorded yet: run a session with the hook installed.');
+// The no-records reading, which names which state the page stands in — a store held sessions and the
+// controls hid them, stores stand and none held a record, or the tree holds no store at all. The
+// count the feed states is the stores it found, so a tree holding stores that recorded nothing reads
+// differently from one holding none.
+const empty = (held_count, store_count) => {
+  if (held_count) return wideRow('No sessions shown: the controls hide every session the feed holds.');
+  if (store_count) return wideRow('No sessions recorded yet: the stores hold no record to draw.');
+  return wideRow('No session store found yet: run a session with the hook installed.');
+};
 const unreadable = (store) => wideRow(store + ' is unreadable');
 
 // What the page holds: every session the feed drew, in the feed's order, each with its children
@@ -1059,31 +1081,39 @@ const unreadable = (store) => wideRow(store + ' is unreadable');
 // feed again. No control hides a store: a store that could not be read is named wherever it stands.
 let held = [];
 let stores = [];
+let found = 0; // the stores the feed found, where it drew no session to say so itself
 let order = null; // the column the heads were last sorted on, and now ascending or descending
 
 // A session the page hides: the child-rows control takes every dispatched session out, and each
-// harness's control its own sessions. A dispatcher whose children are hidden keeps its row, and its
-// count names the agents the feed holds rather than the rows on screen.
-const hides = (session) =>
-  (!document.getElementById('child-rows').checked && session.dispatcher) ||
-  !document.getElementById('harness-' + session.harness).checked;
+// harness's control its own sessions — a harness the controls carry no box for is visible, since no
+// control can hide it. A dispatcher is never hidden by a control: it keeps its row, and its count
+// names the agents the feed holds rather than the rows on screen. The harness pair is two boxes and
+// hides by the harness alone: a claude session an opencode dispatch named as its child is the
+// feed's child, which the child-rows control alone hides, and its own harness's box hides it beside.
+const hides = (session) => {
+  if (session.dispatcher && !document.getElementById('child-rows').checked) return true;
+  if (!HARNESSES.includes(session.harness)) return false;
+  return !document.getElementById('harness-' + session.harness).checked;
+};
 
 // The table from what the page holds: the feed's order, or the sorted order where a head was chosen,
 // each dispatcher's row followed by its own visible children, and each unread store beside them. A
-// dispatcher's count is the agents the feed holds beneath it, whether or not the page is showing them.
+// dispatcher's count is the agents the feed holds beneath it, whether or not the page is showing
+// them; an empty table reads as which state the page stands in (`empty`).
 const draw = () => {
   const visible = held.filter((session) => !hides(session));
-  const counted = new Map();
   const children = new Map();
   for (const session of held) {
     if (!session.dispatcher) continue;
-    const parent = session.dispatcher.session;
-    counted.set(parent, (counted.get(parent) || 0) + 1);
     if (hides(session)) continue;
+    const parent = session.dispatcher.session;
     if (!children.has(parent)) children.set(parent, []);
     children.get(parent).push(session);
   }
-  const tops = visible.filter((session) => !session.dispatcher);
+  // A session stands at the top where nothing dispatched it, or where its dispatcher is not drawn:
+  // an orphan follows its dispatcher's level, never vanishing with a hidden dispatcher.
+  const shown = new Set(visible.map((session) => session.id));
+  const tops = visible.filter((session) => !session.dispatcher || !shown.has(session.dispatcher.session));
   if (order) {
     const s = order.descending ? -1 : 1;
     tops.sort((a, b) => s * (a[order.key] < b[order.key] ? -1 : a[order.key] > b[order.key] ? 1 : 0));
@@ -1091,24 +1121,33 @@ const draw = () => {
   const drawn = [];
   for (const session of tops) {
     const kids = children.get(session.id) || [];
-    drawn.push(row({ session, children: counted.get(session.id) || 0 }));
+    drawn.push(row({ session, children: session.agents }));
     for (const kid of kids) drawn.push(row({ session: kid, dispatched: kid.dispatcher }));
   }
   for (const store of stores) drawn.push(unreadable(store));
-  document.getElementById('rows').replaceChildren(...(drawn.length ? drawn : [empty()]));
+  if (!drawn.length) drawn.push(empty(held.length, found));
+  document.getElementById('rows').replaceChildren(...drawn);
 };
 
 const show = (feed) => {
-  held = feed.filter((entry) => !entry.unreadable);
+  held = feed.filter((entry) => !entry.unreadable && entry.stores === undefined);
   stores = feed.filter((entry) => entry.unreadable).map((entry) => entry.unreadable);
+  found = feed.reduce((sum, entry) => sum + (entry.stores || 0), 0);
+  // A harness box the feed holds no session for is disabled: left checked it would report filtering
+  // a harness the feed has none of, and left pressable it would hide nothing on every press.
+  for (const harness of HARNESSES) {
+    document.getElementById('harness-' + harness).disabled = !held.some((session) => session.harness === harness);
+  }
   draw();
 };
 
-// Column heads: a head's first press sorts ascending, its next descending, the arrow on the head
-// saying which, and a third press on the same head returns the feed's own order. A head's `data-sort`
+// Column heads: a head's three-press cycle — its first press sorts ascending, its second descending,
+// its third returns the feed's own order and the table to no sorted head at all. A head's `data-sort`
 // is the feed entry's own key its column sorts on. The sort state is the column head's own —
-// `aria-sort` on the `<th>`, where a table's sort belongs — so the button is the label and the
-// press, and the cell announces the order.
+// `aria-sort` on the `<th>`, where a table's sort belongs, `none` standing for the unsorted table as
+// headers attribute it — so the button is the label and the press, and the cell announces the order.
+// The arrow marks the two orders a press sets; the third press leaves `none`, with no arrow, which is
+// the same head the page opened on.
 for (const label of document.querySelectorAll('.sort')) {
   label.addEventListener('click', () => {
     const cell = label.closest('th');
@@ -1136,7 +1175,15 @@ fetch(FEED, { cache: 'no-store' })
     if (!response.ok) throw new Error('HTTP ' + response.status);
     return response.json();
   })
-  .then(show)
+  .then((feed) => {
+    try {
+      show(feed);
+    } catch (error) {
+      // The page's own defect, which is no feed's absence: it warns and leaves the rows as they stand
+      // rather than reaching the catch below, whose notice speaks for a feed that could not be read.
+      console.warn('the index could not draw the feed: ' + String(error));
+    }
+  })
   .catch((error) => {
     console.warn('the traces feed could not be read: ' + String(error));
     notice(error);
