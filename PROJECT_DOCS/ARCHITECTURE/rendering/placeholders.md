@@ -34,7 +34,10 @@ exposes today).
 A body of any kind may carry `@!plg-name!@` (`PluginText.NAME`, filled from `ctx.plugin.name`) where
 the text must spell the plugin's name, such as the plugin word of the agents file's begin marker,
 `vvv-devpro devpro <version>`, or the mage install directory the `guide` skill's installation
-reference names.
+reference names. It may carry `@!plg-project-wrapper!@` (`PluginText.PROJECT_WRAPPER`, filled from
+`ctx.bound_harness.project_wrapper`) where the text must spell the path, relative to the project
+root, of the wrapper the plugin's project install under the render's harness writes — claude's
+`.claude/skills/devpro/tools/devpro.sh`.
 The agents file alone also carries `@!agf-<key>!@` for its scope name and the package version. A
 body of any kind may carry `@!tun-<key>!@` for a derived value, one computed from the `Render`'s
 category map and harness rather than supplied by either: `TuningText`'s one member, `step_down_model`,

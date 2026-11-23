@@ -157,7 +157,7 @@ def _references(prefix: str, shipped: frozenset[str]) -> dict[str, str]:
 
 def filled_text(body: str, defn: Definition, ctx: Render, *, where: str) -> str:
     """`body` with every placeholder filled in one pass: a harness text from ctx.bound_harness, the
-    plugin's name from ctx.plugin, an anchor from ctx.overlay for the definition's category ("" where the
+    plugin's name from ctx.plugin and its project install's wrapper from ctx.bound_harness, an anchor from ctx.overlay for the definition's category ("" where the
     family fills none), the step-down model from the render seated at the definition's category for every
     kind, a reference to a definition
     the render ships as ctx.bound_harness.reference_prefix and its name, and for the agents file alone its
@@ -172,6 +172,7 @@ def filled_text(body: str, defn: Definition, ctx: Render, *, where: str) -> str:
     values.update({hole(anchor): seated.overlay(anchor) for anchor in Anchor})
     values[hole(TuningText.STEP_DOWN_MODEL)] = seated.step_down_model
     values[hole(PluginText.NAME)] = ctx.plugin.name
+    values[hole(PluginText.PROJECT_WRAPPER)] = ctx.bound_harness.project_wrapper
     references = _references(ctx.bound_harness.reference_prefix, shipped)
     values.update(references)
     if defn.kind is Kind.AGENTS_FILE:

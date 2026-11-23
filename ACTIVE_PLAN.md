@@ -16,8 +16,8 @@ Design: [ACTIVE_DESIGN/entry-point.md](ACTIVE_DESIGN/entry-point.md). Every pack
 | P5 | landed | mechanical | `devpro:tech-writer` |
 | P6 | landed | expert | post-plan reviewers |
 | P7a | landed | expert | `devpro:python-coder` |
-| P7b | dispatchable | expert | `devpro:python-coder` |
-| P7c | dispatchable | expert | `devpro:shell-dsl-coder` |
+| P7b | landed: R6 keeps its literal, per the finding's own fallback | expert | `devpro:python-coder` |
+| P7c | in progress | expert | `devpro:shell-dsl-coder` |
 | P7d | dispatchable | expert | `devpro:prompt-engineer` |
 | P7e | landed | expert | `devpro:tech-writer` |
 
@@ -571,16 +571,42 @@ Agent `devpro:shell-dsl-coder`; expert (the quoting form is the agent's call).
     `candidate` are `local`, its `cd` (`hp.sh:33`) runs with `CDPATH=`, and either the script sets
     `set -euo pipefail` or its header states why it does not. The choice is the agent's; either way
     `capture` still exits 0 on every path;
-  - R9; R11 (the ARCHITECTURE Recipes sentence on check-wheel's checkout side).
+  - R9; R11 (the ARCHITECTURE Recipes sentence on check-wheel's checkout side);
+  - R10: `just lint` runs `shellcheck` over every tracked `*.sh` file (`git ls-files '*.sh'`).
+    `shellcheck` is a prerequisite: where it is not on `PATH`, `just lint` fails with a message
+    saying `shellcheck` is required; it never skips the step. ARCHITECTURE Recipes
+    (`PROJECT_DOCS/ARCHITECTURE/recipes.md`) gets a new sentence directly after the Toolchain
+    paragraph's "`tests/test_guardrail.py`, `tests/test_opencode_entry.py` and
+    `tests/test_kbase_surface.py` fail rather than skip without them, because a skip would hide
+    drift.", stating that `lint` needs `shellcheck` on `PATH` and fails, naming it, where it is
+    absent. CONVENTIONS *A lint recipe is read-only* changes its list of what `lint` runs from
+    "`black --check`, `isort --check-only` and `flake8` over the paths `format-python` takes" to one
+    that also names `shellcheck` over the tracked `*.sh` files. The package clears the three
+    findings in the Facts: `state-table-reminder.sh:26` (SC2295) and `bump-version.sh:10` (SC2206)
+    are fixed; `test-changed.sh:54` (SC2053) is a deliberate glob match — the `\**` branch matches a
+    `*`-prefixed `TEST_SURFACE_MAP` row against a slash-free path — so quoting `${prefix}` would
+    change behavior, and it instead carries `# shellcheck disable=SC2053` with a comment saying the
+    unquoted right side is an intended pattern match.
 - **Scope:** `devpro/runner-snippets/devpro.just`, `devpro/harnesses/resources/claude/profiler/hp.sh`,
   `devtools/scripts/render.sh`, `devtools/scripts/_render-slot.sh`,
   `PROJECT_DOCS/ARCHITECTURE/recipes.md`, `tests/test_devpro_install.py` (R7),
-  `tests/test_devpro_profiler.py` (R4).
+  `tests/test_devpro_profiler.py` (R4); for R10, `justfile` (the `lint` recipe),
+  `devpro/harnesses/resources/claude/hooks/state-table-reminder.sh`,
+  `devtools/scripts/bump-version.sh`, `devtools/scripts/test-changed.sh` and
+  `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-lint-recipe-is-read-only.md`.
 - **Facts:**
   - `grep -n 'source_directory()' devpro/runner-snippets/devpro.just` → `:33`, `:37`, `:41`, `:45`,
     `:49`.
   - `grep -n 'DEVPRO_DEV' devtools/scripts/*.sh` → `_harness-value.sh:7`, `_render-slot.sh:21`,
     `render.sh:40`, `render-agents-file.sh:11`; R9's are `render.sh:40` and `_render-slot.sh:21`.
+  - `command -v shellcheck` → `/opt/homebrew/bin/shellcheck` (0.11.0).
+    `shellcheck $(git ls-files '*.sh')` at `fceb3d2` exits 1 with three findings, one per file:
+    `devpro/harnesses/resources/claude/hooks/state-table-reminder.sh:26` SC2295 (info),
+    `devtools/scripts/bump-version.sh:10` SC2206 (warning), `devtools/scripts/test-changed.sh:54`
+    SC2053 (warning).
+  - `grep -n -A4 '^lint' justfile` → `:192`, three Python checks (black, isort, flake8).
+  - Line numbers in `tests/test_devpro_install.py` are at `2369903`; P7a has since edited that file,
+    so its tests below are found by name.
 - **Tests pinning the behavior** (in scope):
   - R7: in `tests/test_devpro_install.py`,
     `test_an_installed_runner_snippet_runs_the_check_through_the_wrapper_without_devpro_on_path`

@@ -119,9 +119,12 @@ class TuningText(Enum):
 
 
 class PluginText(Enum):
-    """A value of the plugin being rendered, filled in a body of every kind."""
+    """A value of the plugin being rendered, filled in a body of every kind: its name, and the path,
+    relative to the project root, of the wrapper its project install under the render's harness
+    writes (`Harness.project_wrapper`)."""
 
     NAME = "name"
+    PROJECT_WRAPPER = "project_wrapper"
 
 
 RenderValue = Union[HarnessText, OptionalHarnessText, Anchor, AgentsFileText, TuningText, PluginText]

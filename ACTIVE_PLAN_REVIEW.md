@@ -115,8 +115,9 @@ changes; these findings are the places that isolation does not yet hold.
   (`development.py:246,326-330`): "bounded by *Dispatch*" names no constraint; "model set" is
   defined nowhere; the *Purpose* gives one reason twice; and "a `Rating` cell's note names neither a
   model nor a step-down binding" is an unchecked never. Fix: the Rating sentence says the note names
-  no model (*Dispatch*); "resolved when the dispatch is made, as *Terms* states"; `check-plan`
-  refuses a Rating note holding a model name or `<category>=<model>` pair. Unverified (pe): whether
+  no model (*Dispatch*); "resolved when the dispatch is made, as *Terms* states". The user rules out
+  a `check-plan` refusal: a model name in plan text cannot be told mechanically from a model a
+  project tunes inference for, so the rule stays prose. Unverified (pe): whether
   resolution at dispatch avoids the failure the rule was written for, since the pinned
   `comm-mechanical=haiku` equals the *Terms* default.
 - **R20 — Note (pe 10, 12).** `guide.py:466-475` repeats docdicer's dashboard paragraph (command,

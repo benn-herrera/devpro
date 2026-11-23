@@ -25,6 +25,7 @@ from devpro.context import (
     map_spec,
     read_settings,
 )
+from devpro.doccheck.cli import VERBS as CHECK_VERBS
 from devpro.errors import InputError
 from devpro.vocabulary import HarnessText, key
 
@@ -38,9 +39,6 @@ DICING_VERBS = (
     "check-tree",
 )
 """The dicing verbs, added by `devpro.dicing.cli.add_verbs` and dispatched to its `run`."""
-
-CHECK_VERBS = ("check-plan", "check-design", "check-roadmap")
-"""The check verbs, added by `devpro.doccheck.cli.add_verbs` and dispatched to its `run`."""
 
 PROFILER_VERB = "profiler"
 """The profiler verb, added by `devpro.profiler.cli.add_verbs` and dispatched to its `run`."""

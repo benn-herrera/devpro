@@ -583,8 +583,7 @@ def render_tree(records: list[dict], *, verbose: bool = False, color: bool = Fal
 
 def session_data(session: dict) -> dict:
     """The page data `view.html` inlines at its data mark: the session's calls as the file flow
-    draws them, one source for the standalone render and the served page alike. `<` is escaped so
-    tool output in the JSON can't close the script tag."""
+    draws them, one source for the standalone render and the served page alike."""
     calls = unique_calls(fill_context_tokens(session["records"]))
     contexts, markers = contexts_of(session["records"])
     spend = _context_spend(session["records"])
@@ -620,6 +619,13 @@ def session_data(session: dict) -> dict:
     }
 
 
+def _inlined_session_data(session: dict) -> str:
+    """`session_data` as the JSON a page's script inlines: `<` escaped so tool output cannot close the
+    script tag, and `/` escaped so it cannot spell a fill's mark — `/*DATA*/null` among them, which
+    the strict fill refuses in a value."""
+    return _json(session_data(session)).replace("<", "\\u003c").replace("/", "\\/")
+
+
 def render_html(session: dict) -> str:
     """One self-contained page: the package's template with the presentation layer, the how-to-read
     legend and the trace inlined, the frame band's facts this page carries none of left empty."""
@@ -627,7 +633,7 @@ def render_html(session: dict) -> str:
     return strict_fill(
         template,
         {
-            DATA_MARK: _json(session_data(session)).replace("<", "\\u003c"),
+            DATA_MARK: _inlined_session_data(session),
             LAYER_MARK: LAYER_INLINE,
             **band_fills(dispatcher=None, return_to=None),
         },
@@ -1076,7 +1082,7 @@ def page_for(session: dict, *, return_to: str | None, dispatcher: tuple[str, str
     return strict_fill(
         (files(__package__) / "view.html").read_text(encoding="utf-8"),
         {
-            DATA_MARK: _json(session_data(session)).replace("<", "\\u003c"),
+            DATA_MARK: _inlined_session_data(session),
             LAYER_MARK: LAYER_LINK,
             **band_fills(dispatcher=dispatcher, return_to=return_to),
         },

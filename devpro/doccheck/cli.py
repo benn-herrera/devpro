@@ -10,11 +10,17 @@ import argparse
 import os
 import sys
 
+CHECK_PLAN = "check-plan"
+CHECK_DESIGN = "check-design"
+CHECK_ROADMAP = "check-roadmap"
+VERBS = (CHECK_PLAN, CHECK_DESIGN, CHECK_ROADMAP)
+"""The check verbs `add_verbs` adds and `run` dispatches."""
+
 
 def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
     """Add the three check verbs to subparsers, each refusing abbreviations."""
     plan = subparsers.add_parser(
-        "check-plan", help="check a plan's status form, as the board reads it", allow_abbrev=False
+        CHECK_PLAN, help="check a plan's status form, as the board reads it", allow_abbrev=False
     )
     plan.add_argument(
         "plan",
@@ -24,7 +30,7 @@ def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]")
     )
 
     checked_design = subparsers.add_parser(
-        "check-design",
+        CHECK_DESIGN,
         help="check a design's final form and its delta pairs against their targets",
         allow_abbrev=False,
     )
@@ -41,7 +47,7 @@ def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]")
     )
 
     checked_roadmap = subparsers.add_parser(
-        "check-roadmap", help="check ROADMAP.md's ticket layout, as the board reads it", allow_abbrev=False
+        CHECK_ROADMAP, help="check ROADMAP.md's ticket layout, as the board reads it", allow_abbrev=False
     )
     checked_roadmap.add_argument(
         "roadmap",
@@ -59,7 +65,7 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
     out, err = sys.stdout, sys.stderr
     run_dir = os.getcwd()  # the one read of the working directory: every check below is given it
     verb = args.verb
-    if verb == "check-plan":
+    if verb == CHECK_PLAN:
         if args.plan is not None and not os.path.isfile(args.plan):
             parser.error(
                 f"no such plan file: {args.plan} (name a plan's markdown file, or a diced plan's entry-point.md)"
@@ -67,7 +73,7 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
         from .plancheck import check_plan
 
         return check_plan(args.plan, start=run_dir, stdout=out, stderr=err)
-    if verb == "check-design":
+    if verb == CHECK_DESIGN:
         if args.design is not None and not os.path.isfile(args.design):
             parser.error(
                 f"no such design file: {args.design} (name a design's markdown file, or a diced design's entry-point.md)"
@@ -75,7 +81,7 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
         from .plancheck import check_design
 
         return check_design(args.design, start=run_dir, stdout=out, stderr=err, deltas_applied=args.deltas_applied)
-    if verb == "check-roadmap":
+    if verb == CHECK_ROADMAP:
         if args.roadmap is not None and not os.path.isfile(args.roadmap):
             parser.error(f"no such roadmap file: {args.roadmap} (name a roadmap's markdown file)")
         from .plancheck import check_roadmap

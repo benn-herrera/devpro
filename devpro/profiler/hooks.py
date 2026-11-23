@@ -6,10 +6,10 @@ capture works in a repository, and why not. Both apply the stores' rename: an in
 the `claude-profiler` and `opencode-profiler` stores under the project's `.devpro-temp/` to their
 `.profiler-*` names.
 
-The renderer and the package's root are imported where they are used, in `profiler_skill_text` and
-`launcher_resource`: the hook-run capture reaches this module for `doctor` and `init`, and the install
-for `rename_stores` — from `stores`, which imports the store facts alone — and none of those reads a
-rendered definition or a package path.
+The renderer is imported where it is used, in `profiler_skill_text`: the hook-run capture reaches this
+module for `doctor` and `init`, and the install for `rename_stores` — from `stores`, which imports the
+store facts alone — and none of those reads a rendered definition. The package's root is imported at
+module scope from `install_base`, which imports nothing of the renderer's.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
 from pathlib import Path
 
 from devpro.install_base import PACKAGE_ROOT, WRAPPER
@@ -50,14 +51,20 @@ RETIRED_SKILL = Path("skills") / "show-profile"
 # The harness resource the launcher is the master of: the install copies it, and `init` copies it again
 # into the repository's committed hook directory.
 HARNESS_RESOURCES = Path("harnesses") / "resources" / "claude" / "profiler"
-# The installation's wrapper in a repository, the launcher's first candidate: the one file both claude
-# launchers there resolve — the committed hook's and a project install's — under the claude plugin's
-# install directory, `.claude/skills/devpro/`.
-INSTALLED_WRAPPER = Path(".claude") / "skills" / "devpro" / WRAPPER
-# The candidates the launcher's finder searches after `PATH`, in its order: the finder extends
-# `PATH` with the Homebrew and `~/.local/bin` locations and runs one `command -v` over the whole
-# thing, so doctor lists them here and its line names what the launcher would resolve.
-DEVPRO_CANDIDATES = ("/opt/homebrew/bin/devpro", "/usr/local/bin/devpro")
+# A claude project install's directory in a repository, the claude plugin's: its wrapper is the one file
+# both claude launchers there resolve, the committed hook's and the install's own. A literal, not derived:
+# the claude harness profile's `project_wrapper` renders the same path, but importing the profile bound
+# to the install's name here would put the definitions on the capture's import path. The contract is
+# `hp.sh`'s second candidate, `"${here}/../skills/devpro/tools/devpro.sh"`, which `INSTALLED_WRAPPER`
+# must equal taken from `HOOK_DIR`.
+INSTALL_DIR = Path(".claude") / "skills" / "devpro"
+INSTALLED_WRAPPER = INSTALL_DIR / WRAPPER
+INSTALLED_LAUNCHER = INSTALL_DIR / HARNESS_RESOURCES.name / LAUNCHER
+# The directories the launcher's finder appends to `PATH` before its one `command -v`, `~/.local/bin`
+# last.
+DEVPRO_SEARCH_DIRS = ("/opt/homebrew/bin", "/usr/local/bin")
+# How long doctor waits on a candidate's `--version`, the launcher's usability probe.
+PROBE_TIMEOUT_S = 30
 
 USAGE = """Usage:
   devpro profiler tree [session-id-prefix] [--branch <name>] [--verbose] [--format text|html]
@@ -71,16 +78,42 @@ def launcher_resource() -> Path:
     return PACKAGE_ROOT / HARNESS_RESOURCES / LAUNCHER
 
 
-def devpro_executable(repo: Path) -> str | None:
-    """The devpro the launcher's finder would resolve in `repo`, or nothing where none is usable: the
-    installation's wrapper first, then the `devpro` command's search."""
-    candidates = (
-        str(repo / INSTALLED_WRAPPER),
-        shutil.which("devpro"),
-        *DEVPRO_CANDIDATES,
-        str(Path.home() / ".local" / "bin" / "devpro"),
-    )
-    return next((candidate for candidate in candidates if candidate and os.access(candidate, os.X_OK)), None)
+def _launcher_wrappers(launcher: Path) -> tuple[Path, Path]:
+    """The wrappers the launcher at `launcher` tries, in its finder's order, from the directory above
+    its own: an install directory's wrapper, and the claude project install's below a `.claude/`."""
+    above = launcher.parent.parent
+    return above / WRAPPER, above / INSTALLED_WRAPPER.relative_to(".claude")
+
+
+def _runs(command: str) -> bool:
+    """Whether `command` runs: the launcher's probe, `--version` exiting 0."""
+    try:
+        probe = subprocess.run(
+            [command, "--version"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=PROBE_TIMEOUT_S,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return probe.returncode == 0
+
+
+def devpro_executable(launcher: Path | None) -> str:
+    """What the launcher at `launcher` would run, as doctor's line names it: its first wrapper that
+    exists, else the `devpro` its `command -v` finds — `launcher` None searches no wrapper — and that
+    candidate is the devpro where it runs, and named as unusable where it does not."""
+    wrappers = _launcher_wrappers(launcher) if launcher else ()
+    found = next((str(wrapper) for wrapper in wrappers if wrapper.exists()), None)
+    if found is None:
+        local_bin = str(Path.home() / ".local" / "bin")
+        search = os.pathsep.join([os.environ.get("PATH", ""), *DEVPRO_SEARCH_DIRS, local_bin])
+        found = shutil.which("devpro", path=search)
+    if found is None:
+        return "not found in the installation, on PATH, in Homebrew or ~/.local/bin (install devpro)"
+    return found if _runs(found) else f'unusable: "{found}" does not run'
 
 
 def _hook_command(launcher: str) -> str:
@@ -164,9 +197,8 @@ def init(argv: list[str], cwd: Path | str) -> str:
     skill = repo / ".claude" / PROFILER_SKILL
     skill.mkdir(parents=True, exist_ok=True)
     (skill / "SKILL.md").write_text(profiler_skill_text(), encoding="utf-8")
-    staged = [HOOK_DIR, Path(".claude") / PROFILER_SKILL, Path(".claude") / "settings.json"]
-    if removed_retired_skill:
-        staged.insert(2, Path(".claude") / RETIRED_SKILL)
+    retired = [Path(".claude") / RETIRED_SKILL] if removed_retired_skill else []
+    staged = [HOOK_DIR, Path(".claude") / PROFILER_SKILL, *retired, Path(".claude") / "settings.json"]
 
     settings_file = repo / ".claude" / "settings.json"
     settings = json.loads(settings_file.read_text(encoding="utf-8")) if settings_file.exists() else {}
@@ -230,7 +262,9 @@ def stale_hook(repo: Path) -> str | None:
 
 
 def doctor(cwd: Path | str) -> str:
-    """Whether capture works here, and why not: the toolchain, the store and the pattern `tree` reads,
+    """Whether capture works here, and why not: the devpro each launcher standing in the repository
+    runs — the committed hook's and a claude project install's — or, where none stands, the `devpro`
+    command's search, the store and the pattern `tree` reads,
     the hook's registration, any store from before the rename, a stale committed hook, and the newest
     claude session."""
     directory = project_dir(cwd)
@@ -245,12 +279,12 @@ def doctor(cwd: Path | str) -> str:
     installed = (
         ", ".join(sources) if sources else "not installed (install the plugin, or run devpro profiler init claude)"
     )
-    devpro = (
-        devpro_executable(repo)
-        or "not found in the installation, on PATH, in Homebrew or ~/.local/bin (install devpro)"
-    )
+    launchers = [launcher for launcher in (HOOK_DIR / LAUNCHER, INSTALLED_LAUNCHER) if (repo / launcher).is_file()]
+    devpro = [f"devpro:  {devpro_executable(repo / launcher)}, for {launcher}" for launcher in launchers] or [
+        f"devpro:  {devpro_executable(None)}"
+    ]
     lines = [
-        f"devpro:  {devpro}",
+        *devpro,
         f"traces:  {claude_store} (tree reads {Path(directory) / TRACE_DIR.parent / TRACE_GLOB})",
         f"hook:    {installed}",
     ]

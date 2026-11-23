@@ -164,8 +164,9 @@ the launcher's one `command -v` makes,
 
 ```
 `devpro profiler doctor` reports `devpro:` the executable the launcher's finder
-would resolve — `devpro_executable`'s first candidate that exists and is executable, the same search
-the launcher makes, the installation's wrapper first and then the one `command -v`,
+would resolve, by the search the launcher makes — the installation's wrapper first, found by
+existing alone, and then the one `command -v` — and probes the command found with `--version`, as
+the launcher probes it, naming it `unusable: "<path>" does not run` where the probe fails.
 ```
 
 **As it stands:**

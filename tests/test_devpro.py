@@ -887,6 +887,14 @@ def test_a_harness_text_placeholder_fills_with_the_harness_string(
     assert filled_body(defn, ctx) == f"see {expected}/x"
 
 
+def test_the_project_wrapper_placeholder_fills_with_the_wrapper_a_claude_project_install_writes() -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: the closed set held no placeholder for the wrapper's
+    path, so a body naming the wrapper a project install writes could not render it."""
+    defn = Definition(name="probe", kind=Kind.COMMAND, body=f"run {hole(PluginText.PROJECT_WRAPPER)} here")
+    ctx = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+    assert filled_body(defn, ctx) == "run .claude/skills/devpro/tools/devpro.sh here"
+
+
 def test_a_harness_display_name_that_is_not_lowercase_is_refused() -> None:
     with pytest.raises(InputError, match=re.escape("harness 'claude': display_name is not lowercase")):
         dataclasses.replace(CLAUDE, display_name="Claude Code")

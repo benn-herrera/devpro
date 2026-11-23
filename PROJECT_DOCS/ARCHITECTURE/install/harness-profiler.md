@@ -223,9 +223,12 @@ per harness stands with its traces readable under it, or the operator is told wh
 behind.
 
 **Doctor's lines.** `devpro profiler doctor` reports `devpro:` the executable the launcher's finder
-would resolve — `devpro_executable`'s first candidate that exists and is executable, the same search
-the launcher makes, the installation's wrapper first and then the one `command -v`, and it is the launcher's own probe that finds out whether that
-command runs — or `not found in the installation, on PATH, in Homebrew or ~/.local/bin (install devpro)` — `traces:` the
+would resolve, by the search the launcher makes — the installation's wrapper first, found by
+existing alone, and then the one `command -v` — and probes the command found with `--version`, as
+the launcher probes it, naming it `unusable: "<path>" does not run` where the probe fails.
+It reports one such line for each launcher standing in the repository — the committed hook's
+and a claude project install's, `INSTALLED_LAUNCHER` — each walking that launcher's own wrapper
+candidates, and where none stands one line from the `command -v` search alone — or `not found in the installation, on PATH, in Homebrew or ~/.local/bin (install devpro)` — `traces:` the
 claude store `tree` reads beside the `.profiler-*` pattern, `hook:` where a capture hook is
 registered here (the plugin's own records, and the committed, local and user settings files) or
 `not installed` with the install and `init` remedies, an `old:` line per pre-rename store it cannot

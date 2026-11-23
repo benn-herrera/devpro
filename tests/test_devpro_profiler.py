@@ -260,6 +260,24 @@ def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> N
     assert data["calls"][0]["tool"] == "Bash"
 
 
+def test_a_session_whose_trace_holds_the_data_mark_renders(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: the page's data was inlined with `/` unescaped, so a
+    trace carrying the data mark's own text, `/*DATA*/null`, made the strict fill refuse a value holding
+    its mark and `tree --format html` failed for that session."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    args = f"grep -n '{DATA_MARK}' view.html"
+    _write_store(
+        project, ".profiler-claude", "s-mark", "2026-01-01T00:00:00.000Z", harness="claude", extra={"args": args}
+    )
+
+    page = _run(_launcher(tmp_path / "harness"), "tree", "--format", "html", cwd=project)
+
+    assert page.returncode == 0, page.stderr
+    assert _page_data(page.stdout)["calls"][0]["args"] == args
+
+
 def test_a_capture_writes_its_line_in_the_bytes_it_measured(tmp_path: Path) -> None:
     """A lone surrogate in a tool argument, and a non-ASCII one, measure as the bytes the store holds:
     the line is ASCII, so the length `serialize` bounds and the file's bytes are one count, and
@@ -300,15 +318,15 @@ def test_a_launcher_finding_an_unusable_devpro_captures_silently_and_reports_oth
     payload = json.dumps({"hook_event_name": "PostToolUse", "session_id": "s-none", "tool_name": "Bash"})
     project = tmp_path / "project"
     project.mkdir()
+    wrapper = launcher.parent / ".." / "tools" / "devpro.sh"
     if unusable_kind == "wrapper":
-        script = launcher.parent / ".." / "tools" / "devpro.sh"
+        script = wrapper
         script.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
         script.chmod(0o755)
         environment = {**os.environ, "PATH": "/usr/bin:/bin"}
     else:
         # No wrapper stands: remove the install's, so the finder falls through to PATH.
-        script = launcher.parent / ".." / "tools" / "devpro.sh"
-        script.unlink(missing_ok=True)
+        wrapper.unlink(missing_ok=True)
         broken = tmp_path / "broken"
         broken.mkdir()
         script = broken / "devpro"
@@ -727,6 +745,29 @@ def test_doctor_reports_a_committed_launcher_that_differs_from_the_resource(tmp_
 
     assert edited.returncode == 0, edited.stderr
     assert "update:  the committed hook has another version of hp.sh;" in edited.stdout
+
+
+@pytest.mark.parametrize("wrapper", [".claude/tools/devpro.sh", ".claude/skills/devpro/tools/devpro.sh"])
+def test_doctor_reports_a_launcher_relative_wrapper_that_does_not_run_as_unusable(tmp_path: Path, wrapper: str) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: doctor searched one wrapper path, not the committed
+    launcher's candidates, and took the first candidate with the execute bit without running it, so it
+    named a devpro the launcher does not run — here the `devpro` on PATH for the launcher's first
+    candidate, and the broken wrapper itself for its second. Each wrapper stands and exits 1, which the
+    launcher reports as unusable."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    assert _profiler_init(project).returncode == 0
+    broken = project / wrapper
+    broken.parent.mkdir(parents=True, exist_ok=True)
+    broken.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+    broken.chmod(0o755)
+
+    reported = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
+
+    assert reported.returncode == 0, reported.stderr
+    [line] = [line for line in reported.stdout.splitlines() if line.startswith("devpro:")]
+    assert str(broken) in line and "does not run" in line
 
 
 def _write_store(

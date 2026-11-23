@@ -25,11 +25,12 @@ import json
 import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Protocol
 
 from devpro import __version__, clauses
 from devpro.errors import InputError
+from devpro.install_base import WRAPPER
 from devpro.vocabulary import IDENTIFIER, HarnessText, Kind, OptionalHarnessText, Tool
 
 KBASE_OWNER = "kbase"
@@ -290,6 +291,12 @@ class Harness:
     def user_dir(self) -> Path:
         """The user harness directory, `~` read from HOME."""
         return Path(self.user_harness_dir).expanduser()
+
+    @property
+    def project_wrapper(self) -> str:
+        """The wrapper a project install writes, relative to the project root: `WRAPPER` below ROOT, the
+        project harness directory's plugin directory. A bound harness's, every `{plugin}` filled."""
+        return PurePosixPath(self.project_harness_dir, self.plugin_dir, WRAPPER).as_posix()
 
     def text(self, part: HarnessText | OptionalHarnessText) -> str:
         """The value of the string field `part` names; "" where an optional one is supplied nowhere."""
