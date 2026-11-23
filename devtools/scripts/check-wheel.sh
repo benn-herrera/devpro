@@ -47,6 +47,18 @@ if [[ "${in_wheel}" != "${in_tree}" ]]; then
   fail "the wheel's package data differs from the tree"
 fi
 
+# The package declares no runtime dependencies, so its METADATA carries no Requires-Dist entry of
+# any kind — a dev group stays in pyproject.toml and never reaches a wheel. Read from the wheel's
+# own METADATA rather than inferred: `pip install --no-index` below proves only that nothing
+# resolved, which a --find-links or an index would change.
+requires_dist="$(unzip -p "${wheel}" '*dist-info/METADATA' | grep '^Requires-Dist' || true)"
+if [[ -n "${requires_dist}" ]]; then
+  while IFS= read -r entry; do
+    printf 'check-wheel: the wheel declares a runtime dependency: %s\n' "${entry}" >&2
+  done <<<"${requires_dist}"
+  fail "the wheel's METADATA carries Requires-Dist; the package declares no runtime dependencies"
+fi
+
 scratch="${PROJECT_ROOT}/.devpro-temp/check-wheel"
 venv="${scratch}/venv"
 command rm -rf "${scratch}"
