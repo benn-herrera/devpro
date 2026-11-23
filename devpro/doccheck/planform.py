@@ -407,7 +407,7 @@ def _after_separator(text: str) -> str:
     return text[_SEPARATOR.match(text).end() :]
 
 
-def _opening_word(words: "re.Pattern[str]", cell: str) -> tuple[str | None, str]:
+def _opening_word(words: re.Pattern[str], cell: str) -> tuple[str | None, str]:
     """The word of words that cell opens with and the note after it; (None, cell) where it opens
     with none."""
     m = words.match(cell)

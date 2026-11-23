@@ -19,9 +19,8 @@ devpro = "devpro.cli:main"
 Repository = "https://github.com/benn-herrera/devpro"
 
 # The dev toolchain `.venv` runs (PEP 735): a dependency group is development-only and never
-# distribution metadata, so no wheel of this package carries or installs it. Each line is a
-# compatible-release range — a rebuild takes the newest patch release of the named minor and
-# nothing newer, and a minor or major bump is an edit here, visible in the diff.
+# distribution metadata, so no wheel of this package carries or installs it. The line convention and
+# the group's record are stated in `PROJECT_DOCS/ARCHITECTURE/packaging.md`.
 [dependency-groups]
 dev = [
     "pytest~=9.2",

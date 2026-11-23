@@ -228,7 +228,11 @@ runpy.run_module("devpro", run_name="__main__", alter_sys=True)
 
 def base_interpreter() -> str:
     """The Python running this process as it stands outside any virtual environment: a venv's python is
-    gone with the venv, while the interpreter it was made from outlives it."""
+    gone with the venv, while the interpreter it was made from outlives it.
+
+    `sys._base_executable` is CPython's own answer to this: for a venv, the base interpreter it was
+    made from (`--copies` alike); outside one, the interpreter itself. The leading underscore marks it
+    documented but not guaranteed stable across releases, so it is read here and nowhere else."""
     return str(Path(sys._base_executable))
 
 

@@ -39,19 +39,23 @@ devpro project root is the whole build configuration.
   `pyproject.toml`'s `[dependency-groups]` (PEP 735): groups are development-only and never
   distribution metadata, so no wheel of this package — a Homebrew local wheel build included —
   carries or installs them. Each tool's line is named with a compatible-release specifier; a line
-  move is a deliberate edit to `pyproject.toml`, visible in the diff. The build makes no git
-  check. A build also
-  writes `devpro.egg-info/` at the devpro project root, which `.gitignore` covers. The sdist is
-  a byproduct of the build: SPEC.md, Package and Command names no sdist install source, and
-  `check-wheel` checks only that the sdist exists.
+  move is a deliberate edit to `pyproject.toml`, visible in the diff. The group's text is the
+  record: `_venv` writes it to `.venv/tools.txt` after it installs, and a group edited since the
+  last install no longer matches that record, so the next `_venv` installs the group again; a
+  record a step checked in place of the group would pass on a stale toolchain. The build makes no
+  git check. A build also writes `devpro.egg-info/` at the devpro project root, which `.gitignore`
+  covers. The sdist is a byproduct of the build: SPEC.md, Package and Command names no sdist install
+  source, and `check-wheel` checks only that the sdist exists.
 - **Check.** `just check-wheel [python]` builds, then installs the wheel into a throwaway venv under
-  `.devpro-temp/` made from `python` (default `python3`). With `PYTHONPATH` unset and
+  `.devpro-temp/` made from `python` (default `python3`); a `python` below the floor is refused
+  before that venv is made. With `PYTHONPATH` unset and
   `GIT_CEILING_DIRECTORIES` at that scratch directory, it checks that `devpro` imports from the
   venv, that the console script and `python -m devpro` print the same `--help` and the checkout's
-  version, that an install with the kbase component on into a scratch project equals the checkout's
-  byte for byte, and that a mage install writes `devpro/CLAUDE.md`. It is the `wheel` test surface:
-  `just test wheel`, and the last step of an unscoped `just test`. A change to `pyproject.toml` or
-  under `devpro/` selects it in `just test-changed`.
+  version, that the wheel's METADATA carries no `Requires-Dist` entry — the package declares no
+  runtime dependency — that an install with the kbase component on into a scratch project equals
+  the checkout's byte for byte, and that a mage install writes `devpro/CLAUDE.md`. It is the `wheel`
+  test surface: `just test wheel`, and the last step of an unscoped `just test`. A change to
+  `pyproject.toml` or under `devpro/` selects it in `just test-changed`.
 
 **The checkout premise.** devpro runs from a checkout when `PACKAGE_ROOT.parent` holds a `.git` entry: a directory in a
 clone, a file in a worktree. `install_base.checkout_root` tests for it without running a subprocess, and

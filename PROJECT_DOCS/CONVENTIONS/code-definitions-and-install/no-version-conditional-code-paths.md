@@ -2,8 +2,7 @@
 
 Code runs on the floor and above with one path. A feature the floor provides is used presumptively;
 compat code for a version below it leaves by deletion — never as a check rewritten to branch the
-other way. 3.12 through 3.15 remove nothing this project relies on, so nothing the floor provides is
-withheld for the sake of a later interpreter either.
+other way, and nothing the floor provides is withheld for the sake of a later interpreter either.
 
 A version branch is a second path to test for the same task, and the tests that would cover it are
 the ones nobody writes. A new mechanism must win by a wide margin to be worth that second path; a

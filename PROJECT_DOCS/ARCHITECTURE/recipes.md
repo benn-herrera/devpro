@@ -13,7 +13,8 @@ under claude, the `CLAUDE.md` redirect beside it (Agents File, Placement), and t
 earlier revision's copy run inside that revision's worktree, where that worktree's own justfile
 supplies `GEN` and the worktree holds the package `GEN` names. `tag` goes through `--version`, which
 prints the version bare and nothing else, so the `v` of `v<version>` is the recipe's;
-`check-wheel` through `--version` and through `install` (see the paragraph on `build` below).
+`check-wheel` through `--version` and through a working-tree `install` (see the paragraph on `build`
+below).
 Scripts read a harness's `HarnessText` values through `python3 -m devpro harness NAME KEY`: the
 maintainer scripts' reader, and not part of the consumer CLI. It, `dev-render` and
 `render-agents-file` are registered at parser build only where `DEVPRO_DEV` is `1` (SPEC.md,
@@ -28,8 +29,9 @@ CONVENTIONS.md states where the version is written down, and the order a bump ta
 `just build` runs `python -m build --no-isolation` in `.venv` and runs no devpro.
 `just check-wheel` reaches `python3 -m devpro` from the working tree for the version, and the
 throwaway venv's Python with `PYTHONPATH` at the working tree for the checkout side of its install
-comparison, so the wrapper records one interpreter on both sides; it runs the `devpro` console
-script only from that throwaway venv. Packaging states both.
+comparison — that interpreter is the `install` that reach runs, and the one the floor guard refuses
+where it is below the floor, before the venv is made — so the wrapper records one interpreter on both
+sides; it runs the `devpro` console script only from that throwaway venv. Packaging states both.
 
 **Toolchain.** This repository's justfile needs `just` 1.27.0 or later, for the `[doc]` recipe
 attribute; a consuming project's floor is 1.33.0 or later where the devpro line ships — the include
