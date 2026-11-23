@@ -8,8 +8,9 @@ The items the active plan deferred as it landed, collected where a later reader 
 type-check of the opencode resources — upstream's own packaging lags its runtime (`ctx.tool.hook`
 is wider than any published or client-installed surface; the host source's `packages/plugin` has
 `tool: ToolDomain`), and the check lands when the host publishes what its runtime provides, with
-no devpro-owned types; the leaf amendments R16 and R17's leaf halves — a design revision, the
-user's; the three proposed CONVENTIONS leaves R23/R24/R25 — a JS stand-in models the API's real
+no devpro-owned types; R17's halves closed into the entries below at the owner's smallest-wording
+call; R16's leaf catch-up is sequenced after this plan's code-shaping packages land, drafted from
+measurement — the owner's call; the three proposed CONVENTIONS leaves R23/R24/R25 — a JS stand-in models the API's real
 semantics, a shipped resource is checked against the host's declarations, a formatted-time test
 pins the locale beside `TZ`; the `UNREADABLE` twin (`plancheck.py` / `kanban/server.py`); the
 installed plugin payload's `dicerlib` imports, cleared by a reinstall; and the capture's third
@@ -94,3 +95,62 @@ no-records state a zero-record store renders. The controls' state and the sort i
 the index page's URL — its query carries what the reader chose, so leaving the view and returning
 restores it — and the URL is a link the reader can copy.
 ```
+
+**As it stands:**
+
+```
+A session's page carries its dispatcher in the frame band, linked to that
+session's page, where one dispatched it, and an Agent row links to the child session's page where
+the record names one:
+```
+
+**Becomes:**
+
+```
+A session's page carries its dispatcher in the frame band, linked to that
+session's page, where one dispatched it, and a call row whose tool is `Agent` links to the child
+session's page where the record names one:
+```
+
+**As it stands:**
+
+```
+A store the glob finds but cannot read appears in the index as unreadable —
+the server raises nothing for it; a store whose files the glob finds but whose trace cannot be read
+is stated in the feed as unreadable, like the store that could not be read at all.
+```
+
+**Becomes:**
+
+```
+A store the glob finds but cannot read appears in the index as unreadable —
+the server raises nothing for it.
+```
+
+### [Repo layout](PROJECT_DOCS/ARCHITECTURE/repo-layout.md)
+
+**As it stands:**
+
+```
+The package's modules depend one way: `kanban/` imports `doccheck/` and `dicing`'s modules,
+`doccheck/` imports `dicing`'s, `profiler/` reads `kanban/`'s stylesheet as package data,
+```
+
+**Becomes:**
+
+```
+The package's modules depend one way: `kanban/` imports `doccheck/` and `dicing/`,
+`doccheck/` imports `dicing/`, `profiler/` reads `kanban/`'s stylesheet as package data,
+```
+
+## Code delta
+
+### [Harness profiler](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)
+
+The harness-union comment above the index template's style block in `devpro/profiler/pages.py`
+still counts the union's spellings at two — "the style block's two harness rules and that list
+change together" — where the union is now spelled three ways: the feed's name, the controls' box
+ids and the style rules. The comment beside `HARNESSES` already counts the three; the older
+comment's counting clause leaves, deferring the union's one declaration to it — against the
+leaf's statement that the index carries the harness controls, which the union's keeping-in-step
+serves. Nothing is applied to the leaf.
