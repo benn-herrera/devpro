@@ -26,13 +26,6 @@
 # own check/help. Plain recipe lines, no `set shell` — nothing here
 # needs bash.
 #
-# No recipe takes an argument, and the consumer's words are the recipes':
-# `set positional-arguments` splices no word into a line by name, so a bare word
-# after one — `just devpro-check-plan hi` — reads as a request for the recipe
-# `hi`, as it would in the project's own justfile, and `just devpro help` is
-# refused there rather than the recipe's line failing with `help: not found`.
-
-set positional-arguments
 
 [doc("show help on devpro just recipes")]
 devpro-help:
