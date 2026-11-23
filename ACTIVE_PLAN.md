@@ -19,7 +19,7 @@ Design: [ACTIVE_DESIGN/entry-point.md](ACTIVE_DESIGN/entry-point.md). Every pack
 | P7b | dispatchable | expert | `devpro:python-coder` |
 | P7c | dispatchable | expert | `devpro:shell-dsl-coder` |
 | P7d | dispatchable | expert | `devpro:prompt-engineer` |
-| P7e | in progress | expert | `devpro:tech-writer` |
+| P7e | landed | expert | `devpro:tech-writer` |
 
 ## Common to every package
 

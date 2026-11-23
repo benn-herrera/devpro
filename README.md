@@ -9,30 +9,6 @@ Mage that lets you build to last: you work with the agents to design, plan, buil
 *The board panel `devpro dashboard` serves at `/board/` — the project's work packages, roadmap and
 design as cards — in an earlier release's frame, before the top nav the two views share.*
 
-## The dashboard
-
-`devpro dashboard [<project-dir>] [--port <number>]` serves the project in a browser on the local
-machine and prints the URL it is served at:
-
-```sh
-devpro dashboard
-```
-
-It serves the project the command runs in, up to the nearest directory holding a `.git` entry;
-`<project-dir>` names another directory inside the project to serve from anywhere. The port is
-loopback only, `127.0.0.1`, and the system picks a free one unless `--port` names one. The URL opens
-on the board — its root answers a redirect to `/board/` — and the profiler view is the second view,
-at `/profiler/`: the session records the activity profiler captured, one row per session, each
-linking to that session's page. A top nav switches between the two: its `kanban` link is the board
-panel at `/board/`, its `profiler` link the profiler view at `/profiler/`, and at the nav's right
-edge sit the server's live/idle indicator and its stop.
-
-The board is the project's roadmap, its active design and its active plan as a set of columns of
-cards, live: an edit to a watched file shows on the open page within about a second. Dropping a
-card moves its ticket between `ROADMAP.md` and the active design. Those moves are the board's only
-writes; the plan's columns are read-only. The stop in the nav ends the server, as Ctrl-C does, from
-either view. Only the command line starts it: no served page starts its own server.
-
 ## What it asks of you
 
 This process does not run itself, and it does not claim to be a 10X everyone-is-now-an-engineer super suit.
@@ -63,23 +39,13 @@ in just over 16K lines of runtime code, including vision tower support and an Op
 
 ## Requirements and Supported Platforms
 
+- Platforms: macOS and Linux. Native Windows is unsupported; no install refuses it.
 - Harness: claude, opencode, or mage; `--harness` takes these three names.
-- Homebrew (macOS or Linux), or pipx on a machine without it, to install devpro.
+- Homebrew, or pipx on a machine without it, to install devpro.
+- Python 3.9 or later, which runs devpro and the wrapper each install writes into the project; the
+  wrapper exits non-zero, saying so, where it finds none.
 - `just` 1.27.0 or later, where the project's runner is a justfile, and 1.33.0 or later there wherever the devpro line ships: every project install of a nested plugin writes that line, an `import?`, which earlier `just` rejects; the `kb` include line an install with the kbase component also writes rides the same floor. No install checks the version.
 - `perl` with core `JSON::PP` for the claude guardrail: without them the install skips the hook, says so in one line, and installs everything else.
-- An activity profiler, shipped with a claude or opencode project install: the session's activity is
-  recorded to the project's own store under `.devpro-temp/` at the project root — `.profiler-claude/`
-  under claude, one line per hook event, and `.profiler-opencode/` under opencode, one per tool call.
-  The `tree` subcommand of the `devpro profiler` verb reads every `.profiler-*` store there, and the
-  `profiler` skill hands a session to the user as text or as an HTML page; the `devpro dashboard`
-  verb serves the records as its profiler view (The dashboard, above). The claude install copies the
-  launcher `profiler/hp.sh` and registers six hook entries in the plugin's `hooks/hooks.json`; the
-  opencode install copies the launcher and the capture `profiler.ts` beside the plugin entry and
-  registers no hook entries. The page template `view.html` is the devpro wheel's own package data,
-  not an install resource.
-- Under mage, `profiler` ships with no launcher and no capture, so a mage session records nothing
-  and has no trace to read. A claude session on the web loads no plugin's hooks and records nothing
-  there until `init` commits the hook; the skill names that `init`.
 
 ## Quick Start Guide
 
@@ -128,12 +94,20 @@ backup.AGENTS.md
 
 A project install under claude or opencode adds the include lines to the project's `justfile` or
 `Makefile` — an `import?` or an `-include` — for the runner snippets it installs, and a project
-with neither runner file gets a new `Makefile` holding them. One is the dicing snippets package's,
+with neither runner file gets a new `Makefile` holding them. One is the devpro tools package's,
 `devpro`, written on every project install of a nested plugin; another is the kb-tools package's,
 `kb`, written with `--components=kbase`. A line an earlier release wrote for the docdicer tools
 package — retired with the absorbed dicing verbs, and none of its snippet paths point at anything
-any more — the install removes, naming the removal in its report. The
-install also writes the devpro block into the project's `AGENTS.md`, created with it where absent —
+any more — the install removes, naming the removal in its report.
+
+The install gives the project its own copy of devpro, `tools/devpro/` in the install directory,
+and a wrapper, `tools/devpro.sh`, that runs it; the recipes, hooks and session commands run that
+copy, not the `devpro` on your `PATH`. So the project's devpro does not change when the global one
+does: a `brew upgrade` changes no project's checks. Only rerunning the project's install replaces
+the copy (Updating, below). The wrapper's interpreter lookup and what the copy holds are in
+[SPEC Shipped files](PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md).
+
+The install also writes the devpro block into the project's `AGENTS.md`, created with it where absent —
 unless `~/.claude/CLAUDE.md` or `~/.config/opencode/AGENTS.md` already holds an agents-file block,
 which the install keeps current there instead and writes no project agents file. Where the
 project's `AGENTS.md` takes the block, claude also gets the project's `CLAUDE.md` as the one-line
@@ -155,9 +129,8 @@ This writes `~/Mage/Skills/devpro/` and that plugin's `CLAUDE.md`, holding the a
 reaches no project: a mage session works with the skills where Mage opens it. To run the process in
 a project, install into that project as above, under claude or opencode. The kbase component is
 optional: `--components=kbase` adds the `kbase` skill and the `.mcp.json` entry Mage starts the
-`kbase` executable from. No devpro install provides, runs or checks that executable: on macOS and
-Linux, install it with `brew install benn-herrera/tap/kbase` (0.11.1 or later); native Windows is
-unsupported for the devpro plugin, the component included. Restart Mage after installing or
+`kbase` executable from. No devpro install provides, runs or checks that executable: install it
+with `brew install benn-herrera/tap/kbase` (0.11.1 or later; platforms as under Requirements). Restart Mage after installing or
 upgrading kbase, so it starts the server.
 
 ## Next: ask your agent
@@ -167,9 +140,7 @@ Start your coding harness, or, if a session was already open during the install,
 the kbase component on, restart Mage. Then ask the session agent to load the `guide` skill:
 `devpro:guide` under claude and mage, `devpro-guide` under opencode. It starts a design, explains how
 the development process runs, tells you where your work stands, and shows the board — it runs
-`devpro dashboard`, or gives you that command line where you would rather run it yourself; a
-checkout of this repository runs it as `just dev-dashboard`, which passes any further arguments
-through to the verb. It also
+`devpro dashboard`, or gives you that command line where you would rather run it yourself. It also
 installs, updates, inspects or changes what you just installed. To see what the session did — its
 profile, trace or call tree — ask for the `profiler` skill: `devpro:profiler` under claude and
 mage, `devpro-profiler` under opencode.
@@ -179,10 +150,49 @@ in the directory the session runs in. A mage install reaches no project, so afte
 the project the work runs in as the claude and opencode section above shows, and ask for the guide
 in a session started there.
 
+## The dashboard
+
+`devpro dashboard [<project-dir>] [--port <number>]` serves the project in a browser on the local
+machine and prints the URL it is served at:
+
+```sh
+devpro dashboard
+```
+
+It serves the project the command runs in, up to the nearest directory holding a `.git` entry;
+`<project-dir>` names another directory inside the project to serve from anywhere. The port is
+loopback only, `127.0.0.1`, and the system picks a free one unless `--port` names one. The URL opens
+on the board — its root answers a redirect to `/board/` — and the profiler view is the second view,
+at `/profiler/`: the session records the activity profiler captured, one row per session, each
+linking to that session's page. A top nav switches between the two: its `kanban` link is the board
+panel at `/board/`, its `profiler` link the profiler view at `/profiler/`, and at the nav's right
+edge sit the server's live/idle indicator and its stop.
+
+The board is the project's roadmap, its active design and its active plan as a set of columns of
+cards, live: an edit to a watched file shows on the open page within about a second. Dropping a
+card moves its ticket between `ROADMAP.md` and the active design. Those moves are the board's only
+writes; the plan's columns are read-only. The stop in the nav ends the server, as Ctrl-C does, from
+either view. Only the command line starts it: no served page starts its own server.
+
+## The activity profiler
+
+A claude or opencode project install ships an activity profiler. It records the session's activity
+to the project's own store under `.devpro-temp/` at the project root: `.profiler-claude/` under
+claude, one line per hook event, and `.profiler-opencode/` under opencode, one per tool call.
+`devpro profiler tree` reads every `.profiler-*` store there, the `profiler` skill hands a session
+to you as text or as an HTML page, and `devpro dashboard` serves the records as its profiler view
+(The dashboard, above). What the install copies and registers for it is in
+[SPEC Shipped files](PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md).
+
+Under mage, `profiler` ships with no launcher and no capture, so a mage session records nothing. A
+claude session on the web loads no plugin's hooks and records nothing there until `init` commits the
+hook; the skill names that `init`.
+
 ## Updating
 
 To update, run `brew upgrade devpro`, then the same install line with `--dry-run` added to preview
-it, then without to apply it.
+it, then without to apply it. The upgrade alone reaches no project: each project keeps the copy of
+devpro its last install wrote, and the rerun is what replaces it.
 
 Installed with pipx, update with `pipx install --force` of the next release's tagged URL, then `pipx
 ensurepath` and a new shell, then the same install line.
@@ -190,7 +200,7 @@ ensurepath` and a new shell, then the same install line.
 A project installed by 0.17.x upgrades in two runs. The first removes `skills/docdicer/tools/`'s own
 files — the dicer, its runner snippets — along with the `docdicer` skill's earlier files, and
 removes the docdicer include line from the project's runner file, naming it in the report; the
-include line it writes for the new dicing snippets package lands in the same runner file. Then the
+include line it writes for the devpro tools package lands in the same runner file. Then the
 tree is exhausted: a second install reports nothing and leaves the same files where it left them.
 
 A line already in your `justfile` or `Makefile` that names this install's snippets is rewritten in
@@ -201,7 +211,9 @@ in the file.
 What survives both runs is the launcher's `.venv` under `skills/docdicer/tools/`, with everything in
 it, and the directory `skills/docdicer/tools/` holding it. Nothing uses what is there: no
 definition, no include line, and no install writes into it, the prune keeping a `VENV_DIR` entry by
-rule. Delete `skills/docdicer/tools/` once, and the upgrade is complete.
+rule. Delete `skills/docdicer/tools/` once, and the upgrade is complete. That is the old directory
+under `skills/docdicer/`; the install directory's own `tools/`, holding the project's copy of devpro
+and its wrapper, is current and stays.
 
 A project that recorded sessions before this release keeps them: the profiler's stores were named
 `claude-profiler/` and `opencode-profiler/` under `.devpro-temp/`, and the install renames each to
