@@ -3,6 +3,8 @@ form a design holds, or of the ticket layout a roadmap holds, each reported with
 text found there and the form accepted in its place, so that the fix can be made from the message.
 """
 
+from __future__ import annotations
+
 import os
 import re
 from collections.abc import Callable
@@ -17,7 +19,9 @@ from .planform import (
     TICKET,
     Breach,
     BreachKind,
+    Layout,
     Pair,
+    Plan,
     active_document,
     document_locations,
     find_project_root,
@@ -156,22 +160,22 @@ def _check(
     return report.status
 
 
-def _plan_report(path: str) -> _Report:
-    plan = read_plan(path)
+def _report(path: str, *, reader: Callable[[str], Plan | Layout]) -> _Report:
+    """The report the plan or roadmap at path gives: the plan's, its work packages counted, where the
+    reader reads a plan; the roadmap's, its tickets counted, where it reads a roadmap. Each reports the
+    document's breaches, a summary line, and its status, 1 on any breach and 0 otherwise."""
+    document = reader(path)
+    if isinstance(document, Plan):
+        return _Report(
+            document.breaches,
+            f"plan checked: {path}, work packages: {len(document.packages)}, problems: {len(document.breaches)}",
+            1 if document.breaches else 0,
+        )
     return _Report(
-        plan.breaches,
-        f"plan checked: {path}, work packages: {len(plan.packages)}, problems: {len(plan.breaches)}",
-        1 if plan.breaches else 0,
-    )
-
-
-def _roadmap_report(path: str) -> _Report:
-    roadmap = read_roadmap(path)
-    return _Report(
-        roadmap.breaches,
-        f"roadmap checked: {path}, tickets: {sum(part.kind == TICKET for part in roadmap.parts)},"
-        f" problems: {len(roadmap.breaches)}",
-        1 if roadmap.breaches else 0,
+        document.breaches,
+        f"roadmap checked: {path}, tickets: {sum(part.kind == TICKET for part in document.parts)},"
+        f" problems: {len(document.breaches)}",
+        1 if document.breaches else 0,
     )
 
 
@@ -301,7 +305,7 @@ def check_plan(plan: Optional[str], *, start: str, stdout: TextIO, stderr: TextI
         noun="plan",
         find=lambda root: active_document(root, ACTIVE_PLAN),
         absent="active plan",
-        read=_plan_report,
+        read=lambda path: _report(path, reader=read_plan),
         empty="cell",
         start=start,
         stdout=stdout,
@@ -344,7 +348,7 @@ def check_roadmap(roadmap: Optional[str], *, start: str, stdout: TextIO, stderr:
         noun="roadmap",
         find=roadmap_file,
         absent="roadmap",
-        read=_roadmap_report,
+        read=lambda path: _report(path, reader=read_roadmap),
         empty="line",
         start=start,
         stdout=stdout,
