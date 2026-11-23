@@ -385,9 +385,9 @@ Agent `devpro:prompt-engineer`; expert (which sentences give a session a command
 
 ## P5 README: the profiler skill and the supported platforms
 
-Agent `devpro:tech-writer`; mechanical, step-down `reaper/Qwen3.8-Flash-Next` through the dispatch's
-`model` parameter. (The plan's first form named `comm-mechanical=haiku`, a literal model name from a
-stale pin set — no such model on the menu.)
+Agent `devpro:tech-writer`; mechanical. The step-down model was resolved at dispatch, not recorded
+here — the plan's first form named `comm-mechanical=haiku`, a literal model name from a stale pin
+set, no such model on the menu; the correction's record is the P5 landing commit.
 
 - **Scope:** `README.md`, these edits only:
   - `:74` and `:80`: `show-profile` → `profiler`;
