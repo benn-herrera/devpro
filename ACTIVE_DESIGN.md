@@ -10,9 +10,11 @@ is wider than any published or client-installed surface; the host source's `pack
 `tool: ToolDomain`), and the check lands when the host publishes what its runtime provides, with
 no devpro-owned types; R17's halves closed into the entries below at the owner's smallest-wording
 call; R16's leaf catch-up is sequenced after this plan's code-shaping packages land, drafted from
-measurement — the owner's call; the three proposed CONVENTIONS leaves R23/R24/R25 — a JS stand-in models the API's real
-semantics, a shipped resource is checked against the host's declarations, a formatted-time test
-pins the locale beside `TZ`; the `UNREADABLE` twin (`plancheck.py` / `kanban/server.py`); the
+measurement — the owner's call; R23/R24/R25, the three proposed CONVENTIONS leaves, ruled: R24 lands as
+its own package — a shipped resource naming a host version is type-checked against that host's
+published declarations, never against a devpro-owned stub for a published package, the rule
+binding future resources while R9's enforcement waits for the host to publish; R23 rides the
+runner-fidelity package, R25 rides R16's leaf catch-up; the `UNREADABLE` twin (`plancheck.py` / `kanban/server.py`); the
 installed plugin payload's `dicerlib` imports, cleared by a reinstall; and the capture's third
 host shape: on opencode 2.4.1 the dispatch result carries the child's id at the result's top level
 (`result.sessionID`, beside an `output` array — `packages/core/src/tool/plugin/subagent.ts:19-26,47-49`),
