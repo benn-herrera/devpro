@@ -100,6 +100,49 @@ restores it — and the URL is a link the reader can copy.
 **As it stands:**
 
 ```
+A `subagent` or `task` call also records the child session it dispatched, the child's session id
+read from the host's result where the host reports it — opencode 2.3.2's `result.output.sessionID`
+is that place: that id fills the record's `child_agent_id`, where the index groups the child one
+level under its dispatcher — the tree, on the session's page, drawing the dispatch as a context —
+and the dispatch links to the child's page.
+```
+
+**Becomes:**
+
+```
+A `subagent` or `task` call also records the child session it dispatched, the child's session id
+read from the host's result where the host reports it — the place moves with the host: opencode
+2.4.1 reports the id at the result's top level (`result.sessionID`), 2.3.2 in `output.sessionID`
+and 2.3.0 in `metadata.sessionID`, and the capture reads them in that order, each under the host's
+own string guard: that id fills the record's `child_agent_id`, where the index groups the child one
+level under its dispatcher — the tree, on the session's page, drawing the dispatch as a context —
+and the dispatch links to the child's page.
+```
+
+**As it stands:**
+
+```
+The stores stay flat — the child's id reaches no
+capture as a parent key, the hierarchy being what the parent's records state — and a dispatch that
+fails before creating a child, or whose result reports no child session, records none.
+```
+
+**Becomes:**
+
+```
+The stores stay flat — the child's id reaches no
+capture as a parent key, the hierarchy being what the parent's records state — and a dispatch that
+fails before creating a child, or whose result reports no child session, records none. Records a
+capture wrote before the capture read 2.4.1's shape carry the child's id only in their stored
+result text; a one-shot repair, run before the installation updates, reads each standing subagent
+record's result text and fills its `child_agent_id` where the host reported it — a record whose
+id is already right stays untouched, and every edge a capture writes after the update is correct
+at write time.
+```
+
+**As it stands:**
+
+```
 A session's page carries its dispatcher in the frame band, linked to that
 session's page, where one dispatched it, and an Agent row links to the child session's page where
 the record names one:
@@ -155,3 +198,10 @@ ids and the style rules. The comment beside `HARNESSES` already counts the three
 comment's counting clause leaves, deferring the union's one declaration to it — against the
 leaf's statement that the index carries the harness controls, which the union's keeping-in-step
 serves. Nothing is applied to the leaf.
+
+The capture's `childSessionOf` in `devpro/harnesses/resources/opencode/profiler.ts` reads the
+child's id where the host reports it — `result.sessionID` first, then `output.sessionID`, then
+`metadata.sessionID`, each under the host's own string guard — matching the leaf's amended
+statement. The one-shot repair is written to the scope the leaf states: every standing record,
+once, before the installation updates, idempotent over a record whose id is already right; its
+mechanics are the plan's.
