@@ -17,8 +17,14 @@ and the user owns their fate. Any other failure belongs to the package being don
 | P2 | landed | expert | workaround code the 3.11 floor orphans; its pins verdict superseded by P4 |
 | P3 | landed: commit fbb8e04 | expert | the annotation standard for the 3.11 floor |
 | P4 | landed: commit ee87157 | expert | the dev toolchain lives in pyproject; pins move to latest 3.11 lines |
-| R1 | landed: this commit adds the review document | expert | the changed code and documents reviewed |
-| R2 | drafted | expert | drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands |
+| R1 | landed: commit c089c10 | expert | the changed code and documents reviewed |
+| R2 | drafted | expert | the burndown, its items below; drafted from ACTIVE_PLAN_REVIEW.md |
+| B1 | drafted | expert | `_venv` refuses what it cannot parse |
+| B2 | drafted | mechanical | the wheel surface asserts the clean claim |
+| B3 | drafted | mechanical | check-wheel checks the floor on the interpreter it is handed |
+| B4 | drafted | expert | the wrapper enforces the floor on both branches |
+| B5 | drafted | mechanical | the wording debts |
+| B6 | drafted | expert | the guide's floor line — the owner decides |
 
 ### P1 — the floor states 3.11
 
@@ -279,4 +285,57 @@ standards; the session synthesizes their reviews into `ACTIVE_PLAN_REVIEW.md`.
 
 ### R2 — Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (landed, `c089c10`). Lifetime shipped. Items B1–B3 are one
+commit each under the checkpoint gate; B4 and B5 likewise. B6 waits for the owner.
+
+| Item | Source | Rating |
+| --- | --- | --- |
+| B1 | D1 (three seats) | expert |
+| B2 | D2 | mechanical |
+| B3 | D3 | mechanical |
+| B4 | D9 | expert |
+| B5 | D4, D5, D6, D7, D10, D12, D13, D14 | mechanical |
+| B6 | D8 | the owner decides |
+
+**B1 — `_venv` refuses what it cannot parse.** Scope: `justfile`'s `_venv` recipe. Between parse
+and act: refuse an empty `${floor}` and an empty `${group}` with the recipe's own error naming
+which; widen the floor regex to the spellings `requires-python` actually takes (`>=3.11,<4`,
+`>=3.11.0`, `==3.11.*`); stop dropping the rebuild guard's stderr. Reading the values with the
+venv python's `tomllib` instead of `sed` is the executor's call — the floor-first sequencing note
+in the review holds either way. Re-run `shell-dsl-coder`'s probe variants
+(`.devpro-temp/probe/`) as the verification. Done-line: `just lint`, `just test devpro`.
+
+**B2 — the wheel surface asserts the clean claim.** Scope: `devtools/scripts/check-wheel.sh`. One
+`grep -q '^Requires-Dist'` check on the wheel's METADATA, failing the check when the dev group
+leaks, so "no wheel carries the dev group" is read where it is claimed. Done-line: `just test
+wheel`.
+
+**B3 — `check-wheel` checks the floor on the interpreter it is handed.** Scope:
+`devtools/scripts/check-wheel.sh`. One guard beside the existing ones: an interpreter below the
+floor exits with the floor message, before any wheel work. Done-line: `just test wheel`.
+
+**B4 — the wrapper enforces the floor on both branches.** Scope: `devpro/install.py`
+(`_WRAPPER_TEXT`), `tests/test_devpro_install.py`. The recorded branch runs `supported` before
+trusting the recorded interpreter; the refusal names both the recorded path and the `python3`
+found, so the reader can act; the test pins move with the message. The asymmetry's reach is
+narrow but the fix is two lines and the pin update is in scope. Done-line: `just lint`, `just
+test devpro`.
+
+**B5 — the wording debts.** Scope: documents and one docstring, each enumerated:
+`annotations-on-the-floor.md`'s `typing` list states itself as open (`D4`);
+`no-version-conditional-code-paths.md` drops the dated parenthetical (`D5`); `pyproject.toml`'s
+group comment drops to a pointer, packaging leaf the home (`D6`); the annotations leaf's floor
+list gains `plugins.md`'s statement (`D7`); README:45's bullet names pip's refusal and its
+enforcement (`D10`); `packaging.md` names `tools.txt` and the reinstall-on-group-edit half
+(`D13`); `install.py`'s `base_interpreter` docstring states the CPython guarantee the code relies
+on (`D12`); `planform.py:410`'s stale quote is unquoted (`D14`). Done-line: `just lint`, `just
+test devpro`, `just dev-check-design-deltas-applied` (0 problems), plus the docs surface in the
+gate.
+
+**B6 — the guide's floor line.** The owner decides whether the installing page gains one floor
+line (`D8`) or the silence stands as ruled. Not dispatched until decided; if adopted, it is one
+line and rides B5's commit or its own.
+
+Out of scope, noted: `D11` (the tap's unversioned `depends_on` — tap-side work); the installed
+copies' staleness (the owner's reinstall, after the plan lands); the two foreign recipe-pin
+failures (the owner's).
