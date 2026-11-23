@@ -102,10 +102,12 @@ const localMoments = (first, last) => {
   return sameDay(a, b) ? `${momentClock(a)} to ${momentClock(b)}` : `${dayOf(a)} ${momentClock(a)} to ${momentClock(b)}`;
 };
 
-// One moment standing alone — the session page's header stamp — is its clock reading alone.
+// One moment standing alone — the session page's header stamp — reads with its date: a lone stamp is
+// its page's only time, and the page's title says no day. It carries the date whole, not the pair's
+// first-end-alone reading, which is a span's shorthand.
 const localMoment = (stamp) => {
   const at = new Date(stamp);
-  return Number.isNaN(at.getTime()) ? null : momentClock(at);
+  return Number.isNaN(at.getTime()) ? null : `${dayOf(at)} ${momentClock(at)}`;
 };
 
 // A moments cell's text becomes the local reading and a lone moment's its own; each keeps its title,
@@ -120,9 +122,10 @@ const readMoments = (cell) => {
   const reading = instants.length === 1 ? localMoment(instants[0]) : instants.length === 2 ? localMoments(instants[0], instants[1]) : null;
   // The local reading lands in each `<time>`'s own text, where the raw UTC stood: rewriting the
   // elements' text changes nothing this sweep reads, so the observation it fires comes round to the
-  // same text and stops.
+  // same text and stops. A lone moment's reading is its element's own text whole — it splits on no
+  // separator, and its date would be the first end's if it did.
   if (!reading || cell.textContent === reading) return;
-  const ends = reading.split(" to ");
+  const ends = stamps.length === 2 ? reading.split(" to ") : [reading];
   stamps.forEach((time, index) => (time.textContent = ends[index]));
 };
 const MOMENTS = ".moments, #subline time";

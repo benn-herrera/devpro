@@ -604,9 +604,11 @@ def test_the_session_pages_header_reads_in_the_readers_clock(tmp_path: Path) -> 
     """The session page's header stamp is a moment like any the pages show: the page's own script
     writes the first call's instant as a `<time>` in the subline — the raw UTC its text where no script
     runs and the machine form its `datetime` — and the deco's sweep, loaded before that script as the
-    served page loads it, reads the stamp in the reader's local time, 24-hour, the raw UTC kept in its
-    title. A header left as a bare `toISOString` string is a moment in neither the reader's clock nor
-    a `<time>`, and no sweep can reach it."""
+    served page loads it, reads the stamp in the reader's local time with its date, 24-hour, the raw
+    UTC kept in its title. The page's title names no day, so a stamp reading its clock alone leaves
+    nothing saying which day the session ran — the same `HH:MM` for a run a week ago and one today. A
+    header left as a bare `toISOString` string is a moment in neither the reader's clock nor a
+    `<time>`, and no sweep can reach it."""
     project = tmp_path / "project"
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:01.250Z", harness="claude")
     launcher = _launcher(tmp_path / "harness")
@@ -622,7 +624,7 @@ def test_the_session_pages_header_reads_in_the_readers_clock(tmp_path: Path) -> 
     )
     stamped = json.loads(run.stdout)["stamped"]
 
-    assert stamped == [["16:00", "2026-01-01 00:00 UTC"]]
+    assert stamped == [["2025-12-31 16:00", "2026-01-01 00:00 UTC"]]
 
 
 def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:

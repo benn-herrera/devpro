@@ -98,8 +98,9 @@ document.getElementById('sid').textContent = D.session.slice(0, 8);
 const starts = D.calls.map((c) => c.start).concat(D.markers.map((m) => m.at));
 const first = Math.min(...starts);
 // The header's stamp is the session's first call as a `<time>`: the raw UTC serves its text where no
-// script runs, where the deco's one sweep reads it in the reader's own time, and the machine form
-// stands in its `datetime`, as it does on every moment the pages show.
+// script runs, where the deco's one sweep reads it in the reader's own time with its date — the page's
+// title names no day — and the machine form stands in its `datetime`, as it does on every moment the
+// pages show.
 const head = document.getElementById('subline');
 if (Number.isFinite(first)) {
   const moment = document.createElement('time');
