@@ -163,6 +163,49 @@ redeclared across scripts is a page that drew nothing.
 **As it stands:**
 
 ```
+(`LAYER_MARK`), which `render_html` fills with the presentation layer's text inline — the board's
+own stylesheet, `devpro/kanban/assets/board.css`, read the same way — for the standalone page,
+which loads nothing from the network and so cannot link it, and which the serve path
+(`served_page`) fills with a link to that stylesheet.
+```
+
+**Becomes:**
+
+```
+(`LAYER_MARK`), which fills with the presentation layer one way per carrier — the page's one
+rendering, two carriers: the dashboard's serve path (`served_page`) links the board's own
+stylesheet, `devpro/kanban/assets/board.css`, and `render_html` — `tree --format html`'s
+carrier — fills the layer's text inline, the one difference a file cannot avoid, being unable to
+link a server's origin. What the dump writes is the page the dashboard serves: one template, one
+script, one band, one presentation.
+```
+
+**As it stands:**
+
+```
+The moments are the raw UTC where no script runs; with it, every moment the pages and their
+headers show — the moments cells, the index's first-to-last line, the session page's header stamp —
+reads in the reader's local time, 24-hour, one notation, the machine form only in the `<time>`
+elements' `datetime` attributes and the raw UTC in the titles. A first-to-last whose ends share the
+reader's day reads as two times with no date; one crossing midnight reads with the date on its first
+end alone and the finish end time only, the next day's being obvious.
+```
+
+**Becomes:**
+
+```
+The pages' own scripts draw every moment local at birth — the moments cells, the index's
+first-to-last line, the session page's header stamp — in the reader's local time, 24-hour, one
+notation: the first end of a pair carries its date whole beside its time, the second its time
+only, the clock's being 24-hour making a span across midnight plain by the numbers, no branch to
+state. The machine form stands in the `<time>` elements' `datetime` attributes and the raw UTC in
+the titles; a page carries no moments where its script does not run, and the deco reads none — the
+moment sweep and its observers leave with the double render they served.
+```
+
+**As it stands:**
+
+```
 A session's page carries its dispatcher in the frame band, linked to that
 session's page, where one dispatched it, and an Agent row links to the child session's page where
 the record names one:
@@ -249,6 +292,13 @@ mechanics are the plan's.
 The pages' scripts — the deco's and the templates' own — wrap their bodies in an IIFE: helpers
 module-private, the deliberate surface only what the page calls. The board's and the profiler's
 served pages draw as before; the leaf's new sentence holds.
+
+The moment rendering moves to the pages' own scripts: the index script's moments cells and the
+session page's header stamp (`view.html`'s script) draw local at birth — first end date whole
+beside its time, second end time only, 24-hour — and the `<time>` title keeps the raw UTC. The
+deco's moment pass leaves whole — `readMoments`, the `MOMENTS` selector and both moment observers —
+with the double render it served; the deco's state indicator and stop are untouched. The leaf's
+amended statement holds.
 
 ### [Why there is no verification verb](PROJECT_DOCS/ARCHITECTURE/why-there-is-no-verification-verb.md)
 
