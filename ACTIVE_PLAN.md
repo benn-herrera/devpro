@@ -24,7 +24,6 @@ and the user owns their fate. Any other failure belongs to the package being don
 | B3 | drafted | mechanical | check-wheel checks the floor on the interpreter it is handed |
 | B4 | drafted | expert | the wrapper enforces the floor on both branches |
 | B5 | drafted | mechanical | the wording debts |
-| B6 | drafted | expert | the guide's floor line — the owner decides |
 
 ### P1 — the floor states 3.11
 
@@ -286,7 +285,9 @@ standards; the session synthesizes their reviews into `ACTIVE_PLAN_REVIEW.md`.
 ### R2 — Post-plan burndown
 
 Drafted from `ACTIVE_PLAN_REVIEW.md` (landed, `c089c10`). Lifetime shipped. Items B1–B3 are one
-commit each under the checkpoint gate; B4 and B5 likewise. B6 waits for the owner.
+commit each under the checkpoint gate; B4 and B5 likewise. D8 dissolved by the owner: the guide's
+silence stands — Homebrew manages the requirement on its route, pip names the floor at the moment
+of failure on the others; enforcement lives in the tools, and a prose statement would be lore.
 
 | Item | Source | Rating |
 | --- | --- | --- |
@@ -295,7 +296,6 @@ commit each under the checkpoint gate; B4 and B5 likewise. B6 waits for the owne
 | B3 | D3 | mechanical |
 | B4 | D9 | expert |
 | B5 | D4, D5, D6, D7, D10, D12, D13, D14 | mechanical |
-| B6 | D8 | the owner decides |
 
 **B1 — `_venv` refuses what it cannot parse.** Scope: `justfile`'s `_venv` recipe. Between parse
 and act: refuse an empty `${floor}` and an empty `${group}` with the recipe's own error naming
@@ -332,10 +332,6 @@ on (`D12`); `planform.py:410`'s stale quote is unquoted (`D14`). Done-line: `jus
 test devpro`, `just dev-check-design-deltas-applied` (0 problems), plus the docs surface in the
 gate.
 
-**B6 — the guide's floor line.** The owner decides whether the installing page gains one floor
-line (`D8`) or the silence stands as ruled. Not dispatched until decided; if adopted, it is one
-line and rides B5's commit or its own.
-
 Out of scope, noted: `D11` (the tap's unversioned `depends_on` — tap-side work); the installed
 copies' staleness (the owner's reinstall, after the plan lands); the two foreign recipe-pin
-failures (the owner's).
+failures (the owner's); `D8` dissolved by the owner's decision above.
