@@ -5,6 +5,21 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
+### The index's column headers do not sit over their columns
+
+The header row drifts out of alignment with the body's columns — "records", "dispatched agents",
+"first to last" and "span" do not sit over the cells they name. The header is likely a separate
+element from the body's rows (the body is drawn by script into its own `tbody`), so whatever widths
+the body's cells take are not shared with the header's.
+
+### The index's controls and sort reset when the view leaves and returns
+
+The selector checkboxes (child rows, claude, opencode) and the column sort do not stick: going into
+a session's details view and coming back brings the index back to its defaults. The controls' state
+lives only in the page's script, so a re-navigation re-draws the page and reads nothing — the state
+wants either persistence (the URL's query, or `sessionStorage`) or the view to survive the
+round-trip.
+
 ## Features
 
 ### A live agents panel on the dashboard
@@ -148,11 +163,6 @@ surface only), and the runners executing all of a page's scripts in one shared s
 browser does. On the user's direction:
 the forensic child-tie repair runs one last time over the profiler records written since the last
 repair, before the installation is updated — the capture fix makes every edge after that correct.
-
-### Bump python req to >=3.11
-
-Simplifies a bunch of code. Probably saves on hook startup time.
-Brew installation eliminates the bulk of the 'breadth of usability' problem that <=3.9 was addressing.
 
 ### (STICKY) Periodic load-bearing-ness pruning pass
 
