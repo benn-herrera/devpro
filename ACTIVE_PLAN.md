@@ -14,9 +14,9 @@ and the user owns their fate. Any other failure belongs to the package being don
 | Package | State | Rating | Note |
 | --- | --- | --- | --- |
 | P1 | landed: commit e9d0b89 | expert | the floor states 3.11 everywhere it is stated or enforced |
-| P2 | landed | expert | workaround code the 3.11 floor orphans |
+| P2 | landed | expert | workaround code the 3.11 floor orphans; its pins verdict superseded by P4 |
 | P3 | in progress: dispatched to devpro-python-coder | expert | the annotation standard for the 3.11 floor |
-| P4 | drafted | expert | the dev toolchain lives in pyproject; pins move to latest 3.11 lines |
+| P4 | dispatchable | expert | the dev toolchain lives in pyproject; pins move to latest 3.11 lines |
 | R1 | drafted | expert | the changed code and documents reviewed |
 | R2 | drafted | expert | drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands |
 
@@ -226,9 +226,10 @@ holdover — `pyproject.toml` declares dev-only dependencies as a PEP 735 depend
 pip installs cleanly and which no wheel of the package can drag in, a Homebrew local wheel build
 included. The pins move to that group at the latest lines supporting Python 3.11.
 
-Scope: `pyproject.toml` (`[dependency-groups]`), `justfile` (`_venv`'s tools list, the
-range-rule comment beside it, and its tools-record), and the two pending design pairs
-([packaging](ACTIVE_DESIGN.md#packaging), [recipes](ACTIVE_DESIGN.md#recipes)).
+Scope: `pyproject.toml` (`[dependency-groups]`), `justfile` (`_venv`: the tools list, the comment
+above the recipe — both its record paragraph and its range-rule paragraph — and the tools-record),
+and the two pending design pairs ([packaging](ACTIVE_DESIGN.md#packaging),
+[recipes](ACTIVE_DESIGN.md#recipes)).
 
 **Facts acted on**:
 
@@ -250,14 +251,23 @@ range-rule comment beside it, and its tools-record), and the two pending design 
    named with a compatible-release specifier (`~=X.Y`) — the range policy's home now that the
    justfile's range-rule comment dies with its list. `flake8` moves to 7.5.0, the first line to
    require 3.11 (P2's finding). A `black` line move may reformat files; any such reformat rides
-   this package's commit.
-2. `_venv` installs the group — `pip install --group dev` from the project root — and its
-   tools-record stays honest about when a reinstall is due (the record mechanism is the
-   executor's call; the hand-held list and the range-rule comment beside it are deleted).
+   this package's commit. A `setuptools` move also moves the tool that builds the shipped wheel —
+   `just build` runs the venv's setuptools with `--no-isolation` — so the wheel and sdist are
+   re-proven under the moved pin by the done-line's `just test wheel`.
+2. `_venv` installs the group — `pip install --group dev` from the project root — and the
+   tools-record satisfies one invariant: it derives from `pyproject.toml`'s declared group, never
+   from a second hand-held copy, so any change to the group's content makes the next `_venv`
+   reinstall and an unchanged group keeps `_venv` a no-op. The comparison's mechanics are the
+   executor's call. The hand-held list and the range-rule comment beside it are deleted; the
+   comment's record paragraph is rewritten to match what survives.
 3. Apply the two pending design pairs.
 
 **Done-line**: `just lint`, `just test devpro`, `just test wheel`, and
 `just dev-check-design-deltas-applied` reporting 8 pairs landed, 0 pending, problems 0.
+`just test wheel` is also the proof of the packaging pair's no-drag-in claim: its throwaway venv
+is fresh and the wheel installs `--no-index` (`devtools/scripts/check-wheel.sh:56-57`), so any
+`Requires-Dist` a botched group left in the wheel fails resolution there — no separate check
+needed.
 
 ### R1 — Post-plan review
 
