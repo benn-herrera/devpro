@@ -88,9 +88,9 @@
 // A clock reading in the reader's local time, 24-hour: built from the date's own fields, so the
 // separator and the digits are this page's rather than the reader's locale's — `toLocaleTimeString`
 // reads the ICU settings of whatever browser it runs in.
-const pad = (n) => String(n).padStart(2, "0");
-const momentClock = (date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-const dayOf = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+const padTwo = (n) => String(n).padStart(2, "0");
+const momentClock = (date) => `${padTwo(date.getHours())}:${padTwo(date.getMinutes())}`;
+const dayOf = (date) => `${date.getFullYear()}-${padTwo(date.getMonth() + 1)}-${padTwo(date.getDate())}`;
 const sameDay = (a, b) => dayOf(a) === dayOf(b);
 
 // The two instants in the reader's local time: the times alone where they share the reader's calendar
