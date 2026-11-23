@@ -6,7 +6,9 @@ two install sources: a release tag's git URL,
 it. A Homebrew tap is a distribution channel for that release archive, not a package index.
 
 The installed package provides the `devpro` command. `python3 -m devpro` is the same command:
-both print the same `--help`, and the same arguments install the same product, byte for byte.
+both print the same `--help`, and the same arguments under the same Python install the same
+product, byte for byte: the interpreter the installation's wrapper records is the one value that
+varies with the Python running the install (Deployed Surfaces, Shipped files).
 
 Three maintainer verbs — `dev-render`, `render-agents-file` and `harness` — exist only where the
 environment variable `DEVPRO_DEV` is `1`. Elsewhere they are absent from `--help` and refused as an

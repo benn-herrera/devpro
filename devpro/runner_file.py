@@ -10,7 +10,6 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
-from devpro import install_base
 from devpro.context import harnesses
 from devpro.install_base import report_left_alone, utf8_text
 from devpro.render import appended_paragraph, write_text_verbatim
@@ -207,7 +206,6 @@ def install_include_lines(
     *,
     harness_relpath: str,
     retired_set: SnippetSet | None = None,
-    real_project: Path | None = None,
 ) -> None:
     """Write each of `snippet_sets`' canonical include lines, in order, into `project`'s runner file:
     the justfile or Makefile probed there, else a `Makefile` created carrying every one.
@@ -220,16 +218,12 @@ def install_include_lines(
     no second line appended. A line naming another harness directory is reported and left alone, and so
     is a file holding more than one line for the set, which the operator merges by hand; either leaves
     the other sets' lines to be written. Only the runner file this run selected is examined: a second
-    runner file's stale line is left to the operator and is non-fatal. Nothing is written when `project`
-    is this repository — its own runner is the generator's, not a consumer's. `real_project`, defaulting
-    to `project`, is the project that is, where `project` is a scratch copy of it.
+    runner file's stale line is left to the operator and is non-fatal.
 
     `retired_set` is a set no shipped package carries any more: its lines are removed rather than
     written (`_remove_retired_line`), and removing the last one from a runner file this run created
     removes the file. No runner file is created, or a `Makefile` touched, when neither there is a line
     to write nor that runner file holds a retired line."""
-    if (project if real_project is None else real_project).resolve() == install_base.REPO_ROOT:
-        return
     labels = " and ".join(snippet_set.label for snippet_set in snippet_sets)
     found = _runner_file(project)
     if found is None:

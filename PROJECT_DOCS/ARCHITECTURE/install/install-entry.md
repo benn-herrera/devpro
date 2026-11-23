@@ -17,9 +17,7 @@ naming rule and the settings' semantics are SPEC.md, Install destination. `insta
 provides the per-harness directory judgment the `detect` setting needs;
 `_detected_harness`'s single-harness resolution stays the no-config path's. Without the file, or
 with `--harness` given, the resolution is the one above. One read of the file serves the
-selection and every harness's render. `install` uses the project root as spelled, and resolves it
-only to compare it with this checkout (`REPO_ROOT`, `runner_file.install_include_lines`), so
-two spellings of the checkout compare equal. The install directory's path relative to it
+selection and every harness's render. `install` uses the project root as spelled. The install directory's path relative to it
 (`_harness_relpath`) is taken as both are spelled. The harness and harness directory follow
 SPEC.md, Install destination; every directory name is read from the `Harness` values
 (`project_harness_dir`, `user_harness_dir`, and `plugin_parent_dir` for a harness-directory plugin,

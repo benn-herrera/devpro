@@ -15,7 +15,7 @@ Design: [ACTIVE_DESIGN/entry-point.md](ACTIVE_DESIGN/entry-point.md). Every pack
 | P4c | landed | expert | `devpro:prompt-engineer` |
 | P5 | landed | mechanical | `devpro:tech-writer` |
 | P6 | landed | expert | post-plan reviewers |
-| P7a | in progress | expert | `devpro:python-coder` |
+| P7a | landed | expert | `devpro:python-coder` |
 | P7b | dispatchable | expert | `devpro:python-coder` |
 | P7c | dispatchable | expert | `devpro:shell-dsl-coder` |
 | P7d | dispatchable | expert | `devpro:prompt-engineer` |

@@ -60,7 +60,7 @@ from devpro.render import (
     render_all,
     render_definition,
 )
-from devpro.runner_file import _named_harnesses, include_line, install_include_lines
+from devpro.runner_file import _named_harnesses, install_include_lines
 from devpro.vocabulary import CATEGORIES, Kind
 from tests._structure import kbase_skill_output_paths
 from tests.conftest import PLAIN, WITH_KBASE, settings_file
@@ -283,23 +283,6 @@ def test_a_checkout_git_cannot_read_still_refuses(tmp_path: Path, monkeypatch: p
     monkeypatch.setattr("devpro.install_base.REPO_ROOT", tmp_path)
     with pytest.raises(InputError, match="cannot read the commit state"):
         uncommitted_sources()
-
-
-@pytest.fixture
-def _site_packages(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """A site-packages directory holding the package, with no repository around it."""
-    site = (tmp_path / "site").resolve()
-    (site / "devpro" / "kb-tools").mkdir(parents=True)
-    monkeypatch.setattr("devpro.install.PACKAGE_ROOT", site / "devpro")
-    monkeypatch.setattr("devpro.install_base.REPO_ROOT", None)
-    return site
-
-
-def test_outside_a_checkout_a_project_at_site_packages_gets_its_include_line(_site_packages: Path) -> None:
-    (_site_packages / "justfile").write_text("", encoding="utf-8")
-    install_include_lines(_site_packages, [_KB_SNIPPETS], harness_relpath=".claude")
-    lines = (_site_packages / "justfile").read_text(encoding="utf-8").splitlines()
-    assert include_line(_KB_SNIPPETS, runner="just", harness_relpath=".claude") in lines
 
 
 def test_a_project_directory_under_claude_writes_agents_md_and_the_redirect(tmp_path: Path) -> None:
@@ -1371,24 +1354,18 @@ def test_a_non_utf8_runner_file_is_refused_before_the_first_write(tmp_path: Path
     assert _files(tmp_path) == before
 
 
-def test_the_repositorys_own_project_root_gets_no_include_line() -> None:
-    before = (REPO_ROOT / "justfile").read_bytes()
-    install_include_lines(REPO_ROOT, list(_SNIPPET_SETS.values()), harness_relpath=".claude")
-    assert (REPO_ROOT / "justfile").read_bytes() == before
-    assert not (REPO_ROOT / "Makefile").exists()
-
-
-def test_the_exemption_creates_no_runner_file_in_a_project_holding_none(
+@pytest.mark.usefixtures("_no_uncommitted")
+def test_an_install_whose_project_is_this_repository_writes_the_devpro_include_line(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The exemption returns before the runner file is probed, so it covers the creation branch too: a
-    repository root with neither runner file gets neither, the `Makefile` that branch would write included.
-    Not exempted, this root holds a created `Makefile` after the call."""
-    root = tmp_path / "repo"
-    root.mkdir()
-    monkeypatch.setattr("devpro.install_base.REPO_ROOT", root.resolve())
-    install_include_lines(root, list(_SNIPPET_SETS.values()), harness_relpath=".claude")
-    assert list(root.iterdir()) == []
+    """Defect: the include lines were skipped where the project is `REPO_ROOT`, so this repository's own
+    justfile carried no `devpro-*` recipes."""
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "justfile").write_text("# generator\n", encoding="utf-8")
+    monkeypatch.setattr("devpro.install_base.REPO_ROOT", project.resolve())
+    main(["install", str(project), "--harness=claude"])
+    assert _DEVPRO_SET_LINE in (project / "justfile").read_text(encoding="utf-8").splitlines()
 
 
 def test_a_retired_docdicer_line_is_removed_and_reported(tmp_path: Path, capsys) -> None:
@@ -1609,11 +1586,6 @@ def test_an_installed_runner_snippet_runs_the_check_through_the_wrapper_without_
         "HOME": str(tmp_path),
         "DEVPRO_PROBE_LOG": str(recorded),
     }
-    # The recipe runs the wrapper with the environment it was fired in, so the probe reaches the log
-    # whatever the runner keeps of it: make passes its own environment through, and just keeps an
-    # unset variable unset rather than dropping it.
-    environment.pop("DEVPRO_PROBE_LOG", None)
-    environment["DEVPRO_PROBE_LOG"] = str(recorded)
     wrapper = plugin / "tools" / "devpro.sh"
     wrapper.write_text('#!/bin/sh\nprintf \'%s\\n\' "$@" >> "$DEVPRO_PROBE_LOG"\n', encoding="utf-8")
     wrapper.chmod(0o755)
@@ -1833,6 +1805,37 @@ def test_a_project_install_writes_the_devpro_copy_and_a_wrapper_that_runs_it(tmp
     assert (ran.returncode, ran.stdout) == (0, f"{__version__}\n"), ran.stderr
 
 
+def test_a_wrapper_run_from_a_directory_holding_a_devpro_package_runs_the_copy(tmp_path: Path) -> None:
+    """Defect: `python -m devpro` put the working directory ahead of the copy on `sys.path`, so a `devpro`
+    package there — this repository's root among them — ran in the copy's place."""
+    project = tmp_path / "project"
+    project.mkdir()
+    main(["install", str(project), "--harness=claude"])
+    impostor = tmp_path / "impostor"
+    _plant(impostor / "devpro/__init__.py", "")
+    _plant(impostor / "devpro/__main__.py", "print('impostor')\n")
+    ran = _run_wrapper(_claude_plugin(project / ".claude") / "tools/devpro.sh", path=_NO_DEVPRO_PATH, home=impostor)
+    assert (ran.returncode, ran.stdout) == (0, f"{__version__}\n"), ran.stderr
+
+
+def test_an_install_run_from_an_installations_copy_into_that_installation_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
+    """Defect: the install cleared its package destinations before reading their sources, so run from the
+    installation's own copy into that installation it emptied the copy it was running."""
+    project = tmp_path / "project"
+    project.mkdir()
+    main(["install", str(project), "--harness=claude"])
+    copy = _claude_plugin(project / ".claude") / "tools/devpro"
+    monkeypatch.setattr("devpro.install.PACKAGE_ROOT", copy)
+    before = _files(project)
+    with pytest.raises(SystemExit) as exited:
+        main(["install", str(project), "--harness=claude", "--components=kbase"])
+    assert exited.value.code == 2
+    assert (copy / "__init__.py").is_file()
+    assert _files(project) == before
+
+
 def test_a_wrapper_whose_recorded_python_is_gone_runs_the_first_python3_on_path_or_names_the_floor(
     tmp_path: Path,
 ) -> None:
@@ -1989,6 +1992,17 @@ def test_a_hand_written_file_at_a_render_target_is_refused_with_nothing_written(
     mine = _claude_plugin(root) / "agents/python-coder.md"
     mine.parent.mkdir(parents=True)
     mine.write_text("---\nname: python-coder\n---\n\nmy own agent\n", encoding="utf-8")
+    before = _files(tmp_path)
+    with pytest.raises(InputError, match=re.escape(f"'{mine}'")):
+        _definition_install(root, project_root=tmp_path)
+    assert _files(tmp_path) == before
+
+
+def test_a_wrapper_no_install_wrote_is_refused_with_nothing_written(tmp_path: Path) -> None:
+    """Defect: the wrapper was not among the checked targets, so a project's own `tools/devpro.sh` was
+    overwritten without a word."""
+    root = tmp_path / ".claude"
+    mine = _plant(_claude_plugin(root) / "tools/devpro.sh", "#!/bin/sh\necho mine\n")
     before = _files(tmp_path)
     with pytest.raises(InputError, match=re.escape(f"'{mine}'")):
         _definition_install(root, project_root=tmp_path)
@@ -2395,16 +2409,6 @@ def _agents_file_in_a_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     return ["install-agents-file", str(project), "--harness=claude"], project
 
 
-def _the_repository_as_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[list[str], Path]:
-    """The project is this repository, whose runner file no install writes: the copy must read that from
-    the real project, not from its scratch one."""
-    project = tmp_path / "project"
-    project.mkdir()
-    (project / "justfile").write_text("# generator\n", encoding="utf-8")
-    monkeypatch.setattr("devpro.install_base.REPO_ROOT", project.resolve())
-    return ["install", str(project), "--components=kbase", "--harness=claude"], project
-
-
 def _mage_below_its_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[list[str], Path]:
     """The plugin's own `.mcp.json` and agents file at ROOT."""
     project = tmp_path / "project"
@@ -2418,10 +2422,9 @@ def _mage_below_its_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     [
         _kb_install_with_a_runner_file,
         _agents_file_in_a_project,
-        _the_repository_as_project,
         _mage_below_its_project,
     ],
-    ids=["kb-runner-file", "agents-file", "repository-project", "mage-subdir"],
+    ids=["kb-runner-file", "agents-file", "mage-subdir"],
 )
 def test_a_second_identical_run_whose_decisions_read_the_real_location_is_up_to_date(
     tmp_path: Path, capsys, monkeypatch: pytest.MonkeyPatch, setup

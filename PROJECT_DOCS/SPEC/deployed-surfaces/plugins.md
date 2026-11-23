@@ -60,7 +60,7 @@ package, a set called `devpro`, and the kb-tools, a set called `kb`. Every proje
 nested plugin writes the `devpro` line; one with the kbase component also writes the `kb` line. Only
 a project install under a harness whose plugin
 nests in the project (claude, opencode) writes one; a mage install writes no runner include line and
-creates no `Makefile`, and nothing is written into this repository's own runner file. A line names
+creates no `Makefile`. A line names
 the snippets inside the installed tree (under claude,
 `.claude/skills/devpro/tools/runner-snippets/` or
 `.claude/skills/devpro/skills/kbase/kb-tools/runner-snippets/`; under opencode, the same below

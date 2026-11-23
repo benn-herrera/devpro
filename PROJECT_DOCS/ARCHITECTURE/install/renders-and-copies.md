@@ -112,9 +112,9 @@ part.
   managed path at its position below its base. Every `.venv` (`VENV_DIR`) is omitted. A base nested in another keeps its position below the outer
   one.
 - **The run** calls `install` on the scratch copy with `real_harness_dir` and `real_project` naming
-  the real paths, because three decisions compare a written path with a fixed location and a
-  scratch copy would decide them differently: whether the harness directory is user-level, whether
-  the project is `REPO_ROOT` (the include lines are skipped there), and the agents file's
+  the real paths, because two decisions compare a written path with a fixed location and a
+  scratch copy would decide them differently: whether the harness directory is user-level, and the
+  agents file's
   user-harness-directory test and title, which `checked_agents_file` and `install_agents_file` read
   from their `real_directory` parameter. Its stdout, the write log, is discarded. What the install
   leaves alone or skips goes to stderr, which the run captures and prints again, each scratch base

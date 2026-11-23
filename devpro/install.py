@@ -1,25 +1,27 @@
-"""`python3 -m devpro install TARGET [--components CSV]`, once `devpro.install_target` has resolved the
-harness directory and the project root from TARGET. The set is written into ROOT, the harness's
-`plugin_dir` below the harness directory — the harness directory itself where that is empty: every
-definition the selection ships rendered into ROOT's agents/, commands/ and skills/, each of the two
-skill-owned shipped packages whose owning definition rendered copied to its stated destination — the
-development scripts inside the development skill's directory, the kb-tools package inside the kbase
-skill's, with the `kbase` MCP entry — the devpro tools package in ROOT's tools/ on every install: the
-running package's own copy, the wrapper that runs it, and the runner snippets — the dicing snippets
-package's retired home removed — and, for each copied package carrying runner snippets, its include line in the
-consumer's runner file, a line an earlier release wrote for the retired docdicer package removed there;
-each file the installing harness ships copied into ROOT as it stands,
-the harness's hooks registered in a file of their own under ROOT, its guardrail's entry only where one
-install-time run of the guardrail succeeds; a harness-directory install below its project root
-also gets its agents file in its harness directory, and its profiler stores from before the `.profiler-*`
-rename — `claude-profiler` and `opencode-profiler` — renamed in place, once, with the move printed.
+"""`devpro install TARGET [--components CSV]`, once `devpro.install_target` has resolved the harness
+directory and the project root from TARGET. The set is written into ROOT, the harness's `plugin_dir`
+below the harness directory, or the harness directory itself where that is empty.
+
+Every definition the selection ships is rendered into ROOT's agents/, commands/ and skills/. Each
+skill-owned shipped package whose owning definition rendered is copied to its stated destination: the
+development scripts inside the development skill's directory, and the kb-tools package, with the
+`kbase` MCP entry, inside the kbase skill's. Every install writes the devpro tools package into ROOT's
+tools/ — the running package's own copy, the wrapper that runs it and the runner snippets — and removes
+the dicing snippets package's retired home. A project install writes the include line of each copied
+package carrying runner snippets into the consumer's runner file, and removes a line an earlier release
+wrote there for the retired docdicer package. Each file the installing harness ships is copied into
+ROOT as it stands, and the harness's hooks are registered in a file of their own under ROOT, its
+guardrail's entry only where one install-time run of the guardrail succeeds. A harness-directory
+install below its project root also gets its agents file in its harness directory. The project's
+profiler stores from before the `.profiler-*` rename — `claude-profiler` and `opencode-profiler` — are
+renamed in place, once, with the move printed.
+
 A target that resolves into the running devpro package's own source is refused before anything is
-written. Overwrites without ceremony only what carries this
-repository's banner, refusing over any other file at a path it writes: the consumer's git is the record
-of what an install changed.
-Where the devpro settings file names harnesses and `--harness` is not given, `install_selected` drives
-one install per harness it names, each rendered from that harness's settings-file map and component
-list."""
+written, and so is an install run from an installation's own copy into that installation. The install
+overwrites without ceremony only what carries this repository's banner, refusing over any other file at
+a path it writes: the consumer's git is the record of what an install changed. Where the devpro
+settings file names harnesses and `--harness` is not given, `install_selected` drives one install per
+harness it names, each rendered from that harness's settings-file map and component list."""
 
 from __future__ import annotations
 
@@ -94,13 +96,15 @@ DEVELOPMENT_SCRIPTS_PACKAGE = "skills/development/scripts"
 class ShippedPackage(NamedTuple):
     """A package an install copies: its source directory in this package (`.` for the package itself),
     its destination below ROOT, the definition it ships with — none for the plugin's own, which ships on
-    every install — and the runner snippets it carries, their directory below the destination, whose
-    include line a project install writes into the project's runner file."""
+    every install — the runner snippets it carries, their directory below the destination, whose
+    include line a project install writes into the project's runner file, and whether its script and
+    build files take the installed banner: the devpro copy is byte-verbatim, so takes none."""
 
     source: str
     destination: str
     owner: str | None
     snippets: SnippetSet | None = None
+    stamps: bool = True
 
     def installed_snippets(self) -> SnippetSet | None:
         """`snippets` with its directory below ROOT, as an include line names it."""
@@ -125,7 +129,7 @@ SHIPPED_PACKAGES: tuple[ShippedPackage, ...] = (
         None,
         SnippetSet("devpro", ".", {"just": "devpro.just", "make": "devpro.mk"}),
     ),
-    ShippedPackage(".", DEVPRO_COPY, None),
+    ShippedPackage(".", DEVPRO_COPY, None, stamps=False),
     ShippedPackage(
         "kb-tools",
         KB_TOOLS_DIR,
@@ -188,17 +192,22 @@ _RESOURCE_BANNER_LINES = 10
 
 
 # The wrapper `tools/devpro.sh`, its `@INTERPRETER@` slot filled with the shell-quoted path of the
-# Python that ran the install. `${@+"${@}"}` because bash 3.2, macOS's `/bin/bash`, reads an empty
-# `"${@}"` as unbound under `set -u`.
+# Python that ran the install. It is bash and Python at once: bash reads `''':'` as `:` and execs the
+# interpreter on this same file, which Python reads with the bash lines as one string. Run as a script,
+# the file's own directory, `tools/`, leads `sys.path`, where `-m` would put the working directory
+# first and run a `devpro` package there in the copy's place; a separate bootstrap script would be one
+# more installed file. The bash lines must hold no `'''` and no backslash. `${@+"${@}"}` because bash
+# 3.2, macOS's `/bin/bash`, reads an empty `"${@}"` as unbound under `set -u`.
 _WRAPPER_TEXT = """\
 #!/usr/bin/env bash
+''':'
 # Runs this installation's own copy of devpro, the `devpro/` beside this file, as `python3 -m devpro`
 # runs it: under the Python that ran the install while that path exists, else under the first
 # `python3` on PATH where it is Python 3.9 or later. It looks for no other interpreter.
 set -euo pipefail
 
 recorded=@INTERPRETER@
-here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+here=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 function supported() {
   "${1}" -c 'import sys; sys.exit(sys.version_info < (3, 9))' >/dev/null 2>&1
@@ -213,7 +222,11 @@ else
   exit 1
 fi
 export PYTHONPATH="${here}${PYTHONPATH:+:${PYTHONPATH}}"
-exec "${python}" -m devpro ${@+"${@}"}
+exec "${python}" "${BASH_SOURCE[0]}" ${@+"${@}"}
+'''
+import runpy
+
+runpy.run_module("devpro", run_name="__main__", alter_sys=True)
 """
 
 
@@ -221,11 +234,15 @@ def base_interpreter() -> str:
     """The Python running this process as it stands outside any virtual environment: a venv's python is
     gone with the venv, while the interpreter it was made from outlives it. Before 3.11,
     `sys._base_executable` names the venv's own python on POSIX; that python is a link to the base, so
-    it is resolved where it still sits inside the venv."""
-    executable = getattr(sys, "_base_executable", sys.executable)
-    if sys.prefix != sys.base_prefix and Path(executable).is_relative_to(sys.prefix):
-        return os.path.realpath(executable)
-    return executable
+    its links are followed only while they stay inside the venv: the first path outside it is the base
+    as the venv names it, where the end of the chain — a versioned build directory, say — can go with a
+    patch upgrade."""
+    executable = Path(getattr(sys, "_base_executable", sys.executable))
+    if sys.prefix == sys.base_prefix:
+        return str(executable)
+    while executable.is_relative_to(sys.prefix) and executable.is_symlink():
+        executable = Path(os.path.normpath(executable.parent / executable.readlink()))
+    return str(executable)
 
 
 def wrapper_text(interpreter: str) -> str:
@@ -254,12 +271,11 @@ def _shipped(relative: Path) -> bool:
     )
 
 
-def package_copies(root: Path, packages: Iterable[ShippedPackage]) -> list[tuple[Path, Path]]:
-    """(source file, target under `root`) for every file `packages` deliver, each landing under its
-    package's destination."""
+def package_copies(root: Path, package: ShippedPackage) -> list[tuple[Path, Path]]:
+    """(source file, target under `root`) for every file `package` delivers, each landing under its
+    destination."""
     return [
         (source, root / package.destination / source.relative_to(PACKAGE_ROOT / package.source))
-        for package in packages
         for source in sorted((PACKAGE_ROOT / package.source).rglob("*"))
         if source.is_file() and _shipped(source.relative_to(PACKAGE_ROOT / package.source))
     ]
@@ -360,9 +376,10 @@ def _refuse_foreign_targets(
     harness_targets: Iterable[tuple[Path, str]],
 ) -> None:
     """Refuse an install that would overwrite a file it did not write. A target that exists passes only
-    where the claim its class makes of it holds: a render by its generated banner, a resource by its
-    installed header, a harness-rendered file — `(path, marker)` — by the marker that file states about
-    itself. Every failing path is named in the one refusal, so the operator clears them in one pass."""
+    where the claim its class makes of it holds: a render by its generated banner, a resource — the
+    wrapper among them — by its installed header, a harness-rendered file — `(path, marker)` — by the
+    marker that file states about itself. Every failing path is named in the one refusal, so the operator
+    clears them in one pass."""
     claims = [
         *((target, _is_ours) for target in render_targets),
         *((target, _is_our_resource) for target in resource_targets),
@@ -510,6 +527,17 @@ def _clear_package_destination(destination: Path) -> None:
         destination.unlink(missing_ok=True)
 
 
+def _require_not_the_running_copy(root: Path) -> None:
+    """Refuse an install into the installation whose own copy of devpro is the one running: the copy's
+    destination is cleared before its files are read, so the install would empty the package it runs."""
+    copy = root / DEVPRO_COPY
+    if copy.resolve() == PACKAGE_ROOT:
+        raise InputError(
+            f"install would replace {copy}, the copy of devpro running it — run the `devpro` command on PATH "
+            "to install here; nothing written"
+        )
+
+
 def _write_created(target: Path, data: bytes, *, mode: int) -> None:
     """Write `data` to `target`, its parents created, asking for `mode` at creation: a `chmod` after the
     write would ignore the umask."""
@@ -575,17 +603,21 @@ def install(
     project = _lexical(harness_dir if project_root is None else Path(project_root))
     user_level = ctx.harness.name in user_dir_harnesses(harness_dir if real_harness_dir is None else real_harness_dir)
     harness_relpath = _harness_relpath(root, project)
-    # Every check runs before the first write: the render, the guardrail probe that decides whether its
-    # script is a resource target, each render, harness-file and resource target the install would
-    # overwrite, the runner file where a shipped package carries runner snippets, and the agents file's.
-    # ROOT itself is created only after all of them.
+    # Every check runs before the first write: the running copy's own installation, the render, the
+    # guardrail probe that decides whether its script is a resource target, each render, harness-file
+    # and resource target the install would overwrite, the runner file where a shipped package carries
+    # runner snippets, and the agents file's. ROOT itself is created only after all of them.
+    real_root = (harness_dir if real_harness_dir is None else real_harness_dir) / ctx.bound_harness.plugin_dir
+    _require_not_the_running_copy(real_root)
     renders = render_all(ctx)
     packages = [
         package
         for package in SHIPPED_PACKAGES
         if package.owner is None or (not user_level and ctx.plugin.ships(package.owner))
     ]
-    package_files = package_copies(root, packages)
+    package_files = [
+        (package, source, target) for package in packages for source, target in package_copies(root, package)
+    ]
     resource_files = _resource_copies(root, harness=ctx.harness, user_level=user_level)
     guardrail = _guardrail_in_play(ctx.bound_harness, user_level=user_level)
     snippet_sets = [snippets for package in packages if (snippets := package.installed_snippets()) is not None]
@@ -611,18 +643,19 @@ def install(
     # The harness's own rendered files are a class of their own at the refusal: their ownership is the
     # marker each states, not a banner a JSON file has no way to carry.
     harness_markers = {PurePosixPath(file.path): file.marker for file in harness_files}
+    wrapper = root / WRAPPER
     _refuse_foreign_targets(
         render_targets=[root.joinpath(*relative.parts) for relative, _ in renders if relative not in harness_markers],
-        resource_targets=[target for _, target in resource_files],
+        resource_targets=[*(target for _, target in resource_files), wrapper],
         harness_targets=[
             (root.joinpath(*relative.parts), harness_markers[relative])
             for relative, _ in renders
             if relative in harness_markers
         ],
     )
-    # Everything this install copies, in one list: `keep` and the report below count a harness's own
-    # files with the packages', so neither reads as a stale render.
-    copies = [*package_files, *resource_files]
+    # Everything this install copies, the wrapper with it, in one list: `keep` and the report below count
+    # a harness's own files with the packages', so neither reads as a stale render.
+    copied = [*(target for _, _, target in package_files), wrapper, *(target for _, target in resource_files)]
     if touches_runner_file:
         check_runner(project)
     agents_file: AgentsFileWrite | None = None
@@ -643,13 +676,11 @@ def install(
     replaced_version = _installed_version(root / DEVPRO_COPY / "__init__.py")
     for package in packages:
         _clear_package_destination(root / package.destination)
-    for source, target in package_files:
+    for package, source, target in package_files:
         data = source.read_bytes()
-        stamps = not target.is_relative_to(root / DEVPRO_COPY)
-        if stamps and (source.suffix in STAMPED_SUFFIXES or source.name in STAMPED_NAMES):
+        if package.stamps and (source.suffix in STAMPED_SUFFIXES or source.name in STAMPED_NAMES):
             data = stamped(data, origin=source.relative_to(PACKAGE_ROOT.parent).as_posix())
         _write_created(target, data, mode=_package_copy_mode(source))
-    wrapper = root / WRAPPER
     wrapper_data = wrapper_text(base_interpreter()).encode("utf-8")
     _write_created(wrapper, stamped(wrapper_data, origin=f"{PACKAGE_ROOT.name}/install.py"), mode=0o777)
     retired_package = root / RETIRED_PACKAGE_DIR
@@ -666,8 +697,8 @@ def install(
     if followed is not None:
         write_followed_agents_file(followed)
 
-    pruned = prune(root, keep={*written, *(target for _, target in copies)})
-    print(f"installed: {len(written)} rendered files, {len(copies)} copied files → {root}")
+    pruned = prune(root, keep={*written, *copied})
+    print(f"installed: {len(written)} rendered files, {len(copied)} copied files → {root}")
     copy_dir = root / DEVPRO_COPY
     if replaced_version is None:
         print(f"devpro {__version__} installed → {copy_dir}")
@@ -678,7 +709,7 @@ def install(
     for path in pruned:
         print(f"pruned {path}")
     if verbose:
-        for path in [*(target for _, target in copies), wrapper, *written]:
+        for path in [*copied, *written]:
             print(f"wrote {path}")
     if touches_runner_file:
         install_include_lines(
@@ -686,7 +717,6 @@ def install(
             snippet_sets,
             harness_relpath=harness_relpath,
             retired_set=RETIRED_SNIPPET_SET,
-            real_project=real_project,
         )
     # The profiler's stores from before their rename, for the project written: the preflight's scratch run
     # renames its copy, which is what shows the preflight a move, and the real project is renamed once.

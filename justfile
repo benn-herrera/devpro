@@ -308,3 +308,5 @@ dev-check-roadmap:
 dev-check-links:
   @just dev-devpro check-links PROJECT_DOCS *.md
   @just dev-devpro check-tree PROJECT_DOCS
+
+import? '.claude/skills/devpro/tools/runner-snippets/devpro.just'

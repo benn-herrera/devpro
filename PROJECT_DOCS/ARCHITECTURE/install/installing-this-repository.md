@@ -7,7 +7,7 @@ values leave every model unpinned. Each
 install also keeps the agents-file block current, in the global agents file where that holds
 a marker line and else in this repository's `AGENTS.md`. Under claude the install lands in the
 plugin, `.claude/skills/devpro/`, and under opencode in `.opencode/plugins/devpro/`.
-`install_include_lines` returns without writing when the project is
-`REPO_ROOT`, which is set only in a checkout (Packaging). Nor are any written for a harness-directory plugin
+`install_include_lines` writes this repository's include lines as it writes any project's. None are
+written for a harness-directory plugin
 (mage, whose `project_harness_dir` is `devpro` and whose `user_harness_dir` is `.`): the install
 skips that call there, so a mage install writes no include line and creates no `Makefile`.

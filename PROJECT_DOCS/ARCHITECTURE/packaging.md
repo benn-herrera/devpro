@@ -57,7 +57,6 @@ surrounding project. `PACKAGE_ROOT` and `REPO_ROOT` are defined in `install_base
 
 | check | in a checkout | outside |
 |---|---|---|
-| `install_include_lines`: no include lines for the repository itself, written by a project install | skips that project | stands down: writes the lines for any project |
 | `uncommitted_sources`, before an agents-file write into a user harness directory | refuses on uncommitted sources; a failed `git status` refuses with `InputError` | returns `()` without running git |
 
 Only a missing premise stands a check down: in a checkout nothing changes.

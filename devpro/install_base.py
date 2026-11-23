@@ -21,7 +21,8 @@ def checkout_root(package_root: Path) -> Path | None:
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 """The directory the running devpro package resolves to: the one source `require_outside_package_source`
-refuses an install into, and the one `init` refuses a repository's root being."""
+refuses an install into, the installation's copy an install run from it refuses to replace, and the one
+`init` refuses a repository's root being."""
 REPO_ROOT = checkout_root(PACKAGE_ROOT)
 
 KBASE_SKILL_DIR = "skills/kbase"
