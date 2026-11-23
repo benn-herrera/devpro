@@ -15,6 +15,16 @@ in-page notice naming the feed's failure), not a console line no dashboard reade
 
 A claude project session writes no record to `.devpro-temp/.profiler-claude/`.
 
+### DRY violation in doccheck
+
+devpro/doccheck/plancheck.py has two copy-paste duplicates:
+- check_plan, check_design and check_roadmap (:295, :313, :338) have the same body. Each could be a call to one shared function, given the reader and report for
+  its document type.
+- _plan_report and _roadmap_report (:159, :168) are the same function, differing only in the reader they call.
+
+Optionally, the verb name check-roadmap is defined twice: CHECK_ROADMAP_COMMAND in devpro/definitions/skills/development.py:35, and CHECK_ROADMAP in
+devpro/doccheck/cli.py:15.
+
 ## Features
 
 ### Codex CLI harness support
