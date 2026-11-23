@@ -38,21 +38,17 @@ EXE := if os() == "windows" { ".exe" } else { "" }
 VENV_PYTHON := "\"" + VENV / PYBIN / "python" + EXE + "\""
 TOOLS_RECORD := VENV / "tools.txt"
 
-# Lazy: the venv is created when its python is absent. The tool list below is recorded in
-# .venv/tools.txt after it installs; when the record is absent or differs from the list, the list
-# is installed into the existing venv and recorded again, and when it matches this runs no pip.
-# A half-built venv is repaired by deleting .venv and re-running.
-# The tools are compatible-release ranges on the install line (`~=X.Y.Z`): a venv rebuild takes
-# the newest patch release of each named minor and nothing newer, so maintenance fixes arrive
-# while what `just format-python` and `just test` do holds; a minor or major bump is an edit to
-# that line, visible in the diff. `pip` stays unpinned: it installs, it does not produce output a
-# change depends on.
+# Lazy: the venv is created when its python is absent. It installs the `dev` dependency group
+# `pyproject.toml` declares, and records the group's own text in .venv/tools.txt after it
+# installs: when the record does not hold that text, the group is installed into the existing venv
+# and recorded again, and when it does, this runs no pip. A half-built venv is repaired by deleting
+# .venv and re-running. `pip` is not in the group: it installs, it does not produce output a change
+# depends on.
 _venv:
     #!/usr/bin/env bash
     set -euo pipefail
     # The project's scratch directory, so a recipe that needs it finds it.
     mkdir -p "{{PROJECT_ROOT}}/.devpro-temp"
-    tools=("pytest~=8.4.2" "isort~=6.1.0" "black~=25.11.0" "flake8~=7.3.0" "setuptools~=82.0.1" "build~=1.4.4")
     # The floor's one home. Parsed with a regex, not tomllib: the python that runs this recipe is
     # not yet known to be new enough to read it.
     floor="$(sed -n 's/^requires-python *= *">=\([0-9]*\.[0-9]*\)".*/\1/p' "{{PROJECT_ROOT}}/pyproject.toml")"
@@ -62,9 +58,11 @@ _venv:
     if [[ ! -x {{VENV_PYTHON}} ]]; then
         python3 -m venv --upgrade-deps "{{VENV}}"
     fi
-    if [[ "$(cat "{{TOOLS_RECORD}}" 2>/dev/null || true)" != "$(printf '%s\n' "${tools[@]}")" ]]; then
-        {{VENV_PYTHON}} -m pip install "${tools[@]}"
-        printf '%s\n' "${tools[@]}" > "{{TOOLS_RECORD}}"
+    # The record is the group's text, read from pyproject.toml — never a second copy of the list.
+    group="$(sed -n '/^\[dependency-groups\]/,/^\[/p' "{{PROJECT_ROOT}}/pyproject.toml" | sed '1d;$d' | sed -n '/^dev = \[/,/^\]/p' | sed '1d;$d')"
+    if [[ "$(cat "{{TOOLS_RECORD}}" 2>/dev/null || true)" != "${group}" ]]; then
+        (cd "{{PROJECT_ROOT}}" && {{VENV_PYTHON}} -m pip install --group dev > /dev/null)
+        printf '%s\n' "${group}" > "{{TOOLS_RECORD}}"
     fi
 
 

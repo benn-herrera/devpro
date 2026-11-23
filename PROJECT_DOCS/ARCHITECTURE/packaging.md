@@ -34,9 +34,13 @@ devpro project root is the whole build configuration.
   function that renders the skill a hook writes, and never at module scope — the hook-write path
   imports only what it executes, as the capture path does.
 - **Offline build.** `just build` runs `python -m build --no-isolation` in `.venv` and writes the
-  wheel and sdist to `dist/`, so it uses the venv's own setuptools, not a downloaded one. `.venv`'s
-  install line in the justfile's `_venv` recipe therefore pins `setuptools~=82.0.1` and
-  `build~=1.4.4`. The build makes no git check. A build also
+  wheel and sdist to `dist/`, so it uses the venv's own setuptools, not a downloaded one.
+  The dev toolchain `.venv` runs — `setuptools` and `build` among it — is declared in
+  `pyproject.toml`'s `[dependency-groups]` (PEP 735): groups are development-only and never
+  distribution metadata, so no wheel of this package — a Homebrew local wheel build included —
+  carries or installs them. Each tool's line is named with a compatible-release specifier; a line
+  move is a deliberate edit to `pyproject.toml`, visible in the diff. The build makes no git
+  check. A build also
   writes `devpro.egg-info/` at the devpro project root, which `.gitignore` covers. The sdist is
   a byproduct of the build: SPEC.md, Package and Command names no sdist install source, and
   `check-wheel` checks only that the sdist exists.

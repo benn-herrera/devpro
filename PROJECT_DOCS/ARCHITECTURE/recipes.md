@@ -47,9 +47,8 @@ profiler view is the second view at `/profiler/`. The
 dev-check recipes run the absorbed verbs. The `_venv`
 recipe creates `.venv`
 where its python is absent or older than the floor, from the first `python3` on `PATH`. It installs
-the
-pinned tools with pip, so the first run needs the network. The suite needs `bun`, `perl` and
-`kbase` (at least `KBASE_MIN_VERSION`) on `PATH`. `tests/test_guardrail.py`,
-`tests/test_opencode_entry.py` and `tests/test_kbase_surface.py` fail rather than skip without
-them, because a skip would hide drift. `just lint` needs `shellcheck` on `PATH`, and where it is
-absent the recipe fails, naming it, rather than skip the shell check.
+the `dev` dependency group `pyproject.toml` declares, with pip, so the first run needs the network.
+The suite needs `bun`, `perl` and `kbase` (at least `KBASE_MIN_VERSION`) on `PATH`.
+`tests/test_guardrail.py`, `tests/test_opencode_entry.py` and `tests/test_kbase_surface.py` fail
+rather than skip without them, because a skip would hide drift. `just lint` needs `shellcheck` on
+`PATH`, and where it is absent the recipe fails, naming it, rather than skip the shell check.
