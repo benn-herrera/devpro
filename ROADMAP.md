@@ -46,6 +46,20 @@ the dispatching session, the agent, the model, and the link to the session's pag
 the session id the plan's dispatch note carries, written at dispatch time, never inferred from
 brief text — agents with no package show unjoined.
 
+UPDATE:
+
+- live use showed that 'drafted' is useful for discovered issues mid-plan that belong
+in the current sprint. 'roadmap' still goes away during execution, though, leaving room for
+the agents column.
+
+- additionally, the split progress/agents column view isn't going to work.
+  proposal b: active agents column with different colors for each active agent/model listed
+  and then colored dots on the cards when a model is acting on it.
+  i.e. when a drafted item is getting a PE review, there's a colored dot in the corner of the
+  ticket that matches the running PE color. when getting revised, the revising agent's color
+  is used. same treatment for tickets in the 'in progress' column. the reason the previous 2-column
+  proposal doesn't work is that agents can be working on tickets in more columns than just 'in-progress'
+
 ### Codex CLI harness support
 
 Add the ability to install as a codex plugin. Feasible with gaps
