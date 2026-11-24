@@ -515,9 +515,11 @@ def _bun() -> str:
     return "bun"
 
 
-# A moment's reading is pinned on the reader's zone and locale both: a runner's ICU settings decide a
-# clock's separator and digits where the page's own code does not, so a test that pins only `TZ`
-# asserts on the runner rather than on the page.
+# A moment's reading is pinned on the reader's zone with `TZ`: the zone decides which day and clock a
+# date draws into, so a pin holding no zone asserts on whatever the runner carries. The locale is not
+# holdable under the embedded bun — `LC_ALL=de_DE.UTF-8 bun` still resolves `en-US` — so the expected
+# text is built from the date's own fields, reading the same under whatever locale the runner carries;
+# `LC_ALL` rides along although bun ignores it.
 _MOMENT_LOCALE = {"TZ": "America/Los_Angeles", "LC_ALL": "de_DE.UTF-8"}
 
 # The crafted feed's four instants, as epoch milliseconds: a pair whose ends share the reader's day
@@ -562,7 +564,12 @@ def _page_runner(tmp_path: Path, page: str, deco: str = "") -> dict:
     carrier loads nothing, so it runs the page's script alone — in one shared classic-script scope,
     the way the browser executes a page. The runner reports the header stamp the page drew and the
     subline's markup as the scripts left it."""
-    run = _run_ts(_PAGE_RUNNER, directory=tmp_path, stdin=json.dumps({"page": page, "deco": deco}))
+    run = _run_ts(
+        _PAGE_RUNNER,
+        directory=tmp_path,
+        stdin=json.dumps({"page": page, "deco": deco}),
+        env={**os.environ, **_MOMENT_LOCALE},
+    )
     return json.loads(run.stdout)
 
 
@@ -577,9 +584,9 @@ def test_the_pages_draw_their_moments_local_at_birth(tmp_path: Path) -> None:
     time only, 24-hour, one notation whether the ends share the reader's day or cross its midnight —
     the hand-built clock, its separator and digits the page's own — and the session page's header
     stamp reads with its date, the page's title naming no day. The machine form stands in the
-    `datetime` attributes and the raw UTC in the titles. The locale is pinned beside the zone: a
-    clock built from the date's own fields reads the same under any locale, and the pin holds the
-    runner's ICU settings hostile to prove it."""
+    `datetime` attributes and the raw UTC in the titles. The zone is pinned with `TZ`; the locale is
+    not holdable under the embedded bun, so a clock built from the date's own fields reads the same
+    under whatever locale the runner carries."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()

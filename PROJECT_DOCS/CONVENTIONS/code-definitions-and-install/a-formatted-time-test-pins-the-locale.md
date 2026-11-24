@@ -1,8 +1,8 @@
 ### A formatted time test pins the locale
 
-A test asserting a formatted time or date pins the locale beside the time zone: a runner's ICU
-settings decide locale-aware formatting as the `TZ` setting decides the zone, so a pin holding
-the zone alone passes under whatever locale the runner carries. The pin is hostile to the locale:
-the expected text is built from the date's own fields, reading the same under any locale, and the
-runner's ICU settings are set hostile in the test's own setup, so the shape the assertion holds
-is the code's, not the runner's settings'.
+A test asserting a formatted time or date pins the reader's zone with `TZ`: the zone decides
+which day and clock a date draws into, so a pin holding no zone asserts on whatever the runner
+carries. The locale is not holdable under the embedded bun, which ignores the locale environment
+— `LC_ALL=de_DE.UTF-8 bun` still resolves `en-US` — so the pin holds the locale by construction
+instead: the expected text is built from the date's own fields, reading the same under any locale
+the runner carries.
