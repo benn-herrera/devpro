@@ -51,7 +51,7 @@ source and the SPEC.
 
 | Package | State | Rating | Scope |
 | --- | --- | --- | --- |
-| P1 | dispatchable | mechanical | applies the development.py pairs |
+| P1 | in progress | mechanical | applies the development.py pairs |
 | P2 | dispatchable | mechanical | applies the guide.py pairs and the SPEC delta's two pairs |
 | PR | dispatchable | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | Post-plan burndown drafting: the section's items from the review, then their usability review |
