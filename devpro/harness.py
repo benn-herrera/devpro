@@ -132,7 +132,7 @@ def scratch_rule(*, harness_dir: str) -> str:
     the project scratch directory sits beside."""
     return (
         f"All scratch —\nthrowaway builds, probe harnesses, captured output — goes in `{clauses.PROJECT_TEMP_DIR}/` under the\n"
-        f"active project root. If it doesn't exist, stop and say so; don't\n"
+        f"active project root. Where it doesn't exist, create it; don't\n"
         "improvise a location."
     )
 

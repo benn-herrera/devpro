@@ -54,6 +54,12 @@ directory names and the instruction names; `tests/test_cold_read_tools.py` holds
 `Harness.project_harness_dir` and every harness's `agents_file`. Mage's install of the devpro plugin ships the
 file too, since `development` ships there, and there it refuses.
 
+**The scratch directory.** A project install prepares the project's scratch directory for the work the
+hooks and the agents write into it: it creates `.devpro-temp/` under the project root when it is
+missing, and it adds a `.devpro-temp/` line to the project's `.gitignore`, creating the file holding
+that one line where the project has none. A `.gitignore` already carrying the line is left as it
+stands.
+
 The devpro tools package takes the same package copy for its two rows — `runner-snippets` to
 `tools/runner-snippets/`, and the running package, `PACKAGE_ROOT`, to `tools/devpro/` through
 `_shipped` and unstamped — and adds one written file, the wrapper `tools/devpro.sh`: a bash
@@ -111,7 +117,8 @@ part.
   harness-rendered file — the manifest, `.mcp.json`, `registry.json` — the retired resource names
   (`RETIRED_RESOURCE_FILES`' and `RETIRED_RESOURCE_DIRS`', unlinked and removed on every install), and
   the guardrail registration. Under the project root, on a project install: the justfile and Makefile names unless the harness
-  is a harness-directory plugin. The project's own settings files are not named: no install writes one.
+  is a harness-directory plugin, and the scratch directory and `.gitignore` the installation prepares
+  (The scratch directory). The project's own settings files are not named: no install writes one.
 - **The scratch copy** (`preflight.preflight`) lives in a `tempfile.TemporaryDirectory`, each
   managed path at its position below its base. Every `.venv` (`VENV_DIR`) is omitted. A base nested in another keeps its position below the outer
   one.

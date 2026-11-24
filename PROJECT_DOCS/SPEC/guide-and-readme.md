@@ -100,8 +100,9 @@ The repository's `README.md` holds these things:
 - a minimal installation path, with no runner recipe:
   - installing devpro with Homebrew, or with pipx where Homebrew is absent, and the new shell the
     pipx bin directory needs before the next command runs;
-  - for claude and opencode: the command that installs into the consuming project, and the lines
-    to add to `.gitignore`, each harness's own;
+  - for claude and opencode: the command that installs into the consuming project, the harness
+    lines to add to `.gitignore`, each harness's own — the project's `.devpro-temp/` line the
+    install adds itself;
   - for mage: making `~/Mage/Skills` first where absent, and the install into it for the mage
     harness; then, for the project the development process runs in, the claude or opencode install
     this path gives — the mage install alone installing into no project;

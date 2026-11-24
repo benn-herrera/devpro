@@ -41,8 +41,9 @@ A definition body names no installed path below the harness directory for a sess
 script the install places is named relative to the directory of the skill that names it: the
 installation's wrapper sits in the install directory's `tools/` and is named relative to the skill's
 directory (`../../tools/devpro.sh`; Shipped files states which commands run through it). The
-project's scratch directory is `.devpro-temp/` under the project root, the same name under every
-harness. A cross-definition reference renders
+project's scratch directory is `.devpro-temp/` under the project root: a project install creates it
+when it is missing, and a `.devpro-temp/` line sits in the project's `.gitignore`, the file created
+holding that line where the project has none. It carries the same name under every harness. A cross-definition reference renders
 with the plugin's namespace — under claude and mage `<plugin>:<name>` for an agent, a command or a
 skill, and under opencode `<plugin>-<name>`, the id the registry registers it under; a `kbase` MCP
 tool is named `mcp__plugin_devpro_kbase__<tool>` under claude, `mcp_kbase_<tool>` under mage and

@@ -70,7 +70,14 @@ from devpro.render import (
     shipped_harness_files,
     write_renders,
 )
-from devpro.runner_file import JUSTFILE_NAMES, MAKEFILE_NAMES, SnippetSet, check_runner, install_include_lines
+from devpro.runner_file import (
+    JUSTFILE_NAMES,
+    MAKEFILE_NAMES,
+    SnippetSet,
+    check_runner,
+    install_include_lines,
+    prepare_scratch_directory,
+)
 
 
 def uncommitted_sources() -> tuple[str, ...]:
@@ -626,8 +633,9 @@ def install(
     snippet_sets = [snippets for package in packages if (snippets := package.installed_snippets()) is not None]
     # A project install of a nested plugin touches the project's runner file: it writes each shipped
     # set's include line and removes the retired docdicer line where the project holds one, whichever
-    # shipped packages it carries — the retiree's cleanup needing no set of its own. Nothing else — a
-    # mage or user-level install — reads or writes it.
+    # shipped packages it carries — the retiree's cleanup needing no set of its own. It leaves the
+    # project's scratch directory and its `.gitignore` line ready with it. Nothing else — a mage or
+    # user-level install — reads or writes any of the three.
     touches_runner_file = _is_project_install_of_a_nested_plugin(ctx.harness, user_level=user_level)
     guardrail_skipped: str | None = None
     own_files = shipped_harness_files(ctx)
@@ -731,6 +739,7 @@ def install(
             harness_relpath=harness_relpath,
             retired_set=RETIRED_SNIPPET_SET,
         )
+        prepare_scratch_directory(project)
     # The profiler's stores from before their rename, for the project written: the preflight's scratch run
     # renames its copy, which is what shows the preflight a move, and the real project is renamed once.
     # Called straight, with no migration passed, this call is the only one, so it makes the one rename.
@@ -783,7 +792,14 @@ def _install_managed_paths(
         under_root.append(guardrail.registration.path)
     under_project: list[str] = []
     if _is_project_install_of_a_nested_plugin(harness, user_level=user_level):
-        under_project += [*JUSTFILE_NAMES, *MAKEFILE_NAMES]
+        under_project += [
+            *JUSTFILE_NAMES,
+            *MAKEFILE_NAMES,
+            # The scratch directory and the `.gitignore` line a project install prepares: a directory
+            # and a file that may be absent, which the copy makes where the real project holds nothing.
+            clauses.PROJECT_TEMP_DIR,
+            ".gitignore",
+        ]
     # The profiler's stores: each old-pattern one the install renames, and the name it renames to, so the
     # preflight sees the move it would make rather than reporting the target up to date.
     store_dir = TRACE_DIR.parent.as_posix()

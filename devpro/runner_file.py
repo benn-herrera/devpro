@@ -1,13 +1,14 @@
 """The include lines an install writes into the consumer's runner file (justfile or Makefile) so the
-project can reach the runner snippets its shipped packages carry, and the cleanup of the line a
-retired package left there. Which snippet sets exist is the caller's: each function here takes the
-sets it is given."""
+project can reach the runner snippets its shipped packages carry, the cleanup of the line a retired
+package left there, and the project's scratch directory and its `.gitignore` line. Which snippet sets
+exist is the caller's: each function here takes the sets it is given."""
 
 import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
+from devpro import clauses
 from devpro.context import harnesses
 from devpro.install_base import report_left_alone, utf8_text
 from devpro.render import appended_paragraph, write_text_verbatim
@@ -45,6 +46,30 @@ def check_runner(project: Path) -> None:
     found = _runner_file(project)
     if found is not None:
         utf8_text(found[1])
+
+
+def prepare_scratch_directory(project: Path) -> None:
+    """The scratch directory a project install leaves ready: `project / clauses.PROJECT_TEMP_DIR` created
+    where it is missing, and `project/.gitignore` carrying the one line `.devpro-temp/`, the
+    file created holding that line where the project has none. A `.gitignore` already carrying the line
+    is left as it stands, its text kept byte for byte otherwise."""
+    temp = clauses.PROJECT_TEMP_DIR
+    (project / temp).mkdir(exist_ok=True)
+    gitignore = project / ".gitignore"
+    if not gitignore.exists():
+        gitignore.write_text(f"{temp}/\n", encoding="utf-8", newline="")
+        print(f"created {gitignore} with the {temp}/ line")
+        return
+    text = utf8_text(gitignore)
+    if any(line.rstrip() == f"{temp}/" for line in text.splitlines()):
+        return
+    ending = "\r\n" if "\r\n" in text else "\n"
+    if ending == "\n":
+        write_text_verbatim(gitignore, appended_paragraph(text, f"{temp}/"))
+        return
+    # A CRLF file keeps every byte it holds: the blank line and the added line take its own ending.
+    closed = text if text.endswith(ending) else f"{text}{ending}"
+    write_text_verbatim(gitignore, f"{closed}{ending}{temp}/{ending}")
 
 
 def _snippets_path(snippet_set: SnippetSet, *, runner: str, harness_relpath: str) -> str:

@@ -1,7 +1,8 @@
 """The agents-file render and installer, and the definition install, each case checked against values
 the code under test did not compute: the marker span, the bytes kept outside it, the refusals that
 write nothing, the redirects, the kb-tools and devpro tools packages and their banners, the kb
-install path, the kbase `.mcp.json`, the runner include line, the harness resources a harness ships as
+install path, the kbase `.mcp.json`, the runner include line, the project's scratch directory and its
+`.gitignore` line, the harness resources a harness ships as
 they stand, the umask a package copy lands under, the prune, the refusal to overwrite a file without
 this repository's banner, the claude guardrail hook's probe and registration, the removal of entries
 earlier installs registered, and the checkout premise with the checks that stand down outside one.
@@ -51,7 +52,7 @@ from devpro.install import (
     preflighted_install,
     uncommitted_sources,
 )
-from devpro.install_base import PACKAGE_ROOT, REPO_ROOT, checkout_root
+from devpro.install_base import PACKAGE_ROOT, REPO_ROOT, checkout_root, utf8_text
 from devpro.loading import load
 from devpro.render import (
     filled_body,
@@ -59,7 +60,7 @@ from devpro.render import (
     render_all,
     render_definition,
 )
-from devpro.runner_file import _named_harnesses, install_include_lines
+from devpro.runner_file import _named_harnesses, install_include_lines, prepare_scratch_directory
 from devpro.vocabulary import CATEGORIES, AgentsFileText, Kind, PluginText, hole
 from tests._structure import kbase_skill_output_paths
 from tests.conftest import PLAIN, WITH_KBASE, settings_file
@@ -1448,6 +1449,78 @@ def test_a_project_install_without_the_kbase_component_writes_the_devpro_include
     assert not (tmp_path / "justfile").exists()
 
 
+def test_a_gitignore_already_carrying_the_line_is_left_as_it_stands(tmp_path: Path) -> None:
+    """Neither its bytes nor its modification time change: an install rerun on a prepared project writes
+    no `.gitignore` at all, so the preflight has nothing to report and the file is untouched."""
+    project = tmp_path / "project"
+    project.mkdir()
+    gitignore = _plant(project / ".gitignore", ".venv/\n.devpro-temp/\n")
+    state = _state(project)
+    main(["install", str(project), "--harness=claude"])
+    assert (gitignore.read_bytes(), gitignore.stat().st_mtime_ns) == (
+        b".venv/\n.devpro-temp/\n",
+        state[".gitignore"][1],
+    )
+
+
+@pytest.mark.parametrize(
+    ("prior", "expected"),
+    [
+        (None, ".devpro-temp/\n"),
+        (".venv/\n", ".venv/\n\n.devpro-temp/\n"),
+        (".venv/", ".venv/\n\n.devpro-temp/\n"),
+    ],
+    ids=["no-gitignore", "line-added", "last-line-unterminated"],
+)
+def test_a_project_install_prepares_the_scratch_directory_and_its_gitignore_line(
+    tmp_path: Path, prior: str | None, expected: str
+) -> None:
+    """Defect: the install left the project's scratch directory to whoever ran the work, so a project's
+    first capture or probe made it untracked and showed up in `git status`; and a project with no
+    `.gitignore` got none.
+
+    `prior` is the `.gitignore` standing before the install, None where the project has none; `expected`
+    is its text after, byte for byte."""
+    project = tmp_path / "project"
+    project.mkdir()
+    gitignore = project / ".gitignore"
+    if prior is not None:
+        _plant(gitignore, prior)
+    main(["install", str(project), "--harness=claude"])
+    assert (project / ".devpro-temp").is_dir()
+    assert utf8_text(gitignore) == expected
+
+
+def test_a_user_level_install_prepares_no_scratch_directory_and_writes_no_gitignore(_home: Path) -> None:
+    """A user-level install places nothing relative to a project, so it reads and writes no `.gitignore`
+    and creates no scratch directory, in the home directory or anywhere below it."""
+    _home.mkdir()
+    install(_home / ".claude", _CLAUDE_RENDER, verbose=False, project_root=_home, uncommitted=_committed)
+    assert _files(_home) and ".gitignore" not in _files(_home)
+    assert sorted(path.name for path in _home.rglob(".devpro-temp")) == []
+
+
+def test_a_mage_install_prepares_no_scratch_directory_and_writes_no_gitignore(tmp_path: Path) -> None:
+    """A harness-directory plugin's install is no project install of a nested plugin: the runner file,
+    the scratch directory and the `.gitignore` line are all outside what it touches."""
+    project = tmp_path / "project"
+    project.mkdir()
+    main(["install", str(project), "--harness=mage", "--subdir=plugins/devpro"])
+    assert not (project / ".devpro-temp").exists()
+    assert not (project / ".gitignore").exists()
+
+
+def test_preparing_the_scratch_directory_keeps_every_other_byte_of_the_gitignore(tmp_path: Path) -> None:
+    """An operator's `.gitignore` with CRLF endings, its last line unterminated and a line a prefix
+    match would take for this one (`.devpro-temp-old/`): the line added after the last with the file's own
+    ending, and every other byte as it stood."""
+    gitignore = tmp_path / ".gitignore"
+    prior = ".venv/\r\n.devpro-temp-old/\r\nnode_modules/"
+    gitignore.write_text(prior, encoding="utf-8", newline="")
+    prepare_scratch_directory(tmp_path)
+    assert utf8_text(gitignore) == f"{prior}\r\n\r\n.devpro-temp/\r\n"
+
+
 def test_the_makefile_the_installer_created_is_removed_with_its_last_line(tmp_path: Path, capsys) -> None:
     """The cleanup removes the docdicer line and leaves the file it created holding nothing. It goes with
     its last include line, reported as removed; one the consumer added targets to is theirs and is left,
@@ -2745,8 +2818,12 @@ def test_without_a_global_block_a_project_install_keeps_it_in_the_projects_agent
     project.mkdir()
     main(["install", str(project), f"--harness={name}"])
     rendered = render_agents_file(harness, PLAIN, scope=project.name).encode()
-    top = {path: data for path, data in _files(project).items() if "/" not in path and path != "Makefile"}
+    gitignore = ".gitignore"
+    top = {
+        path: data for path, data in _files(project).items() if "/" not in path and path not in {"Makefile", gitignore}
+    }
     assert top == {"AGENTS.md": rendered, **({"CLAUDE.md": b"@AGENTS.md\n"} if redirect else {})}
+    assert (project / gitignore).read_text(encoding="utf-8") == ".devpro-temp/\n"
     assert _global_agents_file(tmp_path / "home", harness).read_text(encoding="utf-8") == "# my global rules\n"
 
 

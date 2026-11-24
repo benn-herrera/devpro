@@ -40,7 +40,7 @@ HARNESS = Harness(
     mcp_tool_prefix="mcp_kbase_",
     scratch_rule=(
         f"All scratch —\nthrowaway builds, probe harnesses, captured output — goes in `{clauses.PROJECT_TEMP_DIR}/` under the\n"
-        "active project root. If it doesn't exist, stop and say so; don't improvise a location."
+        "active project root. Where it doesn't exist, create it; don't improvise a location."
     ),
     memory_file="the mage plugin's `CLAUDE.md` (outside its marker lines)",
     recipe_rule=FOREGROUND_RECIPE_RULE,

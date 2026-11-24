@@ -83,14 +83,13 @@ The install reads the harness from the `.claude/` or `.opencode/` directory the 
 holds neither, or holds both, pass `--harness=claude` or `--harness=opencode`. A devpro settings file
 that names harnesses installs for each of them instead, one install apiece.
 
-Add the installed tree, the agent scratch space and the agents file's backup to the project's
-`.gitignore`, listing the lines of the harness you installed:
+Add the installed tree and the agents file's backup to the project's `.gitignore`, listing the lines of
+the harness you installed; the install adds the `.devpro-temp/` line for the scratch space itself:
 
 ```text
 # claude
 .claude/
 # opencode: .opencode/ instead
-.devpro-temp/
 # the agents file's rolling backup
 backup.AGENTS.md
 ```
