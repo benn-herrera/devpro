@@ -59,6 +59,12 @@ imports and a 32 KiB cap; agents, skills, hooks and MCP live in separate places,
 Expand the model category map assignment scheme to allow specifying a specific model
 to a specific agent. Allow globbing for agent names, e.g. *-coder
 
+Decided — the category map populates the model pins, and once that is done its job is over: the
+pin is the delivered model configuration, and the mechanism for changing it is re-running install
+after changing the config file. Reading the config file to dynamically override a model pin is an
+entirely new category of behavior with zero language specifying or implying it — out of the
+scheme's scope however it expands.
+
 ### Detect a re-install from embedded devpro
 
 Right now ./<harness-dir>.../devpro.sh install . fails because it detects the self-overwrite.
