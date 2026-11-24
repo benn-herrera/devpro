@@ -191,4 +191,101 @@ Done-line: `just check-links`.
 
 ### B — Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (landed at 2c48159); findings cited by their entry numbers.
+Items whose subject carries an owner ruling still open state it in the item, and a `no` retires
+the item as the item states; a ruling arriving changes the item before dispatch, never after.
+Every item's intended lifetime is **shipped**. Each item whose done-line runs a document check
+runs the dev-tree verb (`just dev-check-links`, `just dev-check-roadmap`); a package whose
+done-line names `just test` also runs `just lint`.
+
+**B1 — the model-pin remedy is redone on the evidence** *(review finding 1 — the owner's standing
+order, "we are good where we are now after the fix. change nothing.", was premised on the claim
+the declarations and the host source refute; this item needs the owner's ruling before it
+dispatches. A `yes` is the ruling it runs under; a `no` retires the item and the plan records the
+premise as held.)* The transform writes the pin as the plain object again, the resolve hook is removed
+with its comment, the pin returns to store level — the stub as the driver of what the transform
+writes — and `opencode-entry.md`'s Registration bullet and API-event count are true again; the
+floor claim covers no experimental hook. The historical question gets one live 2.4.1 dispatch on
+a cross-provider configured model, observed through the host's request surface, its outcome
+recorded in the item's closing commit. Scope: `devpro/harnesses/resources/opencode/index.ts`,
+`tests/opencode_entry_runner.ts`, `tests/test_opencode_entry.py`,
+`PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md`.
+Done-line: `just test`, `just lint`.
+
+**B2 — the capture's record contract gets its driver back** *(review findings 2 and 3 — the
+owner's P4 ruling removed the test believing it oracle-class; the review states it is
+driver-class. This item also needs the owner's ruling before it dispatches. A `yes` is the ruling
+it runs under; a `no` retires the item and finding 2 stays a stated gap in
+`PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`.)* A contract runner
+drives the shipped `profiler.ts`'s event-record construction over the three host-shape inputs and
+asserts the capture's own outputs, the boundary stated in its docstring — the shapes are inputs,
+no claim in the test about what the host actually reports; the live-dispatch evidence is recorded
+as a roadmap ticket again. The serialize fixture's key set is pinned to the capture's own record
+construction, or the fixture's provenance is recorded and the docstring scoped. Scope:
+`tests/profiler_contract_runner.ts` (new), `tests/test_devpro_profiler.py`,
+`tests/fixtures/profiler_serialize_record.json`, `tests/profiler_serialize_runner.ts`, ROADMAP.md.
+Done-line: `just test`, `just lint`.
+
+**B3 — the scratch sentence is single-sourced** *(review finding 4)* One constant beside
+`clauses.PROJECT_TEMP_DIR` carries the scratch paragraph; `harness.py`'s `scratch_rule` and
+mage's hand-written copy (`mage.py:41–45`) take the constant; the dead `harness_dir` parameter
+and `harness.py`'s "beside" docstring go — `NEW_PROJECT_SETUP`'s placement invariant stays.
+Scope: `devpro/clauses.py`, `devpro/harness.py`, `devpro/harnesses/mage.py`,
+`tests/test_devpro.py` (the render probes read the constant).
+Done-line: `just test`, `just lint`.
+
+**B4 — the scratch guarantee's scope is stated where it is delivered** *(review finding 5, and
+finding 6's dry-run note — B4 carries the dry-run work, B5 does not)* SPEC's `installed-tree.md`
+and ARCHITECTURE's scratch passage state the condition the delivery carries — claude/opencode
+nested-plugin project installs, mage and user-level installs none. `devpro/install.py`'s
+`_install_managed_paths` names the project's `.devpro-temp/` beside the `.gitignore` in its
+managed set, so the `--dry-run` prediction prints both — `created:` lists `.gitignore` and no
+directory today — and `tests/test_devpro_install.py`'s `_assert_dry_run_predicts` case for a
+fresh claude project asserts the directory. Scope: `PROJECT_DOCS/SPEC/deployed-surfaces/installed-tree.md`,
+`PROJECT_DOCS/ARCHITECTURE/install/renders-and-copies.md`, `devpro/install.py`,
+`tests/test_devpro_install.py`.
+Done-line: `just test`, `just lint`, `just dev-check-links`.
+
+**B5 — the README's changed sections are finished** *(review finding 6, excluding its dry-run
+note — B4 carries it)* The `.gitignore` example block carries the `.devpro-temp/` line and marks
+it as the install's, so a reader copying the block sees the finished state and a hand-written
+`.devpro-temp` (no slash) cannot duplicate; the profiler section states the exact-name rule and
+the idle records; the Acknowledgments anchor drift is left standing (predates). Scope:
+`README.md`.
+Done-line: `just dev-check-links`.
+
+**B6 — the stale glob stragglers go** *(review finding 7)* `harness-profiler.md`'s Serving
+passage and its doubled store set, `pages.py`'s two docstrings and the INDEX template's comment:
+the sentences name the exact-name read; the literal list drops; the negative pin and the two
+dangling docstring cross-references go with them (review finding 9's related residue). Scope:
+`PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`, `devpro/profiler/pages.py`,
+`tests/test_devpro_profiler.py`.
+Done-line: `just test`, `just dev-check-links`.
+
+**B7 — the mechanical debt from the packages, decided** *(review findings 9 and 8, each
+alternative picked rather than left to the executor)* One ending-aware helper replaces the CRLF
+re-implementation; `rstrip()` is narrowed to the line's own ending; the one-function accessor is
+inlined; the dashboard's traces-feed case gains a readable claude session beside the locked
+store; the entry runner's always-empty `requests` key is dropped; `subsystem-map.md` names
+`runner_file.py`'s three duties — the move to `install.py` is the roadmap's. Scope:
+`devpro/runner_file.py`, `tests/conftest.py`, `tests/test_devpro_profiler.py`,
+`tests/dashboard/test_server.py`, `tests/opencode_entry_runner.ts`,
+`PROJECT_DOCS/ARCHITECTURE/subsystem-map.md`.
+Done-line: `just test`, `just lint`.
+
+**B8 — the double-delivery instance is folded into its ticket** *(review finding 10)* The
+restated scratch sentence reaches nine coder definitions through `NEW_PROJECT_SETUP` and the
+agents file's `scratch_rule` (`grep -rn "throwaway builds" devpro/definitions/agents/` returns
+nothing: the sentences are delivered, not written). The roadmap's sentence-duplication ticket
+gains the instance as one line naming those two sources and the nine seats; no code change in
+this plan. Scope: `ROADMAP.md`.
+Done-line: `just dev-check-roadmap`.
+
+Two owner decisions ride with the findings, not as items, and neither is dispatchable until
+ruled: finding 11's candidate `TESTS_PROTECT_LOGIC` sentence, and the mock sentence's provenance
+beside `TEST_REVIEW`'s bullet. The candidate sentence is the doctrine B1 and B2 enact one test at
+a time: ruled yes, it lands in `devpro/clauses.py` and changes B1's and B2's report line; ruled
+no, B1 and B2 stand as written. Finding 11's third bullet — the design's claim that the opencode
+stub "vouches for nothing" — is corrected by B2's docstring boundary for the capture and by the
+`opencode_plugin_stub.ts` sentence in P4; no separate edit. A ruling lands each where the owner
+says.
