@@ -23,7 +23,7 @@ cited by name, and a name outranks a stale line number.
 | B2 | dispatchable | expert | the failed-feed answer: one catch-all, the notice rendered |
 | B3 | landed: 7d5547c | expert | sweep line numbers, helper dedup |
 | B4 | landed: 641ef80 | expert | the prefix's one source and its tool gate |
-| B5 | in progress | mechanical | document wording: repo-layout row, leaf reflow |
+| B5 | landed: c026bcb | mechanical | document wording: repo-layout row, leaf reflow |
 | B6 | dispatchable | mechanical | pin honesty: name the form pins |
 | B7 | dispatchable | mechanical | CONVENTIONS lines: real-tree case, synonym search, scratch hygiene |
 | B8 | dispatchable | mechanical | the cli docstrings' one home |
