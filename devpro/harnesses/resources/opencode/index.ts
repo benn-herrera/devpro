@@ -191,6 +191,11 @@ export default Plugin.define({
       for (const { entry, body } of held.agents) {
         editor.update(entry.id, (agent) => {
           agent.system = body
+          // The agent's model field decodes from the string the host's own config path writes —
+          // "provider/model", per the schema's parse — so the write here is that encoded form, the
+          // sanctioned path; the mutable type names the decoded side, hence the cast. The resolve
+          // hook above applies the same pin until the host honors this write.
+          if (entry.model) agent.model = `${entry.model.providerID}/${entry.model.id}` as unknown as NonNullable<typeof agent.model>
           if (entry.description !== undefined) agent.description = entry.description
           agent.mode = entry.mode
           if (entry.hidden !== undefined) agent.hidden = entry.hidden
