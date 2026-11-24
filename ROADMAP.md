@@ -245,7 +245,10 @@ and `devpro/harnesses/mage.py`'s hand-copy, equal by lockstep edits until the co
 The corpus gains the f-string and `str` literals of `devpro/definitions/`, `devpro/harnesses/`
 and `devpro/clauses.py` as sentence units, the candidates reporting like the rest: sorted,
 byte-stable, advisory. Measured cost: the whole-corpus sweep runs in 0.535s and the literals'
-sentences reach machinery that already clusters them.
+sentences reach machinery that already clusters them. Live instance already in hand: the nine
+coder definitions restate the scratch paragraph's location-and-examples sentence that
+`NEW_PROJECT_SETUP` dropped the mandate from — delivered twice through the clauses layer, seen
+by the post-plan review and invisible to every gate.
 
 ### Browser-driven visual verification
 

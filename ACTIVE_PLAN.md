@@ -26,7 +26,7 @@ it changes reports the failure as a finding — the test is never edited to pass
 | P3 | landed (cd50d71) | expert | the scratch guarantee's one home: install prepares, the clause drops |
 | P4 | landed (f1c226a) | expert | the stand-ins' removal and the mock-as-oracle clause |
 | R | landed (2c48159) | expert | Post-plan review |
-| B | in progress: B1–B5 landed, B6 in flight, B7–B8 next; B2 and the two clause decisions on the owner | expert | Post-plan burndown |
+| B | in progress: B1–B6 landed, B7 in flight, B8 last; B2 and the two clause decisions on the owner | expert | Post-plan burndown |
 
 ### P1 — the plugin's configured model applies at runtime
 
@@ -284,7 +284,8 @@ restated scratch sentence reaches nine coder definitions through `NEW_PROJECT_SE
 agents file's `scratch_rule` (`grep -rn "throwaway builds" devpro/definitions/agents/` returns
 nothing: the sentences are delivered, not written). The roadmap's sentence-duplication ticket
 gains the instance as one line naming those two sources and the nine seats; no code change in
-this plan. Scope: `ROADMAP.md`.
+this plan. (Folded: the ticket's live instance is the nine stems' definitions carrying the
+location-and-examples sentence the agents file's block already delivers.) Scope: `ROADMAP.md`.
 Done-line: `just dev-check-roadmap`.
 
 Two owner decisions rode with the findings: finding 11's candidate `TESTS_PROTECT_LOGIC`
