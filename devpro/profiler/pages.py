@@ -906,8 +906,7 @@ RETURN_MARK = "<!--RETURN-->"
 # marks are the last thing before the body's own content, their text no stylesheet's.
 # A harness's dot wears its brand color, the page's own rule rather than the site's — the dots are
 # the only brand-marked part of a row — and its class is the name the feed's entry carries where the
-# script's `HARNESSES` holds that harness, so the style block's two harness rules and that list
-# change together.
+# script's `HARNESSES` holds that harness.
 INDEX = """<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
