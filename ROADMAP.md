@@ -5,6 +5,24 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
+### A locked store's feed drops the readable sessions beside it
+
+`tests/dashboard/test_server.py`'s locked-store case found it live (B7's blocked item 3): with a
+claude store lock beside a readable claude session, the served `/api/traces` holds only the
+opencode sessions and `{"unreadable": ...}` — the readable claude session vanishes — while
+`read_sessions` returns all four in-process (`report-b7.md`, the attempted patch at
+`.devpro-temp/b7-item3-attempted.patch`). The served profiler is the instrument the pruning pass
+reads; it must not lie about its own stores. Fix the serialization or route layer that drops
+them, and restore item 3's enumerated edit on top.
+
+### The retired-directory pin's third harness name is a leftover
+
+Mage's `.mage-temp` was a `scratch_rule` value, never a directory any install created
+(`f6e50c6` deleted it and `Harness.project_temp_dir`) — the owner's account of the forgotten
+unification. The third retired name in `tests/test_devpro.py:778`'s pin is a leftover no
+cleaning branch could ever run; drop it, keeping the check for a mage rendering that carries the
+retired name.
+
 ### The profiler index's controls state dies at every navigation hop
 
 The controls' state lives in the page's URL (`pages.py`'s `sync`/`restore`, landed) and survives a
