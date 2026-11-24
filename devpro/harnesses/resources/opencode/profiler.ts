@@ -9,7 +9,8 @@
 // against opencode's hook surface, which reports different things than claude's hooks do.
 // The floor is behavioral: the child's session id, which the dispatch's tie to its child is read from,
 // is `result.sessionID` on 2.4.1, `result.output.sessionID` on 2.3.2 and `result.metadata.sessionID` on
-// 2.3.0, and the read covers all three.
+// 2.3.0, and the read covers all three. These reads are observed, shipped behavior: the host's
+// published declarations are narrower than what its runtime reports, a gap in the opencode doc.
 //
 // `execute.before` carries no result, so it is where a call's start is taken; `execute.after` is where
 // the record is written. A capture that fails raises nothing out of a hook and says nothing, save the
