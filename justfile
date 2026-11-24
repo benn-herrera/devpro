@@ -230,9 +230,9 @@ _lint-shell:
     @git ls-files -z '*.sh' | xargs -0 shellcheck
 
 # A missing bun, or an install that cannot reach the registry, fails the lint, never skips the step.
-# The declarations the resources import arrive through `package.json`'s lockfile, which is pinned to
-# the host version the resources name; `tsconfig.json` scopes the program to what ships, the test
-# runners' TypeScript being dev-time only.
+# The declarations the resources import arrive through `package.json`'s lockfile, `bun.lock`, which is
+# pinned to the host version the resources name; `tsconfig.json` scopes the program to what ships, the
+# test runners' TypeScript being dev-time only.
 _lint-typescript:
     @command -v bun > /dev/null || { printf '%s\n' "error: just lint requires bun on PATH" >&2; exit 1; }
     @cd "{{PROJECT_ROOT}}" && bun install --frozen-lockfile
