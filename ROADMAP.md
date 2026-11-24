@@ -275,8 +275,10 @@ pass, where the visual work lives.
 
 B4 added `.devpro-temp` to the managed set so the dry run could predict its creation, and the
 preflight's comparison is a whole-tree read — so `_copy_managed` copytrees the entire scratch
-tree on every install: a stale repo-sized probe copy made the run crawl, and a broken-symlink
-fixture stopped it outright (the `symlinks=True` stopgap landed at `6429cdc`). The comparison's
+tree on every install. Measured 2026-11-24: 270 MB and 22,651 files of stale probe copies made
+`just agents` take 30 seconds; after the detritus went, the same run took 0.72 — the cost scales
+with scratch bulk, which regrows every session. A broken-symlink fixture also stopped it outright
+(the `symlinks=True` stopgap landed at `6429cdc`). The comparison's
 semantics need redesign with fresh eyes: a managed directory reads as its existence plus the
 managed subset the install writes into it — and the install *runs into the copy*, so whatever
 the run would see must be visible there. The two constraints pull against each other; the
