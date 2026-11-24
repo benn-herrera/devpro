@@ -7,6 +7,9 @@ runtime stand-in for a package the runner does not install; installed beside the
 shadows the package's own types wherever the check reads the module, so the drift the check exists to
 catch passes it silently.
 
+The id the capture reads at the result's top level is the host's runtime shape, published in its
+source and not in the shipped declarations; the check sees the shapes around it.
+
 The declarations reach the check as a dev-time dependency the lint recipe installs before the checker
 runs, pinned to the version the resource's header names (ARCHITECTURE.md, Recipes). `just lint` runs
 the check, and a missing tool fails it, naming what is missing, rather than skipping the step.

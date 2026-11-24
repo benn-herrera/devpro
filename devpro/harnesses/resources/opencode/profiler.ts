@@ -33,30 +33,17 @@ import { fileURLToPath } from "node:url"
 const here = dirname(fileURLToPath(import.meta.url))
 const registryPath = join(here, "registry.json")
 
-// The slice of the plugin context this module uses, declared as the entry declares its own.
-type ToolInput = { [arg: string]: unknown }
+// The plugin context is the host's own, as `index.ts` takes its own, and each hook's event is the
+// callback's parameter at that hook's name in the host's declarations: a field the host renames
+// fails the check here.
+type Context = Parameters<Parameters<typeof Plugin.define>[0]["setup"]>[0]
+// Declared, never built: the hook signatures the events below are read from.
+declare const host: Context
 // The call's pairing key: `execute.before` reports it and `execute.after` repeats it.
-type Pairing = { tool: string; sessionID: string; agent?: string; messageID?: string; id: string; input: ToolInput }
+type Started = Parameters<Parameters<typeof host.tool.hook<"execute.before">>[1]>[0]
 // `execute.before` carries no result and no status; `execute.after` carries one or the other, and
 // on a failed call its `error` is the host's `Tool.Error` object rather than a string.
-type Started = Pairing
-type Finished = Pairing & { status: "completed" | "error"; result?: unknown; error?: unknown }
-type Idle = { sessionID: string; background: readonly unknown[] }
-
-// The callback's type is written literally at each `hook`, not through a generic alias: TypeScript
-// infers an unannotated arrow's parameter from a literal callback type and not, in this position, from
-// one reached through an alias.
-type Context = {
-  // The opened directory is not the project root: the store sits at the checkout root.
-  location: { project: { directory: string } }
-  tool: {
-    hook(name: "execute.before", callback: (event: Started) => Promise<void> | void): Promise<unknown>
-    hook(name: "execute.after", callback: (event: Finished) => Promise<void> | void): Promise<unknown>
-  }
-  session: {
-    hook(name: "experimental.idle", callback: (event: Idle) => Promise<void> | void): Promise<unknown>
-  }
-}
+type Finished = Parameters<Parameters<typeof host.tool.hook<"execute.after">>[1]>[0]
 
 // The module's id, as `guardrail.ts` and this file take it: the plugin's, read synchronously from
 // `registry.json` because opencode takes an id before `setup` runs, and the install directory's name where
@@ -215,8 +202,9 @@ function argsOf(tool: string, input: Record<string, unknown>): string | undefine
 
 // resultText is a completed call's text: the devpro profiler's `response_text` unwrapping — the `content` parts'
 // text, then a string `output`, then `stdout` and `stderr` — and, where the result carries none of
-// those, its `metadata` as JSON.
+// those, its `metadata` as JSON. A call the host reports no result for has no text.
 function resultText(result: unknown): string {
+  if (result === undefined || result === null) return ""
   if (!isRecord(result)) return valueText(result)
   const { content, output } = result
   if (Array.isArray(content)) {
@@ -231,12 +219,7 @@ function resultText(result: unknown): string {
 // resultOf is what the call returned, or, on a failed call, why: the devpro profiler's result is the error's text
 // where the response carries none.
 function resultOf(call: Finished): string | undefined {
-  const textOf =
-    call.status === "completed"
-      ? call.result === undefined || call.result === null
-        ? ""
-        : resultText(call.result)
-      : errorText(call.error)
+  const textOf = call.status === "completed" ? resultText(call.result) : errorText(call.error)
   return clip(mask(firstLine(textOf)), RESULT_LIMIT) || undefined
 }
 
@@ -246,11 +229,11 @@ function resultOf(call: Finished): string | undefined {
 // opencode session owns its own trace file, so this id names the child's page and its row in the
 // index, never a context in the parent's file. A result carrying none of the three — a bare output
 // string among them, and a result with none — is a valid no-child state, and the record keeps `null`.
-function childSessionOf(call: Finished): string | undefined {
-  const result = isRecord(call.result) ? call.result : {}
-  const output = isRecord(result.output) ? result.output : {}
-  const metadata = isRecord(result.metadata) ? result.metadata : {}
-  const ids = [result.sessionID, output.sessionID, metadata.sessionID]
+function childSessionOf(result: unknown): string | undefined {
+  const carried = isRecord(result) ? result : {}
+  const output = isRecord(carried.output) ? carried.output : {}
+  const metadata = isRecord(carried.metadata) ? carried.metadata : {}
+  const ids = [carried.sessionID, output.sessionID, metadata.sessionID]
   const id = ids.find((candidate) => typeof candidate === "string")
   return id as string | undefined
 }
@@ -260,10 +243,10 @@ function childSessionOf(call: Finished): string | undefined {
 // The two places here are the ones the host was observed reporting a kind in. The mirror of
 // `childSessionOf`: a kind the host reports elsewhere — beside the child's session id in `output` —
 // would record as the call's own input, and no live observation has shown it there.
-function childAgentTypeOf(tool: string, input: Record<string, unknown>, call: Finished): string | undefined {
-  const { result, metadata } = isRecord(call.result) ? call.result : {}
+function childAgentTypeOf(tool: string, input: Record<string, unknown>, result: unknown): string | undefined {
+  const { result: response, metadata } = isRecord(result) ? result : {}
   const kind =
-    (isRecord(result) ? textFrom(result.agentType) : "") ||
+    (isRecord(response) ? textFrom(response.agentType) : "") ||
     (isRecord(metadata) ? textFrom(metadata.agentType) : "")
   if (kind) return kind
   for (const arg of KIND_ARGS[tool] ?? []) {
@@ -303,6 +286,8 @@ type CallRecord = {
 function callRecord(call: Finished, start: number, end: number): CallRecord {
   const raw = call.tool
   const input = isRecord(call.input) ? call.input : {}
+  // A completed call carries its result; a failed one carries the error instead.
+  const result: unknown = call.status === "completed" ? call.result : undefined
   const subagent = raw in SUBAGENT_TOOLS
   const tool = SUBAGENT_TOOLS[raw] ?? (raw === "skill" ? SKILL : raw)
   return {
@@ -321,8 +306,8 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
     ok: call.status === "completed",
     // A subagent call starts its child's context, and the host names that child's session in the
     // result's output, or in 2.3.0's metadata: the id goes in the slot the render groups children by.
-    child_agent_id: subagent ? (childSessionOf(call) ?? null) : null,
-    child_agent_type: subagent ? (childAgentTypeOf(raw, input, call) ?? DEFAULT_AGENT) : null,
+    child_agent_id: subagent ? (childSessionOf(result) ?? null) : null,
+    child_agent_type: subagent ? (childAgentTypeOf(raw, input, result) ?? DEFAULT_AGENT) : null,
     background: false,
     child_spend: null,
     tokens: null,
@@ -448,6 +433,7 @@ function silently(step: () => void): void {
 export default Plugin.define({
   id: pluginId(),
   async setup(ctx: Context) {
+    // The opened directory is not the project root: the store sits at the checkout root.
     const root = ctx.location.project.directory
     await ctx.tool.hook("execute.before", (call) => {
       silently(() => {
