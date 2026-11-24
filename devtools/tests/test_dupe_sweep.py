@@ -5,6 +5,7 @@ rather than building a tree — the sweep reads its corpus from git, and a
 filesystem is not on the path between a source file and a candidate.
 """
 
+import ast
 import io
 
 import pytest
@@ -238,6 +239,36 @@ def test_a_literal_is_rejoined_across_its_hard_wrap_and_split_like_a_docstring()
     files = {"devpro/clauses.py": 'RULE = """A rule that spans\\ntwo physical lines. A second sentence."""\n'}
     units = definition_text.definition_text_units(files)
     assert [unit.text for unit in units] == ["A rule that spans two physical lines.", "A second sentence."]
+
+
+def test_a_literals_later_blocks_report_at_their_own_lines_not_the_literals():
+    """Defect, before numbering: `block_sentences` was handed the literal as a single numbered
+    line, so the whole literal — every block in it — reported at its opening line."""
+    files = {"devpro/clauses.py": 'RULE = """A rule.\n\nA second block two lines down."""\n'}
+    units = definition_text.definition_text_units(files)
+    assert [(unit.line, unit.text) for unit in units] == [(1, "A rule."), (3, "A second block two lines down.")]
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        '"""A module rule."""\n',
+        'class Store:\n    """A store rule."""\n',
+        'def f():\n    """A function rule."""\n',
+        'async def f():\n    """An async rule."""\n',
+        '"""\nA rule that starts on the docstring\'s second line.\n"""\n',
+        'def f():\n    """A rule."""\n    def g():\n        """A nested rule."""\n',
+        'x = 1\n# not a docstring\ny = "a literal"\n',
+    ],
+)
+def test_the_literals_read_as_docstrings_and_the_literals_skipped_as_them_are_one_set(source):
+    """Defect, before the one helper: `docstring_nodes` walked for docstrings a second time, so a
+    shape one walk recognized and the other did not reported a docstring against itself."""
+    tree = ast.parse(source)
+    read_by_doc_units = {id(literal) for literal, _, _, _ in doc_sentences.docstrings(tree)}
+    skipped_as_docstring = {id(literal) for literal in definition_text._literals(tree)} & read_by_doc_units
+    assert skipped_as_docstring == set()
+    assert len(read_by_doc_units) == source.count('"""') // 2
 
 
 @pytest.mark.parametrize(

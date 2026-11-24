@@ -4,7 +4,7 @@ A definition module is its rendered text with placeholders, so its prose lives i
 literals: two modules stating one rule hold it in two literals, and :mod:`doc_sentences` reads
 neither. Each literal is rejoined across its hard wrap and split by
 :func:`doc_sentences.block_sentences`, so a sentence means here what it means in a docstring; a
-sentence's line is the literal's line, which is the line the reader opens the module at.
+sentence's line is its block's first line, numbered from the line the literal opens on.
 
 A literal carrying no whitespace — a placeholder, a directory name, a lone word — is not prose,
 and contributes no sentence. A docstring contributes none either: it is a literal, and
@@ -15,7 +15,7 @@ import ast
 from collections.abc import Iterator
 
 from .clustering import Unit
-from .doc_sentences import block_sentences, docstring_nodes
+from .doc_sentences import block_sentences, docstrings
 from .normalization import prose_tokens
 from .python_corpus import parse_module
 
@@ -34,7 +34,7 @@ def definition_text_units(files: dict[str, str]) -> list[Unit]:
             continue
         for literal in _literals(tree):
             label = f"string literal at {literal.lineno}"
-            for line, sentence in block_sentences([(literal.lineno, literal.value)]):
+            for line, sentence in block_sentences(enumerate(literal.value.splitlines(), start=literal.lineno)):
                 units.append(Unit(path, line, label, sentence, prose_tokens(sentence)))
     return units
 
@@ -45,9 +45,9 @@ def _literals(tree: ast.Module) -> Iterator[ast.Constant]:
     A docstring is a string literal and is skipped: :func:`~.doc_sentences.doc_units` already
     reads it, and a sentence reported against its own docstring is not two homes.
     """
-    docstrings = {id(node) for node in docstring_nodes(tree)}
+    docstring_literals = {id(literal) for literal, _, _, _ in docstrings(tree)}
     for node in ast.walk(tree):
-        if id(node) in docstrings or not isinstance(node, ast.Constant) or not isinstance(node.value, str):
+        if id(node) in docstring_literals or not isinstance(node, ast.Constant) or not isinstance(node.value, str):
             continue
         if any(char.isspace() for char in node.value):
             yield node

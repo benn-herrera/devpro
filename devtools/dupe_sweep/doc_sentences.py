@@ -56,7 +56,7 @@ def doc_units(files: dict[str, str]) -> list[Unit]:
         tree = parse_module(path, text)
         if tree is None:
             continue
-        for owner, doc, first_line in _docstrings(tree):
+        for _literal, owner, doc, first_line in docstrings(tree):
             lines = list(enumerate(doc.splitlines(), start=first_line))
             for line, sentence in block_sentences(lines):
                 units.append(Unit(path, line, owner, sentence, prose_tokens(sentence)))
@@ -65,27 +65,24 @@ def doc_units(files: dict[str, str]) -> list[Unit]:
     return units
 
 
-def _docstrings(tree: ast.Module) -> Iterator[tuple[str, str, int]]:
+def docstrings(tree: ast.Module) -> Iterator[tuple[ast.Constant, str, str, int]]:
+    """(each docstring's literal, its owner's name, its cleaned text, the line it starts on).
+
+    One walk decides what a docstring is, who owns it and where its text begins, so
+    :func:`doc_units` and a second sentence source cannot disagree about the set.
+    """
     for node in ast.walk(tree):
         if not isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             continue
+        if not node.body:
+            continue
+        literal = node.body[0].value if isinstance(node.body[0], ast.Expr) else None
+        if not isinstance(literal, ast.Constant) or not isinstance(literal.value, str):
+            continue
         doc = ast.get_docstring(node, clean=True)
         if doc:
-            name = "module docstring" if isinstance(node, ast.Module) else f"{node.name} docstring"
-            yield name, doc, node.body[0].lineno
-
-
-def docstring_nodes(tree: ast.Module) -> Iterator[ast.Constant]:
-    """Each docstring's own literal node — the expression statement's value.
-
-    A docstring is a string literal that :func:`doc_units` already reads, so a second
-    sentence source must skip it or one sentence reports against itself.
-    """
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.body:
-            first = node.body[0].value if isinstance(node.body[0], ast.Expr) else None
-            if isinstance(first, ast.Constant) and isinstance(first.value, str):
-                yield first
+            owner = "module docstring" if isinstance(node, ast.Module) else f"{node.name} docstring"
+            yield literal, owner, doc, literal.lineno
 
 
 def _comment_lines(path: str, text: str) -> list[tuple[int, str]]:
