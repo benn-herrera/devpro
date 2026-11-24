@@ -25,8 +25,8 @@ it changes reports the failure as a finding — the test is never edited to pass
 | P2 | landed (67d4516) | expert | the stores read true: exact names, both readers, the doctor's line |
 | P3 | landed (cd50d71) | expert | the scratch guarantee's one home: install prepares, the clause drops |
 | P4 | landed (f1c226a) | expert | the stand-ins' removal and the mock-as-oracle clause |
-| R | in progress: reviewers dispatched in model waves | expert | Post-plan review |
-| B | drafted | expert | Post-plan burndown |
+| R | landed (2c48159) | expert | Post-plan review |
+| B | drafted: drafted from ACTIVE_PLAN_REVIEW.md, burndown items pending PE review | expert | Post-plan burndown |
 
 ### P1 — the plugin's configured model applies at runtime
 
