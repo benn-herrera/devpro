@@ -177,6 +177,14 @@ export default Plugin.define({
     // Every callback reads `held`, which only setup and the watcher replace: a callback that threw
     // would disable this plugin module's whole registration group.
     let held = await readPlugin()
+    // The runtime reads an agent's model from its own store, not from the agent the transform below
+    // edits, so a record's model would never reach a request. The model a Session resolves starts as
+    // the agent's selection, and changing it there serves the request with the record's model while
+    // that Session keeps its own, as a model selected in opencode does.
+    await ctx.session.hook("experimental.model.resolve", (resolve) => {
+      const model = held.agents.find(({ entry }) => entry.id === resolve.agent)?.entry.model
+      if (model) resolve.model = model as NonNullable<typeof resolve.model>
+    })
     await ctx.agent.transform((editor) => {
       for (const { entry, body } of held.agents) {
         editor.update(entry.id, (agent) => {
@@ -184,10 +192,6 @@ export default Plugin.define({
           if (entry.description !== undefined) agent.description = entry.description
           agent.mode = entry.mode
           if (entry.hidden !== undefined) agent.hidden = entry.hidden
-          // The registry's ids are plain strings where the host's model ref brands them, and the
-          // declarations export no maker for those brands: the ref handed to the update is the
-          // registry's own value.
-          if (entry.model) agent.model = entry.model as NonNullable<typeof agent.model>
           if (entry.color !== undefined) agent.color = entry.color
           for (const [key, effect] of Object.entries(entry.permission ?? {})) {
             agent.permissions.push({ action: key, resource: "*", effect })
