@@ -32,9 +32,8 @@ harness supplies as text or as the empty string, an empty one dropping the parag
 and `@!fam-<anchor>!@` for an anchor, an `Anchor` member (`ask-vs-stipulate`, the one a definition
 exposes today).
 A body of any kind may carry `@!plg-name!@` (`PluginText.NAME`, filled from `ctx.plugin.name`) where
-the text must spell the plugin's name, such as the plugin word of the agents file's begin marker,
-`vvv-devpro devpro <version>`, or the mage install directory the `guide` skill's installation
-reference names. It may carry `@!plg-project-wrapper!@` (`PluginText.PROJECT_WRAPPER`, filled from
+the text must spell the plugin's name, such as the mage install directory the `guide` skill's
+installation reference names. It may carry `@!plg-project-wrapper!@` (`PluginText.PROJECT_WRAPPER`, filled from
 `ctx.bound_harness.project_wrapper`) where the text must spell the path, relative to the project
 root, of the wrapper the plugin's project install under the render's harness writes — claude's
 `.claude/skills/devpro/tools/devpro.sh`.
