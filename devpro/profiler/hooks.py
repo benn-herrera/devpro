@@ -242,7 +242,7 @@ def doctor(cwd: Path | str) -> str:
     hook, and the newest claude session."""
     directory = project_dir(cwd)
     # doctor is claude-facing: every other line reads claude's hook and this directory's claude sessions,
-    # so `newest` is claude's store alone, and the `traces` line names it beside what `tree` reads.
+    # so `newest` is claude's store alone, named among the stores the `traces` line lists.
     claude_store = Path(directory) / TRACE_DIR
     claude_sessions = [session for session in list_sessions(directory) if session["path"].parent == claude_store]
     newest = max((session["last"] for session in claude_sessions), default=None)
@@ -256,7 +256,7 @@ def doctor(cwd: Path | str) -> str:
     )
     lines = [
         f"devpro:  {devpro_command()}",
-        f"traces:  {claude_store} (tree reads {reads})",
+        f"traces:  tree reads {reads}",
         f"hook:    {installed}",
     ]
     # A store from before the rename is one `tree` cannot see, and no devpro command merges two stores:

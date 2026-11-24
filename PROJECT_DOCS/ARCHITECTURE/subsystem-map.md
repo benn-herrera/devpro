@@ -138,9 +138,10 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
 - **Install machinery** — the one entry not rendered from a definition: `install.py` renders, copies
   and prunes; `install_base.py` holds what the install modules share (the package and checkout
   paths, the kb-tools package paths, `VENV_DIR`, the path checks, UTF-8 text reading and the report of what an
-  install left alone); `runner_file.py` writes the runner include lines, one per `SnippetSet` the install passes it; `preflight.py` runs that
-  install into a scratch copy and compares (Install, Renders and copies); `agents_file.py`
-  does the same for the agents file (Agents File). The imports layer: `install_base.py` and
-  `install_target.py` import no other install module; `preflight.py` imports `install_base.py`;
+  install left alone); `runner_file.py` writes the runner include lines, one per `SnippetSet` the
+  install passes it, prepares the project's scratch directory and writes the `.gitignore` line for it;
+  `preflight.py` runs that install into a scratch copy and compares (Install, Renders and copies);
+  `agents_file.py` does the same for the agents file (Agents File). The imports layer: `install_base.py`
+  and `install_target.py` import no other install module; `preflight.py` imports `install_base.py`;
   `runner_file.py` imports `install_base.py`; `agents_file.py` imports
   `install_base.py`, `install_target.py` and `preflight.py`; `install.py` imports all of them.

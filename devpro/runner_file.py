@@ -61,15 +61,11 @@ def prepare_scratch_directory(project: Path) -> None:
         print(f"created {gitignore} with the {temp}/ line")
         return
     text = utf8_text(gitignore)
-    if any(line.rstrip() == f"{temp}/" for line in text.splitlines()):
+    # The line's own ending alone, not the trailing spaces a wider strip would take too: a line the
+    # file holds with spaces after it may be the operator's, and that errs toward touching nothing.
+    if any(line.rstrip("\r\n") == f"{temp}/" for line in text.splitlines()):
         return
-    ending = "\r\n" if "\r\n" in text else "\n"
-    if ending == "\n":
-        write_text_verbatim(gitignore, appended_paragraph(text, f"{temp}/"))
-        return
-    # A CRLF file keeps every byte it holds: the blank line and the added line take its own ending.
-    closed = text if text.endswith(ending) else f"{text}{ending}"
-    write_text_verbatim(gitignore, f"{closed}{ending}{temp}/{ending}")
+    write_text_verbatim(gitignore, appended_paragraph(text, f"{temp}/", ending="\r\n" if "\r\n" in text else "\n"))
 
 
 def _snippets_path(snippet_set: SnippetSet, *, runner: str, harness_relpath: str) -> str:

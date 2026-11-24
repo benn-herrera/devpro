@@ -34,7 +34,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -59,6 +59,7 @@ from devpro.profiler.pages import (
 )
 from devpro.profiler.stores import repair_child_ids
 from devpro.profiler.values import CAPTURED_EVENTS, TRACE_STORES, _epoch_ms
+from tests.fixtures import fixture_file
 from tests.test_devpro_install import _claude_plugin, _definition_install
 
 # The serve path's carrier of the shared layer: the one file the board panel serves, which the pages
@@ -523,7 +524,7 @@ def test_the_capture_builds_its_record_over_host_shape_inputs(tmp_path: Path) ->
     assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"]
 
 
-def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path, fixture_file: Callable[[str], Path]) -> None:
+def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path) -> None:
     """`serialize` holds every line to `LINE_LIMIT`, which the torn-tail read relies on: a record whose
     fixed `session` alone is longer than the bound is fitted by clipping that field too, and a line
     already inside the bound is left as it stands. The record measured is the fixture

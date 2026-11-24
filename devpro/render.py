@@ -297,15 +297,16 @@ def write_text_verbatim(path: Path, text: str) -> None:
         stream.write(text)
 
 
-def appended_paragraph(text: str, paragraph: str) -> str:
-    """`text` unchanged, then `paragraph` after one blank line, ending with a newline."""
+def appended_paragraph(text: str, paragraph: str, *, ending: str = "\n") -> str:
+    """`text` unchanged, then `paragraph` after one blank line, ending with `ending`: the caller passes
+    the line ending the text carries, and every line this adds takes it too."""
     if not text:
-        return f"{paragraph}\n"
-    if text.endswith("\n\n"):
-        return f"{text}{paragraph}\n"
-    if text.endswith("\n"):
-        return f"{text}\n{paragraph}\n"
-    return f"{text}\n\n{paragraph}\n"
+        return f"{paragraph}{ending}"
+    if text.endswith(f"{ending}{ending}"):
+        return f"{text}{paragraph}{ending}"
+    if text.endswith(ending):
+        return f"{text}{ending}{paragraph}{ending}"
+    return f"{text}{ending}{ending}{paragraph}{ending}"
 
 
 def write_renders(out: Path, renders: Iterable[tuple[PurePosixPath, str]]) -> list[Path]:
