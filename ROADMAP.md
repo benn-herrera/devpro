@@ -7,6 +7,24 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Features
 
+### A child session's page names itself for the agent and wears that call's color
+
+Owner's notes: a child session's page top context is named `main`, not for the agent whose call
+created it, and it carries no color. It should (1) be named for the agent — the dispatch record
+already names it, and the parent's index row shows the same name — and (2) wear the color that
+agent call carries in the parent context, so the child page reads as *that* agent's session at a
+glance. Open for the design: where the binding lives (the dispatch record's name and the call's
+color at capture, or a join at read time); what a page shows when the agent name is absent or the
+call's color is not in the palette.
+
+### The profiler's primary color theme is devpro green, not claude orange
+
+Owner's note: the primary color theme should not be claude orange — it should be devpro green.
+The harness dots keep their per-harness colors; the theme in question is the profiler's own accent
+(harnesses' orange reads as claude's brand, not devpro's). Open for the design: which surfaces
+carry the primary accent and where its token lives, so the change is one home's edit rather than a
+sweep.
+
 ### The profiler surfaces the model name each session and agent used
 
 Owner's note: the records already carry the model name used in each session and agent — the
