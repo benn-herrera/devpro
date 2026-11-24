@@ -84,9 +84,13 @@ holds neither, or holds both, pass `--harness=claude` or `--harness=opencode`. A
 that names harnesses installs for each of them instead, one install apiece.
 
 Add the installed tree and the agents file's backup to the project's `.gitignore`, listing the lines of
-the harness you installed; the install adds the `.devpro-temp/` line for the scratch space itself:
+the harness you installed. The install writes the `.devpro-temp/` line itself, once, to the one
+directory of that name; leave it to the install, and run the install again if you write it by hand in
+another form:
 
 ```text
+# the install wrote:
+.devpro-temp/
 # claude
 .claude/
 # opencode: .opencode/ instead
@@ -180,10 +184,12 @@ either view. Only the command line starts it: no served page starts its own serv
 
 A claude or opencode project install ships an activity profiler. It records the session's activity
 to the project's own store under `.devpro-temp/` at the project root: `.profiler-claude/` under
-claude, one line per hook event, and `.profiler-opencode/` under opencode, one per tool call.
-`devpro profiler tree` reads the project's two stores there, the `profiler` skill hands a session
-to you as text or as an HTML page, and `devpro dashboard` serves the records as its profiler view
-(The dashboard, above). What the install copies and registers for it is in
+claude, one line per hook event, and `.profiler-opencode/` under opencode, one per record — a tool
+call, or an idle marker where the session's work settles. `devpro profiler tree` reads the stores
+named exactly `.profiler-claude/` and `.profiler-opencode/`, whichever the project holds; a
+directory under `.devpro-temp/` by any other name is not a store and is not read. The `profiler`
+skill hands a session to you as text or as an HTML page, and `devpro dashboard` serves the records as
+its profiler view (The dashboard, above). What the install copies and registers for it is in
 [SPEC Shipped files](PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md).
 
 Under mage, `profiler` ships with no launcher and no capture, so a mage session records nothing. A
