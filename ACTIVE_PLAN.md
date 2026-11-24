@@ -285,11 +285,9 @@ gains the instance as one line naming those two sources and the nine seats; no c
 this plan. Scope: `ROADMAP.md`.
 Done-line: `just dev-check-roadmap`.
 
-Two owner decisions ride with the findings, not as items, and neither is dispatchable until
-ruled: finding 11's candidate `TESTS_PROTECT_LOGIC` sentence, and the mock sentence's provenance
-beside `TEST_REVIEW`'s bullet. The candidate sentence is the doctrine B1 and B2 enact one test at
-a time: ruled yes, it lands in `devpro/clauses.py` and changes B1's and B2's report line; ruled
-no, B1 and B2 stand as written. Finding 11's third bullet — the design's claim that the opencode
-stub "vouches for nothing" — is corrected by B2's docstring boundary for the capture and by the
-`opencode_plugin_stub.ts` sentence in P4; no separate edit. A ruling lands each where the owner
-says.
+Two owner decisions rode with the findings: finding 11's candidate `TESTS_PROTECT_LOGIC`
+sentence is **ruled no** — there is no good rule there; the host-runtime-claim judgment is the
+owner's to remember, not a clause — and B1 and B2 stand as written. The mock sentence's
+provenance beside `TEST_REVIEW`'s bullet remains open. Finding 11's third bullet — the design's
+claim that the opencode stub "vouches for nothing" — is corrected by B2's docstring boundary for
+the capture and by the `opencode_plugin_stub.ts` sentence in P4; no separate edit.
