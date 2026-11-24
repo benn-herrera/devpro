@@ -259,6 +259,20 @@ as `UnsupportedOperation` — named, not silent.
 Still open for the design work: what the check asserts and which pages it covers. Rides with the UX
 pass, where the visual work lives.
 
+### The DOM stand-ins' shape
+
+The bun runners' DOM stand-in exists in three divergent copies (~130 lines each:
+`tests/profiler_browser_runner.ts`, `tests/profiler_index_runner.ts`,
+`tests/profiler_page_runner.ts` — the plan review's VR6), and the `MutationObserver` machinery in
+two of them is residue of the deleted deco sweep — R23's rule sends residue with the semantics it
+served.
+
+Decided — parked with the browser-driven design: the stand-ins' shape (one shared module, a
+published DOM, or retirement of the DOM-touching tests to the real browser) is that design's call,
+not a burndown item. The owner's principle: a stand-in shaped like what we already have looks
+reliable while testing our assumptions, not what a browser will encounter in actual use; where the
+deployed environment exists, tests run against it.
+
 ### check-plan does not detect a duplicated package heading
 
 `ACTIVE_PLAN.md` carried `## P4` twice — a plan revision leaving a stale section behind — and

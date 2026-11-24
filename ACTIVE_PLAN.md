@@ -27,7 +27,6 @@ becomes-blocks are the accepted text.
 | B3 | landed 9ca5c29 | expert | the type check sees the host's surface (VR3) |
 | B4 | landed aff8ba0 | expert | the repair tells the truth (VR4, VR13) |
 | B5a | landed 1ab0ff1 | expert | one home each (VR5) |
-| B5b | drafted | expert | one stand-in (VR6) |
 | B6 | landed 6641b54 | expert | the documents state the shipped code (VR7, VR8, VR14; after B8) |
 | B7 | landed 4584cd5 | expert | CONVENTIONS aligns with practice (VR9) |
 | B8 | landed 7ea5524 | expert | the launcher's edges and the stale installs (VR10) |
@@ -262,7 +261,8 @@ synthesized into the review document.
 
 Drafted from `ACTIVE_PLAN_REVIEW.md` (9ca3218, revised with this plan's revision commit); each
 item cites its findings' `VR` IDs there — the kickoff's `R` IDs name ROADMAP tickets, a different
-namespace. The checkpoint gate runs once before each package's commit: `just test`, then `just
+namespace. VR6's item moved to ROADMAP.md — the stand-ins' shape is the browser-driven design's
+call, not this plan's. The checkpoint gate runs once before each package's commit: `just test`, then `just
 sweep-python` (CONVENTIONS/planning-and-execution/the-gates.md). The packages run serially in the
 shared tree; the stated orders: B8 before B6 (B6's ticket rewrite states the install change B8
 lands); B1 before nothing and B7 after nothing — B1 carries the R25 leaf's mechanism sentence
@@ -349,20 +349,6 @@ residue leaves: `view.html:5` (the provenance banner contradicting its twin), `v
 `profiler.ts:184`.
 
 Done-line: `just test`, `just test devpro`.
-
-### B5b — one stand-in (VR6)
-
-Scope: `tests/profiler_browser_runner.ts`, `tests/profiler_index_runner.ts`,
-`tests/profiler_page_runner.ts`, a new `tests/dom_stub.ts`.
-
-The three DOM stand-in copies (`profiler_browser_runner.ts:38-180`,
-`profiler_index_runner.ts:31-124`, `profiler_page_runner.ts:23-89`) become one module the three
-runners share; the browser runner's geometry and URL tests are its unique value and are retained.
-The `MutationObserver` machinery (`profiler_page_runner.ts:103-116`, `:137-141`, `:150`;
-`profiler_browser_runner.ts:284-288`, `:303-307`) leaves in the same change — residue of the
-deleted deco sweep, and R23's rule sends residue with the semantics it served.
-
-Done-line: `just test devpro`.
 
 ### B6 — the documents state the shipped code (VR7, VR8, VR14; runs after B8)
 
