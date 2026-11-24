@@ -49,6 +49,10 @@ devpro = [
 version = { attr = "devpro.__version__" }
 
 [tool.pytest.ini_options]
+# Keep pytest's cache out of the project root: it writes under the scratch directory instead, so a
+# test run leaves no `.pytest_cache` beside the source. See `PROJECT_DOCS/CONVENTIONS/` — "Scratch
+# for tests and recipes".
+cache_dir = ".devpro-temp/.pytest_cache"
 markers = [
     "cold_read: the shipped cold-read.sh suite, one test per subprocess case — a rare manual surface (`just test cold-read`), excluded from the default run",
 ]
