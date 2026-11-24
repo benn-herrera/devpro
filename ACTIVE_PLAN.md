@@ -52,8 +52,8 @@ source and the SPEC.
 | Package | State | Rating | Scope |
 | --- | --- | --- | --- |
 | P1 | landed: 67c13e3 | mechanical | applies the development.py pairs |
-| P2 | in progress | mechanical | applies the guide.py pairs and the SPEC delta's two pairs |
-| PR | dispatchable | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
+| P2 | landed: 90cd6cc | mechanical | applies the guide.py pairs and the SPEC delta's two pairs |
+| PR | in progress | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | Post-plan burndown drafting: the section's items from the review, then their usability review |
 
 ## Sequencing
