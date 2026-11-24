@@ -25,7 +25,7 @@ becomes-blocks are the accepted text.
 | B1 | landed bdb395a | expert | the time pins pin what they claim (VR1) |
 | B2 | landed 613b955 | expert | the IIFE invariant holds everywhere, checked (VR2) |
 | B3 | landed 9ca5c29 | expert | the type check sees the host's surface (VR3) |
-| B4 | in progress: dispatched to devpro-python-coder | expert | the repair tells the truth (VR4, VR13) |
+| B4 | landed aff8ba0 | expert | the repair tells the truth (VR4, VR13) |
 | B5a | drafted | expert | one home each (VR5) |
 | B5b | drafted | expert | one stand-in (VR6) |
 | B6 | landed 6641b54 | expert | the documents state the shipped code (VR7, VR8, VR14; after B8) |
