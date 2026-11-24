@@ -59,7 +59,7 @@ source and the SPEC.
 | B2 | landed: 09c934a | mechanical | the development skill's reworded sentences: Periodic review, items' identity, re-wrap |
 | B3 | landed: 1f6a905 | mechanical | the guide's walkthrough: reviewer/revision named, steps 4 and 6, re-wrap |
 | B4 | landed: 361c6be | mechanical | the CONVENTIONS lines the run earned: width-prohibition trap, staging practice note |
-| B5 | dispatchable | mechanical | the staging rule joins the skill's Dispatch section (the design's fourth pair) |
+| B5 | in progress | mechanical | the staging rule joins the skill's Dispatch section (the design's fourth pair) |
 
 ## Sequencing
 
