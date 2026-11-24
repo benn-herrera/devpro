@@ -5,36 +5,26 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
-### A locked store's feed drops the readable sessions beside it
-
-`tests/dashboard/test_server.py`'s locked-store case found it live (B7's blocked item 3): with a
-claude store lock beside a readable claude session, the served `/api/traces` holds only the
-opencode sessions and `{"unreadable": ...}` — the readable claude session vanishes — while
-`read_sessions` returns all four in-process (`report-b7.md`, the attempted patch at
-`.devpro-temp/b7-item3-attempted.patch`). The served profiler is the instrument the pruning pass
-reads; it must not lie about its own stores. Fix the serialization or route layer that drops
-them, and restore item 3's enumerated edit on top.
-
-### The retired-directory pin's third harness name is a leftover
-
-Mage's `.mage-temp` was a `scratch_rule` value, never a directory any install created
-(`f6e50c6` deleted it and `Harness.project_temp_dir`) — the owner's account of the forgotten
-unification. The third retired name in `tests/test_devpro.py:778`'s pin is a leftover no
-cleaning branch could ever run; drop it, keeping the check for a mage rendering that carries the
-retired name.
-
-### The profiler index's controls state dies at every navigation hop
-
-The controls' state lives in the page's URL (`pages.py`'s `sync`/`restore`, landed) and survives a
-reload — but nothing carries the query across the page's own links: the index's row links
-(`pages.py:1028`) are `PAGE + id` with no query, and the session page's return link is
-`return_to=PROFILER_PATH` bare (`pages.py:648`). Index → session → back is the reader's normal
-flow, and the state dies at both hops. The fix is two lines — the row link appending
-`location.search`, the session page's script echoing its query into the return link — and it
-ships blind until the browser-vision loop can see it: the loop's first calibrated use, the fix
-verified on the served page before it lands.
-
 ## Features
+
+### Group traces with plans — the operational-context stamp
+
+Sessions recorded by the profiler carry their operational context, so the dashboard can answer
+what happened under what set of operational directives and when — before-and-after comparison for
+an agent or skill tuning being the use the whole forensic layer serves. The stamp binds three
+things to each trace group at capture time: the plan the session worked under; the directives
+state in effect — a fingerprint of the installed agent and skill definitions and the agents file,
+taken once per session start, so two sessions under the same plan but different definitions are
+distinguishable; and the session's start time, which orders the fingerprint transitions: before
+and after a tuning change are defined by observed transitions in session order — the sessions
+through the last carrying the old fingerprint are before it, those from the first carrying the new
+one are after it — the change moment bounded by the sessions either side, not exact. A change no
+session straddles is invisible and no defect: the sessions are the only observers of directive
+state, and the comparison needs the partition, not the moment. Open decisions for the pass's own
+design work: the fingerprint's exact scope and mechanism, how association renders in the
+dashboard's index, and whether pre-stamping traces get inference-based association marked as
+inferred. Rides after the attribution pass: capability layers land in order, each on the clean
+foundation the previous layer left.
 
 ### A live agents panel on the dashboard
 
@@ -179,26 +169,7 @@ working rather than that something ran. The index stays one level deep (the flat
 sessions); the session page is the depth view. Rides after the attribution pass, whose
 grouping and child pages this extends.
 
-### Group traces with plans — the operational-context stamp
-
-Sessions recorded by the profiler carry their operational context, so the dashboard can answer
-what happened under what set of operational directives and when — before-and-after comparison for
-an agent or skill tuning being the use the whole forensic layer serves. The stamp binds three
-things to each trace group at capture time: the plan the session worked under; the directives
-state in effect — a fingerprint of the installed agent and skill definitions and the agents file,
-taken once per session start, so two sessions under the same plan but different definitions are
-distinguishable; and the session's time against directive-state changes, so before and after a
-tuning change are defined by the change, not inferred. Open decisions for the pass's own design
-work: the fingerprint's exact scope and mechanism, how association renders in the dashboard's
-index, and whether pre-stamping traces get inference-based association marked as inferred. Rides
-after the attribution pass: capability layers land in order, each on the clean foundation the
-previous layer left.
-
 ## Maintenance
-
-### Profiler pages should skip namespacing
-
-`devpro-` preceding agent names is just consuming space. We know they are from devpro. 
 
 ### Git Flow light: publish the rework history
 
@@ -241,44 +212,6 @@ mind may change about this later.
 
 ## Testing
 
-### A shared sentence written out inside a longer paragraph is not checked for double delivery
-
-`tests/test_devpro.py` `_double_paragraphs` compares whole prose units and never splits them into
-sentences, so a sentence two outputs of one prompt both carry — each inside its own longer
-paragraph — is delivered twice unseen. The fix compares sentences: each prose unit splits into
-sentences the way `devtools/dupe_sweep/doc_sentences.py` splits them — hard wrap rejoined before
-the split, punctuation-split, the abbreviation caveats that module states — and the repeat count
-runs over the prompt's sentences instead of its units. Measured cost: the splitter's own corpus
-sweep runs in 0.535s and sentence splitting is linear over the filled texts the check already
-walks, so the check's cost stays flat. The false-positive surface is bounded by the check's own
-scope — one prompt, being one plugin's agents file and the outputs its `@` lines load — so the
-families' deliberate parallel structure across different agents stays out of it, and the shared
-scaffolds one prompt co-delivers stay candidates, judged as this check's findings always are. The
-sentence check inherits the fill gap the next ticket states: finer granularity checked through
-one family and one harness only.
-
-### The double-delivery check fills only the claude family under the claude harness
-
-`tests/test_devpro.py` `_prompts` fills with `_CLAUDE_RENDER`, so family overlay text and other
-harnesses' text go unchecked. The sentence check the previous ticket adds raises the stakes:
-overlay text and other harnesses escape at sentence granularity, where a shared sentence is small
-enough to hide inside a paragraph that differs.
-
-### dupe_sweep reads the string literals
-
-The sentence pass reads docstrings and comments only, so a paragraph hand-copied between two
-harness renderers is equal only by care, checked by nothing: the render-level double-delivery
-check sees duplication within one prompt, and the sweep never reads a plain string literal. The
-calibration instance is the post-plan review's finding 4 — `devpro/harness.py`'s `scratch_rule`
-and `devpro/harnesses/mage.py`'s hand-copy, equal by lockstep edits until the constant landed.
-The corpus gains the f-string and `str` literals of `devpro/definitions/`, `devpro/harnesses/`
-and `devpro/clauses.py` as sentence units, the candidates reporting like the rest: sorted,
-byte-stable, advisory. Measured cost: the whole-corpus sweep runs in 0.535s and the literals'
-sentences reach machinery that already clusters them. Live instance already in hand: the nine
-coder definitions restate the scratch paragraph's location-and-examples sentence that
-`NEW_PROJECT_SETUP` dropped the mandate from — delivered twice through the clauses layer, seen
-by the post-plan review and invisible to every gate.
-
 ### The opencode capture's host-shape reads are verified by live dispatch alone
 
 `devpro/harnesses/resources/opencode/profiler.ts` reads a dispatch's child session from three places
@@ -317,3 +250,10 @@ project eliminates. The primary first use is the development loop, not a hard te
 working on the pages sees what it rendered and iterates toward what it intends, and the
 assertion set distills second, from what that loop shows matters. Rides with the UX
 pass, where the visual work lives.
+
+### The double-delivery check fills only the claude family under the claude harness
+
+`tests/test_devpro.py` `_prompts` fills with `_CLAUDE_RENDER`, so family overlay text and other
+harnesses' text go unchecked. The sentence check the previous ticket adds raises the stakes:
+overlay text and other harnesses escape at sentence granularity, where a shared sentence is small
+enough to hide inside a paragraph that differs.
