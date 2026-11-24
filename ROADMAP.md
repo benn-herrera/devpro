@@ -88,6 +88,17 @@ board or in the nav area - maybe an 'errors' top level nav
 compaction hook to record a marker, context hook to inject the `@devpro-development` command.
 note: only necessary for opencode. claude code automatically reloads active skills after a compaction (verify that)
 
+### An introduction to the process
+
+The development skill's references serve an agent mid-process; a person arriving cold asks what
+the dealio is, how to use it, and why it is shaped as it is, and no leaf answers them. Add
+`references/introduction.md` to the development skill: what the process is for, the route through
+its references, and the why its Purpose lines only hint at — the process encodes the occasions
+(the periodic review's count, the seats, the burndown) while the discipline that acts on them
+stays human: the willingness to spend a dispatch proving one's own work wrong, and the restraint
+to fix what that proves before the next feature. The skill definition's `## Route` table
+(`devpro/definitions/skills/development.py`) gains the row at its top — the newcomer is routed
+before any other row is reached — joining the references the table lists.
 
 ### Dashboard config editor
 
@@ -279,21 +290,3 @@ published DOM, or retirement of the DOM-touching tests to the real browser) is t
 not a burndown item. The owner's principle: a stand-in shaped like what we already have looks
 reliable while testing our assumptions, not what a browser will encounter in actual use; where the
 deployed environment exists, tests run against it.
-
-### check-plan does not detect a duplicated package heading
-
-`ACTIVE_PLAN.md` carried `## P4` twice — a plan revision leaving a stale section behind — and
-`check-plan` reported 0 problems: `devpro/doccheck/planform.py` checks the status table's IDs and not
-the package headings. The check reads the headings too and refuses an ID a second heading reuses.
-
-### An introduction to the process
-
-The development skill's references serve an agent mid-process; a person arriving cold asks what
-the dealio is, how to use it, and why it is shaped as it is, and no leaf answers them. Add
-`references/introduction.md` to the development skill: what the process is for, the route through
-its references, and the why its Purpose lines only hint at — the process encodes the occasions
-(the periodic review's count, the seats, the burndown) while the discipline that acts on them
-stays human: the willingness to spend a dispatch proving one's own work wrong, and the restraint
-to fix what that proves before the next feature. The skill definition's `## Route` table
-(`devpro/definitions/skills/development.py`) gains the row at its top — the newcomer is routed
-before any other row is reached — joining the references the table lists.
