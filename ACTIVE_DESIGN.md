@@ -27,8 +27,9 @@ summary text is not to be consistency checked. The design is authoritative.
 `just lint` needs `shellcheck` on
 `PATH`, and where it is absent the recipe fails, naming it, rather than skip the shell check.
 `just lint` also type-checks what ships: the opencode harness's shipped TypeScript resources
-(`index.ts`, `guardrail.ts`) through `bunx tsc --noEmit` under a `tsconfig`, with a declaration
-stub for `@opencode/plugin`. The compiler rides unpinned — `bunx` takes the latest at run time,
+(`index.ts`, `guardrail.ts`) through `bunx tsc --noEmit` under a `tsconfig`, checked against the
+host's published declarations — `@opencode/plugin`'s own types are the authority, no devpro-owned
+stand-in for a published package shadows them. The compiler rides unpinned — `bunx` takes the latest at run time,
 and pinning it is a later decision the project has not yet needed. The check's mandate is what
 ships: the test runners' TypeScript is dev-time only and outside it.
 ```
@@ -253,7 +254,7 @@ and treated as absent.
 
 ```
 **The launcher's finder.** The launcher resolves the wrapper beside it — `../tools/devpro.sh` from
-`<install-dir>/profiler/profiler.sh`, and `../skills/devpro/tools/profiler.sh` from the committed
+`<install-dir>/profiler/profiler.sh`, and `../skills/devpro/tools/devpro.sh` from the committed
 `.claude/harness-profiler/profiler.sh` — and runs it as a child with the `profiler` verb and the
 launcher's own arguments passed through. The first candidate standing is the one that runs: there
 is no probe and no `PATH` search, a foreign devpro is never run, and every failure is named by the

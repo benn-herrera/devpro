@@ -50,26 +50,31 @@ written after P3's capture lands is correct at write time.
 
 ## P1 — the shipped TypeScript resources are type-checked
 
-Scope: `devpro/harnesses/resources/opencode/index.ts`,
-`guardrail.ts` type-checked; a `tsconfig.json` at the repository root whose scope covers the
-resources' directory only — the test runners' TypeScript is dev-time only and outside it; a
-declaration stub, `devpro/harnesses/resources/opencode/opencode-plugin.d.ts`, declaring
-`Plugin.define` — the one export `index.ts:16`, `guardrail.ts:7` and `profiler.ts:17` import — and
-declaring the host's published surface, the type check's stand-in only for a package not installed;
-`just lint` runs `bunx tsc --noEmit` after the shell check, where `bun` is a required tool failing
-with a named error where absent, as `shellcheck` does; R24's leaf, named
+Scope: `devpro/harnesses/resources/opencode/index.ts` — type-checked against the host's published
+declarations and its 11 pre-existing type errors fixed to green (`@opencode/plugin` is published;
+its own types are the authority, per R24's ruling — no devpro-owned stub for a published package,
+and none is built; the base commit's errors are the check's first finding); `guardrail.ts`
+type-checked, clean on the base commit; `profiler.ts` in the check's scope — it ships and its drift
+is this check's; a `tsconfig.json` at the repository root whose scope covers the resources'
+directory only — the test runners' TypeScript is dev-time only and outside it; the declarations
+reach the check through the package the resources name, installed as the dev-time toolchain's
+dependency; `just lint` runs `bunx tsc --noEmit` after the shell check, where `bun` is a required
+tool failing with a named error where absent, as `shellcheck` does; R24's leaf, named
 `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-host-version-is-checked-against-the-host-s-declarations.md`,
 enters beside R24's ruling — a shipped resource naming a host version is type-checked against that
-host's published declarations, never against a devpro-owned stub for a published package. The
-compiler is unpinned — `bunx` takes the latest at run time; the test runners' TypeScript is dev-time
-only and outside the check.
+host's published declarations, never against a devpro-owned stub for a published package — and
+`index.md` lists it. The compiler is unpinned — `bunx` takes the latest at run time; the test
+runners' TypeScript is dev-time only and outside the check. The edits to the shipped resources are
+the resource's own — `harness-resources-are-copied-verbatim.md` stays true: the resource is the
+master the copies follow.
 
-Applies the design's [Recipes] pair verbatim to `PROJECT_DOCS/ARCHITECTURE/recipes.md`.
+Applies the design's [Recipes] pair as revised verbatim to `PROJECT_DOCS/ARCHITECTURE/recipes.md`.
 
-Done-line: `just lint` passes with the type check live — `bunx tsc --noEmit --listFiles` reports the
-two resource files among its inputs, so an empty program cannot pass; `just test devpro`; the
-declaration stub's import surface matches the resource's imports. The unpinned compiler is the
-ruled state — pinning is a later decision.
+Done-line: `just lint` passes with the type check live — `bunx tsc --noEmit --listFiles` reports
+the resource files among its inputs, so an empty program cannot pass; `just test devpro`; the
+host's declarations are what the check reads (`@opencode/plugin` resolved from the installed
+package, no `declare module` present). The unpinned compiler is the ruled state — pinning is a
+later decision.
 
 ## P2 — the index's display
 
