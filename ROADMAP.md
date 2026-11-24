@@ -9,13 +9,15 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ### The index spends less width on the dispatched-agents column and the child-row prefix
 
-Owner's notes from live use (screenshot in session, 2026-11-24): the dispatched-agents column can
-be narrowed further — the cells read `102 agents` and the column still takes more width than its
-content needs; and the child row's `↳ child —` prefix before the agent name can be eliminated to
-save horizontal space — the child row's indent and tone already signal what it is, and the session
-id beside it carries the identity. Open for the design: what marks a child row once the prefix is
-gone (indent alone, or the row's tone carrying it); whether the agents cell or its column
-definition narrows; and what the column head reads if the cell narrows further.
+Owner's notes from live use (screenshot in session, 2026-11-24): the first-to-last column needs to
+be widened — its dates and times are the wrapping the reader sees, and they belong on one line;
+the dispatched-agents column can be narrowed further to fund that width (the cells read
+`102 agents` and the column still takes more width than its content needs); and the child row's
+`↳ child —` prefix before the agent name can be eliminated to save horizontal space — the child
+row's indent and tone already signal what it is, and the session id beside it carries the identity.
+Open for the design: what marks a child row once the prefix is gone (indent alone, or the row's
+tone carrying it); whether the agents cell or its column definition narrows, and how the freed
+width reaches first-to-last (column definition, not just cell text).
 
 ### Group traces with plans — the operational-context stamp
 
