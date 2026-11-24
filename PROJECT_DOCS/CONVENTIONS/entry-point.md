@@ -41,6 +41,7 @@ Contents:
   - [A sentence two harness resources carry is one text](code-definitions-and-install/a-sentence-two-resources-carry-is-one-text.md)
   - [A host version is checked against the host's declarations](code-definitions-and-install/a-host-version-is-checked-against-the-host-s-declarations.md)
   - [A stand-in models the API's real semantics](code-definitions-and-install/a-stand-in-models-the-api-s-real-semantics.md)
+  - [A formatted time test pins the locale](code-definitions-and-install/a-formatted-time-test-pins-the-locale.md)
 - [Planning and Execution](planning-and-execution/index.md)
   - [The gates](planning-and-execution/the-gates.md)
   - [`render-diff` slots and output](planning-and-execution/render-diff-slots-and-output.md)

@@ -12,8 +12,7 @@ no dependency: `values.py` the schema, limits, masks and store facts every other
 page render, `hooks.py` the committed hook's wiring — `init` and `doctor` — and `cli.py` the
 `profiler` verb's dispatch. The verb is dispatched lazily: registering it imports none of these
 modules, and `cli.py` imports the one whose subcommand runs. Its subcommands are `capture`, `tree`,
-`init` and `doctor`, which read exactly as they did inside `hp.py`; the records are served by the
-`dashboard` verb, below.
+`init` and `doctor`; the records are served by the `dashboard` verb, below.
 
 **Resources.** One file lives in `devpro/harnesses/resources/claude/profiler/`:
 `profiler.sh`, the bash launcher, which runs the wrapper beside it with the `profiler` verb. Every
@@ -89,13 +88,20 @@ dashboard's landing surface: its URL's root answers a `302` to `/board/`'s absol
 prints, `http://127.0.0.1:<port>/board/` — so opening it shows the kanban board, the project's actual
 current state. The profiler view is the second view, at
 `/profiler/` (trailing slash, the board panel's convention): the index of record files, every store
-the `.profiler-*` glob finds, one row per session — harness, session id, record count, first and
-last moments, and the span between them — each linking to `/page/<session-id>`, which serves that
-session's page in memory, the render's page carrying the same page data `tree --format html`
-produces. The header row and the body's rows take their column widths from one source, so every
-header sits over the column it names at every width the data produces. The index's page file is static — no row is in its text — and its script fetches the
-records' feed the server answers at `/api/traces`, one JSON entry per session with the columns
-above, the stores the glob finds but cannot read among them as unreadable, and renders the rows
+the `.profiler-*` glob finds, one row per session — harness, session id, record count, the count
+of the dispatched agents it holds, first and last moments, and the span between them — each
+linking to `/page/<session-id>`, which serves that session's page in memory, the render's page
+carrying the same page data `tree --format html` produces. The header row and the body's rows take
+their column widths from one source, so every header sits over the column it names at every width
+the data produces. The index's page file is static — no row is in its text — and its script fetches the
+records' feed the server answers at `/api/traces`, one JSON entry per session carrying its keys —
+`harness`, `id`, `records`, `agents`, `first`, `last`, `span`, and `dispatcher` where a session
+was dispatched — keys the index's script renders into the columns the header names: `harness` and
+`records` carry their own names, `id` the session column, `agents` the dispatched-agents count,
+`first` and `last` the first-to-last line, `span` the span column, and `dispatcher` no column at
+all, drawing the child row under its dispatcher's row. Where the feed holds no session and no
+unreadable store it is one `stores` entry naming how many stores the glob found. The stores the
+glob finds but cannot read are among the entries as unreadable, and the script renders the rows
 client-side — the board's pattern, the payload consumed client-side. The index carries simple
 controls — child-record rows on and off, claude and opencode on and off separately, and column
 heads sorting on the dispatched-agent count, the record count, the time and the span — and a
@@ -114,7 +120,9 @@ only, the clock's being 24-hour making a span across midnight plain by the numbe
 state. The machine form stands in the `<time>` elements' `datetime` attributes and the raw UTC in
 the titles; a page carries no moments where its script does not run, and the deco reads none — the
 moment sweep and its observers leave with the double render they served. The span is its own
-column. A session's page carries its dispatcher in the frame band, linked to that session's page,
+column, drawn from the feed's seconds as whole hours and minutes — `3h 2m` — minutes and seconds
+below the hour — `3m 20s` — seconds below the minute, and `0s` for a zero-length span.
+A session's page carries its dispatcher in the frame band, linked to that session's page,
 where one dispatched it, and a call row whose tool is `Agent` links to the child session's page
 where the record names one: a child's page the dashboard does not serve answers the 404 any unrecorded
 session's page answers. A top nav persists across both views — the `devpro` brand, then `kanban` and
