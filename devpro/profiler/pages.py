@@ -812,7 +812,8 @@ def dispatcher_of(session: str, sessions: list[dict]) -> tuple[str, str] | None:
 
 def traces_feed(directory: Path | str) -> list[dict]:
     """The feed `/api/traces` answers, the index's rows' one source: one JSON entry per recorded
-    session, in the order the index draws them, then one per store the glob found but could not read.
+    session, in the order the index draws them, then one per store the exact names read but could
+    not list.
 
     A session's entry carries its harness, its id, its record count, the count of the dispatched
     agents it holds, its first and last moments as epoch milliseconds and its span in seconds, and —
@@ -820,8 +821,8 @@ def traces_feed(directory: Path | str) -> list[dict]:
     dispatching call's name, the two halves `dispatches` holds; an entry so dispatched follows its
     dispatcher's, so the feed is in the order the index draws the rows. An unreadable store's entry
     is `{unreadable: <store name>}` and carries no other key. Where the feed holds no session and no
-    unreadable store, it is one `{stores: <count>}` entry: the stores the glob found, none of which
-    held a record to draw — the count a zero-record store renders, which no session and no
+    unreadable store, it is one `{stores: <count>}` entry: the stores the exact names read, none of
+    which held a record to draw — the count a zero-record store renders, which no session and no
     unreadable store would otherwise tell apart from a tree with no store at all. This is the
     schema's one definition: the index's own script renders the rows from exactly these keys."""
     sessions, unreadable = read_sessions(directory)
@@ -1003,7 +1004,7 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 // milliseconds and become the row's `<time>` elements, drawn local at birth — the reader's clock,
 // 24-hour — their titles keeping the raw UTC for a hover. Reads the entry's own keys and nothing else: `harness`, `id`,
 // `records`, `agents`, `first`, `last`, `span`, `dispatcher`, `unreadable` on a store's entry, and
-// `stores` on a feed that drew nothing, naming how many stores the glob found. The page's body is
+// `stores` on a feed that drew nothing, naming how many stores the exact names read. The page's body is
 // wrapped: the controls' state and the sort in force live in the page's URL, and the helpers for
 // them are the page's own.
 (() => {

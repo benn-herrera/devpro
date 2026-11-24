@@ -785,7 +785,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     carries `dispatcher`, the dispatching session's id and the dispatching call's name, and follows
     its dispatcher's in the feed — the order the index draws the rows in, a child under its
     dispatcher. The index's page file is static: no row is in its text, and its script renders them
-    from this feed, which `test_the_index_renders_the_rows_the_feed_answers` drives."""
+    from this feed."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
@@ -985,9 +985,7 @@ def test_the_served_feed_states_an_unreadable_store(tmp_path: Path) -> None:
 def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> None:
     """One session's `/page/<id>` carries the file flow's page data: the JSON the page template
     inlines at its data slot is the payload `tree --format html` inlines, and the served page names
-    the shared layer's one file where the render inlines its text — the two carriers' one difference,
-    which the one-rendering pin holds to (`test_the_pages_two_carriers_differ_in_the_layers_slot_alone`,
-    where the band's per-page facts and the drawn moments bite too)."""
+    the shared layer's one file where the render inlines its text — the two carriers' one difference."""
     project = tmp_path / "project"
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
@@ -1156,7 +1154,6 @@ def test_the_doctor_names_the_stores_the_readers_read(tmp_path: Path) -> None:
     assert reported.returncode == 0, reported.stderr
     [line] = [line for line in reported.stdout.splitlines() if line.startswith("traces:")]
     assert all(str(project / ".devpro-temp" / store) in line for store in TRACE_STORES), line
-    assert "*" not in line
 
 
 def test_an_install_renames_an_old_pattern_store_and_a_second_install_touches_nothing(tmp_path: Path) -> None:

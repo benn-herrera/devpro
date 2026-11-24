@@ -99,14 +99,15 @@ its script renders the feed the server answers at `/api/traces`: one JSON entry 
 dispatched. The script puts `harness` and `records` under their own names, `id` in the session column,
 `agents` in the dispatched-agents count, `first` and `last` in the first-to-last line, `span` in the
 span column, and draws `dispatcher` in no column at all, as the child row under its dispatcher's row.
-A feed with no session and no unreadable store is one `stores` entry naming how many stores the glob
-found; a store the glob finds but cannot read is an entry among them, marked unreadable, and the
-server raises nothing for it. The index carries simple controls — child-record rows on and off, claude
-and opencode on and off separately, and column heads sorting on the dispatched-agent count, the record
-count, the time and the span — and a failed feed names itself in an in-page notice, distinct from the
-no-records state a zero-record store renders. The controls' state and the sort in force live in the
-index page's URL, which the reader can copy, so leaving the view and returning restores it. The
-session page's embedded payload is unchanged: it is, and stays, the feed the page's script reads.
+A feed with no session and no unreadable store is one `stores` entry naming how many stores the
+exact names read; a store an exact name finds but cannot read is an entry among them, marked
+unreadable, and the server raises nothing for it. The index carries simple controls — child-record
+rows on and off, claude and opencode on and off separately, and column heads sorting on the
+dispatched-agent count, the record count, the time and the span — and a failed feed names itself in
+an in-page notice, distinct from the no-records state a zero-record store renders. The controls' state
+and the sort in force live in the index page's URL, which the reader can copy, so leaving the view
+and returning restores it. The session page's embedded payload is unchanged: it is, and stays, the
+feed the page's script reads.
 
 A session an opencode record names as its dispatch's child is drawn under the session that dispatched
 it — a dispatch's child one level deep; deeper chains read on the session's page, whose tree draws
@@ -237,13 +238,12 @@ of a file left as it stands — and a file a capture appends to while the repair
 stderr and left as it stands, never rewritten under a session's own write.
 
 **The stores and their rename.** Each harness's capture owns one store under the project's
-`.devpro-temp/`: claude's `.profiler-claude/`, opencode's `.profiler-opencode/`, and both readers —
-`tree`'s render, and the dashboard's profiler view, whose index and session pages read the stores per
-request — read the stores the captures write, the directories named exactly `.profiler-<harness>`
-for a harness name the profiler's own captures use (claude and opencode today) — a dot name, so the
-stores group and sort at the top of the scratch tree. A directory of any other shape beside a store
-is not a store and is not read. Both `devpro install` and `devpro profiler init claude` rename the two
-old-pattern stores: `.devpro-temp/claude-profiler/` to `.profiler-claude` and
+`.devpro-temp/`: both readers — `tree`'s render, and the dashboard's profiler view, whose index and
+session pages read the stores per request — read the stores the captures write, the directories named
+exactly `.profiler-<harness>` for a harness name the profiler's own captures use (claude and opencode
+today) — a dot name, so the stores group and sort at the top of the scratch tree. A directory of any
+other shape beside a store is not a store and is not read. Both `devpro install` and
+`devpro profiler init claude` rename the two old-pattern stores: `.devpro-temp/claude-profiler/` to `.profiler-claude` and
 `.devpro-temp/opencode-profiler/` to `.profiler-opencode`, and the move is printed. A directory under
 `.devpro-temp/` whose name only ends in `-profiler` is no store and is left alone. Where a store's new
 name is already taken, the old one is left in place and named instead — the stores' contents are
