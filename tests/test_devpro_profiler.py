@@ -36,7 +36,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import IO
 
@@ -56,6 +56,9 @@ from devpro.profiler.pages import (
     RETURN_MARK,
     SHARED_CSS,
     index_html,
+    page_for,
+    render_html,
+    session_of,
 )
 from devpro.profiler.values import _epoch_ms
 from tests.test_devpro_install import _PROFILER, _claude_plugin, _definition_install
@@ -497,8 +500,17 @@ def _bun() -> str:
 
 # A moment's reading is pinned on the reader's zone and locale both: a runner's ICU settings decide a
 # clock's separator and digits where the page's own code does not, so a test that pins only `TZ`
-# asserts on the runner rather than on the deco.
+# asserts on the runner rather than on the page.
 _MOMENT_LOCALE = {"TZ": "America/Los_Angeles", "LC_ALL": "de_DE.UTF-8"}
+
+# The crafted feed's four instants, as epoch milliseconds: a pair whose ends share the reader's day
+# (2026-01-01T00:00:01.250Z and T02:00:00Z — LA, 2025-12-31 16:00 and 18:00) and a pair whose span
+# crosses the reader's midnight (T06:00:00Z and T08:00:00.500Z — LA, 2025-12-31 22:00 and 2026-01-01
+# 00:00).
+_SAME_DAY_FIRST = 1767225601250
+_SAME_DAY_LAST = 1767232800000
+_MIDNIGHT_FIRST = 1767247200000
+_MIDNIGHT_LAST = 1767254400500
 
 
 def _run_ts(
@@ -524,105 +536,124 @@ def _run_ts(
     return done
 
 
-def _moments(first: str, last: str) -> str:
-    """The moments' cell as the index's script writes it from the feed's two epoch milliseconds —
-    `index.js`'s `moments`, in Python: each instant an ISO UTC `<time>`, the text raw UTC to the
-    second, the title's last instant with the milliseconds the instant holds.
-
-    The script reads the feed's integers, so a whole second there carries no `.000`; the cell's last
-    `<time>` keeps the milliseconds only where the instant has any, and the title stands on that
-    same instant, so a title that added `.000` would be a form the page never draws."""
-    moments = [datetime.fromtimestamp(_epoch_ms(stamp) / 1000, timezone.utc) for stamp in (first, last)]
-    text = [f"{moment:%Y-%m-%d %H:%M:%S} UTC" for moment in moments]
-    instants = [
-        f"{moment:%Y-%m-%dT%H:%M:%S}" + (f".{moment.microsecond // 1000:03d}" if moment.microsecond else "") + "Z"
-        for moment in moments
-    ]
-    return (
-        f'<span class="moments" title="{text[0]} to {instants[1]}">'
-        f'<time datetime="{instants[0]}">{text[0]}</time> to '
-        f'<time datetime="{instants[1]}">{instants[1]}</time></span>'
-    )
+_PAGE_RUNNER = _HERE / "profiler_page_runner.ts"
 
 
-def test_the_decoration_script_reads_every_moments_cell_the_index_draws(tmp_path: Path) -> None:
-    """`deco.js` over the moments cells the index's script writes — its `<time>` elements' datetimes
-    the feed's epoch milliseconds, its text and title the raw UTC: a cell whose two instants share the
-    reader's calendar day reads `HH:MM to HH:MM` in the reader's zone, 24-hour with the hour's leading
-    zero kept; one whose instants fall on two days carries the date on its first end alone, the finish
-    being the next day's; a second-precision instant keeps its second of it, and the cell's title
-    keeps the raw UTC to the byte; a cell with no `<time>` element keeps the text it served, the
-    fallback where a cell's instants cannot be read. The script parses no cell text, so a moment
-    whose rendered form moves still reads: a script that parses the served text instead stops
-    matching at the first format change and leaves the raw UTC with nothing saying so."""
-    cells = [
-        _moments("2026-01-01T00:00:01.250Z", "2026-01-01T00:00:02.500Z"),
-        _moments("2026-01-01T06:00:00.000Z", "2026-01-01T18:30:00.000Z"),
-        '<span class="moments" title="2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z">'
-        "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z</span>",
-    ]
-    done = subprocess.run(
-        [_bun(), str(_HERE / "profiler_deco_runner.ts")],
-        input=json.dumps({"cells": cells}),
-        capture_output=True,
-        encoding="utf-8",
-        env={**os.environ, **_MOMENT_LOCALE},
-        timeout=120,
-        check=False,
-    )
-    assert done.returncode == 0, done.stderr
-    readings = json.loads(done.stdout)
-
-    assert readings["readings"] == [
-        "16:00 to 16:00",
-        "2025-12-31 22:00 to 10:30",
-        "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z",
-    ]
-    assert readings["titles"] == [
-        "2026-01-01 00:00:01 UTC to 2026-01-01T00:00:02.500Z",
-        "2026-01-01 06:00:00 UTC to 2026-01-01T18:30:00Z",
-        "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z",
-    ]
-    # The machine form the served page promises survives the sweep: each moment's `<time>` elements
-    # still stand, each at its own `datetime`, with only their text replaced — a sweep that writes the
-    # cell's text whole takes the elements and their datetimes with it.
-    assert readings["markup"] == [
-        '<span class="moments" title="2026-01-01 00:00:01 UTC to 2026-01-01T00:00:02.500Z">'
-        '<time datetime="2026-01-01T00:00:01.250Z">16:00</time> to '
-        '<time datetime="2026-01-01T00:00:02.500Z">16:00</time></span>',
-        '<span class="moments" title="2026-01-01 06:00:00 UTC to 2026-01-01T18:30:00Z">'
-        '<time datetime="2026-01-01T06:00:00Z">2025-12-31 22:00</time> to '
-        '<time datetime="2026-01-01T18:30:00Z">10:30</time></span>',
-        '<span class="moments" title="2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z">'
-        "2026-01-01 00:00:00 UTC to 2026-01-01T00:00:01.000Z</span>",
-    ]
+def _page_runner(tmp_path: Path, page: str, deco: str = "") -> dict:
+    """A session page in a browser's own shape (`profiler_page_runner.ts`): the page's own scripts,
+    with the deco's file the page names ahead of them where the carrier loads that file — a file
+    carrier loads nothing, so it runs the page's script alone — in one shared classic-script scope,
+    the way the browser executes a page. The runner reports the header stamp the page drew and the
+    subline's markup as the scripts left it."""
+    run = _run_ts(_PAGE_RUNNER, directory=tmp_path, stdin=json.dumps({"page": page, "deco": deco}))
+    return json.loads(run.stdout)
 
 
-def test_the_session_pages_header_reads_in_the_readers_clock(tmp_path: Path) -> None:
-    """The session page's header stamp is a moment like any the pages show: the page's own script
-    writes the first call's instant as a `<time>` in the subline — the raw UTC its text where no script
-    runs and the machine form its `datetime` — and the deco's sweep, loaded before that script as the
-    served page loads it, reads the stamp in the reader's local time with its date, 24-hour, the raw
-    UTC kept in its title. The page's title names no day, so a stamp reading its clock alone leaves
-    nothing saying which day the session ran — the same `HH:MM` for a run a week ago and one today. A
-    header left as a bare `toISOString` string is a moment in neither the reader's clock nor a
-    `<time>`, and no sweep can reach it."""
+def test_the_pages_draw_their_moments_local_at_birth(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect this package replaces is the double render — the
+    pages' own scripts writing the raw UTC and the deco's sweep rewriting it in the reader's clock —
+    so the page a file carrier serves, where the deco the page names cannot load, reads UTC, and a
+    pin reading a swept page cannot fail on it. The run that fails under it is this one: each page's
+    own script alone draws its moments, and the drawn text is the reader's local time.
+
+    The index's moments cell carries the first end's date whole beside its time and the second end's
+    time only, 24-hour, one notation whether the ends share the reader's day or cross its midnight —
+    the hand-built clock, its separator and digits the page's own — and the session page's header
+    stamp reads with its date, the page's title naming no day. The machine form stands in the
+    `datetime` attributes and the raw UTC in the titles. The locale is pinned beside the zone: a
+    clock built from the date's own fields reads the same under any locale, and the pin holds the
+    runner's ICU settings hostile to prove it."""
     project = tmp_path / "project"
-    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:01.250Z", harness="claude")
+    project.mkdir()
+    (project / ".devpro-temp").mkdir()
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
     launcher = _launcher(tmp_path / "harness")
 
     with _serve(launcher, cwd=project) as url:
-        page = _fetch(f"{url}page/s-claude")
-
+        index = _fetch(f"{url}profiler/")
+    # The feed crafted, so the instants are known by construction: one pair whose ends share the
+    # reader's day and one whose span crosses the reader's midnight (PST, UTC-8 in January).
+    feed = [
+        {
+            "harness": "claude",
+            "id": "s-same-day",
+            "records": 1,
+            "agents": 0,
+            "first": _SAME_DAY_FIRST,
+            "last": _SAME_DAY_LAST,
+            "span": 7199,
+        },
+        {
+            "harness": "claude",
+            "id": "s-midnight",
+            "records": 1,
+            "agents": 0,
+            "first": _MIDNIGHT_FIRST,
+            "last": _MIDNIGHT_LAST,
+            "span": 7200,
+        },
+    ]
     run = _run_ts(
-        _HERE / "profiler_deco_runner.ts",
+        _HERE / "profiler_index_runner.ts",
         directory=tmp_path,
-        stdin=json.dumps({"page": page}),
+        stdin=json.dumps({"index": index, "feed": feed}),
         env={**os.environ, **_MOMENT_LOCALE},
     )
-    stamped = json.loads(run.stdout)["stamped"]
+    cells = [
+        re.search(r'<span\b[^>]*class="moments"[^>]*>.*?</span>', row).group(0)
+        for row in json.loads(run.stdout)["rows"]
+    ]
+    assert cells == [
+        '<span title="2026-01-01 00:00:01 UTC to 2026-01-01T02:00:00Z" class="moments">'
+        '<time datetime="2026-01-01T00:00:01.250Z" title="2026-01-01 00:00:01 UTC">2025-12-31 16:00</time> to '
+        '<time datetime="2026-01-01T02:00:00Z" title="2026-01-01 02:00:00 UTC">18:00</time></span>',
+        '<span title="2026-01-01 06:00:00 UTC to 2026-01-01T08:00:00.500Z" class="moments">'
+        '<time datetime="2026-01-01T06:00:00Z" title="2026-01-01 06:00:00 UTC">2025-12-31 22:00</time> to '
+        '<time datetime="2026-01-01T08:00:00.500Z" title="2026-01-01 08:00:00 UTC">00:00</time></span>',
+    ]
 
-    assert stamped == [["2025-12-31 16:00", "2026-01-01 00:00 UTC"]]
+    # The session page's header stamp, drawn by the page's own script alone — the file carrier's
+    # `tree --format html` page, whose script the page names and a file cannot load.
+    printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
+    assert printed.returncode == 0, printed.stderr
+    stamped = _page_runner(tmp_path, printed.stdout)["stamped"]
+    assert stamped == [["2025-12-31 16:00", "2026-01-01 00:00 UTC", "2026-01-01T00:00:00.000Z"]], stamped
+
+
+def test_the_pages_two_carriers_differ_in_the_layers_slot_alone(tmp_path: Path) -> None:
+    """One session, both carriers: the page the file flow writes and the page the serve path
+    assembles, each run with the scripts its carrier loads — the file carrier's own script alone (a
+    file cannot link the server's origin, so the deco the page names never loads there), the serve
+    carrier's own script and the deco in the order the page names them. The two texts differ within
+    the `<!--LAYER-->`'s slot alone: the page renders once, its moments drawn at birth by its own
+    script, and the deco reads none of them — so a carrier-dependent second render (the deco's moment
+    sweep this package deleted, or any later one) shows here as the carriers' texts drifting apart
+    beyond the layer's slot.
+
+    The serve carrier here is the serve path's own assembly carrying the band the render carries, so
+    the layer's carriage is the assembly's one difference; the served page's own band facts — the way
+    back and the dispatcher — are the dashboard's own addition, pinned beside it."""
+    project = tmp_path / "project"
+    project.mkdir()
+    trace = _write_store(
+        project, ".profiler-claude", "s-claude", "2026-01-01T00:00:01.250Z", harness="claude", records=2
+    )
+    session = session_of(trace / "s-claude.jsonl")
+
+    file_carrier = render_html(session)
+    serve_carrier = page_for(session, return_to=None, dispatcher=None)
+    # The layer's carriage is the assembly's one difference: the serve carrier's link, stood back as
+    # the render's inline text, is the render's page.
+    assert serve_carrier.replace(LAYER_LINK, LAYER_INLINE) == file_carrier
+
+    # And the scripts the carriers load draw the same page: the file carrier's script alone — a file
+    # cannot link the server's origin — and the served carrier's own script with the deco it names,
+    # in the order the page loads them.
+    deco = (_PACKAGE_ROOT / "devpro" / "profiler" / "deco.js").read_text(encoding="utf-8")
+    file_drawn = _page_runner(tmp_path, file_carrier)
+    serve_drawn = _page_runner(tmp_path, serve_carrier, deco=deco)
+    assert file_drawn["stamped"] == serve_drawn["stamped"], (file_drawn["stamped"], serve_drawn["stamped"])
+    assert file_drawn["subline"] == serve_drawn["subline"]
 
 
 def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
@@ -1077,25 +1108,6 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
         "stores",
     }
     assert drawn["fetches"] == ["/api/traces"]
-
-    # The deco's sweep over the rows the index drew: the index's script runs first and its fetch
-    # settles after it, the deco's sweep loading before those rows arrive — the served page's own
-    # script order — so a sweep that reads the cells once at load leaves every fresh one raw UTC. Each
-    # moments cell the rows carry is read from its `<time>` instants, its raw text replaced by the
-    # reader's clock and its title left standing.
-    run = _run_ts(
-        _HERE / "profiler_deco_runner.ts",
-        directory=tmp_path,
-        stdin=json.dumps({"index": index, "feed": json.loads(feed)}),
-    )
-    swept = json.loads(run.stdout)
-    assert len(swept["drawn"]) == 4, swept["drawn"]
-    for markup, reading in swept["drawn"]:
-        assert re.search(r'title="\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC to ', markup), markup
-        assert reading and "UTC" not in reading, reading
-        # The machine form stands through the sweep as the title does: the cell's two `<time>` elements
-        # are still there, each at its own `datetime`, where a whole-text write would leave neither.
-        assert markup.count("<time datetime=") == 2, markup
 
     # The span's own rendering, at every scale the server-side span test covered — seconds below a
     # minute, minutes alone, and the hour forms — fed the runner a crafted feed so the scale is known

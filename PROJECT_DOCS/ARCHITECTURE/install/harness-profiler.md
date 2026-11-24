@@ -104,12 +104,13 @@ payload is unchanged: it is, and stays, the feed the page's script reads. A sess
 dispatched it — a dispatch's child one level deep; deeper chains read on the session's page, whose
 tree draws every dispatch as a context — that session's row carrying the count of the rows beneath
 it and each child's naming the call that dispatched it; the rows alternate their tone, and each
-carries its harness's mark. The moments are the raw UTC where no script runs; with it, every moment the pages and their
-headers show — the moments cells, the index's first-to-last line, the session page's header stamp —
-reads in the reader's local time, 24-hour, one notation, the machine form only in the `<time>`
-elements' `datetime` attributes and the raw UTC in the titles. A first-to-last whose ends share the
-reader's day reads as two times with no date; one crossing midnight reads with the date on its
-first end alone and the finish end time only, the next day's being obvious. The span is its own
+carries its harness's mark. The pages' own scripts draw every moment local at birth — the moments cells, the index's
+first-to-last line, the session page's header stamp — in the reader's local time, 24-hour, one
+notation: the first end of a pair carries its date whole beside its time, the second its time
+only, the clock's being 24-hour making a span across midnight plain by the numbers, no branch to
+state. The machine form stands in the `<time>` elements' `datetime` attributes and the raw UTC in
+the titles; a page carries no moments where its script does not run, and the deco reads none — the
+moment sweep and its observers leave with the double render they served. The span is its own
 column. A session's page carries its dispatcher in the frame band, linked to that session's page,
 where one dispatched it, and a call row whose tool is `Agent` links to the child session's page
 where the record names one: a child's page the dashboard does not serve answers the 404 any unrecorded

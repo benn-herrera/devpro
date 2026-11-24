@@ -624,18 +624,25 @@ def _inlined_session_data(session: dict) -> str:
     return _json(session_data(session)).replace("<", "\\u003c").replace("/", "\\/")
 
 
-def render_html(session: dict) -> str:
-    """One self-contained page: the package's template with the presentation layer, the how-to-read
-    legend and the trace inlined, the frame band's facts this page carries none of left empty."""
+def _rendering(session: dict, *, dispatcher: tuple[str, str] | None, return_to: str | None) -> str:
+    """The page's one rendering: the template's own text with the session's data and the band's facts
+    filled, the layer's mark left standing for its carrier's fill — `render_html` inlines the layer's
+    text, a file being unable to link a server's origin, and the serve path fills the link
+    (`served_page`). One rendering, two carriers."""
     template = (files(__package__) / "view.html").read_text(encoding="utf-8")
     return strict_fill(
         template,
         {
             DATA_MARK: _inlined_session_data(session),
-            LAYER_MARK: LAYER_INLINE,
-            **band_fills(dispatcher=None, return_to=None),
+            **band_fills(dispatcher=dispatcher, return_to=return_to),
         },
     )
+
+
+def render_html(session: dict) -> str:
+    """One self-contained page: the package's template with the presentation layer, the how-to-read
+    legend and the trace inlined, the frame band's facts this page carries none of left empty."""
+    return strict_fill(_rendering(session, dispatcher=None, return_to=None), {LAYER_MARK: LAYER_INLINE})
 
 
 def session_of(path: Path) -> dict:
@@ -972,8 +979,8 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 // consumed client-side. One feed entry per session, in the order the index draws them, and one per
 // store the feed could not read. A session dispatched by another is drawn under its dispatcher, its
 // dispatcher's row carrying the count of the children beneath it. The moments are epoch
-// milliseconds and become the row's `<time>` elements, whose local reading the deco writes and whose
-// titles keep the raw UTC for a hover. Reads the entry's own keys and nothing else: `harness`, `id`,
+// milliseconds and become the row's `<time>` elements, drawn local at birth — the reader's clock,
+// 24-hour — their titles keeping the raw UTC for a hover. Reads the entry's own keys and nothing else: `harness`, `id`,
 // `records`, `agents`, `first`, `last`, `span`, `dispatcher`, `unreadable` on a store's entry, and
 // `stores` on a feed that drew nothing, naming how many stores the glob found. The page's body is
 // wrapped: the controls' state and the sort in force live in the page's URL, and the helpers for
@@ -1011,7 +1018,7 @@ const span = (seconds) => {
   return left ? hours + 'h ' + left + 'm' : hours + 'h';
 };
 
-// A moment's UTC reading, the one a row states: the first to the second, the last with its
+// A moment's UTC reading, the one a title states: the first to the second, the last with its
 // milliseconds — `2026-01-01 00:00:00 UTC` and `2026-01-01T00:00:05.000Z`.
 const day = (d) => d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
 const clock = (d) => pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ':' + pad(d.getUTCSeconds());
@@ -1022,22 +1029,34 @@ const isoStamp = (ms) => {
   return day(d) + 'T' + clock(d) + fraction + 'Z';
 };
 
-// A moment as the index draws one: the machine form in the `<time>` element's `datetime`, the raw UTC
-// in its title and — where no script runs — its text. The deco finds a moment by this tag, wherever
-// it stands: a moments cell's two ends and the index's first-to-last line are the same element.
-const moment = (ms) => {
-  const node = el('time', utcStamp(ms));
+// The reader's clock, built from the date's own local fields — 24-hour, the separator and the digits
+// this page's rather than the reader's locale's, which `toLocaleTimeString` reads off whatever
+// browser it runs in.
+const localDay = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const localClock = (d) => pad(d.getHours()) + ':' + pad(d.getMinutes());
+
+// A moment as the index draws one, local at birth: its text the reading this script writes — there
+// is no second pass to correct it, so a page whose script does not run carries no moment — the
+// machine form in the `<time>` element's `datetime`, the raw UTC in its title.
+const moment = (ms, text) => {
+  const node = el('time', text);
   node.setAttribute('datetime', isoStamp(ms));
   node.title = utcStamp(ms);
   return node;
 };
 
-// The two moments' cell. The first to the second and the last with its milliseconds are the moments'
-// raw UTC reading, the one the cell's text serves and its title states.
+// The two moments' cell: the first end carries its date whole beside its time, the second its time
+// only — the clock's being 24-hour makes a span across midnight plain by the numbers, no branch to
+// state. The cell's title keeps the pair's raw UTC for a hover.
 const moments = (session) => {
+  const [first, last] = [new Date(session.first), new Date(session.last)];
   const cell = el('span', undefined, 'moments');
   cell.title = utcStamp(session.first) + ' to ' + isoStamp(session.last);
-  cell.append(moment(session.first), ' to ', moment(session.last));
+  cell.append(
+    moment(session.first, localDay(first) + ' ' + localClock(first)),
+    ' to ',
+    moment(session.last, localClock(last)),
+  );
   return cell;
 };
 
@@ -1287,12 +1306,7 @@ def session_for(path: str, directory: Path | str) -> dict | None:
 def page_for(session: dict, *, return_to: str | None, dispatcher: tuple[str, str] | None) -> str:
     """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
     frame band with its legend, the decoration's script, the presentation layer linked — the band's
-    per-page facts the dashboard's own lookup names, one legend on the page and the script once."""
-    return strict_fill(
-        (files(__package__) / "view.html").read_text(encoding="utf-8"),
-        {
-            DATA_MARK: _inlined_session_data(session),
-            LAYER_MARK: LAYER_LINK,
-            **band_fills(dispatcher=dispatcher, return_to=return_to),
-        },
-    )
+    per-page facts the dashboard's own lookup names, one legend on the page and the script once. The
+    layer's carriage is the serve path's own fill (`served_page`), where the render inlined the
+    layer's text."""
+    return served_page(_rendering(session, dispatcher=dispatcher, return_to=return_to))
