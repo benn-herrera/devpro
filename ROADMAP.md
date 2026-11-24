@@ -263,9 +263,10 @@ pass, where the visual work lives.
 
 The bun runners' DOM stand-in exists in three divergent copies (~130 lines each:
 `tests/profiler_browser_runner.ts`, `tests/profiler_index_runner.ts`,
-`tests/profiler_page_runner.ts` — the plan review's VR6), and the `MutationObserver` machinery in
-two of them is residue of the deleted deco sweep — R23's rule sends residue with the semantics it
-served.
+`tests/profiler_page_runner.ts`), and the `MutationObserver` machinery in two of them is residue
+of the deleted deco sweep — the stand-in rule
+(`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-stand-in-models-the-api-s-real-semantics.md`)
+sends residue with the semantics it served.
 
 Decided — parked with the browser-driven design: the stand-ins' shape (one shared module, a
 published DOM, or retirement of the DOM-touching tests to the real browser) is that design's call,
@@ -287,5 +288,6 @@ the dealio is, how to use it, and why it is shaped as it is, and no leaf answers
 its references, and the why its Purpose lines only hint at — the process encodes the occasions
 (the periodic review's count, the seats, the burndown) while the discipline that acts on them
 stays human: the willingness to spend a dispatch proving one's own work wrong, and the restraint
-to fix what that proves before the next feature. The Route table gains the row that hands a
-newcomer there first.
+to fix what that proves before the next feature. The skill definition's `## Route` table
+(`devpro/definitions/skills/development.py`) gains the row at its top — the newcomer is routed
+before any other row is reached — joining the references the table lists.

@@ -259,17 +259,14 @@ synthesized into the review document.
 
 ## B — the post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` (9ca3218, revised with this plan's revision commit); each
-item cites its findings' `VR` IDs there — the kickoff's `R` IDs name ROADMAP tickets, a different
-namespace. VR6's item moved to ROADMAP.md — the stand-ins' shape is the browser-driven design's
-call, not this plan's. The checkpoint gate runs once before each package's commit: `just test`, then `just
+Drafted from `ACTIVE_PLAN_REVIEW.md` as revised; each item cites its findings' `VR` IDs there —
+the kickoff's `R` IDs name ROADMAP tickets, a different namespace. VR6's item moved to ROADMAP.md's
+*The DOM stand-ins' shape* — the stand-ins' shape is the browser-driven design's call, not this
+plan's. The checkpoint gate runs once before each package's commit: `just test`, then `just
 sweep-python` (CONVENTIONS/planning-and-execution/the-gates.md). The packages run serially in the
-shared tree; the stated orders: B8 before B6 (B6's ticket rewrite states the install change B8
-lands); B1 before nothing and B7 after nothing — B1 carries the R25 leaf's mechanism sentence
-entire, so B7 touches that leaf no further. After B1–B10 land, the plan's landing commit deletes
-`ACTIVE_PLAN_REVIEW.md` and `ACTIVE_DESIGN.md` and retires the plan — the burndown is their last
-reader. The owner-gated items wait on the review document's open questions and are excluded from
-their packages' scopes, named per item.
+shared tree; B9, B10 and B11 are order-free — no two share a file. After the burndown's packages
+land, the plan's landing commit deletes `ACTIVE_PLAN_REVIEW.md` and `ACTIVE_DESIGN.md` and retires
+the plan.
 
 ### B1 — the time pins pin what they claim (VR1)
 
@@ -436,10 +433,9 @@ Scope: `justfile`, the repository's lockfile.
 `justfile:238` runs `bun install --frozen-lockfile` against npm's `package-lock.json` with no
 `bun.lock` committed and re-migrates every run. The direction: one lockfile, the runner's —
 bun's — committed, so `--frozen-lockfile` means what it says. The read-only rule holds today:
-from a scratch copy the recipe runs exit 0 across 261 packages and writes no lockfile (the
-prompt-engineer seat's evidence, carried here so no scratch is cited). The compiler rides
-unpinned by the design's explicit text — settled, no action, stated here so the exclusion
-travels with the package.
+from a scratch copy the recipe runs exit 0 across 261 packages and writes no lockfile. The
+compiler rides unpinned — ROADMAP.md's *The TypeScript compiler rides unpinned* states the
+exclusion; settled, no action, stated here so it travels with the package.
 
 Done-line: `just lint`.
 
@@ -454,46 +450,64 @@ renders into the `col-agents` cell in `row()` — the empty `el('td', undefined,
 build — and the `— n dispatched agents` span in the session cell is dropped. The residue, named
 per site: the CSS-text pins duplicate the measured geometry — in the index test's layout block
 (grep `table-layout: fixed` in `tests/test_devpro_profiler.py`), the six `.col-*` width regexes
-delete and the `table-layout: fixed` assertion stays, the runner modeling no layout being the
-one guarantee that mechanism stays; the attribute-order pinning — the serialized `moments`-cell
+delete and the `table-layout: fixed` assertion stays — the browser runner reads and measures
+those exact declarations, which is what makes them redundant, while only the `fixed` assertion
+pins `table-layout` itself; the attribute-order pinning — the serialized `moments`-cell
 literals (grep `class="moments"` in the test file) asserting `title` before `class` — becomes
 per-element assertions on text, `datetime` and `title`, the attributes' order unpinned; the
 multi-sort URL hole — `restore()` applying every `sort` parameter the URL carries, so a
 hand-edited `?sort=records&sort=span` marks two heads sorted while the draw honors one —
-closes: `restore` takes one value and compares each head to it; the capture's cast in
-`childSessionOf` becomes the predicate —
+closes: `restore` takes one `sort` value, the surplus dropped at the boundary, and compares
+each head to it; `sync()` stays the URL's only writer; the count's move out of the session cell
+changes that cell's measured box — the browser runner's geometry test is the observation,
+re-baselined where the span's drop moves a width; the capture's cast in `childSessionOf`
+becomes the predicate —
 `return [carried.sessionID, output.sessionID, metadata.sessionID].find((id): id is string =>
 typeof id === "string")` — the `ids` array, the `find` and the cast collapsing into it; the deco
 body's exercise: the two runners' `querySelector` returns null for everything, so the deco's
-script body never runs under them — the runners gain minimal elements for the deco's selectors
-and the body executes. The IIFE check covers the pages' file scripts too — `deco.js` and
-`board.js` — one assertion each that the file's body opens the IIFE form (B2's check reads the
-inline bodies alone).
+script body never runs under them — the runners gain the deco's own three elements
+(`#connection`, `#stop`, `.nav-server`) and the assertion reads what the deco draws — `show()`'s
+text in `#connection` and the `nav-live`/`nav-idle` class on the server element. The IIFE check
+covers the pages' file scripts too — `devpro/profiler/deco.js` and
+`devpro/kanban/assets/board.js` — one assertion each that the file's body opens the IIFE form
+(B2's check reads the inline bodies alone).
 
 Done-line: `just test devpro`.
 
-### B11 — one path to the profiler's outcome (the owner's ruling, from the retired ticket)
+### B11 — one path to the profiler's outcome
 
-Scope: `devpro/harnesses/resources/claude/profiler/profiler.sh`, `devpro/profiler/hooks.py`,
-`devpro/profiler/capture.py`, `devpro/install.py`, the skill definition's finder,
+Scope: `devpro/harnesses/resources/claude/profiler/profiler.sh`, `devpro/harnesses/claude.py`,
+`devpro/profiler/hooks.py`, `devpro/profiler/capture.py`, `devpro/install.py`, the skill
+definition's finder,
 `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`, `ACTIVE_DESIGN.md`'s resources and
 finder pairs.
 
 The ruling: one path — every runner names the wrapper from its writer's knowledge. The launcher
 file and its finder retire: the committed hook's wiring invokes the project-committed wrapper
 directly (`profiler capture`), the installed hook's wiring names the installed wrapper from
-`init`'s knowledge, and `init` unlinks the copies it once wrote there — `RETIRED_RESOURCE_FILES`
-gains the launcher's own retirement, both `hp.sh` leftovers and `profiler.sh` itself. The
-skill's finder clause becomes the filled relative path (`WRAPPER_PROFILER` filled at install —
-the path carried, not derived). The doctor runs as the wrapper's own subcommand: it reports the
-wiring's target and the wrapper's presence, re-deriving nothing — the launcher's failure
-message dissolves with the candidate loop it spelled. The capture subcommand owns the contract
-itself: its read of the hook payload is bounded, it exits 0 on every path, and its child's
-stdout stays off the hook's stdout (the host reads hook JSON there — SPEC's "exits 0 with no
-output"). The launcher's remaining ride-notes land here: the success path's stdin handling and
-the `exec` the before side carried. The design's resources and finder
-pairs are revised at this package's dispatch — their becomes-blocks filled from this ruling,
-PE-reviewed as changed text — and applied by this package; the leaf's committed-hook and skill
-passages move with them.
+`init`'s knowledge, and the plugin registration's command (`_PROFILER_COMMAND`, the six
+`_PROFILER_EVENTS` entries in `devpro/harnesses/claude.py`) names the wrapper `INSTALLED_WRAPPER`
+declares. The copies the writers once wrote leave: `init` unlinks the committed tree's
+`.claude/harness-profiler/profiler.sh` beside the `hp.sh` names its machinery already carries,
+and the install's copy step removes the installed tree's `profiler/profiler.sh` — the pairing
+machinery cannot express a removal with no replacement, so the removal joins the retired names
+unconditionally where the copy carries the repository's header. The opencode install's
+`profiler/` copy empties with it — `_CROSS_HARNESS_SOURCES` drops the entry (the opencode
+capture is the plugin's own). The skill's finder clause is rewritten: `WRAPPER_PROFILER`'s
+current text is the first-of-two-candidates resolution the ruling abolishes; its replacement
+carries the wrapper's path as the writer's knowledge, and the shared `WRAPPER` clause (the
+guide's and docdicer's) keeps its resolution — the ruling covers the profiler's runner. The
+doctor runs as the wrapper's own subcommand: its `devpro:` line names the registered wrapper,
+the launcher-compare helpers leave, and the stand-in pair asserting the launcher's resolution
+moves with the semantics it served. The resources tree's `claude/profiler/` directory empties —
+the install's resource lists and the banner test's fixture lose it. The capture subcommand owns
+the contract itself: its read of the hook payload is bounded, it exits 0 on every path, and its
+child's stdout stays off the hook's stdout (the host reads hook JSON there — SPEC's "exits 0
+with no output"). The launcher's remaining ride-notes land here: the success path's stdin
+handling and the `exec` the before side carried. The dispatcher revises the design's resources
+and finder pairs and obtains the PE review before this package's dispatch; the package applies
+them as the other packages did — the leaf's **Resources**, **The launcher's finder** and
+**Wiring** passages and the skill's `Locate the profiler` block move with them.
 
-Done-line: `just test`, `just lint`, `just dev-check-design-deltas-applied` at 17 landed.
+Done-line: `just test`, `just lint`; `just dev-check-design-deltas-applied` reporting the
+resources and finder pairs landed.
