@@ -270,3 +270,14 @@ project eliminates. The primary first use is the development loop, not a hard te
 working on the pages sees what it rendered and iterates toward what it intends, and the
 assertion set distills second, from what that loop shows matters. Rides with the UX
 pass, where the visual work lives.
+
+### The preflight's managed-directory copy drags scratch through every install
+
+B4 added `.devpro-temp` to the managed set so the dry run could predict its creation, and the
+preflight's comparison is a whole-tree read — so `_copy_managed` copytrees the entire scratch
+tree on every install: a stale repo-sized probe copy made the run crawl, and a broken-symlink
+fixture stopped it outright (the `symlinks=True` stopgap landed at `6429cdc`). The comparison's
+semantics need redesign with fresh eyes: a managed directory reads as its existence plus the
+managed subset the install writes into it — and the install *runs into the copy*, so whatever
+the run would see must be visible there. The two constraints pull against each other; the
+design question is honest, not mechanical.
