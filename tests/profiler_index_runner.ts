@@ -172,6 +172,11 @@ Object.assign(globalThis, {
         ? statics.filter((node) => node.tag === "button" && node.cell !== null)
         : statics.filter((node) => node.tag === "input"),
   },
+  // The page's URL and its history: the state the controls and the sort carry is written back into
+  // them (`sync`), and the query the page opened at is read back into the controls (`restore`). The
+  // page opens at its bare path here, so the state starts as the markup serves it.
+  location: { pathname: "/profiler/", search: "" },
+  history: { replaceState: (_state: unknown, _title: string, _next: string) => {} },
   fetch: async (path: string) => {
     fetches.push(path)
     if (failure !== null) return { ok: failure.status < 400, status: failure.status, json: async () => watched(failure.body ?? {}) }

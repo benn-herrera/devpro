@@ -916,15 +916,27 @@ INDEX = """<!doctype html>
 <style>
 main { padding: 1rem; }
 h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem; }
-table { border-collapse: collapse; }
-th, td { text-align: left; padding: 0.4rem 1rem 0.4rem 0; border-bottom: 1px solid var(--line); }
-th { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
+/* One width per column, taken from the table's layout and no cell's: the header row and the body's
+   rows share it, so a header stands as wide as the cells it names — a header that wraps is its whole
+   label over its column, and no header stands narrower than the column beneath it. */
+table { border-collapse: collapse; table-layout: fixed; }
+th, td { text-align: left; padding: 0.4rem 1rem 0.4rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
+td { overflow-wrap: anywhere; }
 a { color: var(--fg); }
 a:hover, a:focus-visible { color: var(--accent); }
 tr:nth-child(odd) td { background: var(--zebra); }
 td small { color: var(--muted); }
 tr td:first-child.child { border-left: 3px solid var(--accent); }
 tr td:first-child.child + td { padding-left: 2.4rem; }
+/* Each column's own share of the table, as wide as its widest cell wants: a column sized below that
+   is grown by the layout, a header with it — the two never stand apart. */
+.col-harness { width: 7.5rem; }
+.col-session { width: 40%; }
+.col-records { width: 8rem; }
+.col-agents { width: 12rem; }
+.col-one { width: 8rem; }
+.col-span { width: 7rem; }
 .harness { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; }
 .harness.opencode { background: #4a9eea; }
 .harness.claude { background: #d97757; }
@@ -945,13 +957,13 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 <main>
 <h1>Sessions</h1>
 <div class="controls">
-<label><input type="checkbox" id="child-rows" checked> child rows</label>
-<label><input type="checkbox" id="harness-claude" checked> claude</label>
-<label><input type="checkbox" id="harness-opencode" checked> opencode</label>
+<label><input type="checkbox" id="child-rows" name="child-rows" value="on" checked> child rows</label>
+<label><input type="checkbox" id="harness-claude" name="harness" value="claude" checked> claude</label>
+<label><input type="checkbox" id="harness-opencode" name="harness" value="opencode" checked> opencode</label>
 </div>
 <p id="notice" class="notice" role="alert" hidden></p>
 <table>
-<thead><tr><th>harness</th><th>session</th><th aria-sort="none"><button type="button" class="sort" data-sort="records">records</button></th><th aria-sort="none"><button type="button" class="sort" data-sort="agents">dispatched agents</button></th><th aria-sort="none"><button type="button" class="sort" data-sort="first">first to last</button></th><th aria-sort="none"><button type="button" class="sort" data-sort="span">span</button></th></tr></thead>
+<thead><tr><th class="col-harness">harness</th><th class="col-session">session</th><th class="col-records" aria-sort="none"><button type="button" class="sort" data-sort="records">records</button></th><th class="col-agents" aria-sort="none"><button type="button" class="sort" data-sort="agents">dispatched agents</button></th><th class="col-one" aria-sort="none"><button type="button" class="sort" data-sort="first">first to last</button></th><th class="col-span" aria-sort="none"><button type="button" class="sort" data-sort="span">span</button></th></tr></thead>
 <tbody id="rows"></tbody>
 </table>
 </main>
@@ -964,7 +976,10 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 // milliseconds and become the row's `<time>` elements, whose local reading the deco writes and whose
 // titles keep the raw UTC for a hover. Reads the entry's own keys and nothing else: `harness`, `id`,
 // `records`, `agents`, `first`, `last`, `span`, `dispatcher`, `unreadable` on a store's entry, and
-// `stores` on a feed that drew nothing, naming how many stores the glob found.
+// `stores` on a feed that drew nothing, naming how many stores the glob found. The page's body is
+// wrapped: the controls' state and the sort in force live in the page's URL, and the helpers for
+// them are the page's own.
+(() => {
 const FEED = '/api/traces';
 const PAGE = '/page/';
 // The harnesses the controls carry a box for, in the page's own order: a box's id is this name
@@ -1036,10 +1051,11 @@ const row = ({ session, dispatched, children = 0 }) => {
   tr.setAttribute('data-records', String(session.records));
   tr.setAttribute('data-first', String(session.first));
   tr.setAttribute('data-span', String(session.span));
-  const harness = el('td');
+  const harness = el('td', undefined, 'col-harness');
   const mark = HARNESSES.includes(session.harness) ? session.harness : '';
   harness.append(el('span', undefined, ('harness ' + mark).trim()), session.harness);
-  const id = el('td', undefined, dispatched ? 'child' : undefined);
+  const id = el('td', undefined, dispatched ? 'col-session child' : 'col-session');
+  id.title = session.id;
   id.append(link(session.id));
   if (dispatched) {
     id.append(' ', el('small', '↳ child — ' + dispatched.name));
@@ -1047,9 +1063,16 @@ const row = ({ session, dispatched, children = 0 }) => {
     const count = children === 1 ? '1 dispatched agent' : children + ' dispatched agents';
     id.append(' ', el('small', '— ' + count));
   }
-  const window = el('td');
+  const window = el('td', undefined, 'col-one');
   window.append(moments(session));
-  tr.append(harness, id, el('td', session.records + ' records'), window, el('td', span(session.span)));
+  tr.append(
+    harness,
+    id,
+    el('td', session.records + ' records', 'col-records'),
+    el('td', undefined, 'col-agents'),
+    window,
+    el('td', span(session.span), 'col-span'),
+  );
   return tr;
 };
 
@@ -1080,7 +1103,18 @@ const unreadable = (store) => wideRow(store + ' is unreadable');
 let held = [];
 let stores = [];
 let found = 0; // the stores the feed found, where it drew no session to say so itself
-let order = null; // the column the heads were last sorted on, and now ascending or descending
+
+// The column the table stands sorted on, and the order it stands in, read off the head that marks it:
+// the `<th>`'s `aria-sort` is where a table's sort belongs, and a sort is the page's whether a press
+// set it or the URL the page opened at did.
+const sorted = () => {
+  for (const head of document.querySelectorAll('.sort')) {
+    const cell = head.closest('th');
+    const state = cell ? cell.getAttribute('aria-sort') : null;
+    if (state === 'ascending' || state === 'descending') return { key: head.dataset.sort, descending: state === 'descending' };
+  }
+  return null;
+};
 
 // A session the page hides: the child-rows control takes every dispatched session out, and each
 // harness's control its own sessions — a harness the controls carry no box for is visible, since no
@@ -1094,10 +1128,10 @@ const hides = (session) => {
   return !document.getElementById('harness-' + session.harness).checked;
 };
 
-// The table from what the page holds: the feed's order, or the sorted order where a head was chosen,
-// each dispatcher's row followed by its own visible children, and each unread store beside them. A
-// dispatcher's count is the agents the feed holds beneath it, whether or not the page is showing
-// them; an empty table reads as which state the page stands in (`empty`).
+// The table from what the page holds: the feed's order, or the sorted order where a head marks the
+// table sorted, each dispatcher's row followed by its own visible children, and each unread store
+// beside them. A dispatcher's count is the agents the feed holds beneath it, whether or not the page
+// is showing them; an empty table reads as which state the page stands in (`empty`).
 const draw = () => {
   const visible = held.filter((session) => !hides(session));
   const children = new Map();
@@ -1112,6 +1146,7 @@ const draw = () => {
   // an orphan follows its dispatcher's level, never vanishing with a hidden dispatcher.
   const shown = new Set(visible.map((session) => session.id));
   const tops = visible.filter((session) => !session.dispatcher || !shown.has(session.dispatcher.session));
+  const order = sorted();
   if (order) {
     const s = order.descending ? -1 : 1;
     tops.sort((a, b) => s * (a[order.key] < b[order.key] ? -1 : a[order.key] > b[order.key] ? 1 : 0));
@@ -1132,11 +1167,52 @@ const show = (feed) => {
   stores = feed.filter((entry) => entry.unreadable).map((entry) => entry.unreadable);
   found = feed.reduce((sum, entry) => sum + (entry.stores || 0), 0);
   // A harness box the feed holds no session for is disabled: left checked it would report filtering
-  // a harness the feed has none of, and left pressable it would hide nothing on every press.
+  // a harness the feed has none of, and left pressable it would hide nothing on every press. A box it
+  // disables is checked again, so the disabled box neither hides rows nor carries an "off" the reader
+  // never chose; one the feed still holds keeps whatever state the reader left it in.
   for (const harness of HARNESSES) {
-    document.getElementById('harness-' + harness).disabled = !held.some((session) => session.harness === harness);
+    const box = document.getElementById('harness-' + harness);
+    box.disabled = !held.some((session) => session.harness === harness);
+    if (box.disabled) box.checked = true;
   }
+  sync();
   draw();
+};
+
+// The page's state, in the page's URL: each control the reader turned off and the head the table
+// sorts on with the order it stands in. A page showing every control's rows and sorted on nothing is
+// the page it opened on, so its link carries no query at all — the short URL for an untouched page,
+// and the reader's own choices for one they changed. The URL the page shows is the link they copy:
+// opened again it reads the same state back (`restore`).
+const sync = () => {
+  const params = new URLSearchParams();
+  for (const control of document.querySelectorAll('.controls input')) {
+    if (control.name && !control.checked) params.append(control.name, control.value);
+  }
+  for (const head of document.querySelectorAll('.sort')) {
+    const cell = head.closest('th');
+    const state = cell ? cell.getAttribute('aria-sort') : null;
+    if (state === 'ascending' || state === 'descending') {
+      params.append('sort', head.dataset.sort + (state === 'descending' ? '-descending' : ''));
+    }
+  }
+  const query = params.toString();
+  history.replaceState(null, '', location.pathname + (query ? '?' + query : ''));
+};
+
+// The state the page's URL carries, read back into the page before its feed arrives: a control the
+// link names as off, and a head in the order the link names, the heads a link names none of left as
+// the page carries them.
+const restore = () => {
+  const params = new URLSearchParams(location.search);
+  for (const control of document.querySelectorAll('.controls input')) {
+    if (control.name) control.checked = !params.getAll(control.name).includes(control.value);
+  }
+  for (const head of document.querySelectorAll('.sort')) {
+    const cell = head.closest('th');
+    const found = params.getAll('sort').find((value) => value === head.dataset.sort || value === head.dataset.sort + '-descending');
+    if (cell) cell.setAttribute('aria-sort', !found ? 'none' : found.endsWith('-descending') ? 'descending' : 'ascending');
+  }
 };
 
 // Column heads: a head's three-press cycle — its first press sorts ascending, its second descending,
@@ -1145,20 +1221,27 @@ const show = (feed) => {
 // `aria-sort` on the `<th>`, where a table's sort belongs, `none` standing for the unsorted table as
 // headers attribute it — so the button is the label and the press, and the cell announces the order.
 // The arrow marks the two orders a press sets; the third press leaves `none`, with no arrow, which is
-// the same head the page opened on.
+// the same head the page opened on. A press writes the page's state to its URL, as a control's change
+// does, and redraws the table.
 for (const label of document.querySelectorAll('.sort')) {
   label.addEventListener('click', () => {
     const cell = label.closest('th');
     const key = label.dataset.sort;
-    if (order === null || order.key !== key) order = { key, descending: false };
-    else if (!order.descending) order = { key, descending: true };
-    else order = null;
+    const order = sorted();
+    const next = !order || order.key !== key ? { key, descending: false } : order.descending ? null : { key, descending: true };
     for (const other of document.querySelectorAll('.sort')) other.closest('th').setAttribute('aria-sort', 'none');
-    if (order) cell.setAttribute('aria-sort', order.descending ? 'descending' : 'ascending');
+    if (next && cell) cell.setAttribute('aria-sort', next.descending ? 'descending' : 'ascending');
+    sync();
     draw();
   });
 }
-for (const control of document.querySelectorAll('.controls input')) control.addEventListener('change', draw);
+for (const control of document.querySelectorAll('.controls input')) {
+  control.addEventListener('change', () => {
+    sync();
+    draw();
+  });
+}
+restore();
 
 // The feed's failure names itself in the page, in the feed's own words, and is no session's absence:
 // the no-records reading stands for a feed that answered with nothing to draw.
@@ -1186,6 +1269,7 @@ fetch(FEED, { cache: 'no-store' })
     console.warn('the traces feed could not be read: ' + String(error));
     notice(error);
   });
+})();
 </script>
 </body>
 </html>

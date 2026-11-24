@@ -317,6 +317,10 @@ Object.assign(globalThis, {
   setInterval: () => 0,
   window: { addEventListener: () => {} },
   getComputedStyle: () => ({ getPropertyValue: () => "" }),
+  // The index's own script reads the URL's state back into the controls and writes it there again;
+  // this run opens the page at its bare path, so the markup's own states are the page's.
+  location: { pathname: "/profiler/", search: "" },
+  history: { replaceState: () => {} },
 })
 
 if ("cells" in input) {

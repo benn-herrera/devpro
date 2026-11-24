@@ -984,17 +984,24 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     # layer switches with the color scheme itself, so the template carries no second rule for it.
     assert '<tbody id="rows"></tbody>' in index and 'href="/page/' not in index
     assert re.search(
-        r'<th>harness</th><th>session</th><th aria-sort="none"><button type="button" class="sort" data-sort="records">'
-        r'records</button></th><th aria-sort="none"><button type="button" class="sort" data-sort="agents">'
-        r'dispatched agents</button></th><th aria-sort="none"><button type="button" class="sort" data-sort="first">'
-        r'first to last</button></th><th aria-sort="none"><button type="button" class="sort" data-sort="span">'
+        r'<th class="col-harness">harness</th><th class="col-session">session</th>'
+        r'<th class="col-records" aria-sort="none"><button type="button" class="sort" data-sort="records">'
+        r'records</button></th><th class="col-agents" aria-sort="none"><button type="button" class="sort" '
+        r'data-sort="agents">dispatched agents</button></th><th class="col-one" aria-sort="none">'
+        r'<button type="button" class="sort" data-sort="first">first to last</button></th>'
+        r'<th class="col-span" aria-sort="none"><button type="button" class="sort" data-sort="span">'
         r"span</button></th>",
         index,
     )
+    # Each column's share of the table comes from the page's own stylesheet, beside the header's class,
+    # and the table's layout is the fixed one that gives that share to header and body alike.
+    assert re.search(r"table \{ border-collapse: collapse; table-layout: fixed; \}", index)
+    for column in ("col-harness", "col-session", "col-records", "col-agents", "col-one", "col-span"):
+        assert re.search(rf"\.{column} \{{ width: [\d.]+(?:rem|%); \}}", index), column
     # The controls: a box for the child rows and one per harness, each checked so the page opens on
     # every row, and the notice a failed feed names itself in, standing empty and hidden.
     for control in ('id="child-rows"', 'id="harness-claude"', 'id="harness-opencode"'):
-        assert re.search(rf'<input type="checkbox" {control} checked>', index), control
+        assert re.search(rf'<input type="checkbox" {control} [^>]*checked>', index), control
     assert re.search(r'<p id="notice" class="notice" role="alert" hidden></p>', index)
     assert re.search(r"tr:nth-child\(odd\) td \{ background: var\(--zebra\); \}", index)
     assert "prefers-color-scheme: dark" not in index.split("<style>", 1)[1].split("</style>", 1)[0]
@@ -1042,7 +1049,7 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
     ]
     assert "claude" in drawn["rows"][0] and "2 records" in drawn["rows"][0]
     assert "1 dispatched agent" in drawn["rows"][2]
-    assert 'class="child"' in drawn["rows"][3] and "↳ child — devpro-coder" in drawn["rows"][3]
+    assert 'class="col-session child"' in drawn["rows"][3] and "↳ child — devpro-coder" in drawn["rows"][3]
     # The dispatched-agent count is the entry's own, and the row carries no second copy of it: a
     # `data-agents` attribute beside the feed's key is the one the script's sort would read had the
     # entry not carried it.
@@ -1439,6 +1446,120 @@ def test_the_standalone_render_carries_the_shared_layer_and_the_legend_once(tmp_
     assert SHARED_CSS in printed.stdout
     assert printed.stdout.count("How to read this") == 1
     assert 'class="site-nav' in printed.stdout and 'class="frame-band' in printed.stdout
+
+
+# A session id as a host records one — opencode's own is about this long, and an id this wide is a
+# column the page's header must cover.
+_LONG_SESSION = "ses_60a1b2c3d4e5f60718293a4b5c6d7e8f0a1b2c3d4e5f60718293a4b5c6d7e8f"
+
+
+def _browser(tmp_path: Path, index: str, feed: list[dict], actions: list[dict]) -> dict:
+    """The served index in a browser's own shape (`profiler_browser_runner.ts`): its scripts run over a
+    document at `index`'s own markup, laid out the way a browser lays a table out, with the reader's
+    presses and visits in order."""
+    run = _run_ts(
+        _HERE / "profiler_browser_runner.ts",
+        directory=tmp_path,
+        stdin=json.dumps(
+            {
+                "index": index,
+                "deco": (_PACKAGE_ROOT / "devpro" / "profiler" / "deco.js").read_text(encoding="utf-8"),
+                "feed": feed,
+                "actions": actions,
+            }
+        ),
+    )
+    return json.loads(run.stdout)
+
+
+def test_the_headers_sit_over_their_columns(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`: a page whose header row does not share its columns' widths is a
+    header over the wrong column, and no test that reads the markup alone can fail on it.
+
+    The served index, drawn over a session id as long as a host's own: the page's rows carry a cell
+    wider than any header's text — the session cell, an id of about sixty characters — and a browser
+    lays a table out with one width per column, so the header over that column stands as wide as the
+    cell beneath it. The header row and the body's rows take their widths from one source: on a
+    template whose header takes its width from its own short text and no rule gives it the column's,
+    the session header stands narrower than its column and a reader looking down that column reads the
+    header of the column beside it."""
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / ".devpro-temp").mkdir()
+    _write_store(
+        project, ".profiler-opencode", _LONG_SESSION, "2026-01-01T00:00:00.000Z", harness="opencode", records=2
+    )
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:05.000Z", harness="claude")
+
+    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
+        index = _fetch(f"{url}profiler/")
+        feed = json.loads(_fetch(f"{url}api/traces"))
+
+    drawn = _browser(tmp_path, index, feed, [])
+    assert len(drawn["headers"]) == 6, drawn["headers"]
+    assert _LONG_SESSION in drawn["sessionCells"], drawn["sessionCells"]
+    # A session id is wide: its column is the widest in the table. The header row and the body's rows
+    # take their widths from one source, so every header's box is its column's box. A header that
+    # keeps its own text's width while the body's cell takes the id's is a header over the column
+    # beside it — the reader following the header down lands one column left of the ids.
+    headers = {label: (column, header) for label, column, header in drawn["headers"]}
+    for label, (column, header) in headers.items():
+        assert header == column, f"{label!r}'s header is {header} over a column of {column}"
+
+
+def test_the_url_restores_the_controls_and_sort(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a page that keeps its controls' state and its sort in
+    the document alone, so the state a reader chose is gone the moment they leave the view and come
+    back through the page's own link — a page that cannot be bookmarked or shared in the reading it
+    shows. The run that fails under it is this one: a control toggled off and a column head pressed
+    leave the page's URL naming them, and the page opened again at that URL — the link a reader copies
+    — reads back with the control off and the head sorted, the rows drawn in the order the sort
+    names."""
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / ".devpro-temp").mkdir()
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
+    _write_store(project, ".profiler-opencode", "s-p1", "2026-01-01T00:00:05.000Z", harness="opencode")
+    _write_store(
+        project,
+        ".profiler-opencode",
+        "s-p2",
+        "2026-01-01T00:00:06.000Z",
+        harness="opencode",
+        extra={"tool": "Agent", "name": "devpro-coder", "child_agent_id": "s-child"},
+    )
+    _write_store(project, ".profiler-opencode", "s-child", "2026-01-01T00:00:07.000Z", harness="opencode", records=2)
+
+    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
+        index = _fetch(f"{url}profiler/")
+        feed = json.loads(_fetch(f"{url}api/traces"))
+
+    # The closed state is no query at all: the page opens on every row, in the feed's order, and its
+    # link carries nothing a reader did not choose.
+    opened = _browser(tmp_path, index, feed, [])
+    assert opened["visits"][0]["url"] == "http://127.0.0.1:0/profiler/"
+
+    toggled = _browser(tmp_path, index, feed, [{"toggle": "child-rows"}])
+    # The URL carries what the reader chose: leaving the view and returning through the page's own
+    # link reads the control back off, where a page keeping its state in the document alone returns it
+    # on.
+    assert toggled["visits"][-1]["url"] != opened["visits"][-1]["url"], toggled["visits"][-1]["url"]
+    assert toggled["visits"][-1]["controls"]["child-rows"] is False
+    # A control toggled twice is the page it opened on, and its URL says so.
+    twice = _browser(tmp_path, index, feed, [{"toggle": "child-rows"}, {"toggle": "child-rows"}])
+    assert twice["visits"][-1]["url"] == "http://127.0.0.1:0/profiler/"
+
+    sorted_once = _browser(tmp_path, index, feed, [{"sort": "records"}])
+    assert ["records", "ascending"] in sorted_once["visits"][-1]["sorts"]
+
+    # Leaving the view and returning through the page's own link: the visit reads the state the page
+    # left, from the URL alone.
+    returned = _browser(tmp_path, index, feed, [{"toggle": "child-rows"}, {"navigate": True}])
+    assert returned["visits"][-1]["controls"]["child-rows"] is False
+    assert returned["visits"][-1]["url"] == toggled["visits"][-1]["url"]
+
+    sorted_and_returned = _browser(tmp_path, index, feed, [{"sort": "records"}, {"navigate": True}])
+    assert sorted_and_returned["visits"][-1]["sorts"] == sorted_once["visits"][-1]["sorts"]
 
 
 def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path) -> None:
