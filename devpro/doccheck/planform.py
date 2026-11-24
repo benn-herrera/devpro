@@ -391,9 +391,10 @@ def _unpaired_post_plan(packages: list[WorkPackage]) -> list[Breach]:
         if any(_title_opens_with(p.title, other) for p in packages):
             continue
         accepted = (
-            f"a package of its own: a status-table row with an ID no other row uses, and a heading at any level"
-            f" opening with that ID and then `{other}`, case as shown, as `## <ID> {other}`; or, only where the"
-            f" plan is to hold no {other.lower()}, no {own.lower()} package either"
+            f"a package of its own: a status-table row with an ID no other row uses, and a heading"
+            f" opening with that ID then `{other}`, case as shown: under `## {other}` where that is"
+            f" present, as `### <ID> {other}`; or, only where the plan is to hold no {other.lower()},"
+            f" no {own.lower()} package either"
         )
         breaches += [
             Breach(kind, p.path, p.line, f"{p.id} {p.title}", accepted)

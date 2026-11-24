@@ -59,9 +59,9 @@ A plan states:
   and no debugging; `expert`, anything else. Anything after the word is a note.
 - The post-plan review is a work package whose title opens with `Post-plan review`. The post-plan
   burndown is a `## Post-plan burndown` section holding its drafting ticket, a work package whose
-  title opens with its ID and then `Post-plan burndown`; the rest of each title is free. A plan has
-  a post-plan review row only with a post-plan burndown row, and a burndown row only with a review
-  row.
+  title opens with `Post-plan burndown` — a heading opening with its ID and then that title; the
+  rest of each title is free. A plan has a post-plan review row only with a post-plan burndown row,
+  and a burndown row only with a review row.
 - A plan carries `Release: <version>` as the first non-blank line after the plan's H1 heading once
   it is the plan under way for that release. A plan set aside for later names no release.
 - A release's hardening plan is the plan whose H1 heading opens with `Release hardening`.

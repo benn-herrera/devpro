@@ -246,8 +246,9 @@ plan the same way.
   dispatch; anything after the word is a note, and names no model (*Dispatch*). *Purpose:* whoever reads the table sees which work runs on the
   {STEP_DOWN_MODEL_TERM}.
 - The post-plan review is a package whose title opens with `Post-plan review`; the post-plan
-  burndown is a `## Post-plan burndown` section holding its drafting ticket, whose title opens with
-  its ID and then `Post-plan burndown` (*Post-plan review*).
+  burndown is a `## Post-plan burndown` section holding its drafting ticket, whose title
+  opens with `Post-plan burndown`. That section heading is not a package title: a package
+  titled only with its ID breaches the pairing (*Post-plan review*).
 - The table states each package's place at every moment, not only at a commit
   boundary; a commit whose tree includes a package's work includes that
   package's row, and work committed without its row is corrected in the commit
@@ -260,7 +261,10 @@ plan the same way.
   then reads as one that landed nothing.
 
 After each edit to a plan, run `check-plan` on it (on its `entry-point.md` where it is diced; the
-`{clauses.optional_ref(name="docdicer")}` skill) and fix what it reports.
+`{clauses.optional_ref(name="docdicer")}` skill) and fix what it reports. A change to a plan-form
+rule is verified only by a `check-plan` run over a plan holding the new form.
+*Purpose:* a delta check reads source text and nothing else, so no other target catches
+plan-form drift.
 
 ## Roadmap tickets
 
