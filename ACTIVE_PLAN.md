@@ -24,7 +24,7 @@ it changes reports the failure as a finding — the test is never edited to pass
 | P1 | landed (748c330) | expert | the plugin's configured model applies at runtime |
 | P2 | landed (67d4516) | expert | the stores read true: exact names, both readers, the doctor's line |
 | P3 | landed (cd50d71) | expert | the scratch guarantee's one home: install prepares, the clause drops |
-| P4 | dispatchable | expert | the stand-ins' removal and the mock-as-oracle clause |
+| P4 | in progress: dispatched to devpro-python-coder | expert | the stand-ins' removal and the mock-as-oracle clause |
 | R | drafted | expert | Post-plan review |
 | B | drafted | expert | Post-plan burndown |
 
