@@ -28,7 +28,7 @@ becomes-blocks are the accepted text.
 | B4 | drafted | expert | the repair tells the truth (VR4, VR13; the fixture half owner-gated) |
 | B5a | drafted | expert | one home each (VR5) |
 | B5b | drafted | expert | one stand-in (VR6) |
-| B6 | in progress: dispatched to devpro-python-coder | expert | the documents state the shipped code (VR7, VR8, VR14; after B8) |
+| B6 | landed 6641b54 | expert | the documents state the shipped code (VR7, VR8, VR14; after B8) |
 | B7 | drafted | expert | CONVENTIONS aligns with practice (VR9) |
 | B8 | landed 7ea5524 | expert | the launcher's edges and the stale installs (VR10) |
 | B9 | drafted | expert | one lockfile (VR11) |
