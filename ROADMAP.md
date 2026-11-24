@@ -235,6 +235,18 @@ harnesses' text go unchecked. The sentence check the previous ticket adds raises
 overlay text and other harnesses escape at sentence granularity, where a shared sentence is small
 enough to hide inside a paragraph that differs.
 
+### dupe_sweep reads the string literals
+
+The sentence pass reads docstrings and comments only, so a paragraph hand-copied between two
+harness renderers is equal only by care, checked by nothing: the render-level double-delivery
+check sees duplication within one prompt, and the sweep never reads a plain string literal. The
+calibration instance is the post-plan review's finding 4 — `devpro/harness.py`'s `scratch_rule`
+and `devpro/harnesses/mage.py`'s hand-copy, equal by lockstep edits until the constant landed.
+The corpus gains the f-string and `str` literals of `devpro/definitions/`, `devpro/harnesses/`
+and `devpro/clauses.py` as sentence units, the candidates reporting like the rest: sorted,
+byte-stable, advisory. Measured cost: the whole-corpus sweep runs in 0.535s and the literals'
+sentences reach machinery that already clusters them.
+
 ### Browser-driven visual verification
 
 The dashboard's served pages need a check that a page not only serves but renders. Firefox's
