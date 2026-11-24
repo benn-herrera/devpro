@@ -19,7 +19,7 @@ becomes-blocks are the accepted text.
 | P4 | landed fe14273 | expert | R17's wording halves: the Agent row's referent, the unreadable store stated once, the union comment defers |
 | P5 | landed 9766c02 | expert | moments local at birth; the deco's moment pass leaves; one rendering, two carriers |
 | P6 | landed 57bc90e | expert | `profiler.sh` renames `hp.sh`; the finder runs the wrapper bare; R23's rule enters CONVENTIONS |
-| P7 | drafted: measurement passages filled, four pairs await its application; PE review in flight | expert | R16's leaf catch-up applied as the design's pairs; R25's rule enters CONVENTIONS |
+| P7 | dispatchable | expert | R16's leaf catch-up applied as the design's pairs; R25's rule enters CONVENTIONS |
 | R | drafted | expert | the post-plan review, five seats |
 | B | drafted | expert | the post-plan burndown, drafted from the review document |
 
@@ -208,9 +208,11 @@ The four R16 drift items, each with the measurement that produces its answer, ta
 tree:
 
 1. The index row's list names five data items where the header draws six columns — the
-   dispatched-agents count is missing from the list. Measured: `grep -o '<th class="col-[a-z]*">[a-z ]*</th>' devpro/profiler/pages.py` answers `harness`, `session`, `records`, `dispatched
-   agents`, `first to last`, `span` (the static `<thead>`, one line). The design's index pair is
-   revised to carry the list the header draws; P7 applies the revised pair.
+   dispatched-agents count is missing from the list. Measured: `sed -n '/^<thead>/p'
+   devpro/profiler/pages.py | grep -o '>[a-z][a-z ]*<'` answers `harness`, `session`, `records`,
+   `dispatched agents`, `first to last`, `span` (the static `<thead>`, one line; four labels sit
+   inside sort buttons). The design's index pair is revised to carry the list the header draws;
+   P7 applies the revised pair.
 2. The feed's entry keys are not "the columns above": the feed carries `harness`, `id`,
    `records`, `agents`, `first`, `last`, `span`, and `dispatcher` where a session was dispatched —
    keys the index's script renders into the header's columns. Measured: `sed -n '846,855p'
@@ -222,26 +224,24 @@ tree:
    claims; the correction drops the stale clause, the display's description living in the Serving
    section.
 4. The span's drawn notation is unstated: the index's script draws the feed's seconds as whole
-   hours and minutes — `3h 2m` — minutes alone below the hour, seconds below the minute. Measured:
-   `sed -n '1027,1035p' devpro/profiler/pages.py` (the span's formatter and its comment).
+   hours and minutes — `3h 2m` — minutes and seconds below the hour — `3m 20s` — seconds below
+   the minute, and `0s` for a zero-length span. Measured: `sed -n '1027,1035p'
+   devpro/profiler/pages.py` (the span's formatter and its comment).
 
 R25's leaf, drafted from the pin — `grep -n "locale" tests/test_devpro_profiler.py` answers at
-lines 502 and 564-566: the locale is pinned beside the zone, a clock built from the date's own
+lines 502 and 564-565: the locale is pinned beside the zone, a clock built from the date's own
 fields reading the same under any locale, the runner's ICU settings held hostile to prove it:
 
 ```markdown
-### A formatted time or date pins the locale alongside TZ
+### A formatted time test pins the locale
 
 A test asserting a formatted time or date pins the locale beside the time zone: a runner's ICU
 settings decide locale-aware formatting as the `TZ` setting decides the zone, so a pin holding
-the zone alone passes under whatever locale the runner carries. The pin holds the locale hostile
-— the expected text built from the date's own fields, reading the same under any locale — and the
+the zone alone passes under whatever locale the runner carries. The pin is hostile to the locale:
+the expected text is built from the date's own fields, reading the same under any locale, and the
 runner's ICU settings are set hostile in the test's own setup, so the shape the assertion holds
 is the code's, not the runner's settings'.
 ```
-
-entered in `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/index.md` and
-`PROJECT_DOCS/CONVENTIONS/entry-point.md` beside their listings.
 
 Done-line: `just test` — the docs surface's link check runs over the rewritten leaf and the new
 leaf's listings; `just dev-check-design-deltas-applied` reports the design's pairs landed — P7's

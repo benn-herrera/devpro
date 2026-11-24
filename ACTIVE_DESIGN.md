@@ -56,9 +56,7 @@ the index of record files, every store
 the `.profiler-*` glob finds, one row per session — harness, session id, record count, the count
 of the dispatched agents it holds, first and last moments, and the span between them — each
 linking to `/page/<session-id>`, which serves that session's page in memory, the render's page
-carrying the same page data `tree --format html` produces. The header row and the body's rows
-take their column widths from one source, so every header sits over the column it names at every
-width the data produces.
+carrying the same page data `tree --format html` produces.
 ```
 
 **As it stands:**
@@ -281,10 +279,13 @@ client-side — the board's pattern, the payload consumed client-side.
 The index's page file is static — no row is in its text — and its script fetches the
 records' feed the server answers at `/api/traces`, one JSON entry per session carrying its keys —
 `harness`, `id`, `records`, `agents`, `first`, `last`, `span`, and `dispatcher` where a session
-was dispatched — the keys the index's script renders into the columns the header names: `id` the
-session column, `agents` the dispatched-agents count, `first` and `last` the first-to-last line,
-`span` the span column — the stores the glob finds but cannot read among them as unreadable, and
-renders the rows client-side — the board's pattern, the payload consumed client-side.
+was dispatched — keys the index's script renders into the columns the header names: `harness` and
+`records` carry their own names, `id` the session column, `agents` the dispatched-agents count,
+`first` and `last` the first-to-last line, `span` the span column, and `dispatcher` no column at
+all, drawing the child row under its dispatcher's row. Where the feed holds no session and no
+unreadable store it is one `stores` entry naming how many stores the glob found. The stores the
+glob finds but cannot read are among the entries as unreadable, and the script renders the rows
+client-side — the board's pattern, the payload consumed client-side.
 ```
 
 **As it stands:**
@@ -313,8 +314,8 @@ column.
 
 ```
 moment sweep and its observers leave with the double render they served. The span is its own
-column, drawn from the feed's seconds as whole hours and minutes — `3h 2m` — minutes alone below
-the hour, seconds below the minute.
+column, drawn from the feed's seconds as whole hours and minutes — `3h 2m` — minutes and seconds
+below the hour — `3m 20s` — seconds below the minute, and `0s` for a zero-length span.
 ```
 
 ### [Why there is no verification verb](PROJECT_DOCS/ARCHITECTURE/why-there-is-no-verification-verb.md)
