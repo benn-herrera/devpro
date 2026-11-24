@@ -167,6 +167,9 @@ previous layer left.
 
 ## Maintenance
 
+### Profiler pages should skip namespacing
+
+`devpro-` preceding agent names is just consuming space. We know they are from devpro. 
 
 ### Git Flow light: publish the rework history
 
