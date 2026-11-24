@@ -58,7 +58,7 @@ source and the SPEC.
 | B1 | landed: 278d229 | expert | the pairing identity: the checker's terms, messages, and the rule's heading requirement |
 | B2 | landed: 09c934a | mechanical | the development skill's reworded sentences: Periodic review, items' identity, re-wrap |
 | B3 | landed: 1f6a905 | mechanical | the guide's walkthrough: reviewer/revision named, steps 4 and 6, re-wrap |
-| B4 | dispatchable | mechanical | the CONVENTIONS lines the run earned: width-prohibition trap, staging practice note |
+| B4 | in progress | mechanical | the CONVENTIONS lines the run earned: width-prohibition trap, staging practice note |
 | B5 | dispatchable | mechanical | the staging rule joins the skill's Dispatch section (the design's fourth pair) |
 
 ## Sequencing
