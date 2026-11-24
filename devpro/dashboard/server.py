@@ -16,8 +16,10 @@ Endpoints:
 - `GET /profiler/`: the profiler view's static index — `pages.index_html` — with the nav and the band,
   the shared layer linked at `/board/board.css` and the decoration's script linked at
   `/profiler/deco.js`; its rows are rendered client-side from the feed below.
-- `GET /api/traces`: the index's feed — `pages.traces_feed` — one JSON entry per recorded session and
-  one per store that could not be read, the rows' one schema.
+- `GET /api/traces`: the index's feed — `pages.traces_feed` — one JSON entry per recorded session, the
+  rows' one schema. A feed that cannot be assembled answers a `500` naming the exception's text, and
+  the index's notice renders it: a store the exact names find and cannot read fails the feed, rather
+  than standing in it as an entry of its own.
 - `GET /page/<session-id>`: that session's page, with the nav, the band's legend and its return to the
   list, and the dispatcher its lookup names where one dispatched it.
 - `GET /board/` and `GET /board/<file>`: the board page and its files, the file resolved beside the
@@ -187,6 +189,12 @@ class _Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         if not self._local_host():
             return
+        try:
+            self._answer()
+        except Exception as e:  # an exception no route anticipates: answered, not a closed connection
+            self._fail(e)
+
+    def _answer(self) -> None:
         url = urlsplit(self.path)
         path = unquote(url.path)
         if path in ("", "/"):
@@ -257,6 +265,16 @@ class _Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Security-Policy", CONTENT_SECURITY_POLICY)
         self.end_headers()
         self.wfile.write(body)
+
+    def _fail(self, error: Exception) -> None:
+        """Answer a request no route anticipated, the exception's text for the operator: the dashboard
+        serves `127.0.0.1` and the operator could read the server log, so the answer says what went
+        wrong rather than closing the connection on a traceback nobody sees."""
+        self._send(
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+            json.dumps({"error": str(error)}).encode("utf-8"),
+            "application/json",
+        )
 
     def _redirect(self, location: str) -> None:
         """Answer with a redirect to location, under the policy a page is served under: it is an

@@ -11,7 +11,6 @@ import subprocess
 import sys
 import threading
 from dataclasses import asdict, dataclass
-from http.client import RemoteDisconnected
 from importlib.resources import files
 from pathlib import Path
 
@@ -177,9 +176,9 @@ def test_a_store_the_feed_cannot_read_fails_the_feed(tmp_path: Path, serve) -> N
     that draws rows from a read it could not finish.
 
     A store an exact name finds and cannot read raises out of the feed's assembly to the handler's
-    default failure: the request gets no answer at all — the connection closes without a status
-    line — never the 200 a feed of entries answers over the other store's sessions, and no entry
-    stands in the store's place."""
+    failure answer: the request gets a `500` whose error body names the cause — never the 200 a feed
+    of entries answers over the other store's sessions, never a connection closed without an answer,
+    and no entry standing in the store's place."""
     root = project(tmp_path / "proj", {})
     store(root, "s-claude", [_tool_call("s-claude", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-claude")
     locked = store(
@@ -187,20 +186,48 @@ def test_a_store_the_feed_cannot_read_fails_the_feed(tmp_path: Path, serve) -> N
     )
     locked.parent.chmod(0)
     try:
-        if not _denied(locked.parent):
+        if not _listing_denied(locked.parent):
             pytest.skip("chmod denies this user no read")
-        with pytest.raises(RemoteDisconnected):
-            serve(root).get("api/traces")
+        status, content_type, body = serve(root).get("api/traces")
     finally:
         locked.parent.chmod(0o755)
 
+    assert (status, content_type) == (500, "application/json")
+    assert "/" + str(locked.parent.relative_to(root)) in json.loads(body)["error"]
 
-def _denied(path: Path) -> bool:
+
+def _listing_denied(path: Path) -> bool:
     try:
         os.listdir(path)
     except PermissionError:
         return True
     return False
+
+
+def test_a_store_a_session_page_cannot_read_fails_the_page(tmp_path: Path, serve) -> None:
+    """A session's page reads the stores like the feed does, so a store an exact name finds and cannot
+    read fails it the same way: a `500` whose error body names the cause, never a page rendered over
+    the other store's sessions and never a connection closed without an answer."""
+    root = project(tmp_path / "proj", {})
+    store(
+        root,
+        "s-claude",
+        [_tool_call("s-claude", "2026-01-01T00:00:00.000Z", "ls")],
+        directory=".profiler-claude",
+    )
+    locked = store(
+        root, "s-broken", [_tool_call("s-broken", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-opencode"
+    )
+    locked.parent.chmod(0)
+    try:
+        if not _listing_denied(locked.parent):
+            pytest.skip("chmod denies this user no read")
+        status, content_type, body = serve(root).get("page/s-claude")
+    finally:
+        locked.parent.chmod(0o755)
+
+    assert (status, content_type) == (500, "application/json")
+    assert "/" + str(locked.parent.relative_to(root)) in json.loads(body)["error"]
 
 
 def _unreadable(path: Path) -> bool:

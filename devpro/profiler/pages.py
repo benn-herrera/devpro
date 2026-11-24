@@ -1310,7 +1310,14 @@ const notice = (error) => {
 
 fetch(FEED, { cache: 'no-store' })
   .then((response) => {
-    if (!response.ok) throw new Error('HTTP ' + response.status);
+    // A refused feed's body names the failure — the handler's `{"error": ...}` — and that text is the
+    // notice's; a response carrying none speaks for its status alone.
+    if (!response.ok) {
+      return response.json().then(
+        (answer) => { throw new Error(answer.error || 'HTTP ' + response.status); },
+        () => { throw new Error('HTTP ' + response.status); },
+      );
+    }
     return response.json();
   })
   .then((feed) => {
