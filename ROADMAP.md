@@ -7,6 +7,16 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Features
 
+### The profiler surfaces the model name each session and agent used
+
+Owner's note: the records already carry the model name used in each session and agent — the
+capture stores it — and the profiler surfaces it nowhere, neither on the index nor on a session
+page. Open for the design: where it surfaces (an index column, the session page's band or detail,
+per-agent rows); what "the model" means for a session whose records name several (a session's
+own model beside each dispatched agent's); and how it reads beside the dispatched-agents count
+the index already renders. The capture's records are the data source; no capture changes are
+implied.
+
 ### The index spends less width on the dispatched-agents column and the child-row prefix
 
 Owner's notes from live use (screenshot in session, 2026-11-24): the first-to-last column needs to
