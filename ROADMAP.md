@@ -174,6 +174,13 @@ per harness.
 
 ## Testing
 
+### The plugin's model config is not applied at runtime on 2.4.1
+
+Found by P1's type work: `opencode/index.ts` read the host's `entry.model` past the brand, and the
+fix landed the types — the runtime model config was never applied on 2.4.1 and still is not. The
+plugin runs on the default model where a configured one was intended. A small package: apply the
+configured model at `Plugin.define`'s setup, pinned by a test.
+
 ### A shared sentence written out inside a longer paragraph is not checked for double delivery
 
 `tests/test_devpro.py` `_double_paragraphs` compares whole prose units and never splits them into
