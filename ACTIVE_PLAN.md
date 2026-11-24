@@ -247,9 +247,7 @@ verify a plan-form change is a `check-plan` run over a plan holding the new form
 
 ### B4 — the CONVENTIONS lines the run earned
 
-**Scope.** `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/` (G2's neighbours:
-`definition-modules-hold-only-constants.md`, `cross-references-are-placeholders.md`),
-`PROJECT_DOCS/CONVENTIONS/planning-and-execution/` (G1's neighbours:
+**Scope.** `PROJECT_DOCS/CONVENTIONS/planning-and-execution/` (G4's neighbour leaves:
 `a-delta-application-ends-verified.md`, `a-delta-application-ends-by-searching-the-doc-set.md`).
 
 **Facts.**
@@ -259,16 +257,16 @@ verify a plan-form change is a `check-plan` run over a plan holding the new form
   line width is declined by default. The pattern was killed once before as too expensive: agents
   obsess over widths, manually reflow, or write ad-hoc reflow tools. This CONVENTIONS line is the
   prohibition's home, so the next reviewer does not rebirth it.
-- G2: the brace rule in its conditional form — the mistake is writing `{{…}}` into a plain
-  (non-`f`) string, where it renders as a literal brace; the existing doubled occurrences are
-  correct. Pin the constants-only leaf and the placeholders leaf as the sources of truth; do not
-  write a second normative copy.
 - G4: the shared-index practice, stated as a practice the session keeps, not a control a tool
   enforces — a dispatched package stages and commits only its own paths (`git commit --
   <paths>`); concurrent dispatches in one tree swept a rename into another package's commit in the
   landed plan's run.
-- Addressee note: G3's rule sentence — the `check-plan` probe over a plan-form change — lands in
-  `checks.md` in B1 (the leaf that specifies the verb); nothing here duplicates it.
+- G2 is dropped at the owner's ruling: the brace-knowledge is self-evidencing (the render fails
+  loudly on a mangled placeholder), and a pinned rule over prose is golden-master friction. If it
+  bites again, the fix is one sentence in the constants leaf at that moment.
+- Addressee note: G3's rule sentence — the `check-plan` probe over a plan-form change — landed in
+  the skill's `check-plan` paragraph in B1 (where a plan-form editor reads); nothing here
+  duplicates it.
 
 **Done-line.** `just dev-check-links` (the tree and link check is the only one that sees new
 leaves), then `just test-changed`.
