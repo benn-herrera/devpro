@@ -139,6 +139,10 @@ The child-tie repair renames a torn store aside as `-pre-repair-<n>`, and `pages
 `tree <prefix>` reports ambiguity. The backup names want a non-matching shape, or the glob a
 tighter prefix.
 
+### harness-profiler leaf is verbose
+
+Needs less history lesson more architecture. Concision pass needed.
+
 ### Allow creation of .devpro-temp/
 
 Current wording in AGENTS.md says to stop and notify - let's change that to create it.
