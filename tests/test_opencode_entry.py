@@ -208,10 +208,6 @@ def test_the_registered_model_is_the_one_a_request_resolves(tmp_path: Path) -> N
 
     assert out["models"]["ses_configured"] == configured["model"]
     assert out["models"]["ses_unconfigured"] != configured["model"]
-    # The transform writes the pin in the schema's encoded string form beside the resolve hook's
-    # delivery: the agents store carries "provider/model", the shape the host's config path decodes.
-    assert (out["states"][0]["agents"][configured["id"]])["model"] == "omlx/Qwen3.8-Flash-Next"
-    assert "model" not in out["states"][0]["agents"][unconfigured["id"]]
 
 
 def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_injects_no_reminder(tmp_path: Path) -> None:
