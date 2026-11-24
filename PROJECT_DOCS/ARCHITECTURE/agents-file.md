@@ -46,18 +46,21 @@ another name. A project install's preflight reads the global agents file through
 decision (`_install_managed_paths`), so its directory is a managed base and `--dry-run` names those
 paths whole.
 
-**The plugin on the marker.** The begin marker line reads `vvv-devpro devpro <version> …`: the
-plugin word is `@!plg-name!@` (`clauses.PLUGIN_NAME`), the version `@!agf-version!@`. A file holds one
-block, because two blocks would deliver the shared rules twice to every
+**The plugin on the marker.** The begin marker line reads `vvv-devpro <version> …`: the version is
+`@!agf-version!@`, with no plugin word (`clauses.PLUGIN_NAME` appears in the marker of an earlier
+revision, `vvv-devpro devpro <version>`, and a legacy `kbase`-stamped line reads `vvv-devpro kbase
+<version>`). A file holds one block, because two blocks would deliver the shared rules twice to every
 session that reads the file (SPEC.md, Rendering). `agents_file._block_plugin` reads the first word
-after the marker's opening as a plugin name, and `_release` the word after it. A begin line whose
-first word is not `devpro` is a block of no plugin, with no release — a legacy `kbase`-stamped block
-reads as one. On a project install
-`checked_followed_agents_file` keeps a global block current as `_held_plugin` reads it from its
-begin line (`install-agents-file` into the user harness directory is what changes it), and a
-block of no plugin as the installing plugin's. The block of no plugin differs in content from the
-plugin's, so it is rewritten under the existing rule for a stamp that is not a release version. Mage
-writes the plugin's block into `devpro/CLAUDE.md` in its own directory, so no conflict arises.
+after the marker's opening as this install's plugin name, so `devpro …` is this install's block and
+every other first word — the absent one of the harness-neutral marker, a retired `kbase` — is a block
+of no plugin. `_release` reads the version: the second word of a stamp naming this install's plugin,
+the first version-shaped word of a block of no plugin, and none for a stamp naming a retired plugin.
+A block of no plugin thus keeps its release, so `checked_followed_agents_file` keeps a global block
+current as `_block_plugin` reads it from its begin line (`install-agents-file` into the user harness
+directory is what changes it). A block of no plugin's content matches the render's, so it is left as
+it stands whatever its stamp; one that differs is replaced unless its stamp is a later release,
+which is reported and left. Mage writes the plugin's block into `devpro/CLAUDE.md` in its own
+directory, so no conflict arises.
 
 **Version stamp.** The begin marker line carries `@!agf-version!@`, filled by `render.filled_text` from
 `devpro.__version__` for the agents file alone. `checked_agents_file` compares the existing block with

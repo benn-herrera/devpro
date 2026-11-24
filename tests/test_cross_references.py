@@ -8,8 +8,10 @@ A spelling counts as a reference when it is:
 - any other definition name in backticks;
 - `kbase` in backticks followed by ` skill`.
 
-Role nouns ("hand that to the architect") and `kbase` as its program ("Run `kbase`
-itself") are prose, and stay bare.
+Held forms spell the same reference and stay bare: a role noun ("hand that to the
+architect"), `kbase` as its program ("Run `kbase` itself"), and the harness-neutral
+spelling — the word `devpro`, one space, then a hyphenated name ("get devpro
+prompt-engineer review"), which is how text names a definition without naming a harness.
 """
 
 import re
@@ -34,7 +36,7 @@ def _reference_spellings(names: Collection[str]) -> re.Pattern[str]:
     programs = sorted(name for name in names if name in _PROGRAM_NAMES)
     alternation = lambda chosen: "|".join(map(re.escape, chosen))
     return re.compile(
-        rf"(?<![a-z0-9_/.-])(?:{alternation(hyphenated)})(?![a-z0-9_-])"
+        rf"(?<![a-z0-9_/.-])(?<!devpro )(?:{alternation(hyphenated)})(?![a-z0-9_-])"
         rf"|`(?:{alternation(single)})`"
         rf"|`(?:{alternation(programs)})` skill\b"
     )
@@ -93,6 +95,9 @@ def test_no_definition_text_names_a_definition_outside_a_hole() -> None:
         ("Run `kbase` itself", []),
         ("the file agents/python-coder.md", []),
         ("a python-coders seat", []),
+        ("get devpro prompt-engineer review", []),
+        ("dispatch to prompt-engineer", ["prompt-engineer"]),
+        ("the devpro-check-roadmap recipe", []),
     ],
 )
 def test_the_guard_reads_exactly_the_reference_spellings(text: str, expected: list[str]) -> None:

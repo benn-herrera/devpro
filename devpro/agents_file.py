@@ -12,10 +12,12 @@ to the one rolling `backup.<name>` beside it. Every check runs before the first 
 install into a harness's user directory is refused, when run from a checkout, while this package has
 uncommitted changes; an install into a project directory is not.
 
-The begin marker line carries the name whose block it is and the version that wrote it; a begin line
-whose first word is not that name is a block of no plugin, stamped with no release. A block whose lines
-between the markers already match is left as it stands, whatever its stamp; any other is replaced
-unless its stamp is a later release than this one, which is reported and left.
+The begin marker line carries the version that wrote it, preceded by the name whose block it is where
+an earlier revision wrote one. A begin line whose first word is not that name is a block of no plugin:
+the harness-neutral marker carries a release, and one naming a retired plugin carries none. A block
+whose lines between the markers already match is left as it stands, whatever its stamp. Any other is
+replaced unless its stamp is a later release than this one, which is reported and left; a block naming
+a retired plugin has no release, so it is replaced.
 
 A project install keeps the block in one place (`checked_followed_agents_file`): in the harness's
 user-global agents file where that already holds a marker line, removing the project's AGENTS.md copy of
@@ -80,7 +82,7 @@ def _stamp_words(begin_line: str) -> list[str]:
 
 
 def _block_plugin(begin_line: str) -> bool:
-    """Whether a begin marker line names this install's block — its first word after the marker's
+    """Whether a begin marker line names this install's plugin — its first word after the marker's
     opening being the one name — so every other name, a retired plugin's among them, is a block of no
     plugin."""
     words = _stamp_words(begin_line)
@@ -88,12 +90,16 @@ def _block_plugin(begin_line: str) -> bool:
 
 
 def _release(begin_line: str) -> tuple[int, ...] | None:
-    """The release version a begin marker line is stamped with — the word after the one name, dot-separated
-    digits — or None for a block of no plugin, or where that word is no such version."""
+    """The release version a begin marker line is stamped with — dot-separated digits — or None where it
+    carries no such version. A stamp naming this install's plugin holds its version in the second word,
+    and the harness-neutral marker `vvv-devpro <version>` holds it first. A stamp whose first word names
+    a plugin this install is not, a retired plugin's, has no release, so that block is replaced rather
+    than read for downgrade."""
     words = _stamp_words(begin_line)
-    if not _block_plugin(begin_line) or len(words) < 2 or not re.fullmatch(r"\d+(?:\.\d+)*", words[1]):
+    if not _block_plugin(begin_line) and words and not re.fullmatch(r"\d+(?:\.\d+)*", words[0]):
         return None
-    return tuple(int(part) for part in words[1].split("."))
+    version = words[1] if _block_plugin(begin_line) and len(words) > 1 else (words[0] if words else "")
+    return tuple(int(part) for part in version.split(".")) if re.fullmatch(r"\d+(?:\.\d+)*", version) else None
 
 
 def _stamp(release: tuple[int, ...]) -> str:
@@ -270,7 +276,7 @@ def checked_agents_file(
         else:
             old, first, last = marker_span(existing, where=str(path))
             held, installing = _release(old[first]), _release(block[0])
-            if old[first + 1 : last] == block[1:-1] and _block_plugin(old[first]):
+            if old[first + 1 : last] == block[1:-1] and (_block_plugin(old[first]) or held is not None):
                 text = existing
             elif held is not None and installing is not None and installing < held:
                 text = existing

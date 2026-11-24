@@ -12,6 +12,7 @@ import pytest
 from devpro.components import Components, selection
 from devpro.context import Render, build_render, harness_named
 from devpro.definition import Definition
+from devpro.definitions import discover
 from devpro.errors import InputError
 from devpro.families.claude import FAMILY as CLAUDE_FAMILY
 from devpro.harness import PLUGIN_MANIFEST, Harness
@@ -105,9 +106,13 @@ def test_an_optional_reference_fills_where_its_referent_ships_and_drops_its_para
 @pytest.mark.parametrize("harness", [CLAUDE, OPENCODE], ids=lambda harness: harness.name)
 @pytest.mark.parametrize("components", [PLAIN, WITH_KBASE], ids=["plain", "with-kbase"])
 def test_each_selections_agents_file_carries_the_development_bullet(harness: Harness, components: Components) -> None:
+    """The bullet tells the session to load the development skill before a dispatch, and the agents
+    file is harness-neutral, so the file names the skill in prose rather than through a reference
+    prefix. It reads the bullet from the definition's own text and holds the render to it."""
+    [definition] = [defn for _, entries in discover() for defn in entries if defn.kind is Kind.AGENTS_FILE]
+    bullet = next(line for line in definition.body.split("\n") if "skill.**" in line)
     text = render_agents_file(harness, components, scope="x")
-    development = f"{harness.bound(components.name).reference_prefix}development"
-    assert f"load the `{development}` skill" in text
+    assert f"\n{bullet}\n" in text
 
 
 @pytest.mark.parametrize("harness", [CLAUDE, OPENCODE], ids=lambda harness: harness.name)

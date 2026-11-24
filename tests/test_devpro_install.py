@@ -25,11 +25,12 @@ from pathlib import Path, PurePosixPath
 import pytest
 
 from devpro import __version__
-from devpro.agents_file import install_agents_file, marker_span, scope_name
+from devpro.agents_file import BEGIN, install_agents_file, marker_span, scope_name
 from devpro.cli import build_parser, main
 from devpro.components import NAME, Components
 from devpro.context import MapSupply, Render, build_render
 from devpro.definition import Definition
+from devpro.definitions import discover
 from devpro.errors import InputError
 from devpro.families.claude import FAMILY as CLAUDE_FAMILY
 from devpro.harness import Harness
@@ -59,7 +60,7 @@ from devpro.render import (
     render_definition,
 )
 from devpro.runner_file import _named_harnesses, install_include_lines
-from devpro.vocabulary import CATEGORIES, Kind
+from devpro.vocabulary import CATEGORIES, AgentsFileText, Kind, PluginText, hole
 from tests._structure import kbase_skill_output_paths
 from tests.conftest import PLAIN, WITH_KBASE, settings_file
 
@@ -71,8 +72,54 @@ _DEVPRO_SNIPPETS = _SNIPPET_SETS["runner-snippets"]
 
 _BEGIN = " <!-- vvv-devpro do not edit at or between marker lines. devpro-vvv -->"
 """The begin marker line an earlier, unstamped revision wrote: a block of no plugin."""
-_STAMPED_BEGIN = f" <!-- vvv-devpro devpro {__version__} do not edit at or between marker lines. devpro-vvv -->"
 _END = " <!-- ^^^-devpro do not edit at or between marker lines. devpro-^^^ -->"
+_AGENTS_FILE = next(defn for _, entries in discover() for defn in entries if defn.kind is Kind.AGENTS_FILE)
+
+
+def _agents_file_stamp(*, plugin: str | None) -> str:
+    """The begin marker line the agents-file render stamps: its body's marker line filled with this
+    version, and with `plugin`'s name where a plugin names it. The rendered line alone is not the
+    source: a render reads the source out of the stamp, so reading the source through the render would
+    hold however the source spelled it."""
+    line = next(line for line in _AGENTS_FILE.body.split("\n") if line.strip().startswith(BEGIN[0]))
+    body = line.replace(hole(AgentsFileText.VERSION), __version__)
+    return body.replace(hole(PluginText.NAME), plugin) if plugin is not None else body
+
+
+_STAMPED_BEGIN = _agents_file_stamp(plugin=NAME)
+
+_SNIPPET_HELP = "devpro-help"
+
+# The wrapper line each snippet's every recipe runs: `@$(DEVPRO) <command>` in the make snippet, the
+# one templated wrapper in the just one.
+_SNIPPET_WRAPPER_LINE = re.compile(
+    r"^\s*@(?:\$\(DEVPRO\)|\{\{quote\(source_directory\(\) / \"\.\.\" / \"devpro\.sh\"\)\}\}) (.*)$"
+)
+
+
+def _recipe_runs(snippet: str) -> dict[str, list[str]]:
+    """Each recipe the snippet defines, with the wrapper command lines it runs, in order."""
+    runs: dict[str, list[str]] = {}
+    current = None
+    for line in snippet.splitlines():
+        if match := re.fullmatch(r"(devpro(?:-[a-z]+)*):", line):
+            current = runs[match.group(1)] = []
+        elif current is not None and (command := _SNIPPET_WRAPPER_LINE.match(line)):
+            current.append(command.group(1))
+    return runs
+
+
+def _snippet_recipe_runs() -> dict[str, list[str]]:
+    """The recipes the shipped devpro snippet set carries and the wrapper command lines each runs, read
+    from the just snippet: the make snippet defines the same names, so a runner whose list drifted from
+    the other's is caught by comparing the two snippet files."""
+    snippets = {
+        name: (PACKAGE_ROOT / "runner-snippets" / name).read_text(encoding="utf-8")
+        for name in ("devpro.just", "devpro.mk")
+    }
+    runs = {name: _recipe_runs(text) for name, text in snippets.items()}
+    assert runs["devpro.just"] == runs["devpro.mk"]
+    return runs["devpro.just"]
 
 
 def _block(harness: Harness) -> list[str]:
@@ -1475,11 +1522,13 @@ def test_no_two_snippet_sets_name_the_same_snippet() -> None:
 
 
 @pytest.mark.parametrize("runner", ["just", "make"])
-def test_the_shipped_devpro_snippets_list_the_same_five_recipes_in_both_runners(tmp_path: Path, runner: str) -> None:
-    """`devpro-help` lists the same five recipes whichever runner includes the set, and it lists them
+def test_the_shipped_devpro_snippets_list_the_same_recipes_and_every_gate_takes_no_argument(
+    tmp_path: Path, runner: str
+) -> None:
+    """`devpro-help` lists the same recipes whichever runner includes the set, and it lists them
     from the snippet rather than a copy, naming the CLI's own help beside them — its own `devpro
     --help` is in the log below. A devpro on PATH records where a check runs and what it was
-    given, so the four gates prove they run the check verb argumentless with nothing else. A runner
+    given, so the gates prove they run the check verb argumentless with nothing else. A runner
     whose list drifted from the other's would write include lines promising targets one runner does not
     define; a gate carrying an argument would check a file the consumer did not name."""
     if shutil.which(runner) is None:
@@ -1501,9 +1550,10 @@ def test_the_shipped_devpro_snippets_list_the_same_five_recipes_in_both_runners(
     body = "all:\n  @echo hi\n" if runner == "just" else "all:\n\t@echo hi\n"
     (project / runner_file).write_text(f"{body}\n{line}\n", encoding="utf-8")
     environment = {**os.environ, "PATH": f"{tmp_path}:{os.environ['PATH']}", "PROBE_LOG": str(tmp_path / "log")}
-    recipes = (
-        "devpro-help devpro-check-plan devpro-check-design devpro-check-design-deltas-applied devpro-check-roadmap"
-    ).split()
+    runs = _snippet_recipe_runs()
+    # Each recipe runs one line, the line is the wrapper's, and the two runners agree: a name whose line
+    # drifted would promise one runner a target the other never runs.
+    expected = ["--help", *sorted(command for lines in runs.values() for command in lines)]
     listed = subprocess.run(
         [runner, "devpro-help"], cwd=project, env=environment, capture_output=True, text=True, check=True
     )
@@ -1512,23 +1562,14 @@ def test_the_shipped_devpro_snippets_list_the_same_five_recipes_in_both_runners(
         for line in listed.stdout.splitlines()
         if (match := re.match(r"\s+(devpro(?:-[a-z-]+)?)[:\s]", line))
     )
-    assert names == sorted(recipes)
-    for gate, arguments in (
-        ("devpro-check-plan", "check-plan"),
-        ("devpro-check-design", "check-design"),
-        ("devpro-check-design-deltas-applied", "check-design --deltas-applied"),
-        ("devpro-check-roadmap", "check-roadmap"),
-    ):
-        subprocess.run([runner, gate], cwd=project, env=environment, capture_output=True, check=True)
-    # The devpro-help run invokes the command itself — its own `devpro --help` — before the four
-    # gates: the log names the help surface's invocation and the gates' argumentless checks.
-    assert (tmp_path / "log").read_text(encoding="utf-8").splitlines() == [
-        "--help",
-        "check-plan",
-        "check-design",
-        "check-design --deltas-applied",
-        "check-roadmap",
-    ]
+    assert names == sorted(runs)
+    for recipe in runs:
+        subprocess.run([runner, recipe], cwd=project, env=environment, capture_output=True, check=True)
+    # The devpro-help run invokes the command itself — its own `devpro --help` — before the gate
+    # recipes: the log names the help surface's invocation and each gate's own line, argumentless where
+    # the recipe spells it so. Run order is the snippet's, so the log is compared as a multiset.
+    logged = (tmp_path / "log").read_text(encoding="utf-8").splitlines()
+    assert logged[0] == "--help" and sorted(logged[1:]) == expected[1:]
 
 
 def test_an_argument_after_a_devpro_recipe_is_refused_before_the_command_runs(tmp_path: Path) -> None:
@@ -2793,7 +2834,7 @@ def test_a_legacy_kbase_stamped_global_block_is_replaced_as_a_block_of_no_plugin
     main(["install", str(project), "--harness=claude"])
     lines, begin, end = marker_span(render_agents_file(CLAUDE, PLAIN, scope="x"), where="render")
     assert global_file.read_text(encoding="utf-8") == "\n".join([*lines[begin : end + 1], ""])
-    assert f"vvv-devpro devpro {__version__} " in lines[begin]
+    assert lines[begin] == _STAMPED_BEGIN
     assert not (project / "AGENTS.md").exists() and not (project / "CLAUDE.md").exists()
 
 
