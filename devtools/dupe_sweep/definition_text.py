@@ -1,10 +1,11 @@
-"""dupe_sweep — one rule, two homes: the sentences a definition module carries as string literals.
+"""dupe_sweep — one rule, two homes: the sentences a rendered-prose module carries as string literals.
 
-A definition module is its rendered text with placeholders, so its prose lives in string
-literals: two modules stating one rule hold it in two literals, and :mod:`doc_sentences` reads
-neither. Each literal is rejoined across its hard wrap and split by
-:func:`doc_sentences.block_sentences`, so a sentence means here what it means in a docstring; a
-sentence's line is its block's first line, numbered from the line the literal opens on.
+A module whose text a rendering carries — a definition, a harness field, a clause, a family
+overlay — holds its prose in string literals: two modules stating one rule hold it in two
+literals, and :mod:`doc_sentences` reads neither. Each literal is rejoined across its hard wrap
+and split by :func:`doc_sentences.block_sentences`, so a sentence means here what it means in a
+docstring; a sentence's line is its block's first line, numbered from the line the literal opens
+on.
 
 A literal carrying no whitespace — a placeholder, a directory name, a lone word — is not prose,
 and contributes no sentence. A docstring contributes none either: it is a literal, and
@@ -19,12 +20,17 @@ from .doc_sentences import block_sentences, docstrings
 from .normalization import prose_tokens
 from .python_corpus import parse_module
 
-#: The definition-module areas whose string literals are prose the renderings carry.
-DEFINITION_TEXT_PREFIXES = ("devpro/definitions/", "devpro/harnesses/", "devpro/clauses.py")
+#: The rendered-prose areas whose string literals are prose the renderings carry.
+DEFINITION_TEXT_PREFIXES = (
+    "devpro/definitions/",
+    "devpro/harnesses/",
+    "devpro/clauses.py",
+    "devpro/families/",
+)
 
 
 def definition_text_units(files: dict[str, str]) -> list[Unit]:
-    """Every sentence of every string literal in the definition modules among `files`."""
+    """Every sentence of every string literal in the rendered-prose modules among `files`."""
     units = []
     for path, text in sorted(files.items()):
         if not path.startswith(DEFINITION_TEXT_PREFIXES):

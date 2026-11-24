@@ -5,7 +5,7 @@ definitions; one rule, two homes — and prints :data:`UNANSWERED` for the fourt
 meanings: nothing in the source tells a term's referents apart, so it is reported as unanswered
 rather than approximated.
 
-A rule's two homes are read from docstrings, comments and, in the definition modules, string
+A rule's two homes are read from docstrings, comments and, in the rendered-prose modules, string
 literals: a rendering's prose is a literal, so it is a sentence unit beside the other two.
 
 Every stage sorts its output, so the same tree yields the same report, byte for byte.
@@ -41,7 +41,7 @@ def python_pass(*, rev: str | None, settings: dict, out) -> None:
     shapes = shape_units(files)
     docs = doc_units(files) + definition_text_units(files)
     compared = ", ".join(f"{prefix}/" for prefix in CODE_PREFIXES)
-    scope = f"{compared} less {', '.join(CODE_UNSWEPT)}, the definition modules' literals among its sentence units"
+    scope = f"{compared} less {', '.join(CODE_UNSWEPT)}, the rendered-prose modules' literals among its sentence units"
     render_header("python", rev, scope, f"{len(shapes) + len(docs)} spans", out)
     render_clusters("one concept, two implementations", clusters(shapes, **settings), out=out)
     render_constants(constant_candidates(constants(files)), out=out)
