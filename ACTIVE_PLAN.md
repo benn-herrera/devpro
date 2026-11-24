@@ -26,7 +26,7 @@ cited by name, and a name outranks a stale line number.
 | B5 | landed: c026bcb | mechanical | document wording: repo-layout row, leaf reflow |
 | B6 | landed: 2ccc9e6 | mechanical | pin honesty: name the form pins |
 | B7 | landed: 6177b14 | mechanical | CONVENTIONS lines: real-tree case, synonym search, scratch hygiene |
-| B8 | dispatchable | mechanical | the cli docstrings' one home |
+| B8 | landed: 11d65ca | mechanical | the cli docstrings' one home |
 | B9 | landed: 7567f51 | expert | the families' anchor prose: in the literals corpus or recorded as out |
 
 P1–P4 and PR are `landed`. The burndown's items B1–B8 were drafted from `ACTIVE_PLAN_REVIEW.md` in
