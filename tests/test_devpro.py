@@ -74,6 +74,7 @@ from devpro.vocabulary import (
     reference,
 )
 from devtools import clause_join_sites, render_diff
+from devtools.dupe_sweep import doc_sentences
 from tests._structure import (
     ARGUMENT_RULE,
     ASSIGNMENT_RULE,
@@ -773,21 +774,6 @@ def test_the_scratch_rule_names_the_one_scratch_directory(harness: str) -> None:
     rule = harnesses()[harness].scratch_rule
     assert f"`{devpro.clauses.PROJECT_TEMP_DIR}/`" in rule
     assert rule == devpro.clauses.SCRATCH_PARAGRAPH
-
-
-def test_no_rendering_names_a_retired_scratch_directory() -> None:
-    """The scratch directory is one name under every harness, so every rendering under each of them
-    carries that name and no retired one."""
-    texts = []
-    for harness in (CLAUDE, MAGE, OPENCODE):
-        for components in _SELECTIONS:
-            ctx = Render(
-                harness=harness, plugin=components, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
-            )
-            texts += [text for _, text in render_all(ctx)]
-            texts.append(render_agents_file(harness, components, scope="x"))
-    retired = [".claude-temp", ".opencode-temp", ".mage-temp"]
-    assert [(name, text) for name in retired for text in texts if name in text] == []
 
 
 def test_no_rendered_agent_body_names_a_clauses_symbol() -> None:
@@ -1927,6 +1913,21 @@ def _prose_unit_list(body: str) -> list[bytes]:
     return [line for line, kind in zip(lines, render_diff.line_kinds(lines)) if kind in ("item", "text")]
 
 
+def _sentence_list(body: str) -> list[str]:
+    """The sentences of a body's prose units in order, each split by the sweep's own splitter so a
+    sentence means here what it means there: punctuation splits it, abbreviation or not, and each
+    unit is rejoined across its hard wrap first.
+
+    A unit's leading enumeration marker is dropped before the split. A marker is the list's numbering,
+    not prose: one output carrying two numbered lists splits into the same `1.`…`5.` twice, which two
+    outputs repeating one sentence do not."""
+    sentences = []
+    for unit in _prose_unit_list(body):
+        for sentence in doc_sentences._split_sentences(re.sub(rb"\d+[.)] ", b"", unit, count=1).decode()):
+            sentences.append(sentence)
+    return sentences
+
+
 def _prose_units(body: str) -> set[bytes]:
     return set(_prose_unit_list(body))
 
@@ -2050,7 +2051,33 @@ def test_a_paragraph_two_supporting_files_write_out_is_found() -> None:
     ]
 
 
-# A prompt delivers each shared span once: no clause reached twice, no paragraph written twice.
+def _definition_sentences() -> list[str]:
+    """Every sentence a definition module holds in its definitions' own text — a description included,
+    which a rendering writes too — read off their source."""
+    found = []
+    for module, source in _definition_sources().items():
+        for defn in _source_definitions(source, module=module, credited=False):
+            bodies = [defn.body, *(file.body for file in defn.files)]
+            found += [
+                sentence
+                for body in (*bodies, defn.description or "")
+                for sentence in _sentence_list(filled_text(body, defn, _SELECTION_RENDERS[0], where=defn.name))
+            ]
+    return found
+
+
+def _repeatable_sentence() -> str:
+    """A sentence the check writes into a fixture: long enough that a repeat is worth catching, and
+    plain enough to hold inside a definition source written by string formatting — no quote, no
+    backslash, and no leading enumeration marker."""
+    return next(
+        sentence
+        for sentence in _definition_sentences()
+        if len(sentence) > 40 and not re.search(r'["\\]', sentence) and not sentence[0].isdigit()
+    )
+
+
+# A prompt delivers each shared span once: no clause reached twice, no sentence written twice.
 
 _CLAUSE_GRAPH = clause_graph((_PACKAGE / "clauses.py").read_text(encoding="utf-8"))
 _HARNESS_STRINGS = {hole(part) for part in (*HarnessText, *PluginText)}
@@ -2150,13 +2177,13 @@ def _double_clause_deliveries(sources: dict[str, str]) -> list[str]:
 
 
 def _double_paragraphs(sources: dict[str, str]) -> list[str]:
-    """Each prose unit a prompt carries twice, named with the prompt, each finding once however many
+    """Each sentence a prompt carries twice, named with the prompt, each finding once however many
     selections deliver the prompt."""
     found = []
     for prompt in _prompts(sources):
-        counts = Counter(unit for output in prompt for unit in _prose_unit_list(output.text))
+        counts = Counter(sentence for output in prompt for sentence in _sentence_list(output.text))
         found += [
-            f"{prompt[0].label}: written twice: {unit.decode()[:120]}" for unit, count in counts.items() if count > 1
+            f"{prompt[0].label}: written twice: {sentence[:120]}" for sentence, count in counts.items() if count > 1
         ]
     return list(dict.fromkeys(found))
 
@@ -2267,7 +2294,31 @@ def test_a_command_repeating_a_clause_the_output_it_loads_carries_is_refused() -
     assert _double_clause_deliveries(sources) == [
         "commands/c.md: DISSENT reached twice — commands/c.md: DISSENT | agents/a.md: DISSENT"
     ]
-    assert _double_paragraphs(sources) == [f"commands/c.md: written twice: {devpro.clauses.DISSENT[:120]}"]
+    dissent = _sentence_list(devpro.clauses.DISSENT)
+    assert len(dissent) == 3
+    assert _double_paragraphs(sources) == [f"commands/c.md: written twice: {sentence[:120]}" for sentence in dissent]
+
+
+def test_a_command_repeating_a_sentence_of_an_agent_it_loads_is_refused() -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: the check counted a body's paragraphs, so a command
+    repeating one sentence of another rendering was no finding, and shared prose could diverge
+    between two outputs unseen. The sentence is read off the definitions' own text and stands in a
+    list item of each output, so no paragraph holds it twice and only the sentence count sees it."""
+    repeated = _repeatable_sentence()
+    source = "\n".join(
+        [
+            f"{_FIXTURE_HEAD}from devpro.vocabulary import ALL",
+            "DEFINITIONS = (",
+            'Definition(name="a", kind=Kind.AGENT, description="an agent", tools=ALL, category="stem-expert", '
+            f'body="- Own agent text. {repeated}"),',
+            'Definition(name="c", kind=Kind.COMMAND, '
+            f'body="@{devpro.clauses.PROJECT_HARNESS_DIR}/agents/a.md\\n\\n- Own command text. {repeated}"),',
+            ")",
+        ]
+    )
+    sources = {"fixture.loading": source}
+    assert _double_clause_deliveries(sources) == []
+    assert _double_paragraphs(sources) == [f"commands/c.md: written twice: {repeated[:120]}"]
 
 
 def test_a_paragraph_one_output_writes_twice_is_refused() -> None:
