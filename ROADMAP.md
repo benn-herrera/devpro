@@ -242,5 +242,7 @@ as `UnsupportedOperation` — named, not silent.
 
 Still open for the design work: what the check asserts and which pages it covers. Screenshot-byte
 comparison is out of it — a pin on pixels is the photograph antipattern, the class of test this
-project eliminates. Rides with the UX
+project eliminates. The primary first use is the development loop, not a hard test: the model
+working on the pages sees what it rendered and iterates toward what it intends, and the
+assertion set distills second, from what that loop shows matters. Rides with the UX
 pass, where the visual work lives.
