@@ -323,7 +323,8 @@ The plan size limit (default {clauses.PLAN_SIZE_LIMIT_DEFAULT}) and the periodic
   serves a release; a `## Status` table, one row per package, with `Package`, `State` and `Rating`
   columns; then each package under a heading opening with its ID (`P1`). Each package states its
   scope in files and its done-line: the runner targets whose passing run shows it done. A plan with
-  shipped work ends in two more packages, *Post-plan review* and *Post-plan burndown*. A plan longer
+  shipped work ends in the *Post-plan review* package, then the `## Post-plan burndown` section
+  holding its drafting ticket. A plan longer
   than the plan size limit may be the `ACTIVE_PLAN/` tree read from its `entry-point.md`; the plan
   under way is that tree or the document `ACTIVE_PLAN.md`.
 - **Lifetime**, stated per package: **shipped**, the whole process (the default); **exploratory**,
@@ -376,8 +377,10 @@ The plan size limit (default {clauses.PLAN_SIZE_LIMIT_DEFAULT}) and the periodic
   changed, a prompt engineer where model-facing text or the project documents changed. They are
   given the project documents and the design, not the plan. Appearing: `ACTIVE_PLAN_REVIEW.md`,
   their findings, committed with the review's row `landed`.
-- **The burndown:** the session drafts the fix list from `ACTIVE_PLAN_REVIEW.md` into the burndown
-  package, has it reviewed, and runs it like any package. Every finding that cites a written rule is
+- **The burndown:** a `## Post-plan burndown` section holding its drafting ticket; the session
+  drafts the fix list from `ACTIVE_PLAN_REVIEW.md` into the section — one package per root-cause
+  group, each with its own row and rating — has the items reviewed, and runs them like any package.
+  Every finding that cites a written rule is
   fixed, whatever its severity; one that needs a choice nothing written settles comes to the user.
 - **The user** may read `ACTIVE_PLAN_REVIEW.md` and answers what comes to them; nothing else.
 - **Landing:** one commit deletes `ACTIVE_PLAN.md` (or replaces it with the next plan), the design
@@ -502,7 +505,8 @@ A project with code, SPEC.md and ARCHITECTURE.md, and no written process, devpro
    section, a `## ARCHITECTURE delta` entry describing the export code. "I accept the design. Write
    the plan."
 4. `ACTIVE_PLAN.md` appears: P1 applies the two entries, P2 writes the export and its tests, P3 the
-   post-plan review, P4 the post-plan burndown, all shipped. "The plan is approved. Run it."
+   post-plan review, then the burndown section's drafting ticket drafting its item packages, all
+   shipped. "The plan is approved. Run it."
 5. The session names one agent and its model for P1, checks the result, runs `just test`, and
    commits P1 with its row `landed`; then P2. Mid-P2 it asks: "Dates in UTC or the user's time
    zone? SPEC.md and the design say neither." "UTC." The answer is entered in the design. "How far

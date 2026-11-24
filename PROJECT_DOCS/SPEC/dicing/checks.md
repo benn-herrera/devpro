@@ -106,7 +106,8 @@ post-plan review or burndown package without the other; what is otherwise absent
   `Post-plan review` (or `Post-plan burndown`) where it begins with those characters,
   case-sensitive, followed by the end of the title or a character that is not a letter or digit. A
   package whose title opens with `Post-plan review` is a **post-plan review package**; with
-  `Post-plan burndown`, a **post-plan burndown package**.
+  `Post-plan burndown`, a package is the **post-plan burndown's drafting ticket**, the work package
+  a plan's `## Post-plan burndown` section holds.
 
 **The form, as checked.** A plan with no status table, no work packages, no H1 heading, no release
 line or neither post-plan package is valid. A plan has a breach where:
