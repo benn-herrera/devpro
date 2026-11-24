@@ -21,7 +21,7 @@ it changes reports the failure as a finding — the test is never edited to pass
 
 | Package | State | Rating | Scope |
 | --- | --- | --- | --- |
-| P1 | dispatchable | expert | the plugin's configured model applies at runtime |
+| P1 | in progress: dispatched to devpro-python-coder | expert | the plugin's configured model applies at runtime |
 | P2 | drafted | expert | the stores read true: exact names, both readers, the doctor's line |
 | P3 | drafted | expert | the scratch guarantee's one home: install prepares, the clause drops |
 | P4 | drafted | expert | the stand-ins' removal and the mock-as-oracle clause |
