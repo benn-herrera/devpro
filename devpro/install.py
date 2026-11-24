@@ -800,9 +800,9 @@ def _install_managed_paths(
         under_project += [
             *JUSTFILE_NAMES,
             *MAKEFILE_NAMES,
-            # The scratch directory and the `.gitignore` line a project install prepares: a directory
-            # and a file that may be absent, which the copy makes where the real project holds nothing.
-            clauses.PROJECT_TEMP_DIR,
+            # The `.gitignore` line a project install prepares: a file that may be absent, which the
+            # copy makes where the real project holds nothing. The scratch directory is not managed:
+            # the install creates it where missing and the prediction does not contemplate it.
             ".gitignore",
         ]
     # The profiler's stores: each old-pattern one the install renames, and the name it renames to, so the

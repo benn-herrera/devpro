@@ -121,8 +121,10 @@ part.
   harness-rendered file — the manifest, `.mcp.json`, `registry.json` — the retired resource names
   (`RETIRED_RESOURCE_FILES`' and `RETIRED_RESOURCE_DIRS`', unlinked and removed on every install), and
   the guardrail registration. Under the project root, on a project install: the justfile and Makefile names unless the harness
-  is a harness-directory plugin, and the scratch directory and `.gitignore` the installation prepares
-  (The scratch directory). The project's own settings files are not named: no install writes one.
+  is a harness-directory plugin, and the `.gitignore` the installation prepares
+  (The scratch directory) — the scratch directory itself is not managed: the install creates it
+  where missing and the comparison does not read what the project holds inside it. The project's
+  own settings files are not named: no install writes one.
 - **The scratch copy** (`preflight.preflight`) lives in a `tempfile.TemporaryDirectory`, each
   managed path at its position below its base. Every `.venv` (`VENV_DIR`) is omitted. A base nested in another keeps its position below the outer
   one.
