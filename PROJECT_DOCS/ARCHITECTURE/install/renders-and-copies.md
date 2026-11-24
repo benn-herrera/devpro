@@ -83,7 +83,9 @@ of an existing destination. Package destinations are exempt from the banner and 
 there. No error is swallowed: an `OSError` from the clear propagates. The harness resources join the same `copies` list as the packages', so the prune's
 `keep` holds them and the install report counts them: a harness resource never reads as a stale
 rendered definition. The copy is one-way, not a mirror — `prune` owns the install directory's
-`agents/`, `commands/` and `skills/` and nothing outside them. A harness-rendered file is checked a
+`agents/`, `commands/` and `skills/` and nothing outside them — with one exception: a name
+`RETIRED_RESOURCE_FILES` pairs with the file that replaced it is removed where it carries this
+repository's header, on every install. A harness-rendered file is checked a
 third way, by its `HarnessFile.marker`.
 
 **Preflight.** The CLI reaches `install` through `install.preflighted_install`,
@@ -105,8 +107,9 @@ part.
   `checked_agents_file` call. Under the install directory: the three deployed surfaces, which the
   prune walks, the destination of every `SHIPPED_PACKAGES` row whichever definitions the plugin
   ships, the harness's resource destinations (at user level, the entry alone), every
-  harness-rendered file — the manifest, `.mcp.json`, `registry.json` — and the guardrail registration.
-  Under the project root, on a project install: the justfile and Makefile names unless the harness
+  harness-rendered file — the manifest, `.mcp.json`, `registry.json` — the retired resource names
+  (`RETIRED_RESOURCE_FILES`' former names, unlinked on every install that carries their
+  replacements), and the guardrail registration. Under the project root, on a project install: the justfile and Makefile names unless the harness
   is a harness-directory plugin. The project's own settings files are not named: no install writes one.
 - **The scratch copy** (`preflight.preflight`) lives in a `tempfile.TemporaryDirectory`, each
   managed path at its position below its base. Every `.venv` (`VENV_DIR`) is omitted. A base nested in another keeps its position below the outer
