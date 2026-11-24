@@ -394,7 +394,7 @@ _DEVPRO_SET_LINE = f"import? '{_CLAUDE_PLUGIN_RELPATH}/tools/runner-snippets/dev
 # The activity profiler: the launcher the claude install copies beside the hooks, the skill that finds
 # it, and the registration entries that feed it.
 _PROFILER = "profiler"
-_PROFILER_FILES = ("hp.sh",)
+_PROFILER_FILES = ("profiler.sh",)
 _PROFILER_EVENTS = (
     "PostToolUse",
     "PostToolUseFailure",
@@ -403,7 +403,7 @@ _PROFILER_EVENTS = (
     "SessionStart",
     "SubagentStop",
 )
-_PROFILER_COMMAND = '/bin/bash "${CLAUDE_PLUGIN_ROOT}/profiler/hp.sh" capture claude'
+_PROFILER_COMMAND = '/bin/bash "${CLAUDE_PLUGIN_ROOT}/profiler/profiler.sh" capture claude'
 _PROFILER_SKILL = "skills/profiler/SKILL.md"
 
 
@@ -458,7 +458,7 @@ def test_the_profiler_resources_land_under_the_install_directorys_profiler(tmp_p
     _definition_install(root, project_root=tmp_path)
     profiler = _claude_plugin(root) / _PROFILER
     assert sorted(path.name for path in profiler.iterdir()) == sorted(_PROFILER_FILES)
-    assert os.access(profiler / "hp.sh", os.X_OK)
+    assert os.access(profiler / "profiler.sh", os.X_OK)
 
 
 def test_the_claude_registration_carries_the_profiler_on_every_event_it_captures(tmp_path: Path) -> None:

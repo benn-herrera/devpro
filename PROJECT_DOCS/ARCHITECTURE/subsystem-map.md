@@ -75,9 +75,9 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   the copy of the skill `profiler init` writes outside the install directory. The
   tree's drawing is the code's rule: `tree --verbose` draws every node of the session, and the
   plain tree draws the placeholder and marker nodes and the calls whose tool is in `PARENT_TOOLS`.
-  The skill finds the profiler's launcher at `../../profiler/hp.sh`, the installed copy of claude's,
-  before the committed `.claude/harness-profiler/hp.sh` a claude-on-web session uses; the launcher
-  runs the `profiler` verb of the devpro its finder resolves, the installation's wrapper first
+  The skill finds the profiler's launcher at `../../profiler/profiler.sh`, the installed copy of claude's,
+  before the committed `.claude/harness-profiler/profiler.sh` a claude-on-web session uses; the launcher
+  runs the `profiler` verb of the wrapper beside it
   (Install, Harness profiler).
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered

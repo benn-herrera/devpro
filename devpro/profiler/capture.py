@@ -1,9 +1,9 @@
 """The capture: one hook payload in, one record appended to the harness's store.
 
-The claude hook runs this through the launcher (`hp.sh capture claude`); the opencode plugin writes the
-same records itself. Neither a failed capture nor a missing toolchain may block the call that fired it,
-so the launcher exits 0 with no output where the devpro command is missing, and `cli`'s capture path
-swallows every error.
+The claude hook runs this through the launcher (`profiler.sh capture claude`); the opencode plugin writes
+the same records itself. Neither a failed capture nor a missing toolchain may block the call that fired
+it, so the launcher drains its stdin and exits 0 where the wrapper beside it is missing or fails, and
+`cli`'s capture path swallows every error.
 """
 
 import json

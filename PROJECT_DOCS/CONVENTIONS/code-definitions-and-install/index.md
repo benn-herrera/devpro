@@ -30,3 +30,4 @@ Contents:
 - [A hook contract is read, not assumed](a-hook-contract-is-read-not-assumed.md)
 - [A sentence two harness resources carry is one text](a-sentence-two-resources-carry-is-one-text.md)
 - [A host version is checked against the host's declarations](a-host-version-is-checked-against-the-host-s-declarations.md)
+- [A stand-in models the API's real semantics](a-stand-in-models-the-api-s-real-semantics.md)

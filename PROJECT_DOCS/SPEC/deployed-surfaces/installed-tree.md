@@ -40,7 +40,7 @@ and every harness resource is installed byte-verbatim.
 A definition body names no installed path below the harness directory for a session to run or edit. A
 script the install places is named relative to the directory of the skill that names it: the
 profiler's launcher sits in the install directory's `profiler/` and is named relative to the skill's
-directory (`../../profiler/hp.sh`), and so is the installation's wrapper, in its `tools/`
+directory (`../../profiler/profiler.sh`), and so is the installation's wrapper, in its `tools/`
 (`../../tools/devpro.sh`; Shipped files states which commands run through it). The
 project's scratch directory is `.devpro-temp/` under the project root, the same name under every
 harness. A cross-definition reference renders

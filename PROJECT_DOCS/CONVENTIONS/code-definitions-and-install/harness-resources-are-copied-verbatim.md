@@ -8,7 +8,7 @@ stamps a file whose suffix is in `STAMPED_SUFFIXES` or whose name is in `STAMPED
 files being this repository's own, so a change adding a resource must not reuse that loop just
 because the walk is already there: the suffix or name says nothing about what a file already holds,
 and a `.py` resource would gain a banner above its own. This tree is the master for what it ships — an installed copy is never edited,
-and no other repository's copy is a source. The profiler's launcher, `claude/profiler/hp.sh`, is the
+and no other repository's copy is a source. The profiler's launcher, `claude/profiler/profiler.sh`, is the
 one file here `profiler init` also copies, by `launcher_resource()`, into a repository's committed
 hook directory; every other file reaches a consumer through the install's copy list alone.
 

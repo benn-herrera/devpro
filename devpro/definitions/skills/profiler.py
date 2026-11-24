@@ -22,28 +22,28 @@ DEFINITIONS = (
         description=_DESCRIPTION,
         body=f"""Serve this session's recorded trace to the user as a page in their browser. The trace is the newest
 session recording under `.devpro-temp/` at the repository root: `.devpro-temp/.profiler-claude/` under
-claude, `.devpro-temp/.profiler-opencode/` under opencode. `bash HP tree` reads both stores.
+claude, `.devpro-temp/.profiler-opencode/` under opencode. `bash PROFILER tree` reads both stores.
 
 ## Locate the profiler
 
 Use the first launcher that exists:
 
-1. `../../profiler/hp.sh`, from this skill's own directory: the installed copy, present where a
+1. `../../profiler/profiler.sh`, from this skill's own directory: the installed copy, present where a
    project install delivered it beside the skill; a user-level install copies no resource, so the
    file does not exist there.
-2. `.claude/harness-profiler/hp.sh` at the repository root: the copy a committed hook runs, which is
-   how a claude-on-web session records anything at all.
+2. `.claude/harness-profiler/profiler.sh` at the repository root: the copy a committed hook runs,
+   which is how a claude-on-web session records anything at all.
 
 Where neither stands — always, under mage, whose install ships no launcher — the profiler is not
 installed here: say so and stop. A repository can carry both, and the committed copy can be older
 than the installed one, so the installed one goes first.
 
-Under claude, where the hook is not installed and the session cannot install it, `bash HP init claude`
+Under claude, where the hook is not installed and the session cannot install it, `bash PROFILER init claude`
 writes it into this repository's `.claude/` and prints the `git add` line to commit; run it only when
 the user asks for profiling there. `init` and `doctor` are claude's alone: opencode's plugin records
 every call itself, so an opencode session needs neither.
 
-Call the launcher `HP` below and run it with `bash`.
+Call the launcher `PROFILER` below and run it with `bash`.
 
 {clauses.WRAPPER_PROFILER}
 
@@ -54,7 +54,7 @@ profiler view at `/profiler/` — reached from the page's top nav — is this re
 sessions, each linking to its page. It prints the URL it serves on stdout and runs until
 interrupted: start it out of the session's way — it never completes, so the URL is read from the
 running job's output once it prints — then hand the user that URL. Where a one-off export is
-wanted, `bash HP tree --format html > .devpro-temp/harness-profile.html` writes a session's page to
+wanted, `bash PROFILER tree --format html > .devpro-temp/harness-profile.html` writes a session's page to
 a file.
 
 ## Answer
@@ -64,16 +64,16 @@ states it — the trace list at `/profiler/`, whose row for the session states t
 source; never a count of lines you take yourself, where a record is a call or an event marker and a
 call the plugin and the committed hook both recorded appears twice — and, for a claude session, the
 three
-most expensive contexts by duration with their tokens, read from `bash HP tree --verbose`, which draws
+most expensive contexts by duration with their tokens, read from `bash PROFILER tree --verbose`, which draws
 every node of the session; the plain tree draws the placeholder and marker nodes and the calls whose
 tool is in `PARENT_TOOLS` — the skills, agents and compactions — so a session of plain tool calls
 prints the column header alone on the plain tree. An opencode session records no token counts,
 so say so where those columns are blank. Then the URL the dashboard printed. Do not paste the tree.
 
 Where the plain tree prints the column header alone, nothing was recorded: say so, and, under
-claude, run `bash HP doctor`, report what it printed about the traces and the newest session, and that
+claude, run `bash PROFILER doctor`, report what it printed about the traces and the newest session, and that
 its plugin-record check cannot see the payload copy, and stop. Where `tree` instead exits 1 saying
-`No traces in …` on stderr, run `bash HP doctor` before answering, under claude and under opencode
+`No traces in …` on stderr, run `bash PROFILER doctor` before answering, under claude and under opencode
 alike, and report every `old:` line it prints — a store under the name from before the rename,
 which `tree` cannot read — where it prints none, say the repository holds no recording at all.""",
     ),

@@ -16,26 +16,21 @@ modules, and `cli.py` imports the one whose subcommand runs. Its subcommands are
 `dashboard` verb, below.
 
 **Resources.** One file lives in `devpro/harnesses/resources/claude/profiler/`:
-`hp.sh`, the bash launcher, which finds a devpro — the installation's own wrapper first — and
-runs its `profiler` verb (no environment variable overrides the search). It carries the `!INSTALLED! … devpro` banner within its
+`profiler.sh`, the bash launcher, which runs the wrapper beside it with the `profiler` verb. Every
+site spelling the launcher's file name renames with it — the hook wiring's script path, the
+skill's finder and its `HP` line, the init's copy and its unlinks, the doctor's compares. It carries the `!INSTALLED! … devpro` banner within its
 first ten lines — the banner rule binds every harness resource — and `harness_resource_copies` lands
 it at the path it holds below the install directory, so the install directory gains
-`profiler/hp.sh`. Its source is claude's: mage ships no resources, and an opencode install carries
+`profiler/profiler.sh`. Its source is claude's: mage ships no resources, and an opencode install carries
 the same file, below, though opencode's capture is the plugin's own TypeScript.
 
-**The launcher's finder.** Its first candidate is the installation's wrapper (SPEC.md, Deployed
-Surfaces, Shipped files), resolved from the launcher's own location: `../tools/devpro.sh` from
-`<install-dir>/profiler/hp.sh`, and `../skills/devpro/tools/devpro.sh` from the committed
-`.claude/harness-profiler/hp.sh`. Its fallback extends `PATH` with `/opt/homebrew/bin`,
-`/usr/local/bin` and `~/.local/bin`, since a hook may run with a `PATH` where only the shell's
-builtins are found, and runs one `command -v` over the whole of it. A candidate, the wrapper as any
-other, is the devpro when it runs and exits 0 on `--version`, so a wrapper that finds no usable
-Python is treated as absent and the capture still exits 0 with no output — the found command is the
-one `profiler` runs — and the terminal line is
-`exec "$devpro" profiler "$@"`, the subcommand parsed where the verb is dispatched and the launcher's
-own arguments passed through unchanged. The one-shot finder replaced the per-candidate probe and the
-`HP_DEVPRO` override: there is no variable to set, and a found command that does not run is reported
-and treated as absent.
+**The launcher's finder.** The launcher resolves the wrapper beside it — `../tools/devpro.sh` from
+`<install-dir>/profiler/profiler.sh`, and `../skills/devpro/tools/devpro.sh` from the committed
+`.claude/harness-profiler/profiler.sh` — and runs it as a child with the `profiler` verb and the
+launcher's own arguments passed through. The first candidate standing is the one that runs: there
+is no probe and no `PATH` search, a foreign devpro is never run, and every failure is named by the
+wrapper's own refusal — a capture whose wrapper fails drains its stdin and exits 0, never blocking
+the tool call.
 
 **The page template and its presentation layer.** `view.html` is the wheel's package data,
 `devpro/profiler/view.html`, read by `pages.py` through `importlib.resources` beside the module that
@@ -76,13 +71,14 @@ the nav; it carries no legend.
 **Wiring.** `harnesses/claude.py`'s `_registration_hooks` carries the profiler's six hook entries
 beside the guardrail's and the reminder's: `PostToolUse`, `PostToolUseFailure`, `PreCompact`,
 `PostCompact`, `SessionStart` and `SubagentStop`, each `matcher "*"`, `async: true`, `timeout: 5`,
-running `sh "${CLAUDE_PLUGIN_ROOT}/profiler/hp.sh" capture claude`, and the hook name changes with no
-other: `hp.sh` kept its name, so a committed hook written under it stays this tool's own. The wiring
+running `sh "${CLAUDE_PLUGIN_ROOT}/profiler/profiler.sh" capture claude`, and the launcher's file
+name is the one change a committed hook written under its former `hp.sh` inherits: the hook stays
+this tool's own, and `init`'s re-run renames it, the registered command with it. The wiring
 is data in the harness module, not a new mechanism, and no entry is gated on the install-time probe. A
 capture appends one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl` — one of
 the per-harness stores under `.devpro-temp/`, every `.profiler-*` directory of which the `tree`
 subcommand renders — the project's scratch directory, which the project's own convention gitignores; a
-capture that fails, or finds no `devpro`, exits 0 with no output.
+capture that fails, or finds no wrapper beside the launcher, exits 0 with no output.
 
 **Serving.** The dashboard renders in memory behind a local HTTP server: the `devpro dashboard
 [<project-dir>] [--port <number>]` verb binds `127.0.0.1` on a free port — `--port` pins one, 0
@@ -96,14 +92,17 @@ current state. The profiler view is the second view, at
 the `.profiler-*` glob finds, one row per session — harness, session id, record count, first and
 last moments, and the span between them — each linking to `/page/<session-id>`, which serves that
 session's page in memory, the render's page carrying the same page data `tree --format html`
-produces. The index's page file is static — no row is in its text — and its script fetches the
+produces. The header row and the body's rows take their column widths from one source, so every
+header sits over the column it names at every width the data produces. The index's page file is static — no row is in its text — and its script fetches the
 records' feed the server answers at `/api/traces`, one JSON entry per session with the columns
 above, the stores the glob finds but cannot read among them as unreadable, and renders the rows
 client-side — the board's pattern, the payload consumed client-side. The index carries simple
 controls — child-record rows on and off, claude and opencode on and off separately, and column
 heads sorting on the dispatched-agent count, the record count, the time and the span — and a
 failed feed names itself: an in-page notice naming the feed's failure, distinct from the
-no-records state a zero-record store renders. The session page's embedded
+no-records state a zero-record store renders. The controls' state and the sort in force live in
+the index page's URL — its query carries what the reader chose, so leaving the view and returning
+restores it — and the URL is a link the reader can copy. The session page's embedded
 payload is unchanged: it is, and stays, the feed the page's script reads. A session an opencode record names as its dispatch's child is drawn under the session that
 dispatched it — a dispatch's child one level deep; deeper chains read on the session's page, whose
 tree draws every dispatch as a context — that session's row carrying the count of the rows beneath
@@ -149,9 +148,9 @@ message on stderr.
 
 **The skill.** `profiler` ships as a rendered skill definition under `devpro/definitions/`, so it
 carries the generated banner and the harness's namespace (`devpro:profiler` under claude) and
-renders under every harness. Its finder's first candidate, `../../profiler/hp.sh` from
-the skill's directory, resolves to `<install-dir>/profiler/hp.sh` where the payload landed — the
-launcher that then finds `devpro` — and its second, the committed `.claude/harness-profiler/hp.sh`,
+renders under every harness. Its finder's first candidate, `../../profiler/profiler.sh` from
+the skill's directory, resolves to `<install-dir>/profiler/profiler.sh` where the payload landed — the
+launcher that runs the wrapper beside it — and its second, the committed `.claude/harness-profiler/profiler.sh`,
 covers a repository where the hook was committed for claude-on-web; where neither stands, the skill
 says the tool is not installed. A user-level install renders the skill and copies no resource, so
 there it is the committed copy or the absence. `init` renders the same skill into the repository's
@@ -166,12 +165,15 @@ and the skill into the repository's `.claude/` and merging the six entries into 
 `.claude/settings.json`.
 
 **What `init` copies, and what it removes.** `init claude` writes the repository's
-`.claude/harness-profiler/hp.sh` — the harness resource the devpro package ships, readable as
+`.claude/harness-profiler/profiler.sh` — the harness resource the devpro package ships, readable as
 `devpro.profiler.hooks.launcher_resource()` and marked executable — and the rendered skill, then
-unlinks the files an older `init` left beside the launcher: `hp.py` and `view.html`, which no install
-ships any more — and the skill an older `init` rendered under its former name,
+unlinks the launcher an older `init` wrote under its former name, `hp.sh`, and the files an older
+`init` left beside the launcher: `hp.py` and `view.html`, which no install ships any more — and the
+skill an older `init` rendered under its former name,
 `.claude/skills/show-profile/SKILL.md`, with its directory where that leaves it empty.
-A hook committed by an older `init` therefore keeps working: it runs `hp.sh`, which finds `devpro`. `doctor`'s `update` line names a committed hook that lacks an event, is not `async`,
+A hook committed by an older `init` therefore keeps working: it runs `hp.sh`, which still finds a
+devpro; `init`'s re-run renames the hook to the launcher's current name, and the install's update
+runs after that rename. `doctor`'s `update` line names a committed hook that lacks an event, is not `async`,
 or differs by a byte from the launcher's resource the devpro package ships — that resource is the
 master, and the compare reads it without needing an install directory.
 
@@ -209,10 +211,10 @@ record per tool call that did something. A capture that fails raises nothing out
 and `doctor` stay claude-facing: opencode has no committed-hook concept. The install ships the
 profiler's launcher under opencode too: `_CROSS_HARNESS_SOURCES` carries claude's
 `claude/profiler` directory to opencode's `profiler/`, so an opencode project install holds
-`profiler/hp.sh` beside the plugin's `profiler.ts`, and the profiler skill's first finder
+`profiler/profiler.sh` beside the plugin's `profiler.ts`, and the profiler skill's first finder
 candidate resolves it. The payload is copied, not wired: opencode registers no hook entry, so no
 committed copy arises, and the store the plugin writes is read by `profiler tree` run through the
-launcher, whose finder takes the installation's wrapper first. One line holds one record, and the limits that keep it so are
+launcher, which runs the installation's wrapper beside it. One line holds one record, and the limits that keep it so are
 `devpro/profiler/values.py`'s: `NAME_LIMIT`,
 `ARGS_LIMIT` and `RESULT_LIMIT` clip a field's text as the Python capture clips it, and `LINE_LIMIT`
 bounds the written line in bytes, `name` and `session` clipped at the root before `result` and `args`
@@ -244,13 +246,14 @@ does not close — the old store is left standing and named, and at the migratio
 per harness stands with its traces readable under it, or the operator is told which store was left
 behind.
 
-**Doctor's lines.** `devpro profiler doctor` reports `devpro:` the executable the launcher's finder
-would resolve, by the search the launcher makes — the installation's wrapper first, found by
-existing alone, and then the one `command -v` — and probes the command found with `--version`, as
-the launcher probes it, naming it `unusable: "<path>" does not run` where the probe fails.
+**Doctor's lines.** `devpro profiler doctor` reports `devpro:` the wrapper the launcher would run —
+the first candidate standing beside it, resolved as the launcher resolves it, with no probe and no
+`PATH` search: a command the launcher would not run, the `devpro` on `PATH` among them, is never the
+line's answer, and where no candidate stands beside a launcher the line says so, the launcher's
+capture exiting 0 without recording.
 It reports one such line for each launcher standing in the repository — the committed hook's
-and a claude project install's, `INSTALLED_LAUNCHER` — each walking that launcher's own wrapper
-candidates, and where none stands one line from the `command -v` search alone — or `not found in the installation, on PATH, in Homebrew or ~/.local/bin (install devpro)` — `traces:` the
+and a claude project install's, `INSTALLED_LAUNCHER` — and where none stands in the repository, one
+line naming the `devpro` command on `PATH` — or `not found on PATH (install devpro)` — `traces:` the
 claude store `tree` reads beside the `.profiler-*` pattern, `hook:` where a capture hook is
 registered here (the plugin's own records, and the committed, local and user settings files) or
 `not installed` with the install and `init` remedies, an `old:` line per pre-rename store it cannot

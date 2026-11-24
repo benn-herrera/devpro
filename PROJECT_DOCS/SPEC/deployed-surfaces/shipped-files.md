@@ -98,7 +98,7 @@ resources into the install directory, except a user-level install, which copies 
 entry, and save a file conditional on the install-time probe (below), so a resource lands at the
 path it holds below the install directory: opencode's at `<install-dir>/index.ts`, the plugin entry,
 `<install-dir>/guardrail.ts` and `<install-dir>/profiler.ts`, and, for claude and opencode alike,
-`<install-dir>/profiler/hp.sh`;
+`<install-dir>/profiler/profiler.sh`;
 claude's at `<install-dir>/hooks/guardrail.pl` and
 `<install-dir>/hooks/state-table-reminder.sh` (mage ships none):
 in the install directory, outside its three deployed surfaces. Each keeps its bytes and its mode:
@@ -160,7 +160,7 @@ one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl`, an
 fails, or finds no `devpro` to run under, exits 0 with no output. A claude session on the web loads
 no plugin's hooks and records nothing there; the skill names the tool's `init` for committing the
 hook where a session needs one. A user-level install renders the skill and copies none of the
-resources. A project opencode install also ships the profiler's launcher — `profiler/hp.sh` — and
+resources. A project opencode install also ships the profiler's launcher — `profiler/profiler.sh` — and
 the capture `profiler.ts` beside the plugin entry, and
 registers no hook entries; each recorded call appends one line to the project's
 `.devpro-temp/.profiler-opencode/<session-id>.jsonl`, a capture that fails raises nothing out of the
