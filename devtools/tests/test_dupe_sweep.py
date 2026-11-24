@@ -9,7 +9,17 @@ import io
 
 import pytest
 
-from devtools.dupe_sweep import cli, clustering, constants, doc_sentences, normalization, passes, report, shapes
+from devtools.dupe_sweep import (
+    cli,
+    clustering,
+    constants,
+    definition_text,
+    doc_sentences,
+    normalization,
+    passes,
+    report,
+    shapes,
+)
 
 KNOWN_ANSWER_SENTENCE = (
     "If you cannot complete the task as scoped, report immediately rather than proceeding with assumptions."
@@ -201,6 +211,61 @@ def test_a_docstring_and_a_comment_both_state_rules():
 def test_a_module_that_does_not_parse_is_reported_and_skipped(caplog):
     assert shapes.shape_units({"broken.py": "def (:\n"}) == []
     assert "does not parse" in caplog.text
+
+
+# ── definition-module string literals as sentence units ──────────────────────
+
+
+def test_a_sentence_two_definition_modules_carry_as_a_literal_reaches_the_report(monkeypatch):
+    """Defect, before the change: `doc_units` reads docstrings and comments, `constants` reads
+    module-level bindings as values, so two literals stating one rule were no candidate and the
+    shared prose could drift between them unseen. Mounted through the pass, because a unit source
+    the pass does not read is the same defect with a module's worth of code around it."""
+    sentence = "A dispatch that outlives its task is a leak the operator cannot see until the queue drains."
+    files = {f"devpro/definitions/agents/{name}.py": f'BODY = """{sentence}"""\n' for name in ("one", "two")}
+    monkeypatch.setattr(passes, "code_corpus", lambda *, rev: files)
+    out = io.StringIO()
+    passes.python_pass(rev=None, settings=passes.CODE_DEFAULTS, out=out)
+    under_one_rule = out.getvalue().split("\n## one rule, two homes", 1)[1].split("\n## one word")[0]
+    assert sentence in under_one_rule
+    assert [line.strip() for line in under_one_rule.splitlines() if "of a" not in line and "devpro/" in line] == [
+        "100%  devpro/definitions/agents/one.py:1 string literal at 1",
+        "100%  devpro/definitions/agents/two.py:1 string literal at 1",
+    ]
+
+
+def test_a_literal_is_rejoined_across_its_hard_wrap_and_split_like_a_docstring():
+    files = {"devpro/clauses.py": 'RULE = """A rule that spans\\ntwo physical lines. A second sentence."""\n'}
+    units = definition_text.definition_text_units(files)
+    assert [unit.text for unit in units] == ["A rule that spans two physical lines.", "A second sentence."]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "devpro/definitions/agents/one.py",
+        "devpro/harnesses/one.py",
+        "devpro/clauses.py",
+        "devtools/notes.py",  # outside the definition modules
+    ],
+)
+def test_only_the_definition_modules_contribute_literals(path):
+    files = {path: 'BODY = """A sentence held as a literal."""\n'}
+    assert [unit.text for unit in definition_text.definition_text_units(files)] == (
+        ["A sentence held as a literal."] if path != "devtools/notes.py" else []
+    )
+
+
+def test_a_docstring_is_not_also_read_as_a_literal():
+    """Defect, before skipping docstrings: they are `ast.Constant`s, so each reported against
+    itself as one candidate in every module carrying a docstring."""
+    files = {"devpro/clauses.py": '"""A module rule stated once."""\n\n# A comment.\nX = 1\n'}
+    assert [unit.text for unit in definition_text.definition_text_units(files)] == []
+
+
+def test_a_literal_with_no_whitespace_is_not_prose():
+    files = {"devpro/clauses.py": 'PLACEHOLDER = "@!hrn-recipe-rule!@"\nDIR = "kb-tools"\nBODY = "One word."\n'}
+    assert [unit.text for unit in definition_text.definition_text_units(files)] == ["One word."]
 
 
 @pytest.mark.parametrize(

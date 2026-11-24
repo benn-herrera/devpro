@@ -75,6 +75,19 @@ def _docstrings(tree: ast.Module) -> Iterator[tuple[str, str, int]]:
             yield name, doc, node.body[0].lineno
 
 
+def docstring_nodes(tree: ast.Module) -> Iterator[ast.Constant]:
+    """Each docstring's own literal node — the expression statement's value.
+
+    A docstring is a string literal that :func:`doc_units` already reads, so a second
+    sentence source must skip it or one sentence reports against itself.
+    """
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.body:
+            first = node.body[0].value if isinstance(node.body[0], ast.Expr) else None
+            if isinstance(first, ast.Constant) and isinstance(first.value, str):
+                yield first
+
+
 def _comment_lines(path: str, text: str) -> list[tuple[int, str]]:
     """(line, comment text) for every comment, with a blank line between blocks.
 
