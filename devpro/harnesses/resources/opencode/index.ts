@@ -180,7 +180,9 @@ export default Plugin.define({
     // The runtime reads an agent's model from its own store, not from the agent the transform below
     // edits, so a record's model would never reach a request. The model a Session resolves starts as
     // the agent's selection, and changing it there serves the request with the record's model while
-    // that Session keeps its own, as a model selected in opencode does.
+    // that Session keeps its own, as a model selected in opencode does. The transform's model write
+    // is the host's sanctioned path for a plugin-registered agent, and it is not honored on 2.4.1 —
+    // this hook is the pin's delivery until it is, and retires when it is.
     await ctx.session.hook("experimental.model.resolve", (resolve) => {
       const model = held.agents.find(({ entry }) => entry.id === resolve.agent)?.entry.model
       if (model) resolve.model = model as NonNullable<typeof resolve.model>
