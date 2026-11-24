@@ -20,14 +20,14 @@ cited by name, and a name outranks a stale line number.
 | PR | landed: 4d32c66 | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | landed: f3e8835 | expert | Post-plan burndown drafting: the section's items from the review, then their usability review |
 | B1 | landed: 8143650 | expert | sentence-grain check hardening: real-tree case, constant-form pin, marker strip |
-| B2 | dispatchable | expert | the failed-feed answer: one catch-all, the notice rendered |
+| B2 | landed: 0b9d55c | expert | the failed-feed answer: one catch-all, the notice rendered |
 | B3 | landed: 7d5547c | expert | sweep line numbers, helper dedup |
 | B4 | landed: 641ef80 | expert | the prefix's one source and its tool gate |
 | B5 | landed: c026bcb | mechanical | document wording: repo-layout row, leaf reflow |
 | B6 | dispatchable | mechanical | pin honesty: name the form pins |
 | B7 | dispatchable | mechanical | CONVENTIONS lines: real-tree case, synonym search, scratch hygiene |
 | B8 | dispatchable | mechanical | the cli docstrings' one home |
-| B9 | drafted — blocked on the owner's choice (R18) | expert | the families' anchor prose: in the literals corpus or recorded as out |
+| B9 | in progress | expert | the families' anchor prose: in the literals corpus or recorded as out |
 
 P1–P4 and PR are `landed`. The burndown's items B1–B8 were drafted from `ACTIVE_PLAN_REVIEW.md` in
 the section shape the owner directed: one ticket per root-cause group, each with its own row,
@@ -465,14 +465,15 @@ recorded in the commit body — the pair is gone after. Evidence, not gate.
 ### B9 — the families' anchor prose: in the literals corpus or recorded as out
 
 **Scope.** `devtools/dupe_sweep/definition_text.py` (`DEFINITION_TEXT_PREFIXES`),
-`PROJECT_DOCS/ARCHITECTURE/repo-layout.md` (the `dupe_sweep/` row only, if extended).
+`devtools/dupe_sweep/passes.py` (the header's scope line),
+`PROJECT_DOCS/ARCHITECTURE/repo-layout.md` (the `dupe_sweep/` row).
 
-**Facts.** R18: `devpro/families/gemma_4.py`'s anchor paragraph is rendered prose — the same kind
-of text the corpus reads — outside `DEFINITION_TEXT_PREFIXES`. The owner chooses:
-
-- (a) extend the prefixes to the families: the sweep's header scope line (`passes.py:42-45`) and
-  the repo-layout row move with it;
-- (b) record the hole as intended: a line on `definition_text.py`'s docstring saying the families'
-  anchors are outside the corpus by decision, so the next reader does not rediscover it.
+**Facts.** R18: `devpro/families/gemma_4.py`'s anchor overlay is rendered prose — hand-authored
+text a rendered agent carries — outside `DEFINITION_TEXT_PREFIXES`. The owner chose (a): extend
+the prefixes to `devpro/families/`, with the header scope line and the repo-layout row moving with
+it (the row's "definition modules" phrasing widens to say what the corpus now reads). Owner's
+context, recorded: mostly academic today — one placeholder overlay in a family the project doesn't
+really use — the value is that overlays are the growth path for hand-authored prose, so the watch
+is there from the first real one. Expected sweep outcome: few or no new candidates; advisory.
 
 **Done-line.** `just test dupe_sweep`, then `just sweep-python` (advisory), then `just test-changed`.
