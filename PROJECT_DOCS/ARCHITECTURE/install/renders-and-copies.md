@@ -54,11 +54,13 @@ directory names and the instruction names; `tests/test_cold_read_tools.py` holds
 `Harness.project_harness_dir` and every harness's `agents_file`. Mage's install of the devpro plugin ships the
 file too, since `development` ships there, and there it refuses.
 
-**The scratch directory.** A project install prepares the project's scratch directory for the work the
-hooks and the agents write into it: it creates `.devpro-temp/` under the project root when it is
-missing, and it adds a `.devpro-temp/` line to the project's `.gitignore`, creating the file holding
-that one line where the project has none. A `.gitignore` already carrying the line is left as it
-stands.
+**The scratch directory.** A project install of a nested plugin — claude's, or opencode's — prepares
+the project's scratch directory for the work the hooks and the agents write into it: it creates
+`.devpro-temp/` under the project root when it is missing, and it adds a `.devpro-temp/` line to the
+project's `.gitignore`, creating the file holding that one line where the project has none. A
+`.gitignore` already carrying the line is left as it stands. A mage install and a user-level install
+prepare neither: `_is_project_install_of_a_nested_plugin` excludes both, so neither creates the
+directory nor writes a `.gitignore`.
 
 The devpro tools package takes the same package copy for its two rows — `runner-snippets` to
 `tools/runner-snippets/`, and the running package, `PACKAGE_ROOT`, to `tools/devpro/` through

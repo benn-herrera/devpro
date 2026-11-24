@@ -2612,6 +2612,11 @@ def test_a_dry_run_on_a_fresh_target_lists_as_created_what_the_install_creates(
         ["install", str(project), f"--components={components}", *harness_args], project=project, capsys=capsys
     )
     assert groups["created"]
+    # The `.gitignore` a project install of a nested plugin holds is predicted; a mage install writes
+    # none. The scratch directory beside it is not predicted: the preflight's comparison holds a
+    # directory it finds before the run and one it would remove, never one the run creates.
+    nested = "--harness=mage" not in harness_args
+    assert (".gitignore" in groups["created"]) is nested
 
 
 @pytest.mark.usefixtures("_uncommitted_never_read")
