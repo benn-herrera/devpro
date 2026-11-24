@@ -265,3 +265,9 @@ never-block contract itself: its read of the hook payload is bounded (an unbound
 tool call for the harness's hook timeout wherever a writer holds stdin open), and it exits 0 on
 every path. P6's rename and its migration machinery carry: `init` unlinks the old launcher names
 and copies.
+
+### check-plan does not detect a duplicated package heading
+
+`ACTIVE_PLAN.md` carried `## P4` twice — a plan revision leaving a stale section behind — and
+`check-plan` reported 0 problems: the status table's IDs are checked, the package headings are
+not. The check reads the headings too and refuses an ID a second heading reuses.

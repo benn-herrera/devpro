@@ -118,13 +118,6 @@ The repair runs after P3's capture is installed and before any further capture o
 Scope: `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md` — "an Agent row" becomes "a call row
 whose tool is `Agent`"; the unreadable store's three statements collapse to the two the leaf keeps.
 Scope: `devpro/profiler/pages.py` — the harness-union comment above the style block defers its count
-to the `HARNESSES` comment's three.
-
-## P4 — R17's wording halves
-
-Scope: `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md` — "an Agent row" becomes "a call row
-whose tool is `Agent`"; the unreadable store's three statements collapse to the two the leaf keeps.
-Scope: `devpro/profiler/pages.py` — the harness-union comment above the style block defers its count
 to the `HARNESSES` comment's three. Scope: `PROJECT_DOCS/ARCHITECTURE/repo-layout.md` — the
 dependency paragraph's grain reaches package grain, `dicing/` beside its neighbours.
 
