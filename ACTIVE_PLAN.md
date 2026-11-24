@@ -477,14 +477,20 @@ Done-line: `just test devpro`.
 ### B11 — one path to the profiler's outcome
 
 Scope: `devpro/harnesses/resources/claude/profiler/profiler.sh`, `devpro/harnesses/claude.py`,
-`devpro/profiler/hooks.py`, `devpro/profiler/capture.py`, `devpro/install.py`, the skill
-definition's finder,
-`PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`, `ACTIVE_DESIGN.md`'s resources and
-finder pairs.
+`devpro/profiler/hooks.py`, `devpro/profiler/capture.py`, `devpro/install.py`, `devpro/clauses.py`,
+the skill definition's finder and its module docstring,
+`tests/test_devpro_profiler.py`,
+`PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`,
+`PROJECT_DOCS/SPEC/deployed-surfaces/installed-tree.md`,
+`PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md`,
+`PROJECT_DOCS/ARCHITECTURE/subsystem-map.md`, `PROJECT_DOCS/ARCHITECTURE/renders-and-copies.md`,
+`PROJECT_DOCS/ARCHITECTURE/repo-layout.md`, and `ACTIVE_DESIGN.md`'s harness-profiler pairs.
 
 The ruling: one path — every runner names the wrapper from its writer's knowledge. The launcher
 file and its finder retire: the committed hook's wiring invokes the project-committed wrapper
-directly (`profiler capture`), the installed hook's wiring names the installed wrapper from
+directly — the `profiler` verb, the `capture` subcommand, the harness argument (`profiler capture
+claude`), one command shape every block spells the same way — the installed hook's wiring names the
+installed wrapper from
 `init`'s knowledge, and the plugin registration's command (`_PROFILER_COMMAND`, the six
 `_PROFILER_EVENTS` entries in `devpro/harnesses/claude.py`) names the wrapper `INSTALLED_WRAPPER`
 declares. The copies the writers once wrote leave: `init` unlinks the committed tree's
@@ -504,10 +510,16 @@ the install's resource lists and the banner test's fixture lose it. The capture 
 the contract itself: its read of the hook payload is bounded, it exits 0 on every path, and its
 child's stdout stays off the hook's stdout (the host reads hook JSON there — SPEC's "exits 0
 with no output"). The launcher's remaining ride-notes land here: the success path's stdin
-handling and the `exec` the before side carried. The dispatcher revises the design's resources
-and finder pairs and obtains the PE review before this package's dispatch; the package applies
-them as the other packages did — the leaf's **Resources**, **The launcher's finder** and
-**Wiring** passages and the skill's `Locate the profiler` block move with them.
+handling and the `exec` the before side carried. The dispatcher revised the design's harness-profiler pairs at this package's dispatch turn and
+obtained the PE review; the package applies them as the other packages did — the leaf's
+**Resources**, **The launcher's finder** (deleted), **Wiring**, **The skill** through **What
+`init` copies**, the opencode capture's install paragraph and **Doctor's lines** passages, and
+the skill's `Locate the profiler` block. The contract moves with the work: SPEC's
+`installed-tree.md` names the launcher relative to the skill and `shipped-files.md` states both
+hooks' launcher paths and their "finds no `devpro` to run under" — each states the wrapper paths
+instead; ARCHITECTURE's `subsystem-map.md`, `renders-and-copies.md` and `repo-layout.md` carry
+the launcher's copy machinery in a line each — each line states the wrappers the tree names
+instead.
 
 Done-line: `just test`, `just lint`; `just dev-check-design-deltas-applied` reporting the
-resources and finder pairs landed.
+harness-profiler pairs landed.
