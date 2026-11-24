@@ -30,7 +30,7 @@ becomes-blocks are the accepted text.
 | B6 | landed 6641b54 | expert | the documents state the shipped code (VR7, VR8, VR14; after B8) |
 | B7 | landed 4584cd5 | expert | CONVENTIONS aligns with practice (VR9) |
 | B8 | landed 7ea5524 | expert | the launcher's edges and the stale installs (VR10) |
-| B9 | dispatchable | expert | one lockfile (VR11) |
+| B9 | in progress: dispatched to devpro-python-coder | expert | one lockfile (VR11) |
 | B10 | dispatchable | expert | the agents column, and the residue (VR12, VR13) |
 | B11 | dispatchable: its pair revisions fill at dispatch, PE-reviewed before the dispatch | expert | one path to the profiler's outcome |
 
