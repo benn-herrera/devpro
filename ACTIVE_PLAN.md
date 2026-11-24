@@ -53,8 +53,12 @@ source and the SPEC.
 | --- | --- | --- | --- |
 | P1 | landed: 67c13e3 | mechanical | applies the development.py pairs |
 | P2 | landed: 90cd6cc | mechanical | applies the guide.py pairs and the SPEC delta's two pairs |
-| PR | landed: with this commit | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
-| B0 | drafted | expert | Post-plan burndown drafting: the section's items from the review, then their usability review |
+| PR | landed: 2846a42 | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
+| B0 | in progress | expert | Post-plan burndown drafting: the section's items from the review, then their usability review |
+| B1 | dispatchable | expert | the pairing identity: the checker's terms, messages, and the rule's heading requirement |
+| B2 | dispatchable | mechanical | the development skill's reworded sentences: Periodic review, items' identity, re-wrap |
+| B3 | dispatchable | mechanical | the guide's walkthrough: reviewer/revision named, steps 4 and 6, re-wrap |
+| B4 | dispatchable | mechanical | the CONVENTIONS lines the run earned: pair re-wrap, brace rule, staging |
 
 ## Sequencing
 
@@ -166,3 +170,106 @@ note naming what blocks it.
 above; each item then dispatches under its own row.
 
 **One commit** — the one carrying the items' usability-reviewed form.
+
+### B1 — the pairing identity: the checker's terms, messages, and the rule's heading requirement
+
+**Scope.** `PROJECT_DOCS/SPEC/dicing/checks.md` (the Terms definition, the form note at :126-130,
+and the breach-message table), `devpro/doccheck/planform.py`, `devpro/doccheck/plancheck.py`,
+`devpro/definitions/skills/development.py` (the rule's section-heading sentence only),
+`PROJECT_DOCS/SPEC/plan-status-form.md` (the amended bullet — the title-only ruling touches it;
+cite the architect seat's K2 correction when it does).
+
+**Facts.**
+
+- R1(a): `checks.md:105-110`'s amended Terms no longer define `post-plan burndown package` — the
+  term its own messages emit at `:74, :124, :162-163` (`plancheck.py:40-41`). The pairing
+  (`planform.py:378-403`) classifies by title alone; the Terms stay title-only and the definition
+  keeps the term, naming the drafting ticket as what it now covers.
+- R1(b): `planform.py:393-397`'s unpaired-breach message advises `## <ID> Post-plan burndown` — the
+  section, not the ticket. The message states the ticket's title shape instead.
+- R1(c): the rule text requires the literal `## Post-plan burndown` section heading *and* a ticket
+  title opening with ID + `Post-plan burndown`; a ticket titled bare `B0` breaches pairing
+  (`_title`, `planform.py:367-375` — the coder seat's probe). The rule's sentence says which title
+  pairs and that the section heading is not a package title.
+- The checks.md form note (:126-130) is the leaf's statement of title-only pairing — it must not
+  re-assert the heading requirement in a form the rule's sentence contradicts.
+- Session-level residue, reported not fixed: `_title` matches any heading opening with the ID, so
+  "heading fails to open with the ID" is indistinguishable from "mentions it" — the obligation to
+  keep section and ticket headings distinguishable survives as a silent violation; report to
+  `devpro-architect` for the roadmap.
+
+**Done-line.** `just test devpro`, then `just test-changed`, then `just dev-check-links`; then the
+probe, twice: `PYTHONPATH=. .venv/bin/python .devpro-temp/pr-review-checkplan-probe.py` (clean) and
+a second probe of the same shape whose unpaired plan prints the amended `accepted` text — both
+results and the `accepted` string verbatim in the commit body. G3's normative sentence — the way to
+verify a plan-form change is a `check-plan` run over a plan holding the new form — lands in
+`checks.md` (the plan-form verifier's own leaf) in this package.
+
+### B2 — the development skill's reworded sentences
+
+**Scope.** `devpro/definitions/skills/development.py`.
+
+**Facts.**
+
+- R2: *Periodic review* still teaches the old model — the seat's quoted fix: "The burndown
+  section's items cite that ID and group the findings by root cause, several findings to one item."
+  (`development.py:482-485`.)
+- R3: the items' identity and the placeholder mechanism. The mechanism is settled by the landed
+  plan's own shape (`git show c45641a:ACTIVE_PLAN.md`): the items are sibling packages under the
+  section; the placeholder text becomes the section-opening citation. The identity sentence — an
+  item is a work package — comes from the seat's F2 (`pr-review-prompt-engineer.md:100-123`, which
+  parts this package takes and drops are stated there); the section-dies act is stated per F2's
+  third part. The architect seat's K3 (`pr-review-architect.md:113-114`) is the alternative wording
+  the landed plan's shape supersedes.
+- R5 (development.py side): the pairs' added lines (`:404-430`, `:480-485` — all exceed 90) re-wrap
+  to the file's ≤ 90 columns; whitespace-squash keeps the pairs landed — verify with the delta
+  check. Reachability note: the test corpus may carry the shipped sentence in an assertion; if a
+  reword turns one red, that assertion moves with this package.
+
+**Done-line.** `just test devpro`, then `just test-changed`, then
+`just dev-check-design-deltas-applied` green.
+
+### B3 — the guide's walkthrough
+
+**Scope.** `devpro/definitions/skills/guide.py`.
+
+**Facts.**
+
+- R4: the reviewer reading is settled — the guide's sentence follows the skill's exception verbatim
+  (`development.py:407-411`): the items' review is the PE usability review and the session's
+  revision. The regions and their rewords: the architect seat's K1 (`pr-review-architect.md:88-90`,
+  two lines, both required) over `guide.py:322-332` and `:507-514`; the PE seat's F5
+  (`pr-review-prompt-engineer.md`) for step 6. Do not paste a paraphrase where the skill's sentence
+  is the shared text — cite it.
+- R5 (guide.py side): the over-width lines by count — `guide.py:507-509` (99/99) and the prose line
+  at `:382-384` (98/101) — re-wrap to ≤ 90; the manual witness is `awk 'length>90'` over the edited
+  regions (`just lint`'s flake8 ignores E501).
+
+**Done-line.** `just test devpro`, then `just test-changed`, then
+`just dev-check-design-deltas-applied` green.
+
+### B4 — the CONVENTIONS lines the run earned
+
+**Scope.** `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/` (G2's neighbours:
+`definition-modules-hold-only-constants.md`, `cross-references-are-placeholders.md`),
+`PROJECT_DOCS/CONVENTIONS/planning-and-execution/` (G1's neighbours:
+`a-delta-application-ends-verified.md`, `a-delta-application-ends-by-searching-the-doc-set.md`).
+
+**Facts.**
+
+- G1: a design pair's text is re-wrapped to the source file's width when applied;
+  whitespace-squash matching makes this safe (R5's lesson). Home: a sibling of the two
+  delta-application leaves.
+- G2: the brace rule in its conditional form — the mistake is writing `{{…}}` into a plain
+  (non-`f`) string, where it renders as a literal brace; the existing doubled occurrences are
+  correct. Pin the constants-only leaf and the placeholders leaf as the sources of truth; do not
+  write a second normative copy.
+- G4: the shared-index practice, stated as a practice the session keeps, not a control a tool
+  enforces — a dispatched package stages and commits only its own paths (`git commit --
+  <paths>`); concurrent dispatches in one tree swept a rename into another package's commit in the
+  landed plan's run.
+- Addressee note: G3's rule sentence — the `check-plan` probe over a plan-form change — lands in
+  `checks.md` in B1 (the leaf that specifies the verb); nothing here duplicates it.
+
+**Done-line.** `just dev-check-links` (the tree and link check is the only one that sees new
+leaves), then `just test-changed`.
