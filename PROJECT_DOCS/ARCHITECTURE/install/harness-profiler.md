@@ -99,9 +99,8 @@ its script renders the feed the server answers at `/api/traces`: one JSON entry 
 dispatched. The script puts `harness` and `records` under their own names, `id` in the session column,
 `agents` in the dispatched-agents count, `first` and `last` in the first-to-last line, `span` in the
 span column, and draws `dispatcher` in no column at all, as the child row under its dispatcher's row.
-A feed with no session and no unreadable store is one `stores` entry naming how many stores the
-exact names read; a store an exact name finds but cannot read is an entry among them, marked
-unreadable, and the server raises nothing for it. The index carries simple controls — child-record
+A feed with no session and no store it cannot read is one `stores` entry naming how many stores the
+exact names read. A store an exact name finds but cannot read fails the feed. The index carries simple controls — child-record
 rows on and off, claude and opencode on and off separately, and column heads sorting on the
 dispatched-agent count, the record count, the time and the span — and a failed feed names itself in
 an in-page notice, distinct from the no-records state a zero-record store renders. The controls' state

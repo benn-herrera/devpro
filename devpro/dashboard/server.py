@@ -153,7 +153,7 @@ class DashboardServer(ThreadingHTTPServer):
         session_record = pages.session_for(PAGE_PREFIX + session, self.root)
         if session_record is None:
             return None
-        sessions, _ = read_sessions(self.root)
+        sessions = read_sessions(self.root)
         return profiler_page(session_record, return_to=PROFILER_PATH, dispatcher=dispatcher_of(session, sessions))
 
     def start(self) -> None:

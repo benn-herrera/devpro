@@ -762,22 +762,15 @@ def store_directories(directory: Path | str) -> list[Path]:
     return sorted(stores / name for name in TRACE_STORES if (stores / name).is_dir())
 
 
-def read_sessions(directory: Path | str) -> tuple[list[dict], list[str]]:
-    """`list_sessions`'s sessions, and the stores it cannot read, named as such rather than raised.
-
-    One read over all of them cannot tell an unreadable store from an empty tree: `iterdir` raises
-    out of it, so the index walks the stores one at a time, building each session the shape
-    `list_sessions` builds, and states the store it cannot list in place of the session it lost."""
+def read_sessions(directory: Path | str) -> list[dict]:
+    """`list_sessions`'s sessions, the index's and the pages' one read: each store the exact names
+    find, walked a session at a time so a store's own listing is the one read that fails where it
+    does. A store that cannot be read raises out of it."""
     sessions: list[dict] = []
-    unreadable: list[str] = []
     for store in store_directories(directory):
-        try:
-            traces = [path for path in store.iterdir() if path.name.endswith(".jsonl")]
-        except OSError:
-            unreadable.append(store.name)
-            continue
+        traces = [path for path in store.iterdir() if path.name.endswith(".jsonl")]
         sessions.extend(session_of(path) for path in traces)
-    return [session for session in sessions if session["records"]], unreadable
+    return [session for session in sessions if session["records"]]
 
 
 def session_harness(session: dict) -> str:
@@ -812,20 +805,19 @@ def dispatcher_of(session: str, sessions: list[dict]) -> tuple[str, str] | None:
 
 def traces_feed(directory: Path | str) -> list[dict]:
     """The feed `/api/traces` answers, the index's rows' one source: one JSON entry per recorded
-    session, in the order the index draws them, then one per store the exact names read but could
-    not list.
+    session, in the order the index draws them.
 
     A session's entry carries its harness, its id, its record count, the count of the dispatched
     agents it holds, its first and last moments as epoch milliseconds and its span in seconds, and —
     where an opencode record names a dispatcher for it — that dispatcher's session id and the
     dispatching call's name, the two halves `dispatches` holds; an entry so dispatched follows its
-    dispatcher's, so the feed is in the order the index draws the rows. An unreadable store's entry
-    is `{unreadable: <store name>}` and carries no other key. Where the feed holds no session and no
-    unreadable store, it is one `{stores: <count>}` entry: the stores the exact names read, none of
-    which held a record to draw — the count a zero-record store renders, which no session and no
-    unreadable store would otherwise tell apart from a tree with no store at all. This is the
-    schema's one definition: the index's own script renders the rows from exactly these keys."""
-    sessions, unreadable = read_sessions(directory)
+    dispatcher's, so the feed is in the order the index draws the rows. A store the exact names find
+    and cannot read raises out of here: the answer is the handler's failed request, not an entry.
+    Where the feed holds no session, it is one `{stores: <count>}` entry: the stores the exact names
+    read, none of which held a record to draw — the count a zero-record store renders, which no
+    session would otherwise tell apart from a tree with no store at all. This is the schema's one
+    definition: the index's own script renders the rows from exactly these keys."""
+    sessions = read_sessions(directory)
     dispatched = dispatches(sessions)
     children: dict[str, list[dict]] = {}
     for session in sessions:
@@ -838,7 +830,6 @@ def traces_feed(directory: Path | str) -> list[dict]:
         entries.append(_feed_entry(session, dispatched.get(session["id"]), len(children.get(session["id"], ()))))
         for child in sorted(children.get(session["id"], ()), key=lambda session: session["first"]):
             entries.append(_feed_entry(child, dispatched.get(child["id"])))
-    entries += [{"unreadable": store} for store in unreadable]
     if not entries:
         return [{"stores": len(store_directories(directory))}]
     return entries
@@ -998,12 +989,12 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 <script>
 'use strict';
 // The index's rows, rendered from the feed the server answers — the board's pattern, the payload
-// consumed client-side. One feed entry per session, in the order the index draws them, and one per
-// store the feed could not read. A session dispatched by another is drawn under its dispatcher, its
-// dispatcher's row carrying the count of the children beneath it. The moments are epoch
+// consumed client-side. One feed entry per session, in the order the index draws them. A session
+// dispatched by another is drawn under its dispatcher, its dispatcher's row carrying the count of the
+// children beneath it. The moments are epoch
 // milliseconds and become the row's `<time>` elements, drawn local at birth — the reader's clock,
 // 24-hour — their titles keeping the raw UTC for a hover. Reads the entry's own keys and nothing else: `harness`, `id`,
-// `records`, `agents`, `first`, `last`, `span`, `dispatcher`, `unreadable` on a store's entry, and
+// `records`, `agents`, `first`, `last`, `span`, `dispatcher`, and
 // `stores` on a feed that drew nothing, naming how many stores the exact names read. The page's body is
 // wrapped: the controls' state and the sort in force live in the page's URL, and the helpers for
 // them are the page's own.
@@ -1133,14 +1124,11 @@ const empty = (held_count, store_count) => {
   if (store_count) return wideRow('No sessions recorded yet: the stores hold no record to draw.');
   return wideRow('No session store found yet: run a session with the hook installed.');
 };
-const unreadable = (store) => wideRow(store + ' is unreadable');
 
 // What the page holds: every session the feed drew, in the feed's order, each with its children
-// counted and the call that dispatched it where one did — and every store the feed could not read.
-// The controls read this, and a control's change redraws the table from it rather than fetching the
-// feed again. No control hides a store: a store that could not be read is named wherever it stands.
+// counted and the call that dispatched it where one did. The controls read this, and a control's
+// change redraws the table from it rather than fetching the feed again.
 let held = [];
-let stores = [];
 let found = 0; // the stores the feed found, where it drew no session to say so itself
 
 // The column the table stands sorted on, and the order it stands in, read off the head that marks it:
@@ -1168,9 +1156,9 @@ const hides = (session) => {
 };
 
 // The table from what the page holds: the feed's order, or the sorted order where a head marks the
-// table sorted, each dispatcher's row followed by its own visible children, and each unread store
-// beside them. A dispatcher's count is the agents the feed holds beneath it, whether or not the page
-// is showing them; an empty table reads as which state the page stands in (`empty`).
+// table sorted, each dispatcher's row followed by its own visible children. A dispatcher's count is
+// the agents the feed holds beneath it, whether or not the page is showing them; an empty table
+// reads as which state the page stands in (`empty`).
 const draw = () => {
   const visible = held.filter((session) => !hides(session));
   const children = new Map();
@@ -1196,14 +1184,12 @@ const draw = () => {
     drawn.push(row({ session, children: session.agents }));
     for (const kid of kids) drawn.push(row({ session: kid, dispatched: kid.dispatcher }));
   }
-  for (const store of stores) drawn.push(unreadable(store));
   if (!drawn.length) drawn.push(empty(held.length, found));
   document.getElementById('rows').replaceChildren(...drawn);
 };
 
 const show = (feed) => {
-  held = feed.filter((entry) => !entry.unreadable && entry.stores === undefined);
-  stores = feed.filter((entry) => entry.unreadable).map((entry) => entry.unreadable);
+  held = feed.filter((entry) => entry.stores === undefined);
   found = feed.reduce((sum, entry) => sum + (entry.stores || 0), 0);
   // A harness box the feed holds no session for is disabled: left checked it would report filtering
   // a harness the feed has none of, and left pressable it would hide nothing on every press. A box it
@@ -1323,7 +1309,7 @@ def session_for(path: str, directory: Path | str) -> dict | None:
     no session: the page's own read, the records the render and the band's facts both draw from."""
     if not path.startswith(PAGE_PREFIX):
         return None
-    sessions, _ = read_sessions(directory)
+    sessions = read_sessions(directory)
     return next((session for session in sessions if session["id"] == path[len(PAGE_PREFIX) :]), None)
 
 

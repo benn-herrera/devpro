@@ -11,6 +11,7 @@ import subprocess
 import sys
 import threading
 from dataclasses import asdict, dataclass
+from http.client import RemoteDisconnected
 from importlib.resources import files
 from pathlib import Path
 
@@ -101,34 +102,11 @@ def test_the_profiler_view_serves_its_list_and_its_pages(tmp_path: Path, serve) 
     assert (data["session"], [call["name"] for call in data["calls"]]) == ("s-one", ["ls"])
 
 
-def test_an_unreadable_store_is_stated_in_the_feed_rather_than_failing_it(tmp_path: Path, serve) -> None:
-    """A store the readers read and the dashboard cannot list is an entry of its own in the traces
-    feed, and the other store's session is still in it: the index's rule reaches the feed its script
-    draws the rows from."""
-    root = project(tmp_path / "proj", {})
-    store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
-    locked = store(
-        root, "s-broken", [_tool_call("s-broken", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-opencode"
-    )
-    os.chmod(locked.parent, 0)
-    try:
-        if not _denied(locked.parent):
-            pytest.skip("chmod denies this user no read")
-        status, _, body = serve(root).get("api/traces")
-    finally:
-        os.chmod(locked.parent, 0o755)
-
-    entries = json.loads(body)
-    assert status == 200
-    assert {"unreadable": ".profiler-opencode"} in entries
-    assert [entry.get("id") for entry in entries if "unreadable" not in entry] == ["s-one"]
-
-
 SESSION_KEYS = {"harness", "id", "records", "agents", "first", "last", "span"}
 DISPATCHED_KEYS = SESSION_KEYS | {"dispatcher"}
 
 
-def test_the_traces_feed_answers_one_entry_per_session_and_names_unreadable_stores(tmp_path: Path, serve) -> None:
+def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) -> None:
     """`clauses.TEST_PRECONDITION`: the defect is a static index with no rows and a `/api/traces`
     answering an empty list — which passes every test the rework began from, since each read the
     index's rows out of a page the server assembled, and this feed did not exist to be empty.
@@ -136,12 +114,11 @@ def test_the_traces_feed_answers_one_entry_per_session_and_names_unreadable_stor
     `/api/traces` answers one entry per recorded session, each carrying exactly the keys the
     schema names — the harness the records carry, the id, the record count, the first and last
     moments as epoch milliseconds and the span in seconds — and `dispatcher`, whose two halves are
-    the session that dispatched the child and the call that did, on a child's entry alone. A store
-    the readers read and cannot list is its own entry, `{unreadable: <store name>}` and no other key.
+    the session that dispatched the child and the call that did, on a child's entry alone.
     A feed answering an empty list, one entry per store instead of per session, or an entry whose
     moments are strings is the index drawing nothing, or drawing what the script cannot read."""
     root = project(tmp_path / "proj", {})
-    store(root, "s-claude", [_tool_call("s-claude", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-claude")
+    store(root, "s-claude", [_tool_call("s-claude", "2026-01-01T00:00:09.000Z", "ls")], directory=".profiler-claude")
     store(
         root,
         "s-parent",
@@ -157,16 +134,7 @@ def test_the_traces_feed_answers_one_entry_per_session_and_names_unreadable_stor
         [_tool_call("s-child", "2026-01-01T00:00:07.000Z", "cat") | {"harness": "opencode"}],
         directory=".profiler-opencode",
     )
-    locked = store(
-        root, "s-broken", [_tool_call("s-broken", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-claude"
-    )
-    os.chmod(locked.parent, 0)
-    try:
-        if not _denied(locked.parent):
-            pytest.skip("chmod denies this user no read")
-        status, content_type, body = serve(root).get("api/traces")
-    finally:
-        os.chmod(locked.parent, 0o755)
+    status, content_type, body = serve(root).get("api/traces")
     entries = json.loads(body)
 
     assert (status, content_type) == (200, "application/json")
@@ -190,9 +158,41 @@ def test_the_traces_feed_answers_one_entry_per_session_and_names_unreadable_stor
             "span": 0,
             "dispatcher": {"session": "s-parent", "name": "devpro-coder"},
         },
-        {"unreadable": ".profiler-claude"},
+        {
+            "harness": "claude",
+            "id": "s-claude",
+            "records": 1,
+            "agents": 0,
+            "first": 1767225609000,
+            "last": 1767225609000,
+            "span": 0,
+        },
     ]
-    assert [set(entry) for entry in entries] == [SESSION_KEYS, DISPATCHED_KEYS, {"unreadable"}]
+    assert [set(entry) for entry in entries] == [SESSION_KEYS, DISPATCHED_KEYS, SESSION_KEYS]
+
+
+def test_a_store_the_feed_cannot_read_fails_the_feed(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a store the exact names find and cannot list answered
+    as a feed entry of its own, with the other store's sessions beside it and an HTTP 200 — a feed
+    that draws rows from a read it could not finish.
+
+    A store an exact name finds and cannot read raises out of the feed's assembly to the handler's
+    default failure: the request gets no answer at all — the connection closes without a status
+    line — never the 200 a feed of entries answers over the other store's sessions, and no entry
+    stands in the store's place."""
+    root = project(tmp_path / "proj", {})
+    store(root, "s-claude", [_tool_call("s-claude", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-claude")
+    locked = store(
+        root, "s-broken", [_tool_call("s-broken", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-opencode"
+    )
+    locked.parent.chmod(0)
+    try:
+        if not _denied(locked.parent):
+            pytest.skip("chmod denies this user no read")
+        with pytest.raises(RemoteDisconnected):
+            serve(root).get("api/traces")
+    finally:
+        locked.parent.chmod(0o755)
 
 
 def _denied(path: Path) -> bool:
@@ -518,7 +518,7 @@ def test_a_session_page_is_served_without_reading_the_stores_a_second_time(tmp_p
     reads: list[str] = []
     groupings: list[int] = []
 
-    def counted_read(directory: object) -> tuple[list[dict], list[str]]:
+    def counted_read(directory: object) -> list[dict]:
         reads.append(str(directory))
         return real_read(directory)
 
@@ -547,7 +547,7 @@ def test_the_static_index_answers_without_reading_the_stores(tmp_path: Path, ser
     real_read = read_sessions
     reads: list[str] = []
 
-    def counted_read(directory: object) -> tuple[list[dict], list[str]]:
+    def counted_read(directory: object) -> list[dict]:
         reads.append(str(directory))
         return real_read(directory)
 

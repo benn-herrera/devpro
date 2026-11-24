@@ -993,40 +993,6 @@ def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_
     assert [entry["id"] for entry in feed] == ["s-here"]
 
 
-def test_the_served_feed_states_an_unreadable_store(tmp_path: Path) -> None:
-    """One store the readers read and cannot list, beside one they read: the feed answers 2xx, names
-    the unreadable store as such, and still lists the readable store's session, and the unreadable
-    store's own page is a 404 rather than a traceback; a feed that lets the one bad directory blank it
-    or raise out of the handler is the defect the stated entry replaces."""
-    project = tmp_path / "project"
-    project.mkdir()
-    (project / ".devpro-temp").mkdir()
-    locked = _write_store(project, ".profiler-opencode", "s-broken", "2026-01-01T00:00:00.000Z", harness="opencode")
-    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
-    os.chmod(locked, 0o000)
-    try:
-        with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
-            feed = json.loads(_fetch(f"{url}api/traces"))
-            with pytest.raises(urllib.error.HTTPError) as missing:
-                _fetch(f"{url}page/s-broken")
-    finally:
-        os.chmod(locked, 0o755)
-
-    assert feed == [
-        {
-            "harness": "claude",
-            "id": "s-claude",
-            "records": 1,
-            "agents": 0,
-            "first": _epoch_ms("2026-01-01T00:00:00.000Z"),
-            "last": _epoch_ms("2026-01-01T00:00:00.000Z"),
-            "span": 0,
-        },
-        {"unreadable": ".profiler-opencode"},
-    ]
-    assert missing.value.code == 404
-
-
 def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> None:
     """One session's `/page/<id>` carries the file flow's page data: the JSON the page template
     inlines at its data slot is the payload `tree --format html` inlines, and the served page names
@@ -1181,8 +1147,26 @@ def test_the_readers_read_a_copy_of_a_store_as_no_store_at_all(tmp_path: Path) -
     (project / ".devpro-temp" / ".profiler-broken").mkdir()
 
     assert [session["id"] for session in list_sessions(project)] == ["s-only"]
-    assert [session["id"] for session in read_sessions(project)[0]] == ["s-only"]
-    assert read_sessions(project)[1] == []
+    assert [session["id"] for session in read_sessions(project)] == ["s-only"]
+
+
+def test_an_unrecorded_session_id_is_a_404_and_no_traceback(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is `/page/<id>` for an id no store records answering
+    HTTP 500 from the handler's traceback instead of the 404 the view answers a page it does not
+    serve — on a tree whose stores are readable, the read that finds no match returns `None`.
+
+    The tree holds one recorded session, readable, and no locked store: the unknown id's page is a
+    404, as the recorded session's page is a 200."""
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
+
+    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
+        assert _fetch(f"{url}page/s-claude")
+        with pytest.raises(urllib.error.HTTPError) as missing:
+            _fetch(f"{url}page/s-unrecorded")
+
+    assert missing.value.code == 404
 
 
 def test_the_doctor_names_the_stores_the_readers_read(tmp_path: Path) -> None:
