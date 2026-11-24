@@ -26,7 +26,7 @@ it changes reports the failure as a finding — the test is never edited to pass
 | P3 | landed (cd50d71) | expert | the scratch guarantee's one home: install prepares, the clause drops |
 | P4 | landed (f1c226a) | expert | the stand-ins' removal and the mock-as-oracle clause |
 | R | landed (2c48159) | expert | Post-plan review |
-| B | in progress: B1–B6 landed, B7 in flight, B8 last; B2 and the two clause decisions on the owner | expert | Post-plan burndown |
+| B | in progress: B1–B6 and B8 landed, B7 in flight — the last item; B2 and the two clause decisions on the owner | expert | Post-plan burndown |
 
 ### P1 — the plugin's configured model applies at runtime
 
