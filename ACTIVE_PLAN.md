@@ -63,7 +63,9 @@ tool failing with a named error where absent, as `shellcheck` does; R24's leaf, 
 `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-host-version-is-checked-against-the-host-s-declarations.md`,
 enters beside R24's ruling — a shipped resource naming a host version is type-checked against that
 host's published declarations, never against a devpro-owned stub for a published package — and
-`index.md` lists it. The compiler is unpinned — `bunx` takes the latest at run time; the test
+`index.md` lists it. Scope: `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/harness-resources-are-copied-verbatim.md:27-29`
+— the TypeScript sentence's first clause is false once the check lands: the leaf keeps the verbatim
+rule and drops the no-type-check premise. The compiler is unpinned — `bunx` takes the latest at run time; the test
 runners' TypeScript is dev-time only and outside the check. The edits to the shipped resources are
 the resource's own — `harness-resources-are-copied-verbatim.md` stays true: the resource is the
 master the copies follow.

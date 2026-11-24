@@ -27,9 +27,12 @@ summary text is not to be consistency checked. The design is authoritative.
 `just lint` needs `shellcheck` on
 `PATH`, and where it is absent the recipe fails, naming it, rather than skip the shell check.
 `just lint` also type-checks what ships: the opencode harness's shipped TypeScript resources
-(`index.ts`, `guardrail.ts`) through `bunx tsc --noEmit` under a `tsconfig`, checked against the
-host's published declarations — `@opencode/plugin`'s own types are the authority, no devpro-owned
-stand-in for a published package shadows them. The compiler rides unpinned — `bunx` takes the latest at run time,
+(`index.ts`, `guardrail.ts`, `profiler.ts`) through `bunx tsc --noEmit` under a `tsconfig`, checked
+against the host's published declarations — `@opencode/plugin`'s own types are the authority, no
+devpro-owned stand-in for a published package shadows them. The declarations reach the check as a
+dev-time dependency installed before `tsc` runs — a root `package.json` holds it — and the check
+reads what ships: the host's transitive declarations are not this check's mandate, `skipLibCheck`
+keeping the program over the resources. The compiler rides unpinned — `bunx` takes the latest at run time,
 and pinning it is a later decision the project has not yet needed. The check's mandate is what
 ships: the test runners' TypeScript is dev-time only and outside it.
 ```
