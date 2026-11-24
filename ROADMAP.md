@@ -5,6 +5,17 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
+### The profiler index's controls state dies at every navigation hop
+
+The controls' state lives in the page's URL (`pages.py`'s `sync`/`restore`, landed) and survives a
+reload — but nothing carries the query across the page's own links: the index's row links
+(`pages.py:1028`) are `PAGE + id` with no query, and the session page's return link is
+`return_to=PROFILER_PATH` bare (`pages.py:648`). Index → session → back is the reader's normal
+flow, and the state dies at both hops. The fix is two lines — the row link appending
+`location.search`, the session page's script echoing its query into the return link — and it
+ships blind until the browser-vision loop can see it: the loop's first calibrated use, the fix
+verified on the served page before it lands.
+
 ## Features
 
 ### A live agents panel on the dashboard
@@ -268,17 +279,6 @@ the result the hook receives, and the observation dated and recorded where the h
 leaf's account of the capture cites it. Which of the three the current releases still report, and
 whether the floor's range still needs all three, is what the dispatch answers.
 
-### The profiler index's controls state dies at every navigation hop
-
-The controls' state lives in the page's URL (`pages.py`'s `sync`/`restore`, landed) and survives a
-reload — but nothing carries the query across the page's own links: the index's row links
-(`pages.py:1028`) are `PAGE + id` with no query, and the session page's return link is
-`return_to=PROFILER_PATH` bare (`pages.py:648`). Index → session → back is the reader's normal
-flow, and the state dies at both hops. The fix is two lines — the row link appending
-`location.search`, the session page's script echoing its query into the return link — and it
-ships blind until the browser-vision loop can see it: the loop's first calibrated use, the fix
-verified on the served page before it lands.
-
 ### Browser-driven visual verification
 
 The dashboard's served pages need a check that a page not only serves but renders. Firefox's
@@ -308,7 +308,3 @@ writes, and the comparison never reads what the project holds inside scratch. Th
 `symlinks=True` landed at `6429cdc` on the way. Measured before the removal: 270 MB and 22,651
 files of stale probe copies made `just agents` take 30 seconds; after the detritus went, the
 same run took 0.72.
-semantics need redesign with fresh eyes: a managed directory reads as its existence plus the
-managed subset the install writes into it — and the install *runs into the copy*, so whatever
-the run would see must be visible there. The two constraints pull against each other; the
-design question is honest, not mechanical.
