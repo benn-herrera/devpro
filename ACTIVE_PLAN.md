@@ -528,5 +528,7 @@ stand-ins — the runner asserting the launcher's resolution — move with the s
 served: the tests assert one path, `doctor`'s `devpro:` line naming the wrapper's own path.
 
 Done-line: `just test`, `just lint`; `just dev-check-design-deltas-applied` reporting the
-harness-profiler pairs landed; and `git grep -n "profiler\.sh" -- PROJECT_DOCS devpro/definitions
-tests` returning nothing — the name is retired everywhere those trees and definitions reach.
+harness-profiler pairs landed; and `git grep -n "profiler\.sh" -- devpro/definitions tests`
+returning nothing — a live reference is what it guards, the definitions and the tests being where
+one would hide; the project documents' leaves state the retirement by naming the path, and stay
+out of the grep.
