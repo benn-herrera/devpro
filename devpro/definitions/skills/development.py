@@ -245,9 +245,9 @@ plan the same way.
 - Each package's `Rating` cell opens with `mechanical` or `expert`, rated as *Dispatch* rates its
   dispatch; anything after the word is a note, and names no model (*Dispatch*). *Purpose:* whoever reads the table sees which work runs on the
   {STEP_DOWN_MODEL_TERM}.
-- The post-plan review and the post-plan burndown (*Post-plan review*) are packages, each with its
-  own ID and row; the review's title opens with `Post-plan review`, the burndown's with
-  `Post-plan burndown`.
+- The post-plan review is a package whose title opens with `Post-plan review`; the post-plan
+  burndown is a `## Post-plan burndown` section holding its drafting ticket, whose title opens with
+  its ID and then `Post-plan burndown` (*Post-plan review*).
 - The table states each package's place at every moment, not only at a commit
   boundary; a commit whose tree includes a package's work includes that
   package's row, and work committed without its row is corrected in the commit
@@ -401,9 +401,19 @@ approved can run as approved.
 
 ## Post-plan review
 
-- Every plan holding a shipped package ends with two packages: the post-plan review, then the
-  post-plan burndown. *Purpose:* review and its fixes are planned work, not a step dropped when the
-  plan lands.
+- Every plan holding a shipped package ends with the post-plan review package, then the burndown
+  section and its drafting ticket. *Purpose:* review and its fixes are planned work, not a step
+  dropped when the plan lands.
+- The drafting ticket's work: draft the section's items from the {REVIEW_DOCUMENT_TERM} — one
+  package per root-cause group, each with its own ID, status-table row, rating and one-commit close
+  — run one `{clauses.ref(name="prompt-engineer")}` usability review over the drafted items
+  together, apply the revision, and set each item's row by its state. Drafting the items edits the
+  plan, so the session is the worker; the ticket's row still moves through the states.
+  *Purpose:* the burndown's real dispatches are visible on the board, each with its own rating.
+- The items move through the states individually, and the section dies when its last item lands.
+  Where the review finds nothing needing a fix, the drafting ticket lands having drafted no items,
+  and the plan ends — a normal landing. *Purpose:* the count of burndown items per plan is recorded
+  data the process's tuning reads.
 - The {POST_PLAN_REVIEWERS_TERM} are given the project documents and the design, where there is
   one, not the plan, and review the changes and their tests against the project's standards and
   fitness for purpose. *Purpose:* they judge what shipped, not how well it matches the plan's
@@ -414,12 +424,10 @@ approved can run as approved.
   the write-up. The {REVIEW_DOCUMENT_TERM} is never diced. The review's row is
   `landed` in the commit that adds the {REVIEW_DOCUMENT_TERM}. *Purpose:* the
   burndown is drafted from one record of what was found.
-- Until the review lands, the burndown's section holds only: "Drafted from `ACTIVE_PLAN_REVIEW.md`
-  once the post-plan review lands." Then you draft the burndown's work list from the
-  {REVIEW_DOCUMENT_TERM}; it replaces that text where the section is, in the plan or in its leaf.
-- The burndown gets `{clauses.ref(name="prompt-engineer")}` usability review, then your revision, before it is
-  `dispatchable`. *Purpose:* the agents that execute from it can act on each item without inventing
-  what it leaves open.
+- Until the review lands, the drafting ticket's body holds only: "Drafted from
+  `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands." The drafted items' text replaces that
+  placeholder in the section, and the citation of the {REVIEW_DOCUMENT_TERM} moves to the section's
+  opening.
 - The {REVIEW_DOCUMENT_TERM} is deleted in the commit that lands the plan, not before. *Purpose:*
   the burndown cites it until it lands, and a review left in place after reads as findings still
   open.

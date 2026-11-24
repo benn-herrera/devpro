@@ -145,9 +145,10 @@ package's row goes `landed` in the commit that adds the review document.
 
 ## Post-plan burndown
 
-Drafted from [ACTIVE_PLAN_REVIEW.md](ACTIVE_PLAN_REVIEW.md); the findings' IDs below are its. One
-package per root-cause group, one commit each, per the section shape this plan itself follows: the
-section holds the drafting ticket, and the items it drafted under it. The checkpoint gate —
+Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands; the findings' IDs below are
+its. One package per root-cause group, one commit each, per the section shape this plan itself
+follows: the section holds the drafting ticket, and the items it drafted under it. The checkpoint
+gate —
 `just test`, then `just sweep-python` — runs once, before each item's closing commit; each
 done-line's final run is at that close.
 
