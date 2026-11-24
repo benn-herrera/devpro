@@ -83,6 +83,12 @@ The upgrade to python 3.11 makes toml available without a dependency.
 When roadmap, design, or plan are not kanban compliant an indication should show on the kanban
 board or in the nav area - maybe an 'errors' top level nav
 
+### Auto-reload devpro development skill after compaction
+
+compaction hook to record a marker, context hook to inject the `@devpro-development` command.
+note: only necessary for opencode. claude code automatically reloads active skills after a compaction (verify that)
+
+
 ### Dashboard config editor
 
 Settings top nav for letting you edit the supported config fields (some design needed around the globbable keys)
