@@ -1906,6 +1906,9 @@ def _source_definitions(source: str, *, module: str, credited: bool) -> tuple[De
     return namespace["DEFINITIONS"]
 
 
+_ENUMERATION_MARKER = re.compile(rb"^\d+[.)] ")
+
+
 def _prose_unit_list(body: str) -> list[bytes]:
     """The paragraphs and list items of a body in order, each as devtools.render_diff collapses it; a
     heading, a table row and a line of a fenced block are not prose."""
@@ -1918,18 +1921,33 @@ def _sentence_list(body: str) -> list[str]:
     sentence means here what it means there: punctuation splits it, abbreviation or not, and each
     unit is rejoined across its hard wrap first.
 
-    A unit's leading enumeration marker is dropped before the split. A marker is the list's numbering,
-    not prose: one output carrying two numbered lists splits into the same `1.`…`5.` twice, which two
-    outputs repeating one sentence do not."""
-    sentences = []
-    for unit in _prose_unit_list(body):
-        for sentence in doc_sentences._split_sentences(re.sub(rb"\d+[.)] ", b"", unit, count=1).decode()):
-            sentences.append(sentence)
-    return sentences
+    A unit's leading enumeration marker is dropped before the split, anchored at the unit's start. A
+    marker is the list's numbering, not prose: one output carrying two numbered lists splits into the
+    same `1.`…`5.` twice, which two outputs repeating one sentence do not. A number written mid-sentence
+    is prose, and dropping it would split that unit unlike its unnumbered twin."""
+    return [
+        sentence
+        for unit in _prose_unit_list(body)
+        for _, sentence in doc_sentences.block_sentences([(1, _ENUMERATION_MARKER.sub(b"", unit, count=1).decode())])
+    ]
 
 
 def _prose_units(body: str) -> set[bytes]:
     return set(_prose_unit_list(body))
+
+
+@pytest.mark.parametrize(
+    "body, expected",
+    [
+        ("Run 2. Then stop.", ["Run 2.", "Then stop."]),
+        ("1. Own text.", ["Own text."]),
+    ],
+)
+def test_a_number_inside_a_sentence_is_prose_and_an_opening_marker_is_not(body: str, expected: list[str]) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: the marker strip was unanchored, so the first `N. `
+    anywhere in a unit went — and a unit reading `Run 2. Then stop.` split as `Run` and `Then stop.`,
+    unlike the same sentence without its number."""
+    assert _sentence_list(body) == expected
 
 
 def _outputs(defn: Definition, sentinel: Definition) -> list[tuple[str, str, str]]:
@@ -2067,13 +2085,15 @@ def _definition_sentences() -> list[str]:
 
 
 def _repeatable_sentence() -> str:
-    """A sentence the check writes into a fixture: long enough that a repeat is worth catching, and
-    plain enough to hold inside a definition source written by string formatting — no quote, no
-    backslash, and no leading enumeration marker."""
-    return next(
-        sentence
-        for sentence in _definition_sentences()
-        if len(sentence) > 40 and not re.search(r'["\\]', sentence) and not sentence[0].isdigit()
+    """A sentence the check writes into a fixture: long enough that a repeat is worth catching, plain
+    enough to hold inside a definition source written by string formatting — no quote, no backslash —
+    and not opening with a digit, which a list item would read as its enumeration marker."""
+    for sentence in _definition_sentences():
+        if len(sentence) > 40 and not re.search(r'["\\]', sentence) and not sentence[0].isdigit():
+            return sentence
+    raise LookupError(
+        "every definition sentence is too short, carries a quote or backslash, or opens with a digit — "
+        "no sentence can stand in a fixture written by string formatting"
     )
 
 
@@ -2196,6 +2216,13 @@ def test_no_prompt_delivers_a_span_twice(check: Callable[[dict[str, str]], list[
     assert found == [], "\n".join(found)
 
 
+def test_the_paragraph_check_finds_nothing_in_the_real_renderings() -> None:
+    """The parametrized case above reaches this check only through the real tree as one of two; on its
+    own, it names the grain the renderings are judged at — the prompts' 19,192 sentences, not a
+    fixture's handful."""
+    assert _double_paragraphs(_definition_sources()) == []
+
+
 def test_a_paragraph_the_agents_file_and_an_agent_both_write_is_refused() -> None:
     source = (
         f"{_FIXTURE_HEAD}from devpro.vocabulary import ALL\n"
@@ -2294,9 +2321,14 @@ def test_a_command_repeating_a_clause_the_output_it_loads_carries_is_refused() -
     assert _double_clause_deliveries(sources) == [
         "commands/c.md: DISSENT reached twice — commands/c.md: DISSENT | agents/a.md: DISSENT"
     ]
-    dissent = _sentence_list(devpro.clauses.DISSENT)
-    assert len(dissent) == 3
-    assert _double_paragraphs(sources) == [f"commands/c.md: written twice: {sentence[:120]}" for sentence in dissent]
+    assert _double_paragraphs(sources) == [
+        "commands/c.md: written twice: If you believe a directive would produce technically incorrect output, state the "
+        "concern and your recommended alternativ",
+        "commands/c.md: written twice: A directive whose result would break an invariant the project states, where the "
+        "directive does not itself say it changes",
+        "commands/c.md: written twice: An order whose result satisfies every stated requirement but whose only possible "
+        "variation is form is the case to disput",
+    ]
 
 
 def test_a_command_repeating_a_sentence_of_an_agent_it_loads_is_refused() -> None:
