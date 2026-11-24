@@ -228,10 +228,13 @@ runs its `profiler` verb (no environment variable overrides the search).
 **Becomes:**
 
 ```
-**Resources.** One file lives in `devpro/harnesses/resources/claude/profiler/`:
-`profiler.sh`, the bash launcher, which runs the wrapper beside it with the `profiler` verb. Every
-site spelling the launcher's file name renames with it — the hook wiring's script path, the
-skill's finder and its `PROFILER` line, the init's copy and its unlinks, the doctor's compares.
+**Resources.** No file lives in `devpro/harnesses/resources/claude/profiler/` — the directory is
+gone. The launcher and the candidate search it carried retire, and every runner names the wrapper
+from its writer's knowledge: the committed hook's wiring invokes the project-committed wrapper
+directly (`profiler capture`), the installed hook's wiring names the installed wrapper from
+`init`'s knowledge, and the plugin registration's command names the wrapper `INSTALLED_WRAPPER`
+declares. The skill's finder and its `PROFILER` line carry the wrapper's path as the writer's
+knowledge — no candidates, no resolution — and the doctor runs as the wrapper's own subcommand.
 ```
 
 **As it stands:**
@@ -255,13 +258,12 @@ and treated as absent.
 **Becomes:**
 
 ```
-**The launcher's finder.** The launcher resolves the wrapper beside it — `../tools/devpro.sh` from
-`<install-dir>/profiler/profiler.sh`, and `../skills/devpro/tools/devpro.sh` from the committed
-`.claude/harness-profiler/profiler.sh` — and runs it as a child with the `profiler` verb and the
-launcher's own arguments passed through. The first candidate standing is the one that runs: there
-is no probe and no `PATH` search, a foreign devpro is never run, and every failure is named by the
-wrapper's own refusal — a capture whose wrapper fails drains its stdin and exits 0, never blocking
-the tool call.
+**The launcher's finder.** There is no finder to state: the launcher retires with the candidate
+search and the `PATH` extension it carried, and the installation's `profiler/` directory and the
+committed tree's `.claude/harness-profiler/` copy leave with it. Each hook's wiring names the
+wrapper it knows and runs it as a child with the `profiler` verb; the capture subcommand owns the
+never-block contract itself — a bounded read of the hook payload, exit 0 on every path, and the
+child's stdout kept off the hook's stdout.
 ```
 
 **As it stands:**
