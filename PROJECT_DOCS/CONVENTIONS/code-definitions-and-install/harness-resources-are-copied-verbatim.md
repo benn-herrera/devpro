@@ -12,11 +12,10 @@ and no other repository's copy is a source. The profiler's launcher, `claude/pro
 one file here `profiler init` also copies, by `launcher_resource()`, into a repository's committed
 hook directory; every other file reaches a consumer through the install's copy list alone.
 
-The two destinations differ in what the banner means: the install's copy is an installed tree's, where
-`!INSTALLED!` tells the operator the source is elsewhere, while `profiler init` writes the same bytes
-into a repository's own `.claude/harness-profiler/`, committed and the operator's to tune — so a future
-resource copied to both must state at its banner which copy the reader holds, the installed or the
-committed one.
+The two destinations carry one banner: the install's copy is an installed tree's, where
+`!INSTALLED!` tells the operator the source is elsewhere, and `profiler init` writes the same bytes,
+banner included, into a repository's own `.claude/harness-profiler/`, overwritten at init's next run.
+The banner's *do not edit* governs both, so neither copy is the operator's to tune.
 
 No Python file stands under this tree: the one it carried, the profiler's `hp.py`, is gone, and the
 profiler's code is the `devpro/profiler/` package, which is a devpro module like any other. A resource written in Python again would pass black, isort and flake8 as well as
@@ -24,4 +23,5 @@ carrying its banner — the gate it is subject to is the module it becomes.
 
 A resource written in TypeScript, `opencode/profiler.ts` among them, is held by its tests and by the
 type check `just lint` runs over the opencode harness's resources: it ships verbatim, and what the
-shipped text does is held to the host's own declarations rather than to a copy of them.
+shipped text does is held to the host's own declarations ([A host version is checked against the
+host's declarations](a-host-version-is-checked-against-the-host-s-declarations.md)).

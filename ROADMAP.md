@@ -224,21 +224,11 @@ until then the capture reads every place the host has been observed to report a 
 dispatch under the host in use is the evidence. The capture and its `devpro profiler repair` are
 that evidence's product.
 
-### One path to the profiler's outcome
+### The TypeScript compiler rides unpinned
 
-The profiler's outcome — one capture recorded, one profile shown — is reached today through several
-derivations of one fact: the launcher tests two wrapper candidates per copy location, the skill's
-finder runs its own two-location search, and doctor re-derives the launcher's resolution to report
-it. The wrapper's location is known wherever the profiler is written: the committed hook's wiring
-can name the project-committed wrapper directly, the installed tree's layout is fixed, and the
-skill's text is rendered. Ruled: one path — every runner names the wrapper from its writer's
-knowledge; no candidate hunting, no re-derivation for reporting. The capture subcommand is to own the
-never-block contract itself: its read of the hook payload bounded (an unbounded drain stalls a tool
-call for the harness's hook timeout wherever a writer holds stdin open) and its exit 0 on every path.
-The rename and its migration machinery carry: `init` unlinks the old launcher names and copies the
-launcher to `.claude/harness-profiler/profiler.sh` and the rendered skill to
-`.claude/skills/profiler/SKILL.md`; the install removes the launcher name it once copied into the
-install directory, where this repository's header marks it.
+`just lint`'s type check runs `bunx tsc`, which takes the latest compiler at run time, so a compiler
+release can change what the check reports with no change here. A pin in the root `package.json`,
+beside `@opencode/plugin`, would hold it.
 
 ## Testing
 
