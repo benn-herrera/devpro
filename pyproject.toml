@@ -47,3 +47,8 @@ devpro = [
 
 [tool.setuptools.dynamic]
 version = { attr = "devpro.__version__" }
+
+[tool.pytest.ini_options]
+markers = [
+    "cold_read: the shipped cold-read.sh suite, one test per subprocess case — a rare manual surface (`just test cold-read`), excluded from the default run",
+]

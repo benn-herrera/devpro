@@ -39,7 +39,7 @@ devtools/               repository-maintenance tooling — never installed; impo
     passes.py           the `python` pass and its defaults
     cli.py              argparse surface and dispatch
   tests/                the devtools test suite — dupe_sweep (`test_dupe_sweep` and its import-structure test), clause_join_sites and render_diff — run as the `dupe_sweep` test surface (`just test dupe_sweep`)
-tests/                  the root test suite, the `devpro` package's tests and the repository-wide checks, run as the `devpro` test surface (`just test devpro`) — never installed
+tests/                  the root test suite, the `devpro` package's tests and the repository-wide checks, run as the `devpro` test surface (`just test devpro`) with the `cold_read` marker excluded by default — the cold-read suite's subprocess cases run as the `cold-read` surface (`just test cold-read`) — never installed
 ```
 
 The package's modules depend one way: `kanban/` imports `doccheck/` and `dicing/`,

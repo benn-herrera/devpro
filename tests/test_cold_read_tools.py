@@ -20,6 +20,8 @@ from devpro.install_base import PACKAGE_ROOT
 from devpro.loading import load
 from devpro.render import filled_body, rendered_definitions
 
+pytestmark = pytest.mark.cold_read
+
 _SCRIPT = PACKAGE_ROOT / "development-tools" / "cold-read.sh"
 
 _CLAUDE_COPY = Path(".claude/skills/devpro/skills/development/scripts")

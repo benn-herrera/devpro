@@ -198,9 +198,12 @@ check-links:
 render-diff a="reference-claude" b="latest":
     @PYTHONPATH="{{PROJECT_ROOT}}" RENDERED_DIR="{{RENDERED_DIR}}" python3 -m devtools.render_diff "{{a}}" "{{b}}"
 
-# No argument runs all four surfaces: devpro and dupe_sweep pytest, then docs (just check-links
-# with its defaults), then wheel (just check-wheel). A surface argument (devpro, dupe_sweep, docs,
-# wheel) runs only that one. Further arguments, never given to docs or wheel, forward to pytest: a
+# No argument runs the pytest surfaces (devpro and dupe_sweep, the cold_read marker excluded by
+# default — the shipped cold-read suite costs about a fifth of the run and no checkpoint work
+# touches it), then docs (just check-links with its defaults), then wheel (just check-wheel). A
+# surface argument (devpro, dupe_sweep, cold-read, docs, wheel) runs only that one — cold-read runs
+# the marker's tests as its default -m, a caller's own -m wins everywhere. Further arguments, never
+# given to docs or wheel, forward to pytest: a
 # flag (-k, -x, -q, ...) keeps the surface directory, a file or file::test path narrows the run to
 # it, and a path outside the surface's directory is refused.
 [doc("[dev] run the tests, or one surface's")]

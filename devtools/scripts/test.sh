@@ -14,6 +14,10 @@
 #
 # The `docs` surface is the markdown link check (`just check-links` with its default roots), and
 # the `wheel` surface is `just check-wheel`; neither is pytest, so neither takes pytest arguments.
+# The `cold-read` surface is pytest with the `cold_read` marker as its default `-m`; the other
+# pytest surfaces default to `-m "not cold_read"` when the caller passes no `-m`, because the
+# cold-read suite's subprocess cases cost about a fifth of the full run and are a rare, manual
+# surface. A caller's own `-m` wins over either default.
 # The full run (no surface) runs both after pytest, and fails when any of them fails. It shows
 # check-wheel's last line only, its full output on failure, so the pytest result stays near the end
 # of the log.
@@ -31,6 +35,7 @@ case "${surface}" in
     "") dirs=(tests devtools/tests); full_run=1 ;;
     devpro) dirs=(tests) ;;
     dupe_sweep) dirs=(devtools/tests) ;;
+    cold-read) dirs=(tests) ;;
     docs)
         if [[ "$#" -gt 1 ]]; then
             printf '%s\n' "error: test surface 'docs' is the link check and takes no pytest arguments" >&2
@@ -46,20 +51,22 @@ case "${surface}" in
         exec "${JUST}" --justfile "${JUSTFILE}" check-wheel
         ;;
     *)
-        printf '%s\n' "error: unknown test surface '${surface}' — valid values: devpro, dupe_sweep, docs, wheel; a leading flag binds here instead — pass it with an explicit empty surface: just test \"\" ${surface}" >&2
+        printf '%s\n' "error: unknown test surface '${surface}' — valid values: devpro, dupe_sweep, cold-read, docs, wheel; a leading flag binds here instead — pass it with an explicit empty surface: just test \"\" ${surface}" >&2
         exit 1
         ;;
 esac
 root="${PROJECT_ROOT}"
 has_path=0
 skip_next=0
+caller_m=0
 for arg in "${@:2}"; do
     if [[ "${skip_next}" -eq 1 ]]; then
         skip_next=0
         continue
     fi
     case "${arg}" in
-        -k|-m|-p|-o|-c|-n|--deselect|--ignore|--ignore-glob|--maxfail|--tb|--durations) skip_next=1; continue ;;
+        -m) caller_m=1; skip_next=1; continue ;;
+        -k|-p|-o|-c|-n|--deselect|--ignore|--ignore-glob|--maxfail|--tb|--durations) skip_next=1; continue ;;
         -*) continue ;;
     esac
     [[ -e "${arg}" || "${arg}" == *::* ]] || continue
@@ -84,8 +91,17 @@ if [[ "${has_path}" -eq 1 ]]; then
 else
     targets=("${dirs[@]}")
 fi
+# A surface's default `-m`: the cold-read surface runs its marker, every other pytest surface
+# excludes it, and a caller's own `-m` (counted in the argument loop) wins over both.
+marker=()
+if [[ "${caller_m}" -eq 0 ]]; then
+    case "${surface}" in
+        cold-read) marker=(-m cold_read) ;;
+        *) marker=(-m "not cold_read") ;;
+    esac
+fi
 status=0
-PYTHONPATH="${root}" "${VENV_PYTHON}" -m pytest ${targets[@]+"${targets[@]}"} "${@:2}" || status=$?
+PYTHONPATH="${root}" "${VENV_PYTHON}" -m pytest ${targets[@]+"${targets[@]}"} ${marker[@]+"${marker[@]}"} "${@:2}" || status=$?
 if [[ "${full_run}" -eq 1 ]]; then
     "${JUST}" --justfile "${JUSTFILE}" check-links || status=1
     wheel_out=""
