@@ -1571,6 +1571,44 @@ def test_the_standalone_render_carries_the_shared_layer_and_the_legend_once(tmp_
     assert 'class="site-nav' in printed.stdout and 'class="frame-band' in printed.stdout
 
 
+# The form a page script's body opens with: an IIFE, its body inside and its helpers private to it —
+# the arrow the index's script and the deco use, the `function` spelling an equivalent.
+_IIFE_OPENINGS = ("(() => {", "(function () {")
+
+
+def _inline_script_bodies(page: str) -> list[str]:
+    """`page`'s inline script bodies, in order: each between its `<script>` tag and its close, a tag
+    naming a `src` loading a file and carrying no body."""
+    return re.findall(r"<script>(.*?)</script>", page, re.DOTALL)
+
+
+def _opens_an_iife(body: str) -> bool:
+    """Whether `body`'s first statement opens an IIFE, a leading `'use strict';` directive and the
+    comments ahead of it passed over."""
+    for line in body.splitlines():
+        statement = line.strip()
+        if not statement or statement.startswith("//") or statement == "'use strict';":
+            continue
+        return statement in _IIFE_OPENINGS
+    return False
+
+
+def test_every_page_script_wraps_its_body_in_an_iife() -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: `view.html`'s script stood at the page's top level,
+    its helpers — `padTwo`, `localDay`, `localClock` — in the global scope classic scripts share with
+    the deco's, so the next helper of one of those names would redeclare a `const` and the session
+    page would draw nothing. Every script the pages run wraps its body in an IIFE; the shipped pages
+    carrying an inline script are `view.html` and the `INDEX` template."""
+    pages = {
+        "view.html": (_PACKAGE_ROOT / "devpro" / "profiler" / "view.html").read_text(encoding="utf-8"),
+        "INDEX": INDEX,
+    }
+    for name, page in pages.items():
+        bodies = _inline_script_bodies(page)
+        assert bodies, f"{name} carries no inline script"
+        assert all(_opens_an_iife(body) for body in bodies), f"{name}'s script does not open an IIFE"
+
+
 # A session id as a host records one — opencode's own is about this long, and an id this wide is a
 # column the page's header must cover.
 _LONG_SESSION = "ses_60a1b2c3d4e5f60718293a4b5c6d7e8f0a1b2c3d4e5f60718293a4b5c6d7e8f"

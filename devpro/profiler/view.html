@@ -54,6 +54,7 @@ svg .spawn rect { stroke:var(--panel); stroke-width:1; }
 <div class="tree" id="tree"></div>
 <script>
 'use strict';
+(() => {
 const D = /*DATA*/null;
 const PALETTE = 8;
 const SEQ_GUTTER = 130, SEQ_RIGHT = 120, SEQ_COL = 230, SEQ_HEAD = 54, SEQ_ROW = 40, CHAR_W = 6.6;
@@ -428,4 +429,5 @@ let pending;
 window.addEventListener('resize', () => { clearTimeout(pending); pending = setTimeout(drawSequence, 100); });
 if (D.calls.length) drawSequence(); else document.querySelector('.panel').textContent = 'No calls recorded in this session.';
 drawTree();
+})();
 </script></body></html>
