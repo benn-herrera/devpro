@@ -32,7 +32,7 @@ becomes-blocks are the accepted text.
 | B8 | landed 7ea5524 | expert | the launcher's edges and the stale installs (VR10) |
 | B9 | landed bca8961 | expert | one lockfile (VR11) |
 | B10 | landed a468bfb | expert | the agents column, and the residue (VR12, VR13) |
-| B11 | drafted: its pair set rewritten per the PE review at 3bd6e99, scope widened to the SPEC/ARCHITECTURE lines; PE review of the changed text in flight | expert | one path to the profiler's outcome |
+| B11 | dispatchable | expert | one path to the profiler's outcome |
 
 ## Kickoff
 
