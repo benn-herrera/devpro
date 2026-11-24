@@ -12,4 +12,5 @@ Contents:
 - [Scratch for tests and recipes](scratch-for-tests-and-recipes.md)
 - [A delta application ends verified](a-delta-application-ends-verified.md)
 - [A delta application is followed by a search of the doc set](a-delta-application-ends-by-searching-the-doc-set.md)
+- [Source line width is not enforced](source-line-width-is-not-enforced.md)
 - [Evidence commands run before they ship](evidence-commands-run-before-they-ship.md)
