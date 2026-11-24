@@ -15,7 +15,7 @@ becomes-blocks are the accepted text.
 |---|---|---|---|
 | P1 | landed b715ab6 | expert | the shipped TypeScript resources are type-checked; R24's rule enters CONVENTIONS |
 | P2 | landed 2c0563f | expert | the index's display: header widths from one source, controls state in the URL |
-| P3 | landed 7a9918c | expert | the capture reads 2.4.1's shape; the one-shot child-tie repair runs before the install updates |
+| P3 | landed 7a9918c, R9's note 456673f beside it | expert | the capture reads 2.4.1's shape; the one-shot child-tie repair runs before the install updates |
 | P4 | dispatchable | expert | R17's wording halves: the Agent row's referent, the unreadable store stated once, the union comment defers |
 | P5 | dispatchable | expert | moments local at birth; the deco's moment pass leaves; one rendering, two carriers |
 | P6 | dispatchable | expert | `profiler.sh` renames `hp.sh`; the finder runs the wrapper bare; R23's rule enters CONVENTIONS |

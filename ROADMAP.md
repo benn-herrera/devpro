@@ -132,6 +132,21 @@ previous layer left.
 
 ## Maintenance
 
+### The repair's backup stores match the profiler glob
+
+The child-tie repair renames a torn store aside as `-pre-repair-<n>`, and `pages.py`'s
+`.profiler-*` glob matches those backups: their sessions render twice in the index and
+`tree <prefix>` reports ambiguity. The backup names want a non-matching shape, or the glob a
+tighter prefix.
+
+### Allow creation of .devpro-temp/
+
+Current wording in AGENTS.md says to stop and notify - let's change that to create it.
+To make ^^^ less consequential let's add modification of .gitignore to add .devpro-temp/
+to it (or create if missing with .devpro-temp/) to the installation behaviors.
+we already modify the justfile and AGENTS.md there's no reason for .gitignore to be sacronsanct.
+
+
 ### Git Flow light: publish the rework history
 
 Move development from squash-style landing to Git Flow light — work branches with granular
