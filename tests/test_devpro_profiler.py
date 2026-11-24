@@ -6,7 +6,9 @@ record field the page data carries — the rename or drop ships green and render
 One record the port itself owns: `tree` renders an opencode session's store beside the claude
 capture's — the split that is the capture's purpose, and whose loss the single-store read would not
 show. `test_the_two_masks_redact_alike` holds the two harnesses' masking to one sample list, since
-JavaScript's `\\w` is ASCII where Python's is not.
+JavaScript's `\\w` is ASCII where Python's is not, and
+`test_the_capture_builds_its_record_over_host_shape_inputs` holds the capture's own record
+construction to the child session its result names under each host shape the floor covers.
 
 One more is `init`'s: `init` writes the skill and the committed hook's one command, removing the
 launchers and files older inits left in the hook directory.
@@ -480,11 +482,53 @@ def _run_ts(
     return done
 
 
+def test_the_capture_builds_its_record_over_host_shape_inputs(tmp_path: Path) -> None:
+    """The shipped `profiler.ts` through a stub plugin context: a completed call, a failed one, a
+    skill call and subagent dispatches each append their record. The failed call's text is its
+    `Tool.Error`'s message, the skill and subagent carry the host's own names, and a dispatch's child
+    session is the one its result names — in the output 2.3.2 reports, in the metadata 2.3.0
+    reports, and at the result's top level 2.4.1 reports, each of which the floor covers — with a
+    top-level id that is not a string refused, the read falling through to the output's id. The
+    session's idle appends its lifecycle record.
+
+    The host shapes and the plugin context are inputs, both shaped here: nothing the test asserts is a
+    claim about what the host reports, only about what the capture builds from them."""
+    project = tmp_path / "project"
+    project.mkdir()
+    out = json.loads(_run_ts(_HERE / "profiler_contract_runner.ts", directory=project).stdout)
+    records = out["records"]
+
+    calls = [record for record in records if record.get("event") is None]
+    assert [(record["tool"], record["name"]) for record in calls] == [
+        ("shell", "printf 'hi\\n'"),
+        ("shell", "rm -rf /"),
+        ("Skill", "profiler"),
+        ("Agent", "devpro-python-coder"),
+        ("Agent", "devpro-go-coder"),
+        ("Agent", "devpro-rust-coder"),
+        ("Agent", "devpro-typescript-coder"),
+    ]
+    # The completed and failed texts, the failure's being the host's error object's message.
+    assert calls[0]["result"] == "hi"
+    assert (calls[1]["ok"], calls[1]["result"]) == (False, "The user rejected this tool call")
+    assert calls[2]["result"] == "loaded"
+    # A subagent dispatch: the child's id the result names, and the kind its input names.
+    assert (calls[3]["child_agent_id"], calls[3]["child_agent_type"]) == ("ses_output", "devpro-python-coder")
+    # 2.3.0's shape: the id rides the result's metadata, so the metadata is what names this child.
+    assert (calls[4]["child_agent_id"], calls[4]["child_agent_type"]) == ("ses_floor", "devpro-go-coder")
+    # 2.4.1's shape: the id at the result's top level alone, `output` a bare string carrying none.
+    assert (calls[5]["child_agent_id"], calls[5]["child_agent_type"]) == ("ses_top", "devpro-rust-coder")
+    # The top-level id is not a string: the guard refuses it and the read falls through to the output.
+    assert (calls[6]["child_agent_id"], calls[6]["child_agent_type"]) == ("ses_guard", "devpro-typescript-coder")
+    assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"]
+
+
 def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path, fixture_file: Callable[[str], Path]) -> None:
     """`serialize` holds every line to `LINE_LIMIT`, which the torn-tail read relies on: a record whose
     fixed `session` alone is longer than the bound is fitted by clipping that field too, and a line
-    already inside the bound is left as it stands. The record measured is a captured dispatch, its
-    field set the record's own, so the two bounds are that record's own field lengths."""
+    already inside the bound is left as it stands. The record measured is the fixture
+    `profiler_serialize_record.json` — a dispatch the capture wrote, frozen — so the two bounds are
+    that fixture's field lengths."""
     line_limit = 4096
     record = json.loads(fixture_file("profiler_serialize_record.json").read_text(encoding="utf-8"))
     first, second = tmp_path / "first", tmp_path / "second"

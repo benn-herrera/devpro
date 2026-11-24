@@ -250,6 +250,24 @@ coder definitions restate the scratch paragraph's location-and-examples sentence
 `NEW_PROJECT_SETUP` dropped the mandate from — delivered twice through the clauses layer, seen
 by the post-plan review and invisible to every gate.
 
+### The opencode capture's host-shape reads are verified by live dispatch alone
+
+`devpro/harnesses/resources/opencode/profiler.ts` reads a dispatch's child session from three places
+in the result — `result.metadata.sessionID` on 2.3.0, `result.output.sessionID` on 2.3.2 and the
+result's top-level `sessionID` on 2.4.1 — and the code's own comment calls these reads observed,
+shipped behavior: the host's published declarations are narrower than what its runtime reports.
+Since the capture's stand-in runner was retired (`f1c226a`), that observation has been the reads'
+only evidence, and nothing holds it. `tests/profiler_contract_runner.ts` drives the record
+construction over the three shapes, but its shapes are inputs it authors: it pins what the capture
+builds from a given result and says nothing about what the host reports, so a release that moves a
+read's location, or drops it, leaves the capture failing live with the runner green.
+
+The ticket is the live evidence, restored as a recurring understanding rather than a one-time record:
+an opencode dispatch on each covered release that fires a subagent call, the child's id observed in
+the result the hook receives, and the observation dated and recorded where the harness-profiler
+leaf's account of the capture cites it. Which of the three the current releases still report, and
+whether the floor's range still needs all three, is what the dispatch answers.
+
 ### Browser-driven visual verification
 
 The dashboard's served pages need a check that a page not only serves but renders. Firefox's
