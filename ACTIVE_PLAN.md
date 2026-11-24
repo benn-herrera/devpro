@@ -417,7 +417,9 @@ leaf's mechanism sentence is B1's and is not touched here. `recipes.md:63-64`'s 
 moves to a ROADMAP ticket. The verbatim leaf's `:17` reads *committed and the operator's to tune*
 — the owner's ruling rejects the notion: the committed copy is `init`'s render, overwritten at
 init's re-run, and the banner's *do not edit* governs both destinations; the clause is corrected
-to say that, the banner itself untouched. The one-path ticket is **retired** by the owner's
+to say that, the banner itself untouched — and the correcting commit names the clause's
+provenance: it entered at e19906d's stage-2 burndown, never authorized by the owner. The one-path
+ticket is **retired** by the owner's
 ruling, its substance moved to B11 — this package removes it from ROADMAP. The structural-claims
 rule proposal is **rejected** by the owner's ruling — no license for photograph-of-the-source
 tests — recorded in the review document, no leaf added. After acceptance, `just retake-reference`

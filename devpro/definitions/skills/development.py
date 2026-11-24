@@ -605,6 +605,11 @@ interpolate from, so it invents.
   states a reason for it that holds.
 - Where a comparison with standard tools decides whether one check stays, apply the same comparison
   to every check of that concern.
+- A statement of the owner's intent, permission or practice — what the operator will do, may do, or
+  wants — is authorized only where the owner's own words put it there. Text speaking for the owner
+  without their words is removed, and the removing commit names what it removed. *Purpose:* a
+  document that grants a permission nobody asked for fabricates authority, and every later reader
+  inherits it.
 
 *Purpose:* the documents and the code teach their readers only what the project does.
 
