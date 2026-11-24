@@ -54,7 +54,7 @@ source and the SPEC.
 | P1 | landed: 67c13e3 | mechanical | applies the development.py pairs |
 | P2 | landed: 90cd6cc | mechanical | applies the guide.py pairs and the SPEC delta's two pairs |
 | PR | landed: 2846a42 | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
-| B0 | in progress | expert | Post-plan burndown drafting: the section's items from the review, then their usability review |
+| B0 | landed: 80b1518 | expert | Post-plan burndown drafting: the section's items from the review, then their usability review |
 | B1 | dispatchable | expert | the pairing identity: the checker's terms, messages, and the rule's heading requirement |
 | B2 | dispatchable | mechanical | the development skill's reworded sentences: Periodic review, items' identity, re-wrap |
 | B3 | dispatchable | mechanical | the guide's walkthrough: reviewer/revision named, steps 4 and 6, re-wrap |
