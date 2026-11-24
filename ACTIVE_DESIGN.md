@@ -69,7 +69,8 @@ the ticket — and its definition gains what it now names.
 
 The change replaces the *Plans* section's burndown sentence and the *Post-plan review* section's
 burndown bullets with the section shape the landed plan's run proved, keeping the section's
-placeholder and clause style. Three pairs, quoted from the source:
+placeholder and clause style, and adds one new bullet to the *Dispatch* section. Four pairs; the
+first three quoted from the source, the fourth adding new text to the *Dispatch* section:
 
 **As it stands:**
 
@@ -146,9 +147,10 @@ placeholder and clause style. Three pairs, quoted from the source:
 - Packages that share a build run serially in the shared tree. *Purpose:* one package's half-done
   edit does not fail another's build.
 - When dispatches are concurrent, a package stages and commits only its own paths
-  (`git commit -- <paths>`), never the shared index whole. *Purpose:* disjoint edits stay disjoint
-  when two agents share a working tree — a whole-index commit sweeps another package's staged work
-  into the wrong commit.
+  (`git commit -- <paths>`), never the shared index whole; where the index holds a path another
+  package staged, that path is unstaged before the commit, or the commit waits. *Purpose:* disjoint
+  edits stay disjoint when two agents share a working tree — a commit that reads the whole index
+  either carries another package's work or leaves it behind.
 ```
 
 The section's remaining bullets — the reviewers, the independent writes, the synthesis, the

@@ -281,11 +281,12 @@ only (the *Dispatch* section's staging bullet). Runs after B2: same file.
 
 - The pair is quoted in [the design's development.py entry](ACTIVE_DESIGN.md#the-development-skills-burndown-shape-devprodefinitionsskillsdevelopmentpy):
   the *Dispatch* section's "share a build run serially" bullet gains the staging bullet — a
-  concurrent package stages and commits only its own paths (`git commit -- <paths>`), never the
-  shared index whole. The owner's ruling: general good behavior binds every project the process
-  ships to, so its home is the skill body, not a local CONVENTIONS leaf.
-- Applied verbatim; the delta check reads `pairs: 9` and goes green with this pair's application
-  (all nine landed).
+  concurrent package stages and commits only its own paths, and where the index holds a path
+  another package staged, that path is unstaged before the commit, or the commit waits.
+- Applied verbatim; the delta check is the witness of the application.
 
-**Done-line.** `just test devpro`, then `just test-changed`, then
-`just dev-check-design-deltas-applied` green (9/9).
+**Done-line.** `just test devpro`, then `just test-changed`, then the delta check:
+`just dev-check-design-deltas-applied` exits 1 with `pairs: 9, landed: 6, pending: 0, drifted: 3`
+— every `pending` line gone; the three `drifted` lines are the pairs B1's title-only improvements
+superseded (the development.py first pair and the two SPEC pairs), named as expected; any other
+`drifted` or `conflicting` line, or any `pending` line, fails the package.
