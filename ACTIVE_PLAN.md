@@ -26,7 +26,7 @@ becomes-blocks are the accepted text.
 | B2 | landed 613b955 | expert | the IIFE invariant holds everywhere, checked (VR2) |
 | B3 | landed 9ca5c29 | expert | the type check sees the host's surface (VR3) |
 | B4 | landed aff8ba0 | expert | the repair tells the truth (VR4, VR13) |
-| B5a | in progress: dispatched to devpro-python-coder | expert | one home each (VR5) |
+| B5a | landed 1ab0ff1 | expert | one home each (VR5) |
 | B5b | drafted | expert | one stand-in (VR6) |
 | B6 | landed 6641b54 | expert | the documents state the shipped code (VR7, VR8, VR14; after B8) |
 | B7 | landed 4584cd5 | expert | CONVENTIONS aligns with practice (VR9) |
