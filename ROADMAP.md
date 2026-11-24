@@ -271,3 +271,14 @@ and copies.
 `ACTIVE_PLAN.md` carried `## P4` twice — a plan revision leaving a stale section behind — and
 `check-plan` reported 0 problems: the status table's IDs are checked, the package headings are
 not. The check reads the headings too and refuses an ID a second heading reuses.
+
+### An introduction to the process
+
+The development skill's references serve an agent mid-process; a person arriving cold asks what
+the dealio is, how to use it, and why it is shaped as it is, and no leaf answers them. Add
+`references/introduction.md` to the development skill: what the process is for, the route through
+its references, and the why its Purpose lines only hint at — the process encodes the occasions
+(the periodic review's count, the seats, the burndown) while the discipline that acts on them
+stays human: the willingness to spend a dispatch proving one's own work wrong, and the restraint
+to fix what that proves before the next feature. The Route table gains the row that hands a
+newcomer there first.

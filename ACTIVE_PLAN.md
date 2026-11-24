@@ -21,17 +21,18 @@ becomes-blocks are the accepted text.
 | P6 | landed 57bc90e | expert | `profiler.sh` renames `hp.sh`; the finder runs the wrapper bare; R23's rule enters CONVENTIONS |
 | P7 | landed 11fe544 | expert | R16's leaf catch-up applied as the design's pairs; R25's rule enters CONVENTIONS |
 | R | landed: this commit adds the review document | expert | the post-plan review, five seats |
-| B | drafted: the work list below, from the review document (9ca3218) | expert | the post-plan burndown |
-| B1 | drafted | expert | the time pins pin what they claim (R1) |
-| B2 | drafted | expert | the IIFE invariant holds everywhere, checked (R2) |
-| B3 | drafted | expert | the type check sees the host's surface (R3) |
-| B4 | drafted | expert | the repair tells the truth (R4) |
-| B5 | drafted | expert | one home each, and one stand-in (R5, R6) |
-| B6 | drafted | expert | the documents state the shipped code (R7, R8) |
-| B7 | drafted | expert | CONVENTIONS aligns with practice (R9) |
-| B8 | drafted | expert | the launcher's edges and the stale installs (R10) |
-| B9 | drafted | expert | tooling: one lockfile (R11) |
-| B10 | drafted | expert | the agents column, and the review's remaining small items (R12, R13) |
+| B | landed: the work list below, at this plan's revision commit | expert | the post-plan burndown |
+| B1 | drafted | expert | the time pins pin what they claim (VR1) |
+| B2 | drafted | expert | the IIFE invariant holds everywhere, checked (VR2) |
+| B3 | drafted | expert | the type check sees the host's surface (VR3) |
+| B4 | drafted | expert | the repair tells the truth (VR4, VR13; the fixture half owner-gated) |
+| B5a | drafted | expert | one home each (VR5) |
+| B5b | drafted | expert | one stand-in (VR6) |
+| B6 | drafted | expert | the documents state the shipped code (VR7, VR8, VR14; after B8) |
+| B7 | drafted | expert | CONVENTIONS aligns with practice (VR9) |
+| B8 | drafted | expert | the launcher's edges and the stale installs (VR10) |
+| B9 | drafted | expert | one lockfile (VR11) |
+| B10 | drafted | expert | the agents column, and the residue (VR12, VR13) |
 
 ## Kickoff
 
@@ -258,77 +259,210 @@ synthesized into the review document.
 
 ## B — the post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` (9ca3218); each item cites its finding's ID there. Grouped
-by root cause; each package one commit, the plan's usual gates, done-lines naming the runner
-targets that check what they change.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (9ca3218, revised with this plan's revision commit); each
+item cites its findings' `VR` IDs there — the kickoff's `R` IDs name ROADMAP tickets, a different
+namespace. The checkpoint gate runs once before each package's commit: `just test`, then `just
+sweep-python` (CONVENTIONS/planning-and-execution/the-gates.md). The packages run serially in the
+shared tree; the stated orders: B8 before B6 (B6's ticket rewrite states the install change B8
+lands); B1 before nothing and B7 after nothing — B1 carries the R25 leaf's mechanism sentence
+entire, so B7 touches that leaf no further. After B1–B10 land, the plan's landing commit deletes
+`ACTIVE_PLAN_REVIEW.md` and `ACTIVE_DESIGN.md` and retires the plan — the burndown is their last
+reader. The owner-gated items wait on the review document's open questions and are excluded from
+their packages' scopes, named per item.
 
-### B1 — the time pins pin what they claim (R1)
+### B1 — the time pins pin what they claim (VR1)
 
-Pin the environment on every runner invocation the moments assertions make — the index half at
-`tests/test_devpro_profiler.py:601` is the pattern (`_MOMENT_LOCALE`); the unpinned sites:
-`:543-550`, `:618-621`, `:620`. Establish what actually holds a locale under the embedded bun —
-the seat's probe says `LC_ALL` does not — and correct the stated mechanism in the test comments
-(`:502-505`, `:564-565`), the R25 leaf (`a-formatted-time-test-pins-the-locale.md`) and the
-profiler leaf's notation passage. Each pin names its defect per TEST_PRECONDITION.
+Scope: `tests/test_devpro_profiler.py`, `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-formatted-time-test-pins-the-locale.md`.
 
-### B2 — the IIFE invariant holds everywhere, checked (R2)
+Facts, settled by the seats' probes: bun ignores `LC_ALL` — `LC_ALL=de_DE.UTF-8 bun` still
+resolves `en-US` — so no environment holds a locale under the embedded bun, and the assertions
+hold because the code builds the clock from the date's own fields. What a test pins is the zone:
+the index half at `:601` runs its runner under `_MOMENT_LOCALE`'s environment and is the pattern;
+the unpinned sites `:543-550` and `:618-621` take the same environment, and their asserted
+`America/Los_Angeles` readings fail under `TZ=UTC` today — that is each new pin's defect. The
+mechanism sentence is corrected where it is stated: the test comments at `:502-504` and
+`:564-566`, and the R25 leaf — the zone is pinned with `TZ`; the locale is not holdable under the
+embedded bun; the expected text is built from the date's own fields, reading the same under any
+locale the runner carries. The profiler leaf's notation passage states the drawn behavior and
+stands unedited.
 
-Wrap `devpro/profiler/view.html`'s script (`:55-431`) in an IIFE; rename its helpers off the
-removed deco sweep's names; add the check the invariant lacks — a runner assertion that no page
-script leaks a global the pages' deliberate surface does not name.
+Done-line: `just test devpro`, each new pin shown failing before its fix.
 
-### B3 — the type check sees the host's surface (R3)
+### B2 — the IIFE invariant holds everywhere, checked (VR2)
 
-Derive the capture's `Context` from the host's published declarations as `index.ts:130` derives
-its own. Settle whether the published types declare 2.4.1's top-level `sessionID` — the seat's
-probe says no — and record the fact where it belongs: R9's ticket, or the R24 leaf's caveat.
+Scope: `devpro/profiler/view.html`, `tests/test_devpro_profiler.py`.
 
-### B4 — the repair tells the truth (R4)
+The session page's own script (`view.html:55-431`) wraps its body in an IIFE, as the leaf states
+and the deco's and index's scripts already do. The helpers keep their names — the deco is
+deleted, no collision exists, the IIFE is the guard against the next one. The invariant gains its
+check: a test asserting every inline script body in the shipped pages begins with the IIFE form
+(`view.html:57-59` shows the shape) — today's unwrapped script is the defect it fails on.
 
-`stores.py:104-126`: a file the live-file guard leaves as it stands contributes no `repaired`
-count — the branch tested. The repair test's 2.3.2 fixture becomes realizable, or the
-2.3.2-unrecoverable truth gets its own pin; the `(result clipped)` label and the leaf's gloss
-match the count's semantics. The capture's string-guard fall-through gets its test (R13).
+Done-line: `just test devpro`, the check shown failing on the unwrapped script first.
 
-### B5 — one home each, and one stand-in (R5, R6)
+### B3 — the type check sees the host's surface (VR3)
 
-The dispatcher lookup and the `/profiler/` constant take one home — the dependency direction
-decides whose; `hook_sources` reads `LAUNCHER`/`OLD_LAUNCHERS` instead of re-spelling them; the
-`hp` residue leaves (`view.html:5` with its contradicting provenance banner, `:335`,
-`profiler.ts:184`); the runners' DOM stand-in becomes one module the three runners share.
+Scope: `devpro/harnesses/resources/opencode/profiler.ts`,
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-host-version-is-checked-against-the-host-s-declarations.md`.
 
-### B6 — the documents state the shipped code (R7, R8)
+The capture's hand-written `Context` and event types (`profiler.ts:36-53`; the stale claims at
+`:36` and `:45-47` drop with the change) are derived from the host's published declarations, as
+`index.ts:130` derives its own. The declaration fact is settled and already recorded on the
+ROADMAP ticket *The opencode resources' type-check waits on the host's runtime declarations*:
+`node_modules/@opencode/schema/dist/tool.d.ts` declares `Tool.Result` as
+`{output?, content?, metadata?}` — no top-level `sessionID`. The leaf is the fact's one home and
+gains the sentence: *"The id the capture reads at the result's top level is the host's runtime
+shape, published in its source and not in the shipped declarations; the check sees the shapes
+around it."*
 
-The profiler leaf: `:73` names `/bin/bash` as the code does; `:20` names `PROFILER`; the
-subcommand list at `:14-15` gains `repair`; the edge phrasings state what the wrapper names and
-where. SPEC's `shipped-files.md` matches the launcher's stderr naming at its edges. ROADMAP's
-tickets rewritten to the real surface — the backup-glob ticket's premise corrected, plan labels
-removed, the Testing category's placement fixed, the one-path ticket's tense stated as target,
-`planform.py` named — and the CSS comment's contradiction resolved.
+Done-line: `just lint`, `just test devpro`.
 
-### B7 — CONVENTIONS aligns with practice (R9)
+### B4 — the repair tells the truth (VR4, VR13)
 
-The shell rule gains the exit-contract exception (the shell seat's proposed wording); the
-R24 leaf cites `recipes.md`'s mechanism instead of restating it; the stand-in leaf's residue
-clause cites `obviated-code-is-deleted-not-parked.md`; the verbatim leaf keeps one wording of the
-declarations rule; "runner" names one referent across R24/R25/R23; `recipes.md`'s inline deferral
-moves to ROADMAP; the reference slots re-taken.
+Scope: `devpro/profiler/stores.py`, `devpro/profiler/cli.py`, `tests/test_devpro_profiler.py`,
+`devpro/harnesses/resources/opencode/profiler.ts`.
 
-### B8 — the launcher's edges and the stale installs (R10)
+The defect: `stores.py:119` increments the repaired count before `:123`'s `if changed`, so a file
+the live-file guard leaves as it stands still reports its would-be fills as `repaired`, against
+its own docstring. Count per file after the guard, and add the test that drives the guard. The
+capture's string-guard fall-through gets its test: `profiler.ts:249-256`, the fixture
+`result.sessionID: 5` with `output.sessionID: "ses_x"` — the non-string first arm falls through
+to the next. The repair test's 2.3.2 fixture is **excluded, waiting on the owner**: the review's
+open question on the host's real `notice` wording decides whether the fixture becomes realizable
+or the 2.3.2-unrecoverable truth gets its own pin.
 
-The capture child's stdout silenced (`>/dev/null`) so the hook's stdout carries only the host's
-protocol. The install's rename removes the old-name copies it once wrote — no stale `hp.sh`
-beside `profiler.sh`. The undrained-success path and the dropped `exec` ride the one-path
-ticket's rewrite, not this package.
+Done-line: `just test devpro`.
 
-### B9 — tooling: one lockfile (R11)
+### B5a — one home each (VR5)
 
-The justfile's bun install stops re-migrating against npm's `package-lock.json` — one lockfile
-format committed, or the invocation corrected — and the lint recipe's read-only rule is honored
-by whatever the run writes.
+Scope: `devpro/profiler/pages.py`, `devpro/dashboard/server.py`, `devpro/profiler/hooks.py`,
+`devpro/profiler/view.html`, `devpro/harnesses/resources/opencode/profiler.ts`.
 
-### B10 — the agents column, and the review's remaining small items (R12, R13)
+The dispatcher lookup and the `/profiler/` constant take one home: `server.py` already imports
+the profiler, so `server.py` takes `pages.py`'s (`pages.py:802-806`, `:916` →
+`server.py:73-79`, `:52`), and both duplicates delete from `pages.py`; the docstring's "the one
+lookup" then reads true. The reference search `git grep -l 'dispatcher_of\|PROFILER_PATH'`
+answers `devpro/dashboard/server.py` and `devpro/profiler/pages.py` — every referencing file,
+named. `hooks.py:211-213` reads `LAUNCHER`/`OLD_LAUNCHERS` instead of re-spelling them. The `hp`
+residue leaves: `view.html:5` (the provenance banner contradicting its twin), `view.html:335`,
+`profiler.ts:184`.
 
-Establish whether the empty `col-agents` cells or the mapping text is wrong and fix the side
-that is. Then the residue as named: the form pins in the index test, attribute-order pinning, the
-multi-sort URL hole, the `find` type predicate, the deco body's exercise in the runners.
+Done-line: `just test`, `just test devpro`.
+
+### B5b — one stand-in (VR6)
+
+Scope: `tests/profiler_browser_runner.ts`, `tests/profiler_index_runner.ts`,
+`tests/profiler_page_runner.ts`, a new `tests/dom_stub.ts`.
+
+The three DOM stand-in copies (`profiler_browser_runner.ts:38-180`,
+`profiler_index_runner.ts:31-124`, `profiler_page_runner.ts:23-89`) become one module the three
+runners share; the browser runner's geometry and URL tests are its unique value and are retained.
+The `MutationObserver` machinery (`profiler_page_runner.ts:103-116`, `:137-141`, `:150`;
+`profiler_browser_runner.ts:284-288`, `:303-307`) leaves in the same change — residue of the
+deleted deco sweep, and R23's rule sends residue with the semantics it served.
+
+Done-line: `just test devpro`.
+
+### B6 — the documents state the shipped code (VR7, VR8, VR14; runs after B8)
+
+Scope: `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`,
+`PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md`, `devpro/profiler/pages.py`,
+`devpro/harnesses/resources/opencode/profiler.ts`, `index.ts`, `guardrail.ts`,
+`devpro/definitions/skills/profiler.py`, `ROADMAP.md`, `ACTIVE_DESIGN.md`'s subcommand pair.
+
+The corrections, named per site: the leaf's `:73` names `/bin/bash` as the code's two hook
+commands and `hooks.py:97` do (measured under `/bin/dash`: four `[[: not found`, exit 127, the
+capture never taken); `:20` names `PROFILER`; the subcommand list at `:14-15` gains `repair` —
+the design's subcommand pair is revised, its becomes reading verbatim: *"Its subcommands are
+`capture`, `tree`, `init`, `doctor` and `repair`; the records are served by the `dashboard` verb,
+below."* — the pair re-pends until this package applies it, and the deltas check returns to 17
+landed; the failure phrasings state what the wrapper names on stderr and where the capture path
+stays silent, and SPEC's `shipped-files.md:110-111`, `:159-160` match. The CSS comment at
+`pages.py:941-943` stops contradicting `table-layout: fixed`; the header test's docstring at
+`tests/test_devpro_profiler.py:194-200` describes the layout the test actually pins. The skill's
+`PROFILER` is introduced at its first use (`profiler.py:25`) rather than twenty-one lines later.
+The three resource headers' headline versions become 2.4.1 (`profiler.ts:3`, `index.ts:3`,
+`guardrail.ts:3` — the capture has read 2.4.1's shape since P3; the 2.3.0 floor and the child-id
+note stay as the history they state), and a test asserts the pin and the headers agree — today's
+tree is the defect it fails on. ROADMAP: the backup-glob ticket's premise corrected — the shipped
+repair makes no backup, and any `.profiler-*` sibling of a store reads as a store
+(`pages.py:676`), so a store directory added beside another renders twice and `tree <prefix>`
+reports ambiguity; the plan labels at `:209`, `:216`, `:226`, `:266` leave, `:209` naming
+`harness-profiler.md` where it pointed at a directory; the model-config ticket moves to
+`## Bugs` and the one-path ticket stays under `## Maintenance`; `:266-267`'s "copies" gains its
+object and destination as B8's landed install behavior states them; `:269-273` names
+`devpro/doccheck/planform.py`; the one-path ticket's bounded-read sentence stated as the target
+state — its retire-or-rewrite disposition **waits on the owner** and is not this package's;
+`ROADMAP.md:158-163` and `:64-72` are the owner's verbatim texts and are **excluded**.
+
+Done-line: `just test docs`, `just dev-check-links`, `just dev-check-roadmap`,
+`just dev-check-design-deltas-applied` back at 17 landed.
+
+### B7 — CONVENTIONS aligns with practice (VR9)
+
+Scope: `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/shell-in-this-repository-is-bash.md`,
+`a-host-version-is-checked-against-the-host-s-declarations.md`,
+`a-stand-in-models-the-api-s-real-semantics.md`,
+`harness-resources-are-copied-verbatim.md`, `PROJECT_DOCS/ARCHITECTURE/recipes.md`, `ROADMAP.md`.
+
+The shell rule gains, after its existing sentence: *"A script whose exit contract forbids `-e` —
+a hook launcher that must exit 0 on every path — states that in its header, naming the failures
+`-e` or `-u` would turn into a blocking exit."* The host-version leaf cites `recipes.md:57-65`'s
+mechanism instead of restating it at `:9-13`, fixes the pronoun reversal at `:6-7`, and reads
+*"the lint recipe installs it before the checker runs"* at `:10`. The stand-in leaf's residue
+clause cites `obviated-code-is-deleted-not-parked.md`. The verbatim leaf's `:25-27` cites the R24
+leaf's wording of the declarations rule — that wording survives, the restatement leaves. The R25
+leaf's mechanism sentence is B1's and is not touched here. `recipes.md:63-64`'s inline deferral
+moves to a ROADMAP ticket. The banner-versus-tune-rights question and the structural-claims rule
+proposal are the **owner's** and are **excluded**. After acceptance, `just retake-reference`
+runs (the reference-retakes convention).
+
+Done-line: `just test docs`, `just dev-check-links`, `just retake-reference`.
+
+### B8 — the launcher's edges and the stale installs (VR10)
+
+Scope: `devpro/harnesses/resources/claude/profiler/profiler.sh`, `devpro/install.py`'s copy step,
+`devpro/harnesses/resources/claude/hooks/state-table-reminder.sh`, `devpro/harnesses/claude.py`.
+
+The capture child's stdout is silenced (`>/dev/null`): the hook's stdout carries only the host's
+protocol, and SPEC's "exits 0 with no output" stops resting on the capture's silence. The
+install's copy step removes the old-name copies it once wrote — no stale `hp.sh` stands beside
+`profiler.sh` after an upgrade. The reminder resource's `set -euo pipefail` (`:16`) leaves where
+`:13` says exit 0 is the only answer — the profiler launcher's own header reasoning is the
+pattern. `claude.py:47`'s interpreter comment is corrected to match `:71`'s `/bin/bash` naming.
+The drain, the `exec` and the failure-message spelling ride the one-path ticket's rewrite, not
+this package.
+
+Done-line: `just lint`, `just test`.
+
+### B9 — one lockfile (VR11)
+
+Scope: `justfile`, the repository's lockfile.
+
+`justfile:238` runs `bun install --frozen-lockfile` against npm's `package-lock.json` with no
+`bun.lock` committed and re-migrates every run. The direction: one lockfile, the runner's —
+bun's — committed, so `--frozen-lockfile` means what it says. The read-only rule holds today:
+from a scratch copy the recipe runs exit 0 across 261 packages and writes no lockfile (the
+prompt-engineer seat's evidence, carried here so no scratch is cited). The compiler rides
+unpinned by the design's explicit text — settled, no action, stated here so the exclusion
+travels with the package.
+
+Done-line: `just lint`.
+
+### B10 — the agents column, and the residue (VR12, VR13)
+
+Scope: `devpro/profiler/pages.py`, `tests/test_devpro_profiler.py`,
+`devpro/harnesses/resources/opencode/profiler.ts`, the two page runners.
+
+The render is the wrong side, settled by the accepted design's mapping: the count renders into
+`col-agents` at `pages.py:1106`, and the `— n dispatched agents` span in the session cell
+(`:1097-1098`) is dropped. The residue, named per site: the form pins at
+`tests/test_devpro_profiler.py:1121-1125` state the layout they pin; attribute-order pinning at
+`:607-614`; the multi-sort URL hole at `pages.py:1240-1249` closes; the capture's
+`profiler.ts:254-255` cast becomes the predicate —
+`return [result.sessionID, output.sessionID, metadata.sessionID].find((id): id is string =>
+typeof id === "string")`; the deco body's exercise: the two runners' `querySelector` returns
+null for everything, so the deco's script body never runs under them — the runners gain minimal
+elements for the deco's selectors and the body executes.
+
+Done-line: `just test devpro`.
