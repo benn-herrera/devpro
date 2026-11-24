@@ -44,7 +44,9 @@ directory (`../../tools/devpro.sh`; Shipped files states which commands run thro
 project's scratch directory is `.devpro-temp/` under the project root, and it carries the same name
 under every harness. A project install of a nested plugin — claude's, or opencode's — prepares it:
 that install creates it when it is missing, and a `.devpro-temp/` line sits in the project's
-`.gitignore`, the file created holding that line where the project has none. A mage install and a
+`.gitignore`, the file created holding that line where the project has none. The preparation is
+the install's, not the runner file's: an install whose runner file is already up to date still
+prepares a missing scratch directory. A mage install and a
 user-level install prepare neither: a mage install is no project install of a nested plugin, and a
 user-level install places nothing relative to a project, so the scratch directory and its `.gitignore`
 line are the work the agent's rule or the operator leaves them. A cross-definition reference renders
