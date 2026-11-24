@@ -448,36 +448,50 @@ Done-line: `just lint`.
 Scope: `devpro/profiler/pages.py`, `tests/test_devpro_profiler.py`,
 `devpro/harnesses/resources/opencode/profiler.ts`, the two page runners.
 
-The render is the wrong side, settled by the accepted design's mapping: the count renders into
-`col-agents` at `pages.py:1106`, and the `— n dispatched agents` span in the session cell
-(`:1097-1098`) is dropped. The residue, named per site: the form pins at
-`tests/test_devpro_profiler.py:1121-1125` state the layout they pin; attribute-order pinning at
-`:607-614`; the multi-sort URL hole at `pages.py:1240-1249` closes; the capture's
-`profiler.ts:254-255` cast becomes the predicate —
-`return [result.sessionID, output.sessionID, metadata.sessionID].find((id): id is string =>
-typeof id === "string")`; the deco body's exercise: the two runners' `querySelector` returns
-null for everything, so the deco's script body never runs under them — the runners gain minimal
-elements for the deco's selectors and the body executes. The IIFE check covers the pages' file
-scripts too — `deco.js` and `board.js` — one assertion each that the file's body opens the IIFE
-form (B2's check reads the inline bodies alone).
+Sites are anchored to symbols and greps — earlier packages shift the tree under a review-era
+line number. The render is the wrong side, settled by the accepted design's mapping: the count
+renders into the `col-agents` cell in `row()` — the empty `el('td', undefined, 'col-agents')`
+build — and the `— n dispatched agents` span in the session cell is dropped. The residue, named
+per site: the CSS-text pins duplicate the measured geometry — in the index test's layout block
+(grep `table-layout: fixed` in `tests/test_devpro_profiler.py`), the six `.col-*` width regexes
+delete and the `table-layout: fixed` assertion stays, the runner modeling no layout being the
+one guarantee that mechanism stays; the attribute-order pinning — the serialized `moments`-cell
+literals (grep `class="moments"` in the test file) asserting `title` before `class` — becomes
+per-element assertions on text, `datetime` and `title`, the attributes' order unpinned; the
+multi-sort URL hole — `restore()` applying every `sort` parameter the URL carries, so a
+hand-edited `?sort=records&sort=span` marks two heads sorted while the draw honors one —
+closes: `restore` takes one value and compares each head to it; the capture's cast in
+`childSessionOf` becomes the predicate —
+`return [carried.sessionID, output.sessionID, metadata.sessionID].find((id): id is string =>
+typeof id === "string")` — the `ids` array, the `find` and the cast collapsing into it; the deco
+body's exercise: the two runners' `querySelector` returns null for everything, so the deco's
+script body never runs under them — the runners gain minimal elements for the deco's selectors
+and the body executes. The IIFE check covers the pages' file scripts too — `deco.js` and
+`board.js` — one assertion each that the file's body opens the IIFE form (B2's check reads the
+inline bodies alone).
 
 Done-line: `just test devpro`.
 
 ### B11 — one path to the profiler's outcome (the owner's ruling, from the retired ticket)
 
 Scope: `devpro/harnesses/resources/claude/profiler/profiler.sh`, `devpro/profiler/hooks.py`,
-`devpro/profiler/capture.py`, the skill definition's finder,
+`devpro/profiler/capture.py`, `devpro/install.py`, the skill definition's finder,
 `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`, `ACTIVE_DESIGN.md`'s resources and
 finder pairs.
 
-The ruling: one path — every runner names the wrapper from its writer's knowledge. The committed
-hook's wiring invokes the project-committed wrapper directly (`profiler capture`); no launcher
-copy stands in the committed tree, and `init` unlinks the copies it once wrote there. The
-launcher serves the installed tree alone at one known relative path (`../tools/devpro.sh`) — no
-candidate loop. The capture subcommand owns the never-block contract itself: its read of the hook
-payload is bounded, and it exits 0 on every path. The launcher's remaining ride-notes land here:
-the success path's stdin handling, the `exec` the before side carried, and the failure message
-naming the directory rather than spelling both candidates. The design's resources and finder
+The ruling: one path — every runner names the wrapper from its writer's knowledge. The launcher
+file and its finder retire: the committed hook's wiring invokes the project-committed wrapper
+directly (`profiler capture`), the installed hook's wiring names the installed wrapper from
+`init`'s knowledge, and `init` unlinks the copies it once wrote there — `RETIRED_RESOURCE_FILES`
+gains the launcher's own retirement, both `hp.sh` leftovers and `profiler.sh` itself. The
+skill's finder clause becomes the filled relative path (`WRAPPER_PROFILER` filled at install —
+the path carried, not derived). The doctor runs as the wrapper's own subcommand: it reports the
+wiring's target and the wrapper's presence, re-deriving nothing — the launcher's failure
+message dissolves with the candidate loop it spelled. The capture subcommand owns the contract
+itself: its read of the hook payload is bounded, it exits 0 on every path, and its child's
+stdout stays off the hook's stdout (the host reads hook JSON there — SPEC's "exits 0 with no
+output"). The launcher's remaining ride-notes land here: the success path's stdin handling and
+the `exec` the before side carried. The design's resources and finder
 pairs are revised at this package's dispatch — their becomes-blocks filled from this ruling,
 PE-reviewed as changed text — and applied by this package; the leaf's committed-hook and skill
 passages move with them.
