@@ -155,6 +155,12 @@ HARNESS_RESOURCES_SOURCE = "harnesses/resources"
 # name, since the destination is a consumer contract; the destination is another harness's directory,
 # as the harness's own is walked already.
 _CROSS_HARNESS_SOURCES = {"opencode": (("claude/profiler", "profiler"),)}
+# Resource names an earlier release copied and this one ships under another, each paired with the file
+# that replaced it, both relative to ROOT: the one-way copy would leave the old name beside its
+# replacement for good, so an install removes it. The removal runs on every install, not on a version
+# change alone, so reinstalling a tree an older release wrote cleans it. Only a file carrying this
+# repository's installed header is removed; anything else at the old name is not ours to delete.
+RETIRED_RESOURCE_FILES = (("profiler/hp.sh", "profiler/profiler.sh"),)
 # The interpreter the install-time probe runs a guardrail hook script under, found on PATH, and how long
 # that run may take before it counts as failed.
 GUARDRAIL_INTERPRETER = "perl"
@@ -287,8 +293,10 @@ def harness_resource_copies(root: Path, *, harness: str) -> list[tuple[Path, Pat
     states beside them; no other harness's list gains them.
 
     The copy is one-way and is not a mirror: a resource file this repository drops is not removed from
-    a consumer, because `prune` owns the three rendered surfaces and nothing outside them. What lands
-    here stays until the consuming project removes it."""
+    a consumer, because `prune` owns the three rendered surfaces and nothing outside them, and what
+    lands here stays until the consuming project removes it. The one exception is a name
+    `RETIRED_RESOURCE_FILES` pairs with the file that replaced it, which `install` removes from the
+    install directory where it carries this repository's header."""
     sources = [(PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / harness, None)]
     sources.extend(
         (PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / extra, destination)
@@ -502,6 +510,16 @@ def _resource_copies(root: Path, *, harness: Harness, user_level: bool) -> list[
     return [(source, target) for source, target in copies if target == root / harness.entry_resource]
 
 
+def _retired_resource_targets(root: Path, *, copies: list[tuple[Path, Path]]) -> list[Path]:
+    """The old-name resource files standing at `root` that this run's copies replaced, in the order
+    `RETIRED_RESOURCE_FILES` lists them: each retired name whose replacement is among `copies` and that
+    carries this repository's installed header. A name holding anything else, or a replacement this
+    harness does not copy, leaves nothing to remove."""
+    shipped = {target for _, target in copies}
+    standing = (root / name for name, replacement in RETIRED_RESOURCE_FILES if root / replacement in shipped)
+    return [path for path in standing if _is_our_resource(path)]
+
+
 def _clear_package_destination(destination: Path) -> None:
     """Leave a directory at `destination` holding at most its `VENV_DIR` entry, or nothing, for the
     package copy: a directory is emptied and stays, except an entry named `VENV_DIR` directly under it,
@@ -682,6 +700,9 @@ def install(
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, target)
         shutil.copymode(source, target)
+    retired_resources = _retired_resource_targets(root, copies=resource_files)
+    for path in retired_resources:
+        path.unlink()
     written = write_renders(root, renders)
     if agents_file is not None:
         write_agents_file(agents_file)
@@ -697,6 +718,8 @@ def install(
         print(f"devpro {replaced_version} replaced by devpro {__version__} → {copy_dir}")
     if retired_package_found:
         print(f"removed {retired_package}")
+    for path in retired_resources:
+        print(f"removed {path}")
     for path in pruned:
         print(f"pruned {path}")
     if verbose:
@@ -715,8 +738,8 @@ def install(
     for line in (store_migration or _one_project_renamed_once(project))(project):
         print(line)
     if guardrail is not None and not registers_guardrail:
-        # Neither prune nor the one-way copy removes what an earlier install delivered, so the script
-        # is named; the registration is written on every install, so it is never left.
+        # Neither prune nor the resource copy removes a resource this run skipped, so the script is
+        # named; the registration is written on every install, so it is never left.
         earlier = root / guardrail.script
         left = f"; left in place from an earlier install: {earlier}" if _is_our_resource(earlier) else ""
         report_left_alone(f"guardrail hook skipped, neither installed nor registered: {guardrail_skipped}{left}")
@@ -747,6 +770,8 @@ def _install_managed_paths(
         *(package.destination for package in SHIPPED_PACKAGES),
         WRAPPER,
         RETIRED_PACKAGE_DIR,
+        # Read and removed rather than written: the preflight has to see the removal to predict it.
+        *(name for name, _ in RETIRED_RESOURCE_FILES),
         *(
             target.relative_to(root).as_posix()
             for _, target in _resource_copies(root, harness=harness, user_level=user_level)

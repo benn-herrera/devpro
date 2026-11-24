@@ -9,7 +9,9 @@
 # no PATH search — a foreign devpro is never run, and every failure is named by the
 # wrapper's own refusal. A capture whose wrapper fails or stands not at all drains its
 # stdin and exits 0 — a missing or failing profiler must never block a tool call — and
-# every other subcommand reports and exits nonzero. The script sets no `set -euo pipefail`:
+# every other subcommand reports and exits nonzero. The capture child's stdout is
+# discarded whatever it wrote: a hook's stdout is the host's protocol alone, so a line
+# the wrapper prints there is never read as a hook result. The script sets no `set -euo pipefail`:
 # `capture` must exit 0 on every path, and `-e` or `-u` would turn an unforeseen failure
 # into a nonzero exit that blocks the tool call.
 
@@ -31,7 +33,7 @@ if [[ "${1}" == "capture" ]]; then
     cat >/dev/null 2>&1
     exit 0
   fi
-  "${wrapper}" profiler "${@}"
+  "${wrapper}" profiler "${@}" >/dev/null
   status=$?
   if [[ ${status} -ne 0 ]]; then
     cat >/dev/null 2>&1

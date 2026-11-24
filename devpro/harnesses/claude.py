@@ -44,8 +44,9 @@ _REGISTRATION = "hooks/hooks.json"
 # with no `args` through a shell, so the path is quoted. Claude Code reads exit 2 as a block, and that
 # is an interpreter's status for a script it cannot open, so the command runs the script only where it
 # stands and otherwise names it on stderr and exits 1, which Claude Code reports without blocking. The
-# interpreter is named on PATH, never by absolute path: the file registering it is often committed and
-# shared across machines.
+# interpreter each command built here names is found on PATH, never at an absolute path: the file
+# registering it is often committed and shared across machines. The profiler's command below is the
+# exception: it names `/bin/bash`, and the launcher's header states why.
 _MISSING_SCRIPT_REPORT = "guardrail hook: no readable script at $s"
 _MISSING_REMINDER_REPORT = "state-table reminder: no readable script at $s"
 

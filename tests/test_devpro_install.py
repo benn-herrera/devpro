@@ -1876,6 +1876,22 @@ def test_an_install_removes_the_dicing_snippets_package_an_earlier_install_left(
     assert f"{retired.relative_to(project).as_posix()}/" in groups["removed"]
 
 
+@pytest.mark.usefixtures("_no_uncommitted")
+def test_an_install_removes_the_launchers_former_name_beside_it(tmp_path: Path, capsys) -> None:
+    """The dry run names the removal the install then makes, on a re-install of the same version.
+    Defect: the copy renames forward and never removes, so a tree the earlier `hp.sh` install wrote kept
+    that launcher beside `profiler.sh` for good."""
+    project = tmp_path / "project"
+    project.mkdir()
+    argv = ["install", str(project), "--harness=claude"]
+    main(argv)
+    retired = _claude_plugin(project / ".claude") / _PROFILER / "hp.sh"
+    _plant(retired, "# !INSTALLED! from devpro/harnesses/resources/claude/profiler/hp.sh — y\n")
+    groups = _assert_dry_run_predicts(argv, project=project, capsys=capsys)
+    assert not retired.exists()
+    assert retired.relative_to(project).as_posix() in groups["removed"]
+
+
 def test_the_cold_read_script_installed_under_mage_refuses(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()

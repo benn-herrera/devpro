@@ -11,9 +11,10 @@
 # so nothing is injected then.
 #
 # Exit 0 with the JSON on stdout is the only answer: Claude Code reads a hook's stdout as its JSON
-# output, and `hookSpecificOutput` must name the event the input carries.
-
-set -euo pipefail
+# output, and `hookSpecificOutput` must name the event the input carries. The script sets no
+# `set -euo pipefail`: exit 0 is the only answer on every path, and `-e` or `-u` would turn an
+# unforeseen failure — a `cat` that could not read its input, a `printf` that could not write —
+# into a nonzero exit, which Claude Code reports as a failed hook on the call that fired it.
 
 input="$(cat)"
 # The event's own fields precede the tool's, so the scan below reads a top-level `cwd` or

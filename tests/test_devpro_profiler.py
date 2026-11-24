@@ -278,6 +278,22 @@ def test_the_installed_profiler_is_the_sources_bytes(tmp_path: Path) -> None:
     assert launcher.read_bytes() == launcher_resource().read_bytes()
 
 
+def test_a_launcher_discards_what_its_capture_child_prints(tmp_path: Path) -> None:
+    """A hook's stdout is the host's protocol alone, so the capture's own output is discarded even where
+    the wrapper succeeds. Defect: the launcher passed the capture child's stdout straight through, so a
+    warning or a progress line a wrapper printed there reached Claude Code as its hook result."""
+    launcher = _launcher(tmp_path / "harness")
+    wrapper = launcher.parent / ".." / "tools" / "devpro.sh"
+    wrapper.write_text("#!/bin/sh\necho 'a line the wrapper printed'\nexit 0\n", encoding="utf-8")
+    wrapper.chmod(0o755)
+    project = tmp_path / "project"
+    project.mkdir()
+
+    done = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD, path="/usr/bin:/bin")
+
+    assert (done.returncode, done.stdout) == (0, ""), done.stderr
+
+
 @pytest.mark.parametrize("command", ["capture", "tree"])
 def test_a_launcher_whose_wrapper_fails_captures_silently_and_reports_otherwise(tmp_path: Path, command: str) -> None:
     """The wrapper beside the launcher that stands but fails: `capture` drains stdin and exits 0 — the
