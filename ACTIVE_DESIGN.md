@@ -214,6 +214,53 @@ A store the glob finds but cannot read appears in the index as unreadable —
 the server raises nothing for it.
 ```
 
+**As it stands:**
+
+```
+**Resources.** One file lives in `devpro/harnesses/resources/claude/profiler/`:
+`hp.sh`, the bash launcher, which finds a devpro — the installation's own wrapper first — and
+runs its `profiler` verb (no environment variable overrides the search).
+```
+
+**Becomes:**
+
+```
+**Resources.** One file lives in `devpro/harnesses/resources/claude/profiler/`:
+`profiler.sh`, the bash launcher, which runs the wrapper beside it with the `profiler` verb. Every
+site spelling the launcher's file name renames with it — the hook wiring's script path, the
+skill's finder and its `HP` line, the init's copy and its unlinks, the doctor's compares.
+```
+
+**As it stands:**
+
+```
+**The launcher's finder.** Its first candidate is the installation's wrapper (SPEC.md, Deployed
+Surfaces, Shipped files), resolved from the launcher's own location: `../tools/devpro.sh` from
+`<install-dir>/profiler/hp.sh`, and `../skills/devpro/tools/devpro.sh` from the committed
+`.claude/harness-profiler/hp.sh`. Its fallback extends `PATH` with `/opt/homebrew/bin`,
+`/usr/local/bin` and `~/.local/bin`, since a hook may run with a `PATH` where only the shell's
+builtins are found, and runs one `command -v` over the whole of it. A candidate, the wrapper as any
+other, is the devpro when it runs and exits 0 on `--version`, so a wrapper that finds no usable
+Python is treated as absent and the capture still exits 0 with no output — the found command is the
+one `profiler` runs — and the terminal line is
+`exec "$devpro" profiler "$@"`, the subcommand parsed where the verb is dispatched and the launcher's
+own arguments passed through unchanged. The one-shot finder replaced the per-candidate probe and the
+`HP_DEVPRO` override: there is no variable to set, and a found command that does not run is reported
+and treated as absent.
+```
+
+**Becomes:**
+
+```
+**The launcher's finder.** The launcher resolves the wrapper beside it — `../tools/devpro.sh` from
+`<install-dir>/profiler/profiler.sh`, and `../skills/devpro/tools/profiler.sh` from the committed
+`.claude/harness-profiler/profiler.sh` — and runs it as a child with the `profiler` verb and the
+launcher's own arguments passed through. The first candidate standing is the one that runs: there
+is no probe and no `PATH` search, a foreign devpro is never run, and every failure is named by the
+wrapper's own refusal — a capture whose wrapper fails drains its stdin and exits 0, never blocking
+the tool call.
+```
+
 ### [Why there is no verification verb](PROJECT_DOCS/ARCHITECTURE/why-there-is-no-verification-verb.md)
 
 **As it stands:**
