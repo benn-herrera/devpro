@@ -21,7 +21,7 @@ cited by name, and a name outranks a stale line number.
 | B0 | landed: f3e8835 | expert | Post-plan burndown drafting: the section's items from the review, then their usability review |
 | B1 | landed: 8143650 | expert | sentence-grain check hardening: real-tree case, constant-form pin, marker strip |
 | B2 | drafted — blocked on the owner's choice (R4) | expert | the failed-feed outcome |
-| B3 | dispatchable | expert | sweep line numbers, helper dedup |
+| B3 | landed: 7d5547c | expert | sweep line numbers, helper dedup |
 | B4 | dispatchable | expert | the prefix's one source and its tool gate |
 | B5 | dispatchable | mechanical | document wording: repo-layout row, leaf reflow |
 | B6 | dispatchable | mechanical | pin honesty: name the form pins |
