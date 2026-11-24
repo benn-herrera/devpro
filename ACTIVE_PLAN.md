@@ -19,38 +19,56 @@ becomes-blocks are the accepted text.
 | P4 | drafted | expert | R17's wording halves: the Agent row's referent, the unreadable store stated once, the union comment defers |
 | P5 | drafted | expert | moments local at birth; the deco's moment pass leaves; one rendering, two carriers |
 | P6 | drafted | expert | `profiler.sh` renames `hp.sh`; the finder runs the wrapper bare; R23's rule enters CONVENTIONS |
-| P7 | drafted | expert | R25's rule rides R16's catch-up (this package's tail) |
-| P8 | drafted | expert | R16's leaf catch-up, drafted from measurement after P2 and P5 land |
+| P7 | drafted | expert | R16's leaf catch-up, drafted from measurement after P2 and P5 land; R25's rule enters CONVENTIONS |
 | R | drafted | expert | the post-plan review, five seats |
 | B | drafted | expert | the post-plan burndown, drafted from the review document |
 
 ## Kickoff
 
+The R-IDs name the findings they carry:
+R9 — the opencode resources' type-check against the host source lands when the host publishes what
+its runtime provides; R16 — the leaf's time-notation sentences drift from what the code holds, and
+the column lists disagree; R17 — "an Agent row" has no referent, the unreadable store is stated
+three times with the middle one weakest, the repo-layout paragraph's grain disagrees with its
+neighbours, and the harness-union comment counts two spellings where three exist; R23 — a runner's
+stand-in models the API's real semantics; R24 — a shipped resource naming a host version is checked
+against that host's published declarations; R25 — a test asserting a formatted time or date pins
+the locale alongside `TZ`.
+
+Every before/after done-line measures against `6dccae1`.
+
 The design was accepted with its six entries; the pairs' becomes-blocks are applied verbatim by the
 packages below. The plan carries what design deltas do not: the R23/R24/R25 CONVENTIONS leaves
-(ruled: R24 its own package — P1; R23 rides P6; R25 rides P8), R16's catch-up sequenced after this
-plan's code-shaping packages land — P8, drafted from measurement — R9 deferred to the host's move
+(ruled: R24 its own package — P1; R23 rides P6; R25 rides P7), R16's catch-up sequenced after this
+plan's code-shaping packages land — P7, drafted from measurement — R9 deferred to the host's move
 (recorded in ROADMAP.md by P3), and the repair's one-shot ordering (P3): every standing record,
-once, before the installation updates.
+once, before the installation is refreshed.
 
-P2 and P5 land before P8 is drafted: R16's leaf catch-up is measured against the code as it lands,
+P2 and P5 land before P7 is drafted: R16's leaf catch-up is measured against the code as it lands,
 not as it stands today. P3's repair runs once, before the installation is refreshed — every capture
 written after P3's capture lands is correct at write time.
 
 ## P1 — the shipped TypeScript resources are type-checked
 
-Scope: `devpro/profiler/view.html`-carried scripts excluded; `devpro/harnesses/resources/opencode/index.ts`,
-`guardrail.ts` type-checked; a `tsconfig.json` at the repository root; a declaration stub for
-`@opencode/plugin` beside the resources; `just lint` runs `bunx tsc --noEmit` after the shell check;
-R24's leaf enters `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/` — a shipped resource naming
-a host version is type-checked against that host's published declarations, never against a
-devpro-owned stub for a published package. The compiler is unpinned — `bunx` takes the latest at run
-time; the test runners' TypeScript is dev-time only and outside the check.
+Scope: `devpro/harnesses/resources/opencode/index.ts`,
+`guardrail.ts` type-checked; a `tsconfig.json` at the repository root whose scope covers the
+resources' directory only — the test runners' TypeScript is dev-time only and outside it; a
+declaration stub, `devpro/harnesses/resources/opencode/opencode-plugin.d.ts`, declaring
+`Plugin.define` — the one export `index.ts:16`, `guardrail.ts:7` and `profiler.ts:17` import — and
+declaring the host's published surface, the type check's stand-in only for a package not installed;
+`just lint` runs `bunx tsc --noEmit` after the shell check, where `bun` is a required tool failing
+with a named error where absent, as `shellcheck` does; R24's leaf, named
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-host-version-is-checked-against-the-host-s-declarations.md`,
+enters beside R24's ruling — a shipped resource naming a host version is type-checked against that
+host's published declarations, never against a devpro-owned stub for a published package. The
+compiler is unpinned — `bunx` takes the latest at run time; the test runners' TypeScript is dev-time
+only and outside the check.
 
 Applies the design's [Recipes] pair verbatim to `PROJECT_DOCS/ARCHITECTURE/recipes.md`.
 
-Done-line: `just lint` passes with the type check live on the two resources; `just test devpro`;
-the declaration stub's import surface matches the resource's imports. The unpinned compiler is the
+Done-line: `just lint` passes with the type check live — `bunx tsc --noEmit --listFiles` reports the
+two resource files among its inputs, so an empty program cannot pass; `just test devpro`; the
+declaration stub's import surface matches the resource's imports. The unpinned compiler is the
 ruled state — pinning is a later decision.
 
 ## P2 — the index's display
@@ -62,15 +80,19 @@ carried in the index page's URL query, restored on leaving and returning, the UR
 
 Applies the design's [Harness profiler] pairs two and three verbatim.
 
-Done-line: `just test devpro` — a pin fails on the pre-P2 template for each behavior (the header
-pin on a template whose widths drift; the state pin on a re-navigation), and passes on P2's tree.
-The two foreign `devpro-dashboard` recipe pins are the expected failures.
+Done-line: `just test devpro` — two pins, both new: `test_the_headers_sit_over_their_columns` fails
+on the pre-P2 template's header cell narrower than its column at a long session id;
+`test_the_url_restores_the_controls_and_sort` fails on a control toggled then the page left and
+returned through its own link, reading back toggled-off — and both pass on P2's tree.
 
 ## P3 — the capture reads the host's moving shape; the one-shot repair
 
 Scope: `devpro/harnesses/resources/opencode/profiler.ts` (`childSessionOf`: `result.sessionID`
-first, then `output.sessionID`, then `metadata.sessionID`, each under the host's own string guard),
-the one-shot repair over the standing stores, and the leaf pairs. The repair: run once, before the
+first, then `output.sessionID`, then `metadata.sessionID`, each read through
+`typeof === "string"` before the `??` chain, so a non-string at one place falls through to the
+next); the one-shot repair, a `devpro profiler repair` subcommand dispatched from
+`devpro/profiler/cli.py`, printing `repaired: <n> edges; null: <m> records (result clipped)`; and
+the leaf pairs. The repair: run once, before the
 installation is refreshed — every standing opencode record's result text read, its
 `child_agent_id` filled where the host reported it, a record whose id is already right untouched.
 R9's deferral is recorded in `ROADMAP.md`: the type-check of the resources against the host source
@@ -78,9 +100,11 @@ lands when the host publishes what its runtime provides.
 
 Applies the design's [Harness profiler] capture and repair pairs verbatim.
 
-Done-line: `just test devpro`; the live capture on this host writes `child_agent_id` for a dispatch;
-the repair's one-shot run reports the edges recovered and the records left null (clip-eaten ids) —
-the recoverable set measured, not asserted.
+Done-line: `just test devpro`; the live capture — one `subagent` dispatch under this host (opencode
+v2.4.1), then `jq -r .child_agent_id .devpro-temp/.profiler-opencode/<session>.jsonl` on the
+parent's records — returns the child's id, not null; the repair's one-shot run reports the edges
+recovered and the records left null (result clipped) — the recoverable set measured, not asserted.
+The repair runs after P3's capture is installed and before any further capture on this host.
 
 ## P4 — R17's wording halves
 
@@ -89,12 +113,38 @@ whose tool is `Agent`"; the unreadable store's three statements collapse to the 
 Scope: `devpro/profiler/pages.py` — the harness-union comment above the style block defers its count
 to the `HARNESSES` comment's three.
 
-Applies the design's [Harness profiler] R17 pairs and the [Why there is no verification verb]
-pair-skip: the comment fix is the Code delta's, held to the leaf.
+## P4 — R17's wording halves
 
-Done-line: `just test devpro`; the leaf's amended passages are the design's becomes-blocks.
+Scope: `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md` — "an Agent row" becomes "a call row
+whose tool is `Agent`"; the unreadable store's three statements collapse to the two the leaf keeps.
+Scope: `devpro/profiler/pages.py` — the harness-union comment above the style block defers its count
+to the `HARNESSES` comment's three. Scope: `PROJECT_DOCS/ARCHITECTURE/repo-layout.md` — the
+dependency paragraph's grain reaches package grain, `dicing/` beside its neighbours.
+
+Applies the design's [Harness profiler] R17 pairs, the [Repo layout] pair, and the Code delta's
+harness-union comment paragraph — nothing applied to the leaf for the comment.
+
+Done-line: `just test` — the docs surface's link check runs over the two rewritten leaves;
+`just dev-check-design-deltas-applied` reports P4's pairs landed.
 
 ## P5 — moments local at birth; one rendering, two carriers
+
+Scope: `devpro/profiler/pages.py` — the index script's moments cells draw local at birth: first end
+date whole beside its time, second end time only, 24-hour, one notation — the hand-built clock R8's
+fix landed; the `<time>` title keeps the raw UTC. Scope: `devpro/profiler/view.html` — the session
+page's header stamp draws the same way. Scope: `devpro/profiler/deco.js` — the deco's moment pass
+leaves whole: `readMoments`, the `MOMENTS` selector, both moment observers — with the double render
+it served. Scope: `tests/profiler_deco_runner.ts` — the runner's moment cases leave with it. One
+rendering, two carriers: `render_html` and `served_page` differ only in the layer's carrier —
+inlined where a file cannot link a server's origin.
+
+Applies the design's [Harness profiler] moments pairs and the Code delta's moment paragraphs
+verbatim. R23's leaf rides P6; R16's catch-up is sequenced after this package lands.
+
+Done-line: `just test devpro` — the moments pin fails on the pre-P5 tree (UTC text) and passes on
+P5's; a pin rendering one session both ways asserts the two texts differ only within
+`<!--LAYER-->`'s slot and fails on the pre-P5 tree, which renders two templates; the nav's indicator
+and stop pass their pins unchanged.
 
 Scope: `devpro/profiler/pages.py` — the index script's moments cells and the session page's header
 stamp draw local at birth: first end date whole beside its time, second end time only, 24-hour, one
@@ -115,29 +165,40 @@ the served page's text, the layer its only difference — measured, not asserted
 Scope: `profiler.sh` replaces `hp.sh` everywhere the launcher is spelled — the resource file and its
 opencode cross-harness copy, the hook wiring's script path (`harnesses/claude.py`), the launchers'
 finder candidates, the skill's finder, the init's copy and its unlinks, the doctor's compares, the
-skill's `HP` line. The finder resolves the wrapper beside it and runs it as a child with the
-`profiler` verb — no probe, no `PATH` search, no foreign devpro; every failure named by the wrapper's
-own refusal; capture never blocks. R23's leaf enters CONVENTIONS beside R24's: a runner's stand-in
-models the API's real semantics, and no test relies on a stand-in being more permissive than the
-browser.
+skill's `HP` line — and the leaves the rename invalidates beside the design's pairs:
+`PROJECT_DOCS/ARCHITECTURE/repo-layout.md:22`, `PROJECT_DOCS/ARCHITECTURE/subsystem-map.md:78-79`,
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/harness-resources-are-copied-verbatim.md:11`,
+`PROJECT_DOCS/SPEC/deployed-surfaces/installed-tree.md:43`,
+`PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:101,163`. Scope: `devpro/profiler/hooks.py`
+(`LAUNCHER = "hp.sh"` and its finder comment), `devpro/profiler/capture.py` (docstring),
+`tests/test_devpro_profiler.py`, `tests/test_devpro_install.py`. R23's leaf, named
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-stand-in-models-the-api-s-real-semantics.md`,
+enters beside R24's — and `index.md` lists it. The finder resolves the wrapper beside it and runs it
+as a child with the `profiler` verb — no probe, no `PATH` search, no foreign devpro; every failure
+named by the wrapper's own refusal; capture never blocks.
 
 Applies the design's [Harness profiler] resources and finder pairs and the [Why there is no
 verification verb] pair verbatim.
 
-Done-line: `just test devpro` — the committed-hook pins fail on the pre-P6 launcher name and pass on
-P6's; `doctor --update` renames the stale committed hooks it names; the capture on this host writes
-a record through the renamed launcher. The rename's consuming-project migration is doctor's, run
-before the install refreshes.
+Done-line: `just test` — the docs surface runs over the six renamed leaves; the committed-hook pins
+fail on the pre-P6 launcher name and pass on P6's; `devpro profiler init claude` in a repository
+holding a stale committed hook renames it, and `devpro profiler doctor` no longer prints its
+`update:` line; the capture on this host writes a record through the renamed launcher. The rename's
+consuming-project migration is the init's, run before the install refreshes.
 
 ## P7 — R16's leaf catch-up, and R25's rule
 
-Scope: `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md` and R25's leaf — drafted from
-measurement against P2 and P5's landed code: the notations the scripts actually produce, the column
-list the index actually draws, the locale the tests actually pin. Sequenced last — the owner's
-ruling: drafted from measurement, not from this plan's expectations.
+Scope: `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md` and R25's leaf, named
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-formatted-time-test-pins-the-locale.md` —
+drafted from measurement against P2 and P5's landed code: the notations the scripts actually
+produce, the column list the index actually draws, the locale the tests actually pin. Sequenced
+last — the owner's ruling: drafted from measurement, not from this plan's expectations; this
+package's measurement passages are filled at its dispatch, a later revision of this plan's changed
+text only.
 
-Done-line: `just test devpro`; the leaf's amended passages are the design's becomes-blocks — the
-measurements named in the package, taken on the landed tree.
+Done-line: `just test devpro`; `just dev-check-design-deltas-applied` reports P7's pairs landed —
+the four R16 drift items, each carrying the grep or pin that produces its answer, taken on the
+landed tree.
 
 ## R — the post-plan review, five seats
 
