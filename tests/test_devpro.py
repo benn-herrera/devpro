@@ -766,10 +766,13 @@ def test_the_installing_reference_names_every_install_setting(harness: str) -> N
     assert [setting for setting in INSTALL_SETTINGS if setting not in text] == []
 
 
-@pytest.mark.parametrize("harness", [CLAUDE, MAGE, OPENCODE], ids=lambda harness: harness.name)
-def test_the_scratch_rule_names_the_one_scratch_directory(harness: Harness) -> None:
-    """Each harness's scratch rule names the one scratch directory both guardrails allow."""
-    assert f"`{devpro.clauses.PROJECT_TEMP_DIR}/`" in harness.scratch_rule
+@pytest.mark.parametrize("harness", harnesses(), ids=lambda name: name)
+def test_the_scratch_rule_names_the_one_scratch_directory(harness: str) -> None:
+    """Each harness's scratch rule names the one scratch directory both guardrails allow, in the
+    paragraph the clauses module carries."""
+    rule = harnesses()[harness].scratch_rule
+    assert f"`{devpro.clauses.PROJECT_TEMP_DIR}/`" in rule
+    assert rule == devpro.clauses.SCRATCH_PARAGRAPH
 
 
 def test_no_rendering_names_a_retired_scratch_directory() -> None:
@@ -2052,7 +2055,8 @@ def test_a_paragraph_two_supporting_files_write_out_is_found() -> None:
 _CLAUSE_GRAPH = clause_graph((_PACKAGE / "clauses.py").read_text(encoding="utf-8"))
 _HARNESS_STRINGS = {hole(part) for part in (*HarnessText, *PluginText)}
 # A reference names one definition, like the scratch directory's name names one directory and the plugin
-# name one plugin: a sentence's word, not a span a prompt could deliver twice.
+# name one plugin, and the scratch rule is one paragraph every harness passes: a sentence's word or a
+# value, not a span a prompt could deliver twice.
 _SENTENCE_HOLES = (
     frozenset(
         name for name, value in vars(devpro.clauses).items() if isinstance(value, str) and value in _HARNESS_STRINGS

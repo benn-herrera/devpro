@@ -153,7 +153,7 @@ HARNESS = Harness(
     # a plugin's components register only under the plugin's namespace, its MCP tools included
     reference_prefix="{plugin}:",
     mcp_tool_prefix="mcp__plugin_{plugin}_kbase__",
-    scratch_rule=scratch_rule(harness_dir=_PROJECT_HARNESS_DIR),
+    scratch_rule=scratch_rule(),
     memory_file=f"`{_USER_HARNESS_DIR}/{_AGENTS_FILE}`",
     user_plugin_shadows=True,
     reload_rule=_RELOAD_RULE,

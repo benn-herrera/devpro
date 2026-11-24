@@ -9,9 +9,9 @@ under the default family's own categories, with no model-shape check. The `devel
 optional
 reference to `development` in its own paragraph, and every install carries it, so the block carries it.
 The scratch rule and the memory file's name are the harness's `scratch_rule` and `memory_file`
-(Rendering, Placeholders); the rule names the scratch directory
-([Installed tree](../SPEC/deployed-surfaces/installed-tree.md)); under claude and opencode it names
-the harness directory beside it, and mage's names none. `agents_file`
+(Rendering, Placeholders); the rule is `clauses.SCRATCH_PARAGRAPH`, the one paragraph every
+harness's field carries, and it names the scratch directory
+([Installed tree](../SPEC/deployed-surfaces/installed-tree.md)). `agents_file`
 passes `GLOBAL_SCOPE` for a user harness directory and otherwise the directory's name.
 
 `devpro/agents_file.py` implements the install SPEC.md specifies. It finds the agents-file block

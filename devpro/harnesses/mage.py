@@ -38,10 +38,7 @@ HARNESS = Harness(
     # mage namespaces a plugin's agents, commands and skills as Claude Code does
     reference_prefix="{plugin}:",
     mcp_tool_prefix="mcp_kbase_",
-    scratch_rule=(
-        f"All scratch —\nthrowaway builds, probe harnesses, captured output — goes in `{clauses.PROJECT_TEMP_DIR}/` under the\n"
-        "active project root. Where it doesn't exist, create it; don't improvise a location."
-    ),
+    scratch_rule=clauses.SCRATCH_PARAGRAPH,
     memory_file="the mage plugin's `CLAUDE.md` (outside its marker lines)",
     recipe_rule=FOREGROUND_RECIPE_RULE,
     kbase_project_rule=_KBASE_PROJECT_RULE,

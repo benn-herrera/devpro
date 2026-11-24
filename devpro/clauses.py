@@ -1,12 +1,12 @@
-"""The clauses module: every paragraph definitions in different modules carry, as plain
-string constants; text only one module's definitions share is that module's own.
+"""The clauses module: every paragraph that definitions and harness fields in different modules
+carry, as plain string constants; text only one module's definitions share is that module's own.
 A chunk with argument slots is a function taking keyword arguments and returning
 its text; a chunk with variants is one constant (or function) per variant,
 `CHUNK_VARIANT`. A function calls nothing, so a run of text that holds a slotted
-chunk is composed where a definition uses it. A definition interpolates these
-into its body at import. The harness and tuning strings, and the references to other
-definitions, are placeholders, spelled as `vocabulary.hole` and `vocabulary.reference`
-spell them: the only ones left for the renderer to fill.
+chunk is composed where a definition or a harness field uses it. A definition interpolates these
+into its body at import; a harness field holds one whole. The harness and tuning strings, and the
+references to other definitions, are placeholders, spelled as `vocabulary.hole` and
+`vocabulary.reference` spell them: the only ones left for the renderer to fill.
 
 No constant carries a leading or trailing newline: a definition's body places
 the blank lines between paragraphs.
@@ -17,6 +17,13 @@ PROJECT_HARNESS_DIR = "@!hrn-project-harness-dir!@"
 # The project's scratch directory is one name under every harness, so it is a literal rather than a
 # harness placeholder.
 PROJECT_TEMP_DIR = ".devpro-temp"
+# The agents file's scratch paragraph, every harness's `scratch_rule`: `harness.scratch_rule()` returns
+# it and mage's harness passes it whole.
+SCRATCH_PARAGRAPH = (
+    f"All scratch —\nthrowaway builds, probe harnesses, captured output — goes in `{PROJECT_TEMP_DIR}/` under the\n"
+    "active project root. Where it doesn't exist, create it; don't\n"
+    "improvise a location."
+)
 DISPLAY_NAME = "@!hrn-display-name!@"
 USER_HARNESS_DIR = "@!hrn-user-harness-dir!@"
 MCP_TOOL_PREFIX = "@!hrn-mcp-tool-prefix!@"
@@ -37,9 +44,12 @@ PERIODIC_REVIEW_INTERVAL_DEFAULT = "5"
 
 REPOSITORY_URL = "https://github.com/benn-herrera/devpro"
 
-# Constants carrying a value rather than a clause: a new value constant is added here.
+# Constants carrying a value rather than a clause: a new value constant is added here. A member is
+# compared by equality, never by identity, so a harness passing `clauses.SCRATCH_PARAGRAPH` through
+# stays a value.
 VALUE_CONSTANTS = (
     PROJECT_TEMP_DIR,
+    SCRATCH_PARAGRAPH,
     REPOSITORY_URL,
     PLAN_SIZE_LIMIT_DEFAULT,
     PERIODIC_REVIEW_INTERVAL_DEFAULT,

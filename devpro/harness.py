@@ -127,14 +127,10 @@ If a recipe times out, the agent hands back naming it instead of rerunning it in
 in the background."""
 
 
-def scratch_rule(*, harness_dir: str) -> str:
-    """The agents file's scratch rule, after its `/tmp` sentence; `harness_dir` is the harness directory
-    the project scratch directory sits beside."""
-    return (
-        f"All scratch —\nthrowaway builds, probe harnesses, captured output — goes in `{clauses.PROJECT_TEMP_DIR}/` under the\n"
-        f"active project root. Where it doesn't exist, create it; don't\n"
-        "improvise a location."
-    )
+def scratch_rule() -> str:
+    """The agents file's scratch rule, after its `/tmp` sentence: `clauses.SCRATCH_PARAGRAPH`, the text
+    mage's harness passes too."""
+    return clauses.SCRATCH_PARAGRAPH
 
 
 class McpEntryBuilder(Protocol):
