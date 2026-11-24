@@ -267,7 +267,11 @@ alternative picked rather than left to the executor)* One ending-aware helper re
 re-implementation; `rstrip()` is narrowed to the line's own ending; the one-function accessor is
 inlined; the dashboard's traces-feed case gains a readable claude session beside the locked
 store; the entry runner's always-empty `requests` key is dropped; `subsystem-map.md` names
-`runner_file.py`'s three duties — the move to `install.py` is the roadmap's. Scope:
+`runner_file.py`'s three duties — the move to `install.py` is the roadmap's. The retired-directory
+pin in `test_devpro_install.py` naming three harnesses is verified against the owner's account:
+mage's per-harness temp separation predates the `.devpro-temp` unification, which forgot mage —
+the third retired name's fate (leftover the install should clean, or stale pin) is decided there
+with the unification's history as the record. Scope:
 `devpro/runner_file.py`, `tests/conftest.py`, `tests/test_devpro_profiler.py`,
 `tests/dashboard/test_server.py`, `tests/opencode_entry_runner.ts`,
 `PROJECT_DOCS/ARCHITECTURE/subsystem-map.md`.
