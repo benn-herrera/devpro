@@ -172,6 +172,19 @@ whole rendered tree with it. Single-harness installs converge and are pinned by 
 (plugin references with a space separator, no harness-named paths) or scope the up-to-date decision
 per harness.
 
+### The opencode resources' type-check waits on the host's runtime declarations
+
+The shipped opencode resources are type-checked against `@opencode/plugin`'s published declarations
+(P1's rule, `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/`). What the check cannot settle
+is what the host's runtime actually provides where its published types are narrower or absent: the
+`output` its plugin API hands a tool hook is a declared type the runtime can widen — `subagent`'s
+result on 2.4.1 carries the child's `sessionID` and a bare-string `output` where the declaration's
+shape said `output.sessionID` — so a read the types admit can still record nothing at run time.
+Landing the check against the host source ends when the host publishes what its runtime provides;
+until then the capture reads every place the host has been observed to report a value, and a live
+dispatch under the host in use is the evidence. P3's capture and its `devpro profiler repair` are
+that evidence's product.
+
 ## Testing
 
 ### The plugin's model config is not applied at runtime on 2.4.1
