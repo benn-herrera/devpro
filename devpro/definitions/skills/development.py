@@ -395,6 +395,9 @@ approved can run as approved.
   harness instruction says. Write it on every pull request; removing it at submission is the user's
   choice. *Purpose:* the submitter takes full responsibility for the change, so the line names the
   harness and no model.
+- A commit that removes text speaking for the owner without the owner's own words names what it
+  removed in its body, so the record states the gap and not only the correction. *Purpose:* an
+  unauthorized claim's provenance is the evidence a later reader needs to trust the removal.
 
 ## Post-plan review
 
@@ -605,11 +608,9 @@ interpolate from, so it invents.
   states a reason for it that holds.
 - Where a comparison with standard tools decides whether one check stays, apply the same comparison
   to every check of that concern.
-- A statement of the owner's intent, permission or practice — what the operator will do, may do, or
-  wants — is authorized only where the owner's own words put it there. Text speaking for the owner
-  without their words is removed, and the removing commit names what it removed. *Purpose:* a
-  document that grants a permission nobody asked for fabricates authority, and every later reader
-  inherits it.
+- A statement of the owner's intent, permission or practice is authorized only by the owner's own
+  words; without them it goes. *Purpose:* a claim the owner never made reads the same as one the
+  owner made.
 
 *Purpose:* the documents and the code teach their readers only what the project does.
 

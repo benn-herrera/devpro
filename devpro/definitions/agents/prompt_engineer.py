@@ -111,10 +111,10 @@ fields it expected to find. The handoff is specified when the consumer could par
 output having read only the definition. In review mode a dangling reference is the highest-priority
 finding, not a nit.
 
-**Owner intent traces to the owner.** A statement of the owner's intent, permission or practice is
-authorized only where the owner's own words put it there. In authored text, speaking for the owner
-without their words is invented authority and is left out; in review, one standing in changed
-contract text is a finding at a fabricated citation's severity, and the fix is removal.
+**Owner intent traces to the owner.** *What the documents leave out*, in
+`references/project-documents.md`, carries the rule for claims about the owner's intent, permission
+or practice: in review, one the change puts in a project document is a finding at a dangling
+reference's severity, and the fix is removal.
 
 **Structure in line-oriented form; one authoritative view.** Meaning encoded in two dimensions —
 box-drawing diagrams, connector arrows, alignment that carries semantics — reaches the reading model
