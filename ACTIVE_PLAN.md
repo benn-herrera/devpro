@@ -141,7 +141,8 @@ date whole beside its time, second end time only, 24-hour, one notation — the 
 fix landed; the `<time>` title keeps the raw UTC. Scope: `devpro/profiler/view.html` — the session
 page's header stamp draws the same way. Scope: `devpro/profiler/deco.js` — the deco's moment pass
 leaves whole: `readMoments`, the `MOMENTS` selector, both moment observers — with the double render
-it served. Scope: `tests/profiler_deco_runner.ts` — the runner's moment cases leave with it. One
+it served, and the deco's remaining script wraps its body in an IIFE, the design's [Harness
+profiler] IIFE pair applied here. Scope: `tests/profiler_deco_runner.ts` — the runner's moment cases leave with it. One
 rendering, two carriers: `render_html` and `served_page` differ only in the layer's carrier —
 inlined where a file cannot link a server's origin.
 
