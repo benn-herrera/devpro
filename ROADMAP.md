@@ -5,13 +5,6 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
-### The plugin's model config is not applied at runtime on 2.4.1
-
-`opencode/index.ts` read the host's `entry.model` past the brand, and the fix landed the types — the
-runtime model config was never applied on 2.4.1 and still is not. The plugin runs on the default model
-where a configured one was intended. A small package: apply the configured model at `Plugin.define`'s
-setup, pinned by a test.
-
 ## Features
 
 ### A live agents panel on the dashboard
@@ -168,24 +161,6 @@ previous layer left.
 
 ## Maintenance
 
-### Any `.profiler-*` directory beside a store reads as a store
-
-`pages.py`'s `.profiler-*` glob takes every directory of that shape under `.devpro-temp/` for a
-store, so a copy of a store, or a second one added beside it, has its sessions rendered twice in the
-index and makes `tree <prefix>` report ambiguity. The glob wants a shape only a capture's own store
-matches, or the readers a marker of the store's own.
-
-### harness-profiler leaf is verbose
-
-Needs less history lesson more architecture. Concision pass needed.
-
-### Allow creation of .devpro-temp/
-
-Current wording in AGENTS.md says to stop and notify - let's change that to create it.
-To make that less consequential let's add modification of .gitignore to add .devpro-temp/
-to it (or create if missing with .devpro-temp/) to the installation behaviors.
-we already modify the justfile and AGENTS.md there's no reason for .gitignore to be sacronsanct.
-
 
 ### Git Flow light: publish the rework history
 
@@ -217,47 +192,39 @@ where opencode's background service has never run a session, models a provider p
 there; the run fails or falls back to opencode's free models. Whether the composed agent file's
 `"*": deny` blocks every tool is therefore unconfirmed by a live run.
 
-### Agents-file block churns under alternating harness installs
-
-Installing one harness after another into the same project rewrites the agents-file block and its
-rolling backup on every run — each harness's block names its own reference spelling, global
-agents-file path and file-name examples — so the install never reports up to date and rewrites the
-whole rendered tree with it. Single-harness installs converge and are pinned by tests
-(`tests/test_devpro_install.py`). A fix would render the block byte-identical across harnesses
-(plugin references with a space separator, no harness-named paths) or scope the up-to-date decision
-per harness.
-
-### The opencode resources' type-check waits on the host's runtime declarations
-
-The shipped opencode resources are type-checked against `@opencode/plugin`'s published declarations
-(the host-version rule, `a-host-version-is-checked-against-the-host-s-declarations.md` in
-`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/`). What the check cannot settle
-is what the host's runtime actually provides where its published types are narrower or absent: the
-`output` its plugin API hands a tool hook is a declared type the runtime can widen — `subagent`'s
-result on 2.4.1 carries the child's `sessionID` and a bare-string `output` where the declaration's
-shape said `output.sessionID` — so a read the types admit can still record nothing at run time.
-Landing the check against the host source ends when the host publishes what its runtime provides;
-until then the capture reads every place the host has been observed to report a value, and a live
-dispatch under the host in use is the evidence. The capture and its `devpro profiler repair` are
-that evidence's product.
-
 ### The TypeScript compiler rides unpinned
 
 `just lint`'s type check runs `bunx tsc`, which takes the latest compiler at run time, so a compiler
 release can change what the check reports with no change here. A pin in the root `package.json`,
 beside `@opencode/plugin`, would hold it.
 
+currently vetoed because bun gets updated and if we break under a new bun that is a finding.
+mind may change about this later.
+
 ## Testing
 
 ### A shared sentence written out inside a longer paragraph is not checked for double delivery
 
 `tests/test_devpro.py` `_double_paragraphs` compares whole prose units and never splits them into
-sentences.
+sentences, so a sentence two outputs of one prompt both carry — each inside its own longer
+paragraph — is delivered twice unseen. The fix compares sentences: each prose unit splits into
+sentences the way `devtools/dupe_sweep/doc_sentences.py` splits them — hard wrap rejoined before
+the split, punctuation-split, the abbreviation caveats that module states — and the repeat count
+runs over the prompt's sentences instead of its units. Measured cost: the splitter's own corpus
+sweep runs in 0.535s and sentence splitting is linear over the filled texts the check already
+walks, so the check's cost stays flat. The false-positive surface is bounded by the check's own
+scope — one prompt, being one plugin's agents file and the outputs its `@` lines load — so the
+families' deliberate parallel structure across different agents stays out of it, and the shared
+scaffolds one prompt co-delivers stay candidates, judged as this check's findings always are. The
+sentence check inherits the fill gap the next ticket states: finer granularity checked through
+one family and one harness only.
 
 ### The double-delivery check fills only the claude family under the claude harness
 
 `tests/test_devpro.py` `_prompts` fills with `_CLAUDE_RENDER`, so family overlay text and other
-harnesses' text go unchecked.
+harnesses' text go unchecked. The sentence check the previous ticket adds raises the stakes:
+overlay text and other harnesses escape at sentence granularity, where a shared sentence is small
+enough to hide inside a paragraph that differs.
 
 ### Browser-driven visual verification
 
@@ -275,18 +242,3 @@ as `UnsupportedOperation` — named, not silent.
 
 Still open for the design work: what the check asserts and which pages it covers. Rides with the UX
 pass, where the visual work lives.
-
-### The DOM stand-ins' shape
-
-The bun runners' DOM stand-in exists in three divergent copies (~130 lines each:
-`tests/profiler_browser_runner.ts`, `tests/profiler_index_runner.ts`,
-`tests/profiler_page_runner.ts`), and the `MutationObserver` machinery in two of them is residue
-of the deleted deco sweep — the stand-in rule
-(`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-stand-in-models-the-api-s-real-semantics.md`)
-sends residue with the semantics it served.
-
-Decided — parked with the browser-driven design: the stand-ins' shape (one shared module, a
-published DOM, or retirement of the DOM-touching tests to the real browser) is that design's call,
-not a burndown item. The owner's principle: a stand-in shaped like what we already have looks
-reliable while testing our assumptions, not what a browser will encounter in actual use; where the
-deployed environment exists, tests run against it.
