@@ -18,7 +18,7 @@ becomes-blocks are the accepted text.
 | P3 | landed 7a9918c, R9's note 456673f beside it | expert | the capture reads 2.4.1's shape; the one-shot child-tie repair runs before the install updates |
 | P4 | landed fe14273 | expert | R17's wording halves: the Agent row's referent, the unreadable store stated once, the union comment defers |
 | P5 | landed 9766c02 | expert | moments local at birth; the deco's moment pass leaves; one rendering, two carriers |
-| P6 | dispatchable | expert | `profiler.sh` renames `hp.sh`; the finder runs the wrapper bare; R23's rule enters CONVENTIONS |
+| P6 | in progress: dispatched to devpro-python-coder | expert | `profiler.sh` renames `hp.sh`; the finder runs the wrapper bare; R23's rule enters CONVENTIONS |
 | P7 | drafted: dispatchable when P2 and P5 land | expert | R16's leaf catch-up, drafted from measurement after P2 and P5 land; R25's rule enters CONVENTIONS |
 | R | drafted | expert | the post-plan review, five seats |
 | B | drafted | expert | the post-plan burndown, drafted from the review document |
