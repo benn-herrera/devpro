@@ -25,6 +25,11 @@ The harness dots keep their per-harness colors; the theme in question is the pro
 carry the primary accent and where its token lives, so the change is one home's edit rather than a
 sweep.
 
+Owner's addition: opencode's dot color changes to the purple-blue opencode's TUI now uses — the
+periwinkle blue of their "Build" headings (screenshot in session, 2026-11-24; approximately a
+#7B7BF0-class violet-blue, the design picks the exact token against the TUI). Claude's dot keeps
+its color; opencode's is the change.
+
 ### The profiler surfaces the model name each session and agent used
 
 Owner's note: the records already carry the model name used in each session and agent — the
