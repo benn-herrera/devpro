@@ -26,7 +26,7 @@ it changes reports the failure as a finding — the test is never edited to pass
 | P3 | landed (cd50d71) | expert | the scratch guarantee's one home: install prepares, the clause drops |
 | P4 | landed (f1c226a) | expert | the stand-ins' removal and the mock-as-oracle clause |
 | R | landed (2c48159) | expert | Post-plan review |
-| B | in progress: B1 landed (2f7c00c), B3–B5 landed, B6–B8 next; B2 holds for the owner's ruling | expert | Post-plan burndown |
+| B | in progress: B1–B5 landed, B6 in flight, B7–B8 next; B2 and the two clause decisions on the owner | expert | Post-plan burndown |
 
 ### P1 — the plugin's configured model applies at runtime
 
@@ -266,15 +266,15 @@ Done-line: `just test`, `just dev-check-links`.
 alternative picked rather than left to the executor)* One ending-aware helper replaces the CRLF
 re-implementation; `rstrip()` is narrowed to the line's own ending; the one-function accessor is
 inlined; the dashboard's traces-feed case gains a readable claude session beside the locked
-store; the entry runner's always-empty `requests` key is dropped; `subsystem-map.md` names
-`runner_file.py`'s three duties — the move to `install.py` is the roadmap's. The retired-directory
+store; `subsystem-map.md` names
+`runner_file.py`'s three duties — the move to `install.py` is the roadmap's. (The entry runner's
+always-empty `requests` key left with B1's hook removal — nothing to drop.) The retired-directory
 pin in `test_devpro_install.py` naming three harnesses is verified against the owner's account:
 mage's per-harness temp separation predates the `.devpro-temp` unification, which forgot mage —
 the third retired name's fate (leftover the install should clean, or stale pin) is decided there
 with the unification's history as the record. Scope:
 `devpro/runner_file.py`, `tests/conftest.py`, `tests/test_devpro_profiler.py`,
-`tests/dashboard/test_server.py`, `tests/opencode_entry_runner.ts`,
-`PROJECT_DOCS/ARCHITECTURE/subsystem-map.md`.
+`tests/dashboard/test_server.py`, `PROJECT_DOCS/ARCHITECTURE/subsystem-map.md`.
 Done-line: `just test`, `just lint`.
 
 **B8 — the double-delivery instance is folded into its ticket** *(review finding 10)* The
