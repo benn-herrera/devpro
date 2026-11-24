@@ -59,6 +59,18 @@ imports and a 32 KiB cap; agents, skills, hooks and MCP live in separate places,
 Expand the model category map assignment scheme to allow specifying a specific model
 to a specific agent. Allow globbing for agent names, e.g. *-coder
 
+### Detect a re-install from embedded devpro
+
+Right now ./<harness-dir>.../devpro.sh install . fails because it detects the self-overwrite.
+what it *should* do is reinstall everything but the embedded copy (just detect and skip).
+this allows for edits to ~/.config/devpro/devpro.cfg to take effect without potentially changing
+devpro's installed version by using the system copy.
+
+### Consider changing devpro config format
+
+It's currently .cfg but .toml allows for nesting (which we are faking with <harness>-model-map group)
+The upgrade to python 3.11 makes toml available without a dependency.
+
 ### Dashboard doc state indicator
 
 When roadmap, design, or plan are not kanban compliant an indication should show on the kanban
@@ -239,3 +251,17 @@ as `UnsupportedOperation` — named, not silent.
 
 Still open for the design work: what the check asserts and which pages it covers. Rides with the UX
 pass, where the visual work lives.
+
+### One path to the profiler's outcome
+
+The profiler's outcome — one capture recorded, one profile shown — is reached today through several
+derivations of one fact: the launcher tests two wrapper candidates per copy location, the skill's
+finder runs its own two-location search, and doctor re-derives the launcher's resolution to report
+it. The wrapper's location is known wherever the profiler is written: the committed hook's wiring
+can name the project-committed wrapper directly, the installed tree's layout is fixed, and the
+skill's text is rendered. Ruled: one path — every runner names the wrapper from its writer's
+knowledge; no candidate hunting, no re-derivation for reporting. The capture subcommand owns the
+never-block contract itself: its read of the hook payload is bounded (an unbounded drain stalls a
+tool call for the harness's hook timeout wherever a writer holds stdin open), and it exits 0 on
+every path. P6's rename and its migration machinery carry: `init` unlinks the old launcher names
+and copies.
