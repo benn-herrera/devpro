@@ -24,8 +24,8 @@ cited by name, and a name outranks a stale line number.
 | B3 | landed: 7d5547c | expert | sweep line numbers, helper dedup |
 | B4 | landed: 641ef80 | expert | the prefix's one source and its tool gate |
 | B5 | landed: c026bcb | mechanical | document wording: repo-layout row, leaf reflow |
-| B6 | in progress | mechanical | pin honesty: name the form pins |
-| B7 | dispatchable | mechanical | CONVENTIONS lines: real-tree case, synonym search, scratch hygiene |
+| B6 | landed: 2ccc9e6 | mechanical | pin honesty: name the form pins |
+| B7 | in progress | mechanical | CONVENTIONS lines: real-tree case, synonym search, scratch hygiene |
 | B8 | dispatchable | mechanical | the cli docstrings' one home |
 | B9 | landed: 7567f51 | expert | the families' anchor prose: in the literals corpus or recorded as out |
 
@@ -282,9 +282,11 @@ document present at `ACTIVE_PLAN_REVIEW.md`.
 
 Drafted from [ACTIVE_PLAN_REVIEW.md](ACTIVE_PLAN_REVIEW.md); the findings' IDs below are its. One
 package per root-cause group, one commit each, per the section shape the owner directed: the
-section holds the drafting ticket, and the items it drafted under it. R17's one-sentence leaf
-reword — the only finding with no package — rides the session's commit that lands the plan. The
-checkpoint gate —
+section holds the drafting ticket, and the items it drafted under it. Two one-line doc items with
+no package ride the session's commit that lands the plan: R17's leaf reword, and the catch-all's
+ARCHITECTURE line — the owner refiled the B2 coder's proposal from CONVENTIONS to ARCHITECTURE:
+the dashboard's failure answer is a behavior of the implementation, so the sentence lands beside
+the failure sentences it makes true, in the profiler/dashboard leaf. The checkpoint gate —
 `just test`, then `just sweep-python` — runs once, before each item's closing commit; each
 done-line's final run is at that close.
 
