@@ -32,7 +32,7 @@ becomes-blocks are the accepted text.
 | B8 | landed 7ea5524 | expert | the launcher's edges and the stale installs (VR10) |
 | B9 | landed bca8961 | expert | one lockfile (VR11) |
 | B10 | landed a468bfb | expert | the agents column, and the residue (VR12, VR13) |
-| B11 | in progress: dispatched to devpro-python-coder | expert | one path to the profiler's outcome |
+| B11 | landed 6bffe75 | expert | one path to the profiler's outcome |
 
 ## Kickoff
 
