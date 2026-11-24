@@ -22,7 +22,7 @@ cited by name, and a name outranks a stale line number.
 | B1 | landed: 8143650 | expert | sentence-grain check hardening: real-tree case, constant-form pin, marker strip |
 | B2 | drafted — blocked on the owner's choice (R4) | expert | the failed-feed outcome |
 | B3 | landed: 7d5547c | expert | sweep line numbers, helper dedup |
-| B4 | dispatchable | expert | the prefix's one source and its tool gate |
+| B4 | landed: 641ef80 | expert | the prefix's one source and its tool gate |
 | B5 | dispatchable | mechanical | document wording: repo-layout row, leaf reflow |
 | B6 | dispatchable | mechanical | pin honesty: name the form pins |
 | B7 | dispatchable | mechanical | CONVENTIONS lines: real-tree case, synonym search, scratch hygiene |
