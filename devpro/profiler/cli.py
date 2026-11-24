@@ -1,8 +1,7 @@
 """The profiler verb's argparse surface and dispatch: `devpro profiler <subcommand>`.
 
-`add_verbs` adds one `profiler` verb to `devpro.cli.build_parser`'s subparsers; `run` dispatches it and
-returns its exit status. The verb's subcommand line is parsed where it is dispatched, so registering the
-verb imports only this module.
+The verb's subcommand line is parsed where it is dispatched, so registering the verb
+imports only this module.
 """
 
 import argparse

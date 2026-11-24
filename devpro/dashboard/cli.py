@@ -1,7 +1,6 @@
 """The dashboard verb's argparse surface and dispatch: `devpro dashboard [<project-dir>] [--port <number>]`.
 
-`add_verbs` adds one `dashboard` verb to `devpro.cli.build_parser`'s subparsers; `run` serves it and
-returns its exit status. `devpro.cli` imports `add_verbs` while building its parser, so no module the
+`devpro.cli` imports `add_verbs` while building its parser, so no module the
 verb dispatches to is imported by it; `run` asks its server's module for `serve` where it dispatches.
 """
 
