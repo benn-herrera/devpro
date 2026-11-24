@@ -30,9 +30,9 @@ becomes-blocks are the accepted text.
 | B6 | landed 6641b54 | expert | the documents state the shipped code (VR7, VR8, VR14; after B8) |
 | B7 | landed 4584cd5 | expert | CONVENTIONS aligns with practice (VR9) |
 | B8 | landed 7ea5524 | expert | the launcher's edges and the stale installs (VR10) |
-| B9 | drafted: anchor confirmed current, PE review of the fill in flight | expert | one lockfile (VR11) |
-| B10 | drafted: sites re-anchored to symbols, PE review in flight | expert | the agents column, and the residue (VR12, VR13) |
-| B11 | drafted: retirement amendment applied, PE review in flight; its pair revisions fill at dispatch | expert | one path to the profiler's outcome (the owner's ruling, from the retired ticket) |
+| B9 | dispatchable | expert | one lockfile (VR11) |
+| B10 | dispatchable | expert | the agents column, and the residue (VR12, VR13) |
+| B11 | dispatchable: its pair revisions fill at dispatch, PE-reviewed before the dispatch | expert | one path to the profiler's outcome |
 
 ## Kickoff
 
