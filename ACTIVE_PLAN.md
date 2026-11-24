@@ -25,7 +25,7 @@ cited by name, and a name outranks a stale line number.
 | B4 | landed: 641ef80 | expert | the prefix's one source and its tool gate |
 | B5 | landed: c026bcb | mechanical | document wording: repo-layout row, leaf reflow |
 | B6 | landed: 2ccc9e6 | mechanical | pin honesty: name the form pins |
-| B7 | in progress | mechanical | CONVENTIONS lines: real-tree case, synonym search, scratch hygiene |
+| B7 | landed: 6177b14 | mechanical | CONVENTIONS lines: real-tree case, synonym search, scratch hygiene |
 | B8 | dispatchable | mechanical | the cli docstrings' one home |
 | B9 | landed: 7567f51 | expert | the families' anchor prose: in the literals corpus or recorded as out |
 
