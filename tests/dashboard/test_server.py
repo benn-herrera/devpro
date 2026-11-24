@@ -625,9 +625,11 @@ def test_the_indexs_row_links_and_the_session_pages_way_back_carry_the_query(tmp
     narrowed the list and sorted it lands on a session and comes back to a list with neither, the
     state the page's URL carries lost at both ends of the navigation.
 
-    The fetched index's own script composes the page's query into the row links, and the fetched
-    session page's script sets the return control's `href` to the profiler path with that query: the
-    server-side band fill is the base `href` both read from, and the query is the script's own."""
+    This is a form pin: the two assertions that name the inline script — the index's row-link line
+    and the page's return-link line — byte-match its source, not a rendered navigation. The
+    served-page fetch checks are the effect witnesses, the browser-eye check the witness for the
+    branches the probes do not exercise: whether the page's own script folds the query into a click
+    is a render-time fact the substring probes do not run."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
     served = serve(root)
@@ -644,8 +646,10 @@ def test_the_agents_cell_reads_the_count_as_agents(tmp_path: Path, serve) -> Non
     `dispatched agents` column head — the head names the column, so the cell repeating it spends a
     reader's width on what the head already said.
 
-    The fetched index's script renders the count with the postscript the leaf states: `1 agent` and
-    `3 agents`, singular and plural."""
+    This is a form pin: the single assertion byte-matches the inline script's ternary, not the cell
+    the page renders. The served-page fetch checks are the effect witnesses, the browser-eye check
+    the witness for the branches the probes do not exercise: which of `1 agent` and `3 agents` the
+    cell shows is a render-time fact the substring probe does not run."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
     index = serve(root).get("profiler/")[2].decode("utf-8")
@@ -659,8 +663,11 @@ def test_a_rendered_agent_name_drops_the_set_prefix(tmp_path: Path, serve) -> No
     repeating on every row a provenance the reader reading a devpro session already knows.
 
     The stored name keeps its prefix — the record and the feed are as recorded — and the page drops
-    it at the render: the served band names `coder`, and the index's own script strips the prefix
-    from the dispatcher name the feed carries."""
+    it at the render: the served band names `coder` and the feed carries the name as stored. The
+    index's child-row drop is a form pin — the assertion byte-matches the inline script's ternary,
+    not the rendered row. The served-page fetch checks are the effect witnesses, the browser-eye
+    check the witness for the branches the probes do not exercise: whether the child row shows
+    `coder` is a render-time fact the substring probe does not run."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
     store(
