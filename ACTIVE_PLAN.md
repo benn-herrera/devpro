@@ -227,8 +227,12 @@ verify a plan-form change is a `check-plan` run over a plan holding the new form
   check. Reachability note: the test corpus may carry the shipped sentence in an assertion; if a
   reword turns one red, that assertion moves with this package.
 
-**Done-line.** `just test devpro`, then `just test-changed`, then
-`just dev-check-design-deltas-applied` green.
+**Done-line.** `just test devpro`, then `just test-changed`, then the delta check:
+`just dev-check-design-deltas-applied` exits 1 with `pairs: 9, landed: 3, pending: 1, drifted: 5`
+— the `drifted` lines naming development.py's pairs 2 and 3 (this package's rewords superseded
+their text) and the three pairs B1's title-only improvements superseded; the `pending` line naming
+the staging pair (B5's). Any `conflicting` line, or any other `drifted` or `pending` line, fails
+the package.
 
 ### B3 — the guide's walkthrough
 
@@ -279,7 +283,7 @@ only (the *Dispatch* section's staging bullet). Runs after B2: same file.
 
 **Facts.**
 
-- The pair is quoted in [the design's development.py entry](ACTIVE_DESIGN.md#the-development-skills-burndown-shape-devprodefinitionsskillsdevelopmentpy):
+- The pair is quoted in [the design's development.py entry](ACTIVE_DESIGN.md#the-development-skills-burndown-shape):
   the *Dispatch* section's "share a build run serially" bullet gains the staging bullet — a
   concurrent package stages and commits only its own paths, and where the index holds a path
   another package staged, that path is unstaged before the commit, or the commit waits.

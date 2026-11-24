@@ -405,18 +405,22 @@ approved can run as approved.
 
 ## Post-plan review
 
-- Every plan holding a shipped package ends with the post-plan review package, then the burndown
-  section and its drafting ticket. *Purpose:* review and its fixes are planned work, not a step
-  dropped when the plan lands.
-- The drafting ticket's work: draft the section's items from the {REVIEW_DOCUMENT_TERM} — one
-  package per root-cause group, each with its own ID, status-table row, rating and one-commit close
-  — run one `{clauses.ref(name="prompt-engineer")}` usability review over the drafted items
-  together, apply the revision, and set each item's row by its state. Drafting the items edits the
-  plan, so the session is the worker; the ticket's row still moves through the states.
-  *Purpose:* the burndown's real dispatches are visible on the board, each with its own rating.
-- The items move through the states individually, and the section dies when its last item lands.
-  Where the review finds nothing needing a fix, the drafting ticket lands having drafted no items,
-  and the plan ends — a normal landing. *Purpose:* the count of burndown items per plan is recorded
+- Every plan holding a shipped package ends with the post-plan review package, then the
+  burndown section and its drafting ticket. *Purpose:* review and its fixes are planned
+  work, not a step dropped when the plan lands.
+- The drafting ticket's work: draft the section's items from the {REVIEW_DOCUMENT_TERM}
+  — work packages under the section, one per root-cause group, each with its own ID,
+  status-table row, rating and one-commit close — run one
+  `{clauses.ref(name="prompt-engineer")}` usability review over the drafted items
+  together, apply the revision, and set each item's row by its state. Drafting the items
+  edits the plan, so the session is the worker; the ticket's row still moves through the
+  states.
+  *Purpose:* the burndown's real dispatches are visible on the board, each with its own
+  rating.
+- The items move through the states individually, and the plan lands once the last item's
+  row is `landed`; the drafting ticket stays `landed` throughout. Where the review finds
+  nothing needing a fix, the drafting ticket lands having drafted no items, and the plan
+  ends — a normal landing. *Purpose:* the count of burndown items per plan is recorded
   data the process's tuning reads.
 - The {POST_PLAN_REVIEWERS_TERM} are given the project documents and the design, where there is
   one, not the plan, and review the changes and their tests against the project's standards and
@@ -429,9 +433,10 @@ approved can run as approved.
   `landed` in the commit that adds the {REVIEW_DOCUMENT_TERM}. *Purpose:* the
   burndown is drafted from one record of what was found.
 - Until the review lands, the drafting ticket's body holds only: "Drafted from
-  `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands." The drafted items' text replaces that
-  placeholder in the section, and the citation of the {REVIEW_DOCUMENT_TERM} moves to the section's
-  opening.
+  `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands." The drafted items
+  are packages under the section, each with its own heading and row; that
+  placeholder body is removed, and the section's opening carries a sentence
+  naming the {REVIEW_DOCUMENT_TERM} it was drafted from.
 - The {REVIEW_DOCUMENT_TERM} is deleted in the commit that lands the plan, not before. *Purpose:*
   the burndown cites it until it lands, and a review left in place after reads as findings still
   open.
@@ -481,12 +486,13 @@ approved can run as approved.
 
   *Purpose:* one owner per pair keeps a single defect from being reported by three seats, and a text
   read in part hides contradictions a whole read shows.
-- Its members' findings are its post-plan review, written to the {REVIEW_DOCUMENT_TERM}, and are
-  fixed in its post-plan burndown, outside any release's hardening. *Purpose:* cleanup has a home that is not a release.
-- The findings take one ID per defect as they are written to the {REVIEW_DOCUMENT_TERM}: one entry
-  per defect, naming every seat that reported it. The burndown cites that ID and groups the findings
-  by root cause, not one item per finding. *Purpose:* a defect every seat can see is still one
-  defect, and one cause is fixed once.
+- Its members' findings are its post-plan review, written to the {REVIEW_DOCUMENT_TERM},
+  and are fixed in its post-plan burndown, outside any release's hardening. *Purpose:*
+  cleanup has a home that is not a release.
+- The findings take one ID per defect as they are written to the {REVIEW_DOCUMENT_TERM}:
+  one entry per defect, naming every seat that reported it. The burndown section's items
+  cite that ID and group the findings by root cause, several findings to one item.
+  *Purpose:* a defect every seat can see is still one defect, and one cause is fixed once.
 
 ## Pre-release
 
