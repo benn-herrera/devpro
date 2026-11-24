@@ -184,12 +184,23 @@ a lifecycle record the tree does not draw — writing them to its own
 `.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which
 `devpro profiler tree` and the dashboard's profiler view render beside the claude sessions', each
 record read from its own `.profiler-*` store. A `subagent` or `task` call also records the child session it dispatched, the child's session id
-read from the host's result where the host reports it — opencode 2.3.2's `result.output.sessionID`
-is that place: that id fills the record's `child_agent_id`, where the index groups the child one
+read from the host's result where the host reports it — the place moves with the host: opencode
+2.4.1 reports the id at the result's top level (`result.sessionID`), 2.3.2 in `output.sessionID`
+and 2.3.0 in `metadata.sessionID`, and the capture reads them in that order, each under the host's
+own string guard: that id fills the record's `child_agent_id`, where the index groups the child one
 level under its dispatcher — the tree, on the session's page, drawing the dispatch as a context —
 and the dispatch links to the child's page. The stores stay flat — the child's id reaches no
 capture as a parent key, the hierarchy being what the parent's records state — and a dispatch that
-fails before creating a child, or whose result reports no child session, records none.
+fails before creating a child, or whose result reports no child session, records none. Records a
+capture wrote before the capture read 2.4.1's shape carry the child's id only in their stored
+result text; a one-shot repair, run before the installation updates, reads each standing subagent
+record's result text and fills its `child_agent_id` where the host reported it — a record whose
+id is already right stays untouched, and every edge a capture writes after the update is correct
+at write time. The repair is `devpro profiler repair`, run once from the project's root: it reports
+`repaired: <n> edges; null: <m> records (result clipped)` — the edges it filled and the subagent
+records left naming no child, their result text clipped before the id survived — and a file a
+capture appends to while the repair reads it is named on stderr and left as it stands, never
+rewritten under a session's own write.
 The model's own `todowrite` notes are not recorded: they are not activity, so the store holds one
 record per tool call that did something. A capture that fails raises nothing out of the hook. `init`
 and `doctor` stay claude-facing: opencode has no committed-hook concept. The install ships the

@@ -21,7 +21,11 @@ def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]")
         help="record a session's tool calls and show them as a tree or a page",
         allow_abbrev=False,
     )
-    profiler.add_argument("arguments", nargs=argparse.REMAINDER, help="tree | init | doctor | capture <harness>")
+    profiler.add_argument(
+        "arguments",
+        nargs=argparse.REMAINDER,
+        help="tree | init | doctor | repair | capture <harness>",
+    )
 
 
 def read_stdin() -> str:
@@ -37,6 +41,7 @@ def run(args: argparse.Namespace) -> int:
     from .capture import capture
     from .hooks import USAGE, doctor, init
     from .pages import UsageError, tree
+    from .stores import repair_child_ids
     from .values import project_dir
 
     sys.stdout.reconfigure(encoding="utf-8")
@@ -60,6 +65,12 @@ def run(args: argparse.Namespace) -> int:
             return 0
         if command == "doctor":
             print(doctor(Path.cwd()))
+            return 0
+        if command == "repair":
+            repaired, null, left = repair_child_ids(project_dir(os.getcwd()))
+            print(f"repaired: {repaired} edges; null: {null} records (result clipped)")
+            for file in left:
+                print(f"left {file} as it stands: a capture appended to it while it was read", file=sys.stderr)
             return 0
     except UsageError as error:
         print(error, file=sys.stderr)

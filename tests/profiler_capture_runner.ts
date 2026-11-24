@@ -3,9 +3,10 @@
 // Usage: bun tests/profiler_capture_runner.ts
 // Stdin: JSON {directory}: a project root whose `.devpro-temp/.profiler-opencode/` receives the records.
 // Stdout: JSON {records, startedBeforeIdle, startedAfterIdle} — the records the shipped `profiler.ts`
-// wrote, through the plugin context stub, for a completed call, a failed one, a skill call, two subagent
-// dispatches, a remark and a call whose `execute.after` never fires; and the in-flight start map's size
-// around the session's idle, which drops the never-finished call's entry.
+// wrote, through the plugin context stub, for a completed call, a failed one, a skill call, three
+// subagent dispatches — one in each of opencode 2.4.1's, 2.3.2's and 2.3.0's result shapes — a remark
+// and a call whose `execute.after` never fires; and the in-flight start map's size around the
+// session's idle, which drops the never-finished call's entry.
 //
 // `profiler_serialize_runner.ts` measures a record from this same run rather than inventing one, so the
 // record's carried fields have one home in the tests.
@@ -90,6 +91,15 @@ await fire("execute.after", {
   ...base("call_9", "subagent", { agent: "devpro-go-coder", description: "port it", prompt: "go" }),
   status: "completed",
   result: { output: "ses_floor", metadata: { sessionID: "ses_floor" } },
+})
+
+// opencode 2.4.1's result shape: the child's id at the result's top level, `output` a bare string and
+// no `metadata`. The output carries no id at all here, so the top level is the only place it is read.
+await fire("execute.before", base("call_10", "subagent", { agent: "devpro-rust-coder", description: "port it", prompt: "rust" }))
+await fire("execute.after", {
+  ...base("call_10", "subagent", { agent: "devpro-rust-coder", description: "port it", prompt: "rust" }),
+  status: "completed",
+  result: { sessionID: "ses_top", status: "running", output: "The subagent is working..." },
 })
 
 // A remark the capture skips, a call whose `execute.after` never fires, and the session's idle.

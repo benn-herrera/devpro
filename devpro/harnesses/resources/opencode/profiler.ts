@@ -8,7 +8,8 @@
 // because the same render reads both, and the masking is its masking: this file is that record rebuilt
 // against opencode's hook surface, which reports different things than claude's hooks do.
 // The floor is behavioral: the child's session id, which the dispatch's tie to its child is read from,
-// is `result.output.sessionID` on 2.3.2 and `result.metadata.sessionID` on 2.3.0, and the read covers both.
+// is `result.sessionID` on 2.4.1, `result.output.sessionID` on 2.3.2 and `result.metadata.sessionID` on
+// 2.3.0, and the read covers all three.
 //
 // `execute.before` carries no result, so it is where a call's start is taken; `execute.after` is where
 // the record is written. A capture that fails raises nothing out of a hook and says nothing, save the
@@ -239,17 +240,19 @@ function resultOf(call: Finished): string | undefined {
   return clip(mask(firstLine(textOf)), RESULT_LIMIT) || undefined
 }
 
-// childSessionOf is the session a subagent call dispatched: the host's `result.output.sessionID` first,
-// then opencode 2.3.0's `result.metadata.sessionID`, which the floor still covers, each read under the
-// host's own string guard. Each opencode session owns its own trace file, so this id names the child's
-// page and its row in the index, never a context in the parent's file.
-// opencode 2.3.2 reports the dispatched child's session id in the output and 2.3.0 reported it in the
-// metadata; a result carrying neither — a bare output string among them, and a result with none — is a
-// valid no-child state, and the record keeps `null`.
+// childSessionOf is the session a subagent call dispatched: the host's `result.sessionID` (2.4.1)
+// first, then `result.output.sessionID` (2.3.2), then `result.metadata.sessionID` (2.3.0), each read
+// under the host's own string guard, so a non-string at one place falls through to the next. Each
+// opencode session owns its own trace file, so this id names the child's page and its row in the
+// index, never a context in the parent's file. A result carrying none of the three — a bare output
+// string among them, and a result with none — is a valid no-child state, and the record keeps `null`.
 function childSessionOf(call: Finished): string | undefined {
-  const { output, metadata } = isRecord(call.result) ? call.result : {}
-  const id = (isRecord(output) ? output.sessionID : undefined) ?? (isRecord(metadata) ? metadata.sessionID : undefined)
-  return typeof id === "string" ? id : undefined
+  const result = isRecord(call.result) ? call.result : {}
+  const output = isRecord(result.output) ? result.output : {}
+  const metadata = isRecord(result.metadata) ? result.metadata : {}
+  const ids = [result.sessionID, output.sessionID, metadata.sessionID]
+  const id = ids.find((candidate) => typeof candidate === "string")
+  return id as string | undefined
 }
 
 // childAgentTypeOf is the kind of subagent a parent call started, the response's `agentType` first as

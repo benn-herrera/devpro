@@ -630,9 +630,9 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
     skill call, subagent dispatches and the session's idle each append their record; the failed call's
     text is its `Tool.Error`'s message, the skill and subagent carry the host's own names, a dispatch
     carries the kind its response reports or else its own agent, under either of the host's spellings
-    for the tool, the child session its result names — in the output the host observed, and in the
-    metadata 2.3.0 reported, which the floor covers — and the one call whose `execute.after` never fires
-    drops its start at the idle."""
+    for the tool, the child session its result names — in the metadata 2.3.0 reported, in the output
+    2.3.2 reported, and at the result's top level 2.4.1 reports, each of which the floor covers — and
+    the one call whose `execute.after` never fires drops its start at the idle."""
     project = tmp_path / "project"
     project.mkdir()
     run = _run_ts(_HERE / "profiler_capture_runner.ts", directory=project)
@@ -648,6 +648,7 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
         ("Agent", "devpro-architect"),
         ("Agent", "devpro-tech-writer"),
         ("Agent", "devpro-go-coder"),
+        ("Agent", "devpro-rust-coder"),
     ]
     assert calls[0]["result"] == "hi"
     assert calls[1]["ok"] is False
@@ -665,6 +666,10 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
     assert calls[6]["result"] == "ses_floor"
     assert calls[6]["child_agent_id"] == "ses_floor"
     assert calls[6]["child_agent_type"] == "devpro-go-coder"
+    # opencode 2.4.1's shape: the id at the result's top level alone, `output` a bare string carrying
+    # no id. A read that stops at the output records `null` here, which is the defect this case pins.
+    assert calls[7]["child_agent_id"] == "ses_top"
+    assert calls[7]["child_agent_type"] == "devpro-rust-coder"
     assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"]
     assert (out["startedBeforeIdle"], out["startedAfterIdle"]) == (1, 0)
 
@@ -1706,6 +1711,53 @@ def test_a_doctor_names_a_collided_store_as_the_operators_own_merge(tmp_path: Pa
     assert f"old:     {old} is not a store tree reads; {live} already exists" in reported.stdout
     assert "devpro never merges two stores: merge or delete the old one yourself" in reported.stdout
     assert "profiler init claude and" not in reported.stdout
+
+
+def test_repair_fills_the_child_ids_a_capture_that_missed_2_4_1_left_null(tmp_path: Path) -> None:
+    """`devpro profiler repair`, through the launcher's `devpro`, over a store holding what a capture that
+    read the host's result for `output.sessionID` alone wrote: a dispatch whose result names the child
+    in 2.4.1's background notice, one whose result carries 2.3.2's `output` JSON, a failed dispatch that
+    created no child, and a dispatch already tied to its child. The repair fills the two and leaves the
+    other two, reports the edges filled and the record still null, and a second run fills nothing — the
+    records it already filled, and the one that names no child, stay as they stand."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    store = project / ".devpro-temp" / ".profiler-opencode"
+    store.mkdir(parents=True)
+    notice = "The subagent is working in the background (sessionID: ses_notice). You will receive a <background-result"
+    earlier = '{"output":{"sessionID":"ses_output","status":"running","output":"The subagent is working…"}}'
+    records = [
+        {"tool": "Agent", "name": "devpro-python-coder", "ok": True, "child_agent_id": None, "result": notice},
+        {"tool": "Agent", "name": "devpro-go-coder", "ok": True, "child_agent_id": None, "result": earlier},
+        {"tool": "Agent", "name": "devpro-c-coder", "ok": False, "child_agent_id": None, "result": "Invalid arguments"},
+        {"tool": "Agent", "name": "devpro-rust-coder", "ok": True, "child_agent_id": "ses_right", "result": notice},
+        {"tool": "read", "name": "read", "ok": True},
+    ]
+    (store / "ses_parent.jsonl").write_text(
+        "".join(
+            json.dumps({"v": 2, "harness": "opencode", "session": "ses_parent", **record}) + "\n" for record in records
+        ),
+        encoding="utf-8",
+    )
+    launcher = _launcher(tmp_path / "harness")
+
+    repaired = _run(launcher, "repair", cwd=project)
+
+    assert repaired.returncode == 0, repaired.stderr
+    assert repaired.stdout.strip() == "repaired: 2 edges; null: 1 records (result clipped)"
+    written = [json.loads(line) for line in (store / "ses_parent.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert [record.get("child_agent_id") for record in written] == [
+        "ses_notice",
+        "ses_output",
+        None,
+        "ses_right",
+        None,
+    ]
+
+    again = _run(launcher, "repair", cwd=project)
+
+    assert again.stdout.strip() == "repaired: 0 edges; null: 1 records (result clipped)"
 
 
 def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_standing(

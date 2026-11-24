@@ -68,6 +68,7 @@ USAGE = """Usage:
   devpro profiler tree [session-id-prefix] [--branch <name>] [--verbose] [--format text|html]
   devpro profiler init claude
   devpro profiler doctor
+  devpro profiler repair  (once, after the capture reads the host's current result shape)
   devpro profiler capture <harness>  (run by the hook, not by hand)"""
 
 
