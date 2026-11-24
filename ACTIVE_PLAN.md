@@ -33,6 +33,7 @@ becomes-blocks are the accepted text.
 | B8 | landed 7ea5524 | expert | the launcher's edges and the stale installs (VR10) |
 | B9 | drafted | expert | one lockfile (VR11) |
 | B10 | drafted | expert | the agents column, and the residue (VR12, VR13) |
+| B11 | drafted: its pair revisions fill at dispatch | expert | one path to the profiler's outcome (the owner's ruling, from the retired ticket) |
 
 ## Kickoff
 
@@ -327,9 +328,9 @@ the live-file guard leaves as it stands still reports its would-be fills as `rep
 its own docstring. Count per file after the guard, and add the test that drives the guard. The
 capture's string-guard fall-through gets its test: `profiler.ts:249-256`, the fixture
 `result.sessionID: 5` with `output.sessionID: "ses_x"` — the non-string first arm falls through
-to the next. The repair test's 2.3.2 fixture is **excluded, waiting on the owner**: the review's
-open question on the host's real `notice` wording decides whether the fixture becomes realizable
-or the 2.3.2-unrecoverable truth gets its own pin.
+to the next. The repair test's 2.3.2 fixture **leaves**: the owner's ruling — we are on 2.4.1,
+and a fixture asserting a version's documented interface guards nothing this repository needs; no
+replacement pin.
 
 Done-line: `just test devpro`.
 
@@ -413,8 +414,13 @@ mechanism instead of restating it at `:9-13`, fixes the pronoun reversal at `:6-
 clause cites `obviated-code-is-deleted-not-parked.md`. The verbatim leaf's `:25-27` cites the R24
 leaf's wording of the declarations rule — that wording survives, the restatement leaves. The R25
 leaf's mechanism sentence is B1's and is not touched here. `recipes.md:63-64`'s inline deferral
-moves to a ROADMAP ticket. The banner-versus-tune-rights question and the structural-claims rule
-proposal are the **owner's** and are **excluded**. After acceptance, `just retake-reference`
+moves to a ROADMAP ticket. The verbatim leaf's `:17` reads *committed and the operator's to tune*
+— the owner's ruling rejects the notion: the committed copy is `init`'s render, overwritten at
+init's re-run, and the banner's *do not edit* governs both destinations; the clause is corrected
+to say that, the banner itself untouched. The one-path ticket is **retired** by the owner's
+ruling, its substance moved to B11 — this package removes it from ROADMAP. The structural-claims
+rule proposal is **rejected** by the owner's ruling — no license for photograph-of-the-source
+tests — recorded in the review document, no leaf added. After acceptance, `just retake-reference`
 runs (the reference-retakes convention).
 
 Done-line: `just test docs`, `just dev-check-links`, `just retake-reference`.
@@ -466,3 +472,24 @@ null for everything, so the deco's script body never runs under them — the run
 elements for the deco's selectors and the body executes.
 
 Done-line: `just test devpro`.
+
+### B11 — one path to the profiler's outcome (the owner's ruling, from the retired ticket)
+
+Scope: `devpro/harnesses/resources/claude/profiler/profiler.sh`, `devpro/profiler/hooks.py`,
+`devpro/profiler/capture.py`, the skill definition's finder,
+`PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`, `ACTIVE_DESIGN.md`'s resources and
+finder pairs.
+
+The ruling: one path — every runner names the wrapper from its writer's knowledge. The committed
+hook's wiring invokes the project-committed wrapper directly (`profiler capture`); no launcher
+copy stands in the committed tree, and `init` unlinks the copies it once wrote there. The
+launcher serves the installed tree alone at one known relative path (`../tools/devpro.sh`) — no
+candidate loop. The capture subcommand owns the never-block contract itself: its read of the hook
+payload is bounded, and it exits 0 on every path. The launcher's remaining ride-notes land here:
+the success path's stdin handling, the `exec` the before side carried, and the failure message
+naming the directory rather than spelling both candidates. The design's resources and finder
+pairs are revised at this package's dispatch — their becomes-blocks filled from this ruling,
+PE-reviewed as changed text — and applied by this package; the leaf's committed-hook and skill
+passages move with them.
+
+Done-line: `just test`, `just lint`, `just dev-check-design-deltas-applied` at 17 landed.

@@ -203,19 +203,20 @@ The headers are the stale side: the capture has read 2.4.1's shape since P3. Fix
 headline versions become 2.4.1 (the floor and the child-id note stay as the history they state),
 and a test asserts the pin and the headers agree — today's tree is the defect it fails on.
 
-## Open questions for the owner
+## The owner's rulings on the open questions
 
-- The banner's "do not edit here" against the committed copy's tune-rights (shell) — which
-  authority wins?
-- The 2.4.1 `notice` fixture vs the capture runner's text disagree about the host's wording
-  (python) — which is the host's? B4's fixture item waits on this.
-- The one-path ticket: retire or rewrite (prompt-engineer, architect) — B6 fixes only its tense
-  until answered.
-- `ROADMAP.md:158-163` overlaps `NEW_PROJECT_SETUP`, and names a generated file — move, rewrite,
-  or leave (prompt-engineer)?
-- `ROADMAP.md:64-72` — owner's verbatim text, unchanged by this review.
-- Should the profiler skill carry `repair` at all — the design places it as a one-shot run before
-  the installation updates, nothing model-facing tells a session to run it, and the install does
-  not run it (prompt-engineer)?
-- CONVENTIONS gains no rule that a structural claim an ARCHITECTURE leaf makes about the shipped
-  pages is carried by a test — the python seat proposes the leaf; adopt, amend, or leave?
+All seven answered as the burndown's revision landed:
+
+- The banner rules; the committed copy is `init`'s render, overwritten at re-run — the
+  "operator's to tune" notion is rejected, and the verbatim leaf's `:17` clause is corrected (B7).
+  The banner itself is untouched.
+- The 2.3.2 fixture leaves — we are on 2.4.1, and a fixture asserting a version's documented
+  interface guards nothing this repository needs; no replacement pin (B4).
+- The one-path ticket is retired; its substance folds into the burndown as B11.
+- `ROADMAP.md:158-163` is left as it stands; the stale roadmap is revised after the work's final
+  shape lands.
+- `ROADMAP.md:64-72` is fine as it stands — and was never a question; this record corrects the
+  list.
+- The profiler skill carries no `repair`: the one-shot is a dev-time one-off, not operator
+  surface; the leaf's own description is the record.
+- The structural-claims rule proposal is rejected: no license for photograph-of-the-source tests.
