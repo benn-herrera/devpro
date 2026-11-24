@@ -24,7 +24,7 @@ becomes-blocks are the accepted text.
 | B | landed: the work list below, at this plan's revision commit | expert | the post-plan burndown |
 | B1 | landed bdb395a | expert | the time pins pin what they claim (VR1) |
 | B2 | landed 613b955 | expert | the IIFE invariant holds everywhere, checked (VR2) |
-| B3 | drafted | expert | the type check sees the host's surface (VR3) |
+| B3 | in progress: dispatched to devpro-python-coder | expert | the type check sees the host's surface (VR3) |
 | B4 | drafted | expert | the repair tells the truth (VR4, VR13; the fixture half owner-gated) |
 | B5a | drafted | expert | one home each (VR5) |
 | B5b | drafted | expert | one stand-in (VR6) |
@@ -471,7 +471,9 @@ The render is the wrong side, settled by the accepted design's mapping: the coun
 `return [result.sessionID, output.sessionID, metadata.sessionID].find((id): id is string =>
 typeof id === "string")`; the deco body's exercise: the two runners' `querySelector` returns
 null for everything, so the deco's script body never runs under them — the runners gain minimal
-elements for the deco's selectors and the body executes.
+elements for the deco's selectors and the body executes. The IIFE check covers the pages' file
+scripts too — `deco.js` and `board.js` — one assertion each that the file's body opens the IIFE
+form (B2's check reads the inline bodies alone).
 
 Done-line: `just test devpro`.
 
