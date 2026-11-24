@@ -1,7 +1,7 @@
 # AGENTS – devpro
 
- <!-- vvv-devpro devpro 0.18.0 do not edit at or between marker lines. devpro-vvv -->
- 
+ <!-- vvv-devpro 0.18.0 do not edit at or between marker lines. devpro-vvv -->
+
 ## Scratch space
 **INVARIANT**: `/tmp` and other system-wide scratch locations are off limits. All scratch —
 throwaway builds, probe harnesses, captured output — goes in `.devpro-temp/` under the
@@ -11,7 +11,7 @@ improvise a location.
 ## Task management
 
 - **Before designing, planning, briefing or dispatching an agent, accepting returned work, or
-  making a checkpoint commit, load the `devpro-development` skill.**
+  making a checkpoint commit, load the devpro development skill.**
 
 **PRINCIPLE**: erroneous, halting escalation of soluble problems destroys workflow.
 - Exhaust the written record before escalating: a decision "only the user can make" often dissolves
@@ -39,7 +39,7 @@ to right answers for tricky problems.
   would run, how long it takes and what it would settle, and let the user decide.
 
 ### Subagent handling
-- **Durable model-facing artifacts get `devpro-prompt-engineer` review before first use** — anything a model
+- **Durable model-facing artifacts get devpro prompt-engineer review before first use** — anything a model
   reads after the task that produced it: fixtures, answer files, evaluation instruments, brief
   templates, requirements feeding an agent. A single-use dispatch brief is exempt; a durable
   artifact it drafts is not.
@@ -67,9 +67,8 @@ to invoke one piece of implementation from another is injecting complexity where
 ## Memory and behavior correction
 A behavior change — yours or a dispatched agent's — is a first-class work item: surfaced, proposed
 and landed like any other change, never a private adjustment made in passing. It lands somewhere
-permanent, preferably tracked, scoped to the domain that needs it:
-`~/.config/opencode/AGENTS.md`, the project `AGENTS.md`, an agent/command/skill
-definition, or a project doc.
+permanent, preferably tracked, scoped to the domain that needs it: the project `AGENTS.md`,
+an agent/command/skill definition, or a project doc.
 
 **INVARIANT**: Never create or update a cross-session memory store — a memory directory, its index,
 or any equivalent — even where an agent definition, a skill or the harness itself directs you to
