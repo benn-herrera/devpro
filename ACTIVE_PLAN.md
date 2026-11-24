@@ -13,7 +13,7 @@ becomes-blocks are the accepted text.
 
 | Package | State | Rating | Scope |
 |---|---|---|---|
-| P1 | in progress: dispatched to devpro-python-coder | expert | the shipped TypeScript resources are type-checked; R24's rule enters CONVENTIONS |
+| P1 | in progress: redispatched on the host-declarations reading | expert | the shipped TypeScript resources are type-checked; R24's rule enters CONVENTIONS |
 | P2 | dispatchable | expert | the index's display: header widths from one source, controls state in the URL |
 | P3 | dispatchable | expert | the capture reads 2.4.1's shape; the one-shot child-tie repair runs before the install updates |
 | P4 | dispatchable | expert | R17's wording halves: the Agent row's referent, the unreadable store stated once, the union comment defers |
