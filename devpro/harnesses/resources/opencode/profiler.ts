@@ -1,6 +1,6 @@
 // !INSTALLED! from devpro/harnesses/resources/opencode/profiler.ts — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
 //
-// opencode 2.3.2 plugin module (floor 2.3.0)
+// opencode 2.4.1 plugin module (floor 2.3.0)
 // The activity capture: every tool call of a session, with its duration, arguments, result and
 // outcome, and the session's idle marks, appended to the project's
 // `.devpro-temp/.profiler-opencode/<session-id>.jsonl` — the store `devpro profiler tree` renders

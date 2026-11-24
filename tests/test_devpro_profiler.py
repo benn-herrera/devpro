@@ -1592,13 +1592,13 @@ def test_the_headers_sit_over_their_columns(tmp_path: Path) -> None:
     """`clauses.TEST_PRECONDITION`: a page whose header row does not share its columns' widths is a
     header over the wrong column, and no test that reads the markup alone can fail on it.
 
-    The served index, drawn over a session id as long as a host's own: the page's rows carry a cell
-    wider than any header's text — the session cell, an id of about sixty characters — and a browser
-    lays a table out with one width per column, so the header over that column stands as wide as the
-    cell beneath it. The header row and the body's rows take their widths from one source: on a
-    template whose header takes its width from its own short text and no rule gives it the column's,
-    the session header stands narrower than its column and a reader looking down that column reads the
-    header of the column beside it."""
+    The served index, drawn over a session id as long as a host's own: the table is laid out fixed,
+    one width per column, and a column's width is the one the stylesheet declares for the class its
+    header cell and its body's cells carry. The header row and the body's rows take their widths from
+    that one source, so the session id's column — the table's widest — stands as wide as its rule
+    declares and the header over it stands in it. On a template that leaves a header's column
+    undeclared, the header falls back to its own label's width while the body's cell takes its
+    class's, and the reader looking down that column reads the header of the column beside it."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
@@ -1615,9 +1615,10 @@ def test_the_headers_sit_over_their_columns(tmp_path: Path) -> None:
     assert len(drawn["headers"]) == 6, drawn["headers"]
     assert _LONG_SESSION in drawn["sessionCells"], drawn["sessionCells"]
     # A session id is wide: its column is the widest in the table. The header row and the body's rows
-    # take their widths from one source, so every header's box is its column's box. A header that
-    # keeps its own text's width while the body's cell takes the id's is a header over the column
-    # beside it — the reader following the header down lands one column left of the ids.
+    # take their widths from the class each cell carries, one declared rule per column, so every
+    # header's box is its column's box. A header whose class declares no width falls back to its own
+    # label while the cell beneath takes its class's, and the reader following the header down lands
+    # one column off the ids.
     headers = {label: (column, header) for label, column, header in drawn["headers"]}
     for label, (column, header) in headers.items():
         assert header == column, f"{label!r}'s header is {header} over a column of {column}"

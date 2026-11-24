@@ -12,12 +12,12 @@ no dependency: `values.py` the schema, limits, masks and store facts every other
 page render, `hooks.py` the committed hook's wiring — `init` and `doctor` — and `cli.py` the
 `profiler` verb's dispatch. The verb is dispatched lazily: registering it imports none of these
 modules, and `cli.py` imports the one whose subcommand runs. Its subcommands are `capture`, `tree`,
-`init` and `doctor`; the records are served by the `dashboard` verb, below.
+`init`, `doctor` and `repair`; the records are served by the `dashboard` verb, below.
 
 **Resources.** One file lives in `devpro/harnesses/resources/claude/profiler/`:
 `profiler.sh`, the bash launcher, which runs the wrapper beside it with the `profiler` verb. Every
 site spelling the launcher's file name renames with it — the hook wiring's script path, the
-skill's finder and its `HP` line, the init's copy and its unlinks, the doctor's compares. It carries the `!INSTALLED! … devpro` banner within its
+skill's finder and its `PROFILER` line, the init's copy and its unlinks, the doctor's compares. It carries the `!INSTALLED! … devpro` banner within its
 first ten lines — the banner rule binds every harness resource — and `harness_resource_copies` lands
 it at the path it holds below the install directory, so the install directory gains
 `profiler/profiler.sh`. Its source is claude's: mage ships no resources, and an opencode install carries
@@ -70,14 +70,15 @@ the nav; it carries no legend.
 **Wiring.** `harnesses/claude.py`'s `_registration_hooks` carries the profiler's six hook entries
 beside the guardrail's and the reminder's: `PostToolUse`, `PostToolUseFailure`, `PreCompact`,
 `PostCompact`, `SessionStart` and `SubagentStop`, each `matcher "*"`, `async: true`, `timeout: 5`,
-running `sh "${CLAUDE_PLUGIN_ROOT}/profiler/profiler.sh" capture claude`, and the launcher's file
-name is the one change a committed hook written under its former `hp.sh` inherits: the hook stays
+running `/bin/bash "${CLAUDE_PLUGIN_ROOT}/profiler/profiler.sh" capture claude`, and the launcher's
+file name is the one change a committed hook written under its former `hp.sh` inherits: the hook stays
 this tool's own, and `init`'s re-run renames it, the registered command with it. The wiring
 is data in the harness module, not a new mechanism, and no entry is gated on the install-time probe. A
 capture appends one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl` — one of
 the per-harness stores under `.devpro-temp/`, every `.profiler-*` directory of which the `tree`
 subcommand renders — the project's scratch directory, which the project's own convention gitignores; a
-capture that fails, or finds no wrapper beside the launcher, exits 0 with no output.
+capture that fails, or finds no wrapper beside the launcher, exits 0 with nothing on the hook's
+stdout, the wrapper's own failure named on stderr.
 
 **Serving.** The dashboard renders in memory behind a local HTTP server: the `devpro dashboard
 [<project-dir>] [--port <number>]` verb binds `127.0.0.1` on a free port — `--port` pins one, 0

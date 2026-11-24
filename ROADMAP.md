@@ -5,6 +5,13 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
+### The plugin's model config is not applied at runtime on 2.4.1
+
+`opencode/index.ts` read the host's `entry.model` past the brand, and the fix landed the types — the
+runtime model config was never applied on 2.4.1 and still is not. The plugin runs on the default model
+where a configured one was intended. A small package: apply the configured model at `Plugin.define`'s
+setup, pinned by a test.
+
 ## Features
 
 ### A live agents panel on the dashboard
@@ -144,12 +151,12 @@ previous layer left.
 
 ## Maintenance
 
-### The repair's backup stores match the profiler glob
+### Any `.profiler-*` directory beside a store reads as a store
 
-The child-tie repair renames a torn store aside as `-pre-repair-<n>`, and `pages.py`'s
-`.profiler-*` glob matches those backups: their sessions render twice in the index and
-`tree <prefix>` reports ambiguity. The backup names want a non-matching shape, or the glob a
-tighter prefix.
+`pages.py`'s `.profiler-*` glob takes every directory of that shape under `.devpro-temp/` for a
+store, so a copy of a store, or a second one added beside it, has its sessions rendered twice in the
+index and makes `tree <prefix>` report ambiguity. The glob wants a shape only a capture's own store
+matches, or the readers a marker of the store's own.
 
 ### harness-profiler leaf is verbose
 
@@ -206,24 +213,34 @@ per harness.
 ### The opencode resources' type-check waits on the host's runtime declarations
 
 The shipped opencode resources are type-checked against `@opencode/plugin`'s published declarations
-(P1's rule, `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/`). What the check cannot settle
+(the host-version rule, `a-host-version-is-checked-against-the-host-s-declarations.md` in
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/`). What the check cannot settle
 is what the host's runtime actually provides where its published types are narrower or absent: the
 `output` its plugin API hands a tool hook is a declared type the runtime can widen — `subagent`'s
 result on 2.4.1 carries the child's `sessionID` and a bare-string `output` where the declaration's
 shape said `output.sessionID` — so a read the types admit can still record nothing at run time.
 Landing the check against the host source ends when the host publishes what its runtime provides;
 until then the capture reads every place the host has been observed to report a value, and a live
-dispatch under the host in use is the evidence. P3's capture and its `devpro profiler repair` are
+dispatch under the host in use is the evidence. The capture and its `devpro profiler repair` are
 that evidence's product.
 
+### One path to the profiler's outcome
+
+The profiler's outcome — one capture recorded, one profile shown — is reached today through several
+derivations of one fact: the launcher tests two wrapper candidates per copy location, the skill's
+finder runs its own two-location search, and doctor re-derives the launcher's resolution to report
+it. The wrapper's location is known wherever the profiler is written: the committed hook's wiring
+can name the project-committed wrapper directly, the installed tree's layout is fixed, and the
+skill's text is rendered. Ruled: one path — every runner names the wrapper from its writer's
+knowledge; no candidate hunting, no re-derivation for reporting. The capture subcommand is to own the
+never-block contract itself: its read of the hook payload bounded (an unbounded drain stalls a tool
+call for the harness's hook timeout wherever a writer holds stdin open) and its exit 0 on every path.
+The rename and its migration machinery carry: `init` unlinks the old launcher names and copies the
+launcher to `.claude/harness-profiler/profiler.sh` and the rendered skill to
+`.claude/skills/profiler/SKILL.md`; the install removes the launcher name it once copied into the
+install directory, where this repository's header marks it.
+
 ## Testing
-
-### The plugin's model config is not applied at runtime on 2.4.1
-
-Found by P1's type work: `opencode/index.ts` read the host's `entry.model` past the brand, and the
-fix landed the types — the runtime model config was never applied on 2.4.1 and still is not. The
-plugin runs on the default model where a configured one was intended. A small package: apply the
-configured model at `Plugin.define`'s setup, pinned by a test.
 
 ### A shared sentence written out inside a longer paragraph is not checked for double delivery
 
@@ -252,25 +269,11 @@ as `UnsupportedOperation` — named, not silent.
 Still open for the design work: what the check asserts and which pages it covers. Rides with the UX
 pass, where the visual work lives.
 
-### One path to the profiler's outcome
-
-The profiler's outcome — one capture recorded, one profile shown — is reached today through several
-derivations of one fact: the launcher tests two wrapper candidates per copy location, the skill's
-finder runs its own two-location search, and doctor re-derives the launcher's resolution to report
-it. The wrapper's location is known wherever the profiler is written: the committed hook's wiring
-can name the project-committed wrapper directly, the installed tree's layout is fixed, and the
-skill's text is rendered. Ruled: one path — every runner names the wrapper from its writer's
-knowledge; no candidate hunting, no re-derivation for reporting. The capture subcommand owns the
-never-block contract itself: its read of the hook payload is bounded (an unbounded drain stalls a
-tool call for the harness's hook timeout wherever a writer holds stdin open), and it exits 0 on
-every path. P6's rename and its migration machinery carry: `init` unlinks the old launcher names
-and copies.
-
 ### check-plan does not detect a duplicated package heading
 
 `ACTIVE_PLAN.md` carried `## P4` twice — a plan revision leaving a stale section behind — and
-`check-plan` reported 0 problems: the status table's IDs are checked, the package headings are
-not. The check reads the headings too and refuses an ID a second heading reuses.
+`check-plan` reported 0 problems: `devpro/doccheck/planform.py` checks the status table's IDs and not
+the package headings. The check reads the headings too and refuses an ID a second heading reuses.
 
 ### An introduction to the process
 

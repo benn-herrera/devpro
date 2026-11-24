@@ -108,10 +108,10 @@ edits. A harness shipping none copies nothing, which is not an error.
 
 A claude project install also ships the **activity profiler**: its code is devpro's own, and the
 hook files refer back to devpro wherever they ran the profiler's script, with the capture hook's
-contract — a failed or interpreterless capture exits 0 with no output — unchanged. The page
-template `view.html` the render reads is the devpro wheel's package data
-(`devpro/profiler/view.html`, read by the rendering module), not an install resource; and the
-`profiler` skill, which renders a session's recorded activity — its skill, agent and tool calls
+contract — a failed or interpreterless capture exits 0 with nothing on the hook's stdout, the failure
+named on stderr — unchanged. The page template `view.html` the render reads is the devpro wheel's
+package data (`devpro/profiler/view.html`, read by the rendering module), not an install resource;
+and the `profiler` skill, which renders a session's recorded activity — its skill, agent and tool calls
 with timings and token costs — as text, as a self-contained HTML page, or served over HTTP: the
 dashboard, devpro's one loopback server for the web interface, renders the record files in memory
 as one panel of its site. The board is the landing surface: opening the dashboard's URL shows the
@@ -157,10 +157,11 @@ machine that runs the server. Six hook entries, one per
 event (`PostToolUse`, `PostToolUseFailure`, `PreCompact`, `PostCompact`, `SessionStart`,
 `SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each appends
 one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl`, and a capture that
-fails, or finds no `devpro` to run under, exits 0 with no output. A claude session on the web loads
-no plugin's hooks and records nothing there; the skill names the tool's `init` for committing the
-hook where a session needs one. A user-level install renders the skill and copies none of the
-resources. A project opencode install also ships the profiler's launcher — `profiler/profiler.sh` — and
+fails, or finds no `devpro` to run under, exits 0 with nothing on the hook's stdout, the failure named
+on stderr. A claude session on the web loads no plugin's hooks and records nothing there; the skill
+names the tool's `init` for committing the hook where a session needs one. A user-level install
+renders the skill and copies none of the resources. A project opencode install also ships the
+profiler's launcher — `profiler/profiler.sh` — and
 the capture `profiler.ts` beside the plugin entry, and
 registers no hook entries; each recorded call appends one line to the project's
 `.devpro-temp/.profiler-opencode/<session-id>.jsonl`, a capture that fails raises nothing out of the
@@ -187,7 +188,7 @@ into the parent session at agent dispatch and agent completion, gated by `ACTIVE
 or, where the plan was diced, the `ACTIVE_PLAN/` tree — existing at the project root. A change to
 the install directory is picked up without restarting opencode, except a change to `guardrail.ts` or
 `profiler.ts`, either of which the plugin entry imports when it loads, so a changed one takes effect
-at the next opencode start. The plugin entry is written for opencode 2.3.2 (floor 2.3.0) and is the
+at the next opencode start. The plugin entry is written for opencode 2.4.1 (floor 2.3.0) and is the
 same file for both plugins; ARCHITECTURE.md, Install, Opencode entry holds how it works. A resource
 may be conditional
 on the probe: claude's guardrail is

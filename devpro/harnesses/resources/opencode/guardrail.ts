@@ -1,6 +1,6 @@
 // !INSTALLED! from devpro/harnesses/resources/opencode/guardrail.ts — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
 //
-// opencode 2.3.2 plugin module (floor 2.3.0)
+// opencode 2.4.1 plugin module (floor 2.3.0)
 // Prevents in-place edits using shell tools, redirects model to use EditTool and WriteTool
 // In the kbase plugin, also refuses a call that names a path in kb-root/.index/, a shell command that searches from kb-root/ without excluding it, or a Grep or Glob rooted there whose file filter's last segment does not end in .md.
 

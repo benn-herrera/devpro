@@ -231,7 +231,7 @@ runs its `profiler` verb (no environment variable overrides the search).
 **Resources.** One file lives in `devpro/harnesses/resources/claude/profiler/`:
 `profiler.sh`, the bash launcher, which runs the wrapper beside it with the `profiler` verb. Every
 site spelling the launcher's file name renames with it — the hook wiring's script path, the
-skill's finder and its `HP` line, the init's copy and its unlinks, the doctor's compares.
+skill's finder and its `PROFILER` line, the init's copy and its unlinks, the doctor's compares.
 ```
 
 **As it stands:**
@@ -300,7 +300,7 @@ Its subcommands are `capture`, `tree`,
 
 ```
 Its subcommands are `capture`, `tree`,
-`init` and `doctor`; the records are served by the `dashboard` verb, below.
+`init`, `doctor` and `repair`; the records are served by the `dashboard` verb, below.
 ```
 
 **As it stands:**

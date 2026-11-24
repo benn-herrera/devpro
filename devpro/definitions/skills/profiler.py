@@ -22,7 +22,8 @@ DEFINITIONS = (
         description=_DESCRIPTION,
         body=f"""Serve this session's recorded trace to the user as a page in their browser. The trace is the newest
 session recording under `.devpro-temp/` at the repository root: `.devpro-temp/.profiler-claude/` under
-claude, `.devpro-temp/.profiler-opencode/` under opencode. `bash PROFILER tree` reads both stores.
+claude, `.devpro-temp/.profiler-opencode/` under opencode. `PROFILER` below is the launcher this skill
+finds, run with `bash`; `bash PROFILER tree` reads both stores.
 
 ## Locate the profiler
 
@@ -42,8 +43,6 @@ Under claude, where the hook is not installed and the session cannot install it,
 writes it into this repository's `.claude/` and prints the `git add` line to commit; run it only when
 the user asks for profiling there. `init` and `doctor` are claude's alone: opencode's plugin records
 every call itself, so an opencode session needs neither.
-
-Call the launcher `PROFILER` below and run it with `bash`.
 
 {clauses.WRAPPER_PROFILER}
 

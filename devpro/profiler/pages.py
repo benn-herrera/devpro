@@ -938,9 +938,9 @@ INDEX = """<!doctype html>
 <style>
 main { padding: 1rem; }
 h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem; }
-/* One width per column, taken from the table's layout and no cell's: the header row and the body's
-   rows share it, so a header stands as wide as the cells it names — a header that wraps is its whole
-   label over its column, and no header stands narrower than the column beneath it. */
+/* One width per column, declared on the header row's cells: `table-layout: fixed` gives each column
+   the width its cell declares and measures no cell's content, so the body's rows stand in the columns
+   the header names — a header whose label outruns its column wraps inside it. */
 table { border-collapse: collapse; table-layout: fixed; }
 th, td { text-align: left; padding: 0.4rem 1rem 0.4rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-weight: 600; color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
@@ -951,8 +951,9 @@ tr:nth-child(odd) td { background: var(--zebra); }
 td small { color: var(--muted); }
 tr td:first-child.child { border-left: 3px solid var(--accent); }
 tr td:first-child.child + td { padding-left: 2.4rem; }
-/* Each column's own share of the table, as wide as its widest cell wants: a column sized below that
-   is grown by the layout, a header with it — the two never stand apart. */
+/* Each column's share of the table, declared here and nowhere else: the fixed layout gives it to
+   header and body alike, and a share below the table's width is grown by the layout's distribution,
+   never by a cell's content. */
 .col-harness { width: 7.5rem; }
 .col-session { width: 40%; }
 .col-records { width: 8rem; }
