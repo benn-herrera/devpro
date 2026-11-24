@@ -7,9 +7,11 @@
 // Usage: bun tests/profiler_page_runner.ts
 // Stdin: JSON {page, deco?}: a session page's own text — the file flow's or the served page's — and
 // the deco's own source where the page's carrier loads it.
-// Stdout: JSON {stamped, subline}: one [text, title, datetime] per `<time>` the page's script drew
-// into the subline — the header stamp's drawn reading, the raw UTC its title keeps and the machine
-// form its `datetime` carries — and the subline's markup as the scripts left it.
+// Stdout: JSON {stamped, subline, deco}: one [text, title, datetime] per `<time>` the page's script
+// drew into the subline — the header stamp's drawn reading, the raw UTC its title keeps and the
+// machine form its `datetime` carries — the subline's markup as the scripts left it, and the deco's
+// own two readings: the text in `#connection` and the class its server element carries, `null` where
+// the carrier loads no deco.
 
 type Input = { page: string; deco?: string }
 
@@ -28,6 +30,16 @@ class Node {
   listeners: Record<string, (() => void)[]> = {}
   // A checkbox's state, the property the page's script reads.
   checked = false
+  // The classes an element carries, as `classList.toggle` writes and reads them: the deco marks its
+  // server element live or idle through these, so a stand-in without them is a deco body that throws.
+  // It stands with the sibling fields the accessor pairs below depend on keeping their place.
+  classList = {
+    names: new Set<string>(),
+    toggle(this: { names: Set<string> }, name: string, on: boolean) {
+      if (on) this.names.add(name)
+      else this.names.delete(name)
+    },
+  }
   // The box that holds the page's diagram, as wide as the page's own: the sequence diagram measures
   // it.
   parentElement: Node = this
@@ -114,9 +126,25 @@ subline.append = (...nodes: (Node | string)[]) => {
   for (const react of observers) react()
 }
 
+// The nav's parts the deco's own body reads, as the pages markup them: the indicator it writes its
+// state's text into, the stop it binds, and the server element whose class carries the state. A
+// document holding none of them makes every `querySelector` answer null, and the deco's body — which
+// returns at its first guard — draws nothing to read.
+const connection = new Node("span")
+connection.attrs.id = "connection"
+const stop = new Node("button")
+stop.attrs.id = "stop"
+const server = new Node("span")
+server.className = "nav-server"
+const nav = new Map<string, Node>([
+  ["connection", connection],
+  ["stop", stop],
+])
+
 const elsewhere = new Map<string, Node>()
 const elementFor = (id: string): Node => {
   if (id === "subline") return subline
+  if (nav.has(id)) return nav.get(id) as Node
   if (byId.has(id)) return byId.get(id) as Node
   if (!elsewhere.has(id)) {
     if (!declared.includes(id)) return null as unknown as Node
@@ -131,7 +159,7 @@ Object.assign(globalThis, {
   document: {
     createElement: (tag: string) => new Node(tag),
     getElementById: (id: string) => elementFor(id),
-    querySelector: () => null,
+    querySelector: (selector: string) => (selector === ".nav-server" ? server : null),
     querySelectorAll: () => [],
   },
   MutationObserver: class {
@@ -148,6 +176,9 @@ Object.assign(globalThis, {
 
 new Function([input.deco ?? "", ...INLINE].join("\n"))()
 for (const react of observers) react()
+// The deco asks the state endpoint as soon as its body runs; one turn of the microtask queue is
+// where the answer arrives, the way a browser delivers it after the task that made the request.
+await new Promise((resolve) => setTimeout(resolve, 0))
 
 const timesIn = (node: Node): Node[] =>
   node.childNodes.filter((child): child is Node => typeof child !== "string").flatMap((child) =>
@@ -158,5 +189,10 @@ console.log(
   JSON.stringify({
     stamped: timesIn(subline).map((time) => [time.textContent, time.attrs.title ?? "", time.attrs.datetime ?? ""]),
     subline: subline.html(),
+    // The deco's own readings, where the carrier loads it: the state it wrote into the indicator, and
+    // the class its server element carries — the two marks a reader sees.
+    deco: input.deco
+      ? { connection: connection.textContent, server: [...server.classList.names].join(" ") }
+      : null,
   }),
 )

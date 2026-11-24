@@ -6,16 +6,16 @@
 // Usage: bun tests/profiler_browser_runner.ts
 // Stdin: JSON {index, deco, feed, actions?}: the served `/profiler/` page, the deco's own source, the
 // feed the page's script fetches, and the reader's presses and visits in order — each `{toggle: <input
-// id>}` a checkbox's `change`, each `{sort: <head data-sort>}` a column head's `click`, and each
-// `{navigate: true}` a visit to the page's own URL, which opens the page again in a document sharing
-// nothing with the one before it.
+// id>}` a checkbox's `change`, each `{sort: <head data-sort>}` a column head's `click`, each
+// `{navigate: <query | true>}` a visit to the page's own URL at that query — the string a hand-edited
+// link carries, `true` the state the page stands at, `""` the page's closed state.
 // Stdout: JSON {headers, sessionCells, rows, visits}: for the page as first drawn, each column's
 // `[label, columnWidth, headerWidth]` — the widest cell of the column and the `<th>`'s own box over it,
 // both in CSS pixels — each row's session cell as the page wrote it, the rows' markup, and, for every
 // visit, the URL the page stands at, whether its scripts ran, each control's state and each head's
 // sort.
 
-type Action = { toggle?: string; sort?: string; navigate?: true }
+type Action = { toggle?: string; sort?: string; navigate?: true | string }
 type Input = { index: string; deco: string; feed: object[]; actions?: Action[] }
 type Page = {
   url: string
@@ -334,8 +334,10 @@ const visits: Page[] = [await visit(state())]
 const headers = layout()
 const sessions = rowsOf().map((row) => (cellsIn(row)[1]?.textContent ?? "").split("\n")[0])
 for (const action of input.actions ?? []) {
-  if (action.navigate) {
-    visits.push(await visit(state()))
+  if (action.navigate !== undefined) {
+    // `true` is the page's own link — the state it stands at — and a string is the query itself, a
+    // hand-edited one a reader can carry in.
+    visits.push(await visit(action.navigate === true ? state() : String(action.navigate)))
     continue
   }
   if (action.toggle) {

@@ -5,7 +5,11 @@
 // its own beyond the version it last drew, the payload last drawn and the payload deferred during a
 // drag, the drag under way, whether the server answers and the bands it has collapsed. The nav's
 // server block is not this file's: `deco.js` reads the server's state and ends it.
+//
+// Its body stands inside an IIFE: this file and the deco share one classic-script scope on a page
+// that loads both, so a top-level name here is a name the deco's next helper could redeclare.
 
+(() => {
 const log = (level, message, context = {}) => console[level]({ level, message, ...context });
 
 const DRAG_TYPE = "application/x-docdicer-card";
@@ -504,3 +508,4 @@ async function follow() {
 }
 
 follow();
+})();

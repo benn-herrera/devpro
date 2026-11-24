@@ -10,8 +10,9 @@
 // each control's state after the presses.
 //
 // The page's script is run against a document that is what the template says it is — the `#rows`
-// body, the empty notice, the static controls and column heads its text carries, and the element
-// factory — and a `fetch` that answers the feed the test hands it. The keys the script reads are
+// body, the empty notice, the static controls and column heads its text carries, the nav's parts the
+// deco's body reads, and the element factory — and a `fetch` that answers the feed the test hands it.
+// The keys the script reads are
 // recorded by wrapping each parsed entry in a proxy, so the run names the schema the script consumes
 // rather than the one a reader of the script believes. The controls are read from the served page's
 // own markup, so a page whose controls the script names differently from the template is a state no
@@ -39,6 +40,16 @@ class Node {
   // The `<th>` a column head's button stands in, where it stands in one: the cell `closest('th')`
   // finds, and the one `aria-sort` belongs on.
   cell: Node | null = null
+  // The classes an element carries, as `classList.toggle` writes them: the deco marks its server
+  // element live or idle through these, so a stand-in without them is a deco body that throws. It
+  // stands with the sibling fields the accessor pairs below depend on keeping their place.
+  classList = {
+    names: new Set<string>(),
+    toggle(this: { names: Set<string> }, name: string, on: boolean) {
+      if (on) this.names.add(name)
+      else this.names.delete(name)
+    },
+  }
 
   closest(selector: string): Node | null {
     return selector === "th" ? this.cell : null
@@ -126,6 +137,16 @@ class Node {
 const body = new Node("tbody")
 const notice = new Node("p")
 notice.hidden = true
+// The nav's parts the deco's own body reads, as the pages markup them — the indicator, the stop and
+// the server element whose class carries the state — and the reading the deco left there, where a
+// caller hands the runner the deco. A document answering none of them makes every `querySelector`
+// null, and the deco's guard returns before it draws anything.
+const connection = new Node("span")
+connection.attrs.id = "connection"
+const stop = new Node("button")
+stop.attrs.id = "stop"
+const server = new Node("span")
+server.className = "nav-server"
 const keys = new Set<string>()
 const fetches: string[] = []
 
@@ -165,8 +186,17 @@ let failure: { status: number; body: unknown } | null = null
 Object.assign(globalThis, {
   document: {
     createElement: (tag: string) => new Node(tag),
-    getElementById: (id: string) => (id === "rows" ? body : id === "notice" ? notice : (byId.get(id) ?? null)),
-    querySelector: () => null,
+    getElementById: (id: string) =>
+      id === "rows"
+        ? body
+        : id === "notice"
+          ? notice
+          : id === "connection"
+            ? connection
+            : id === "stop"
+              ? stop
+              : (byId.get(id) ?? null),
+    querySelector: (selector: string) => (selector === ".nav-server" ? server : null),
     querySelectorAll: (selector: string) =>
       selector === ".sort"
         ? statics.filter((node) => node.tag === "button" && node.cell !== null)

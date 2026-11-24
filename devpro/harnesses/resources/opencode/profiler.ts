@@ -234,9 +234,7 @@ function childSessionOf(result: unknown): string | undefined {
   const carried = isRecord(result) ? result : {}
   const output = isRecord(carried.output) ? carried.output : {}
   const metadata = isRecord(carried.metadata) ? carried.metadata : {}
-  const ids = [carried.sessionID, output.sessionID, metadata.sessionID]
-  const id = ids.find((candidate) => typeof candidate === "string")
-  return id as string | undefined
+  return [carried.sessionID, output.sessionID, metadata.sessionID].find((id): id is string => typeof id === "string")
 }
 
 // childAgentTypeOf is the kind of subagent a parent call started, the response's `agentType` first as

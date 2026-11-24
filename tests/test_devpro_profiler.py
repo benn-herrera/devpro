@@ -516,6 +516,12 @@ def _bun() -> str:
     return "bun"
 
 
+def _cells(row: str) -> list[str]:
+    """A drawn row's cells, each as the text it carries: the cell under the agents head is index 3 of
+    the header's six."""
+    return re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
+
+
 # A moment's reading is pinned on the reader's zone with `TZ`: the zone decides which day and clock a
 # date draws into, so a pin holding no zone asserts on whatever the runner carries. The locale is not
 # holdable under the embedded bun — `LC_ALL=de_DE.UTF-8 bun` still resolves `en-US` — so the expected
@@ -624,17 +630,49 @@ def test_the_pages_draw_their_moments_local_at_birth(tmp_path: Path) -> None:
         stdin=json.dumps({"index": index, "feed": feed}),
         env={**os.environ, **_MOMENT_LOCALE},
     )
+
+    # Each party's element, read on its own: the moments span carries its class and the raw UTC range
+    # in its `title`, and each `<time>` its drawn text, its `datetime` and its own raw UTC — the
+    # attributes' order unpinned, since no reader of the page reads them in any order.
+    def moments_of(cell: str) -> dict:
+        return {
+            "class": re.search(r'<span\b[^>]*\bclass="([^"]*)"', cell).group(1),
+            "title": re.search(r'<span\b[^>]*\btitle="([^"]*)"', cell).group(1),
+            "times": [
+                {
+                    "text": text,
+                    "datetime": re.search(r'\bdatetime="([^"]*)"', attrs).group(1),
+                    "title": re.search(r'\btitle="([^"]*)"', attrs).group(1),
+                }
+                for attrs, text in re.findall(r"<time\b([^>]*)>(.*?)</time>", cell)
+            ],
+        }
+
     cells = [
-        re.search(r'<span\b[^>]*class="moments"[^>]*>.*?</span>', row).group(0)
+        re.search(r'<span\b[^>]*\bclass="moments"[^>]*>.*?</span>', row).group(0)
         for row in json.loads(run.stdout)["rows"]
     ]
-    assert cells == [
-        '<span title="2026-01-01 00:00:01 UTC to 2026-01-01T02:00:00Z" class="moments">'
-        '<time datetime="2026-01-01T00:00:01.250Z" title="2026-01-01 00:00:01 UTC">2025-12-31 16:00</time> to '
-        '<time datetime="2026-01-01T02:00:00Z" title="2026-01-01 02:00:00 UTC">18:00</time></span>',
-        '<span title="2026-01-01 06:00:00 UTC to 2026-01-01T08:00:00.500Z" class="moments">'
-        '<time datetime="2026-01-01T06:00:00Z" title="2026-01-01 06:00:00 UTC">2025-12-31 22:00</time> to '
-        '<time datetime="2026-01-01T08:00:00.500Z" title="2026-01-01 08:00:00 UTC">00:00</time></span>',
+    assert [moments_of(cell) for cell in cells] == [
+        {
+            "class": "moments",
+            "title": "2026-01-01 00:00:01 UTC to 2026-01-01T02:00:00Z",
+            "times": [
+                {
+                    "text": "2025-12-31 16:00",
+                    "datetime": "2026-01-01T00:00:01.250Z",
+                    "title": "2026-01-01 00:00:01 UTC",
+                },
+                {"text": "18:00", "datetime": "2026-01-01T02:00:00Z", "title": "2026-01-01 02:00:00 UTC"},
+            ],
+        },
+        {
+            "class": "moments",
+            "title": "2026-01-01 06:00:00 UTC to 2026-01-01T08:00:00.500Z",
+            "times": [
+                {"text": "2025-12-31 22:00", "datetime": "2026-01-01T06:00:00Z", "title": "2026-01-01 06:00:00 UTC"},
+                {"text": "00:00", "datetime": "2026-01-01T08:00:00.500Z", "title": "2026-01-01 08:00:00 UTC"},
+            ],
+        },
     ]
 
     # The session page's header stamp, drawn by the page's own script alone — the file carrier's
@@ -692,6 +730,13 @@ def test_the_pages_two_carriers_differ_in_the_layers_slot_alone(tmp_path: Path) 
     serve_drawn = _page_runner(tmp_path, served, deco=deco)
     assert file_drawn["stamped"] == serve_drawn["stamped"], (file_drawn["stamped"], serve_drawn["stamped"])
     assert file_drawn["subline"] == serve_drawn["subline"]
+    # The deco's body runs under the served carrier and draws its state: the endpoint's answer as the
+    # indicator's text, and the server element marked for it. The file carrier loads no deco and
+    # reports no reading at all — a runner whose document answers the deco's three elements with
+    # nothing has a deco whose first guard returns, and the reading it reports is empty. The runner's
+    # own `fetch` answers no server, so the state it draws is the idle one.
+    assert serve_drawn["deco"] == {"connection": "idle", "server": "nav-idle"}
+    assert file_drawn["deco"] is None
 
 
 def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
@@ -1148,10 +1193,10 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
         index,
     )
     # Each column's share of the table comes from the page's own stylesheet, beside the header's class,
-    # and the table's layout is the fixed one that gives that share to header and body alike.
+    # and the table's layout is the fixed one that gives that share to header and body alike. The
+    # shares themselves are the browser runner's to measure (`test_the_headers_sit_over_their_columns`),
+    # which reads those same declarations at a width a browser resolves them at.
     assert re.search(r"table \{ border-collapse: collapse; table-layout: fixed; \}", index)
-    for column in ("col-harness", "col-session", "col-records", "col-agents", "col-one", "col-span"):
-        assert re.search(rf"\.{column} \{{ width: [\d.]+(?:rem|%); \}}", index), column
     # The controls: a box for the child rows and one per harness, each checked so the page opens on
     # every row, and the notice a failed feed names itself in, standing empty and hidden.
     for control in ('id="child-rows"', 'id="harness-claude"', 'id="harness-opencode"'):
@@ -1202,7 +1247,9 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
         "s-child",
     ]
     assert "claude" in drawn["rows"][0] and "2 records" in drawn["rows"][0]
-    assert "1 dispatched agent" in drawn["rows"][2]
+    # The dispatched-agent count is the agents column's, drawn in the cell under the head that names
+    # it: a count standing anywhere else leaves the column the header names reading empty.
+    assert _cells(drawn["rows"][2])[3] == "1 dispatched agent"
     assert 'class="col-session child"' in drawn["rows"][3] and "↳ child — devpro-coder" in drawn["rows"][3]
     # The dispatched-agent count is the entry's own, and the row carries no second copy of it: a
     # `data-agents` attribute beside the feed's key is the one the script's sort would read had the
@@ -1250,8 +1297,7 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
     # of order fails rather than satisfying a substring's somewhere.
     assert len(drawn["rows"]) == len(crafted)
     for row, reading in zip(drawn["rows"], ("59s", "1m 30s", "2m", "1h", "1h 30m")):
-        cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
-        assert cells[-1] == reading, f"{reading!r} not the last cell of {row}"
+        assert _cells(row)[-1] == reading, f"{reading!r} not the last cell of {row}"
 
     # The table's own empty reading makes three distinctions: a feed holding sessions the controls
     # hid, a feed whose stores stand but hold no record to draw, and a feed from a tree with no store
@@ -1313,7 +1359,7 @@ def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
 
     hidden_children = driven(json.loads(feed), [{"toggle": "child-rows"}])
     assert ids(hidden_children) == ["s-claude", "s-p1", "s-p2"]
-    assert any("1 dispatched agent" in row for row in hidden_children)
+    assert _cells(hidden_children[2])[3] == "1 dispatched agent"
     assert ids(driven(json.loads(feed), [{"toggle": "harness-opencode"}])) == ["s-claude"]
     assert ids(driven(json.loads(feed), [{"toggle": "harness-claude"}])) == ["s-p1", "s-p2", "s-child"]
     # A harness the controls carry no box for — a hand-written store's name — is drawn, and the page
@@ -1590,11 +1636,11 @@ def _inline_script_bodies(page: str) -> list[str]:
 
 
 def _opens_an_iife(body: str) -> bool:
-    """Whether `body`'s first statement opens an IIFE, a leading `'use strict';` directive and the
-    comments ahead of it passed over."""
+    """Whether `body`'s first statement opens an IIFE, a leading `'use strict';` directive — in either
+    quote the shipped scripts spell it in — and the comments ahead of it passed over."""
     for line in body.splitlines():
         statement = line.strip()
-        if not statement or statement.startswith("//") or statement == "'use strict';":
+        if not statement or statement.startswith("//") or statement in ("'use strict';", '"use strict";'):
             continue
         return statement in _IIFE_OPENINGS
     return False
@@ -1605,7 +1651,8 @@ def test_every_page_script_wraps_its_body_in_an_iife() -> None:
     its helpers — `padTwo`, `localDay`, `localClock` — in the global scope classic scripts share with
     the deco's, so the next helper of one of those names would redeclare a `const` and the session
     page would draw nothing. Every script the pages run wraps its body in an IIFE; the shipped pages
-    carrying an inline script are `view.html` and the `INDEX` template."""
+    carrying an inline script are `view.html` and the `INDEX` template, and the scripts they load by
+    file — the deco and the board's — are in the same shared scope and wrap theirs the same way."""
     pages = {
         "view.html": (_PACKAGE_ROOT / "devpro" / "profiler" / "view.html").read_text(encoding="utf-8"),
         "INDEX": INDEX,
@@ -1614,6 +1661,8 @@ def test_every_page_script_wraps_its_body_in_an_iife() -> None:
         bodies = _inline_script_bodies(page)
         assert bodies, f"{name} carries no inline script"
         assert all(_opens_an_iife(body) for body in bodies), f"{name}'s script does not open an IIFE"
+    for name in ("devpro/profiler/deco.js", "devpro/kanban/assets/board.js"):
+        assert _opens_an_iife((_PACKAGE_ROOT / name).read_text(encoding="utf-8")), f"{name} does not open an IIFE"
 
 
 # A session id as a host records one — opencode's own is about this long, and an id this wide is a
@@ -1729,6 +1778,21 @@ def test_the_url_restores_the_controls_and_sort(tmp_path: Path) -> None:
 
     sorted_and_returned = _browser(tmp_path, index, feed, [{"sort": "records"}, {"navigate": True}])
     assert sorted_and_returned["visits"][-1]["sorts"] == sorted_once["visits"][-1]["sorts"]
+
+    # A link naming two heads is one the page never writes: the table stands sorted on one column, so
+    # the page takes the first the link names and drops the surplus. A restore reading every `sort` the
+    # URL carries marks both heads sorted while the draw honors one — a table announcing an order it
+    # does not stand in, reachable by typing it into the bar. The six heads in order, the two carrying
+    # no button among them.
+    surplus = _browser(tmp_path, index, feed, [{"navigate": "?sort=records&sort=span"}])["visits"][-1]
+    assert surplus["sorts"] == [
+        ["", "none"],
+        ["", "none"],
+        ["records", "ascending"],
+        ["agents", "none"],
+        ["first", "none"],
+        ["span", "none"],
+    ], surplus["sorts"]
 
 
 def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path) -> None:

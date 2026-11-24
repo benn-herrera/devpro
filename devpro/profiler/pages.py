@@ -1077,10 +1077,11 @@ const moments = (session) => {
   return cell;
 };
 
-// One row: a dispatcher's carries the count of the children drawn beneath it; a child's carries the
-// accent bar's empty cell and names the call that dispatched it. Both carry the harness with its
-// mark where the page holds one, their own count, moments and span. A row's sort keys are the
-// entry's own: the dispatched-agent count, the record count, the first moment and the span.
+// One row: a dispatcher's carries the count of the children the feed holds in the agents column; a
+// child's carries the accent bar's empty cell and names the call that dispatched it. Both carry the
+// harness with its mark where the page holds one, their own count, moments and span. A row's sort
+// keys are the entry's own: the dispatched-agent count, the record count, the first moment and the
+// span.
 const row = ({ session, dispatched, children = 0 }) => {
   const tr = el('tr');
   tr.setAttribute('data-records', String(session.records));
@@ -1094,17 +1095,15 @@ const row = ({ session, dispatched, children = 0 }) => {
   id.append(link(session.id));
   if (dispatched) {
     id.append(' ', el('small', '↳ child — ' + dispatched.name));
-  } else if (children) {
-    const count = children === 1 ? '1 dispatched agent' : children + ' dispatched agents';
-    id.append(' ', el('small', '— ' + count));
   }
   const window = el('td', undefined, 'col-one');
   window.append(moments(session));
+  const count = session.agents === 1 ? '1 dispatched agent' : session.agents + ' dispatched agents';
   tr.append(
     harness,
     id,
     el('td', session.records + ' records', 'col-records'),
-    el('td', undefined, 'col-agents'),
+    el('td', session.agents ? count : '', 'col-agents'),
     window,
     el('td', span(session.span), 'col-span'),
   );
@@ -1237,16 +1236,19 @@ const sync = () => {
 
 // The state the page's URL carries, read back into the page before its feed arrives: a control the
 // link names as off, and a head in the order the link names, the heads a link names none of left as
-// the page carries them.
+// the page carries them. The link names one head — the page stands sorted on one — so a URL carrying
+// more takes the first and drops the rest, and no two heads are ever marked sorted by a link
+// `sync()` did not write.
 const restore = () => {
   const params = new URLSearchParams(location.search);
   for (const control of document.querySelectorAll('.controls input')) {
     if (control.name) control.checked = !params.getAll(control.name).includes(control.value);
   }
+  const sort = params.get('sort');
   for (const head of document.querySelectorAll('.sort')) {
     const cell = head.closest('th');
-    const found = params.getAll('sort').find((value) => value === head.dataset.sort || value === head.dataset.sort + '-descending');
-    if (cell) cell.setAttribute('aria-sort', !found ? 'none' : found.endsWith('-descending') ? 'descending' : 'ascending');
+    const state = sort === head.dataset.sort ? 'ascending' : sort === head.dataset.sort + '-descending' ? 'descending' : 'none';
+    if (cell) cell.setAttribute('aria-sort', state);
   }
 };
 
