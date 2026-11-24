@@ -208,9 +208,8 @@ def hook_sources(repo: Path, home: Path) -> list[str]:
     ):
         settings = read_json(file)
         hooks = settings.get("hooks") if isinstance(settings, dict) else None
-        if settings and (
-            "harness-profiler/profiler.sh" in _json(hooks or {}) or "harness-profiler/hp" in _json(hooks or {})
-        ):
+        registered = _json(hooks or {})
+        if settings and any(f"{HOOK_DIR.name}/{name}" in registered for name in (LAUNCHER, *OLD_LAUNCHERS)):
             sources.append(label)
     return sources
 

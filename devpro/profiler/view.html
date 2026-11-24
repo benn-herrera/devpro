@@ -2,7 +2,6 @@
 <!-- Written by devpro's profiler (`devpro profiler tree --format html`). The standalone render fetches nothing and runs from the file the flow wrote. -->
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>devpro — profiler view: session</title>
-<!-- Written by harness-profiler (`hp tree --format html`). The standalone render fetches nothing and runs from the file the flow wrote. -->
 <!--LAYER-->
 <style>
 :root { --panel:#fff; --track:#f1f2f0; --fresh:#8d969e;
@@ -333,7 +332,7 @@ function drawSequence() {
 
 // ---------- tree ----------
 
-// Same nesting as `hp tree`: a subagent's calls go under the call that started it.
+// Same nesting as `devpro profiler tree`: a subagent's calls go under the call that started it.
 const kids = new Map();
 const containerKey = (ctx) => (ctx === 'main' || !D.calls.some((c) => c.child === ctx) ? `root` : ctx);
 const items = D.calls.map((c, i) => ({ type: 'call', i, start: c.start, ctx: c.ctx }))

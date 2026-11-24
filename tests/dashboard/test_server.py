@@ -537,7 +537,7 @@ def test_a_session_page_is_served_without_reading_the_stores_a_second_time(tmp_p
 
     monkeypatch.setattr("devpro.profiler.pages.read_sessions", counted_read)
     monkeypatch.setattr("devpro.dashboard.server.read_sessions", counted_read)
-    monkeypatch.setattr("devpro.dashboard.server.dispatches", counted_grouping)
+    monkeypatch.setattr("devpro.profiler.pages.dispatches", counted_grouping)
     page = served.get("page/s-one")[2].decode("utf-8")
 
     assert reads == [str(root), str(root)]

@@ -168,7 +168,8 @@ function textFrom(value: unknown): string {
 // nameOf, argsOf and resultOf are `devpro/profiler/capture.py`'s three, over opencode's tools: a skill's name, a subagent's
 // kind and brief, a shell command's head and its text. The host names a subagent dispatch by its
 // `agent` and a skill call by its `id`; neither is a tool name, so neither falls through to the tool
-// itself. Any other tool's name is its own (hp's MCP suffix rule apart), its args its input as JSON.
+// itself. Any other tool's name is its own (an MCP tool's being its last `__` segment), its args its
+// input as JSON.
 function nameOf(tool: string, input: Record<string, unknown>): string | undefined {
   const name =
     tool in SUBAGENT_TOOLS

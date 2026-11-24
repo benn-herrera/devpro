@@ -42,14 +42,13 @@ from urllib.parse import unquote, urlsplit
 
 from devpro import __version__
 from devpro.profiler import pages
-from devpro.profiler.pages import PAGE_PREFIX, dispatches, read_sessions
+from devpro.profiler.pages import PAGE_PREFIX, PROFILER_PATH, dispatcher_of, read_sessions
 from devpro.profiler.values import git_root
 
 from ..errors import InputError
 from ..kanban.server import HOST, KanbanServer
 
 BOARD_PATH = "/board/"
-PROFILER_PATH = "/profiler/"
 STATE_PATH = "/api/state"
 TRACES_PATH = "/api/traces"
 # The decoration's script: its one source is the shipped file, which the server answers at the
@@ -68,15 +67,6 @@ CONTENT_SECURITY_POLICY = (
 )
 _REFUSED_HOST = '{"error": "requests must name the host the dashboard is served on"}'
 _NO_SUCH_PAGE = "No such page"
-
-
-def dispatcher_of(session: str, root: str) -> tuple[str, str] | None:
-    """The session that dispatched `session`, and the call that did, for the band it heads.
-
-    The page's render holds this session's records alone, so a dispatcher named among them is found
-    in the stores' other sessions: the band's one fact costs a read beside the page's own."""
-    sessions, _ = read_sessions(root)
-    return dispatches([other for other in sessions if other["id"] != session]).get(session)
 
 
 def profiler_page(session: dict, *, return_to: str | None, dispatcher: tuple[str, str] | None) -> str:
@@ -163,7 +153,8 @@ class DashboardServer(ThreadingHTTPServer):
         session_record = pages.session_for(PAGE_PREFIX + session, self.root)
         if session_record is None:
             return None
-        return profiler_page(session_record, return_to=PROFILER_PATH, dispatcher=dispatcher_of(session, self.root))
+        sessions, _ = read_sessions(self.root)
+        return profiler_page(session_record, return_to=PROFILER_PATH, dispatcher=dispatcher_of(session, sessions))
 
     def start(self) -> None:
         """Begin polling the board's files. Called once the server is serving, inside the try whose
