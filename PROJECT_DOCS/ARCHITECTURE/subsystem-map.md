@@ -67,8 +67,8 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   renders only where kbase ships.
 - **Profile skill** — `profiler` (`definitions/profiler.py`): one `SKILL.md` with no
   supporting files, delivered under every harness. It renders the newest session's trace — read from
-  either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
-  `.profiler-*` ones `devpro profiler tree` walks — as text, as a self-contained HTML page, or
+  either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores
+  `devpro profiler tree` walks — as text, as a self-contained HTML page, or
   served over HTTP by the dashboard's profiler view: its serve section names the `dashboard` verb,
   run through the tree's own wrapper, which `clauses.WRAPPER_PROFILER` names — the project's committed
   wrapper where `init` rendered the skill outside the install directory, the installation's own where

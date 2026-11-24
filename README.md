@@ -182,7 +182,7 @@ either view. Only the command line starts it: no served page starts its own serv
 A claude or opencode project install ships an activity profiler. It records the session's activity
 to the project's own store under `.devpro-temp/` at the project root: `.profiler-claude/` under
 claude, one line per hook event, and `.profiler-opencode/` under opencode, one per tool call.
-`devpro profiler tree` reads every `.profiler-*` store there, the `profiler` skill hands a session
+`devpro profiler tree` reads the project's two stores there, the `profiler` skill hands a session
 to you as text or as an HTML page, and `devpro dashboard` serves the records as its profiler view
 (The dashboard, above). What the install copies and registers for it is in
 [SPEC Shipped files](PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md).

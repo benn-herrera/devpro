@@ -93,7 +93,7 @@ class DashboardServer(ThreadingHTTPServer):
     """The dashboard serving the project at root — its stores and its board — on HOST at port, 0
     being an ephemeral one.
 
-    `root` is explicit: the project whose `.profiler-*` stores and git root the profiler view reads,
+    `root` is explicit: the project whose profiler stores and git root the profiler view reads,
     and whose files the board panel reads. The command takes it from the directory it names, or
     where it names none, from the directory it runs in; a test names it. The board panel is a
     `KanbanServer` over the same root, which reads the board on construction, so a board file that
