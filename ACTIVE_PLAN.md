@@ -16,8 +16,8 @@ cited by name, and a name outranks a stale line number.
 | P1 | landed: 6854bb9 | expert | sweep reads definition string literals as sentence units; repo-layout pair 1 |
 | P2 | landed: 74c5f7e | expert | double-delivery check compares sentences; scratch-name pin retired; repo-layout pair 2 |
 | P3 | landed: 99f0f4d | expert | unreadable store fails the feed; `read_sessions` returns the list alone; profiler pair 1 |
-| P4 | dispatchable | expert | agents cell, query-carrying links, `devpro-` prefix drop; profiler pair 2 |
-| PR | dispatchable | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
+| P4 | landed: e4f1edd | expert | agents cell, query-carrying links, `devpro-` prefix drop; profiler pair 2 |
+| PR | in progress | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
 | PB | drafted | expert | fixes drafted from the review document |
 
 P1–P4 and PR are `dispatchable` as of the PE usability review and the architect revision that applied
