@@ -241,9 +241,6 @@ verify a plan-form change is a `check-plan` run over a plan holding the new form
   two lines, both required) over `guide.py:322-332` and `:507-514`; the PE seat's F5
   (`pr-review-prompt-engineer.md`) for step 6. Do not paste a paraphrase where the skill's sentence
   is the shared text — cite it.
-- R5 (guide.py side): the over-width lines by count — `guide.py:507-509` (99/99) and the prose line
-  at `:382-384` (98/101) — re-wrap to ≤ 90; the manual witness is `awk 'length>90'` over the edited
-  regions (`just lint`'s flake8 ignores E501).
 
 **Done-line.** `just test devpro`, then `just test-changed`, then
 `just dev-check-design-deltas-applied` green.
@@ -257,9 +254,11 @@ verify a plan-form change is a `check-plan` run over a plan holding the new form
 
 **Facts.**
 
-- G1: a design pair's text is re-wrapped to the source file's width when applied;
-  whitespace-squash matching makes this safe (R5's lesson). Home: a sibling of the two
-  delta-application leaves.
+- The owner's ruling, recorded as the trap it is: source line width is not enforced in this
+  project — the review's R5/G1 re-wrap finding is declined, and a review finding about source
+  line width is declined by default. The pattern was killed once before as too expensive: agents
+  obsess over widths, manually reflow, or write ad-hoc reflow tools. This CONVENTIONS line is the
+  prohibition's home, so the next reviewer does not rebirth it.
 - G2: the brace rule in its conditional form — the mistake is writing `{{…}}` into a plain
   (non-`f`) string, where it renders as a literal brace; the existing doubled occurrences are
   correct. Pin the constants-only leaf and the placeholders leaf as the sources of truth; do not
