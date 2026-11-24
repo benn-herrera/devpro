@@ -142,7 +142,7 @@ tighter prefix.
 ### Allow creation of .devpro-temp/
 
 Current wording in AGENTS.md says to stop and notify - let's change that to create it.
-To make ^^^ less consequential let's add modification of .gitignore to add .devpro-temp/
+To make that less consequential let's add modification of .gitignore to add .devpro-temp/
 to it (or create if missing with .devpro-temp/) to the installation behaviors.
 we already modify the justfile and AGENTS.md there's no reason for .gitignore to be sacronsanct.
 
