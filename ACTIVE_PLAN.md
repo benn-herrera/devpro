@@ -32,7 +32,7 @@ becomes-blocks are the accepted text.
 | B8 | landed 7ea5524 | expert | the launcher's edges and the stale installs (VR10) |
 | B9 | landed bca8961 | expert | one lockfile (VR11) |
 | B10 | landed a468bfb | expert | the agents column, and the residue (VR12, VR13) |
-| B11 | dispatchable: its pair revisions fill at dispatch, PE-reviewed before the dispatch | expert | one path to the profiler's outcome |
+| B11 | drafted: its pair revisions filled at 54b8458, PE review of the fill in flight; dispatch on the review's acceptance | expert | one path to the profiler's outcome |
 
 ## Kickoff
 
