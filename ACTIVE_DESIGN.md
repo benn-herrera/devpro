@@ -53,11 +53,12 @@ produces.
 
 ```
 the index of record files, every store
-the `.profiler-*` glob finds, one row per session — harness, session id, record count, first and
-last moments, and the span between them — each linking to `/page/<session-id>`, which serves that
-session's page in memory, the render's page carrying the same page data `tree --format html`
-produces. The header row and the body's rows take their column widths from one source, so every
-header sits over the column it names at every width the data produces.
+the `.profiler-*` glob finds, one row per session — harness, session id, record count, the count
+of the dispatched agents it holds, first and last moments, and the span between them — each
+linking to `/page/<session-id>`, which serves that session's page in memory, the render's page
+carrying the same page data `tree --format html` produces. The header row and the body's rows
+take their column widths from one source, so every header sits over the column it names at every
+width the data produces.
 ```
 
 **As it stands:**
@@ -263,6 +264,57 @@ launcher's own arguments passed through. The first candidate standing is the one
 is no probe and no `PATH` search, a foreign devpro is never run, and every failure is named by the
 wrapper's own refusal — a capture whose wrapper fails drains its stdin and exits 0, never blocking
 the tool call.
+```
+
+**As it stands:**
+
+```
+The index's page file is static — no row is in its text — and its script fetches the
+records' feed the server answers at `/api/traces`, one JSON entry per session with the columns
+above, the stores the glob finds but cannot read among them as unreadable, and renders the rows
+client-side — the board's pattern, the payload consumed client-side.
+```
+
+**Becomes:**
+
+```
+The index's page file is static — no row is in its text — and its script fetches the
+records' feed the server answers at `/api/traces`, one JSON entry per session carrying its keys —
+`harness`, `id`, `records`, `agents`, `first`, `last`, `span`, and `dispatcher` where a session
+was dispatched — the keys the index's script renders into the columns the header names: `id` the
+session column, `agents` the dispatched-agents count, `first` and `last` the first-to-last line,
+`span` the span column — the stores the glob finds but cannot read among them as unreadable, and
+renders the rows client-side — the board's pattern, the payload consumed client-side.
+```
+
+**As it stands:**
+
+```
+Its subcommands are `capture`, `tree`,
+`init` and `doctor`, which read exactly as they did inside `hp.py`; the records are served by the
+`dashboard` verb, below.
+```
+
+**Becomes:**
+
+```
+Its subcommands are `capture`, `tree`,
+`init` and `doctor`; the records are served by the `dashboard` verb, below.
+```
+
+**As it stands:**
+
+```
+moment sweep and its observers leave with the double render they served. The span is its own
+column.
+```
+
+**Becomes:**
+
+```
+moment sweep and its observers leave with the double render they served. The span is its own
+column, drawn from the feed's seconds as whole hours and minutes — `3h 2m` — minutes alone below
+the hour, seconds below the minute.
 ```
 
 ### [Why there is no verification verb](PROJECT_DOCS/ARCHITECTURE/why-there-is-no-verification-verb.md)
