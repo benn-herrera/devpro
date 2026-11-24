@@ -86,7 +86,7 @@ prints, `http://127.0.0.1:<port>/board/` — so opening it shows the kanban boar
 current state.
 
 The profiler view is the second view, at `/profiler/` (trailing slash, the board panel's convention):
-the index of record files, every store the `.profiler-*` glob finds, one row per session — harness,
+the index of record files, every store the readers read, one row per session — harness,
 session id, record count, the count of the dispatched agents it holds, first and last moments, and
 the span between them — each linking to `/page/<session-id>`, which serves that session's page in
 memory, the render's page carrying the same page data `tree --format html` produces. The header row
@@ -237,8 +237,10 @@ stderr and left as it stands, never rewritten under a session's own write.
 **The stores and their rename.** Each harness's capture owns one store under the project's
 `.devpro-temp/`: claude's `.profiler-claude/`, opencode's `.profiler-opencode/`, and both readers —
 `tree`'s render, and the dashboard's profiler view, whose index and session pages read the stores per
-request — walk every `.profiler-*` directory there — a dot name, so the stores group and sort at the
-top of the scratch tree. Both `devpro install` and `devpro profiler init claude` rename the two
+request — read the stores the captures write, the directories named exactly `.profiler-<harness>`
+for a harness name the profiler's own captures use (claude and opencode today) — a dot name, so the
+stores group and sort at the top of the scratch tree. A directory of any other shape beside a store
+is not a store and is not read. Both `devpro install` and `devpro profiler init claude` rename the two
 old-pattern stores: `.devpro-temp/claude-profiler/` to `.profiler-claude` and
 `.devpro-temp/opencode-profiler/` to `.profiler-opencode`, and the move is printed. A directory under
 `.devpro-temp/` whose name only ends in `-profiler` is no store and is left alone. Where a store's new
@@ -250,8 +252,9 @@ the operator merges or deletes it.
 
 **Doctor's lines.** `devpro profiler doctor` runs as the wrapper's own subcommand, and its `devpro:`
 line names the wrapper's own path — `INSTALLED_WRAPPER`'s where the install stands, the invoking
-tree's devpro otherwise — one line: `traces:` the claude store `tree` reads beside the `.profiler-*`
-pattern, `hook:` where a capture hook is registered here (the plugin's own records, and the committed,
+tree's devpro otherwise — one line: `traces:` the claude store `tree` reads, among the
+`.profiler-<harness>` stores it reads, `hook:` where a capture hook is registered here (the plugin's own
+records, and the committed,
 local and user settings files) or `not installed` with the install and `init` remedies, an `old:` line
 per pre-rename store it cannot read with the remedy that renames or merges it, `update:` a stale
 committed hook, and `newest:` the newest claude session's last moment or `no calls recorded yet`.

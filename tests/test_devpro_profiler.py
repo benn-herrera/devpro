@@ -56,9 +56,11 @@ from devpro.profiler.pages import (
     RETURN_MARK,
     SHARED_CSS,
     index_html,
+    list_sessions,
+    read_sessions,
 )
 from devpro.profiler.stores import repair_child_ids
-from devpro.profiler.values import CAPTURED_EVENTS, _epoch_ms
+from devpro.profiler.values import CAPTURED_EVENTS, TRACE_STORES, _epoch_ms
 from tests.test_devpro_install import _claude_plugin, _definition_install
 
 # The serve path's carrier of the shared layer: the one file the board panel serves, which the pages
@@ -360,7 +362,7 @@ def test_the_wrapper_the_install_writes_captures_with_no_devpro_on_path(tmp_path
 
 def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Path) -> None:
     """A session in each harness's store under one project, and one `tree <id>` per store renders it:
-    the read that walks every `.profiler-*` store, whose revert to claude's alone loses the opencode
+    the read that walks both harnesses' stores, whose revert to claude's alone loses the opencode
     session silently.
 
     The opencode dispatch's record draws the context words claude's dispatch draws for the same
@@ -1474,14 +1476,14 @@ def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_
 
 
 def test_the_served_feed_states_an_unreadable_store(tmp_path: Path) -> None:
-    """One `.profiler-*` store the glob finds and cannot read, beside one it can: the feed answers
-    2xx, names the unreadable store as such, and still lists the readable store's session, and the
-    unreadable store's own page is a 404 rather than a traceback; a feed that lets the one bad
-    directory blank it or raise out of the handler is the defect the stated entry replaces."""
+    """One store the readers read and cannot list, beside one they read: the feed answers 2xx, names
+    the unreadable store as such, and still lists the readable store's session, and the unreadable
+    store's own page is a 404 rather than a traceback; a feed that lets the one bad directory blank it
+    or raise out of the handler is the defect the stated entry replaces."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
-    locked = _write_store(project, ".profiler-broken", "s-broken", "2026-01-01T00:00:00.000Z", harness="claude")
+    locked = _write_store(project, ".profiler-opencode", "s-broken", "2026-01-01T00:00:00.000Z", harness="opencode")
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
     os.chmod(locked, 0o000)
     try:
@@ -1502,7 +1504,7 @@ def test_the_served_feed_states_an_unreadable_store(tmp_path: Path) -> None:
             "last": _epoch_ms("2026-01-01T00:00:00.000Z"),
             "span": 0,
         },
-        {"unreadable": ".profiler-broken"},
+        {"unreadable": ".profiler-opencode"},
     ]
     assert missing.value.code == 404
 
@@ -1776,12 +1778,50 @@ def _install_project(project: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
+def test_the_readers_read_a_copy_of_a_store_as_no_store_at_all(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`: a copy of a store beside it reads twice — both of the profiler's
+    readers, `list_sessions` and `read_sessions`, listing the one recorded session once per store the
+    `.profiler-*` glob matched, which is the doubled rows the served index drew.
+
+    A store and a copy of it under one project, then a directory of no store's name beside them: each
+    reader reads the session once, names the copied directory unreadable to neither, and a directory
+    nothing wrote is read by neither — a name is a store only where it is exactly the one a harness's
+    capture writes."""
+    project = tmp_path / "project"
+    project.mkdir()
+    store = _write_store(project, ".profiler-claude", "s-only", "2026-01-01T00:00:00.000Z", harness="claude")
+    shutil.copytree(store, project / ".devpro-temp" / ".profiler-claude-copy")
+    (project / ".devpro-temp" / ".profiler-claude-old").mkdir()
+    (project / ".devpro-temp" / ".profiler-broken").mkdir()
+
+    assert [session["id"] for session in list_sessions(project)] == ["s-only"]
+    assert [session["id"] for session in read_sessions(project)[0]] == ["s-only"]
+    assert read_sessions(project)[1] == []
+
+
+def test_the_doctor_names_the_stores_the_readers_read(tmp_path: Path) -> None:
+    """Doctor's `traces:` line names each store the readers read — every name in `TRACE_STORES`, the
+    claude store's own among them, and no pattern a directory of another shape answers to. A line
+    naming a pattern the readers do not match sends the operator looking for a store under a copy's
+    name, which nothing reads."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+
+    reported = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
+
+    assert reported.returncode == 0, reported.stderr
+    [line] = [line for line in reported.stdout.splitlines() if line.startswith("traces:")]
+    assert all(str(project / ".devpro-temp" / store) in line for store in TRACE_STORES), line
+    assert "*" not in line
+
+
 def test_an_install_renames_an_old_pattern_store_and_a_second_install_touches_nothing(tmp_path: Path) -> None:
     """A project holding `.devpro-temp/claude-profiler/`: the install moves it to `.profiler-claude/`,
     contents and all, naming the rename in its report, and a second install reports the target up to
-    date and leaves the store alone. A rename left undone leaves the store outside the reader's
-    `.profiler-*` glob, so the project's recorded history vanishes from the index at the upgrade with
-    nothing saying it happened."""
+    date and leaves the store alone. A rename left undone leaves the store outside the readers'
+    stores, so the project's recorded history vanishes from the index at the upgrade with nothing
+    saying it happened."""
     project = tmp_path / "project"
     (project / ".claude").mkdir(parents=True)
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)

@@ -372,7 +372,9 @@ def build_event_record(payload: dict, harness: str) -> dict:
 
 
 def session_file(directory: Path | str, session: object) -> Path:
-    """The trace file for one session under `directory`, its id made path-safe."""
+    """The trace file for one session under `directory`, its id made path-safe.
+
+    The store the profiler's readers read: the claude capture's, the harness `capture` runs."""
     safe = re.sub(r"[^\w.-]", "_", str(session))
     return Path(directory) / TRACE_DIR / f"{safe}.jsonl"
 

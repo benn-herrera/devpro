@@ -1,7 +1,7 @@
 """What the capture, the render and the hook wiring all read: the schema and record limits, the masks,
-the store's directory and the pattern the stores are read by, the text helpers, and the git facts a
-record and a project root take without spawning git. The stores' rename and the two names it moves from
-are `stores`'s, which reads this module and nothing else of the package.
+the stores' names and the directories the readers read, the text helpers, and the git facts a record
+and a project root take without spawning git. The stores' rename and the two names it moves from are
+`stores`'s, which reads this module and nothing else of the package.
 """
 
 import json
@@ -12,13 +12,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 SCHEMA_VERSION = 2
-# Each harness's capture owns one store, and `tree` reads them all: every `.profiler-*` directory under
-# `.devpro-temp/`, a dot name so the stores group at the top of the tree. This one is the claude capture's.
-TRACE_DIR = Path(".devpro-temp") / ".profiler-claude"
-TRACE_GLOB = ".profiler-*"
 # The store naming's prefix every name now carries; `stores` holds the naming before the rename, and the
 # two stores it renames.
 NEW_STORE_PREFIX = ".profiler-"
+# Each harness's capture owns one store, named exactly for the harness its records carry, and `tree`
+# reads them all — a dot name, so the stores group at the top of the scratch tree. A directory of any
+# other shape there is no store, so a copy of one is not read beside it.
+TRACE_HARNESSES = ("claude", "opencode")
+TRACE_DIR = Path(".devpro-temp") / f"{NEW_STORE_PREFIX}claude"
+TRACE_STORES = tuple(f"{NEW_STORE_PREFIX}{harness}" for harness in TRACE_HARNESSES)
 TOOL_EVENTS = ("PostToolUse", "PostToolUseFailure")
 SESSION_EVENTS = ("PreCompact", "PostCompact", "SessionStart", "SubagentStop")
 LAUNCHED = "async_launched"

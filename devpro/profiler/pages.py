@@ -30,7 +30,7 @@ from .values import (
     PARENT_TOOLS,
     SESSION_WIDTH,
     TRACE_DIR,
-    TRACE_GLOB,
+    TRACE_STORES,
     TREE_WIDTH,
     _epoch_ms,
     _json,
@@ -673,12 +673,13 @@ def session_of(path: Path) -> dict:
 def list_sessions(directory: Path | str) -> list[dict]:
     """Every session trace under `directory`, with its records and its first and last moments.
 
-    Every `.profiler-*` store under `.devpro-temp/` is read, so both harnesses' sessions reach one tree,
-    and a session id is unique across them."""
+    Every store under `.devpro-temp/` is read — the directories named exactly for a harness the
+    captures write, `values.TRACE_STORES` — so both harnesses' sessions reach one tree, and a session
+    id is unique across them."""
     traces: list[Path] = []
-    for store in sorted((Path(directory) / TRACE_DIR.parent).glob(TRACE_GLOB)):
-        if store.is_dir():
-            traces.extend(path for path in store.iterdir() if path.name.endswith(".jsonl"))
+    stores = Path(directory) / TRACE_DIR.parent
+    for store in sorted(stores / name for name in TRACE_STORES if (stores / name).is_dir()):
+        traces.extend(path for path in store.iterdir() if path.name.endswith(".jsonl"))
     return [session for session in (session_of(path) for path in traces) if session["records"]]
 
 
@@ -715,8 +716,9 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
     options = parse_tree_args(argv)
     sessions = list_sessions(directory)
     if not sessions:
+        stores = Path(directory) / TRACE_DIR.parent
         raise UsageError(
-            f"No traces in {Path(directory) / TRACE_DIR.parent / TRACE_GLOB}. "
+            f"No traces in {', '.join(str(stores / name) for name in TRACE_STORES)}. "
             "Run a session with the hook installed first."
         )
     branch = options.get("branch")
@@ -754,8 +756,10 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
 
 
 def store_directories(directory: Path | str) -> list[Path]:
-    """The `TRACE_GLOB` stores under the project's scratch directory, in the order they are read."""
-    return sorted(store for store in (Path(directory) / TRACE_DIR.parent).glob(TRACE_GLOB) if store.is_dir())
+    """The stores under the project's scratch directory — each named exactly for a harness the captures
+    write — in the order they are read."""
+    stores = Path(directory) / TRACE_DIR.parent
+    return sorted(stores / name for name in TRACE_STORES if (stores / name).is_dir())
 
 
 def read_sessions(directory: Path | str) -> tuple[list[dict], list[str]]:

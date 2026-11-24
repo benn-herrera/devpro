@@ -102,13 +102,13 @@ def test_the_profiler_view_serves_its_list_and_its_pages(tmp_path: Path, serve) 
 
 
 def test_an_unreadable_store_is_stated_in_the_feed_rather_than_failing_it(tmp_path: Path, serve) -> None:
-    """A `.profiler-*` store the dashboard cannot list is an entry of its own in the traces feed,
-    and the other store's session is still in it: the index's rule reaches the feed its script draws
-    the rows from."""
+    """A store the readers read and the dashboard cannot list is an entry of its own in the traces
+    feed, and the other store's session is still in it: the index's rule reaches the feed its script
+    draws the rows from."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
     locked = store(
-        root, "s-broken", [_tool_call("s-broken", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-broken"
+        root, "s-broken", [_tool_call("s-broken", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-opencode"
     )
     os.chmod(locked.parent, 0)
     try:
@@ -120,7 +120,7 @@ def test_an_unreadable_store_is_stated_in_the_feed_rather_than_failing_it(tmp_pa
 
     entries = json.loads(body)
     assert status == 200
-    assert {"unreadable": ".profiler-broken"} in entries
+    assert {"unreadable": ".profiler-opencode"} in entries
     assert [entry.get("id") for entry in entries if "unreadable" not in entry] == ["s-one"]
 
 
@@ -137,11 +137,11 @@ def test_the_traces_feed_answers_one_entry_per_session_and_names_unreadable_stor
     schema names — the harness the records carry, the id, the record count, the first and last
     moments as epoch milliseconds and the span in seconds — and `dispatcher`, whose two halves are
     the session that dispatched the child and the call that did, on a child's entry alone. A store
-    the glob finds and cannot read is its own entry, `{unreadable: <store name>}` and no other key.
+    the readers read and cannot list is its own entry, `{unreadable: <store name>}` and no other key.
     A feed answering an empty list, one entry per store instead of per session, or an entry whose
     moments are strings is the index drawing nothing, or drawing what the script cannot read."""
     root = project(tmp_path / "proj", {})
-    store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-claude")
+    store(root, "s-claude", [_tool_call("s-claude", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-claude")
     store(
         root,
         "s-parent",
@@ -158,7 +158,7 @@ def test_the_traces_feed_answers_one_entry_per_session_and_names_unreadable_stor
         directory=".profiler-opencode",
     )
     locked = store(
-        root, "s-broken", [_tool_call("s-broken", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-broken"
+        root, "s-broken", [_tool_call("s-broken", "2026-01-01T00:00:00.000Z", "ls")], directory=".profiler-claude"
     )
     os.chmod(locked.parent, 0)
     try:
@@ -171,15 +171,6 @@ def test_the_traces_feed_answers_one_entry_per_session_and_names_unreadable_stor
 
     assert (status, content_type) == (200, "application/json")
     assert entries == [
-        {
-            "harness": "claude",
-            "id": "s-one",
-            "records": 1,
-            "agents": 0,
-            "first": 1767225600000,
-            "last": 1767225600000,
-            "span": 0,
-        },
         {
             "harness": "opencode",
             "id": "s-parent",
@@ -199,9 +190,9 @@ def test_the_traces_feed_answers_one_entry_per_session_and_names_unreadable_stor
             "span": 0,
             "dispatcher": {"session": "s-parent", "name": "devpro-coder"},
         },
-        {"unreadable": ".profiler-broken"},
+        {"unreadable": ".profiler-claude"},
     ]
-    assert [set(entry) for entry in entries] == [SESSION_KEYS, SESSION_KEYS, DISPATCHED_KEYS, {"unreadable"}]
+    assert [set(entry) for entry in entries] == [SESSION_KEYS, DISPATCHED_KEYS, {"unreadable"}]
 
 
 def _denied(path: Path) -> bool:

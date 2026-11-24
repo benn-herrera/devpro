@@ -27,7 +27,7 @@ from .values import (
     CAPTURED_EVENTS,
     PROFILER_SKILL,
     TRACE_DIR,
-    TRACE_GLOB,
+    TRACE_STORES,
     _iso,
     _json,
     _utc,
@@ -238,7 +238,7 @@ def stale_hook(repo: Path) -> str | None:
 
 def doctor(cwd: Path | str) -> str:
     """Whether capture works here, and why not: the `devpro` command that runs it, the store and the
-    pattern `tree` reads, the hook's registration, any store from before the rename, a stale committed
+    stores `tree` reads, the hook's registration, any store from before the rename, a stale committed
     hook, and the newest claude session."""
     directory = project_dir(cwd)
     # doctor is claude-facing: every other line reads claude's hook and this directory's claude sessions,
@@ -246,6 +246,8 @@ def doctor(cwd: Path | str) -> str:
     claude_store = Path(directory) / TRACE_DIR
     claude_sessions = [session for session in list_sessions(directory) if session["path"].parent == claude_store]
     newest = max((session["last"] for session in claude_sessions), default=None)
+    stores = Path(directory) / TRACE_DIR.parent
+    reads = ", ".join(str(stores / name) for name in TRACE_STORES)
     repo = git_root(cwd) or Path(cwd)
     sources = hook_sources(repo, Path.home())
     stale = stale_hook(repo)
@@ -254,7 +256,7 @@ def doctor(cwd: Path | str) -> str:
     )
     lines = [
         f"devpro:  {devpro_command()}",
-        f"traces:  {claude_store} (tree reads {Path(directory) / TRACE_DIR.parent / TRACE_GLOB})",
+        f"traces:  {claude_store} (tree reads {reads})",
         f"hook:    {installed}",
     ]
     # A store from before the rename is one `tree` cannot see, and no devpro command merges two stores:
