@@ -335,7 +335,8 @@ skill into the repository's `.claude/` and merging the six entries into its
 `.claude/settings.json`, the committed hook's command naming the project's committed wrapper.
 
 **What `init` copies, and what it removes.** `init claude` writes the repository's rendered skill
-and merges the six hook entries — each command naming the committed wrapper
+and merges the six hook entries — each command running the `profiler capture claude`
+invocation on the committed wrapper
 `.claude/skills/devpro/tools/devpro.sh` — then unlinks the launchers an older `init` wrote into the
 repository: the one under its former name, `hp.sh`, the launcher's later name,
 `.claude/harness-profiler/profiler.sh`, and the files an older `init` left beside the launcher,
@@ -394,15 +395,14 @@ reads claude's hook and claude's store, where `tree` reads both harnesses'.
 
 ```
 **Doctor's lines.** `devpro profiler doctor` runs as the wrapper's own subcommand, and its
-`devpro:` line names the wrapper that runs it — one line: `traces:` the
+`devpro:` line names the wrapper's own path — `INSTALLED_WRAPPER`'s where the install stands, the
+invoking tree's devpro otherwise — one line: `traces:` the
 claude store `tree` reads beside the `.profiler-*` pattern, `hook:` where a capture hook is
 registered here (the plugin's own records, and the committed, local and user settings files) or
 `not installed` with the install and `init` remedies, an `old:` line per pre-rename store it cannot
 read with the remedy that renames or merges it, `update:` a stale committed hook, and `newest:` the
 newest claude session's last moment or `no calls recorded yet`. Doctor is claude-facing: every line
-reads claude's hook and claude's store, where `tree` reads both harnesses'. The launcher's
-resolution stand-ins in the profiler's tests assert the one path: the `devpro:` line names the
-wrapper that runs the doctor.
+reads claude's hook and claude's store, where `tree` reads both harnesses'.
 ```
 
 **As it stands:**
@@ -540,7 +540,7 @@ WRAPPER_PROFILER = f"""`DP` below is the installation's wrapper, the first of th
 **Becomes:**
 
 ```
-WRAPPER_PROFILER = f"""`DP` below is the tree's own wrapper, `{PROJECT_WRAPPER}` — filled with the wrapper's path in the tree the skill ships in. {_WRAPPER_RUN}"""
+WRAPPER_PROFILER = f"""`DP` below is the tree's own wrapper — the project's committed wrapper where `init` rendered the skill, the installation's own where the install rendered it — `{PROJECT_WRAPPER}` filled with its path. {_WRAPPER_RUN}"""
 ```
 
 ### [Why there is no verification verb](PROJECT_DOCS/ARCHITECTURE/why-there-is-no-verification-verb.md)

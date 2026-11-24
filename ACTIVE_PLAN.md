@@ -478,15 +478,18 @@ Done-line: `just test devpro`.
 
 Scope: `devpro/harnesses/resources/claude/profiler/profiler.sh`, `devpro/harnesses/claude.py`,
 `devpro/profiler/hooks.py`, `devpro/profiler/capture.py`, `devpro/install.py`, `devpro/clauses.py`,
-the skill definition's finder and its module docstring,
-`tests/test_devpro_profiler.py`,
+the skill definition's finder, its module docstring and its `Locate the profiler` steps' `bash`
+lines (`devpro/definitions/skills/profiler.py:25-26,42-43`),
+`tests/test_devpro_profiler.py`, `tests/test_devpro_install.py`,
 `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`,
 `PROJECT_DOCS/SPEC/deployed-surfaces/installed-tree.md`,
 `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md`,
 `PROJECT_DOCS/ARCHITECTURE/subsystem-map.md`, `PROJECT_DOCS/ARCHITECTURE/renders-and-copies.md`,
 `PROJECT_DOCS/ARCHITECTURE/repo-layout.md`, and `ACTIVE_DESIGN.md`'s harness-profiler pairs.
 
-The ruling: one path — every runner names the wrapper from its writer's knowledge. The launcher
+The ruling: one path — every runner names the wrapper from its writer's knowledge. The `profiler`
+verb's subcommands — `capture`, `tree`, `init`, `doctor` — are the wrapper's own: once the launcher
+is gone, every caller invokes the wrapper it knows and the verb dispatches as it does. The launcher
 file and its finder retire: the committed hook's wiring invokes the project-committed wrapper
 directly — the `profiler` verb, the `capture` subcommand, the harness argument (`profiler capture
 claude`), one command shape every block spells the same way — the installed hook's wiring names the
@@ -495,9 +498,9 @@ installed wrapper from
 `_PROFILER_EVENTS` entries in `devpro/harnesses/claude.py`) names the wrapper `INSTALLED_WRAPPER`
 declares. The copies the writers once wrote leave: `init` unlinks the committed tree's
 `.claude/harness-profiler/profiler.sh` beside the `hp.sh` names its machinery already carries,
-and the install's copy step removes the installed tree's `profiler/profiler.sh` — the pairing
-machinery cannot express a removal with no replacement, so the removal joins the retired names
-unconditionally where the copy carries the repository's header. The opencode install's
+and the install's copy step removes the installed tree's `profiler/profiler.sh` — the copy
+step's mirror assumption (the "not a mirror" docstring at `install.py`'s copy machinery) is what
+the change relaxes, and the removal's shape is the executor's from that freedom. The opencode install's
 `profiler/` copy empties with it — `_CROSS_HARNESS_SOURCES` drops the entry (the opencode
 capture is the plugin's own). The skill's finder clause is rewritten: `WRAPPER_PROFILER`'s
 current text is the first-of-two-candidates resolution the ruling abolishes; its replacement
@@ -506,7 +509,8 @@ guide's and docdicer's) keeps its resolution — the ruling covers the profiler'
 doctor runs as the wrapper's own subcommand: its `devpro:` line names the registered wrapper,
 the launcher-compare helpers leave, and the stand-in pair asserting the launcher's resolution
 moves with the semantics it served. The resources tree's `claude/profiler/` directory empties —
-the install's resource lists and the banner test's fixture lose it. The capture subcommand owns
+the install's copy machinery (`harness_resource_copies`) and the launcher's banner fixture in
+`tests/test_devpro_install.py` lose it. The capture subcommand owns
 the contract itself: its read of the hook payload is bounded, it exits 0 on every path, and its
 child's stdout stays off the hook's stdout (the host reads hook JSON there — SPEC's "exits 0
 with no output"). The launcher's remaining ride-notes land here: the success path's stdin
@@ -515,11 +519,14 @@ obtained the PE review; the package applies them as the other packages did — t
 **Resources**, **The launcher's finder** (deleted), **Wiring**, **The skill** through **What
 `init` copies**, the opencode capture's install paragraph and **Doctor's lines** passages, and
 the skill's `Locate the profiler` block. The contract moves with the work: SPEC's
-`installed-tree.md` names the launcher relative to the skill and `shipped-files.md` states both
-hooks' launcher paths and their "finds no `devpro` to run under" — each states the wrapper paths
-instead; ARCHITECTURE's `subsystem-map.md`, `renders-and-copies.md` and `repo-layout.md` carry
-the launcher's copy machinery in a line each — each line states the wrappers the tree names
-instead.
+`installed-tree.md` names the launcher relative to the skill — its wrapper sentence stands — and
+`shipped-files.md` states the hooks' launcher paths and their "finds no `devpro` to run under" —
+each names the wrappers the tree runs instead. ARCHITECTURE's `subsystem-map.md` (three
+sentences), `renders-and-copies.md` and `repo-layout.md` carry the launcher's copy machinery —
+each states the wrappers the tree names instead. The profiler tests' launcher-resolution
+stand-ins — the runner asserting the launcher's resolution — move with the semantics they
+served: the tests assert one path, `doctor`'s `devpro:` line naming the wrapper's own path.
 
 Done-line: `just test`, `just lint`; `just dev-check-design-deltas-applied` reporting the
-harness-profiler pairs landed.
+harness-profiler pairs landed; and `git grep -n "profiler\.sh" -- PROJECT_DOCS devpro/definitions
+tests` returning nothing — the name is retired everywhere those trees and definitions reach.
