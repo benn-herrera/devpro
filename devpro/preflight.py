@@ -89,8 +89,11 @@ def _copy_managed(managed: Sequence[tuple[Path, Sequence[str]]], *, scratch_base
                     at = Path(match.relative_to(base))
                     if match.is_dir():
                         shutil.copytree(
-                            match, scratch_base / at,
-                            ignore=shutil.ignore_patterns(VENV_DIR), symlinks=True, dirs_exist_ok=True,
+                            match,
+                            scratch_base / at,
+                            ignore=shutil.ignore_patterns(VENV_DIR),
+                            symlinks=True,
+                            dirs_exist_ok=True,
                         )
                     elif match.is_file():
                         (scratch_base / at).parent.mkdir(parents=True, exist_ok=True)
@@ -111,9 +114,7 @@ def _copy_managed(managed: Sequence[tuple[Path, Sequence[str]]], *, scratch_base
                     (scratch_base / obstacle).parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(base / obstacle, scratch_base / obstacle)
             if real.is_dir():
-                shutil.copytree(
-                    real, copy, ignore=shutil.ignore_patterns(VENV_DIR), symlinks=True, dirs_exist_ok=True
-                )
+                shutil.copytree(real, copy, ignore=shutil.ignore_patterns(VENV_DIR), symlinks=True, dirs_exist_ok=True)
             elif real.is_file():
                 shutil.copy2(real, copy)
 

@@ -5,7 +5,7 @@
 ## Scratch space
 **INVARIANT**: `/tmp` and other system-wide scratch locations are off limits. All scratch —
 throwaway builds, probe harnesses, captured output — goes in `.devpro-temp/` under the
-active project root. If it doesn't exist, stop and say so; don't
+active project root. Where it doesn't exist, create it; don't
 improvise a location.
 
 ## Task management
