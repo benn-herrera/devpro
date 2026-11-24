@@ -189,7 +189,14 @@ harnesses' text go unchecked.
 The dashboard's served pages need a check that a page not only serves but renders. Firefox's
 `--screenshot` cannot provide it: the shot is taken when the document finishes parsing, so nothing
 inside the page can be settled first, and no assertion over the PNG's bytes separates a rendered
-page from a blank one. A check that can settle the page, inspect its state and then capture needs a
-browser driver — Firefox's Remote Agent behind a WebSocket, or an equivalent — which is a
-dependency decision of its own. Open for the design work: the driver and its dependency, what the
-check asserts, and which pages it covers. Rides with the UX pass, where the visual work lives.
+page from a blank one.
+
+Decided — the driver and its dependency: Puppeteer driving the system's Firefox over WebDriver
+BiDi, the binary from `PATH` (`executablePath`), Puppeteer owning the plumbing — throwaway profile,
+flags, the BiDi handshake — no browser download, no second Firefox. The lightest way first: if the
+combination fails or shows a hole the check cannot live with, the upgrade is Puppeteer's own
+hermetic Firefox build. BiDi is the standard protocol, so the system binary's version skew surfaces
+as `UnsupportedOperation` — named, not silent.
+
+Still open for the design work: what the check asserts and which pages it covers. Rides with the UX
+pass, where the visual work lives.
