@@ -21,7 +21,17 @@ becomes-blocks are the accepted text.
 | P6 | landed 57bc90e | expert | `profiler.sh` renames `hp.sh`; the finder runs the wrapper bare; R23's rule enters CONVENTIONS |
 | P7 | landed 11fe544 | expert | R16's leaf catch-up applied as the design's pairs; R25's rule enters CONVENTIONS |
 | R | landed: this commit adds the review document | expert | the post-plan review, five seats |
-| B | drafted | expert | the post-plan burndown, drafted from the review document |
+| B | drafted: the work list below, from the review document (9ca3218) | expert | the post-plan burndown |
+| B1 | drafted | expert | the time pins pin what they claim (R1) |
+| B2 | drafted | expert | the IIFE invariant holds everywhere, checked (R2) |
+| B3 | drafted | expert | the type check sees the host's surface (R3) |
+| B4 | drafted | expert | the repair tells the truth (R4) |
+| B5 | drafted | expert | one home each, and one stand-in (R5, R6) |
+| B6 | drafted | expert | the documents state the shipped code (R7, R8) |
+| B7 | drafted | expert | CONVENTIONS aligns with practice (R9) |
+| B8 | drafted | expert | the launcher's edges and the stale installs (R10) |
+| B9 | drafted | expert | tooling: one lockfile (R11) |
+| B10 | drafted | expert | the agents column, and the review's remaining small items (R12, R13) |
 
 ## Kickoff
 
@@ -248,4 +258,77 @@ synthesized into the review document.
 
 ## B — the post-plan burndown
 
-Drafted from the review document once it lands; its packages get the plan's usual states.
+Drafted from `ACTIVE_PLAN_REVIEW.md` (9ca3218); each item cites its finding's ID there. Grouped
+by root cause; each package one commit, the plan's usual gates, done-lines naming the runner
+targets that check what they change.
+
+### B1 — the time pins pin what they claim (R1)
+
+Pin the environment on every runner invocation the moments assertions make — the index half at
+`tests/test_devpro_profiler.py:601` is the pattern (`_MOMENT_LOCALE`); the unpinned sites:
+`:543-550`, `:618-621`, `:620`. Establish what actually holds a locale under the embedded bun —
+the seat's probe says `LC_ALL` does not — and correct the stated mechanism in the test comments
+(`:502-505`, `:564-565`), the R25 leaf (`a-formatted-time-test-pins-the-locale.md`) and the
+profiler leaf's notation passage. Each pin names its defect per TEST_PRECONDITION.
+
+### B2 — the IIFE invariant holds everywhere, checked (R2)
+
+Wrap `devpro/profiler/view.html`'s script (`:55-431`) in an IIFE; rename its helpers off the
+removed deco sweep's names; add the check the invariant lacks — a runner assertion that no page
+script leaks a global the pages' deliberate surface does not name.
+
+### B3 — the type check sees the host's surface (R3)
+
+Derive the capture's `Context` from the host's published declarations as `index.ts:130` derives
+its own. Settle whether the published types declare 2.4.1's top-level `sessionID` — the seat's
+probe says no — and record the fact where it belongs: R9's ticket, or the R24 leaf's caveat.
+
+### B4 — the repair tells the truth (R4)
+
+`stores.py:104-126`: a file the live-file guard leaves as it stands contributes no `repaired`
+count — the branch tested. The repair test's 2.3.2 fixture becomes realizable, or the
+2.3.2-unrecoverable truth gets its own pin; the `(result clipped)` label and the leaf's gloss
+match the count's semantics. The capture's string-guard fall-through gets its test (R13).
+
+### B5 — one home each, and one stand-in (R5, R6)
+
+The dispatcher lookup and the `/profiler/` constant take one home — the dependency direction
+decides whose; `hook_sources` reads `LAUNCHER`/`OLD_LAUNCHERS` instead of re-spelling them; the
+`hp` residue leaves (`view.html:5` with its contradicting provenance banner, `:335`,
+`profiler.ts:184`); the runners' DOM stand-in becomes one module the three runners share.
+
+### B6 — the documents state the shipped code (R7, R8)
+
+The profiler leaf: `:73` names `/bin/bash` as the code does; `:20` names `PROFILER`; the
+subcommand list at `:14-15` gains `repair`; the edge phrasings state what the wrapper names and
+where. SPEC's `shipped-files.md` matches the launcher's stderr naming at its edges. ROADMAP's
+tickets rewritten to the real surface — the backup-glob ticket's premise corrected, plan labels
+removed, the Testing category's placement fixed, the one-path ticket's tense stated as target,
+`planform.py` named — and the CSS comment's contradiction resolved.
+
+### B7 — CONVENTIONS aligns with practice (R9)
+
+The shell rule gains the exit-contract exception (the shell seat's proposed wording); the
+R24 leaf cites `recipes.md`'s mechanism instead of restating it; the stand-in leaf's residue
+clause cites `obviated-code-is-deleted-not-parked.md`; the verbatim leaf keeps one wording of the
+declarations rule; "runner" names one referent across R24/R25/R23; `recipes.md`'s inline deferral
+moves to ROADMAP; the reference slots re-taken.
+
+### B8 — the launcher's edges and the stale installs (R10)
+
+The capture child's stdout silenced (`>/dev/null`) so the hook's stdout carries only the host's
+protocol. The install's rename removes the old-name copies it once wrote — no stale `hp.sh`
+beside `profiler.sh`. The undrained-success path and the dropped `exec` ride the one-path
+ticket's rewrite, not this package.
+
+### B9 — tooling: one lockfile (R11)
+
+The justfile's bun install stops re-migrating against npm's `package-lock.json` — one lockfile
+format committed, or the invocation corrected — and the lint recipe's read-only rule is honored
+by whatever the run writes.
+
+### B10 — the agents column, and the review's remaining small items (R12, R13)
+
+Establish whether the empty `col-agents` cells or the mapping text is wrong and fix the side
+that is. Then the residue as named: the form pins in the index test, attribute-order pinning, the
+multi-sort URL hole, the `find` type predicate, the deco body's exercise in the runners.
