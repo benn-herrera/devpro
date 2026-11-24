@@ -22,7 +22,7 @@ OPENCODE_STORE = f"{NEW_STORE_PREFIX}opencode"
 # An opencode subagent call's record, in the tool's own spelling.
 SUBAGENT = "Agent"
 # The host's session id as a record's stored result text carries it: 2.4.1's background notice states it
-# as `(sessionID: ses_…)`, and 2.3.2's JSON result carries the same id in its `output`.
+# as `(sessionID: ses_…)`.
 _CHILD_ID = re.compile(r"\bses_[A-Za-z0-9]+")
 
 
@@ -86,7 +86,7 @@ def _is_subagent(record: dict | None) -> bool:
 
 def repair_child_ids(directory: Path | str) -> tuple[int, int, list[Path]]:
     """Read every standing opencode record once, fill each subagent call's `child_agent_id` where its
-    stored result names the child, and return the edges filled, the records left null, and the files
+    stored result names the child, and return the edges written, the records left null, and the files
     left as they stand.
 
     Run once, before the installation updates: a capture that reads opencode 2.4.1's result shape writes
@@ -108,6 +108,7 @@ def repair_child_ids(directory: Path | str) -> tuple[int, int, list[Path]]:
         changed = (before.st_ino, before.st_size) != (after.st_ino, after.st_size)
         lines = text.splitlines()
         rewritten: list[str] = []
+        filled = 0
         for line in lines:
             record = _record(line)
             if _is_subagent(record):
@@ -116,14 +117,18 @@ def repair_child_ids(directory: Path | str) -> tuple[int, int, list[Path]]:
                     if child is not None:
                         record = {**record, "child_agent_id": child}
                         line = _json(record)
-                        repaired += 1
+                        filled += 1
                 if not record.get("child_agent_id"):
                     null += 1
             rewritten.append(line)
         if changed:
+            # Nothing is written, so the fills stay absent from the file: the records they would have
+            # filled are among those left naming no child.
             left.append(file)
+            null += filled
         elif rewritten != lines:
             _atomic_text(file, "\n".join(rewritten) + "\n")
+            repaired += filled
     return repaired, null, left
 
 

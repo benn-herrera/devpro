@@ -68,7 +68,7 @@ def run(args: argparse.Namespace) -> int:
             return 0
         if command == "repair":
             repaired, null, left = repair_child_ids(project_dir(os.getcwd()))
-            print(f"repaired: {repaired} edges; null: {null} records (result clipped)")
+            print(f"repaired: {repaired} edges; null: {null} records (no child id)")
             for file in left:
                 print(f"left {file} as it stands: a capture appended to it while it was read", file=sys.stderr)
             return 0

@@ -57,6 +57,7 @@ from devpro.profiler.pages import (
     SHARED_CSS,
     index_html,
 )
+from devpro.profiler.stores import repair_child_ids
 from devpro.profiler.values import CAPTURED_EVENTS, _epoch_ms
 from tests.test_devpro_install import _PROFILER, _claude_plugin, _definition_install
 
@@ -699,8 +700,9 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
     text is its `Tool.Error`'s message, the skill and subagent carry the host's own names, a dispatch
     carries the kind its response reports or else its own agent, under either of the host's spellings
     for the tool, the child session its result names — in the metadata 2.3.0 reported, in the output
-    2.3.2 reported, and at the result's top level 2.4.1 reports, each of which the floor covers — and
-    the one call whose `execute.after` never fires drops its start at the idle."""
+    2.3.2 reported, and at the result's top level 2.4.1 reports, each of which the floor covers — a
+    top-level id that is not a string refused, the read falling through to the output's id — and the
+    one call whose `execute.after` never fires drops its start at the idle."""
     project = tmp_path / "project"
     project.mkdir()
     run = _run_ts(_HERE / "profiler_capture_runner.ts", directory=project)
@@ -717,6 +719,7 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
         ("Agent", "devpro-tech-writer"),
         ("Agent", "devpro-go-coder"),
         ("Agent", "devpro-rust-coder"),
+        ("Agent", "devpro-typescript-coder"),
     ]
     assert calls[0]["result"] == "hi"
     assert calls[1]["ok"] is False
@@ -738,6 +741,10 @@ def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
     # no id. A read that stops at the output records `null` here, which is the defect this case pins.
     assert calls[7]["child_agent_id"] == "ses_top"
     assert calls[7]["child_agent_type"] == "devpro-rust-coder"
+    # The top-level id is not a string: the guard refuses it and the read falls through to the
+    # output's id. A read that takes the first arm on its presence alone records `null` here.
+    assert calls[8]["child_agent_id"] == "ses_guard"
+    assert calls[8]["child_agent_type"] == "devpro-typescript-coder"
     assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"]
     assert (out["startedBeforeIdle"], out["startedAfterIdle"]) == (1, 0)
 
@@ -1873,20 +1880,18 @@ def test_a_doctor_names_a_collided_store_as_the_operators_own_merge(tmp_path: Pa
 def test_repair_fills_the_child_ids_a_capture_that_missed_2_4_1_left_null(tmp_path: Path) -> None:
     """`devpro profiler repair`, through the launcher's `devpro`, over a store holding what a capture that
     read the host's result for `output.sessionID` alone wrote: a dispatch whose result names the child
-    in 2.4.1's background notice, one whose result carries 2.3.2's `output` JSON, a failed dispatch that
-    created no child, and a dispatch already tied to its child. The repair fills the two and leaves the
-    other two, reports the edges filled and the record still null, and a second run fills nothing — the
-    records it already filled, and the one that names no child, stay as they stand."""
+    in 2.4.1's background notice, a failed dispatch that created no child, and a dispatch already tied
+    to its child. The repair fills the first and leaves the other two, reports the edge filled and the
+    record still null, and a second run fills nothing — the record it already filled, and the one that
+    names no child, stay as they stand."""
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
     store = project / ".devpro-temp" / ".profiler-opencode"
     store.mkdir(parents=True)
     notice = "The subagent is working in the background (sessionID: ses_notice). You will receive a <background-result"
-    earlier = '{"output":{"sessionID":"ses_output","status":"running","output":"The subagent is working…"}}'
     records = [
         {"tool": "Agent", "name": "devpro-python-coder", "ok": True, "child_agent_id": None, "result": notice},
-        {"tool": "Agent", "name": "devpro-go-coder", "ok": True, "child_agent_id": None, "result": earlier},
         {"tool": "Agent", "name": "devpro-c-coder", "ok": False, "child_agent_id": None, "result": "Invalid arguments"},
         {"tool": "Agent", "name": "devpro-rust-coder", "ok": True, "child_agent_id": "ses_right", "result": notice},
         {"tool": "read", "name": "read", "ok": True},
@@ -1902,11 +1907,10 @@ def test_repair_fills_the_child_ids_a_capture_that_missed_2_4_1_left_null(tmp_pa
     repaired = _run(launcher, "repair", cwd=project)
 
     assert repaired.returncode == 0, repaired.stderr
-    assert repaired.stdout.strip() == "repaired: 2 edges; null: 1 records (result clipped)"
+    assert repaired.stdout.strip() == "repaired: 1 edges; null: 1 records (no child id)"
     written = [json.loads(line) for line in (store / "ses_parent.jsonl").read_text(encoding="utf-8").splitlines()]
     assert [record.get("child_agent_id") for record in written] == [
         "ses_notice",
-        "ses_output",
         None,
         "ses_right",
         None,
@@ -1914,7 +1918,53 @@ def test_repair_fills_the_child_ids_a_capture_that_missed_2_4_1_left_null(tmp_pa
 
     again = _run(launcher, "repair", cwd=project)
 
-    assert again.stdout.strip() == "repaired: 0 edges; null: 1 records (result clipped)"
+    assert again.stdout.strip() == "repaired: 0 edges; null: 1 records (no child id)"
+
+
+def test_the_repair_counts_only_the_edges_it_writes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """`clauses.TEST_PRECONDITION`: a test a package adds is written for a named defect and the run
+    that fails under it before the change. The defect is the repair's count incremented before its
+    live-file guard: a store file a capture appends to while the repair reads it is left as it stands,
+    yet its would-be fill is reported as an edge repaired, against the verb's own docstring. The run
+    fails before the count moves, reading `repaired` 1 for a file nothing wrote.
+
+    The append is made by the read itself, between the read and the guard's second stat — the write a
+    live session makes, made deterministically. The file is then named as left, its one subagent
+    record still counts null, and no edge is counted repaired; the file holds the record plus the
+    append, the record's `child_agent_id` still absent."""
+    project = tmp_path / "project"
+    store = project / ".devpro-temp" / ".profiler-opencode"
+    store.mkdir(parents=True)
+    file = store / "ses_parent.jsonl"
+    notice = "The subagent is working in the background (sessionID: ses_notice). You will receive a <background-result"
+    record = {
+        "v": 2,
+        "harness": "opencode",
+        "session": "ses_parent",
+        "tool": "Agent",
+        "name": "devpro-python-coder",
+        "ok": True,
+        "child_agent_id": None,
+        "result": notice,
+    }
+    appended = {"v": 2, "harness": "opencode", "session": "ses_parent", "tool": "read", "name": "read", "ok": True}
+    original = json.dumps(record) + "\n"
+    file.write_text(original, encoding="utf-8")
+    real_read_text = Path.read_text
+
+    def read_while_the_capture_appends(self: Path, encoding: str | None = None, errors: str | None = None) -> str:
+        text = real_read_text(self, encoding=encoding, errors=errors)
+        if self == file:
+            with file.open("a", encoding="utf-8") as stream:
+                stream.write(json.dumps(appended) + "\n")
+        return text
+
+    monkeypatch.setattr(Path, "read_text", read_while_the_capture_appends)
+
+    repaired, null, left = repair_child_ids(project)
+
+    assert (repaired, null, left) == (0, 1, [file])
+    assert real_read_text(file, encoding="utf-8") == original + json.dumps(appended) + "\n"
 
 
 def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_standing(

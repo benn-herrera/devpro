@@ -211,10 +211,11 @@ result text; a one-shot repair, run before the installation updates, reads each 
 record's result text and fills its `child_agent_id` where the host reported it — a record whose
 id is already right stays untouched, and every edge a capture writes after the update is correct
 at write time. The repair is `devpro profiler repair`, run once from the project's root: it reports
-`repaired: <n> edges; null: <m> records (result clipped)` — the edges it filled and the subagent
-records left naming no child, their result text clipped before the id survived — and a file a
-capture appends to while the repair reads it is named on stderr and left as it stands, never
-rewritten under a session's own write.
+`repaired: <n> edges; null: <m> records (no child id)` — the edges it filled and the subagent
+records left naming no child, among them a dispatch that failed before creating one, a result
+clipped before the id survived, and each record of a file left as it stands — and a file a capture
+appends to while the repair reads it is named on stderr and left as it stands, never rewritten under
+a session's own write.
 The model's own `todowrite` notes are not recorded: they are not activity, so the store holds one
 record per tool call that did something. A capture that fails raises nothing out of the hook. `init`
 and `doctor` stay claude-facing: opencode has no committed-hook concept. The install ships the

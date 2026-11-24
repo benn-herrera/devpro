@@ -3,10 +3,11 @@
 // Usage: bun tests/profiler_capture_runner.ts
 // Stdin: JSON {directory}: a project root whose `.devpro-temp/.profiler-opencode/` receives the records.
 // Stdout: JSON {records, startedBeforeIdle, startedAfterIdle} — the records the shipped `profiler.ts`
-// wrote, through the plugin context stub, for a completed call, a failed one, a skill call, three
-// subagent dispatches — one in each of opencode 2.4.1's, 2.3.2's and 2.3.0's result shapes — a remark
-// and a call whose `execute.after` never fires; and the in-flight start map's size around the
-// session's idle, which drops the never-finished call's entry.
+// wrote, through the plugin context stub, for a completed call, a failed one, a skill call, six
+// subagent dispatches — one in each of opencode 2.4.1's, 2.3.2's and 2.3.0's result shapes, one whose
+// top-level id is not a string and falls through to the output's — a remark and a call whose
+// `execute.after` never fires; and the in-flight start map's size around the session's idle, which
+// drops the never-finished call's entry.
 //
 // `profiler_serialize_runner.ts` measures a record from this same run rather than inventing one, so the
 // record's carried fields have one home in the tests.
@@ -100,6 +101,15 @@ await fire("execute.after", {
   ...base("call_10", "subagent", { agent: "devpro-rust-coder", description: "port it", prompt: "rust" }),
   status: "completed",
   result: { sessionID: "ses_top", status: "running", output: "The subagent is working..." },
+})
+
+// A top-level id the host did not report as a string: the guard refuses it and the read falls through
+// to the output's id, the next place the host reports one.
+await fire("execute.before", base("call_11", "subagent", { agent: "devpro-typescript-coder", description: "guard it", prompt: "guard" }))
+await fire("execute.after", {
+  ...base("call_11", "subagent", { agent: "devpro-typescript-coder", description: "guard it", prompt: "guard" }),
+  status: "completed",
+  result: { sessionID: 5, output: { sessionID: "ses_guard", status: "running" } },
 })
 
 // A remark the capture skips, a call whose `execute.after` never fires, and the session's idle.
