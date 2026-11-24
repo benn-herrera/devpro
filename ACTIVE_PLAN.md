@@ -22,7 +22,7 @@ becomes-blocks are the accepted text.
 | P7 | landed 11fe544 | expert | R16's leaf catch-up applied as the design's pairs; R25's rule enters CONVENTIONS |
 | R | landed: this commit adds the review document | expert | the post-plan review, five seats |
 | B | landed: the work list below, at this plan's revision commit | expert | the post-plan burndown |
-| B1 | drafted | expert | the time pins pin what they claim (VR1) |
+| B1 | in progress: dispatched to devpro-python-coder | expert | the time pins pin what they claim (VR1) |
 | B2 | drafted | expert | the IIFE invariant holds everywhere, checked (VR2) |
 | B3 | drafted | expert | the type check sees the host's surface (VR3) |
 | B4 | drafted | expert | the repair tells the truth (VR4, VR13; the fixture half owner-gated) |
