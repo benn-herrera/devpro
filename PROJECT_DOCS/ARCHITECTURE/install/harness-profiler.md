@@ -64,8 +64,8 @@ running `"${CLAUDE_PLUGIN_ROOT}/skills/devpro/tools/devpro.sh" profiler capture 
 (`claude.INSTALL_WRAPPER`). The wiring is data in the harness module, not a new mechanism, and no
 entry is gated on the install-time probe. A capture appends one line to the project's
 `.devpro-temp/.profiler-claude/<session-id>.jsonl` — one of the per-harness stores under
-`.devpro-temp/`, every `.profiler-*` directory of which the `tree` subcommand renders — the project's
-scratch directory, which the project's own convention gitignores. The wrapper's `capture` subcommand
+`.devpro-temp/`, the project's scratch directory, which the install prepares and gitignores. The
+wrapper's `capture` subcommand
 owns the never-block contract: `cli.run` reads the hook payload bounded to `PAYLOAD_LIMIT` bytes,
 points stdout at the null device for the capture's duration so no child line reaches the hook's
 stdout, and returns 0 on every path.
