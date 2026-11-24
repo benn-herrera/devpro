@@ -18,8 +18,8 @@ cited by name, and a name outranks a stale line number.
 | P3 | landed: 99f0f4d | expert | unreadable store fails the feed; `read_sessions` returns the list alone; profiler pair 1 |
 | P4 | landed: e4f1edd | expert | agents cell, query-carrying links, `devpro-` prefix drop; profiler pair 2 |
 | PR | landed: 4d32c66 | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
-| B0 | landed: with this commit | expert | Post-plan burndown drafting: the section's items from the review, then their usability review |
-| B1 | dispatchable | expert | sentence-grain check hardening: real-tree case, constant-form pin, marker strip |
+| B0 | landed: f3e8835 | expert | Post-plan burndown drafting: the section's items from the review, then their usability review |
+| B1 | landed: 8143650 | expert | sentence-grain check hardening: real-tree case, constant-form pin, marker strip |
 | B2 | drafted — blocked on the owner's choice (R4) | expert | the failed-feed outcome |
 | B3 | dispatchable | expert | sweep line numbers, helper dedup |
 | B4 | dispatchable | expert | the prefix's one source and its tool gate |
