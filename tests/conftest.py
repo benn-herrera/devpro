@@ -1,15 +1,23 @@
 """Fixtures every test runs under, and the helpers and values more than one test module shares."""
 
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
 from devpro.components import Components
+from tests.fixtures import fixture_file
 
 PLAIN = Components()
 """The selection with no optional component on."""
 WITH_KBASE = Components(on=frozenset({"kbase"}))
 """The selection with the kbase component on."""
+
+
+@pytest.fixture(name="fixture_file")
+def _fixture_file() -> Callable[[str], Path]:
+    """A test's fixture file under `tests/fixtures/`, by the name it is written under, as a `Path`."""
+    return fixture_file
 
 
 @pytest.fixture(autouse=True)

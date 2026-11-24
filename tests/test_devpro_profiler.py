@@ -3,16 +3,13 @@ writes a schema-2 record, `tree --format html`'s page data carries the keys `vie
 installed wrapper is the wrapper the install wrote. It fails on the port defect that renames or drops a
 record field the page data carries — the rename or drop ships green and renders an empty page.
 
-Two records the port itself owns: `tree` renders an opencode session's store beside the claude
+One record the port itself owns: `tree` renders an opencode session's store beside the claude
 capture's — the split that is the capture's purpose, and whose loss the single-store read would not
-show; and the opencode capture, driven by `tests/profiler_capture_runner.ts` through the shipped
-`profiler.ts`, writes a record for every call it is fired for, a failed one carrying its error's text.
-`test_the_two_masks_redact_alike` holds the two harnesses' masking to one sample list, since
+show. `test_the_two_masks_redact_alike` holds the two harnesses' masking to one sample list, since
 JavaScript's `\\w` is ASCII where Python's is not.
 
-Two more are `init`'s and the capture's: `init` writes the skill and the committed hook's one command,
-removing the launchers and files older inits left in the hook directory, and the capture exits 0 with
-no output on every path — no wrapper, a failing wrapper, or a payload it cannot read.
+One more is `init`'s: `init` writes the skill and the committed hook's one command, removing the
+launchers and files older inits left in the hook directory.
 
 The stores' rename is the last group's: an install and an `init` move each `*-profiler` store under
 `.devpro-temp/` to its `.profiler-*` name and name the move, and neither ever merges one store into
@@ -35,7 +32,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -51,7 +48,6 @@ from devpro.profiler.pages import (
     DATA_MARK,
     DISPATCHED_MARK,
     INDEX,
-    LAYER_INLINE,
     LAYER_MARK,
     RETURN_MARK,
     SHARED_CSS,
@@ -461,29 +457,6 @@ def _bun() -> str:
     return "bun"
 
 
-def _cells(row: str) -> list[str]:
-    """A drawn row's cells, each as the text it carries: the cell under the agents head is index 3 of
-    the header's six."""
-    return re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
-
-
-# A moment's reading is pinned on the reader's zone with `TZ`: the zone decides which day and clock a
-# date draws into, so a pin holding no zone asserts on whatever the runner carries. The locale is not
-# holdable under the embedded bun — `LC_ALL=de_DE.UTF-8 bun` still resolves `en-US` — so the expected
-# text is built from the date's own fields, reading the same under whatever locale the runner carries;
-# `LC_ALL` rides along although bun ignores it.
-_MOMENT_LOCALE = {"TZ": "America/Los_Angeles", "LC_ALL": "de_DE.UTF-8"}
-
-# The crafted feed's four instants, as epoch milliseconds: a pair whose ends share the reader's day
-# (2026-01-01T00:00:01.250Z and T02:00:00Z — LA, 2025-12-31 16:00 and 18:00) and a pair whose span
-# crosses the reader's midnight (T06:00:00Z and T08:00:00.500Z — LA, 2025-12-31 22:00 and 2026-01-01
-# 00:00).
-_SAME_DAY_FIRST = 1767225601250
-_SAME_DAY_LAST = 1767232800000
-_MIDNIGHT_FIRST = 1767247200000
-_MIDNIGHT_LAST = 1767254400500
-
-
 def _run_ts(
     script: Path,
     *,
@@ -507,244 +480,13 @@ def _run_ts(
     return done
 
 
-_PAGE_RUNNER = _HERE / "profiler_page_runner.ts"
-
-
-def _page_runner(tmp_path: Path, page: str, deco: str = "") -> dict:
-    """A session page in a browser's own shape (`profiler_page_runner.ts`): the page's own scripts,
-    with the deco's file the page names ahead of them where the carrier loads that file — a file
-    carrier loads nothing, so it runs the page's script alone — in one shared classic-script scope,
-    the way the browser executes a page. The runner reports the header stamp the page drew and the
-    subline's markup as the scripts left it."""
-    run = _run_ts(
-        _PAGE_RUNNER,
-        directory=tmp_path,
-        stdin=json.dumps({"page": page, "deco": deco}),
-        env={**os.environ, **_MOMENT_LOCALE},
-    )
-    return json.loads(run.stdout)
-
-
-def test_the_pages_draw_their_moments_local_at_birth(tmp_path: Path) -> None:
-    """`clauses.TEST_PRECONDITION`: the defect this package replaces is the double render — the
-    pages' own scripts writing the raw UTC and the deco's sweep rewriting it in the reader's clock —
-    so the page a file carrier serves, where the deco the page names cannot load, reads UTC, and a
-    pin reading a swept page cannot fail on it. The run that fails under it is this one: each page's
-    own script alone draws its moments, and the drawn text is the reader's local time.
-
-    The index's moments cell carries the first end's date whole beside its time and the second end's
-    time only, 24-hour, one notation whether the ends share the reader's day or cross its midnight —
-    the hand-built clock, its separator and digits the page's own — and the session page's header
-    stamp reads with its date, the page's title naming no day. The machine form stands in the
-    `datetime` attributes and the raw UTC in the titles. The zone is pinned with `TZ`; the locale is
-    not holdable under the embedded bun, so a clock built from the date's own fields reads the same
-    under whatever locale the runner carries."""
-    project = tmp_path / "project"
-    project.mkdir()
-    (project / ".devpro-temp").mkdir()
-    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
-    launcher = _launcher(tmp_path / "harness")
-
-    with _serve(launcher, cwd=project) as url:
-        index = _fetch(f"{url}profiler/")
-    # The feed crafted, so the instants are known by construction: one pair whose ends share the
-    # reader's day and one whose span crosses the reader's midnight (PST, UTC-8 in January).
-    feed = [
-        {
-            "harness": "claude",
-            "id": "s-same-day",
-            "records": 1,
-            "agents": 0,
-            "first": _SAME_DAY_FIRST,
-            "last": _SAME_DAY_LAST,
-            "span": 7199,
-        },
-        {
-            "harness": "claude",
-            "id": "s-midnight",
-            "records": 1,
-            "agents": 0,
-            "first": _MIDNIGHT_FIRST,
-            "last": _MIDNIGHT_LAST,
-            "span": 7200,
-        },
-    ]
-    run = _run_ts(
-        _HERE / "profiler_index_runner.ts",
-        directory=tmp_path,
-        stdin=json.dumps({"index": index, "feed": feed}),
-        env={**os.environ, **_MOMENT_LOCALE},
-    )
-
-    # Each party's element, read on its own: the moments span carries its class and the raw UTC range
-    # in its `title`, and each `<time>` its drawn text, its `datetime` and its own raw UTC — the
-    # attributes' order unpinned, since no reader of the page reads them in any order.
-    def moments_of(cell: str) -> dict:
-        return {
-            "class": re.search(r'<span\b[^>]*\bclass="([^"]*)"', cell).group(1),
-            "title": re.search(r'<span\b[^>]*\btitle="([^"]*)"', cell).group(1),
-            "times": [
-                {
-                    "text": text,
-                    "datetime": re.search(r'\bdatetime="([^"]*)"', attrs).group(1),
-                    "title": re.search(r'\btitle="([^"]*)"', attrs).group(1),
-                }
-                for attrs, text in re.findall(r"<time\b([^>]*)>(.*?)</time>", cell)
-            ],
-        }
-
-    cells = [
-        re.search(r'<span\b[^>]*\bclass="moments"[^>]*>.*?</span>', row).group(0)
-        for row in json.loads(run.stdout)["rows"]
-    ]
-    assert [moments_of(cell) for cell in cells] == [
-        {
-            "class": "moments",
-            "title": "2026-01-01 00:00:01 UTC to 2026-01-01T02:00:00Z",
-            "times": [
-                {
-                    "text": "2025-12-31 16:00",
-                    "datetime": "2026-01-01T00:00:01.250Z",
-                    "title": "2026-01-01 00:00:01 UTC",
-                },
-                {"text": "18:00", "datetime": "2026-01-01T02:00:00Z", "title": "2026-01-01 02:00:00 UTC"},
-            ],
-        },
-        {
-            "class": "moments",
-            "title": "2026-01-01 06:00:00 UTC to 2026-01-01T08:00:00.500Z",
-            "times": [
-                {"text": "2025-12-31 22:00", "datetime": "2026-01-01T06:00:00Z", "title": "2026-01-01 06:00:00 UTC"},
-                {"text": "00:00", "datetime": "2026-01-01T08:00:00.500Z", "title": "2026-01-01 08:00:00 UTC"},
-            ],
-        },
-    ]
-
-    # The session page's header stamp, drawn by the page's own script alone — the file carrier's
-    # `tree --format html` page, whose script the page names and a file cannot load.
-    printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
-    assert printed.returncode == 0, printed.stderr
-    stamped = _page_runner(tmp_path, printed.stdout)["stamped"]
-    assert stamped == [["2025-12-31 16:00", "2026-01-01 00:00 UTC", "2026-01-01T00:00:00.000Z"]], stamped
-
-
-def test_the_pages_two_carriers_differ_in_the_layers_slot_alone(tmp_path: Path) -> None:
-    """`clauses.TEST_PRECONDITION`: the defect the one rendering replaces is the page assembled twice
-    — the file flow's page carrying no band facts and no dispatcher where the served page carried
-    them, the moments drawn twice besides — so the two carriers' full texts differed beyond the
-    layer's slot, and a pin holding them to the layer's slot alone failed on that tree. The run that
-    fails under it is this one.
-
-    One session, both carriers — a session the stores name as a dispatch's child, so the band's
-    dispatcher fact is filled, beside the way back every session page carries: the page `tree
-    --format html` writes and the page the dashboard serves. The two texts differ within the
-    `<!--LAYER-->`'s slot alone — one template, one script, one band, one presentation — and the
-    scripts each carrier loads draw the same moments: the file carrier's own script alone (a file
-    cannot link the server's origin, so the deco the page names never loads there), the served
-    carrier's own script and the deco in the order the page names them, the deco reading none."""
-    project = tmp_path / "project"
-    project.mkdir()
-    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    _write_store(
-        project,
-        ".profiler-opencode",
-        "s-parent",
-        "2026-01-01T00:00:00.000Z",
-        harness="opencode",
-        extra={"tool": "Agent", "name": "devpro-coder", "child_agent_id": "s-child"},
-    )
-    _write_store(project, ".profiler-opencode", "s-child", "2026-01-01T00:00:01.000Z", harness="opencode", records=2)
-    launcher = _launcher(tmp_path / "harness")
-
-    with _serve(launcher, cwd=project) as url:
-        served = _fetch(f"{url}page/s-child")
-    printed = _run(launcher, "tree", "s-child", "--format", "html", cwd=project)
-    assert printed.returncode == 0, printed.stderr
-
-    # The band's per-page facts are the dump's too: the way back, and the dispatcher the stores name.
-    assert "Dispatched by" in served and "Return to list" in served
-    # The dump's page is the served page's text, the layer its only difference: the serve's link,
-    # stood back as the render's inline text, is the dump's page — print's own newline aside.
-    assert served.replace(LAYER_LINK, LAYER_INLINE) + "\n" == printed.stdout
-
-    # And the scripts the carriers load draw the same page: the file carrier's script alone — a file
-    # cannot link the server's origin — and the served carrier's own script with the deco it names,
-    # in the order the page loads them.
-    deco = (_PACKAGE_ROOT / "devpro" / "profiler" / "deco.js").read_text(encoding="utf-8")
-    file_drawn = _page_runner(tmp_path, printed.stdout)
-    serve_drawn = _page_runner(tmp_path, served, deco=deco)
-    assert file_drawn["stamped"] == serve_drawn["stamped"], (file_drawn["stamped"], serve_drawn["stamped"])
-    assert file_drawn["subline"] == serve_drawn["subline"]
-    # The deco's body runs under the served carrier and draws its state: the endpoint's answer as the
-    # indicator's text, and the server element marked for it. The file carrier loads no deco and
-    # reports no reading at all — a runner whose document answers the deco's three elements with
-    # nothing has a deco whose first guard returns, and the reading it reports is empty. The runner's
-    # own `fetch` answers no server, so the state it draws is the idle one.
-    assert serve_drawn["deco"] == {"connection": "idle", "server": "nav-idle"}
-    assert file_drawn["deco"] is None
-
-
-def test_the_opencode_capture_records_every_fired_call(tmp_path: Path) -> None:
-    """The shipped `profiler.ts` through a stub plugin context: a completed call, a failed one, a
-    skill call, subagent dispatches and the session's idle each append their record; the failed call's
-    text is its `Tool.Error`'s message, the skill and subagent carry the host's own names, a dispatch
-    carries the kind its response reports or else its own agent, under either of the host's spellings
-    for the tool, the child session its result names — in the metadata 2.3.0 reported, in the output
-    2.3.2 reported, and at the result's top level 2.4.1 reports, each of which the floor covers — a
-    top-level id that is not a string refused, the read falling through to the output's id — and the
-    one call whose `execute.after` never fires drops its start at the idle."""
-    project = tmp_path / "project"
-    project.mkdir()
-    run = _run_ts(_HERE / "profiler_capture_runner.ts", directory=project)
-    out = json.loads(run.stdout)
-    records = out["records"]
-
-    calls = [record for record in records if record.get("event") is None]
-    assert [(record["tool"], record["name"]) for record in calls] == [
-        ("shell", "printf 'hi\\n'"),
-        ("shell", "rm -rf /"),
-        ("Skill", "profiler"),
-        ("Agent", "devpro-python-coder"),
-        ("Agent", "devpro-architect"),
-        ("Agent", "devpro-tech-writer"),
-        ("Agent", "devpro-go-coder"),
-        ("Agent", "devpro-rust-coder"),
-        ("Agent", "devpro-typescript-coder"),
-    ]
-    assert calls[0]["result"] == "hi"
-    assert calls[1]["ok"] is False
-    assert calls[1]["result"] == "The user rejected this tool call"
-    assert calls[2]["result"] == "loaded"
-    assert calls[3]["result"] is None
-    assert calls[3]["child_agent_id"] == "ses_child"
-    assert calls[3]["child_agent_type"] == "devpro-python-coder"
-    assert calls[4]["child_agent_id"] == "ses_fork"
-    assert calls[4]["child_agent_type"] == "devpro-architect"
-    assert calls[5]["child_agent_id"] == "ses_task"
-    assert calls[5]["child_agent_type"] == "devpro-tech-writer"
-    # opencode 2.3.0's shape, the floor's: the id rides the result's metadata and a bare `output` string
-    # refuses the preferred read, so the fallback is what names this child.
-    assert calls[6]["result"] == "ses_floor"
-    assert calls[6]["child_agent_id"] == "ses_floor"
-    assert calls[6]["child_agent_type"] == "devpro-go-coder"
-    # opencode 2.4.1's shape: the id at the result's top level alone, `output` a bare string carrying
-    # no id. A read that stops at the output records `null` here, which is the defect this case pins.
-    assert calls[7]["child_agent_id"] == "ses_top"
-    assert calls[7]["child_agent_type"] == "devpro-rust-coder"
-    # The top-level id is not a string: the guard refuses it and the read falls through to the
-    # output's id. A read that takes the first arm on its presence alone records `null` here.
-    assert calls[8]["child_agent_id"] == "ses_guard"
-    assert calls[8]["child_agent_type"] == "devpro-typescript-coder"
-    assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"]
-    assert (out["startedBeforeIdle"], out["startedAfterIdle"]) == (1, 0)
-
-
-def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path) -> None:
+def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path, fixture_file: Callable[[str], Path]) -> None:
     """`serialize` holds every line to `LINE_LIMIT`, which the torn-tail read relies on: a record whose
     fixed `session` alone is longer than the bound is fitted by clipping that field too, and a line
-    already inside the bound is left as it stands. The record measured is one the capture wrote, so the
-    two bounds are the dispatch record's own field lengths."""
+    already inside the bound is left as it stands. The record measured is a captured dispatch, its
+    field set the record's own, so the two bounds are that record's own field lengths."""
     line_limit = 4096
+    record = json.loads(fixture_file("profiler_serialize_record.json").read_text(encoding="utf-8"))
     first, second = tmp_path / "first", tmp_path / "second"
     first.mkdir()
     second.mkdir()
@@ -752,7 +494,7 @@ def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path) -> None:
         _run_ts(
             _HERE / "profiler_serialize_runner.ts",
             directory=first,
-            stdin=json.dumps({"directory": str(first), "sessionLength": 4090}),
+            stdin=json.dumps({"directory": str(first), "record": record, "sessionLength": 4090}),
         ).stdout
     )
     assert over["bytes"] <= line_limit
@@ -761,7 +503,7 @@ def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path) -> None:
         _run_ts(
             _HERE / "profiler_serialize_runner.ts",
             directory=second,
-            stdin=json.dumps({"directory": str(second), "sessionLength": 200}),
+            stdin=json.dumps({"directory": str(second), "record": record, "sessionLength": 200}),
         ).stdout
     )
     # A line inside the bound keeps its session whole: the field the over case clips is untouched here,
@@ -1119,9 +861,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
         index,
     )
     # Each column's share of the table comes from the page's own stylesheet, beside the header's class,
-    # and the table's layout is the fixed one that gives that share to header and body alike. The
-    # shares themselves are the browser runner's to measure (`test_the_headers_sit_over_their_columns`),
-    # which reads those same declarations at a width a browser resolves them at.
+    # and the table's layout is the fixed one that gives that share to header and body alike.
     assert re.search(r"table \{ border-collapse: collapse; table-layout: fixed; \}", index)
     # The controls: a box for the child rows and one per harness, each checked so the page opens on
     # every row, and the notice a failed feed names itself in, standing empty and hidden.
@@ -1133,273 +873,6 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     assert re.search(r"\.harness\.opencode \{ background: #4a9eea; \}", index)
     assert re.search(r"\.harness\.claude \{ background: #d97757; \}", index)
     assert _page_data(page)["session"] == "s-claude"
-
-
-def test_the_index_renders_the_rows_the_feed_answers(tmp_path: Path) -> None:
-    """`clauses.TEST_PRECONDITION`: the defect is a static index with no rows and a `/api/traces`
-    answering an empty list, which passes every test the rework began from — each read the rows out of
-    a page the server assembled. The run that fails under it is this one: the served page's script,
-    over the feed's JSON, draws the same `<tr>` order the server-assembled index had — each session
-    once, in first-moment order, a dispatched child under its dispatcher — and reads exactly the
-    schema's keys, those the feed builder's entry carries and no others. A script reading a second
-    shape, or a feed answering one, is a row drawn from a key nothing states."""
-    project = tmp_path / "project"
-    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
-    _write_store(project, ".profiler-opencode", "s-p1", "2026-01-01T00:00:05.000Z", harness="opencode")
-    _write_store(
-        project,
-        ".profiler-opencode",
-        "s-p2",
-        "2026-01-01T00:00:06.000Z",
-        harness="opencode",
-        extra={"tool": "Agent", "name": "devpro-coder", "child_agent_id": "s-child"},
-    )
-    _write_store(project, ".profiler-opencode", "s-child", "2026-01-01T00:00:07.000Z", harness="opencode", records=2)
-
-    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
-        index = _fetch(f"{url}profiler/")
-        feed = _fetch(f"{url}api/traces")
-    run = _run_ts(
-        _HERE / "profiler_index_runner.ts",
-        directory=tmp_path,
-        stdin=json.dumps({"index": index, "feed": json.loads(feed)}),
-    )
-    drawn = json.loads(run.stdout)
-
-    assert [re.search(r'href="/page/([^"]+)"', row).group(1) for row in drawn["rows"]] == [
-        "s-claude",
-        "s-p1",
-        "s-p2",
-        "s-child",
-    ]
-    assert "claude" in drawn["rows"][0] and "2 records" in drawn["rows"][0]
-    # The dispatched-agent count is the agents column's, drawn in the cell under the head that names
-    # it: a count standing anywhere else leaves the column the header names reading empty.
-    assert _cells(drawn["rows"][2])[3] == "1 dispatched agent"
-    assert 'class="col-session child"' in drawn["rows"][3] and "↳ child — devpro-coder" in drawn["rows"][3]
-    # The dispatched-agent count is the entry's own, and the row carries no second copy of it: a
-    # `data-agents` attribute beside the feed's key is the one the script's sort would read had the
-    # entry not carried it.
-    assert "data-agents" not in "".join(drawn["rows"])
-    # The keys the script reads are the schema's: a session entry's seven, the dispatcher pair, an
-    # unreadable store's one, and the `{stores}` marker's one — no key the feed builder does not
-    # write, and none it writes unread.
-    assert set(drawn["keys"]) == {
-        "harness",
-        "id",
-        "records",
-        "agents",
-        "first",
-        "last",
-        "span",
-        "dispatcher",
-        "session",
-        "name",
-        "unreadable",
-        "stores",
-    }
-    assert drawn["fetches"] == ["/api/traces"]
-
-    # The span's own rendering, at every scale the server-side span test covered — seconds below a
-    # minute, minutes alone, and the hour forms — fed the runner a crafted feed so the scale is known
-    # by construction; the table's own empty reading is asserted below, where its three distinctions
-    # are driven.
-    crafted = [
-        {"harness": "claude", "id": "s-59", "records": 1, "first": 0, "last": 0, "span": 59},
-        {"harness": "claude", "id": "s-90", "records": 1, "first": 0, "last": 0, "span": 90},
-        {"harness": "claude", "id": "s-120", "records": 1, "first": 0, "last": 0, "span": 120},
-        {"harness": "claude", "id": "s-3600", "records": 1, "first": 0, "last": 0, "span": 3600},
-        {"harness": "claude", "id": "s-5400", "records": 1, "first": 0, "last": 0, "span": 5400},
-    ]
-    run = _run_ts(
-        _HERE / "profiler_index_runner.ts",
-        directory=tmp_path,
-        stdin=json.dumps({"index": index, "feed": crafted}),
-    )
-    drawn = json.loads(run.stdout)
-    # Every crafted entry draws a row: a zip that silently paired fewer rows would pass with the
-    # scale never checked, so the count is stated before the pairing, and each row's span is asserted
-    # where the table puts it — the row's last cell — so a span cell moved a column or a row drawn out
-    # of order fails rather than satisfying a substring's somewhere.
-    assert len(drawn["rows"]) == len(crafted)
-    for row, reading in zip(drawn["rows"], ("59s", "1m 30s", "2m", "1h", "1h 30m")):
-        assert _cells(row)[-1] == reading, f"{reading!r} not the last cell of {row}"
-
-    # The table's own empty reading makes three distinctions: a feed holding sessions the controls
-    # hid, a feed whose stores stand but hold no record to draw, and a feed from a tree with no store
-    # at all — an empty feed being no store found, since a store the server reads answers a session
-    # entry or an `{unreadable}` one, and the stores it finds but holds no record for answer neither.
-    def empty_reading(feed_in: list[dict], actions: list[dict]) -> str:
-        run = _run_ts(
-            _HERE / "profiler_index_runner.ts",
-            directory=tmp_path,
-            stdin=json.dumps({"index": index, "feed": feed_in, "actions": actions}),
-        )
-        rows = json.loads(run.stdout)["rows"]
-        assert len(rows) == 1, rows
-        return rows[0]
-
-    assert "No session store found yet" in empty_reading([{"stores": 0}], [])
-    assert "No sessions recorded yet" in empty_reading([{"stores": 2}], [])
-    pair = [
-        {"harness": "opencode", "id": "s-p", "records": 1, "agents": 1, "first": 0, "last": 0, "span": 0},
-        {
-            "harness": "opencode",
-            "id": "s-kid",
-            "records": 1,
-            "agents": 0,
-            "first": 0,
-            "last": 0,
-            "span": 0,
-            "dispatcher": {"session": "s-p", "name": "x"},
-        },
-    ]
-    assert "No sessions shown" in empty_reading(pair, [{"toggle": "child-rows"}, {"toggle": "harness-opencode"}])
-    # The feed a served tree with stores but no record answers is one `{stores: <count>}` entry, and
-    # the key it reads is the schema's own.
-    served_empty = json.loads(
-        _run_ts(
-            _HERE / "profiler_index_runner.ts",
-            directory=tmp_path,
-            stdin=json.dumps({"index": index, "feed": [{"stores": 2}]}),
-        ).stdout
-    )
-    assert served_empty["keys"] == ["stores", "unreadable"] and "No sessions recorded yet" in served_empty["rows"][0]
-
-    # The controls, driven over the same served page: the child-rows box takes the dispatched rows out
-    # and leaves their dispatcher, naming the agents the feed holds; a harness's box takes its own
-    # sessions out; and a column head sorts the rows on its column — ascending on the first press and
-    # descending on the second — the dispatcher's children following it as they always do.
-
-    def driven(feed_in: list[dict], actions: list[dict]) -> list[str]:
-        run = _run_ts(
-            _HERE / "profiler_index_runner.ts",
-            directory=tmp_path,
-            stdin=json.dumps({"index": index, "feed": feed_in, "actions": actions}),
-        )
-        return json.loads(run.stdout)["rows"]
-
-    # A row's session id, in the order the rows stand; a full-width store row carries no link.
-    def ids(rows: list[str]) -> list[str]:
-        return [match.group(1) for row in rows if (match := re.search(r'href="/page/([^"]+)"', row))]
-
-    hidden_children = driven(json.loads(feed), [{"toggle": "child-rows"}])
-    assert ids(hidden_children) == ["s-claude", "s-p1", "s-p2"]
-    assert _cells(hidden_children[2])[3] == "1 dispatched agent"
-    assert ids(driven(json.loads(feed), [{"toggle": "harness-opencode"}])) == ["s-claude"]
-    assert ids(driven(json.loads(feed), [{"toggle": "harness-claude"}])) == ["s-p1", "s-p2", "s-child"]
-    # A harness the controls carry no box for — a hand-written store's name — is drawn, and the page
-    # reports no failure: a feed that answered is not reported as one that could not be read, and a
-    # box other than the feed's own harnesses hides nothing.
-    stranger = [
-        {"harness": "mage", "id": "s-mage", "records": 1, "agents": 0, "first": 0, "last": 0, "span": 0},
-        {"harness": "claude", "id": "s-claude", "records": 1, "agents": 0, "first": 1, "last": 1, "span": 0},
-    ]
-    run = _run_ts(
-        _HERE / "profiler_index_runner.ts",
-        directory=tmp_path,
-        stdin=json.dumps({"index": index, "feed": stranger}),
-    )
-    unboxed = json.loads(run.stdout)
-    assert ids(unboxed["rows"]) == ["s-mage", "s-claude"] and unboxed["notices"] == []
-    # The control state is honest for the pair that hides nothing: the feed holds no opencode session,
-    # so its box is disabled rather than checked while filtering nothing.
-    assert unboxed["controls"] == {
-        "child-rows": {"checked": True, "disabled": False},
-        "harness-claude": {"checked": True, "disabled": False},
-        "harness-opencode": {"checked": True, "disabled": True},
-    }
-    # R6: a child whose dispatcher its harness's box hides is drawn at its dispatcher's level — an
-    # orphan promoted, not a row drawn nowhere. An opencode dispatch records a claude child; with
-    # opencode off the dispatcher is hidden, and its claude child, whose own box is on, stands.
-    orphan = [
-        {"harness": "opencode", "id": "s-parent", "records": 1, "agents": 1, "first": 0, "last": 0, "span": 0},
-        {
-            "harness": "claude",
-            "id": "s-orphan",
-            "records": 1,
-            "agents": 0,
-            "first": 1,
-            "last": 1,
-            "span": 0,
-            "dispatcher": {"session": "s-parent", "name": "x"},
-        },
-    ]
-    assert ids(driven(orphan, [])) == ["s-parent", "s-orphan"]
-    assert ids(driven(orphan, [{"toggle": "harness-opencode"}])) == ["s-orphan"]
-    # One feed in a known first-moment order, drawn in it: the records, the first moment and the span
-    # each order the rows differently, so a sort that reads no key leaves the feed's own order.
-    by_first = [
-        {"harness": "opencode", "id": "s-late", "records": 3, "first": 30, "last": 40, "span": 10},
-        {"harness": "claude", "id": "s-early", "records": 1, "first": 10, "last": 20, "span": 40},
-        {"harness": "opencode", "id": "s-mid", "records": 2, "first": 20, "last": 30, "span": 20},
-    ]
-    assert ids(driven(by_first, [])) == ["s-late", "s-early", "s-mid"]
-    assert ids(driven(by_first, [{"sort": "records"}])) == ["s-early", "s-mid", "s-late"]
-    assert ids(driven(by_first, [{"sort": "records"}, {"sort": "records"}])) == ["s-late", "s-mid", "s-early"]
-    assert ids(driven(by_first, [{"sort": "first"}])) == ["s-early", "s-mid", "s-late"]
-    assert ids(driven(by_first, [{"sort": "span"}])) == ["s-late", "s-mid", "s-early"]
-    # The arrow the reader sees is the head's `aria-sort`: ascending on the first press, descending on
-    # the second, and every other head back to none, so the table says which order it stands in.
-
-    def sorts_state(actions: list[dict]) -> list[list[str]]:
-        run = _run_ts(
-            _HERE / "profiler_index_runner.ts",
-            directory=tmp_path,
-            stdin=json.dumps({"index": index, "feed": by_first, "actions": actions}),
-        )
-        return json.loads(run.stdout)["sorts"]
-
-    assert sorts_state([]) == [["records", "none"], ["agents", "none"], ["first", "none"], ["span", "none"]]
-    assert sorts_state([{"sort": "span"}]) == [
-        ["records", "none"],
-        ["agents", "none"],
-        ["first", "none"],
-        ["span", "ascending"],
-    ]
-    assert sorts_state([{"sort": "span"}, {"sort": "span"}]) == [
-        ["records", "none"],
-        ["agents", "none"],
-        ["first", "none"],
-        ["span", "descending"],
-    ]
-    # The dispatched-agent count sorts on the entry's own `agents`, the count of the children the feed
-    # holds: two dispatchers of different counts order the rows by it, the feed's order being neither
-    # the ascending nor the descending one, so a head reading a key no entry carries leaves the order
-    # it opened in. `by_first` holds no dispatcher, so its ties are the all-zero sort's own case.
-    by_agents = [
-        {"harness": "opencode", "id": "s-two", "records": 1, "agents": 2, "first": 30, "last": 40, "span": 10},
-        {"harness": "opencode", "id": "s-none", "records": 1, "agents": 0, "first": 10, "last": 20, "span": 10},
-        {"harness": "opencode", "id": "s-five", "records": 1, "agents": 5, "first": 20, "last": 30, "span": 10},
-    ]
-    assert ids(driven(by_agents, [])) == ["s-two", "s-none", "s-five"]
-    assert ids(driven(by_agents, [{"sort": "agents"}])) == ["s-none", "s-two", "s-five"]
-    assert ids(driven(by_agents, [{"sort": "agents"}, {"sort": "agents"}])) == ["s-five", "s-two", "s-none"]
-
-    # The dispatched-agent count sorts on a dispatcher's children, which `by_first` holds none of: the
-    # head sorts, and its ties keep the feed's order.
-    assert ids(driven(by_first, [{"sort": "agents"}])) == ["s-late", "s-early", "s-mid"]
-
-    # A feed that fails names itself: the page's own composed message, from the feed's status, and
-    # draws no row — the no-records reading standing for a feed that answered with nothing to draw,
-    # not one that answered nothing at all. The notice is hidden and empty before the failure, so the
-    # notice the reader sees is the one this failure raised.
-    run = _run_ts(
-        _HERE / "profiler_index_runner.ts",
-        directory=tmp_path,
-        stdin=json.dumps({"index": index, "feed": [], "actions": [{"fail": {"status": 503}}]}),
-    )
-    failed = json.loads(run.stdout)
-    assert failed["before"] == {"hidden": True, "text": "", "rows": []}
-    assert failed["rows"] == []
-    assert failed["notices"] == ["The traces feed could not be read: HTTP 503."]
-    run = _run_ts(
-        _HERE / "profiler_index_runner.ts",
-        directory=tmp_path,
-        stdin=json.dumps({"index": index, "feed": [], "actions": [{"fail": {"status": 200, "body": [{"stores": 0}]}}]}),
-    )
-    failed = json.loads(run.stdout)
-    assert failed["notices"] == [] and "No session store found yet" in failed["rows"][0]
 
 
 def test_a_session_naming_itself_as_a_child_is_drawn_once_in_its_own_place(tmp_path: Path) -> None:
@@ -1589,136 +1062,6 @@ def test_every_page_script_wraps_its_body_in_an_iife() -> None:
         assert all(_opens_an_iife(body) for body in bodies), f"{name}'s script does not open an IIFE"
     for name in ("devpro/profiler/deco.js", "devpro/kanban/assets/board.js"):
         assert _opens_an_iife((_PACKAGE_ROOT / name).read_text(encoding="utf-8")), f"{name} does not open an IIFE"
-
-
-# A session id as a host records one — opencode's own is about this long, and an id this wide is a
-# column the page's header must cover.
-_LONG_SESSION = "ses_60a1b2c3d4e5f60718293a4b5c6d7e8f0a1b2c3d4e5f60718293a4b5c6d7e8f"
-
-
-def _browser(tmp_path: Path, index: str, feed: list[dict], actions: list[dict]) -> dict:
-    """The served index in a browser's own shape (`profiler_browser_runner.ts`): its scripts run over a
-    document at `index`'s own markup, laid out the way a browser lays a table out, with the reader's
-    presses and visits in order."""
-    run = _run_ts(
-        _HERE / "profiler_browser_runner.ts",
-        directory=tmp_path,
-        stdin=json.dumps(
-            {
-                "index": index,
-                "deco": (_PACKAGE_ROOT / "devpro" / "profiler" / "deco.js").read_text(encoding="utf-8"),
-                "feed": feed,
-                "actions": actions,
-            }
-        ),
-    )
-    return json.loads(run.stdout)
-
-
-def test_the_headers_sit_over_their_columns(tmp_path: Path) -> None:
-    """`clauses.TEST_PRECONDITION`: a page whose header row does not share its columns' widths is a
-    header over the wrong column, and no test that reads the markup alone can fail on it.
-
-    The served index, drawn over a session id as long as a host's own: the table is laid out fixed,
-    one width per column, and a column's width is the one the stylesheet declares for the class its
-    header cell and its body's cells carry. The header row and the body's rows take their widths from
-    that one source, so the session id's column — the table's widest — stands as wide as its rule
-    declares and the header over it stands in it. On a template that leaves a header's column
-    undeclared, the header falls back to its own label's width while the body's cell takes its
-    class's, and the reader looking down that column reads the header of the column beside it."""
-    project = tmp_path / "project"
-    project.mkdir()
-    (project / ".devpro-temp").mkdir()
-    _write_store(
-        project, ".profiler-opencode", _LONG_SESSION, "2026-01-01T00:00:00.000Z", harness="opencode", records=2
-    )
-    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:05.000Z", harness="claude")
-
-    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
-        index = _fetch(f"{url}profiler/")
-        feed = json.loads(_fetch(f"{url}api/traces"))
-
-    drawn = _browser(tmp_path, index, feed, [])
-    assert len(drawn["headers"]) == 6, drawn["headers"]
-    assert _LONG_SESSION in drawn["sessionCells"], drawn["sessionCells"]
-    # A session id is wide: its column is the widest in the table. The header row and the body's rows
-    # take their widths from the class each cell carries, one declared rule per column, so every
-    # header's box is its column's box. A header whose class declares no width falls back to its own
-    # label while the cell beneath takes its class's, and the reader following the header down lands
-    # one column off the ids.
-    headers = {label: (column, header) for label, column, header in drawn["headers"]}
-    for label, (column, header) in headers.items():
-        assert header == column, f"{label!r}'s header is {header} over a column of {column}"
-
-
-def test_the_url_restores_the_controls_and_sort(tmp_path: Path) -> None:
-    """`clauses.TEST_PRECONDITION`: the defect is a page that keeps its controls' state and its sort in
-    the document alone, so the state a reader chose is gone the moment they leave the view and come
-    back through the page's own link — a page that cannot be bookmarked or shared in the reading it
-    shows. The run that fails under it is this one: a control toggled off and a column head pressed
-    leave the page's URL naming them, and the page opened again at that URL — the link a reader copies
-    — reads back with the control off and the head sorted, the rows drawn in the order the sort
-    names."""
-    project = tmp_path / "project"
-    project.mkdir()
-    (project / ".devpro-temp").mkdir()
-    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
-    _write_store(project, ".profiler-opencode", "s-p1", "2026-01-01T00:00:05.000Z", harness="opencode")
-    _write_store(
-        project,
-        ".profiler-opencode",
-        "s-p2",
-        "2026-01-01T00:00:06.000Z",
-        harness="opencode",
-        extra={"tool": "Agent", "name": "devpro-coder", "child_agent_id": "s-child"},
-    )
-    _write_store(project, ".profiler-opencode", "s-child", "2026-01-01T00:00:07.000Z", harness="opencode", records=2)
-
-    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
-        index = _fetch(f"{url}profiler/")
-        feed = json.loads(_fetch(f"{url}api/traces"))
-
-    # The closed state is no query at all: the page opens on every row, in the feed's order, and its
-    # link carries nothing a reader did not choose.
-    opened = _browser(tmp_path, index, feed, [])
-    assert opened["visits"][0]["url"] == "http://127.0.0.1:0/profiler/"
-
-    toggled = _browser(tmp_path, index, feed, [{"toggle": "child-rows"}])
-    # The URL carries what the reader chose: leaving the view and returning through the page's own
-    # link reads the control back off, where a page keeping its state in the document alone returns it
-    # on.
-    assert toggled["visits"][-1]["url"] != opened["visits"][-1]["url"], toggled["visits"][-1]["url"]
-    assert toggled["visits"][-1]["controls"]["child-rows"] is False
-    # A control toggled twice is the page it opened on, and its URL says so.
-    twice = _browser(tmp_path, index, feed, [{"toggle": "child-rows"}, {"toggle": "child-rows"}])
-    assert twice["visits"][-1]["url"] == "http://127.0.0.1:0/profiler/"
-
-    sorted_once = _browser(tmp_path, index, feed, [{"sort": "records"}])
-    assert ["records", "ascending"] in sorted_once["visits"][-1]["sorts"]
-
-    # Leaving the view and returning through the page's own link: the visit reads the state the page
-    # left, from the URL alone.
-    returned = _browser(tmp_path, index, feed, [{"toggle": "child-rows"}, {"navigate": True}])
-    assert returned["visits"][-1]["controls"]["child-rows"] is False
-    assert returned["visits"][-1]["url"] == toggled["visits"][-1]["url"]
-
-    sorted_and_returned = _browser(tmp_path, index, feed, [{"sort": "records"}, {"navigate": True}])
-    assert sorted_and_returned["visits"][-1]["sorts"] == sorted_once["visits"][-1]["sorts"]
-
-    # A link naming two heads is one the page never writes: the table stands sorted on one column, so
-    # the page takes the first the link names and drops the surplus. A restore reading every `sort` the
-    # URL carries marks both heads sorted while the draw honors one — a table announcing an order it
-    # does not stand in, reachable by typing it into the bar. The six heads in order, the two carrying
-    # no button among them.
-    surplus = _browser(tmp_path, index, feed, [{"navigate": "?sort=records&sort=span"}])["visits"][-1]
-    assert surplus["sorts"] == [
-        ["", "none"],
-        ["", "none"],
-        ["records", "ascending"],
-        ["agents", "none"],
-        ["first", "none"],
-        ["span", "none"],
-    ], surplus["sorts"]
 
 
 def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path) -> None:
