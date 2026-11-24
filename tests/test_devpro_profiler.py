@@ -53,6 +53,7 @@ from devpro.profiler.pages import (
     LAYER_MARK,
     RETURN_MARK,
     SHARED_CSS,
+    call_label,
     index_html,
     list_sessions,
     read_sessions,
@@ -1167,6 +1168,25 @@ def test_an_unrecorded_session_id_is_a_404_and_no_traceback(tmp_path: Path) -> N
             _fetch(f"{url}page/s-unrecorded")
 
     assert missing.value.code == 404
+
+
+@pytest.mark.parametrize(
+    "name, shown",
+    [
+        pytest.param("devpro-coder", "coder (agent)", id="set-prefix"),
+        pytest.param("reviewer", "reviewer (agent)", id="plain"),
+        pytest.param("devpro-", "agent", id="prefix-alone"),
+    ],
+)
+def test_a_rendered_call_label_drops_the_set_prefix(name: str, shown: str) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a tree line rendering the record's name as stored,
+    `devpro-coder (agent)`, repeating the set's prefix on every dispatch a reader already knows is
+    the devpro set's.
+
+    The label drops `devpro-` at the render and keeps every other name as recorded; a name that is
+    the prefix alone renders as no name, which is the call's kind."""
+    assert call_label("Agent", name) == shown
+    assert call_label("Bash", "devpro-tool") == "tool (Bash)"
 
 
 def test_the_doctor_names_the_stores_the_readers_read(tmp_path: Path) -> None:

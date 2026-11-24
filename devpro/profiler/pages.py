@@ -250,11 +250,21 @@ def unique_events(records: list[dict]) -> list[dict]:
 
 TOOL_WORDS = {"Skill": "skill", "Agent": "agent"}
 
+# The prefix an agent set's definitions carry their names under, dropped where a page renders one: the
+# stored records and the feed keep the name as recorded.
+AGENT_PREFIX = "devpro-"
+
+
+def rendered_name(name: str | None) -> str | None:
+    """A name as a page renders it: an agent set's prefix dropped, every other name as it stands."""
+    return name.removeprefix(AGENT_PREFIX) if name else name
+
 
 def call_label(tool: str | None, name: str | None) -> str:
     """The name leads and the kind follows: `review (skill)`, `counter (agent)`, `wc -l a (Bash)`."""
     word = TOOL_WORDS.get(tool, tool)
-    return f"{name} ({word})" if name else word
+    rendered = rendered_name(name)
+    return f"{rendered} ({word})" if rendered else word
 
 
 def context_of(record: dict) -> str:
@@ -889,7 +899,8 @@ def dispatcher_html(dispatcher: tuple[str, str]) -> str:
     the call that dispatched it."""
     session, name = dispatcher
     return (
-        f'<span class="dispatched"><strong>Dispatched by</strong> {_session_link(session)} — {html.escape(name)}</span>'
+        f'<span class="dispatched"><strong>Dispatched by</strong> {_session_link(session)} — '
+        f"{html.escape(rendered_name(name) or '')}</span>"
     )
 
 
@@ -1013,10 +1024,11 @@ const el = (tag, text, className) => {
   return node;
 };
 
-// A session id, as a link to its page.
+// A session id, as a link to its page — the page's own query carried along, so the controls' state
+// and the sort in force survive the drill-down and the reader's way back.
 const link = (id) => {
   const anchor = el('a', id);
-  anchor.href = PAGE + encodeURIComponent(id);
+  anchor.href = PAGE + encodeURIComponent(id) + location.search;
   return anchor;
 };
 
@@ -1090,11 +1102,11 @@ const row = ({ session, dispatched, children = 0 }) => {
   id.title = session.id;
   id.append(link(session.id));
   if (dispatched) {
-    id.append(' ', el('small', '↳ child — ' + dispatched.name));
+    id.append(' ', el('small', '↳ child — ' + dispatched.name.replace(/^devpro-/, '')));
   }
   const window = el('td', undefined, 'col-one');
   window.append(moments(session));
-  const count = session.agents === 1 ? '1 dispatched agent' : session.agents + ' dispatched agents';
+  const count = session.agents === 1 ? '1 agent' : session.agents + ' agents';
   tr.append(
     harness,
     id,
