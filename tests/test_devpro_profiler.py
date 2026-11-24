@@ -52,13 +52,9 @@ from devpro.profiler.pages import (
     INDEX,
     LAYER_INLINE,
     LAYER_MARK,
-    LEGEND,
     RETURN_MARK,
     SHARED_CSS,
     index_html,
-    page_for,
-    render_html,
-    session_of,
 )
 from devpro.profiler.values import _epoch_ms
 from tests.test_devpro_install import _PROFILER, _claude_plugin, _definition_install
@@ -210,27 +206,6 @@ def _serve(launcher: Path, *, cwd: Path, env: dict[str, str] | None = None) -> I
 def _page_data(page: str) -> dict:
     """The JSON the page template inlines at its data slot."""
     return json.loads(page.split("const D = ", 1)[1].split(";\n", 1)[0])
-
-
-def _without_deco(served: str) -> str:
-    """A served page reduced to the file flow's page, so the served and the printed stand apart on
-    the layer's carriage and nothing else: the shared layer's link stands back as the inline text the
-    render writes there, and the band's per-page facts — the way back this page carries and the
-    legend, which the render's own band holds in the same place — come out, leaving the band the
-    render carries bare.
-
-    The layer line is one with no other `</style>`-opening kind between it and the head; the way back
-    and the legend are the band's own, the band one with no other `frame-band` div, and it runs to the
-    `Return to list` link it ends with, so each region takes its own whole lines with it and nothing
-    is left where the render has nothing. The band comes out bare — the render's own band, its legend
-    removed in the comparison, is bare too."""
-    lines = served.splitlines()
-    lines[lines.index(LAYER_LINK)] = LAYER_INLINE
-    page = "\n".join(lines) + "\n"
-    band = page[
-        page.find('<div class="frame-band') : page.find("Return to list</a></div>") + len("Return to list</a></div>")
-    ]
-    return page.replace(band, '<div class="frame-band scanlines"></div>')
 
 
 def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> None:
@@ -621,37 +596,50 @@ def test_the_pages_draw_their_moments_local_at_birth(tmp_path: Path) -> None:
 
 
 def test_the_pages_two_carriers_differ_in_the_layers_slot_alone(tmp_path: Path) -> None:
-    """One session, both carriers: the page the file flow writes and the page the serve path
-    assembles, each run with the scripts its carrier loads — the file carrier's own script alone (a
-    file cannot link the server's origin, so the deco the page names never loads there), the serve
-    carrier's own script and the deco in the order the page names them. The two texts differ within
-    the `<!--LAYER-->`'s slot alone: the page renders once, its moments drawn at birth by its own
-    script, and the deco reads none of them — so a carrier-dependent second render (the deco's moment
-    sweep this package deleted, or any later one) shows here as the carriers' texts drifting apart
-    beyond the layer's slot.
+    """`clauses.TEST_PRECONDITION`: the defect the one rendering replaces is the page assembled twice
+    — the file flow's page carrying no band facts and no dispatcher where the served page carried
+    them, the moments drawn twice besides — so the two carriers' full texts differed beyond the
+    layer's slot, and a pin holding them to the layer's slot alone failed on that tree. The run that
+    fails under it is this one.
 
-    The serve carrier here is the serve path's own assembly carrying the band the render carries, so
-    the layer's carriage is the assembly's one difference; the served page's own band facts — the way
-    back and the dispatcher — are the dashboard's own addition, pinned beside it."""
+    One session, both carriers — a session the stores name as a dispatch's child, so the band's
+    dispatcher fact is filled, beside the way back every session page carries: the page `tree
+    --format html` writes and the page the dashboard serves. The two texts differ within the
+    `<!--LAYER-->`'s slot alone — one template, one script, one band, one presentation — and the
+    scripts each carrier loads draw the same moments: the file carrier's own script alone (a file
+    cannot link the server's origin, so the deco the page names never loads there), the served
+    carrier's own script and the deco in the order the page names them, the deco reading none."""
     project = tmp_path / "project"
     project.mkdir()
-    trace = _write_store(
-        project, ".profiler-claude", "s-claude", "2026-01-01T00:00:01.250Z", harness="claude", records=2
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    _write_store(
+        project,
+        ".profiler-opencode",
+        "s-parent",
+        "2026-01-01T00:00:00.000Z",
+        harness="opencode",
+        extra={"tool": "Agent", "name": "devpro-coder", "child_agent_id": "s-child"},
     )
-    session = session_of(trace / "s-claude.jsonl")
+    _write_store(project, ".profiler-opencode", "s-child", "2026-01-01T00:00:01.000Z", harness="opencode", records=2)
+    launcher = _launcher(tmp_path / "harness")
 
-    file_carrier = render_html(session)
-    serve_carrier = page_for(session, return_to=None, dispatcher=None)
-    # The layer's carriage is the assembly's one difference: the serve carrier's link, stood back as
-    # the render's inline text, is the render's page.
-    assert serve_carrier.replace(LAYER_LINK, LAYER_INLINE) == file_carrier
+    with _serve(launcher, cwd=project) as url:
+        served = _fetch(f"{url}page/s-child")
+    printed = _run(launcher, "tree", "s-child", "--format", "html", cwd=project)
+    assert printed.returncode == 0, printed.stderr
+
+    # The band's per-page facts are the dump's too: the way back, and the dispatcher the stores name.
+    assert "Dispatched by" in served and "Return to list" in served
+    # The dump's page is the served page's text, the layer its only difference: the serve's link,
+    # stood back as the render's inline text, is the dump's page — print's own newline aside.
+    assert served.replace(LAYER_LINK, LAYER_INLINE) + "\n" == printed.stdout
 
     # And the scripts the carriers load draw the same page: the file carrier's script alone — a file
     # cannot link the server's origin — and the served carrier's own script with the deco it names,
     # in the order the page loads them.
     deco = (_PACKAGE_ROOT / "devpro" / "profiler" / "deco.js").read_text(encoding="utf-8")
-    file_drawn = _page_runner(tmp_path, file_carrier)
-    serve_drawn = _page_runner(tmp_path, serve_carrier, deco=deco)
+    file_drawn = _page_runner(tmp_path, printed.stdout)
+    serve_drawn = _page_runner(tmp_path, served, deco=deco)
     assert file_drawn["stamped"] == serve_drawn["stamped"], (file_drawn["stamped"], serve_drawn["stamped"])
     assert file_drawn["subline"] == serve_drawn["subline"]
 
@@ -1420,15 +1408,11 @@ def test_the_served_feed_states_an_unreadable_store(tmp_path: Path) -> None:
 
 
 def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> None:
-    """One session's `/page/<id>` carries the file flow's page data and that flow's page: the two
-    profiler templates' own text — the nav, the frame band and the decoration's script — both carry,
-    and the only difference between the served page and the printed one is the shared layer's
-    carriage, the serve's the link to the board panel's own file and the print's the inlined text.
-    Undo that carriage — the link stands back as the text the render inlines — and the band's
-    per-page facts — the way back this page carries and the legend, which the render's band holds in
-    the same place — come out, leaving `tree --format html`'s page, to the byte. A served page whose
-    layer is inlined (the render's carriage, not the serve's), or whose data is not that page's, is
-    the page standing apart from the one the file flow writes."""
+    """One session's `/page/<id>` carries the file flow's page data: the JSON the page template
+    inlines at its data slot is the payload `tree --format html` inlines, and the served page names
+    the shared layer's one file where the render inlines its text — the two carriers' one difference,
+    which the one-rendering pin holds to (`test_the_pages_two_carriers_differ_in_the_layers_slot_alone`,
+    where the band's per-page facts and the drawn moments bite too)."""
     project = tmp_path / "project"
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
@@ -1441,9 +1425,8 @@ def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> Non
     assert printed.returncode == 0, printed.stderr
     assert _page_data(served) == _page_data(printed.stdout)
     # The serve path names the layer's one file where the file flow inlines its text: one source, two
-    # carriers, and the page else the same to the byte.
+    # carriers.
     assert served.count(LAYER_LINK) == 1 and SHARED_CSS not in served
-    assert _without_deco(served) == printed.stdout.replace(LEGEND, "").rstrip("\n") + "\n"
 
 
 def test_the_standalone_render_carries_the_shared_layer_and_the_legend_once(tmp_path: Path) -> None:

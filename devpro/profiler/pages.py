@@ -639,10 +639,15 @@ def _rendering(session: dict, *, dispatcher: tuple[str, str] | None, return_to: 
     )
 
 
-def render_html(session: dict) -> str:
+def render_html(session: dict, *, dispatcher: tuple[str, str] | None) -> str:
     """One self-contained page: the package's template with the presentation layer, the how-to-read
-    legend and the trace inlined, the frame band's facts this page carries none of left empty."""
-    return strict_fill(_rendering(session, dispatcher=None, return_to=None), {LAYER_MARK: LAYER_INLINE})
+    legend and the trace inlined, and the frame band's per-page facts the session's stores name — the
+    way back to the list, and the dispatcher where one dispatched it — the same facts the served
+    page fills, the layer's carriage the one difference between the carriers."""
+    return strict_fill(
+        _rendering(session, dispatcher=dispatcher, return_to=PROFILER_PATH),
+        {LAYER_MARK: LAYER_INLINE},
+    )
 
 
 def session_of(path: Path) -> dict:
@@ -735,7 +740,7 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
         if len(chosen) > 1:
             listing = "\n".join(f"  {session['id'][:SESSION_WIDTH]}  {stamp(session)}" for session in chosen)
             raise UsageError(f"The html page shows one session. Pick one by id prefix:\n{listing}")
-        return render_html(chosen[0])
+        return render_html(chosen[0], dispatcher=dispatcher_of(chosen[0]["id"], sessions))
     if not branch:
         return render_tree(chosen[0]["records"], verbose=options["verbose"], color=color)
     blocks = []
@@ -792,6 +797,13 @@ def dispatches(sessions: list[dict]) -> dict[str, tuple[str, str]]:
             if record.get("harness") == "opencode" and child and str(child) != session["id"]:
                 found.setdefault(str(child), (session["id"], str(record.get("name") or "")))
     return found
+
+
+def dispatcher_of(session: str, sessions: list[dict]) -> tuple[str, str] | None:
+    """The session that dispatched `session`, and the call that did, named by the stores' other
+    sessions — the band's per-page fact, the one lookup whoever fills the band runs, so the dump's
+    page and the served page's name the same dispatcher."""
+    return dispatches([other for other in sessions if other["id"] != session]).get(session)
 
 
 def traces_feed(directory: Path | str) -> list[dict]:
@@ -888,8 +900,9 @@ def dispatcher_html(dispatcher: tuple[str, str]) -> str:
 def band_fills(*, dispatcher: tuple[str, str] | None, return_to: str | None) -> dict[str, str]:
     """The frame band's per-page fills for the strict fill: the legend from its one home `LEGEND`,
     the dispatch line, and the way back. A fact this page carries none of fills its mark empty — the
-    dispatcher where none dispatched it, the way back where there is no list to return to — and the
-    strict fill does not raise on an empty value, so a page with neither carries the band bare."""
+    dispatcher where none dispatched it, and the way back on the index, which is the list itself —
+    and the strict fill does not raise on an empty value, so a page with neither carries the band
+    bare."""
     return {
         BAND_LEGEND: LEGEND,
         DISPATCHED_MARK: dispatcher_html(dispatcher) if dispatcher else "",
@@ -898,6 +911,9 @@ def band_fills(*, dispatcher: tuple[str, str] | None, return_to: str | None) -> 
 
 
 PAGE_PREFIX = "/page/"
+# The profiler view's own path: the way back the frame band's return control names, on a session's
+# page, whatever carrier wrote it — the dump's page and the served page's alike.
+PROFILER_PATH = "/profiler/"
 # The frame band's fills, in the order the band reads them — the how-to-read legend from its one home
 # `LEGEND`, then the dispatch line, then the way back — as marks the strict fill replaces. They sit
 # inside the band both profiler templates carry as their own text, so one fill assembles the deco

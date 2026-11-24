@@ -41,10 +41,12 @@ and treated as absent.
 `devpro/profiler/view.html`, read by `pages.py` through `importlib.resources` beside the module that
 renders it: it is a self-contained page that loads nothing from the network, it ships in the wheel,
 and it is no install resource and no committed hook file. It carries no palette of its own: its head carries the layer's mark, `<!--LAYER-->`
-(`LAYER_MARK`), which `render_html` fills with the presentation layer's text inline — the board's
-own stylesheet, `devpro/kanban/assets/board.css`, read the same way — for the standalone page,
-which loads nothing from the network and so cannot link it, and which the serve path
-(`served_page`) fills with a link to that stylesheet. One CSS
+(`LAYER_MARK`), which fills with the presentation layer one way per carrier — the page's one
+rendering, two carriers: the dashboard's serve path (`served_page`) links the board's own stylesheet,
+`devpro/kanban/assets/board.css`, and `render_html` — `tree --format html`'s carrier — fills the
+layer's text inline, the one difference a file cannot avoid, being unable to link a server's origin.
+What the dump writes is the page the dashboard serves: one template, one script, one band, one
+presentation. One CSS
 source serves both views, and `pages.SHARED_CSS` is that text: the board serves the file at
 `/board/board.css`, the render inlines it into the page it prints, and the dashboard links the same
 file into the pages it serves, the layer fetched from the server's own origin, which the site's
@@ -63,9 +65,11 @@ the brand, the two view names and, right-justified at the nav's flex edge on eve
 block — the live/idle indicator and the stop — is template text with each view's active state known
 statically, the standalone render and the served page alike carrying what the template holds; the
 template's own rules are the page's alone: the layer clears the body's margin and sets the page's
-colours, and the template pads its `main`. The deco's one script is named by the board page as
-its own file, and the profiler's pages link the same file; the band's legend with its `Return to
-list` control on a session's page. The board
+colours, and the template pads its `main`. The deco's one script is named by the board page as its own file, and the profiler's pages link the
+same file; the band's legend with its `Return to list` control on a session's page. Every script the
+pages run — the deco's and the templates' own — wraps its body in an IIFE: its helpers are
+module-private, and the deliberate surface is only what the page calls, because classic scripts
+share one global scope and a helper redeclared across scripts is a page that drew nothing. The board
 page carries the same nav grammar, written in its own `index.html`, with the same server block in
 the nav; it carries no legend.
 
