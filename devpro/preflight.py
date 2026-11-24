@@ -24,14 +24,18 @@ from devpro.install_base import VENV_DIR
 
 @dataclass(frozen=True)
 class Difference:
-    """What an install would do to its target, each path a real one: the files it would create, those
-    whose bytes or mode it would change, and the files and directories it would remove; and the lines it would print on
-    stderr — what it would leave alone or skip — naming the real target."""
+    """What an install would do to its target, each path a real one: the files it would create and the
+    directories, those files whose bytes or mode it would change, the files and directories it would
+    remove, and the lines it would print on stderr — what it would leave alone or skip — naming the
+    real target. `created` and `removed` hold every path, `created_directories` and `removed_directories`
+    the ones that are directories, which the dry run prints with a trailing `/`."""
 
     created: tuple[Path, ...]
     changed: tuple[Path, ...]
     removed: tuple[Path, ...]
     reports: tuple[str, ...]
+    created_directories: tuple[Path, ...] = ()
+    removed_directories: tuple[Path, ...] = ()
 
     def is_empty(self) -> bool:
         return not (self.created or self.changed or self.removed)
@@ -69,7 +73,8 @@ def _copy_managed(managed: Sequence[tuple[Path, Sequence[str]]], *, scratch_base
     created where the real one exists, since an install's checks read whether it does; where a regular
     file stands in its place instead, or in a base's, the outermost such file is copied, so the install
     meets the same obstacle. A relative naming a wildcard stands for every path it matches, as the
-    install's own glob reads it, and nothing where it matches none."""
+    install's own glob reads it, and nothing where it matches none. A directory the real tree does not
+    hold is never created: the run makes it, and that is what the comparison reads."""
     for (base, paths), scratch_base in zip(managed, scratch_bases):
         if base.is_dir():
             scratch_base.mkdir(parents=True, exist_ok=True)
@@ -91,7 +96,7 @@ def _copy_managed(managed: Sequence[tuple[Path, Sequence[str]]], *, scratch_base
                         shutil.copy2(match, scratch_base / at)
                 continue
             if real.parent.is_dir():
-                copy.parent.mkdir(parents=True, exist_ok=True)
+                (scratch_base / real.parent.relative_to(base)).mkdir(parents=True, exist_ok=True)
             else:
                 obstacle = next(
                     (
@@ -171,8 +176,10 @@ def preflight(
             _in_real_terms(line, scratch_bases=scratch_bases, bases=bases) for line in stderr.getvalue().splitlines()
         )
         created: list[Path] = []
+        created_directories: list[Path] = []
         changed: list[Path] = []
         removed: list[Path] = []
+        removed_directories: list[Path] = []
         for (base, scratch_base), (prior, prior_directories) in zip(outer, before):
             after, after_directories = _tree(scratch_base)
             # A directory the install moved reads as one path removed and one created, its files the same
@@ -187,16 +194,34 @@ def preflight(
             # The directories the moved stores left: removed as directories, and named so a store's files
             # do not read as a second set of removals beside the directory that held them.
             left = set(moves) | {path for old in moves for path in prior if path.is_relative_to(old)}
-            created += [base / relative for relative in sorted(after - prior - set(moves.values()))]
-            removed += [
-                base / relative for relative in sorted((prior - after - left) | (prior_directories - after_directories))
-            ]
+            # What the run wrote: each file under its own name, and each directory it made and left
+            # holding nothing — the scratch directory among them — which is the install's own write.
+            # A directory made to hold a file the run wrote is that file's, and the dry run names the
+            # file, as it always has.
+            made = after_directories - prior_directories
+            left_empty = {
+                relative
+                for relative in made - set(moves.values())
+                if not any(other != relative and other.is_relative_to(relative) for other in after | after_directories)
+            }
+            created += [base / relative for relative in sorted(after - prior - set(moves.values()) | left_empty)]
+            created_directories += [base / relative for relative in sorted(left_empty)]
+            removed_at = (prior - after - left) | (prior_directories - after_directories)
+            removed += [base / relative for relative in sorted(removed_at)]
+            removed_directories += [base / relative for relative in sorted(removed_at & prior_directories)]
             changed += [
                 base / relative
                 for relative in sorted(after & prior)
                 if _differs(scratch_base / relative, base / relative)
             ]
-    return Difference(created=tuple(created), changed=tuple(changed), removed=tuple(removed), reports=reports)
+    return Difference(
+        created=tuple(created),
+        changed=tuple(changed),
+        removed=tuple(removed),
+        reports=reports,
+        created_directories=tuple(created_directories),
+        removed_directories=tuple(removed_directories),
+    )
 
 
 def _moves(
@@ -234,11 +259,12 @@ def _same_files(base: Path, old: Path, files: Sequence[Path], copy: Path) -> boo
     return held == names and all(not _differs(base / old / name, copy / name) for name in names)
 
 
-def _shown(path: Path, *, report_root: Path) -> str:
-    """`path` relative to `report_root` where it sits below it, else whole; a directory with a trailing
-    `/`."""
+def _shown(path: Path, *, report_root: Path, directory: bool = False) -> str:
+    """`path` relative to `report_root` where it sits below it, else whole. A path the run would create
+    and one it would remove read as directories with a trailing `/`, never from the path on disk, which
+    a created directory is not yet and a removed one no longer is."""
     shown = str(path.relative_to(report_root)) if path.is_relative_to(report_root) else str(path)
-    return f"{shown}/" if path.is_dir() else shown
+    return f"{shown}/" if directory or path.is_dir() else shown
 
 
 def run_preflighted(
@@ -263,15 +289,15 @@ def run_preflighted(
         install([base for base, _ in managed])
         return
     print(f"dry run, nothing written — the install would change these files under {report_root}:")
-    for group, paths in (
-        ("created", difference.created),
-        ("changed", difference.changed),
-        ("removed", difference.removed),
+    for group, paths, is_directory in (
+        ("created", difference.created, difference.created_directories),
+        ("changed", difference.changed, ()),
+        ("removed", difference.removed, difference.removed_directories),
     ):
         if paths:
             print(f"{group}:")
             for path in paths:
-                print(f"  {_shown(path, report_root=report_root)}")
+                print(f"  {_shown(path, report_root=report_root, directory=path in is_directory)}")
     _print_reports(difference)
 
 

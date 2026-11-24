@@ -1510,6 +1510,27 @@ def test_a_mage_install_prepares_no_scratch_directory_and_writes_no_gitignore(tm
     assert not (project / ".gitignore").exists()
 
 
+def test_a_project_install_that_writes_no_runner_line_still_prepares_the_scratch_directory(
+    tmp_path: Path, capsys
+) -> None:
+    """Defect: an install whose project already held the runner-file line found nothing to write there and
+    returned before the scratch preparation, so a project whose `.devpro-temp/` was deleted printed
+    `up to date` and kept the directory gone. The preparation is the install's own, and its idempotence
+    is what leaves a prepared `.gitignore` as it stands."""
+    project = tmp_path / "project"
+    project.mkdir()
+    argv = ["install", str(project), "--harness=claude"]
+    main(argv)
+    gitignore = project / ".gitignore"
+    state = gitignore.stat().st_mtime_ns
+    shutil.rmtree(project / ".devpro-temp")
+    capsys.readouterr()
+    main(argv)
+    assert (project / ".devpro-temp").is_dir()
+    assert gitignore.stat().st_mtime_ns == state
+    assert _UP_TO_DATE not in capsys.readouterr().out
+
+
 def test_preparing_the_scratch_directory_keeps_every_other_byte_of_the_gitignore(tmp_path: Path) -> None:
     """An operator's `.gitignore` with CRLF endings, its last line unterminated and a line a prefix
     match would take for this one (`.devpro-temp-old/`): the line added after the last with the file's own
@@ -2519,14 +2540,22 @@ def _assert_dry_run_predicts(argv: list[str], *, project: Path, capsys) -> dict[
 
 def _changed_since(files: dict[str, bytes], directories: set[str], *, project: Path) -> dict[str, set[str]]:
     """What changed under `project` since it held `files` and `directories`, as a dry run groups it,
-    each group present only where it holds a path."""
+    each group present only where it holds a path. A directory created and left holding nothing is a
+    created path, shown with the trailing `/` a dry run gives it; one created to hold what the run
+    wrote is those files' own, and the dry run names the files."""
     after = _files(project)
     actual = {
-        "created": set(after) - set(files),
+        "created": (set(after) - set(files)) | _empty_directories(project, also=directories),
         "changed": {path for path in set(after) & set(files) if after[path] != files[path]},
         "removed": (set(files) - set(after)) | (directories - _directories(project)),
     }
     return {group: paths for group, paths in actual.items() if paths}
+
+
+def _empty_directories(project: Path, *, also: set[str]) -> set[str]:
+    """Every directory under `project` the project did not hold in `also` and that holds no file, each
+    with the trailing `/` a dry run gives it."""
+    return {path for path in _directories(project) - also if not any((project / path).iterdir())}
 
 
 def _kb_install_with_a_runner_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[list[str], Path]:
@@ -2612,10 +2641,10 @@ def test_a_dry_run_on_a_fresh_target_lists_as_created_what_the_install_creates(
         ["install", str(project), f"--components={components}", *harness_args], project=project, capsys=capsys
     )
     assert groups["created"]
-    # The `.gitignore` a project install of a nested plugin holds is predicted; a mage install writes
-    # none. The scratch directory beside it is not predicted: the preflight's comparison holds a
-    # directory it finds before the run and one it would remove, never one the run creates.
+    # The scratch directory and `.gitignore` line a project install of a nested plugin prepares are both
+    # predicted; a mage install prepares neither.
     nested = "--harness=mage" not in harness_args
+    assert (".devpro-temp/" in groups["created"]) is nested
     assert (".gitignore" in groups["created"]) is nested
 
 

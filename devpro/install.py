@@ -633,10 +633,11 @@ def install(
     snippet_sets = [snippets for package in packages if (snippets := package.installed_snippets()) is not None]
     # A project install of a nested plugin touches the project's runner file: it writes each shipped
     # set's include line and removes the retired docdicer line where the project holds one, whichever
-    # shipped packages it carries — the retiree's cleanup needing no set of its own. It leaves the
-    # project's scratch directory and its `.gitignore` line ready with it. Nothing else — a mage or
-    # user-level install — reads or writes any of the three.
-    touches_runner_file = _is_project_install_of_a_nested_plugin(ctx.harness, user_level=user_level)
+    # shipped packages it carries — the retiree's cleanup needing no set of its own. Its scratch
+    # directory and `.gitignore` line are prepared on the same condition but not by this write: a project
+    # already holding the line writes nothing here and is still prepared below. Nothing else — a mage
+    # or user-level install — reads or writes any of them.
+    nested_project_install = _is_project_install_of_a_nested_plugin(ctx.harness, user_level=user_level)
     guardrail_skipped: str | None = None
     own_files = shipped_harness_files(ctx)
     harness_files = list(own_files)
@@ -667,7 +668,7 @@ def install(
     # Everything this install copies, the wrapper with it, in one list: `keep` and the report below count
     # a harness's own files with the packages', so neither reads as a stale render.
     copied = [*(target for _, _, target in package_files), wrapper, *(target for _, target in resource_files)]
-    if touches_runner_file:
+    if nested_project_install:
         check_runner(project)
     agents_file: AgentsFileWrite | None = None
     if _installs_agents_file(harness_dir, ctx.harness, project=project):
@@ -732,13 +733,17 @@ def install(
     if verbose:
         for path in [*copied, *written]:
             print(f"wrote {path}")
-    if touches_runner_file:
+    if nested_project_install:
         install_include_lines(
             project,
             snippet_sets,
             harness_relpath=harness_relpath,
             retired_set=RETIRED_SNIPPET_SET,
         )
+    # The preparation is the install's, not the runner file's: a project already holding the line writes
+    # nothing there, and the scratch directory is still the install's to keep ready. Its idempotence is
+    # what leaves a prepared `.gitignore` as it stands.
+    if nested_project_install:
         prepare_scratch_directory(project)
     # The profiler's stores from before their rename, for the project written: the preflight's scratch run
     # renames its copy, which is what shows the preflight a move, and the real project is renamed once.

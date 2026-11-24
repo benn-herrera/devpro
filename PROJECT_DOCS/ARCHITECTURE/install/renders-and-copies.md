@@ -58,7 +58,9 @@ file too, since `development` ships there, and there it refuses.
 the project's scratch directory for the work the hooks and the agents write into it: it creates
 `.devpro-temp/` under the project root when it is missing, and it adds a `.devpro-temp/` line to the
 project's `.gitignore`, creating the file holding that one line where the project has none. A
-`.gitignore` already carrying the line is left as it stands. A mage install and a user-level install
+`.gitignore` already carrying the line is left as it stands. The preparation is the install's and not
+the runner file's: an install whose project already holds every line it writes still prepares, and its
+idempotence is what leaves a prepared `.gitignore` as it stands. A mage install and a user-level install
 prepare neither: `_is_project_install_of_a_nested_plugin` excludes both, so neither creates the
 directory nor writes a `.gitignore`.
 
@@ -134,11 +136,15 @@ part.
   replaced by the real one, on the up-to-date and dry-run outcomes. An `InputError` or `OSError` from the scratch copy or the run is raised as an
   `InputError` with each scratch base replaced by the real one, so no refusal and no printed path
   names the scratch copy.
-- **The comparison** is of files. A path in the scratch copy
+- **The comparison** is of files and of the directories the run makes. A file in the scratch copy
   only is created, in the real paths only is removed, and in both is changed when
-  `filecmp.cmp(shallow=False)` is false or `stat.S_IMODE` differs. Directories are compared for
-  removal alone: one in the scratch copy before the run and gone after it is removed. `.venv`
-  directories (`VENV_DIR`) are outside it.
+  `filecmp.cmp(shallow=False)` is false or `stat.S_IMODE` differs. A directory the run made and left
+  holding nothing is created — the project's scratch directory is one — while a directory made to hold
+  a file the run wrote is that file's, named by the file alone. One in the scratch copy before the run
+  and gone after it is removed, and a store the install renamed reads as one path removed and the
+  directory and file created in its place. `.venv` directories (`VENV_DIR`) are outside it. The scratch
+  copy never creates a directory the real tree does not hold: the run makes it, and that is what the
+  comparison reads.
 - **The outcome** (`run_preflighted`): with no difference it returns before the real install, and
   with `--dry-run` it prints the comparison and the
   captured reports, then returns. Otherwise the real install runs as `install` always has.
