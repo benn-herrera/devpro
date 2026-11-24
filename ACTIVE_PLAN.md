@@ -212,11 +212,9 @@ recorded in the item's closing commit. Scope: `devpro/harnesses/resources/openco
 `PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md`.
 Done-line: `just test`, `just lint`.
 
-**B2 — the capture's record contract gets its driver back** *(review findings 2 and 3 — the
-owner's P4 ruling removed the test believing it oracle-class; the review states it is
-driver-class. This item also needs the owner's ruling before it dispatches. A `yes` is the ruling
-it runs under; a `no` retires the item and finding 2 stays a stated gap in
-`PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`.)* A contract runner
+**B2 — the capture's record contract gets its driver back** *(review findings 2 and 3 — ruled yes
+by the owner once install was priority-one fixed: the P4 ruling removed the test believing it
+oracle-class; the review states it is driver-class.)* A contract runner
 drives the shipped `profiler.ts`'s event-record construction over the three host-shape inputs and
 asserts the capture's own outputs, the boundary stated in its docstring — the shapes are inputs,
 no claim in the test about what the host actually reports; the live-dispatch evidence is recorded
