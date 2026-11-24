@@ -299,5 +299,3 @@ project eliminates. The primary first use is the development loop, not a hard te
 working on the pages sees what it rendered and iterates toward what it intends, and the
 assertion set distills second, from what that loop shows matters. Rides with the UX
 pass, where the visual work lives.
-
-### Browser-driven visual verification
