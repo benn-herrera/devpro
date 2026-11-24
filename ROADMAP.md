@@ -268,6 +268,17 @@ the result the hook receives, and the observation dated and recorded where the h
 leaf's account of the capture cites it. Which of the three the current releases still report, and
 whether the floor's range still needs all three, is what the dispatch answers.
 
+### The profiler index's controls state dies at every navigation hop
+
+The controls' state lives in the page's URL (`pages.py`'s `sync`/`restore`, landed) and survives a
+reload — but nothing carries the query across the page's own links: the index's row links
+(`pages.py:1028`) are `PAGE + id` with no query, and the session page's return link is
+`return_to=PROFILER_PATH` bare (`pages.py:648`). Index → session → back is the reader's normal
+flow, and the state dies at both hops. The fix is two lines — the row link appending
+`location.search`, the session page's script echoing its query into the return link — and it
+ships blind until the browser-vision loop can see it: the loop's first calibrated use, the fix
+verified on the served page before it lands.
+
 ### Browser-driven visual verification
 
 The dashboard's served pages need a check that a page not only serves but renders. Firefox's
