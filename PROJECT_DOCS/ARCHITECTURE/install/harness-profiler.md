@@ -70,7 +70,7 @@ owns the never-block contract: `cli.run` reads the hook payload bounded to `PAYL
 points stdout at the null device for the capture's duration so no child line reaches the hook's
 stdout, and returns 0 on every path.
 
-**The install renders, copies and removes.** A claude project install writes the plugin's rendered
+**The install renders and copies.** A claude project install writes the plugin's rendered
 files and `hooks/hooks.json`, whose profiler entries are the wiring above. It copies the harness's
 resources byte-verbatim — `harnesses/resources/claude/` holds `hooks/` alone, nothing under
 `profiler/` — and writes the wrapper at `skills/devpro/tools/devpro.sh`. What it removes is *What
