@@ -278,14 +278,17 @@ def run_preflighted(
     dry_run: bool,
     target: Path,
     report_root: Path,
+    prepared_directories: Sequence[Path] = (),
 ) -> None:
     """Run `install` into the real bases only where `preflight` finds it would change something. Where
-    it would change nothing, report `target` up to date and write nothing. With `dry_run`, print what
+    it would change nothing, report `target` up to date and write nothing — where `prepared_directories`
+    name real paths the install creates when missing, not even then: the run would make them. With
+    `dry_run`, print what
     would be created, changed and removed, each path relative to `report_root`, and write nothing.
     Where nothing is written, what the install would have left alone or skipped is printed on stderr;
     the real install prints its own."""
     difference = preflight(managed, install=install)
-    if difference.is_empty():
+    if difference.is_empty() and not prepared_directories:
         print(f"up to date: {target} — nothing written")
         _print_reports(difference)
         return
@@ -293,8 +296,9 @@ def run_preflighted(
         install([base for base, _ in managed])
         return
     print(f"dry run, nothing written — the install would change these files under {report_root}:")
+    created_directories = [*prepared_directories, *difference.created_directories]
     for group, paths, is_directory in (
-        ("created", difference.created, difference.created_directories),
+        ("created", difference.created, created_directories),
         ("changed", difference.changed, ()),
         ("removed", difference.removed, difference.removed_directories),
     ):

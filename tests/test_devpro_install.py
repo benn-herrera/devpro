@@ -2642,9 +2642,10 @@ def test_a_dry_run_on_a_fresh_target_lists_as_created_what_the_install_creates(
     )
     assert groups["created"]
     # The `.gitignore` line a project install of a nested plugin prepares is predicted; the scratch
-    # directory is not managed — the install creates it where missing and the prediction does not
-    # contemplate it — and a mage install prepares neither file.
+    # directory's creation is named by the install's own conditional where the real tree lacks it — a
+    # mage install prepares neither file.
     nested = "--harness=mage" not in harness_args
+    assert (".devpro-temp/" in groups["created"]) is nested
     assert (".gitignore" in groups["created"]) is nested
 
 

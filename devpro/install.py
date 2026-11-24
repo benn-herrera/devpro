@@ -878,6 +878,15 @@ def preflighted_install(
         dry_run=dry_run,
         target=harness_dir,
         report_root=project,
+        # The scratch directory's creation is the install's own conditional, not a managed path: named
+        # in the prediction where the real tree lacks it, created by the run itself.
+        prepared_directories=(
+            (scratch,)
+            if (scratch := project / clauses.PROJECT_TEMP_DIR)
+            and not scratch.exists()
+            and _is_project_install_of_a_nested_plugin(ctx.harness, user_level=user_level)
+            else ()
+        ),
     )
 
 
