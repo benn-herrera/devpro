@@ -24,10 +24,10 @@ cited by name, and a name outranks a stale line number.
 | B3 | landed: 7d5547c | expert | sweep line numbers, helper dedup |
 | B4 | landed: 641ef80 | expert | the prefix's one source and its tool gate |
 | B5 | landed: c026bcb | mechanical | document wording: repo-layout row, leaf reflow |
-| B6 | dispatchable | mechanical | pin honesty: name the form pins |
+| B6 | in progress | mechanical | pin honesty: name the form pins |
 | B7 | dispatchable | mechanical | CONVENTIONS lines: real-tree case, synonym search, scratch hygiene |
 | B8 | dispatchable | mechanical | the cli docstrings' one home |
-| B9 | in progress | expert | the families' anchor prose: in the literals corpus or recorded as out |
+| B9 | landed: 7567f51 | expert | the families' anchor prose: in the literals corpus or recorded as out |
 
 P1–P4 and PR are `landed`. The burndown's items B1–B8 were drafted from `ACTIVE_PLAN_REVIEW.md` in
 the section shape the owner directed: one ticket per root-cause group, each with its own row,
