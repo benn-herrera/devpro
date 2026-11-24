@@ -300,11 +300,4 @@ working on the pages sees what it rendered and iterates toward what it intends, 
 assertion set distills second, from what that loop shows matters. Rides with the UX
 pass, where the visual work lives.
 
-### The preflight's managed-directory copy drags scratch through every install
-
-RESOLVED — the owner's ruling: `.devpro-temp` is not a managed directory. The install creates it
-where missing and that is the whole story; the managed set carries the `.gitignore` file it
-writes, and the comparison never reads what the project holds inside scratch. The stopgap's
-`symlinks=True` landed at `6429cdc` on the way. Measured before the removal: 270 MB and 22,651
-files of stale probe copies made `just agents` take 30 seconds; after the detritus went, the
-same run took 0.72.
+### Browser-driven visual verification
