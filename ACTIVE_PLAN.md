@@ -58,7 +58,8 @@ source and the SPEC.
 | B1 | landed: 278d229 | expert | the pairing identity: the checker's terms, messages, and the rule's heading requirement |
 | B2 | in progress | mechanical | the development skill's reworded sentences: Periodic review, items' identity, re-wrap |
 | B3 | dispatchable | mechanical | the guide's walkthrough: reviewer/revision named, steps 4 and 6, re-wrap |
-| B4 | dispatchable | mechanical | the CONVENTIONS lines the run earned: pair re-wrap, brace rule, staging |
+| B4 | dispatchable | mechanical | the CONVENTIONS lines the run earned: width-prohibition trap, staging practice note |
+| B5 | drafted | mechanical | the staging rule joins the skill's Dispatch section (the design's fourth pair) |
 
 ## Sequencing
 
@@ -257,10 +258,10 @@ verify a plan-form change is a `check-plan` run over a plan holding the new form
   line width is declined by default. The pattern was killed once before as too expensive: agents
   obsess over widths, manually reflow, or write ad-hoc reflow tools. This CONVENTIONS line is the
   prohibition's home, so the next reviewer does not rebirth it.
-- G4: the shared-index practice, stated as a practice the session keeps, not a control a tool
-  enforces — a dispatched package stages and commits only its own paths (`git commit --
-  <paths>`); concurrent dispatches in one tree swept a rename into another package's commit in the
-  landed plan's run.
+- G4: promoted to the skill body at the owner's ruling — "general good behavior and collision
+  prevention" binds every project the process ships to, not only this repo. The new pair on the
+  skill's *Dispatch* section (the design's fourth development.py pair) is applied by B5; nothing
+  here duplicates it.
 - G2 is dropped at the owner's ruling: the brace-knowledge is self-evidencing (the render fails
   loudly on a mangled placeholder), and a pinned rule over prose is golden-master friction. If it
   bites again, the fix is one sentence in the constants leaf at that moment.
@@ -270,3 +271,21 @@ verify a plan-form change is a `check-plan` run over a plan holding the new form
 
 **Done-line.** `just dev-check-links` (the tree and link check is the only one that sees new
 leaves), then `just test-changed`.
+
+### B5 — the staging rule joins the skill's Dispatch section
+
+**Scope.** `devpro/definitions/skills/development.py` — the design's fourth development.py pair
+only (the *Dispatch* section's staging bullet). Runs after B2: same file.
+
+**Facts.**
+
+- The pair is quoted in [the design's development.py entry](ACTIVE_DESIGN.md#the-development-skills-burndown-shape-devprodefinitionsskillsdevelopmentpy):
+  the *Dispatch* section's "share a build run serially" bullet gains the staging bullet — a
+  concurrent package stages and commits only its own paths (`git commit -- <paths>`), never the
+  shared index whole. The owner's ruling: general good behavior binds every project the process
+  ships to, so its home is the skill body, not a local CONVENTIONS leaf.
+- Applied verbatim; the delta check reads `pairs: 9` and goes green with this pair's application
+  (all nine landed).
+
+**Done-line.** `just test devpro`, then `just test-changed`, then
+`just dev-check-design-deltas-applied` green (9/9).

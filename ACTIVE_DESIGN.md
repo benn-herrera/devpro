@@ -133,6 +133,24 @@ placeholder and clause style. Three pairs, quoted from the source:
   opening.
 ```
 
+**As it stands:**
+
+```
+- Packages that share a build run serially in the shared tree. *Purpose:* one package's half-done
+  edit does not fail another's build.
+```
+
+**Becomes:**
+
+```
+- Packages that share a build run serially in the shared tree. *Purpose:* one package's half-done
+  edit does not fail another's build.
+- When dispatches are concurrent, a package stages and commits only its own paths
+  (`git commit -- <paths>`), never the shared index whole. *Purpose:* disjoint edits stay disjoint
+  when two agents share a working tree — a whole-index commit sweeps another package's staged work
+  into the wrong commit.
+```
+
 The section's remaining bullets — the reviewers, the independent writes, the synthesis, the
 {REVIEW_DOCUMENT_TERM}'s deletion at landing, the release's user-flow audit — stand unchanged. The
 rendered skill text changes with the source. The guide's burndown account moves with it — the next
