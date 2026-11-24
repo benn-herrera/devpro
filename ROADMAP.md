@@ -240,5 +240,7 @@ combination fails or shows a hole the check cannot live with, the upgrade is Pup
 hermetic Firefox build. BiDi is the standard protocol, so the system binary's version skew surfaces
 as `UnsupportedOperation` — named, not silent.
 
-Still open for the design work: what the check asserts and which pages it covers. Rides with the UX
+Still open for the design work: what the check asserts and which pages it covers. Screenshot-byte
+comparison is out of it — a pin on pixels is the photograph antipattern, the class of test this
+project eliminates. Rides with the UX
 pass, where the visual work lives.
