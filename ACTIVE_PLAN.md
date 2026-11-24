@@ -20,7 +20,7 @@ becomes-blocks are the accepted text.
 | P5 | landed 9766c02 | expert | moments local at birth; the deco's moment pass leaves; one rendering, two carriers |
 | P6 | landed 57bc90e | expert | `profiler.sh` renames `hp.sh`; the finder runs the wrapper bare; R23's rule enters CONVENTIONS |
 | P7 | landed 11fe544 | expert | R16's leaf catch-up applied as the design's pairs; R25's rule enters CONVENTIONS |
-| R | in progress: five seats dispatched | expert | the post-plan review, five seats |
+| R | landed: this commit adds the review document | expert | the post-plan review, five seats |
 | B | drafted | expert | the post-plan burndown, drafted from the review document |
 
 ## Kickoff
