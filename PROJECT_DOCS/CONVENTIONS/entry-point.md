@@ -39,6 +39,7 @@ Contents:
   - [A harness resource's floor is behavioral](code-definitions-and-install/a-harness-resource-s-floor-is-behavioral.md)
   - [A hook contract is read, not assumed](code-definitions-and-install/a-hook-contract-is-read-not-assumed.md)
   - [A sentence two harness resources carry is one text](code-definitions-and-install/a-sentence-two-resources-carry-is-one-text.md)
+  - [A host version is checked against the host's declarations](code-definitions-and-install/a-host-version-is-checked-against-the-host-s-declarations.md)
 - [Planning and Execution](planning-and-execution/index.md)
   - [The gates](planning-and-execution/the-gates.md)
   - [`render-diff` slots and output](planning-and-execution/render-diff-slots-and-output.md)

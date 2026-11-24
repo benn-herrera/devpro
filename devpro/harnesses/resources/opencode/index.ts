@@ -38,44 +38,8 @@ type Registry = {
   mcp: Record<string, unknown>
 }
 
-// The slice of opencode's plugin context this entry uses.
-type Rule = { action: string; resource: string; effect: Effect }
-type AgentInfo = {
-  system?: string
-  description?: string
-  mode: string
-  hidden: boolean
-  model?: { providerID: string; id: string }
-  color?: string
-  permissions: Rule[]
-}
-type Prompt = { text: string }
-type Invocation = { sessionID: string; prompt: Prompt; delivery: unknown }
-// A finished tool call, as `execute.after` reports one, and a session that has gone idle, with the
-// work still running on it.
-type ToolCall = { tool: string; sessionID: string; status: "completed" | "error" }
-type Idle = { sessionID: string; background: readonly unknown[] }
-type SessionInfo = { parentID?: string }
-type Hook<Event> = (callback: (event: Event) => Promise<void> | void) => Promise<unknown>
-type Domain<Editor> = { transform(callback: (editor: Editor) => void): Promise<unknown>; reload(): Promise<void> }
-type Context = {
-  // The opened directory is not the project root: the plan stands at the checkout root, which is
-  // `project.directory`.
-  location: { project: { directory: string } }
-  agent: Domain<{ update(id: string, update: (agent: AgentInfo) => void): void }>
-  skill: Domain<{ add(skill: { id: string; name: string; description?: string; path: string; content: string }): void }>
-  command: Domain<{
-    add(command: { name: string; description?: string; execute(input: Invocation): Promise<void> }): void
-  }>
-  mcp: Domain<{ set(name: string, config: unknown): void }>
-  tool: { hook(name: "execute.after", callback: Hook<ToolCall>): Promise<unknown> }
-  session: {
-    prompt(input: Prompt & { sessionID: string; delivery: unknown }): Promise<unknown>
-    hook(name: "experimental.idle", callback: Hook<Idle>): Promise<unknown>
-    get(input: { sessionID: string }): Promise<SessionInfo>
-    synthetic(input: { sessionID: string; text: string; delivery: "steer" | "queue" }): Promise<unknown>
-  }
-}
+// What a registry entry becomes once its body is read: the entry, and the text `readBody` returned.
+type Bodied<E extends Entry> = { entry: E; body: string }
 
 const here = dirname(fileURLToPath(import.meta.url))
 const registryPath = join(here, "registry.json")
@@ -134,10 +98,16 @@ async function readBody(file: string): Promise<string | undefined> {
 }
 
 type Held = {
-  agents: (AgentEntry & { body: string })[]
+  agents: Bodied<AgentEntry>[]
   commands: Entry[]
-  skills: (Entry & { body: string })[]
+  skills: Bodied<Entry>[]
   mcp: [string, unknown][]
+}
+
+// readBodies reads every entry's body, keeping the entries whose body could be read.
+const readBodies = async <E extends Entry>(entries: E[]): Promise<Bodied<E>[]> => {
+  const read = await Promise.all(entries.map(async (entry) => ({ entry, body: await readBody(entry.file) })))
+  return read.filter((bodied): bodied is Bodied<E> => bodied.body !== undefined)
 }
 
 // readPlugin reads the registry and the body of every agent and skill it lists, keeping what it could
@@ -145,17 +115,19 @@ type Held = {
 async function readPlugin(): Promise<Held> {
   const registry = await readRegistry()
   if (!registry) return { agents: [], commands: [], skills: [], mcp: [] }
-  const withBodies = async <E extends Entry>(entries: E[]) =>
-    (await Promise.all(entries.map(async (entry) => ({ ...entry, body: await readBody(entry.file) })))).filter(
-      (entry): entry is E & { body: string } => entry.body !== undefined,
-    )
   return {
-    agents: await withBodies(registry.agents),
+    agents: await readBodies(registry.agents),
     commands: registry.commands,
-    skills: await withBodies(registry.skills),
+    skills: await readBodies(registry.skills),
     mcp: Object.entries(registry.mcp),
   }
 }
+
+// The plugin context is the host's own, so every use below is checked against the declarations of
+// the version this file names. The opened directory is not the project root: the plan stands at the
+// checkout root, which is `project.directory`. A command's body is read when the command runs, so
+// its invocations and prompts are the host's too.
+type Context = Parameters<Parameters<typeof Plugin.define>[0]["setup"]>[0]
 
 export default Plugin.define({
   // opencode takes the id before setup runs, so it is read synchronously; setup's read logs a failure.
@@ -206,13 +178,16 @@ export default Plugin.define({
     // would disable this plugin module's whole registration group.
     let held = await readPlugin()
     await ctx.agent.transform((editor) => {
-      for (const entry of held.agents) {
+      for (const { entry, body } of held.agents) {
         editor.update(entry.id, (agent) => {
-          agent.system = entry.body
+          agent.system = body
           if (entry.description !== undefined) agent.description = entry.description
           agent.mode = entry.mode
           if (entry.hidden !== undefined) agent.hidden = entry.hidden
-          if (entry.model) agent.model = entry.model
+          // The registry's ids are plain strings where the host's model ref brands them, and the
+          // declarations export no maker for those brands: the ref handed to the update is the
+          // registry's own value.
+          if (entry.model) agent.model = entry.model as NonNullable<typeof agent.model>
           if (entry.color !== undefined) agent.color = entry.color
           for (const [key, effect] of Object.entries(entry.permission ?? {})) {
             agent.permissions.push({ action: key, resource: "*", effect })
@@ -221,14 +196,16 @@ export default Plugin.define({
       }
     })
     await ctx.skill.transform((editor) => {
-      for (const entry of held.skills) {
+      for (const { entry, body } of held.skills) {
+        // The host brands a skill's id, name and path, and its published declarations export no maker
+        // for those brands: the strings handed over are the registry's own.
         editor.add({
           id: entry.id,
           name: entry.id,
           ...(entry.description === undefined ? {} : { description: entry.description }),
           path: join(here, entry.file),
-          content: entry.body,
-        })
+          content: body,
+        } as Parameters<typeof editor.add>[0])
       }
     })
     await ctx.command.transform((editor) => {
@@ -253,7 +230,11 @@ export default Plugin.define({
       }
     })
     await ctx.mcp.transform((editor) => {
-      for (const [name, config] of held.mcp) editor.set(name, config)
+      for (const [name, config] of held.mcp) {
+        // The registry holds each server's config as JSON the harness rendered; the host names the
+        // shape a server's config takes, which JSON cannot state.
+        editor.set(name, config as Parameters<typeof editor.set>[1])
+      }
     })
 
     // A second transform would register beside the first, so a change re-reads the files and asks

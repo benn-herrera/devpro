@@ -19,11 +19,9 @@ resource copied to both must state at its banner which copy the reader holds, th
 committed one.
 
 No Python file stands under this tree: the one it carried, the profiler's `hp.py`, is gone, and the
-profiler's code is the `devpro/profiler/` package, which is a devpro module like any other and inside
-`just lint`'s paths by the same rule, so adding or deleting a resource no longer changes what the
-lint gate covers. A resource written in Python again would pass black, isort and flake8 as well as
+profiler's code is the `devpro/profiler/` package, which is a devpro module like any other. A resource written in Python again would pass black, isort and flake8 as well as
 carrying its banner — the gate it is subject to is the module it becomes.
 
-A resource written in TypeScript, `opencode/profiler.ts` among them, is held only by its tests: no
-type check and no lint covers it, since there is no `tsconfig.json`, no package and no `just lint`
-path over the tree, and the file ships verbatim.
+A resource written in TypeScript, `opencode/profiler.ts` among them, is held by its tests and by the
+type check `just lint` runs over the opencode harness's resources: it ships verbatim, and what the
+shipped text does is held to the host's own declarations rather than to a copy of them.

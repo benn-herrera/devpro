@@ -13,6 +13,11 @@ dist/
 # on demand by the same install path a consuming project gets. Never committed.
 rendered/
 
+# the declarations `just lint` type-checks the shipped opencode TypeScript resources
+# against: dev-time only, installed before the check runs, and never committed. The
+# lockfile beside package.json pins the graph.
+node_modules/
+
 # hosted repos
 docdicer/
 homebrew-tap/

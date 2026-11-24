@@ -1,0 +1,9 @@
+{
+  "name": "devpro-typescript-resources",
+  "private": true,
+  "description": "The declarations the shipped opencode TypeScript resources are checked against. Dev-time only: nothing here ships.",
+  "devDependencies": {
+    "@opencode/plugin": "2.4.1",
+    "@types/node": "^26.6.6"
+  }
+}

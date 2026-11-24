@@ -215,10 +215,11 @@ format-python *paths: _venv
     @VENV_PYTHON={{VENV_PYTHON}} FLAKE8_IGNORE="{{FLAKE8_IGNORE}}" ./devtools/scripts/format-python.sh "$@"
 
 # shellcheck over every tracked `*.sh` file, then the same three tools over the same paths as
-# `format-python`, checking and writing nothing: a reviewer runs this one, and `format-python` is
-# what fixes what it reports.
-[doc("[dev] check the shell and the python are clean, writing nothing")]
-lint: _venv _lint-shell
+# `format-python`, checking and writing nothing, then the shipped TypeScript resources against the
+# declarations of the host version their headers name, `@opencode/plugin`. A reviewer runs this one,
+# and `format-python` is what fixes what it reports.
+[doc("[dev] check the shell, the python and the shipped TypeScript are clean, writing nothing")]
+lint: _venv _lint-shell _lint-typescript
     @{{VENV_PYTHON}} -m black --check --line-length=120 tests devpro devtools
     @{{VENV_PYTHON}} -m isort --profile black --check-only --line-length 120 tests devpro devtools
     @{{VENV_PYTHON}} -m flake8 --ignore="{{FLAKE8_IGNORE}}" devpro devtools tests
@@ -227,6 +228,15 @@ lint: _venv _lint-shell
 _lint-shell:
     @command -v shellcheck > /dev/null || { printf '%s\n' "error: just lint requires shellcheck on PATH" >&2; exit 1; }
     @git ls-files -z '*.sh' | xargs -0 shellcheck
+
+# A missing bun, or an install that cannot reach the registry, fails the lint, never skips the step.
+# The declarations the resources import arrive through `package.json`'s lockfile, which is pinned to
+# the host version the resources name; `tsconfig.json` scopes the program to what ships, the test
+# runners' TypeScript being dev-time only.
+_lint-typescript:
+    @command -v bun > /dev/null || { printf '%s\n' "error: just lint requires bun on PATH" >&2; exit 1; }
+    @cd "{{PROJECT_ROOT}}" && bun install --frozen-lockfile
+    @cd "{{PROJECT_ROOT}}" && bunx tsc --noEmit
 
 # Emits candidates, never verdicts, and exits zero with findings: whether two sites are one idea is
 # a judgment, and a gate here would be claiming it.
