@@ -20,10 +20,10 @@ cited by name, and a name outranks a stale line number.
 | PR | landed: 4d32c66 | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | landed: f3e8835 | expert | Post-plan burndown drafting: the section's items from the review, then their usability review |
 | B1 | landed: 8143650 | expert | sentence-grain check hardening: real-tree case, constant-form pin, marker strip |
-| B2 | drafted — blocked on the owner's choice (R4) | expert | the failed-feed outcome |
+| B2 | dispatchable | expert | the failed-feed answer: one catch-all, the notice rendered |
 | B3 | landed: 7d5547c | expert | sweep line numbers, helper dedup |
 | B4 | landed: 641ef80 | expert | the prefix's one source and its tool gate |
-| B5 | dispatchable | mechanical | document wording: repo-layout row, leaf reflow |
+| B5 | in progress | mechanical | document wording: repo-layout row, leaf reflow |
 | B6 | dispatchable | mechanical | pin honesty: name the form pins |
 | B7 | dispatchable | mechanical | CONVENTIONS lines: real-tree case, synonym search, scratch hygiene |
 | B8 | dispatchable | mechanical | the cli docstrings' one home |
@@ -282,7 +282,9 @@ document present at `ACTIVE_PLAN_REVIEW.md`.
 
 Drafted from [ACTIVE_PLAN_REVIEW.md](ACTIVE_PLAN_REVIEW.md); the findings' IDs below are its. One
 package per root-cause group, one commit each, per the section shape the owner directed: the
-section holds the drafting ticket, and the items it drafted under it. The checkpoint gate —
+section holds the drafting ticket, and the items it drafted under it. R17's one-sentence leaf
+reword — the only finding with no package — rides the session's commit that lands the plan. The
+checkpoint gate —
 `just test`, then `just sweep-python` — runs once, before each item's closing commit; each
 done-line's final run is at that close.
 
@@ -327,34 +329,28 @@ splitter's name.
 
 **Done-line.** `just test devpro`, then `just test dupe_sweep`, then `just test-changed`.
 
-### B2 — the failed-feed outcome
+### B2 — the failed-feed answer
 
-**Scope.** `devpro/dashboard/server.py`, `devpro/profiler/pages.py` as the chosen outcome requires;
-`tests/dashboard/test_server.py`; `tests/test_devpro_profiler.py` as the chosen outcome requires;
-`PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md` (wording only).
+**Scope.** `devpro/dashboard/server.py`, `devpro/profiler/pages.py` as the answer requires;
+`tests/dashboard/test_server.py`; `tests/test_devpro_profiler.py`.
 
 **Facts.**
 
-- The leaf as it stands (`harness-profiler.md:105-110`): "A feed with no session and no store it
-  cannot read is one `stores` entry naming how many stores the exact names read. A store an exact
-  name finds but cannot read fails the feed. The index carries simple controls — … — and a failed
-  feed names itself in an in-page notice, distinct from the no-records state a zero-record store
-  renders."
-- R4 — the owner chooses:
-  - (a) the handler answers a failure status whose JSON the page's `fetch` can report, making the
-    in-page-notice sentence true. The pin whose expectation moves:
-    `test_a_store_the_feed_cannot_read_fails_the_feed` asserts
-    `pytest.raises(RemoteDisconnected)` today; under (a) it asserts the failure status instead.
-  - (b) the leaf states plainly that the request gets no answer beyond the closed connection and
-    the traceback stays server-side; the in-page-notice clause is reworded to the notice's real
-    trigger (a failed fetch), or removed with the leaf's failure story stated in its place.
+- The owner decided: one catch-all, not per-cause handling — "individual calls for all of them is
+  giving those super low odds problems exactly the excessive concern that leads to continued
+  fixation on them." Any exception a route doesn't anticipate answers the failure status with the
+  exception's text as its error body; the dashboard is a `127.0.0.1` development surface, so the
+  text is for an operator who could read the server log anyway.
+- The pin that moves: `test_a_store_the_feed_cannot_read_fails_the_feed` asserts
+  `pytest.raises(RemoteDisconnected)` today; under the catch-all it asserts the failure status and
+  an error body naming the cause.
+- The leaf's "a failed feed names itself in an in-page notice" becomes true as written — the
+  page's `fetch` reads the error body and the notice renders it. No unreadable-store special case
+  returns, and no leaf wording changes.
 - R5: `devpro/dashboard/server.py:19-20`'s endpoint-map docstring says "one per store that could
-  not be read" — false since P3; reword to what the feed answers under the chosen outcome.
-- R17: the leaf's "no store it cannot read" qualifier sits beside a sentence saying the feed
-  cannot survive such a store — reword so the qualifier and the failure sentence tell one story.
+  not be read" — reword to what the feed answers now.
 
-**Done-line.** (a): `just test devpro`, then `just test-changed`. (b): `just test devpro`, then
-`just dev-check-links`. Either way the moved pin is named in the commit body.
+**Done-line.** `just test devpro`, then `just test-changed`.
 
 ### B3 — sweep line numbers, helper dedup
 
