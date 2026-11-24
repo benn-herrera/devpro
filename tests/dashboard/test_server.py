@@ -156,7 +156,7 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
             "first": 1767225607000,
             "last": 1767225607000,
             "span": 0,
-            "dispatcher": {"session": "s-parent", "name": "devpro-coder"},
+            "dispatcher": {"session": "s-parent", "name": "devpro-coder", "tool": "Agent"},
         },
         {
             "harness": "claude",
@@ -652,8 +652,34 @@ def test_a_rendered_agent_name_drops_the_set_prefix(tmp_path: Path, serve) -> No
 
     assert "devpro-coder" not in page
     assert re.search(r'<strong>Dispatched by</strong> <a href="/page/s-parent">s-parent</a> — coder<', page)
-    assert "dispatched.name.replace(/^devpro-/, '')" in index
-    assert {"session": "s-parent", "name": "devpro-coder"} in [entry.get("dispatcher") for entry in feed]
+    assert "dispatched.tool === AGENT_TOOL ? dispatched.name.replace(AGENT_PREFIX, '') : dispatched.name" in index
+    assert {"session": "s-parent", "name": "devpro-coder", "tool": "Agent"} in [
+        entry.get("dispatcher") for entry in feed
+    ]
+
+
+def test_a_served_dispatch_line_keeps_a_name_that_is_not_an_agents(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is the band's drop running on every dispatched session,
+    so a session a Bash call recorded as its child — the recorded head `devpro-check-plan` — heads
+    its page `check-plan`, the page misstating the call the store holds.
+
+    The drop is the Agent tool's: the served band renders a Bash dispatcher's name as recorded."""
+    root = project(tmp_path / "proj", {})
+    store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
+    store(
+        root,
+        "s-parent",
+        [
+            record("2026-01-01T00:00:00.000Z", tool="Bash", name="devpro-check-plan", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "s-one"}
+        ],
+        directory=".profiler-opencode",
+    )
+    served = serve(root)
+
+    page = served.get("page/s-one")[2].decode("utf-8")
+
+    assert re.search(r'<strong>Dispatched by</strong> <a href="/page/s-parent">s-parent</a> — devpro-check-plan<', page)
 
 
 def test_the_decoration_and_the_pages_script_share_one_scope(tmp_path: Path, serve) -> None:

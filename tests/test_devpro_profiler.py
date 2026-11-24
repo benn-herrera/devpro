@@ -42,10 +42,14 @@ from typing import IO
 
 import pytest
 
+from devpro.components import NAME
 from devpro.dashboard.server import BOARD_PATH
 from devpro.profiler.capture import mask
 from devpro.profiler.hooks import OLD_HOOK_COMMANDS, RETIRED_HOOK_FILES, RETIRED_LAUNCHERS
 from devpro.profiler.pages import (
+    AGENT_PREFIX,
+    AGENT_PREFIX_LINE,
+    AGENT_PREFIX_MARK,
     BAND_LEGEND,
     DATA_MARK,
     DISPATCHED_MARK,
@@ -889,7 +893,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "first": _epoch_ms("2026-01-01T00:00:07.000Z"),
             "last": _epoch_ms("2026-01-01T00:00:08.000Z"),
             "span": 1,
-            "dispatcher": {"session": "s-dispatcher", "name": "devpro-coder"},
+            "dispatcher": {"session": "s-dispatcher", "name": "devpro-coder", "tool": "Agent"},
         },
     ]
     # The page file is static: the rows' empty table, no session's row, and every column heading a
@@ -1096,6 +1100,92 @@ def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path) -> No
     assert layer == SHARED_CSS
 
 
+def test_every_script_spelling_of_the_prefix_is_the_services_one(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a page's script carrying the set's prefix as its
+    own literal — a re-stringed `devpro-` in `view.html`'s `shownName`, or in the index's row strip,
+    beside `pages.agent_prefix_line` — so a change to the install's one name leaves the page dropping a
+    prefix the set's agents no longer carry, silently, the rendering's own text still saying it does.
+
+    The lane is the engine's reading of both scripts: each reads a name with no prefix line standing
+    and fails to load, then loads beside the `AGENT_PREFIX` line and drops the Agent call's prefix
+    while keeping a Bash call's name whole. The page's own spelling is the install's one name — the
+    line's prefix equals `components.NAME` and `call_label` drops it. A missing `bun` fails rather
+    than skips, as the pages' other engine checks do."""
+    import shutil
+
+    if shutil.which("bun") is None:
+        pytest.fail("bun is not on PATH: the prefix's scripts cannot be read without it")
+    index = index_html()
+    view = (_PACKAGE_ROOT / "devpro" / "profiler" / "view.html").read_text(encoding="utf-8")
+    assert AGENT_PREFIX_MARK in view
+
+    # The pages' own spelling is the install's one name, and the label drops exactly it.
+    assert AGENT_PREFIX == f"{NAME}-"
+    assert call_label("Agent", f"{AGENT_PREFIX}coder") == "coder (agent)"
+
+    # `shown` is the index's child-row name, over the row's dispatcher; `label` is a session page's
+    # call label, over the two helpers it reads.
+    reads = {
+        "index": "const dispatched = { name: 'devpro-coder', tool: 'Agent' };\n"
+        "const AGENT_TOOL = 'Agent';\n"
+        + re.search(r"^    const shown = .*$", index, re.M).group(0)
+        + "\nconsole.log(shown);",
+        "view": "\n".join(
+            re.search(pattern, view, re.M).group(0)
+            for pattern in (
+                r"^const shownName = .*$",
+                r"^const KIND_WORDS = .*$",
+                r"^const kindWord = .*$",
+                r"^const label = .*$",
+            )
+        )
+        + "\nconsole.log(label('Agent', 'devpro-coder') + ' / ' + label('Bash', 'devpro-tool'));",
+    }
+    bound = AGENT_PREFIX_LINE + "\n"
+    for page, read in reads.items():
+        (tmp_path / f"{page}-unbound.js").write_text(read, encoding="utf-8")
+        (tmp_path / f"{page}-bound.js").write_text(bound + read, encoding="utf-8")
+
+    # Each page's unbound module is the engine's `ReferenceError`; its bound one reads the name.
+    for page in reads:
+        unbound = subprocess.run(["bun", str(tmp_path / f"{page}-unbound.js")], capture_output=True, text=True)
+        assert "ReferenceError" in unbound.stderr, unbound.stderr
+    run = subprocess.run(
+        ["bun", "-e", "".join(f"await import({str(tmp_path / (page + '-bound.js'))!r});\n" for page in reads)],
+        capture_output=True,
+        text=True,
+    )
+
+    assert run.returncode == 0, run.stderr
+    assert run.stdout.split("\n")[:2] == ["coder", "coder (agent) / devpro-tool (Bash)"]
+
+
+def test_a_script_naming_no_name_renders_no_word(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is `shownName` returning the name it was handed for a
+    call recorded with none, so the grouped-skills label — the one site that reads the name as a
+    word of its own, its fallback guarded on the string — renders `undefined` in the line a reader
+    reads: `3 skills: undefined, …`.
+
+    A call with no name renders `''`, the empty word a caller's own fallback fills, in the same
+    engine reading as the prefix lane."""
+    import shutil
+
+    if shutil.which("bun") is None:
+        pytest.fail("bun is not on PATH: the prefix's scripts cannot be read without it")
+    view = (_PACKAGE_ROOT / "devpro" / "profiler" / "view.html").read_text(encoding="utf-8")
+    [nameless] = re.findall(r"^const shownName = .*$", view, re.M)
+    calls = "const D = { calls: [{ tool: 'Skill', name: null }, { tool: 'Skill', name: 'devpro-docdicer' }] };\n"
+    names = "const names = D.calls.map((c) => shownName(c.tool, c.name) || 'skill');\n"
+    (tmp_path / "nameless.js").write_text(
+        f"{AGENT_PREFIX_LINE}\n{nameless}\n{calls}{names}console.log(names.join(','));\n", encoding="utf-8"
+    )
+
+    run = subprocess.run(["bun", str(tmp_path / "nameless.js")], capture_output=True, text=True)
+
+    assert run.returncode == 0, run.stderr
+    assert run.stdout.strip() == "skill,devpro-docdicer"
+
+
 # ---------- the stores' rename, and an install's migration of them ----------
 
 
@@ -1183,10 +1273,19 @@ def test_a_rendered_call_label_drops_the_set_prefix(name: str, shown: str) -> No
     `devpro-coder (agent)`, repeating the set's prefix on every dispatch a reader already knows is
     the devpro set's.
 
-    The label drops `devpro-` at the render and keeps every other name as recorded; a name that is
-    the prefix alone renders as no name, which is the call's kind."""
+    The label drops `devpro-` at the render of an Agent call and keeps every other name as recorded; a
+    name that is the prefix alone renders as no name, which is the call's kind."""
     assert call_label("Agent", name) == shown
-    assert call_label("Bash", "devpro-tool") == "tool (Bash)"
+
+
+def test_a_call_that_is_not_an_agent_keeps_its_recorded_name() -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is an unconditional drop, a Bash command recorded as
+    `devpro-check-plan` rendering as `check-plan (Bash)` — the page misstating the command that ran,
+    whose name merely begins the way the set's agent names do.
+
+    The drop is the Agent tool's: every other tool's name is rendered as recorded."""
+    assert call_label("Bash", "devpro-tool") == "devpro-tool (Bash)"
+    assert call_label("Skill", "devpro-docdicer") == "devpro-docdicer (skill)"
 
 
 def test_the_doctor_names_the_stores_the_readers_read(tmp_path: Path) -> None:

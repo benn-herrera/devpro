@@ -251,19 +251,29 @@ def unique_events(records: list[dict]) -> list[dict]:
 TOOL_WORDS = {"Skill": "skill", "Agent": "agent"}
 
 # The prefix an agent set's definitions carry their names under, dropped where a page renders one: the
-# stored records and the feed keep the name as recorded.
+# stored records and the feed keep the name as recorded. It is the install's one name,
+# `components.NAME`; `pages` spells it rather than importing a module the capture path may not pay
+# for, and the lane test pins the spelling to `components.NAME`.
 AGENT_PREFIX = "devpro-"
+# Where the index script's prefix line stands in the template, `index_html` replacing it with the line
+# below: a mark a carrier has filled is no unfilled one, so the strict fill lets neither stand.
+AGENT_PREFIX_MARK = "/*AGENT_PREFIX*/"
+# The one line of JavaScript both pages' scripts get the prefix from, beside the template scripts that
+# read it: a rendering fills their `AGENT_PREFIX` mark with this text, so the four spellings — this
+# constant, the index's row strip and `view.html`'s `shownName` — are one line the lane checks.
+AGENT_PREFIX_LINE = f"const AGENT_PREFIX = '{AGENT_PREFIX}';"
 
 
-def rendered_name(name: str | None) -> str | None:
-    """A name as a page renders it: an agent set's prefix dropped, every other name as it stands."""
-    return name.removeprefix(AGENT_PREFIX) if name else name
+def rendered_name(name: str | None, tool: str | None) -> str | None:
+    """An Agent call's name as a page renders it: the set's prefix dropped. Every other call's name is
+    as recorded — a Bash command's `devpro-check-plan` is that command, not the set's prefix."""
+    return name.removeprefix(AGENT_PREFIX) if name and tool == "Agent" else name
 
 
 def call_label(tool: str | None, name: str | None) -> str:
     """The name leads and the kind follows: `review (skill)`, `counter (agent)`, `wc -l a (Bash)`."""
     word = TOOL_WORDS.get(tool, tool)
-    rendered = rendered_name(name)
+    rendered = rendered_name(name, tool)
     return f"{rendered} ({word})" if rendered else word
 
 
@@ -634,22 +644,23 @@ def _inlined_session_data(session: dict) -> str:
     return _json(session_data(session)).replace("<", "\\u003c").replace("/", "\\/")
 
 
-def _rendering(session: dict, *, dispatcher: tuple[str, str] | None, return_to: str | None) -> str:
-    """The page's one rendering: the template's own text with the session's data and the band's facts
-    filled, the layer's mark left standing for its carrier's fill — `render_html` inlines the layer's
-    text, a file being unable to link a server's origin, and the serve path fills the link
-    (`served_page`). One rendering, two carriers."""
+def _rendering(session: dict, *, dispatcher: tuple[str, str, str | None] | None, return_to: str | None) -> str:
+    """The page's one rendering: the template's own text with the session's data, the band's facts and
+    the prefix line filled, the layer's mark left standing for its carrier's fill — `render_html`
+    inlines the layer's text, a file being unable to link a server's origin, and the serve path fills
+    the link (`served_page`). One rendering, two carriers."""
     template = (files(__package__) / "view.html").read_text(encoding="utf-8")
     return strict_fill(
         template,
         {
             DATA_MARK: _inlined_session_data(session),
+            AGENT_PREFIX_MARK: AGENT_PREFIX_LINE,
             **band_fills(dispatcher=dispatcher, return_to=return_to),
         },
     )
 
 
-def render_html(session: dict, *, dispatcher: tuple[str, str] | None) -> str:
+def render_html(session: dict, *, dispatcher: tuple[str, str, str | None] | None) -> str:
     """One self-contained page: the package's template with the presentation layer, the how-to-read
     legend and the trace inlined, and the frame band's per-page facts the session's stores name — the
     way back to the list, and the dispatcher where one dispatched it — the same facts the served
@@ -789,27 +800,28 @@ def session_harness(session: dict) -> str:
     return clip(mask(str(harness)), NAME_LIMIT)
 
 
-def dispatches(sessions: list[dict]) -> dict[str, tuple[str, str]]:
-    """child session id -> the session that dispatched it and that call's name.
+def dispatches(sessions: list[dict]) -> dict[str, tuple[str, str, str | None]]:
+    """child session id -> the session that dispatched it, that call's name and the tool it ran as.
 
     Only an opencode record names a session: its `child_agent_id` is a session id. A claude record's
     is an agent id, and claude records its subagents' calls in the parent's own file, so no claude
     session is ever a child here. A child two sessions name keeps the first in list order, and a
     session naming itself is no child: it would be dropped from the index's top level and drawn as
-    its own child."""
-    found: dict[str, tuple[str, str]] = {}
+    its own child. The tool is the call's: a page rendering the dispatcher's name drops the set's
+    prefix on an Agent call and on no other."""
+    found: dict[str, tuple[str, str, str | None]] = {}
     for session in sessions:
         for record in session["records"]:
             child = record.get("child_agent_id")
             if record.get("harness") == "opencode" and child and str(child) != session["id"]:
-                found.setdefault(str(child), (session["id"], str(record.get("name") or "")))
+                found.setdefault(str(child), (session["id"], str(record.get("name") or ""), record.get("tool")))
     return found
 
 
-def dispatcher_of(session: str, sessions: list[dict]) -> tuple[str, str] | None:
-    """The session that dispatched `session`, and the call that did, named by the stores' other
-    sessions — the band's per-page fact, the one lookup whoever fills the band runs, so the dump's
-    page and the served page's name the same dispatcher."""
+def dispatcher_of(session: str, sessions: list[dict]) -> tuple[str, str, str | None] | None:
+    """The session that dispatched `session`, the call that did and the tool it ran as, named by the
+    stores' other sessions — the band's per-page fact, the one lookup whoever fills the band runs, so
+    the dump's page and the served page's name the same dispatcher."""
     return dispatches([other for other in sessions if other["id"] != session]).get(session)
 
 
@@ -845,7 +857,7 @@ def traces_feed(directory: Path | str) -> list[dict]:
     return entries
 
 
-def _feed_entry(session: dict, dispatcher: tuple[str, str] | None, agents: int = 0) -> dict:
+def _feed_entry(session: dict, dispatcher: tuple[str, str, str | None] | None, agents: int = 0) -> dict:
     """One session's entry in the feed, `agents` the count of the sessions `dispatcher` and its
     siblings name as children, and `dispatcher` itself left out where none dispatched the session."""
     entry = {
@@ -858,7 +870,8 @@ def _feed_entry(session: dict, dispatcher: tuple[str, str] | None, agents: int =
         "span": _round_half_up((session["last"] - session["first"]) / 1000),
     }
     if dispatcher:
-        entry["dispatcher"] = {"session": dispatcher[0], "name": dispatcher[1]}
+        session, name, tool = dispatcher
+        entry["dispatcher"] = {"session": session, "name": name, "tool": tool}
     return entry
 
 
@@ -871,8 +884,9 @@ def index_html() -> str:
     stands beside no board, so the deco — the nav, the frame band and the decoration's script — is
     the template's own text, the band's legend filled here from its one home (the index carrying no
     dispatcher and no way back), and the layer's carriage left at its mark — filled by the serve path
-    with its link (`served_page`), its one consumer, since no file flow writes the index."""
-    return strict_fill(INDEX, band_fills(dispatcher=None, return_to=None))
+    with its link (`served_page`), its one consumer, since no file flow writes the index. The
+    script's mark is the one prefix line, `AGENT_PREFIX_LINE`, filled here."""
+    return strict_fill(INDEX.replace(AGENT_PREFIX_MARK, AGENT_PREFIX_LINE), band_fills(dispatcher=None, return_to=None))
 
 
 def served_page(text: str) -> str:
@@ -894,17 +908,17 @@ def _session_link(identifier: str) -> str:
     return _link(PAGE_PREFIX + quote(identifier), identifier)
 
 
-def dispatcher_html(dispatcher: tuple[str, str]) -> str:
+def dispatcher_html(dispatcher: tuple[str, str, str | None]) -> str:
     """The frame band's dispatch line: the session that dispatched this page, linked to its page, and
-    the call that dispatched it."""
-    session, name = dispatcher
+    the call that dispatched it — an Agent call, its record's tool gating the prefix's drop."""
+    session, name, tool = dispatcher
     return (
         f'<span class="dispatched"><strong>Dispatched by</strong> {_session_link(session)} — '
-        f"{html.escape(rendered_name(name) or '')}</span>"
+        f"{html.escape(rendered_name(name, tool) or '')}</span>"
     )
 
 
-def band_fills(*, dispatcher: tuple[str, str] | None, return_to: str | None) -> dict[str, str]:
+def band_fills(*, dispatcher: tuple[str, str, str | None] | None, return_to: str | None) -> dict[str, str]:
     """The frame band's per-page fills for the strict fill: the legend from its one home `LEGEND`,
     the dispatch line, and the way back. A fact this page carries none of fills its mark empty — the
     dispatcher where none dispatched it, and the way back on the index, which is the list itself —
@@ -1012,6 +1026,8 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 (() => {
 const FEED = '/api/traces';
 const PAGE = '/page/';
+/*AGENT_PREFIX*/
+const AGENT_TOOL = 'Agent';
 // The harnesses the controls carry a box for, in the page's own order: a box's id is this name
 // behind `harness-`, and a row's dot classes it where the harness is one of these — the feed's name,
 // the controls' boxes and the style block's two rules changing together.
@@ -1102,7 +1118,8 @@ const row = ({ session, dispatched, children = 0 }) => {
   id.title = session.id;
   id.append(link(session.id));
   if (dispatched) {
-    id.append(' ', el('small', '↳ child — ' + dispatched.name.replace(/^devpro-/, '')));
+    const shown = dispatched.tool === AGENT_TOOL ? dispatched.name.replace(AGENT_PREFIX, '') : dispatched.name;
+    id.append(' ', el('small', '↳ child — ' + shown));
   }
   const window = el('td', undefined, 'col-one');
   window.append(moments(session));
@@ -1325,7 +1342,7 @@ def session_for(path: str, directory: Path | str) -> dict | None:
     return next((session for session in sessions if session["id"] == path[len(PAGE_PREFIX) :]), None)
 
 
-def page_for(session: dict, *, return_to: str | None, dispatcher: tuple[str, str] | None) -> str:
+def page_for(session: dict, *, return_to: str | None, dispatcher: tuple[str, str, str | None] | None) -> str:
     """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
     frame band with its legend, the decoration's script, the presentation layer linked — the band's
     per-page facts the dashboard's own lookup names, one legend on the page and the script once. The

@@ -82,14 +82,17 @@ const localDay = (d) => `${d.getFullYear()}-${padTwo(d.getMonth() + 1)}-${padTwo
 const localClock = (d) => `${padTwo(d.getHours())}:${padTwo(d.getMinutes())}`;
 const KIND_WORDS = { Skill: 'skill', Agent: 'agent' };
 const kindWord = (tool) => KIND_WORDS[tool] || tool;
-// A call's name as the page renders it: an agent set's prefix dropped, every other name as recorded.
-const shownName = (n) => (n ? n.replace(/^devpro-/, '') : n);
+// A call's name as the page renders it: an Agent call's set prefix dropped, every other name as
+// recorded — a Bash command's `devpro-check-plan` is that command. `AGENT_PREFIX` is the one line
+// `pages.AGENT_PREFIX_LINE` holds, filled here at the render.
+/*AGENT_PREFIX*/
+const shownName = (tool, n) => (n && tool === 'Agent' ? n.replace(AGENT_PREFIX, '') : n || '');
 // The way back carries the page's own query: the index's row links bring it here, and the list opened
 // at it stands as the reader left it — the controls' state and the sort in force.
 const back = document.querySelector('.frame-band a.return');
 if (back) back.href = back.pathname + location.search;
 // The name leads and the kind follows, quieter: review (skill).
-const label = (tool, n) => (shownName(n) ? `${shownName(n)} (${kindWord(tool)})` : kindWord(tool));
+const label = (tool, n) => (shownName(tool, n) ? `${shownName(tool, n)} (${kindWord(tool)})` : kindWord(tool));
 const short = (id) => (id === 'main' ? 'main' : id.slice(0, 6));
 const byId = new Map(D.contexts.map((c) => [c.id, c]));
 const callOf = new Map(D.calls.map((c, i) => [c.child, i]).filter(([child]) => child));
@@ -215,7 +218,7 @@ function drawSequence() {
     const box = `x="${x - colW / 2 + 8}" y="4" width="${colW - 16}" height="${SEQ_HEAD - 10}" rx="6"`;
     if (new Set(list.map((c) => color(c.id))).size > 1) { s += sharedHeader(list, x, box); return; }
     // One context, or copies that share their parent's color: a solid header.
-    const name = shownName(first.name) || first.label;
+    const name = shownName(first.tool, first.name) || first.label;
     const title = list.length === 1 ? name : `${name} ×${list.length}`;
     const sub = list.length === 1
       ? (first.id === 'main' ? 'main context' : `${kindWord(first.tool)} · ${short(first.id)}${first.kind === 'copy' ? ` · copy of ${short(first.parent)}` : first.parent ? '' : ' · parent not recorded'}`)
@@ -234,10 +237,8 @@ function drawSequence() {
   //   five long names, 230 px    => [wat…] [est…] [val…] [fork] [val…]
   function sharedHeader(list, x, box) {
     const PAD = 6, GAP = 4, avail = colW - 32;
-    const names = list.map((c, i) => {
-      const chip = shownName(c.name) || c.label;
-      return i && chip === (shownName(list[i - 1].name) || list[i - 1].label) ? '' : chip;
-    });
+    const plain = list.map((c) => shownName(c.tool, c.name) || c.label);
+    const names = plain.map((chip, i) => (i && chip === plain[i - 1] ? '' : chip));
     const bare = Math.max(2, Math.min(14, (avail - GAP * (list.length - 1)) / list.length));
     const widths = (n) => names.map((name) => (name && n > 1 ? Math.min(name.length, n) * CHAR_W + PAD * 2 : bare));
     const total = (n) => widths(n).reduce((a, b) => a + b, 0) + GAP * (list.length - 1);
@@ -285,7 +286,7 @@ function drawSequence() {
     }
     if (e.type === 'group') {
       const x = lx.get(e.at) + 5;
-      const names = e.is.map((i) => D.calls[i].name || 'skill');
+      const names = e.is.map((i) => shownName(D.calls[i].tool, D.calls[i].name) || 'skill');
       const text = `${e.is.length} skills: ${names.join(', ')}`;
       s += `<g class="hit" data-group="${e.is[0]}"><path d="M${x + 12} ${y - 7} l7 7 l-7 7 l-7 -7 z" fill="${color(e.at)}"/>`
         + `<text x="${x + 26}" y="${y + 4}">${esc(clip(text, fits(x + 26 > W - colW ? W - x - 36 : colW - 40)))}</text>`
@@ -296,7 +297,7 @@ function drawSequence() {
     const tip = `<title>${esc(`${label(c.tool, c.name)} · ${clock(c.start)} · ${took(c)}${c.ok ? '' : ' · failed'}${c.result ? `\n-> ${c.result}` : ''}`)}</title>`;
     if (e.type === 'self') {
       const x = lx.get(e.at) + 5, inline = c.tool === 'Skill';
-      const name = shownName(c.name) || kindWord(c.tool), kind = ` (${kindWord(c.tool)})`;
+      const name = shownName(c.tool, c.name) || kindWord(c.tool), kind = ` (${kindWord(c.tool)})`;
       s += `<g class="hit" data-i="${e.i}">`
         + (inline ? `<path d="M${x + 12} ${y - 7} l7 7 l-7 7 l-7 -7 z" fill="${color(e.at)}"/>`
           : `<path d="M${x} ${y - 6} h18 v12 h-14" fill="none" stroke="${css('--muted')}" marker-end="url(#head-self)"/>`)
@@ -309,7 +310,7 @@ function drawSequence() {
     const isCall = e.type === 'call';
     const stroke = isCall ? color(c.ctx) : css('--muted');
     const span = Math.abs(x1 - x0);
-    const name = shownName(c.name) || kindWord(c.tool), kind = ` (${kindWord(c.tool)})`;
+    const name = shownName(c.tool, c.name) || kindWord(c.tool), kind = ` (${kindWord(c.tool)})`;
     const args = c.args && c.args !== c.name ? ` · ${c.args}` : '';
     // Labels start a fixed distance right of the left end, the caller's lifeline,
     const lx0 = Math.min(x0, x1) + LABEL_PAD;
@@ -399,7 +400,7 @@ function drawTree() {
       const hue = color(c.child && byId.has(c.child) ? c.child : c.ctx);
       // The dispatch links to the child session's page, where the record's harness names one; a page
       // the dashboard serves nothing at answers its 404 like any unrecorded session's.
-      const name = `<b>${esc(shownName(c.name) || kindWord(c.tool))}</b>`;
+      const name = `<b>${esc(shownName(c.tool, c.name) || kindWord(c.tool))}</b>`;
       h += `<div class="row" id="r${it.i}" data-i="${it.i}"><span class="muted">${clock(c.start)}</span><span class="num">${esc(took(c))}</span>`
         + `<span class="bar"><i style="width:${barWidth(c.running ? 0 : c.dur, longest)}px;background:${hue}"></i></span>`
         + (spent ? [spent.new, spent.cached, spent.out].map((n) => `<span class="num" title="${n}">${count(n)}</span>`).join('') : '<span></span><span></span><span></span>')
