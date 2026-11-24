@@ -29,7 +29,7 @@ becomes-blocks are the accepted text.
 | B5a | drafted | expert | one home each (VR5) |
 | B5b | drafted | expert | one stand-in (VR6) |
 | B6 | landed 6641b54 | expert | the documents state the shipped code (VR7, VR8, VR14; after B8) |
-| B7 | drafted | expert | CONVENTIONS aligns with practice (VR9) |
+| B7 | in progress: dispatched to devpro-python-coder | expert | CONVENTIONS aligns with practice (VR9) |
 | B8 | landed 7ea5524 | expert | the launcher's edges and the stale installs (VR10) |
 | B9 | drafted | expert | one lockfile (VR11) |
 | B10 | drafted | expert | the agents column, and the residue (VR12, VR13) |
