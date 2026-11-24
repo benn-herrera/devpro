@@ -268,12 +268,14 @@ re-implementation; `rstrip()` is narrowed to the line's own ending; the one-func
 inlined; the dashboard's traces-feed case gains a readable claude session beside the locked
 store; `subsystem-map.md` names
 `runner_file.py`'s three duties — the move to `install.py` is the roadmap's. (The entry runner's
-always-empty `requests` key left with B1's hook removal — nothing to drop.) The retired-directory
+always-empty `requests` key left with B1's hook removal — nothing to drop.) The doctor's
+`traces:` line (`hooks.py:259`) prints the claude store twice — alone, then within
+`TRACE_STORES` — and the alone-mention drops. The retired-directory
 pin in `test_devpro_install.py` naming three harnesses is verified against the owner's account:
 mage's per-harness temp separation predates the `.devpro-temp` unification, which forgot mage —
 the third retired name's fate (leftover the install should clean, or stale pin) is decided there
 with the unification's history as the record. Scope:
-`devpro/runner_file.py`, `tests/conftest.py`, `tests/test_devpro_profiler.py`,
+`devpro/runner_file.py`, `devpro/profiler/hooks.py`, `tests/conftest.py`, `tests/test_devpro_profiler.py`,
 `tests/dashboard/test_server.py`, `PROJECT_DOCS/ARCHITECTURE/subsystem-map.md`.
 Done-line: `just test`, `just lint`.
 
