@@ -69,6 +69,8 @@ P2 `74c5f7e`, P3 `99f0f4d`, P4 `e4f1edd`).
 - **R20** (session, from P2's report): `just test`/`just test devpro` leave `.pytest_cache` under
   the project root rather than the scratch directory the CONVENTIONS name for build outputs.
 - **R21** (session): `.devpro-temp/` accumulates packages' scratch with no cleanup rule.
+- **R22** (coder, addendum): `harness-profiler.md`'s lines 105–110 carry ragged wrapping from P4's
+  hand edit — omitted from the synthesized list in error; added at the burndown's usability review.
 
 ## Contract gaps
 

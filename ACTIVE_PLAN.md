@@ -17,13 +17,23 @@ cited by name, and a name outranks a stale line number.
 | P2 | landed: 74c5f7e | expert | double-delivery check compares sentences; scratch-name pin retired; repo-layout pair 2 |
 | P3 | landed: 99f0f4d | expert | unreadable store fails the feed; `read_sessions` returns the list alone; profiler pair 1 |
 | P4 | landed: e4f1edd | expert | agents cell, query-carrying links, `devpro-` prefix drop; profiler pair 2 |
-| PR | landed: with this commit | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
-| PB | drafted | expert | fixes drafted from the review document |
+| PR | landed: 4d32c66 | expert | review of what shipped, written to `ACTIVE_PLAN_REVIEW.md` |
+| B0 | landed: with this commit | expert | Post-plan burndown drafting: the section's items from the review, then their usability review |
+| B1 | dispatchable | expert | sentence-grain check hardening: real-tree case, constant-form pin, marker strip |
+| B2 | drafted — blocked on the owner's choice (R4) | expert | the failed-feed outcome |
+| B3 | dispatchable | expert | sweep line numbers, helper dedup |
+| B4 | dispatchable | expert | the prefix's one source and its tool gate |
+| B5 | dispatchable | mechanical | document wording: repo-layout row, leaf reflow |
+| B6 | dispatchable | mechanical | pin honesty: name the form pins |
+| B7 | dispatchable | mechanical | CONVENTIONS lines: real-tree case, synonym search, scratch hygiene |
+| B8 | dispatchable | mechanical | the cli docstrings' one home |
+| B9 | drafted — blocked on the owner's choice (R18) | expert | the families' anchor prose: in the literals corpus or recorded as out |
 
-P1–P4 and PR are `dispatchable` as of the PE usability review and the architect revision that applied
-it — the revision's checks clean (`check-plan`, `check-links`). PB stays `drafted`: its work list is
-drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands, and gets its own usability
-review before it is `dispatchable`.
+P1–P4 and PR are `landed`. The burndown's items B1–B8 were drafted from `ACTIVE_PLAN_REVIEW.md` in
+the section shape the owner directed: one ticket per root-cause group, each with its own row,
+rating and one-commit close. They stay `drafted` through the burndown's `devpro-prompt-engineer`
+usability review and the session's revision; B2 stays blocked on the owner's choice of outcome
+regardless.
 
 ## Sequencing
 
@@ -268,12 +278,205 @@ document present at `ACTIVE_PLAN_REVIEW.md`.
 
 **One commit.**
 
-## PB — Post-plan burndown
+## Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands. The burndown's work list
-replaces this paragraph where it stands, and gets `devpro-prompt-engineer` usability review then the
-session's revision before its state is set `dispatchable`.
+Drafted from [ACTIVE_PLAN_REVIEW.md](ACTIVE_PLAN_REVIEW.md); the findings' IDs below are its. One
+package per root-cause group, one commit each, per the section shape the owner directed: the
+section holds the drafting ticket, and the items it drafted under it. The checkpoint gate —
+`just test`, then `just sweep-python` — runs once, before each item's closing commit; each
+done-line's final run is at that close.
 
-**Done-line.** Per its drafted items, each naming the runner targets that check what it changes.
+### B0 — Post-plan burndown drafting
 
-**One commit** per burndown item, each item a package of its own at drafting time.
+**Scope.** This section's items; the session is the worker.
+
+**Facts.** The items below group the review's findings and contract gaps by root cause, each item
+citing its IDs and carrying the quoted lines its executor acts on. B0's work: draft them, run their
+`devpro-prompt-engineer` usability review, apply the session's one revision, and set each item's
+row by its state: `dispatchable` where the review left nothing open; `drafted` where it did, the
+note naming what blocks it — B2's note names the owner's choice (R4), B9's the owner's choice
+(R18).
+
+**Done-line.** `just devpro-check-plan` green with every B-row's State cell matching the sentence
+above; each item then dispatches under its own row.
+
+**One commit** — the one carrying the items' usability-reviewed form.
+
+### B1 — sentence-grain check hardening
+
+**Scope.** `tests/test_devpro.py`; `devtools/dupe_sweep/doc_sentences.py` if fixing R9 promotes the
+splitter's name.
+
+**Facts.**
+
+- R1: no caller of `_double_paragraphs` runs it over the real renderings. Add the real-tree case:
+  `assert _double_paragraphs(_definition_sources()) == []` — the review's probe measured 89
+  prompts / 19,192 sentences, zero findings, on the clean tree.
+- R2: the DISSENT expectation at `tests/test_devpro.py:2294-2299` is built by applying the
+  production splitter to the same constant it tests — a splitter change moves both sides. Restore
+  the constant form: the expected findings stated as literals.
+- R3: the pin, stated as the failing observation: `_sentence_list(b"Run 2. Then stop.")` returns
+  `["Run 2. Then stop."]`; before the fix it returns `["Run Then stop."]` — the strip at
+  `tests/test_devpro.py:1926` is `re.sub(rb"\d+[.)] ", b"", unit, count=1)`, unanchored. Anchor it
+  to `^`. (The review's "scope by kind" clause is vacuous under the current code — every prose
+  unit is one kind — so the anchor is the fix.)
+- R10: `_repeatable_sentence`'s empty case raises an unnamed `StopIteration` — name the defect in
+  its raise.
+- R9: tests reach the private `_split_sentences`; make it public or reach it through
+  `block_sentences` — the choice is the coder's.
+
+**Done-line.** `just test devpro`, then `just test dupe_sweep`, then `just test-changed`.
+
+### B2 — the failed-feed outcome
+
+**Scope.** `devpro/dashboard/server.py`, `devpro/profiler/pages.py` as the chosen outcome requires;
+`tests/dashboard/test_server.py`; `tests/test_devpro_profiler.py` as the chosen outcome requires;
+`PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md` (wording only).
+
+**Facts.**
+
+- The leaf as it stands (`harness-profiler.md:105-110`): "A feed with no session and no store it
+  cannot read is one `stores` entry naming how many stores the exact names read. A store an exact
+  name finds but cannot read fails the feed. The index carries simple controls — … — and a failed
+  feed names itself in an in-page notice, distinct from the no-records state a zero-record store
+  renders."
+- R4 — the owner chooses:
+  - (a) the handler answers a failure status whose JSON the page's `fetch` can report, making the
+    in-page-notice sentence true. The pin whose expectation moves:
+    `test_a_store_the_feed_cannot_read_fails_the_feed` asserts
+    `pytest.raises(RemoteDisconnected)` today; under (a) it asserts the failure status instead.
+  - (b) the leaf states plainly that the request gets no answer beyond the closed connection and
+    the traceback stays server-side; the in-page-notice clause is reworded to the notice's real
+    trigger (a failed fetch), or removed with the leaf's failure story stated in its place.
+- R5: `devpro/dashboard/server.py:19-20`'s endpoint-map docstring says "one per store that could
+  not be read" — false since P3; reword to what the feed answers under the chosen outcome.
+- R17: the leaf's "no store it cannot read" qualifier sits beside a sentence saying the feed
+  cannot survive such a store — reword so the qualifier and the failure sentence tell one story.
+
+**Done-line.** (a): `just test devpro`, then `just test-changed`. (b): `just test devpro`, then
+`just dev-check-links`. Either way the moved pin is named in the commit body.
+
+### B3 — sweep line numbers, helper dedup
+
+**Scope.** `devtools/dupe_sweep/definition_text.py`, `devtools/dupe_sweep/doc_sentences.py`,
+`devtools/tests/test_dupe_sweep.py`.
+
+**Facts.**
+
+- R6: multi-line literals report every sentence at the literal's opening line. Number them as
+  `_docstrings` does (`doc_sentences.py:60`'s `enumerate(..., start=first_line)` pattern), and
+  correct the docstring's overclaim at `definition_text.py:6-7` ("a sentence's line is the
+  literal's line, which is the line the reader opens the module at").
+- R11: `docstring_nodes` (`doc_sentences.py:78`) re-implements `_docstrings`' detection
+  (`:68`, `ast.get_docstring(clean=True)`). One helper decides; the shape that survives is the one
+  `test_a_literal_is_rejoined_across_its_hard_wrap_and_split_like_a_docstring` needs — probe the
+  merge both ways if the tests disagree.
+
+**Done-line.** `just test dupe_sweep`, then `just sweep-python` (advisory — read once, its count
+move is not a done-line), then `just test-changed`.
+
+### B4 — the prefix's one source and its tool gate
+
+**Scope.** `devpro/profiler/pages.py`, `devpro/profiler/view.html`,
+`tests/dashboard/test_server.py`, `tests/test_devpro_profiler.py`.
+
+**Facts.**
+
+- R15: the drop is unconditional (`rendered_name`, `pages.py:258-268`), so a Bash call whose
+  recorded head carries the prefix renders misstated — gate the drop on the Agent tool. The pins
+  that move: `test_a_rendered_call_label_drops_the_set_prefix`'s Bash case
+  (`tests/test_devpro_profiler.py:1189`, `call_label("Bash", "devpro-tool")`) flips to
+  `"devpro-tool (Bash)"`; the served band pin at `tests/dashboard/test_server.py:654` stays — it is
+  an Agent call. `view.html:288`'s grouped-skills label renders raw names — render it through
+  `shownName` like the other sites.
+- R7: settled in revision — the equality pin, the smaller change: pin the four spellings equal
+  (the sites at `tests/dashboard/test_server.py:610,612,655`, `pages.py:1031,1105`,
+  `view.html:86`), rather than a render-time constant substitution.
+- R13: `shownName` (`view.html:86`) returns `undefined` for a missing name — return `''`.
+- R12 is struck: `view.html:90` already composes `back.pathname + location.search` — verified in
+  this revision.
+
+**Done-line.** `just test devpro`, then `just lint`, then `just test-changed`.
+
+### B5 — document wording
+
+**Scope.** `PROJECT_DOCS/ARCHITECTURE/repo-layout.md`,
+`PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`.
+
+**Facts.**
+
+- R16: `repo-layout.md`'s `dupe_sweep/` row says "the string literals the trees carry" — narrow to
+  the three definition areas the code reads (`definition_text.py`'s `DEFINITION_TEXT_PREFIXES`).
+- R22: `harness-profiler.md`'s lines 105–110 carry ragged wrapping from P4's hand edit — reflow to
+  the leaf's column. R17's rewrite is B2's; B5 reflows only what B2 leaves.
+
+**Done-line.** `just test-changed` — the docs surface is this package's only work.
+
+### B6 — pin honesty
+
+**Scope.** `tests/dashboard/test_server.py`, `tests/test_devpro_profiler.py`.
+
+**Facts.**
+
+- R8: three inline-script substring assertions in three tests —
+  `test_the_indexs_row_links_and_the_session_pages_way_back_carry_the_query`
+  (`tests/dashboard/test_server.py:610,612`), `test_the_agents_cell_reads_the_count_as_agents`
+  (`:626`), and `test_a_rendered_agent_name_drops_the_set_prefix` (`:655`). R14: that last test's
+  docstring claims the served page while the assertion byte-matches template source. The fix is
+  the naming: each docstring says plainly "a form pin — the served-page fetch checks are the
+  effect witnesses, the browser-eye check the witness for the branches the probes do not
+  exercise." The pins stay (house pattern).
+
+**Done-line.** `just test devpro`, then `just test-changed`.
+
+### B7 — CONVENTIONS lines
+
+**Scope.** `PROJECT_DOCS/CONVENTIONS/planning-and-execution/a-delta-application-ends-by-searching-the-doc-set.md`
+(edit); a new leaf under `PROJECT_DOCS/CONVENTIONS/planning-and-execution/` with its index and
+entry-point lines (the new-leaf rules are in `project-documents.md`);
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/scratch-home-for-tests-and-recipes.md`
+(title widened); `pyproject.toml`.
+
+**Facts.**
+
+- G1: the new leaf's rule — "A repository-wide check's own case set includes one run over the real
+  tree it polices; a fixture-only case leaves the check unexercised on its inputs."
+- G2: the search-of-doc-set leaf gains the synonym requirement — R5's stale docstring survived a
+  mandated search because it said "could not be read" where the search said "unreadable".
+- R20: the widened scratch leaf's rule — "a test run writes its cache under the scratch directory,
+  not the project root" — is carried by the code too: `pyproject.toml`'s
+  `[tool.pytest.ini_options]` sets the cache dir under `.devpro-temp/`, so `just test` stops
+  leaving `.pytest_cache` at the root.
+- R21: the same leaf states the cleanup practice — a package's scratch under `.devpro-temp/` is
+  the session's to delete when the plan lands; a practice the session keeps, not a control a tool
+  enforces.
+
+**Done-line.** `just test` (the cache dir moves under the scratch and the suite still passes), then
+`just test-changed`.
+
+### B8 — the cli docstrings' one home
+
+**Scope.** `devpro/profiler/cli.py`, `devpro/dashboard/cli.py`.
+
+**Facts.** R19: the two module docstrings are 90–100% duplicated — the sweep's live candidate. The
+duplicated portion is the argparse-surface sentence; its one home is `devpro/cli.py`'s own
+docstring, and each module's docstring says only the verb it adds (the verbs differ — sharing one
+text between the two modules is not the fix). Evidence: the sweep's report run before and after,
+recorded in the commit body — the pair is gone after. Evidence, not gate.
+
+**Done-line.** `just test devpro`, then `just test-changed`.
+
+### B9 — the families' anchor prose: in the literals corpus or recorded as out
+
+**Scope.** `devtools/dupe_sweep/definition_text.py` (`DEFINITION_TEXT_PREFIXES`),
+`PROJECT_DOCS/ARCHITECTURE/repo-layout.md` (the `dupe_sweep/` row only, if extended).
+
+**Facts.** R18: `devpro/families/gemma_4.py`'s anchor paragraph is rendered prose — the same kind
+of text the corpus reads — outside `DEFINITION_TEXT_PREFIXES`. The owner chooses:
+
+- (a) extend the prefixes to the families: the sweep's header scope line (`passes.py:42-45`) and
+  the repo-layout row move with it;
+- (b) record the hole as intended: a line on `definition_text.py`'s docstring saying the families'
+  anchors are outside the corpus by decision, so the next reader does not rediscover it.
+
+**Done-line.** `just test dupe_sweep`, then `just sweep-python` (advisory), then `just test-changed`.
