@@ -379,7 +379,9 @@ The plan size limit (default {clauses.PLAN_SIZE_LIMIT_DEFAULT}) and the periodic
   their findings, committed with the review's row `landed`.
 - **The burndown:** a `## Post-plan burndown` section holding its drafting ticket; the session
   drafts the fix list from `ACTIVE_PLAN_REVIEW.md` into the section — one package per root-cause
-  group, each with its own row and rating — has the items reviewed, and runs them like any package.
+  group, each with its own row and rating — has the items reviewed as the
+  `{clauses.ref(name="development")}` skill's *Post-plan review* states, and runs them like any
+  package.
   Every finding that cites a written rule is
   fixed, whatever its severity; one that needs a choice nothing written settles comes to the user.
 - **The user** may read `ACTIVE_PLAN_REVIEW.md` and answers what comes to them; nothing else.
@@ -505,14 +507,15 @@ A project with code, SPEC.md and ARCHITECTURE.md, and no written process, devpro
    section, a `## ARCHITECTURE delta` entry describing the export code. "I accept the design. Write
    the plan."
 4. `ACTIVE_PLAN.md` appears: P1 applies the two entries, P2 writes the export and its tests, P3 the
-   post-plan review, then the burndown section's drafting ticket drafting its item packages, all
-   shipped. "The plan is approved. Run it."
+   post-plan review, and a `## Post-plan burndown` section holding its drafting ticket P4.
+   "The plan is approved. Run it."
 5. The session names one agent and its model for P1, checks the result, runs `just test`, and
    commits P1 with its row `landed`; then P2. Mid-P2 it asks: "Dates in UTC or the user's time
    zone? SPEC.md and the design say neither." "UTC." The answer is entered in the design. "How far
    along are we?" gets an answer and nothing else; "Carry on." resumes.
 6. P3: the coder for the app's language, an architect and a prompt engineer review, and
-   `ACTIVE_PLAN_REVIEW.md` is committed. P4 fixes its findings and is committed.
+   `ACTIVE_PLAN_REVIEW.md` is committed; the drafting ticket drafts its items, each fixing its
+   findings and committed in its own right.
 7. The landing commit deletes `ACTIVE_PLAN.md`, `ACTIVE_DESIGN.md` and `ACTIVE_PLAN_REVIEW.md` and
    says it lands a plan. SPEC.md and ARCHITECTURE.md hold the accepted entries, the code has the
    export, and the root is ready for the next request.""",
