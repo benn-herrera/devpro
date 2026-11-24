@@ -1,9 +1,10 @@
 # The profiler reads true: stores, model config, scratch, and no mocking oracles
 
 The design: [ACTIVE_DESIGN.md](ACTIVE_DESIGN.md), accepted. Each package below applies its named
-entries verbatim over their targets — the pairs' from-blocks match the leaves as they stand, and
-`just dev-check-design-deltas-applied` confirms each pair landed. The entries' code changes are
-stated in the design; the packages name the files, the facts and the pins.
+entries verbatim over their targets — the pairs' from-blocks match the leaves as they stand. The
+packages that apply pairs close with `just dev-check-design-deltas-applied`, which confirms each
+landed. A Code entry applies to no leaf and has no pair for the check to see. The entries' code
+changes are stated in the design; the packages name the files, the facts and the pins.
 
 Every package's intended lifetime is **shipped**.
 
@@ -29,82 +30,113 @@ it changes reports the failure as a finding — the test is never edited to pass
 
 ### P1 — the plugin's configured model applies at runtime
 
-Applies: the [Opencode entry](PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md) Code delta
-entry.
+Applies: the [Opencode entry](PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md#opencode-entry)
+Code delta entry.
 
-Scope: `devpro/harnesses/resources/opencode/index.ts`, the test that pins the fix.
+Scope: `devpro/harnesses/resources/opencode/index.ts`'s `setup` — the agent domain's `transform`
+callback, `index.ts:180–194`, the cast at 190 — and `tests/test_opencode_entry.py:104`.
 
 The fact the entry acts on: the *Registration* passage states each agent record updates the agent
 of that id with the model where the record has them, while at runtime on opencode 2.4.1 the host
 reads an agent's model from its own store — the registry's model applied through the cast at
 `index.ts:190` (`if (entry.model) agent.model = entry.model as NonNullable<typeof agent.model>`)
-never reaches it. The fix applies the configured model at `Plugin.define`'s `setup`, where the
-2.4.1 runtime reads it. The entry leaves the mechanism's exact wiring to the executor where the
-host's reading site admits more than one — the outcome is the leaf's statement true at runtime,
-pinned by a test that drives `Plugin.define`'s setup with a configured model and observes it
-applied. `tests/opencode_plugin_stub.ts` and `tests/opencode_entry_runner.ts` are the drivers for
-that pin and stay.
+never reaches it. The fix applies the configured model in `setup`'s agent-domain `transform`
+callback, where the 2.4.1 runtime reads it. The entry leaves the mechanism's exact wiring to the
+executor where the host's reading site admits more than one — the outcome is the leaf's statement
+true at runtime, pinned by a test that drives `Plugin.define`'s setup with a configured model and
+observes it applied. `tests/opencode_plugin_stub.ts` and `tests/opencode_entry_runner.ts` are the
+drivers for that pin.
+
+The pin: the new pin at `tests/test_opencode_entry.py:104` observes the configured model on a
+second stub store standing in for the host's own-store read — a store the entry's setup populates —
+and must fail at the base commit before the fix. The existing model assertion
+(`tests/test_opencode_entry.py:151`) passes today only because the stub's editor is the only store
+the stub has; whether the new pin replaces it or joins it is the executor's call, stated in the
+report.
 
 Type-check note: `just lint` type-checks what ships against the host's published declarations —
-a fix the declarations' shapes cannot state reads where the runtime reads, cast at the boundary
-with the why-comment the resources carry.
+the fix casts at the boundary with the why-comment the resources carry.
 
 Done-line: `just test`, `just lint`.
 
 ### P2 — the stores read true: exact names, both readers, the doctor's line
 
-Applies: the [Harness profiler](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md) ARCHITECTURE
-delta entry (three pairs) and the [Harness profiler](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)
-Code delta entry.
+Applies: the [Harness profiler](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md#harness-profiler)
+ARCHITECTURE delta entry (three pairs) and the
+[Harness profiler](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md#harness-profiler) Code
+delta entry.
 
 Scope: `devpro/profiler/values.py`, `devpro/profiler/pages.py`, `devpro/profiler/hooks.py`,
-`tests/test_devpro_profiler.py`, the leaf.
+`tests/test_devpro_profiler.py`, `tests/dashboard/test_server.py`, the leaf.
 
 The facts the entry acts on: `TRACE_GLOB = ".profiler-*"` (`values.py:18`); both readers glob it —
 `pages.list_sessions` (`pages.py:679`, the tree's render) and `pages.store_directories`
 (`pages.py:758`, the index and the session pages) — so a copy of a store, or any second
 `.devpro-temp/` directory of that shape, has its sessions rendered twice in the index; the
-doctor's `traces:` line (`hooks.py:257`) prints the same glob. The fix: the three sites read the
-directories named exactly `.profiler-<harness>` for the harness names the captures use (`claude`
-and `opencode`), and a directory of any other shape is not a store and is not read. The three
-pairs apply to the leaf verbatim.
+doctor's `traces:` line prints the same glob as text (`hooks.py:257` interpolates `TRACE_GLOB`).
+The fix: the two readers read the directories named exactly `.profiler-<harness>` for the harness
+names the captures use (`claude` and `opencode`), and a directory of any other shape is not a store
+and is not read; the doctor's `traces:` line prints the leaf's changed doctor sentence and reads no
+store — its own read, `glob(f"*{OLD_STORE_SUFFIX}")` (`hooks.py:264`), is the old-store straggler
+sweep and is untouched. The three pairs apply to the leaf verbatim.
 
 Tests: the suite's tests pinning the readers' current glob behavior are named by the executor
 from the tree and their update is in scope; the new pin drives both readers with a copy beside a
 store among the cases and asserts one read. The pin names its defect: a store copy reads twice
-(doubled rows), the served-page defect the owner triaged.
+(doubled rows), the served-page defect the owner triaged. The dashboard's unreadable-store fixture
+writes `.profiler-broken` (`tests/dashboard/test_server.py:111`, and again at `:161`) — a name the
+exact-name match will not accept — so both tests' reshaping is in scope: the unreadable case becomes
+a real store name made unreadable, each test's subject — the unreadable store stated in the feed
+rather than failing it — unchanged. `tests/dashboard/conftest.py`'s default (`.profiler-claude`)
+is a real name and needs nothing.
 
 Done-line: `just test`, `just lint`, `just dev-check-design-deltas-applied` reporting the three
 pairs landed.
 
 ### P3 — the scratch guarantee's one home: install prepares, the clause drops
 
-Applies: the [Installed tree](PROJECT_DOCS/SPEC/deployed-surfaces/installed-tree.md) SPEC delta
-entry, the [Renders and copies](PROJECT_DOCS/ARCHITECTURE/install/renders-and-copies.md)
-ARCHITECTURE delta entry, and the [Renders and copies](PROJECT_DOCS/ARCHITECTURE/install/renders-and-copies.md)
-and [Installed tree](PROJECT_DOCS/SPEC/deployed-surfaces/installed-tree.md) Code delta entries.
+Applies: the [Installed tree](PROJECT_DOCS/SPEC/deployed-surfaces/installed-tree.md#installed-tree)
+SPEC delta entry, the [Guide and readme](PROJECT_DOCS/SPEC/guide-and-readme.md#guide-and-readme)
+SPEC delta entry, the [Renders and copies](PROJECT_DOCS/ARCHITECTURE/install/renders-and-copies.md#renders-and-copies)
+ARCHITECTURE delta entry, and the [Renders and copies](PROJECT_DOCS/ARCHITECTURE/install/renders-and-copies.md#renders-and-copies)
+and [Installed tree](PROJECT_DOCS/SPEC/deployed-surfaces/installed-tree.md#installed-tree) Code
+delta entries.
 
-Scope: `devpro/install.py` (the preparation beside the copy machinery), `devpro/harness.py`
-(`scratch_rule`, lines 133–138), `devpro/clauses.py` (`NEW_PROJECT_SETUP`), the two leaves, and
-the tests pinning the touched texts (`tests/test_devpro_install.py`, `tests/test_devpro.py`).
+Scope: `devpro/install.py`'s `_install_managed_paths` — the project's `.devpro-temp/` and
+`.gitignore` join its managed paths, so the preflight's prediction observes the preparation —
+`devpro/harness.py` (`scratch_rule`, lines 133–138), `devpro/harnesses/mage.py` (its hand-written
+scratch rule, lines 41–44, taking the same create-it sentence), `devpro/clauses.py`
+(`NEW_PROJECT_SETUP`), `PROJECT_DOCS/SPEC/guide-and-readme.md`, `README.md`, the touched leaves
+(`PROJECT_DOCS/SPEC/deployed-surfaces/installed-tree.md`,
+`PROJECT_DOCS/ARCHITECTURE/install/renders-and-copies.md`), and the tests pinning the touched
+texts (`tests/test_devpro_install.py`, `tests/test_devpro.py`).
 
 The facts the entries act on: the install writes no `.gitignore` and creates no scratch directory
 today; `scratch_rule` tells the agent, where the scratch directory does not exist, to stop and say
-so ("If it doesn't exist, stop and say so; don't improvise a location."); `NEW_PROJECT_SETUP`
-carries the birth-time creation mandate ("Also created at project birth: `.devpro-temp/`, with a
+so ("If it doesn't exist, stop and say so; don't improvise a location."), and mage's hand-written
+rule carries the same sentence (`devpro/harnesses/mage.py:43`); `NEW_PROJECT_SETUP` carries the
+birth-time creation mandate ("Also created at project birth: `.devpro-temp/`, with a
 `.devpro-temp/` entry in the root `.gitignore`"). The changes: the install creates
 `.devpro-temp/` when it is missing and adds the `.devpro-temp/` line to the project's
 `.gitignore` — the file created holding that one line where the project has none, a `.gitignore`
-already carrying the line left as it stands; `scratch_rule` tells the agent to create the
-directory, the improvise-a-location prohibition unchanged; `NEW_PROJECT_SETUP`'s creation mandate
+already carrying the line left as it stands. The condition is the justfile's and Makefile's: a
+project install of a nested plugin; a user-level install places nothing relative to a project and
+creates nothing. `scratch_rule` tells the agent to create the
+directory, the improvise-a-location prohibition unchanged, and mage's rule takes the same
+create-it sentence; `NEW_PROJECT_SETUP`'s creation mandate
 drops and its placement invariant stays — the scratch directory lives beside the harness
 directory, never inside it, writes under the harness directory tripping the permission system's
-own-settings protections. The SPEC pair and the new *The scratch directory* passage apply
-verbatim.
+own-settings protections. The SPEC pairs — the Installed tree pair and the new *The scratch
+directory* passage — and the Guide-and-readme pair apply verbatim; the README's operator
+instructions follow the pair: the harness lines stay the operator's, the `.devpro-temp/` line is
+the install's (`README.md:87` today instructs the operator to add it by hand).
 
 Tests: the install's preparation pinned by a test (missing directory created, line added, the
-file created where none stands, a carrying `.gitignore` untouched); the agents-file tests pinning
-`scratch_rule`'s sentence update with the rule. The pin names its defect: untracked scratch
+file created where none stands, a carrying `.gitignore` untouched), carrying the user-level case —
+a user-level install creates nothing; the pin `tests/test_devpro.py:770`
+(`test_the_scratch_rule_names_the_one_scratch_directory`, name-only, passes green) covers each
+harness's rule, mage's included, and the render probes over `clauses.NEW_PROJECT_SETUP`
+(`tests/test_devpro.py:1204`) update with the clause. The pin names its defect: untracked scratch
 polluting a project's git status.
 
 Done-line: `just test`, `just lint`, `just dev-check-design-deltas-applied` reporting the pairs
@@ -112,27 +144,34 @@ landed, and `just check-links`.
 
 ### P4 — the stand-ins' removal and the mock-as-oracle clause
 
-Applies: the [Repo Layout](PROJECT_DOCS/ARCHITECTURE/repo-layout.md) and
-[Subsystem Map](PROJECT_DOCS/ARCHITECTURE/subsystem-map.md) Code delta entries.
+Applies: the [Repo Layout](PROJECT_DOCS/ARCHITECTURE/repo-layout.md#repo-layout) and
+[Subsystem Map](PROJECT_DOCS/ARCHITECTURE/subsystem-map.md#subsystem-map) Code delta entries.
 
 Scope: `tests/profiler_browser_runner.ts`, `tests/profiler_index_runner.ts`,
-`tests/profiler_page_runner.ts`, `tests/profiler_capture_runner.ts` (deleted), the tests driving
-them in `tests/test_devpro_profiler.py` (removed), `devpro/clauses.py` (`TESTS_PROTECT_LOGIC`,
-line 169), and no other file.
+`tests/profiler_page_runner.ts`, `tests/profiler_capture_runner.ts` (deleted),
+`tests/profiler_serialize_runner.ts` (its record source moves to a fixture the executor shapes
+under `tests/`), the tests driving the deleted runners in `tests/test_devpro_profiler.py`
+(removed), `devpro/clauses.py` (`TESTS_PROTECT_LOGIC`, line 169), and no other file.
 
 The facts the entries act on: the three DOM stand-in runners (~130 lines each, the
 `MutationObserver` machinery in two of them residue of the deleted deco sweep) and the capture's
 stub-plugin fixture runner with its test (`test_the_opencode_capture_records_every_fired_call`,
 `tests/test_devpro_profiler.py:687`) verify the reading of the observation, not the system. The
-changes: the four runners and their tests are removed outright — `tests/opencode_plugin_stub.ts`
-and `tests/opencode_entry_runner.ts` stay (they drive execution to the entry's registration path
-and vouch for nothing the host states), and the suite keeps the mask, serialize and
-capture-contract tests and the Python-side server and store tests; `TESTS_PROTECT_LOGIC` gains
+serialize runner is not deleted — the design's Repo Layout entry keeps the serialize tests — but
+its record source moves: it spawns the capture runner for its record
+(`tests/profiler_serialize_runner.ts:28`) and throws "the capture runner wrote no record" without
+it, so its record becomes a fixture the executor shapes, and the test it serves
+(`test_a_line_over_the_bound_is_fitted_at_its_root`) stays. The changes: the four runners and their
+tests are removed outright — `tests/opencode_plugin_stub.ts` and `tests/opencode_entry_runner.ts`
+stay (they drive execution to the entry's registration path and vouch for nothing the host
+states), and the suite keeps the mask, serialize and capture-contract tests and the Python-side
+server and store tests; `TESTS_PROTECT_LOGIC` gains
 one sentence as its last, after the form-is-the-contract sentence: a mock drives execution to the
 piece under test and is never the oracle for what it simulates — a test asserting against a
 mock's own answers validates the reading of the observation, not the system, and is not written.
 
-Consequence stated by the design: until the browser-vision visual verification the roadmap
+Consequence stated by the design: until the
+[Browser-driven visual verification](ROADMAP.md#browser-driven-visual-verification) the roadmap
 carries next lands, the pages' client-side rendering has no automated check — the byte-level
 instruments check the rendered bytes and the server's answers, not what a browser executes.
 

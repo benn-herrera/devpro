@@ -33,6 +33,23 @@ when it is missing, and a `.devpro-temp/` line sits in the project's `.gitignore
 holding that line where the project has none. It carries the same name under every harness.
 ```
 
+### [Guide and readme](PROJECT_DOCS/SPEC/guide-and-readme.md)
+
+**As it stands:**
+
+```
+  - for claude and opencode: the command that installs into the consuming project, and the lines
+    to add to `.gitignore`, each harness's own;
+```
+
+**Becomes:**
+
+```
+  - for claude and opencode: the command that installs into the consuming project, the harness
+    lines to add to `.gitignore`, each harness's own — the project's `.devpro-temp/` line the
+    install adds itself;
+```
+
 ## ARCHITECTURE delta
 
 ### [Harness profiler](PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md)
@@ -122,7 +139,9 @@ a store among the cases.
 
 A fix. The leaf, as the ARCHITECTURE delta changes it, states a project install creates the
 scratch directory when it is missing and adds the `.gitignore` line; the install does neither
-today. The fix is that preparation, held to the changed passage.
+today. The fix is that preparation, held to the changed passage: the directory created when
+missing, the `.devpro-temp/` line added where the project's `.gitignore` lacks it, and a
+`.gitignore` already carrying the line left as it stands.
 
 A refactor. The clause `NEW_PROJECT_SETUP` (`devpro/clauses.py`) carries the birth-time scratch
 creation the install now owns — "Also created at project birth" with the directory and the
