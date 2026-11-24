@@ -2,8 +2,8 @@
 install of `kbase`, whose registry gains a command record, a model and a permission map: what it
 registers is what the registry lists, with each body's banner stripped; an edited body and a dropped record take effect on the
 reload its watcher triggers; a command reads its body when it runs; and its cleanup closes the watcher.
-A record's model is the one a request for its agent resolves to, not only the agent the transform
-edits. A project whose root holds a plan file or the diced `ACTIVE_PLAN/` tree has the
+A record's model is written onto the agent the transform edits, as the object the record states, and
+onto no other. A project whose root holds a plan file or the diced `ACTIVE_PLAN/` tree has the
 plan-state reminder injected into the parent session when a subagent call completes and when that
 subagent's session goes idle with nothing running on it; a failed call, a session still holding
 background work, a session with no parent and a project holding only a design inject nothing. The
@@ -85,10 +85,9 @@ def _run_entry(
     project: Path,
     writes: list[dict],
     command: dict,
-    model_selects: list[dict] | None = None,
 ) -> dict:
     """The runner's output for the entry installed in `plugin`, for a session opened at `directory` in
-    the project rooted at `project`, resolving the model of each `model_selects` session's agent."""
+    the project rooted at `project`."""
     done = subprocess.run(
         ["bun", str(_RUNNER)],
         input=json.dumps(
@@ -98,7 +97,6 @@ def _run_entry(
                 "project": str(project),
                 "writes": writes,
                 "command": command,
-                "modelSelects": model_selects or [],
             }
         ),
         capture_output=True,
@@ -146,9 +144,9 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     assert out["id"] == NAME
     # Registration order follows the code: the guardrail's `execute.before`, the entry's reminder
     # `execute.after`, then the capture's pair. The capture's setup runs before the entry's own
-    # registrations, so its idle hook precedes the entry's model resolve hook.
+    # registrations, so its idle hook precedes the entry's.
     assert out["hooks"] == ["execute.before", "execute.before", "execute.after", "execute.after"]
-    assert out["sessionHooks"] == ["experimental.idle", "experimental.idle", "experimental.model.resolve"]
+    assert out["sessionHooks"] == ["experimental.idle", "experimental.idle"]
     assert set(first["agents"]) == {a["id"] for a in registry["agents"]}
     assert set(first["skills"]) == {s["id"] for s in registry["skills"]}
     assert first["commands"] == {"kbase-probe": "A probe"}
@@ -177,17 +175,15 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     ]
 
 
-def test_the_registered_model_is_the_one_a_request_resolves(tmp_path: Path) -> None:
-    """A record's model reaches the request, not only the agent the transform edits: the runtime reads
-    an agent's model from the store its requests resolve against, which the agent the transform edits
-    is not the same as. The two rows are the differential: the configured record's agent resolves to
-    its record's model, and an agent the registry configures no model for resolves to none of them —
-    which a wiring that served every request one record's model, or none, would each fail to pin."""
+def test_a_record_model_is_the_one_the_transform_writes(tmp_path: Path) -> None:
+    """The agents store carries each record's model, as the object the record states, for the agents
+    the registry configures one for and for no other: the transform's model write is what the host
+    reads a plugin agent's model from. The two rows are the differential — a write that served every
+    agent one record's model, or none, each fails it."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, registry = _installed(project, harness_dir=project / OPENCODE.project_harness_dir)
     configured, unconfigured, *_ = registry["agents"]
-    (project / "ACTIVE_PLAN.md").write_text("# Active plan\n", encoding="utf-8")
     banner = _banner((plugin / configured["file"]).read_text(encoding="utf-8"))
     command_path = _add_probe_command(plugin, registry, banner=banner)
     configured["model"] = {"providerID": "omlx", "id": "Qwen3.8-Flash-Next"}
@@ -200,14 +196,11 @@ def test_the_registered_model_is_the_one_a_request_resolves(tmp_path: Path) -> N
         project=project,
         writes=[],
         command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
-        model_selects=[
-            {"sessionID": "ses_configured", "agent": configured["id"]},
-            {"sessionID": "ses_unconfigured", "agent": unconfigured["id"]},
-        ],
     )
 
-    assert out["models"]["ses_configured"] == configured["model"]
-    assert out["models"]["ses_unconfigured"] != configured["model"]
+    (registered,) = out["states"]
+    assert registered["agents"][configured["id"]]["model"] == configured["model"]
+    assert "model" not in registered["agents"][unconfigured["id"]]
 
 
 def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_injects_no_reminder(tmp_path: Path) -> None:
@@ -228,10 +221,10 @@ def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_injects_no_remi
         command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
     )
 
-    # The user-level install copies no capture beside the entry, so it registers the reminder's pair
-    # and the model resolve hook.
+    # The user-level install copies no capture beside the entry, so it registers the reminder's idle
+    # hook alone.
     assert out["hooks"] == ["execute.after"]
-    assert out["sessionHooks"] == ["experimental.idle", "experimental.model.resolve"]
+    assert out["sessionHooks"] == ["experimental.idle"]
     assert out["synthetics"] == []
     (registered,) = out["states"]
     assert set(registered["agents"]) == {a["id"] for a in registry["agents"]}
