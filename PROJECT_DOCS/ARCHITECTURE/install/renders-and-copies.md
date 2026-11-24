@@ -65,12 +65,12 @@ names is read from the replaced copy's `tools/devpro/__init__.py` and the runnin
 `__version__`.
 
 The harness resource copy borrows `_shipped` and nothing else from the package path:
-`harness_resource_copies` reads `resources/<harness>/` — and, for opencode, the render payload's
-source `resources/claude/profiler/` beside it, landed under `profiler/` (Install, Harness profiler) —
-and writes each file into the install
+`harness_resource_copies` reads `resources/<harness>/` and writes each file into the install
 directory with `copyfile` and `copymode`, so it lands as the harness ships it — no suffix is
 stamped, whatever the file's type, and an installed banner a file already holds travels with it as
-the file's own text. A guardrail script is the exception to copying every file: it joins the
+the file's own text. No harness's list reaches another harness's resources: opencode's capture is its
+plugin's own, and `_CROSS_HARNESS_SOURCES` is gone with the profiler payload's cross-harness entry.
+A guardrail script is the exception to copying every file: it joins the
 copies only when the probe below passes; its registration joins the rendered definitions on every
 install. A
 user-level install copies one resource only, the harness's entry (`Harness.entry_resource`,
@@ -83,9 +83,10 @@ of an existing destination. Package destinations are exempt from the banner and 
 there. No error is swallowed: an `OSError` from the clear propagates. The harness resources join the same `copies` list as the packages', so the prune's
 `keep` holds them and the install report counts them: a harness resource never reads as a stale
 rendered definition. The copy is one-way, not a mirror — `prune` owns the install directory's
-`agents/`, `commands/` and `skills/` and nothing outside them — with one exception: a name
-`RETIRED_RESOURCE_FILES` pairs with the file that replaced it is removed where it carries this
-repository's header, on every install. A harness-rendered file is checked a
+`agents/`, `commands/` and `skills/` and nothing outside them — with one exception: a file
+`RETIRED_RESOURCE_FILES` names is removed where it carries this
+repository's header, on every install, and a directory `RETIRED_RESOURCE_DIRS` names is removed once
+that leaves it empty, a directory holding anything else being the consumer's. A harness-rendered file is checked a
 third way, by its `HarnessFile.marker`.
 
 **Preflight.** The CLI reaches `install` through `install.preflighted_install`,
@@ -108,8 +109,8 @@ part.
   prune walks, the destination of every `SHIPPED_PACKAGES` row whichever definitions the plugin
   ships, the harness's resource destinations (at user level, the entry alone), every
   harness-rendered file — the manifest, `.mcp.json`, `registry.json` — the retired resource names
-  (`RETIRED_RESOURCE_FILES`' former names, unlinked on every install that carries their
-  replacements), and the guardrail registration. Under the project root, on a project install: the justfile and Makefile names unless the harness
+  (`RETIRED_RESOURCE_FILES`' and `RETIRED_RESOURCE_DIRS`', unlinked and removed on every install), and
+  the guardrail registration. Under the project root, on a project install: the justfile and Makefile names unless the harness
   is a harness-directory plugin. The project's own settings files are not named: no install writes one.
 - **The scratch copy** (`preflight.preflight`) lives in a `tempfile.TemporaryDirectory`, each
   managed path at its position below its base. Every `.venv` (`VENV_DIR`) is omitted. A base nested in another keeps its position below the outer

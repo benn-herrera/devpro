@@ -1,8 +1,8 @@
 """The profile skill: this session's activity trace, served to the user as a page in their browser.
 
-It carries no supporting file, and of the harness's text only the path of its project install's
-wrapper, the second place it looks for one: the launcher it finds is the one the install copies
-beside it, and the page the dashboard serves is the same page everywhere. The skill writes no page
+It carries no supporting file, and of the harness's text only the path of the tree's own wrapper — the
+project's committed one where `init` rendered the skill, the installation's own where the install
+rendered it — and the page the dashboard serves is the same page everywhere. The skill writes no page
 file — the trace reaches the user through the served URL alone.
 """
 
@@ -22,22 +22,15 @@ DEFINITIONS = (
         description=_DESCRIPTION,
         body=f"""Serve this session's recorded trace to the user as a page in their browser. The trace is the newest
 session recording under `.devpro-temp/` at the repository root: `.devpro-temp/.profiler-claude/` under
-claude, `.devpro-temp/.profiler-opencode/` under opencode. `PROFILER` below is the launcher this skill
-finds, run with `bash`; `bash PROFILER tree` reads both stores.
+claude, `.devpro-temp/.profiler-opencode/` under opencode. `PROFILER` below is the tree's own wrapper,
+`{clauses.PROJECT_WRAPPER}`, run with `bash`; `bash PROFILER tree` reads both stores.
 
 ## Locate the profiler
 
-Use the first launcher that exists:
-
-1. `../../profiler/profiler.sh`, from this skill's own directory: the installed copy, present where a
-   project install delivered it beside the skill; a user-level install copies no resource, so the
-   file does not exist there.
-2. `.claude/harness-profiler/profiler.sh` at the repository root: the copy a committed hook runs,
-   which is how a claude-on-web session records anything at all.
-
-Where neither stands — always, under mage, whose install ships no launcher — the profiler is not
-installed here: say so and stop. A repository can carry both, and the committed copy can be older
-than the installed one, so the installed one goes first.
+`PROFILER` is `{clauses.PROJECT_WRAPPER}` at the repository root: the project's committed wrapper where
+`init` rendered this skill beside it, and the installation's own where the install rendered it. Where
+that file does not stand — always, under mage, whose install ships no profiler — the profiler is not
+installed here: say so and stop.
 
 Under claude, where the hook is not installed and the session cannot install it, `bash PROFILER init claude`
 writes it into this repository's `.claude/` and prints the `git add` line to commit; run it only when

@@ -1,7 +1,7 @@
-"""The activity profiler's contract, driven through the launcher the install copies: one capture
+"""The activity profiler's contract, driven through the wrapper the install writes: one capture
 writes a schema-2 record, `tree --format html`'s page data carries the keys `view.html` parses, and the
-installed launcher is the source's bytes. It fails on the port defect that renames or drops a record
-field the page data carries — the rename or drop ships green and renders an empty page.
+installed wrapper is the wrapper the install wrote. It fails on the port defect that renames or drops a
+record field the page data carries — the rename or drop ships green and renders an empty page.
 
 Two records the port itself owns: `tree` renders an opencode session's store beside the claude
 capture's — the split that is the capture's purpose, and whose loss the single-store read would not
@@ -10,18 +10,18 @@ show; and the opencode capture, driven by `tests/profiler_capture_runner.ts` thr
 `test_the_two_masks_redact_alike` holds the two harnesses' masking to one sample list, since
 JavaScript's `\\w` is ASCII where Python's is not.
 
-Two more are the launcher's own: a capture whose wrapper the launcher cannot resolve exits 0 with no
-output and no other subcommand does, and `init` lays down the launcher alone, removing the `hp.sh`,
-`hp.py` and `view.html` older inits left beside it.
+Two more are `init`'s and the capture's: `init` writes the skill and the committed hook's one command,
+removing the launchers and files older inits left in the hook directory, and the capture exits 0 with
+no output on every path — no wrapper, a failing wrapper, or a payload it cannot read.
 
 The stores' rename is the last group's: an install and an `init` move each `*-profiler` store under
 `.devpro-temp/` to its `.profiler-*` name and name the move, and neither ever merges one store into
 another; `doctor` names an old-pattern store the reader cannot see.
 
-The package is imported from the repository root, which `just test` puts on PYTHONPATH. The launcher
-runs the wrapper the install copies beside it, and no test relies on a devpro installed on the host:
-the install runs in the test's directory, so the wrapper beside the launcher runs this checkout's
-code.
+The package is imported from the repository root, which `just test` puts on PYTHONPATH. The tests run
+the wrapper the install writes — `tools/devpro.sh` beside this package's copy in the installed tree —
+and no test relies on a devpro installed on the host: the install runs in the test's directory, so the
+wrapper runs this checkout's code.
 """
 
 import json
@@ -45,7 +45,7 @@ import pytest
 
 from devpro.dashboard.server import BOARD_PATH
 from devpro.profiler.capture import mask
-from devpro.profiler.hooks import RETIRED_HOOK_FILES, launcher_resource
+from devpro.profiler.hooks import OLD_HOOK_COMMANDS, RETIRED_HOOK_FILES, RETIRED_LAUNCHERS
 from devpro.profiler.pages import (
     BAND_LEGEND,
     DATA_MARK,
@@ -59,7 +59,7 @@ from devpro.profiler.pages import (
 )
 from devpro.profiler.stores import repair_child_ids
 from devpro.profiler.values import CAPTURED_EVENTS, _epoch_ms
-from tests.test_devpro_install import _PROFILER, _claude_plugin, _definition_install
+from tests.test_devpro_install import _claude_plugin, _definition_install
 
 # The serve path's carrier of the shared layer: the one file the board panel serves, which the pages
 # it serves name instead of the inline text `SHARED_CSS` holds.
@@ -106,20 +106,20 @@ _CALL_KEYS = {
 
 
 def _launcher(directory: Path) -> Path:
-    """The installed launcher, from a claude install into `directory`.
+    """The installed wrapper, from a claude install into `directory`: `tools/devpro.sh` beside the
+    package copy the install writes.
 
     `directory` is its own project root, so the install writes no `AGENTS.md` or `CLAUDE.md` beside the
     devpro shim a run places in it."""
     directory.mkdir(exist_ok=True)
     _definition_install(directory, project_root=directory)
-    return _claude_plugin(directory) / _PROFILER / "profiler.sh"
+    return _claude_plugin(directory) / "tools" / "devpro.sh"
 
 
 def _devpro_shim(project: Path) -> Path:
-    """A `devpro` command the launcher finds: this checkout's `python3 -m devpro`, in `project`.
+    """A `devpro` command on `project`'s PATH: this checkout's `python3 -m devpro`, in `project`.
 
-    The launcher runs whatever `devpro` it resolves, so a test gives it one that runs this repository's
-    code: its finder, the verb's dispatch and the capture all run as the install's do."""
+    A test that runs the wrapper directly (`dashboard`, `profiler`) gives its run one of these."""
     shim = project / "devpro"
     shim.write_text(
         "#!/bin/sh\nexec env " f'PYTHONPATH={_PACKAGE_ROOT} PYTHONDONTWRITEBYTECODE=1 python3 -m devpro "$@"\n',
@@ -136,13 +136,14 @@ def _run(
     stdin: str | None = None,
     path: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
-    """Runs the launcher with a `devpro` shim of this checkout on PATH, unless `path` is given, which
-    sets PATH whole — a bare PATH, or one with no devpro. The launcher consults PATH for nothing: the
-    wrapper beside it is what runs, and a bare PATH is where that is put to the proof."""
+    """Runs the installed wrapper with the `profiler` verb and `args`, a `devpro` shim of this
+    checkout on PATH unless `path` is given, which sets PATH whole — a bare PATH, or one with no
+    devpro. The wrapper consults PATH for one thing only, its interpreter, so a bare PATH is where a
+    capture is put to the proof."""
     if path is None:
         path = f"{_devpro_shim(cwd).parent}:{os.environ['PATH']}"
     return subprocess.run(
-        ["bash", str(launcher), *args],
+        [str(launcher), "profiler", *args],
         input=stdin,
         capture_output=True,
         text=True,
@@ -157,15 +158,15 @@ _SERVE_URL = re.compile(r"^http://127\.0\.0\.1:\d+/$", re.MULTILINE)
 
 @contextmanager
 def _serve(launcher: Path, *, cwd: Path, env: dict[str, str] | None = None) -> Iterator[str]:
-    """The dashboard, through the launcher's `devpro`, as `_run` runs it, as a context manager
-    yielding the URL its profiler view is at.
+    """The dashboard, run as the wrapper `launcher` names would run it, as a context manager yielding
+    the URL its profiler view is at.
 
     `_run` blocks, and the dashboard never exits, so the process is started as a `Popen` and its
     stdout read by a watcher thread until the URL it prints arrives, the waiting side bounded by a
     timeout: nothing connects to a port before the server says it is listening. The process is
     killed and reaped on the way out, and a URL that never arrives leaves the process's stderr in
-    the failure. The launcher runs the profiler verb, so the dashboard is the found `devpro`'s,
-    run beside the launcher's capture."""
+    the failure. The dashboard is the profiler's sibling verb, run through this checkout's `devpro`,
+    as a session would run it."""
     process = subprocess.Popen(
         [str(_devpro_shim(cwd)), "dashboard"],
         stdin=subprocess.DEVNULL,
@@ -272,44 +273,34 @@ def test_a_capture_writes_its_line_in_the_bytes_it_measured(tmp_path: Path) -> N
     assert json.loads(line)["args"] == "echo h\u00e9 \ud800"
 
 
-def test_the_installed_profiler_is_the_sources_bytes(tmp_path: Path) -> None:
-    """The launcher that ships is the launcher the repository holds: no stamp or reflow lands in
-    `profiler.sh` on its way through the package data."""
-    launcher = _launcher(tmp_path / "harness")
-    assert launcher.read_bytes() == launcher_resource().read_bytes()
-
-
-def test_a_launcher_discards_what_its_capture_child_prints(tmp_path: Path) -> None:
-    """A hook's stdout is the host's protocol alone, so the capture's own output is discarded even where
-    the wrapper succeeds. Defect: the launcher passed the capture child's stdout straight through, so a
-    warning or a progress line a wrapper printed there reached Claude Code as its hook result."""
-    launcher = _launcher(tmp_path / "harness")
-    wrapper = launcher.parent / ".." / "tools" / "devpro.sh"
-    wrapper.write_text("#!/bin/sh\necho 'a line the wrapper printed'\nexit 0\n", encoding="utf-8")
-    wrapper.chmod(0o755)
+def test_the_capture_keeps_its_childs_output_off_the_hooks_stdout(tmp_path: Path) -> None:
+    """A hook's stdout is the host's protocol alone, so the capture's own output never reaches it. The
+    defect: the capture printed the record's path through `sys.stdout`, so a line it wrote there
+    reached Claude Code as its hook result."""
     project = tmp_path / "project"
     project.mkdir()
+    launcher = _launcher(tmp_path / "harness")
 
-    done = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD, path="/usr/bin:/bin")
+    done = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD)
 
     assert (done.returncode, done.stdout) == (0, ""), done.stderr
+    assert (project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl").is_file()
 
 
 @pytest.mark.parametrize("command", ["capture", "tree"])
-def test_a_launcher_whose_wrapper_fails_captures_silently_and_reports_otherwise(tmp_path: Path, command: str) -> None:
-    """The wrapper beside the launcher that stands but fails: `capture` drains stdin and exits 0 — the
-    wrapper's own refusal on stderr is what names the failure, and a capture that exits nonzero blocks
-    the tool call that fired it — and every other subcommand refuses with it. A tree that says nothing
-    and fails leaves the operator no line naming the one dependency to fix."""
+def test_a_wrapper_whose_run_fails_reports_its_failure(tmp_path: Path, command: str) -> None:
+    """The installed wrapper whose own run fails — a deleted copy of devpro, a broken interpreter
+    record — exits nonzero with the failure named on stderr, stdout silent, for every subcommand.
+    Defect: the retired launcher answered the capture's failure with exit 0 and a drained stdin, so a
+    wrapper that could not run at all reported a capture it never made as a success."""
     launcher = _launcher(tmp_path / "harness")
     payload = json.dumps({"hook_event_name": "PostToolUse", "session_id": "s-none", "tool_name": "Bash"})
     project = tmp_path / "project"
     project.mkdir()
-    wrapper = launcher.parent / ".." / "tools" / "devpro.sh"
-    wrapper.write_text("#!/bin/sh\necho 'devpro.sh: this wrapper is broken' >&2\nexit 1\n", encoding="utf-8")
-    wrapper.chmod(0o755)
+    launcher.write_text("#!/bin/sh\necho 'devpro.sh: this wrapper is broken' >&2\nexit 1\n", encoding="utf-8")
+    launcher.chmod(0o755)
     done = subprocess.run(
-        ["bash", str(launcher), command],
+        [str(launcher), "profiler", command],
         input=payload,
         capture_output=True,
         text=True,
@@ -318,94 +309,46 @@ def test_a_launcher_whose_wrapper_fails_captures_silently_and_reports_otherwise(
         check=False,
     )
 
-    assert done.returncode == (0 if command == "capture" else 1), done.stderr
+    assert done.returncode == 1, done.stderr
     assert done.stdout == ""
     assert "devpro.sh: this wrapper is broken" in done.stderr
     assert not (project / ".devpro-temp").exists()
 
 
-def test_a_launcher_with_no_wrapper_beside_it_never_runs_a_devpro_from_path(tmp_path: Path) -> None:
-    """No wrapper stands beside the launcher — the launcher's whole resolution is that file: a capture
-    drains stdin and exits 0 writing nothing, every other subcommand reports and exits 1, and a
-    `devpro` waiting on PATH is never run, there being no PATH search and no probe. A foreign devpro
-    run from a hook is the capture this tool did not write."""
-    launcher = _launcher(tmp_path / "harness")
-    wrapper = launcher.parent / ".." / "tools" / "devpro.sh"
-    wrapper.unlink(missing_ok=True)
-    on_path = tmp_path / "on-path"
-    on_path.mkdir()
-    foreign = on_path / "devpro"
-    foreign.write_text('#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$PROBE_LOG"\n', encoding="utf-8")
-    foreign.chmod(0o755)
-    log = tmp_path / "log"
-    payload = json.dumps({"hook_event_name": "PostToolUse", "session_id": "s-none", "tool_name": "Bash"})
+def test_the_capture_with_no_wrapper_and_no_payload_exits_0_writing_nothing(tmp_path: Path) -> None:
+    """The capture subcommand run where the wrapper does not stand and the payload cannot be read: it
+    exits 0 with nothing on stdout, and writes no store. Defect: with no launcher draining stdin, a
+    capture whose wrapper is missing or whose payload is empty exits nonzero and blocks the tool call
+    that fired it."""
     project = tmp_path / "project"
     project.mkdir()
-    environment = {**os.environ, "PATH": f"{on_path}:/usr/bin:/bin", "PROBE_LOG": str(log)}
+    environment = {
+        **os.environ,
+        "PYTHONPATH": str(_PACKAGE_ROOT),
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PATH": "/usr/bin:/bin",
+    }
 
-    capture = subprocess.run(
-        ["bash", str(launcher), "capture", "claude"],
-        input=payload,
-        capture_output=True,
-        text=True,
-        cwd=project,
-        env=environment,
-        check=False,
-    )
-    tree = subprocess.run(
-        ["bash", str(launcher), "tree"],
-        input="",
-        capture_output=True,
-        text=True,
-        cwd=project,
-        env=environment,
-        check=False,
-    )
-
-    assert (capture.returncode, capture.stdout, capture.stderr) == (0, "", "")
-    assert tree.returncode == 1 and tree.stdout == ""
-    assert "no devpro wrapper beside the launcher" in tree.stderr
-    assert not log.exists()
+    for payload in ("", "not json"):
+        done = subprocess.run(
+            [sys.executable, "-m", "devpro", "profiler", "capture", "claude"],
+            input=payload,
+            capture_output=True,
+            text=True,
+            cwd=project,
+            env=environment,
+            check=False,
+        )
+        assert (done.returncode, done.stdout) == (0, ""), (payload, done.stderr)
     assert not (project / ".devpro-temp").exists()
 
 
-def test_a_launcher_whose_wrapper_lacks_the_execute_bit_runs_no_devpro_from_path(tmp_path: Path) -> None:
-    """A wrapper that exists without its execute bit still stands: the launcher runs it, the shell
-    refuses it, and a capture drains stdin and exits 0 — a `devpro` on PATH is never reached, there
-    being no PATH search. Defect: the finder tested `-x`, skipped the wrapper, and ran the `devpro`
-    on PATH."""
+def test_the_wrapper_the_install_writes_captures_with_no_devpro_on_path(tmp_path: Path) -> None:
+    """The wrapper the install writes is the one the hook runs: a capture through it writes the record,
+    with no `devpro` on PATH at all — the wrapper names its own copy of devpro, so a bare PATH is where
+    that is put to the proof."""
     launcher = _launcher(tmp_path / "harness")
-    (launcher.parent / ".." / "tools" / "devpro.sh").chmod(0o644)
-    on_path = tmp_path / "on-path"
-    on_path.mkdir()
-    foreign = on_path / "devpro"
-    foreign.write_text('#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$PROBE_LOG"\n', encoding="utf-8")
-    foreign.chmod(0o755)
-    log = tmp_path / "log"
-    project = tmp_path / "project"
-    project.mkdir()
-    done = subprocess.run(
-        ["bash", str(launcher), "capture", "claude"],
-        input=_PAYLOAD,
-        capture_output=True,
-        text=True,
-        cwd=project,
-        env={**os.environ, "PATH": f"{on_path}:/usr/bin:/bin", "PROBE_LOG": str(log)},
-        check=False,
-    )
-    assert done.returncode == 0 and done.stdout == ""
-    assert done.stderr != ""
-    assert not log.exists()
-    assert not (project / ".devpro-temp").exists()
-
-
-def test_a_launcher_runs_the_wrapper_beside_it_with_no_devpro_on_path(tmp_path: Path) -> None:
-    """The launcher's whole resolution is the wrapper beside it: a capture through it writes the
-    record, with no `devpro` on PATH at all. Defect: before the launcher named its own installation,
-    a hook run with a bare PATH found no devpro and the capture wrote nothing, though the install's
-    copy stood one file away."""
-    launcher = _launcher(tmp_path / "harness")
-    assert (launcher.parent / ".." / "tools" / "devpro.sh").is_file(), "the install writes the wrapper"
+    assert (launcher.parent / "devpro").is_dir(), "the install writes its copy of devpro in tools/"
     project = tmp_path / "project"
     project.mkdir()
     done = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD, path="/usr/bin:/bin")
@@ -836,39 +779,40 @@ def test_the_two_masks_redact_alike(tmp_path: Path) -> None:
 
 
 def _profiler_init(project: Path) -> subprocess.CompletedProcess[str]:
-    """`profiler init claude` in `project`, through its installed launcher and the test's devpro."""
+    """`profiler init claude` in `project`, through the installed wrapper and the test's devpro."""
     return _run(_launcher(project.parent / "harness"), "init", "claude", cwd=project)
 
 
-def test_init_lays_down_the_launcher_and_clears_an_older_runs_files(tmp_path: Path) -> None:
-    """A committed hook directory holding an older `init`'s launcher `hp.sh` beside `hp.py` and
-    `view.html`: a re-run writes the launcher alone and removes the older names. A committed hook
-    running devpro beside a stale `hp.py` is the half-absorbed install, and `stale_hook` would chase
-    files no install ships."""
+@pytest.mark.parametrize("launcher", RETIRED_LAUNCHERS)
+def test_init_clears_an_older_runs_launcher_and_files(tmp_path: Path, launcher: str) -> None:
+    """A committed hook directory holding an older `init`'s launcher — under any name it wrote, the one
+    this release retired included — beside `hp.py` and `view.html`: a re-run removes every one of
+    them, writes the skill, registers the project's wrapper's command, and leaves no hook directory
+    where nothing else stands in it. A committed hook running devpro beside a stale `hp.py` is the
+    half-absorbed install, and `stale_hook` would chase files no install ships."""
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
     hook_dir = project / ".claude" / "harness-profiler"
     hook_dir.mkdir(parents=True)
-    for name in ("hp.sh", *RETIRED_HOOK_FILES):
+    for name in (launcher, *RETIRED_HOOK_FILES):
         (hook_dir / name).write_text("an older init's copy\n", encoding="utf-8")
 
     done = _profiler_init(project)
 
     assert done.returncode == 0, done.stderr
-    assert [path.name for path in sorted(hook_dir.iterdir())] == ["profiler.sh"]
-    assert (hook_dir / "profiler.sh").read_bytes() == launcher_resource().read_bytes()
-    assert os.access(hook_dir / "profiler.sh", os.X_OK)
+    assert not hook_dir.exists()
     assert (project / ".claude" / "skills" / "profiler" / "SKILL.md").is_file()
-    assert "harness-profiler/profiler.sh" in (project / ".claude" / "settings.json").read_text(encoding="utf-8")
+    settings = (project / ".claude" / "settings.json").read_text(encoding="utf-8")
+    assert ".claude/skills/devpro/tools/devpro.sh" in settings
+    assert "harness-profiler" not in settings
 
 
-def test_init_renames_a_committed_hook_written_under_the_former_launcher_name(tmp_path: Path) -> None:
-    """A repository whose committed hook spells the launcher's former name — the file `hp.sh` and the
-    registered command running it: `init` renames both, the file unlinked and the current launcher
-    written in its place, the command re-registered under the current name, and `doctor` no longer
-    reports the hook as stale. The rename's consuming-project migration is the `init`'s, run before
-    the install refreshes."""
+def test_init_renames_a_committed_hook_written_under_a_launcher_name(tmp_path: Path) -> None:
+    """A repository whose committed hook spells a launcher name — the file `hp.sh` and the registered
+    command running it: `init` removes the file and re-registers the command on the project's committed
+    wrapper, and `doctor` no longer reports the hook as stale. The consuming-project migration is the
+    `init`'s, run before the install refreshes."""
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
@@ -900,10 +844,10 @@ def test_init_renames_a_committed_hook_written_under_the_former_launcher_name(tm
     doctor = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
 
     assert done.returncode == 0, done.stderr
-    assert [path.name for path in sorted(hook_dir.iterdir())] == ["profiler.sh"]
+    assert not hook_dir.exists()
     settings = settings_file.read_text(encoding="utf-8")
-    assert "harness-profiler/profiler.sh" in settings
-    assert "harness-profiler/hp.sh" not in settings
+    assert ".claude/skills/devpro/tools/devpro.sh" in settings
+    assert "harness-profiler" not in settings
     assert doctor.returncode == 0, doctor.stderr
     assert "update:" not in doctor.stdout
     assert "committed hooks" in doctor.stdout
@@ -999,10 +943,11 @@ def test_init_renames_the_repositorys_old_pattern_stores(tmp_path: Path) -> None
     assert sorted(path.name for path in (stores / ".profiler-opencode").iterdir()) == ["s-opencode.jsonl"]
 
 
-def test_doctor_reports_a_committed_launcher_that_differs_from_the_resource(tmp_path: Path) -> None:
-    """A committed hook this devpro's `init` wrote, its launcher then edited: `doctor` says the hook has
-    another version of it. A compare reading a source no install ships reports nothing, and the `update`
-    line loses its one job."""
+def test_doctor_reports_a_committed_hook_that_differs_from_the_registered_one(tmp_path: Path) -> None:
+    """A committed hook this devpro's `init` wrote, its command then hand-edited to an older launcher's
+    — the shape a repository migrated from the retired launcher carries: `doctor` says the hook runs
+    another command than the wiring this devpro registers, which an `init` re-run replaces. A compare
+    reading nothing reports nothing, and the `update` line loses its one job."""
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
@@ -1011,50 +956,29 @@ def test_doctor_reports_a_committed_launcher_that_differs_from_the_resource(tmp_
     assert current.returncode == 0, current.stderr
     assert "update:" not in current.stdout
 
-    (project / ".claude" / "harness-profiler" / "profiler.sh").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    settings_file = project / ".claude" / "settings.json"
+    settings = json.loads(settings_file.read_text(encoding="utf-8"))
+    old = OLD_HOOK_COMMANDS[0]
+    for entries in settings["hooks"].values():
+        for entry in entries:
+            for hook in entry["hooks"]:
+                hook["command"] = old
+    settings_file.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
 
     edited = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
 
     assert edited.returncode == 0, edited.stderr
-    assert "update:  the committed hook has another version of profiler.sh;" in edited.stdout
+    assert "update:  the committed hook runs another command than " in edited.stdout
 
 
-@pytest.mark.parametrize("wrapper", [".claude/tools/devpro.sh", ".claude/skills/devpro/tools/devpro.sh"])
-def test_doctor_names_the_wrapper_the_launcher_would_run(tmp_path: Path, wrapper: str) -> None:
-    """`clauses.TEST_PRECONDITION`. Doctor's `devpro:` line models the launcher's own resolution: the
-    first wrapper candidate standing beside the launcher, named without running it — whether the
-    wrapper runs is the wrapper's own refusal to name at hook time, there being no probe. The defect
-    the stand-in's rule guards: a line naming a devpro the launcher does not run."""
+def test_doctor_names_the_wrapper_this_tree_runs(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. Doctor's `devpro:` line names one command — the tree that ran it,
+    `<python> -m devpro --from <its root>` — never a `devpro` waiting on PATH from another directory,
+    and the line is one. The defect the stand-in's rule guards: a line naming a devpro the tree does not
+    run, or a second line per launcher the repository held."""
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    assert _profiler_init(project).returncode == 0
-    broken = project / wrapper
-    broken.parent.mkdir(parents=True, exist_ok=True)
-    broken.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
-    broken.chmod(0o755)
-
-    reported = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
-
-    assert reported.returncode == 0, reported.stderr
-    [line] = [line for line in reported.stdout.splitlines() if line.startswith("devpro:")]
-    assert str(broken) in line
-    assert "does not run" not in line
-
-
-def test_doctor_names_no_devpro_the_launcher_would_not_run(tmp_path: Path) -> None:
-    """No wrapper stands beside either launcher, and a `devpro` waits on PATH: doctor's line names the
-    absence — the launcher's capture exits 0 without recording — never the PATH command, there being
-    no PATH search for the stand-in to model."""
-    project = tmp_path / "project"
-    project.mkdir()
-    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    assert _profiler_init(project).returncode == 0
-    for wrapper in (
-        project / ".claude" / "tools" / "devpro.sh",
-        project / ".claude" / "skills" / "devpro" / "tools" / "devpro.sh",
-    ):
-        wrapper.unlink(missing_ok=True)
     on_path = tmp_path / "on-path"
     on_path.mkdir()
     foreign = on_path / "devpro"
@@ -1065,8 +989,8 @@ def test_doctor_names_no_devpro_the_launcher_would_not_run(tmp_path: Path) -> No
 
     assert reported.returncode == 0, reported.stderr
     [line] = [line for line in reported.stdout.splitlines() if line.startswith("devpro:")]
+    assert " -m devpro --from " in line, line
     assert str(foreign) not in reported.stdout
-    assert "no wrapper beside it" in line
 
 
 def _write_store(

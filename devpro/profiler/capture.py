@@ -1,9 +1,9 @@
 """The capture: one hook payload in, one record appended to the harness's store.
 
-The claude hook runs this through the launcher (`profiler.sh capture claude`); the opencode plugin writes
-the same records itself. Neither a failed capture nor a missing toolchain may block the call that fired
-it, so the launcher drains its stdin and exits 0 where the wrapper beside it is missing or fails, and
-`cli`'s capture path swallows every error.
+The claude hook runs this through the installation's wrapper (`<wrapper> profiler capture claude`); the
+opencode plugin writes the same records itself. Neither a failed capture nor a missing toolchain may
+block the call that fired it, so `cli`'s capture path reads a bounded payload, silences the child's
+stdout and exits 0 on every path.
 """
 
 import json

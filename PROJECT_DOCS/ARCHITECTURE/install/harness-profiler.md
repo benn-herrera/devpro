@@ -14,22 +14,11 @@ page render, `hooks.py` the committed hook's wiring — `init` and `doctor` — 
 modules, and `cli.py` imports the one whose subcommand runs. Its subcommands are `capture`, `tree`,
 `init`, `doctor` and `repair`; the records are served by the `dashboard` verb, below.
 
-**Resources.** One file lives in `devpro/harnesses/resources/claude/profiler/`:
-`profiler.sh`, the bash launcher, which runs the wrapper beside it with the `profiler` verb. Every
-site spelling the launcher's file name renames with it — the hook wiring's script path, the
-skill's finder and its `PROFILER` line, the init's copy and its unlinks, the doctor's compares. It carries the `!INSTALLED! … devpro` banner within its
-first ten lines — the banner rule binds every harness resource — and `harness_resource_copies` lands
-it at the path it holds below the install directory, so the install directory gains
-`profiler/profiler.sh`. Its source is claude's: mage ships no resources, and an opencode install carries
-the same file, below, though opencode's capture is the plugin's own TypeScript.
-
-**The launcher's finder.** The launcher resolves the wrapper beside it — `../tools/devpro.sh` from
-`<install-dir>/profiler/profiler.sh`, and `../skills/devpro/tools/devpro.sh` from the committed
-`.claude/harness-profiler/profiler.sh` — and runs it as a child with the `profiler` verb and the
-launcher's own arguments passed through. The first candidate standing is the one that runs: there
-is no probe and no `PATH` search, a foreign devpro is never run, and every failure is named by the
-wrapper's own refusal — a capture whose wrapper fails drains its stdin and exits 0, never blocking
-the tool call.
+**Resources.** No file lives in `devpro/harnesses/resources/claude/profiler/` — the directory is
+gone. `init` removes the committed launcher it once wrote into the repository's
+`.claude/harness-profiler/` beside the `hp.sh` names its machinery already carries, and the
+install's copy step removes the installed tree's `profiler/profiler.sh` unconditionally, where the
+pairing machinery names no replacement to pair it with.
 
 **The page template and its presentation layer.** `view.html` is the wheel's package data,
 `devpro/profiler/view.html`, read by `pages.py` through `importlib.resources` beside the module that
@@ -70,15 +59,16 @@ the nav; it carries no legend.
 **Wiring.** `harnesses/claude.py`'s `_registration_hooks` carries the profiler's six hook entries
 beside the guardrail's and the reminder's: `PostToolUse`, `PostToolUseFailure`, `PreCompact`,
 `PostCompact`, `SessionStart` and `SubagentStop`, each `matcher "*"`, `async: true`, `timeout: 5`,
-running `/bin/bash "${CLAUDE_PLUGIN_ROOT}/profiler/profiler.sh" capture claude`, and the launcher's
-file name is the one change a committed hook written under its former `hp.sh` inherits: the hook stays
-this tool's own, and `init`'s re-run renames it, the registered command with it. The wiring
+running the installed wrapper — `<install-dir>/tools/devpro.sh profiler capture claude`, the path
+`INSTALLED_WRAPPER` holds — as the hook's command, the launcher's path and the launcher constants
+gone. The wiring
 is data in the harness module, not a new mechanism, and no entry is gated on the install-time probe. A
 capture appends one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl` — one of
 the per-harness stores under `.devpro-temp/`, every `.profiler-*` directory of which the `tree`
-subcommand renders — the project's scratch directory, which the project's own convention gitignores; a
-capture that fails, or finds no wrapper beside the launcher, exits 0 with nothing on the hook's
-stdout, the wrapper's own failure named on stderr.
+subcommand renders — the project's scratch directory, which the project's own convention gitignores.
+The wrapper's
+`capture` subcommand owns the never-block contract: its read of the hook payload is bounded, it
+exits 0 on every path, and the capture's child runs with its stdout off the hook's stdout.
 
 **Serving.** The dashboard renders in memory behind a local HTTP server: the `devpro dashboard
 [<project-dir>] [--port <number>]` verb binds `127.0.0.1` on a free port — `--port` pins one, 0
@@ -157,34 +147,33 @@ message on stderr.
 
 **The skill.** `profiler` ships as a rendered skill definition under `devpro/definitions/`, so it
 carries the generated banner and the harness's namespace (`devpro:profiler` under claude) and
-renders under every harness. Its finder's first candidate, `../../profiler/profiler.sh` from
-the skill's directory, resolves to `<install-dir>/profiler/profiler.sh` where the payload landed — the
-launcher that runs the wrapper beside it — and its second, the committed `.claude/harness-profiler/profiler.sh`,
-covers a repository where the hook was committed for claude-on-web; where neither stands, the skill
-says the tool is not installed. A user-level install renders the skill and copies no resource, so
-there it is the committed copy or the absence. `init` renders the same skill into the repository's
-`.claude/skills/profiler/SKILL.md` from the definition, beside the launcher it copies.
+renders under every harness. Its `Locate the profiler` block states one wrapper as the writer's
+knowledge — the project's committed wrapper where `init` rendered the skill, the installation's own
+where the install rendered it — and where neither rendering applies, the skill says the tool is not
+installed. A user-level install renders the skill and copies no resource, so there it is the
+committed wrapper or the absence. `init` renders the same skill into the repository's
+`.claude/skills/profiler/SKILL.md` from the definition.
 
 **Limits, stated.** The `doctor` subcommand greps the name `harness-profiler` in claude's
 installed-plugin records and will not recognize the payload copy; its committed-hook and
 settings-hook checks still find a committed one. The limitation is stated, not fixed. Claude Code on
 the web sends the same hook data but loads no plugin's hooks, so a cloud session records nothing
-until the hook is committed to the repository; the `init` subcommand does that, copying the launcher
-and the skill into the repository's `.claude/` and merging the six entries into its
-`.claude/settings.json`.
+until the hook is committed to the repository; the `init` subcommand does that, writing the rendered
+skill into the repository's `.claude/` and merging the six entries into its
+`.claude/settings.json`, the committed hook's command naming the project's committed wrapper.
 
-**What `init` copies, and what it removes.** `init claude` writes the repository's
-`.claude/harness-profiler/profiler.sh` — the harness resource the devpro package ships, readable as
-`devpro.profiler.hooks.launcher_resource()` and marked executable — and the rendered skill, then
-unlinks the launcher an older `init` wrote under its former name, `hp.sh`, and the files an older
-`init` left beside the launcher: `hp.py` and `view.html`, which no install ships any more — and the
-skill an older `init` rendered under its former name,
-`.claude/skills/show-profile/SKILL.md`, with its directory where that leaves it empty.
-A hook committed by an older `init` therefore keeps working: it runs `hp.sh`, which still finds a
-devpro; `init`'s re-run renames the hook to the launcher's current name, and the install's update
-runs after that rename. `doctor`'s `update` line names a committed hook that lacks an event, is not `async`,
-or differs by a byte from the launcher's resource the devpro package ships — that resource is the
-master, and the compare reads it without needing an install directory.
+**What `init` copies, and what it removes.** `init claude` writes the repository's rendered skill
+and merges the six hook entries — each command running the `profiler capture claude`
+invocation on the committed wrapper
+`.claude/skills/devpro/tools/devpro.sh` — then unlinks the launchers an older `init` wrote into the
+repository: the one under its former name, `hp.sh`, the launcher's later name,
+`.claude/harness-profiler/profiler.sh`, and the files an older `init` left beside the launcher,
+`hp.py` and `view.html`, which no install ships any more — and the skill an older `init` rendered
+under its former name, `.claude/skills/show-profile/SKILL.md`, with its directory where that leaves
+it empty. A hook committed by an older `init` therefore keeps working: its command runs the
+committed wrapper from the project root. `doctor`'s `update` line names a committed hook that lacks
+an event, is not `async`, or differs by a byte from the wiring the devpro package registers — the
+registered wiring is the master, and the compare reads it without needing an install directory.
 
 **What does not exist.** No companion-plugin mechanism is built: the profiler has no namespace of its
 own and no carrier but the devpro plugin. Should it become optional later, it becomes a
@@ -218,13 +207,11 @@ appends to while the repair reads it is named on stderr and left as it stands, n
 a session's own write.
 The model's own `todowrite` notes are not recorded: they are not activity, so the store holds one
 record per tool call that did something. A capture that fails raises nothing out of the hook. `init`
-and `doctor` stay claude-facing: opencode has no committed-hook concept. The install ships the
-profiler's launcher under opencode too: `_CROSS_HARNESS_SOURCES` carries claude's
-`claude/profiler` directory to opencode's `profiler/`, so an opencode project install holds
-`profiler/profiler.sh` beside the plugin's `profiler.ts`, and the profiler skill's first finder
-candidate resolves it. The payload is copied, not wired: opencode registers no hook entry, so no
-committed copy arises, and the store the plugin writes is read by `profiler tree` run through the
-launcher, which runs the installation's wrapper beside it. One line holds one record, and the limits that keep it so are
+and `doctor` stay claude-facing: opencode has no committed-hook concept. The install ships no
+launcher under opencode: `_CROSS_HARNESS_SOURCES` drops the cross-harness entry, and an opencode
+project install holds only the plugin's `profiler.ts`. The payload is copied, not wired: opencode
+registers no hook entry, so no committed copy arises, and the store the plugin writes is read by
+`devpro profiler tree` — the wrapper's own subcommand. One line holds one record, and the limits that keep it so are
 `devpro/profiler/values.py`'s: `NAME_LIMIT`,
 `ARGS_LIMIT` and `RESULT_LIMIT` clip a field's text as the Python capture clips it, and `LINE_LIMIT`
 bounds the written line in bytes, `name` and `session` clipped at the root before `result` and `args`
@@ -256,17 +243,12 @@ does not close — the old store is left standing and named, and at the migratio
 per harness stands with its traces readable under it, or the operator is told which store was left
 behind.
 
-**Doctor's lines.** `devpro profiler doctor` reports `devpro:` the wrapper the launcher would run —
-the first candidate standing beside it, resolved as the launcher resolves it, with no probe and no
-`PATH` search: a command the launcher would not run, the `devpro` on `PATH` among them, is never the
-line's answer, and where no candidate stands beside a launcher the line says so, the launcher's
-capture exiting 0 without recording.
-It reports one such line for each launcher standing in the repository — the committed hook's
-and a claude project install's, `INSTALLED_LAUNCHER` — and where none stands in the repository, one
-line naming the `devpro` command on `PATH` — or `not found on PATH (install devpro)` — `traces:` the
-claude store `tree` reads beside the `.profiler-*` pattern, `hook:` where a capture hook is
-registered here (the plugin's own records, and the committed, local and user settings files) or
-`not installed` with the install and `init` remedies, an `old:` line per pre-rename store it cannot
-read with the remedy that renames or merges it, `update:` a stale committed hook, and `newest:` the
-newest claude session's last moment or `no calls recorded yet`. Doctor is claude-facing: every line
-reads claude's hook and claude's store, where `tree` reads both harnesses'.
+**Doctor's lines.** `devpro profiler doctor` runs as the wrapper's own subcommand, and its
+`devpro:` line names the wrapper's own path — `INSTALLED_WRAPPER`'s where the install stands, the
+invoking tree's devpro otherwise — one line: `traces:` the claude store `tree` reads beside the
+`.profiler-*` pattern, `hook:` where a capture hook is registered here (the plugin's own records, and
+the committed, local and user settings files) or `not installed` with the install and `init` remedies,
+an `old:` line per pre-rename store it cannot read with the remedy that renames or merges it,
+`update:` a stale committed hook, and `newest:` the newest claude session's last moment or `no calls
+recorded yet`. Doctor is claude-facing: every line reads claude's hook and claude's store, where
+`tree` reads both harnesses'.

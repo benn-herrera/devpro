@@ -39,6 +39,7 @@ from devpro.harnesses.opencode import HARNESS as OPENCODE
 from devpro.install import (
     _RESOURCE_BANNER_LINES,
     HARNESS_RESOURCES_SOURCE,
+    RETIRED_RESOURCE_FILES,
     RETIRED_SNIPPET_SET,
     SHIPPED_PACKAGES,
     ShippedPackage,
@@ -391,10 +392,10 @@ _SETTINGS = ".claude/settings.json"
 _CLAUDE_PLUGIN_RELPATH = f".claude/{CLAUDE.bound(NAME).plugin_dir}"
 # The devpro tools package's line: the one every project install of a nested plugin writes.
 _DEVPRO_SET_LINE = f"import? '{_CLAUDE_PLUGIN_RELPATH}/tools/runner-snippets/devpro.just'"
-# The activity profiler: the launcher the claude install copies beside the hooks, the skill that finds
-# it, and the registration entries that feed it.
+# The activity profiler: the wrapper the claude install writes beside its package copy — the hook's own
+# command names it — the skill, and the registration entries that feed the capture. The launcher it
+# once shipped is gone from the resources, and an install removes a tree an older release wrote.
 _PROFILER = "profiler"
-_PROFILER_FILES = ("profiler.sh",)
 _PROFILER_EVENTS = (
     "PostToolUse",
     "PostToolUseFailure",
@@ -403,7 +404,7 @@ _PROFILER_EVENTS = (
     "SessionStart",
     "SubagentStop",
 )
-_PROFILER_COMMAND = '/bin/bash "${CLAUDE_PLUGIN_ROOT}/profiler/profiler.sh" capture claude'
+_PROFILER_COMMAND = '"${CLAUDE_PLUGIN_ROOT}/skills/devpro/tools/devpro.sh" profiler capture claude'
 _PROFILER_SKILL = "skills/profiler/SKILL.md"
 
 
@@ -449,16 +450,17 @@ def test_a_fresh_claude_install_ships_the_guardrail_and_registers_it_in_the_plug
     assert not (tmp_path / _SETTINGS).exists()
 
 
-def test_the_profiler_resources_land_under_the_install_directorys_profiler(tmp_path: Path) -> None:
-    """The launcher is a harness resource like the hooks beside it: it lands at the path it holds below
-    `resources/claude/`, so the plugin directory gains `profiler/` holding exactly the launcher, and
-    executable: the profiler's code and page are devpro's own and ship in the wheel, not here."""
+def test_the_profiler_ships_the_skill_and_no_launcher(tmp_path: Path) -> None:
+    """The profiler's code and page are devpro's own and ship in the wheel; the one file it adds to the
+    install directory is the wrapper every install writes. Defect: the harness resources once carried a
+    launcher under `profiler/`, and an install delivered it as a resource beside the hooks."""
     root = tmp_path / ".claude"
     root.mkdir()
     _definition_install(root, project_root=tmp_path)
-    profiler = _claude_plugin(root) / _PROFILER
-    assert sorted(path.name for path in profiler.iterdir()) == sorted(_PROFILER_FILES)
-    assert os.access(profiler / "profiler.sh", os.X_OK)
+    plugin = _claude_plugin(root)
+    assert (plugin / "tools" / "devpro.sh").is_file()
+    assert not (plugin / _PROFILER).exists()
+    assert not (PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / "claude" / _PROFILER).exists()
 
 
 def test_the_claude_registration_carries_the_profiler_on_every_event_it_captures(tmp_path: Path) -> None:
@@ -1642,17 +1644,12 @@ def test_a_user_level_opencode_install_copies_the_entry_and_no_guardrail(
     _home: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A user-level install delivers no guardrail, but the plugin registers only through its entry, so
-    the entry is the one harness resource it copies. The payload a project install reaches across from
-    claude's resources stays behind too: the carve-out admits a project install's copy list, not this
-    one."""
+    the entry is the one harness resource it copies, and it reaches across no other harness's
+    resources at all: the carve-out admits a project install's copy list, not this one."""
     resources = tmp_path / "repo" / HARNESS_RESOURCES_SOURCE / "opencode"
     resources.mkdir(parents=True)
     for name in ("index.ts", _TS_GUARDRAIL):
         (resources / name).write_text(f"{_RESOURCE_HEADER}export const probe = 1\n", encoding="utf-8")
-    profiler = tmp_path / "repo" / HARNESS_RESOURCES_SOURCE / "claude" / _PROFILER
-    profiler.mkdir(parents=True)
-    for name in _PROFILER_FILES:
-        (profiler / name).write_text(f"{_RESOURCE_HEADER}payload {name}\n", encoding="utf-8")
     monkeypatch.setattr("devpro.install.PACKAGE_ROOT", tmp_path / "repo")
     root = _home / ".config/opencode"
     root.mkdir(parents=True)
@@ -1877,19 +1874,40 @@ def test_an_install_removes_the_dicing_snippets_package_an_earlier_install_left(
 
 
 @pytest.mark.usefixtures("_no_uncommitted")
-def test_an_install_removes_the_launchers_former_name_beside_it(tmp_path: Path, capsys) -> None:
-    """The dry run names the removal the install then makes, on a re-install of the same version.
-    Defect: the copy renames forward and never removes, so a tree the earlier `hp.sh` install wrote kept
-    that launcher beside `profiler.sh` for good."""
+def test_an_install_removes_the_retired_launcher_and_its_directory(tmp_path: Path, capsys) -> None:
+    """A tree an earlier release wrote holding `profiler/hp.sh` and the launcher's later name: the install
+    removes both, and the directory they leave empty with them, and the dry run names every removal it
+    then makes, on a re-install of the same version. Defect: the copy is one-way and removes nothing, so
+    a retired launcher stood in the install directory for good."""
     project = tmp_path / "project"
     project.mkdir()
     argv = ["install", str(project), "--harness=claude"]
     main(argv)
-    retired = _claude_plugin(project / ".claude") / _PROFILER / "hp.sh"
-    _plant(retired, "# !INSTALLED! from devpro/harnesses/resources/claude/profiler/hp.sh — y\n")
+    stale = _claude_plugin(project / ".claude") / _PROFILER
+    for name in RETIRED_RESOURCE_FILES:
+        _plant(project / ".claude" / "skills" / "devpro" / name, "# !INSTALLED! from devpro/harnesses/x — y\n")
     groups = _assert_dry_run_predicts(argv, project=project, capsys=capsys)
-    assert not retired.exists()
-    assert retired.relative_to(project).as_posix() in groups["removed"]
+    assert not stale.exists()
+    assert f"{stale.relative_to(project).as_posix()}/" in groups["removed"]
+
+
+@pytest.mark.usefixtures("_no_uncommitted")
+def test_an_install_leaves_a_retired_name_it_did_not_write(tmp_path: Path, capsys) -> None:
+    """A `profiler/` directory holding the consumer's own file is the consumer's: neither the file, at a
+    retired name or beside one, nor the directory is removed, because only a file carrying this
+    repository's installed header is ours to delete."""
+    project = tmp_path / "project"
+    project.mkdir()
+    argv = ["install", str(project), "--harness=claude"]
+    main(argv)
+    theirs = _claude_plugin(project / ".claude") / _PROFILER
+    for name in RETIRED_RESOURCE_FILES:
+        _plant(theirs / name, "#!/bin/sh\n# the operator's own profiler\n")
+    _plant(theirs / "notes.md", "notes\n")
+    capsys.readouterr()
+    main(argv)
+    assert all((theirs / name).is_file() for name in RETIRED_RESOURCE_FILES)
+    assert (theirs / "notes.md").is_file()
 
 
 def test_the_cold_read_script_installed_under_mage_refuses(tmp_path: Path) -> None:
@@ -2188,23 +2206,22 @@ def test_an_opencode_install_writes_no_claude_settings_file(tmp_path: Path) -> N
     assert not (root / _GUARDRAIL).exists()
 
 
-def test_an_opencode_install_copies_the_profiler_payload_while_a_mage_one_does_not(tmp_path: Path) -> None:
-    """The profiler's hooks are claude's, but its render payload is harness-neutral, so opencode's copy
-    list carries it: opencode's project install holds `profiler/` with exactly the launcher and registers
-    nothing, while mage's copy list gains nothing and so its install holds neither the payload nor a
-    registration. Both carry the profiler skill that finds the payload."""
+def test_an_opencode_install_copies_no_profiler_payload(tmp_path: Path) -> None:
+    """The profiler's hooks are claude's, and opencode's capture is its plugin's own, so opencode's copy
+    list carries no profiler resource: its project install holds no `profiler/` and registers nothing,
+    and mage's holds no `profiler/` either. Defect: `_CROSS_HARNESS_SOURCES` carried claude's launcher
+    directory across, so an opencode install delivered a bash launcher beside a TypeScript capture. Both
+    carry the profiler skill."""
     opencode = tmp_path / "opencode"
     (opencode / ".opencode").mkdir(parents=True)
     _definition_install(opencode / ".opencode", _OPENCODE_RENDER, project_root=opencode)
     opencode_plugin = _opencode_plugin(opencode / ".opencode")
-    profiler = opencode_plugin / _PROFILER
-    assert sorted(path.name for path in profiler.iterdir()) == sorted(_PROFILER_FILES)
     mage = tmp_path / "mage"
     (mage / "plugins/devpro").mkdir(parents=True)
     _definition_install(mage / "plugins/devpro", _MAGE_RENDER, project_root=mage)
     mage_plugin = mage / "plugins/devpro"
-    assert not (mage_plugin / _PROFILER).exists()
     for plugin in (opencode_plugin, mage_plugin):
+        assert not (plugin / _PROFILER).exists()
         assert not (plugin / _REGISTRATION).exists()
         assert (plugin / _PROFILER_SKILL).is_file()
 

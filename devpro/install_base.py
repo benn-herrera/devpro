@@ -27,7 +27,7 @@ KBASE_SKILL_DIR = "skills/kbase"
 # Below ROOT: where the kb-tools package is delivered, inside the kbase skill's own directory.
 KB_TOOLS_DIR = f"{KBASE_SKILL_DIR}/kb-tools"
 # Below ROOT: the devpro tools package — the installation's own copy of devpro and the runner snippets
-# — and the wrapper that runs that copy, which every installed launcher names relative to itself.
+# — and the wrapper that runs that copy, which every installed hook and skill names by its own knowledge.
 TOOLS_DIR = "tools"
 WRAPPER = f"{TOOLS_DIR}/devpro.sh"
 # A virtual environment a shipped tool builds beside its package: not install output, so it is neither

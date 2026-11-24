@@ -70,14 +70,13 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores among the
   `.profiler-*` ones `devpro profiler tree` walks — as text, as a self-contained HTML page, or
   served over HTTP by the dashboard's profiler view: its serve section names the `dashboard` verb,
-  run through the installation's wrapper, which `clauses.WRAPPER_PROFILER` names with a second
-  candidate, the bound harness's project wrapper at the project root (Rendering, Placeholders), for
-  the copy of the skill `profiler init` writes outside the install directory. The
+  run through the tree's own wrapper, which `clauses.WRAPPER_PROFILER` names — the project's committed
+  wrapper where `init` rendered the skill outside the install directory, the installation's own where
+  the install rendered it (Rendering, Placeholders). The
   tree's drawing is the code's rule: `tree --verbose` draws every node of the session, and the
   plain tree draws the placeholder and marker nodes and the calls whose tool is in `PARENT_TOOLS`.
-  The skill finds the profiler's launcher at `../../profiler/profiler.sh`, the installed copy of claude's,
-  before the committed `.claude/harness-profiler/profiler.sh` a claude-on-web session uses; the launcher
-  runs the `profiler` verb of the wrapper beside it
+  The skill runs the profiler through that one wrapper, which dispatches the `profiler` verb and its
+  `tree` subcommand
   (Install, Harness profiler).
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered

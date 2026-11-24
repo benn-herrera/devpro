@@ -45,8 +45,7 @@ _REGISTRATION = "hooks/hooks.json"
 # is an interpreter's status for a script it cannot open, so the command runs the script only where it
 # stands and otherwise names it on stderr and exits 1, which Claude Code reports without blocking. The
 # interpreter each command built here names is found on PATH, never at an absolute path: the file
-# registering it is often committed and shared across machines. The profiler's command below is the
-# exception: it names `/bin/bash`, and the launcher's header states why.
+# registering it is often committed and shared across machines.
 _MISSING_SCRIPT_REPORT = "guardrail hook: no readable script at $s"
 _MISSING_REMINDER_REPORT = "state-table reminder: no readable script at $s"
 
@@ -65,12 +64,17 @@ _PLUGIN_GUARDRAIL_COMMAND = _hook_command(interpreter="perl", script=_GUARDRAIL_
 # The reminder is bash, as every other script in this repository is, so its command names bash rather
 # than the shell the command itself runs under.
 _PLUGIN_REMINDER_COMMAND = _hook_command(interpreter="bash", script=_REMINDER_SCRIPT, report=_MISSING_REMINDER_REPORT)
+# The wrapper a project install writes below the plugin's root, and the one the profiler's hook runs.
+# A literal: the profiler's modules stay off the install's import path, so `hooks.INSTALL_WRAPPER` is
+# not read here, and the claude harness profile's `project_wrapper` is the same path.
+INSTALL_WRAPPER = "skills/devpro/tools/devpro.sh"
+
 # The activity profiler's capture: one hook payload on stdin, one record appended to the project's
-# `.devpro-temp/.profiler-claude/` — claude's own capture, beside the opencode plugin's store. It runs
-# out of band and short, and its launcher exits 0 where it finds no devpro, so neither a failed
-# capture nor a missing toolchain blocks the call that fired it.
-_PROFILER_SCRIPT = "profiler/profiler.sh"
-_PROFILER_COMMAND = f'/bin/bash "${{CLAUDE_PLUGIN_ROOT}}/{_PROFILER_SCRIPT}" capture claude'
+# `.devpro-temp/.profiler-claude/` — claude's own capture, beside the opencode plugin's store. Its
+# command names the installed wrapper, resolved from the plugin's root: no launcher stands between the
+# hook and it. The capture runs out of band and short, and its subcommand exits 0 on every path, so
+# neither a failed capture nor a missing wrapper blocks the call that fired it.
+_PROFILER_COMMAND = f'"${{CLAUDE_PLUGIN_ROOT}}/{INSTALL_WRAPPER}" profiler capture claude'
 _PROFILER_TIMEOUT = 5
 _PROFILER_EVENTS = (
     "PostToolUse",

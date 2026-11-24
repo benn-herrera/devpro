@@ -10,12 +10,17 @@ import os
 import sys
 from pathlib import Path
 
+# The hook payload a capture reads at most: a hook's stdin is bounded by what the host writes there, and
+# a read with no bound waits out a host that never closes the pipe. Every read of it is bounded, the
+# capture's included, so the bound is module scope rather than the capture's own.
+PAYLOAD_LIMIT = 8 * 1024 * 1024
+
 
 def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
     """Add the `profiler` verb to subparsers, carrying its subcommand and options as one remainder.
 
     The remainder is passed through as the profiler's own command line: the subcommands parse their
-    options themselves, and a launcher's arguments reach them unchanged."""
+    options themselves, and the wrapper's arguments reach them unchanged."""
     profiler = subparsers.add_parser(
         "profiler",
         help="record a session's tool calls and show them as a tree or a page",
@@ -29,11 +34,21 @@ def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]")
 
 
 def read_stdin() -> str:
-    """The hook payload on stdin, and nothing where it cannot be read."""
+    """The hook payload on stdin, bounded to `PAYLOAD_LIMIT` bytes and nothing where it cannot be read:
+    a hook's stdin is a pipe a host writes, and a capture that read it whole would wait out a host that
+    never closes it."""
     try:
-        return sys.stdin.buffer.read().decode("utf-8", "replace")
+        return sys.stdin.buffer.read(PAYLOAD_LIMIT).decode("utf-8", "replace")
     except OSError:
         return ""
+
+
+def silent_stdout() -> None:
+    """Point this process's stdout at the null device, for the capture's duration: the child writes
+    nothing to the hook's stdout, which Claude Code reads as its hook JSON. An unbuffered write still
+    reaches the terminal it was opened on, and `print(..., file=sys.stdout)` takes what is now here."""
+    sys.stdout.flush()
+    sys.stdout = open(os.devnull, "w", encoding="utf-8")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -49,7 +64,10 @@ def run(args: argparse.Namespace) -> int:
     command = arguments[0] if arguments else None
     rest = arguments[1:]
     if command == "capture":
-        # A profiler must never break or slow down the session it watches, so no error leaves capture.
+        # The never-block contract, owned here: a profiler must never break or slow down the session it
+        # watches, so the payload read is bounded, the child's stdout never reaches the hook's own —
+        # Claude Code reads hook JSON there — and no error leaves capture.
+        silent_stdout()
         try:
             capture(rest[0] if rest else "unknown", read_stdin())
         except Exception:

@@ -97,8 +97,7 @@ and permissions — and the `kbase` MCP server where `kbase` ships. An install c
 resources into the install directory, except a user-level install, which copies only opencode's
 entry, and save a file conditional on the install-time probe (below), so a resource lands at the
 path it holds below the install directory: opencode's at `<install-dir>/index.ts`, the plugin entry,
-`<install-dir>/guardrail.ts` and `<install-dir>/profiler.ts`, and, for claude and opencode alike,
-`<install-dir>/profiler/profiler.sh`;
+`<install-dir>/guardrail.ts` and `<install-dir>/profiler.ts`;
 claude's at `<install-dir>/hooks/guardrail.pl` and
 `<install-dir>/hooks/state-table-reminder.sh` (mage ships none):
 in the install directory, outside its three deployed surfaces. Each keeps its bytes and its mode:
@@ -108,8 +107,8 @@ edits. A harness shipping none copies nothing, which is not an error.
 
 A claude project install also ships the **activity profiler**: its code is devpro's own, and the
 hook files refer back to devpro wherever they ran the profiler's script, with the capture hook's
-contract — a failed or interpreterless capture exits 0 with nothing on the hook's stdout, the failure
-named on stderr — unchanged. The page template `view.html` the render reads is the devpro wheel's
+contract — a capture exits 0 with nothing on the hook's stdout, the failure named on stderr —
+unchanged. The page template `view.html` the render reads is the devpro wheel's
 package data (`devpro/profiler/view.html`, read by the rendering module), not an install resource;
 and the `profiler` skill, which renders a session's recorded activity — its skill, agent and tool calls
 with timings and token costs — as text, as a self-contained HTML page, or served over HTTP: the
@@ -155,14 +154,14 @@ reads the same source, so the served page's legend comes from the frame. The pag
 stay local: reachable only from the
 machine that runs the server. Six hook entries, one per
 event (`PostToolUse`, `PostToolUseFailure`, `PreCompact`, `PostCompact`, `SessionStart`,
-`SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each appends
-one line to the project's `.devpro-temp/.profiler-claude/<session-id>.jsonl`, and a capture that
-fails, or finds no `devpro` to run under, exits 0 with nothing on the hook's stdout, the failure named
-on stderr. A claude session on the web loads no plugin's hooks and records nothing there; the skill
+`SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each runs the
+install directory's `tools/devpro.sh profiler capture claude`, appends one line to the project's
+`.devpro-temp/.profiler-claude/<session-id>.jsonl`, and a capture that fails exits 0 with nothing on
+the hook's stdout, the failure named on stderr. A claude session on the web loads no plugin's hooks
+and records nothing there; the skill
 names the tool's `init` for committing the hook where a session needs one. A user-level install
-renders the skill and copies none of the resources. A project opencode install also ships the
-profiler's launcher — `profiler/profiler.sh` — and
-the capture `profiler.ts` beside the plugin entry, and
+renders the skill and copies none of the resources. A project opencode install ships
+the capture `profiler.ts` beside the plugin entry and no profiler launcher, and
 registers no hook entries; each recorded call appends one line to the project's
 `.devpro-temp/.profiler-opencode/<session-id>.jsonl`, a capture that fails raises nothing out of the
 hook, and a mage install ships none of them. A page attributes a child session to the session that

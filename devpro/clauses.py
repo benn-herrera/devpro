@@ -375,7 +375,10 @@ APPLE_VIOLATION_LEVEL = """as warnings/errors with structured metadata"""
 _WRAPPER_FROM_SKILL = "`../../tools/devpro.sh` resolved from this skill's own directory to an absolute path"
 _WRAPPER_RUN = "Run it with the project root as the working directory."
 WRAPPER = f"""`DP` below is the installation's wrapper, {_WRAPPER_FROM_SKILL}. {_WRAPPER_RUN}"""
-WRAPPER_PROFILER = f"""`DP` below is the installation's wrapper, the first of these that exists: {_WRAPPER_FROM_SKILL}, or `{PROJECT_WRAPPER}` at the project root. {_WRAPPER_RUN}"""
+# The profiler skill renders where `init` wrote it, beside the project's committed wrapper, and where the
+# install wrote it, beside the installation's: the clause names the tree's own, one wrapper, and resolves
+# no second candidate.
+WRAPPER_PROFILER = f"""`DP` below is the tree's own wrapper — the project's committed wrapper where `init` rendered the skill, the installation's own where the install rendered it — `{PROJECT_WRAPPER}` filled with its path. {_WRAPPER_RUN}"""
 
 # ─── Critical gotchas ────────────────────────────────────────────────────────
 

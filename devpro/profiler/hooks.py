@@ -1,10 +1,13 @@
 """The committed hook's wiring: the command string, `init`, and `doctor`.
 
-`init` writes the launcher and the profiler skill into a repository's `.claude/` and registers the
-capture on every event it records, for a session that loads no plugin's hooks. `doctor` says whether
-capture works in a repository, and why not. Both apply the stores' rename: an install and an `init` move
-the `claude-profiler` and `opencode-profiler` stores under the project's `.devpro-temp/` to their
+`init` writes the profiler skill into a repository's `.claude/` and registers the capture on every
+event it records, for a session that loads no plugin's hooks. `doctor` says whether capture works in
+a repository, and why not. Both apply the stores' rename: an install and an `init` move the
+`claude-profiler` and `opencode-profiler` stores under the project's `.devpro-temp/` to their
 `.profiler-*` names.
+
+Every command here names a wrapper its writer knows — the committed hook the project's, the plugin's
+the installation's — and none resolves one.
 
 The renderer is imported where it is used, in `profiler_skill_text`: the hook-run capture reaches this
 module for `doctor` and `init`, and the install for `rename_stores` — from `stores`, which imports the
@@ -13,10 +16,10 @@ module scope from `install_base`, which imports nothing of the renderer's.
 """
 
 import json
-import shutil
+import sys
 from pathlib import Path
 
-from devpro.install_base import PACKAGE_ROOT, WRAPPER
+from devpro.install_base import PACKAGE_ROOT
 
 from .pages import UsageError, list_sessions
 from .stores import OLD_STORE_SUFFIX, old_store_name, rename_stores
@@ -34,29 +37,20 @@ from .values import (
     read_text,
 )
 
-LAUNCHER = "profiler.sh"
-# The launchers an older `init` committed under the names before this one, which an `init` unlinks; a
-# hook command spelling either stays this tool's own.
-OLD_LAUNCHERS = ("hp.sh", "hp")
 HOOK_TIMEOUT_S = 5
 HOOK_DIR = Path(".claude") / "harness-profiler"
-HOOK_FILES = (LAUNCHER,)
-# The files an older `init` copied beside the launcher, which no install ships any more.
+# The launchers an older `init` wrote into the hook directory, under the names they had before the file
+# was retired: an `init` unlinks them, and a hook command spelling one stays this tool's.
+RETIRED_LAUNCHERS = ("hp.sh", "hp", "profiler.sh")
+# The files an older `init` copied into the hook directory beside the launcher, which no install ships.
 RETIRED_HOOK_FILES = ("hp.py", "view.html")
 # The skill directory an older `init` rendered, under the skill's name before `profiler`.
 RETIRED_SKILL = Path("skills") / "show-profile"
-# The harness resource the launcher is the master of: the install copies it, and `init` copies it again
-# into the repository's committed hook directory.
-HARNESS_RESOURCES = Path("harnesses") / "resources" / "claude" / "profiler"
 # A claude project install's directory in a repository, the claude plugin's: its wrapper is the one file
-# both claude launchers there resolve, the committed hook's and the install's own. A literal, not derived:
-# the claude harness profile's `project_wrapper` renders the same path, but importing the profile bound
-# to the install's name here would put the definitions on the capture's import path. The contract is
-# `profiler.sh`'s second candidate, `"${here}/../skills/devpro/tools/devpro.sh"`, which `INSTALLED_WRAPPER`
-# must equal taken from `HOOK_DIR`.
-INSTALL_DIR = Path(".claude") / "skills" / "devpro"
-INSTALLED_WRAPPER = INSTALL_DIR / WRAPPER
-INSTALLED_LAUNCHER = INSTALL_DIR / HARNESS_RESOURCES.name / LAUNCHER
+# the install writes there. A literal, not derived: the claude harness profile's `project_wrapper`
+# renders the same path, but importing the profile bound to the install's name here would put the
+# definitions on the capture's import path. The profiler's skill names the same wrapper as its runner.
+INSTALL_WRAPPER = ".claude/skills/devpro/tools/devpro.sh"
 
 USAGE = """Usage:
   devpro profiler tree [session-id-prefix] [--branch <name>] [--verbose] [--format text|html]
@@ -66,39 +60,36 @@ USAGE = """Usage:
   devpro profiler capture <harness>  (run by the hook, not by hand)"""
 
 
-def launcher_resource() -> Path:
-    """The launcher as the devpro package ships it."""
-    return PACKAGE_ROOT / HARNESS_RESOURCES / LAUNCHER
+def devpro_command() -> str:
+    """The `devpro` command doctor's `devpro:` line names: the tree that ran it, as
+    `<python> -m devpro --from <its root>`, or the `devpro` command on PATH where the tree is not one
+    this project's own sources answer for — a wheel in site-packages, which no line of this
+    repository's names."""
+    if PACKAGE_ROOT.parent.name in ("tools", "devpro"):
+        return f"{sys.executable} -m devpro --from {PACKAGE_ROOT.parent}"
+    return "devpro (on PATH)"
 
 
-def _launcher_wrappers(launcher: Path) -> tuple[Path, Path]:
-    """The wrappers the launcher at `launcher` tries, in its finder's order, from the directory above
-    its own: an install directory's wrapper, and the claude project install's below a `.claude/`."""
-    above = launcher.parent.parent
-    return above / WRAPPER, above / INSTALLED_WRAPPER.relative_to(".claude")
+def _hook_command(wrapper: str) -> str:
+    """The command a hook runs: `wrapper`, then the capture's one shape."""
+    return f"{wrapper} profiler capture claude"
 
 
-def devpro_executable(launcher: Path | None) -> str:
-    """What the launcher at `launcher` would run, as doctor's line names it: the first wrapper
-    candidate standing beside it, resolved as the launcher resolves it — no probe and no `PATH` search;
-    where no candidate stands, the line says so, the launcher's capture exiting 0 without recording.
-    `launcher` None names the `devpro` command on `PATH` — doctor's own diagnostic where no launcher
-    stands to name one — or that nothing was found."""
-    if launcher is None:
-        found = shutil.which("devpro")
-        return found if found else "not found on PATH (install devpro)"
-    wrappers = _launcher_wrappers(launcher)
-    found = next((str(wrapper) for wrapper in wrappers if wrapper.exists()), None)
-    return found if found else "no wrapper beside it (capture exits 0 without recording)"
-
-
-def _hook_command(launcher: str) -> str:
-    """The command a committed hook runs: this launcher, under the repository's `.claude/`."""
-    return f'/bin/bash "$CLAUDE_PROJECT_DIR/.claude/harness-profiler/{launcher}" capture claude'
-
-
-HOOK_COMMAND = _hook_command(LAUNCHER)
-OLD_HOOK_COMMANDS = tuple(_hook_command(name) for name in OLD_LAUNCHERS)
+# The committed hook's command: the project's committed wrapper, which `init` renders the skill beside,
+# named from the project root the hook is run from.
+HOOK_COMMAND = _hook_command(f'"$CLAUDE_PROJECT_DIR/{INSTALL_WRAPPER}"')
+# The commands an older `init` wrote: a launcher under the hook directory, in each name it had, run
+# under `/bin/bash`. A hook spelling one stays this tool's, and an `init` re-run replaces it.
+OLD_HOOK_COMMANDS = tuple(
+    f'/bin/bash "$CLAUDE_PROJECT_DIR/{HOOK_DIR.as_posix()}/{name}" capture claude' for name in RETIRED_LAUNCHERS
+)
+# The spellings a settings file holds for one of those commands, the file read as text for them: a
+# registration is found there whatever JSON shape it takes.
+_OUR_COMMAND_SPELLINGS = (
+    *(f"{HOOK_DIR.as_posix()}/{name}" for name in RETIRED_LAUNCHERS),
+    *(INSTALL_WRAPPER.rsplit("/", count)[0] for count in range(len(INSTALL_WRAPPER.split("/")) - 1, 0, -1)),
+    *OLD_HOOK_COMMANDS,
+)
 
 
 def hook_entry() -> dict:
@@ -110,7 +101,7 @@ def hook_entry() -> dict:
 
 
 def is_our_command(command: str | None) -> bool:
-    """Whether `command` is one this tool wrote, under this launcher's name or an older one's."""
+    """Whether `command` is one this tool wrote, under the committed wrapper or an older launcher."""
     return command in (HOOK_COMMAND, *OLD_HOOK_COMMANDS)
 
 
@@ -145,9 +136,10 @@ def profiler_skill_text() -> str:
 
 
 def init(argv: list[str], cwd: Path | str) -> str:
-    """Commit the hook into the repository at `cwd`: the launcher and the skill, and the six entries in
-    its `.claude/settings.json`, for a session that loads no plugin's hooks. The repository's stores
-    from before the `.profiler-*` rename are renamed here too, as an install renames them."""
+    """Commit the hook into the repository at `cwd`: the skill, and the six entries in its
+    `.claude/settings.json`, for a session that loads no plugin's hooks, run through the project's
+    committed wrapper. The repository's stores from before the `.profiler-*` rename are renamed here
+    too, as an install renames them."""
     if not argv or argv[0] != "claude":
         raise UsageError("Usage: devpro profiler init claude")
     repo = git_root(cwd)
@@ -158,23 +150,27 @@ def init(argv: list[str], cwd: Path | str) -> str:
             f"This repository's root is the running devpro package's source, {PACKAGE_ROOT}: "
             "init writes into a project, not the package running it."
         )
+    skill = repo / ".claude" / PROFILER_SKILL
+    skill.mkdir(parents=True, exist_ok=True)
+    (skill / "SKILL.md").write_text(profiler_skill_text(), encoding="utf-8")
     target = repo / HOOK_DIR
-    target.mkdir(parents=True, exist_ok=True)
-    for name in HOOK_FILES:
-        shutil.copyfile(launcher_resource().parent / name, target / name)
-    (target / LAUNCHER).chmod(0o755)
-    for name in (*OLD_LAUNCHERS, *RETIRED_HOOK_FILES):
-        (target / name).unlink(missing_ok=True)
+    retired = [path for path in (target / name for name in (*RETIRED_LAUNCHERS, *RETIRED_HOOK_FILES)) if path.exists()]
+    for path in retired:
+        path.unlink()
+    if target.is_dir() and not any(target.iterdir()):
+        target.rmdir()
     retired_skill = repo / ".claude" / RETIRED_SKILL
     removed_retired_skill = (retired_skill / "SKILL.md").is_file()
     (retired_skill / "SKILL.md").unlink(missing_ok=True)
     if retired_skill.is_dir() and not any(retired_skill.iterdir()):
         retired_skill.rmdir()
-    skill = repo / ".claude" / PROFILER_SKILL
-    skill.mkdir(parents=True, exist_ok=True)
-    (skill / "SKILL.md").write_text(profiler_skill_text(), encoding="utf-8")
-    retired = [Path(".claude") / RETIRED_SKILL] if removed_retired_skill else []
-    staged = [HOOK_DIR, Path(".claude") / PROFILER_SKILL, *retired, Path(".claude") / "settings.json"]
+    retired_dirs = [Path(".claude") / RETIRED_SKILL] if removed_retired_skill else []
+    staged = [
+        Path(".claude") / PROFILER_SKILL,
+        *retired_dirs,
+        *(path.relative_to(repo) for path in retired),
+        Path(".claude") / "settings.json",
+    ]
 
     settings_file = repo / ".claude" / "settings.json"
     settings = json.loads(settings_file.read_text(encoding="utf-8")) if settings_file.exists() else {}
@@ -183,8 +179,8 @@ def init(argv: list[str], cwd: Path | str) -> str:
     settings_file.write_text(json.dumps(merge_hooks(settings), indent=2) + "\n", encoding="utf-8")
     return "\n".join(
         [
-            f"Copied the hook to {target.relative_to(repo)}/, registered it in .claude/settings.json,"
-            " and added the profiler skill.",
+            "Added the profiler skill and registered its capture for the project's wrapper in"
+            " .claude/settings.json.",
             *rename_stores(repo),
             "Commit them; Claude Code on the web picks the hook up in the next session:",
             "  git add " + " ".join(path.as_posix() for path in staged),
@@ -206,44 +202,44 @@ def hook_sources(repo: Path, home: Path) -> list[str]:
         ("local settings hooks", repo / ".claude" / "settings.local.json"),
         ("user settings hooks", home / ".claude" / "settings.json"),
     ):
-        settings = read_json(file)
-        hooks = settings.get("hooks") if isinstance(settings, dict) else None
-        registered = _json(hooks or {})
-        if settings and any(f"{HOOK_DIR.name}/{name}" in registered for name in (LAUNCHER, *OLD_LAUNCHERS)):
+        text = read_text(file)
+        if text and any(command in text for command in _OUR_COMMAND_SPELLINGS):
             sources.append(label)
     return sources
 
 
 def stale_hook(repo: Path) -> str | None:
-    """What a hook committed by an older `init` lacks: events added since, `async`, and the files as
-    this copy has them."""
+    """What a hook committed by an older `init` lacks: events added since, `async`, and the wrapper's
+    command as this devpro's wiring states it."""
     settings = read_json(repo / ".claude" / "settings.json")
     hooks = (settings.get("hooks") if isinstance(settings, dict) else None) or {}
 
     def ours(event: str) -> list[dict]:
-        entries = [entry for entry in hooks.get(event) or [] if is_ours(entry)]
-        return [hook for entry in entries for hook in entry.get("hooks") or [] if is_our_command(hook.get("command"))]
+        return [
+            hook
+            for entry in hooks.get(event) or []
+            if is_ours(entry)
+            for hook in entry.get("hooks") or []
+            if is_our_command(hook.get("command"))
+        ]
 
     if not any(ours(event) for event in CAPTURED_EVENTS):
         return None
     missing = [event for event in CAPTURED_EVENTS if not ours(event)]
     blocking = any(any(hook.get("async") is not True for hook in ours(event)) for event in CAPTURED_EVENTS)
-    resource = launcher_resource().parent
-    changed = [name for name in HOOK_FILES if read_text(repo / HOOK_DIR / name) != read_text(resource / name)]
+    replaced = any(hook.get("command") != HOOK_COMMAND for event in CAPTURED_EVENTS for hook in ours(event))
     gaps = [
         f"misses {', '.join(missing)}" if missing else "",
         "is not async" if blocking else "",
-        f"has another version of {', '.join(changed)}" if changed else "",
+        f"runs another command than {HOOK_COMMAND}" if replaced else "",
     ]
     return " and ".join(gap for gap in gaps if gap) or None
 
 
 def doctor(cwd: Path | str) -> str:
-    """Whether capture works here, and why not: the devpro each launcher standing in the repository
-    runs — the committed hook's and a claude project install's — or, where none stands, the `devpro`
-    command on `PATH`, the store and the pattern `tree` reads,
-    the hook's registration, any store from before the rename, a stale committed hook, and the newest
-    claude session."""
+    """Whether capture works here, and why not: the `devpro` command that runs it, the store and the
+    pattern `tree` reads, the hook's registration, any store from before the rename, a stale committed
+    hook, and the newest claude session."""
     directory = project_dir(cwd)
     # doctor is claude-facing: every other line reads claude's hook and this directory's claude sessions,
     # so `newest` is claude's store alone, and the `traces` line names it beside what `tree` reads.
@@ -256,12 +252,8 @@ def doctor(cwd: Path | str) -> str:
     installed = (
         ", ".join(sources) if sources else "not installed (install the plugin, or run devpro profiler init claude)"
     )
-    launchers = [launcher for launcher in (HOOK_DIR / LAUNCHER, INSTALLED_LAUNCHER) if (repo / launcher).is_file()]
-    devpro = [f"devpro:  {devpro_executable(repo / launcher)}, for {launcher}" for launcher in launchers] or [
-        f"devpro:  {devpro_executable(None)}"
-    ]
     lines = [
-        *devpro,
+        f"devpro:  {devpro_command()}",
         f"traces:  {claude_store} (tree reads {Path(directory) / TRACE_DIR.parent / TRACE_GLOB})",
         f"hook:    {installed}",
     ]
