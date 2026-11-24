@@ -99,10 +99,10 @@ its script renders the feed the server answers at `/api/traces`: one JSON entry 
 dispatched. The script puts `harness` and `records` under their own names, `id` in the session column,
 `agents` in the dispatched-agents count, `first` and `last` in the first-to-last line, `span` in the
 span column, and draws `dispatcher` in no column at all, as the child row under its dispatcher's row.
-The agents cell reads the count with the postscript `agents` — `1 agent`, `3 agents`. The index's
-row links and the session page's return link carry the query, so the controls' state and the sort
-in force survive the page's own navigation. An agent name a page renders drops the `devpro-`
-prefix: the reader knows the set's provenance already. A feed with no session and no store it cannot
+The agents cell reads the count with the postscript `agents` — `1 agent`, `3 agents`. The index's row
+links and the session page's return link carry the query, so the controls' state and the sort in
+force survive the page's own navigation. An agent name a page renders drops the `devpro-` prefix: the
+reader knows the set's provenance already. A feed with no session and no store it cannot
 read is one `stores` entry naming how many stores the
 exact names read. A store an exact name finds but cannot read fails the feed. The index carries simple controls — child-record
 rows on and off, claude and opencode on and off separately, and column heads sorting on the

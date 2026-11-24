@@ -25,7 +25,7 @@ devtools/               repository-maintenance tooling — never installed; impo
   reference-maps/       the two static devpro settings files `retake-reference` names with --config-file, one harness's model map each (justfile)
   render_diff.py        the text comparison of two rendered slots (justfile `render-diff`); reads rendered output only and never imports the generator
   clause_join_sites.py  the list of definition-body units that join a `clauses.*` interpolation to the module's own text (justfile `clause-join-sites`); splits units with `render_diff.py`'s line classification, `line_kinds`
-  dupe_sweep/           the duplication sweep, run as `python3 -m devtools.dupe_sweep` — enumerates one-idea-two-places candidates over the owned python trees, the string literals the trees carry among its sentence units (justfile `sweep-python`)
+  dupe_sweep/           the duplication sweep, run as `python3 -m devtools.dupe_sweep` — enumerates one-idea-two-places candidates over the owned python trees, the string literals the definition modules carry — `devpro/definitions/`, `devpro/harnesses/`, `devpro/clauses.py` (definition_text.py's `DEFINITION_TEXT_PREFIXES`) — among its sentence units (justfile `sweep-python`)
     __init__.py         package docstring (what the sweep is for, its passes, candidates not verdicts)
     __main__.py         the `-m` entry
     corpus.py           the corpus read from git, never a directory walk; the sweep's error
