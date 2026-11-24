@@ -24,7 +24,7 @@ becomes-blocks are the accepted text.
 | B | landed: the work list below, at this plan's revision commit | expert | the post-plan burndown |
 | B1 | landed bdb395a | expert | the time pins pin what they claim (VR1) |
 | B2 | landed 613b955 | expert | the IIFE invariant holds everywhere, checked (VR2) |
-| B3 | in progress: dispatched to devpro-python-coder | expert | the type check sees the host's surface (VR3) |
+| B3 | landed 9ca5c29 | expert | the type check sees the host's surface (VR3) |
 | B4 | drafted | expert | the repair tells the truth (VR4, VR13; the fixture half owner-gated) |
 | B5a | drafted | expert | one home each (VR5) |
 | B5b | drafted | expert | one stand-in (VR6) |
