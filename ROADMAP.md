@@ -252,7 +252,7 @@ harnesses' text go unchecked. The sentence check the previous ticket adds raises
 overlay text and other harnesses escape at sentence granularity, where a shared sentence is small
 enough to hide inside a paragraph that differs.
 
-### Tests exist only with a defect they die on, and the gate refuses the mirror
+### Tests exist only with a defect they die on
 
 A test protects only where a defect exists that it dies on while the source reads correct to its
 author. It must assert behavior, not text.
@@ -276,7 +276,7 @@ pins presentation text: `tests/test_devpro_profiler.py`'s index test asserts the
 `table { … }` declaration, so a layout change the presentation layer invites — P3's column
 widths — cannot land without either shaping the CSS around the pin or editing it.
 
-Four parts:
+Three parts:
 
 1. **Prune the instances.** Keep the form asserts that are contract — order, spelling, quoting,
    required fields. Assert the `model:` line is present, not its value. Rework or retire the
@@ -284,18 +284,7 @@ Four parts:
 2. **Commission tests.** Wherever a test can be born, not only in plan packages, it exists only
    with its defect named and the run that fails under that defect shown — the
    `clauses.TEST_PRECONDITION` shape.
-3. **Make the form checkable; leave the truth to the triage.** No tool decides "is this a dumb
-   ass pin test": whether a shared literal is contract or mirror is a semantic judgment, and one
-   tuple can hold four contract literals and one mirror — the frontmatter test in part 1 does —
-   which no sweep distinguishes. A gate built on the shape is permanently red on the legitimate
-   pins or permanently waived; build neither. Buildable, and enough: a docstring-form check in
-   the `dupe_sweep` mold that fails the gate for a test carrying no `dies on:` line, and a
-   triage-queue tool listing candidates — a test literal that also appears in the source it
-   tests; an equality between test-local data and loaded source data — as a work list for review
-   to classify, never as a red gate. A test whose only honest answer is "the source changed"
-   convicts itself in its own ledger line; part 4 audits the line against reality each time the
-   test misfires.
-4. **Triage a test that fails on unstated behavior, at once.** The work does not state it changes
+3. **Triage a test that fails on unstated behavior, at once.** The work does not state it changes
    this behavior, yet the test fails on it: the test enters the active plan immediately as an
    interrupt — its own row, closed by one commit — and the package that tripped it does not
    proceed until the row closes. Three verdicts: *axe* (the test checks nothing); *isolate* (it
