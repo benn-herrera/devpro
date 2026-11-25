@@ -24,8 +24,9 @@ devtools/               repository-maintenance tooling — never installed; impo
   scripts/              the shell scripts behind the justfile recipes (justfile)
   reference-maps/       the two static devpro settings files `retake-reference` names with --config-file, one harness's model map each (justfile)
   render_diff.py        the text comparison of two rendered slots (justfile `render-diff`); reads rendered output only and never imports the generator
+  tsconfig.json         the TypeScript program for the repository's own `devtools/` scripts, `devtools/screenshot.ts` alone today — separate from the root `tsconfig.json`, which holds the shipped opencode resources' program to what ships (justfile `_lint-typescript`)
   clause_join_sites.py  the list of definition-body units that join a `clauses.*` interpolation to the module's own text (justfile `clause-join-sites`); splits units with `render_diff.py`'s line classification, `line_kinds`
-  screenshot.ts         the development loop's page screenshot (justfile `screenshot`): Puppeteer driving the system Firefox headless, the page settled, a PNG written under `.devpro-temp/`; run under bun, never imported
+  screenshot.ts         the development loop's page screenshot (justfile `screenshot`); run under bun, never imported
   dupe_sweep/           the duplication sweep, run as `python3 -m devtools.dupe_sweep` — enumerates one-idea-two-places candidates over the owned python trees, the string literals the rendered-prose modules carry — `devpro/definitions/`, `devpro/harnesses/`, `devpro/clauses.py`, `devpro/families/` (definition_text.py's `DEFINITION_TEXT_PREFIXES`) — among its sentence units (justfile `sweep-python`)
     __init__.py         package docstring (what the sweep is for, its passes, candidates not verdicts)
     __main__.py         the `-m` entry

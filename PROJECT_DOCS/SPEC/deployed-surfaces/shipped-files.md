@@ -172,11 +172,10 @@ hook, and a mage install ships none of them. A page attributes a child session t
 dispatched it: the capture extracts the child's session id into the parent call's record, the render
 groups a dispatch's child one level deep under the session that dispatched it — deeper chains read
 on the session's page, whose tree draws every dispatch as a context — links each Agent row to the
-child's page and heads a child page with its dispatcher, naming the child page's own context for
-the dispatching call's agent, in the color the context that call opened wears on its dispatcher's
-page, and the stores stay flat — the child never
+child's page and heads a child page with its dispatcher, and the stores stay flat — the child never
 knows its parent at write time, the hierarchy being metadata the parent side builds, and claude
-holding no child session records at all.
+holding no child session records at all. The color a dispatched page's own context wears is stated
+by the accent's rule, below.
 A call's record names the model that made it where its harness states it: the index names the models a session's
 calls recorded, and a session's page names them for the session, for each context and for each
 call, showing none where no record names one.

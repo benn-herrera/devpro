@@ -37,9 +37,11 @@ the file at `/board/board.css`, the render inlines it into the page it prints, a
 the same file into the pages it serves, the layer fetched from the server's own origin, which the
 site's content-security policy allows. The board's component rules may be scoped so their selectors
 cannot reach the profiler page's DOM, and the template's own rules draw the sequence diagram's colors
-from the layer: hue 0 — the root context's on a page nothing dispatched, and
-its copies' — the layer's `--accent`, its labels in the layer's `--on-accent`, and every other hue
-the palette's `--c0`…`--c7`; no palette hue reads as the accent in the mode shown.
+from the layer: a context's hue is the palette number its calls and labels take, and a copy is a
+`fork` subagent's context, holding the history its parent had when it began and drawing its parent's
+hue; hue 0 — the root context's on a page nothing dispatched, and its copies' — the layer's
+`--accent`, its labels in the layer's `--on-accent`, and every other hue the palette's `--c0`…`--c7`;
+no palette hue reads as the accent in the mode shown.
 
 The frame band's `<!--LEGEND-->` mark is where the how-to-read legend goes: `pages.LEGEND` holds the
 legend once — its prose and its symbol key — its two carriers the standalone render's filled copy and
@@ -131,8 +133,8 @@ A session an opencode record names as its dispatch's child is drawn under the se
 it — a dispatch's child one level deep; deeper chains read on the session's page, whose tree draws
 every dispatch as a context — that session's row carrying the count of the rows beneath it and each
 child's naming, after its id and with no lead-in, the call that dispatched it — the indent, the
-accent rule at its left edge and its tone mark it a child; the rows alternate their tone, and each carries its
-harness's mark. The pages' own scripts draw every moment local at birth — the moments cells, the
+accent-colored border at its left edge and its tone mark it a child; the rows alternate their tone,
+and each carries its harness's mark. The pages' own scripts draw every moment local at birth — the moments cells, the
 index's first-to-last line, the session page's header stamp, its diagram's and its call tree's
 times — in the reader's local time, 24-hour, one
 notation: the first end of a pair carries its date whole beside its time, the second its time only,
@@ -151,9 +153,10 @@ minutes are zero. No space stands between a number and its unit. A session's pag
 carries its dispatcher in the frame band, linked to that session's page, where one dispatched it, and
 then names its own root context — its id still `main` — for the dispatching call's agent, the
 prefix dropped, in the hue the context that call opened wears on the dispatcher's page:
-`pages.dispatcher_of` reads both from the dispatcher's records at render, the dispatcher's
-own root hue from its own dispatcher's, up the chain, the child's own records
-naming no parent, and the page's other contexts take hues from 1 up, skipping the root's hue. A page nothing dispatched names
+`pages.dispatcher_of` reads from the dispatcher's records at render both the dispatching call's
+agent and the hue, the dispatcher's own root hue from its own dispatcher's, up the chain, the
+child's own records naming no parent, and the page's other contexts take hues from 1 up, skipping
+the root's hue. A page nothing dispatched names
 its root `main`, in hue 0. A call row whose tool is `Agent` links to the child session's page where the record names one: a
 child's page the dashboard does not serve answers the 404 any unrecorded session's page answers.
 
@@ -168,10 +171,10 @@ both views: the decoration's one script polls `GET /api/state` — the endpoint 
 answers `{"state": "live"}` while it serves, and that a closed server answers not at all — so a page
 that carries no payload of its own reads the state the board reads, and the stop posts the board
 panel's `/api/stop`. No file is written for the traces.
-The page names the models its calls recorded — the session's in
-its header line, a context's in its lifeline's header where that header holds it alone, where it
-recorded one, and their count where several, a call's in its detail —
-and shows a session's calls: a session of
+The page names the models its calls recorded: the session's in
+its header line, each context's in its lifeline's header where that header holds it alone, and each
+call's in its detail — a context or a call showing none where it recorded none, and a count where a
+context recorded several — and shows a session's calls: a session of
 nothing but tool calls renders those calls as its calls content, never an empty tree under a calls
 header. The server runs until interrupted (Ctrl-C) or stopped from the page; either exits 0.
 

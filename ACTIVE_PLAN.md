@@ -47,7 +47,7 @@ Implements [ACTIVE_DESIGN.md](ACTIVE_DESIGN.md): its [SPEC delta](ACTIVE_DESIGN.
 | B3 | landed | expert | `devpro:web-app-expert` | one formatter per notation; the pages' small layout defects |
 | B4 | landed | expert | `devpro:typescript-coder` | the screenshot tool honors `--base`, its contract and its bounds |
 | B5 | landed | expert | `devpro:python-coder` | test pins loosened, the zone reset owned, the capture parses once |
-| B6 | dispatchable | expert | `devpro:prompt-engineer` | the changed leaves read true and resolve |
+| B6 | landed | expert | `devpro:prompt-engineer` | the changed leaves read true and resolve |
 
 ## P1 — `just screenshot`, the development loop's page screenshot
 
