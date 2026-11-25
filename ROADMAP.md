@@ -209,28 +209,6 @@ it, and begins repair work. The target case is projects whose debt accumulated t
 agentic development. It follows the development-process skill and should not assume that skill's
 workflow is already in place.
 
-### The burndown is a section with a drafting ticket, not one package
-
-A plan's post-plan burndown is today one package whose drafted items hide beneath it: one row
-saying `in progress` conceals several dispatches, and no item carries its own rating, so the
-mechanical ones cannot visibly step down. The change, to the `development` skill's source
-(`devpro/definitions/skills/development.py`, *Post-plan review*): at plan authoring the burndown is
-an `## Post-plan burndown` section holding exactly one ticket — the drafting ticket — whose job is
-to fill out the section once the plan's main pass is complete and the review document has landed:
-converting the review's findings into tickets under the section, one per root-cause group, each
-with its own ID, row, rating and one-commit close, moving through the states individually. The
-plan-status form already permits packages at any heading level, so no SPEC change is expected —
-the design confirms or corrects that. The section dies when its last ticket lands.
-
-The use beyond board honesty: individual items quantify post-process work — burndown tickets per
-plan — giving the before-and-after data tuning the process reads. Count is sensitive to grouping
-granularity, so the metric is paired: findings per review document (the denominator) against
-burndown tickets per plan (the numerator). Both numbers fall out of bookkeeping the process already
-keeps; the operational-context stamp supplies the before/after boundary.
-
-Next up on the agenda: a solo plan, taken as soon as the current plan lands — its design starts
-from this ticket and the quantification use.
-
 ### Nested agent fan-outs read as the process, or the detector names them
 
 The one-level dispatch shape the process keeps — every agent-facing brief crossing the
