@@ -31,11 +31,13 @@ from devpro.profiler.pages import (
     DECO_MARK,
     DISPATCHED_MARK,
     LAYER_MARK,
+    LEGEND,
     RETURN_MARK,
     SHARED_CSS,
     dispatches,
     read_sessions,
 )
+from tests.conftest import page_data
 
 from .conftest import PLAN, TIMEOUT, Client, project, record, store
 
@@ -98,7 +100,7 @@ def test_the_profiler_view_serves_its_list_and_its_pages(tmp_path: Path, serve) 
     # own link prefix standing, a session's link being what the script writes.
     assert '<tbody id="rows"></tbody>' in index and 'href="/page/' not in index
     assert (status, content_type) == (200, "text/html")
-    data = json.loads(page.decode("utf-8").split("const D = ", 1)[1].split(";\n", 1)[0])
+    data = page_data(page.decode("utf-8"))
     assert (data["session"], [call["name"] for call in data["calls"]]) == ("s-one", ["ls"])
 
 
@@ -433,7 +435,7 @@ def test_the_profiler_view_carries_its_nav_and_no_legend(tmp_path: Path, serve) 
     client = serve(project(tmp_path / "proj", {}))
     index = client.get("profiler/")[2].decode("utf-8")
 
-    assert "How to read this" not in index
+    assert LEGEND not in index
     assert 'class="frame-band' in index
     assert re.search(r'<a class="view active" href="/profiler/" aria-current="page">profiler</a>', index)
     assert re.search(r'<a class="view" href="/board/">kanban</a>', index)
@@ -676,12 +678,8 @@ def test_a_child_page_names_its_root_for_the_call_that_dispatched_it(tmp_path: P
     )
     served = serve(root)
 
-    def contexts_of_page(session: str) -> list[dict]:
-        page = served.get(f"page/{session}")[2].decode("utf-8")
-        return json.loads(page.split("const D = ", 1)[1].split(";\n", 1)[0])["contexts"]
-
-    child_root = contexts_of_page("s-one")[0]
-    dispatcher_root = contexts_of_page("s-parent")[0]
+    child_root = page_data(served.get("page/s-one")[2].decode("utf-8"))["contexts"][0]
+    dispatcher_root = page_data(served.get("page/s-parent")[2].decode("utf-8"))["contexts"][0]
 
     assert (child_root["id"], child_root["label"], child_root["hue"]) == ("main", "coder", 2)
     assert (dispatcher_root["id"], dispatcher_root["label"], dispatcher_root["hue"]) == ("main", "main", 0)
@@ -724,7 +722,7 @@ def test_a_child_pages_fresh_context_skips_the_roots_hue(tmp_path: Path, serve) 
         directory=".profiler-opencode",
     )
     page = serve(root).get("page/s-child")[2].decode("utf-8")
-    contexts = json.loads(page.split("const D = ", 1)[1].split(";\n", 1)[0])["contexts"]
+    contexts = page_data(page)["contexts"]
 
     assert [(context["id"], context["hue"]) for context in contexts] == [("main", 2), ("s-grand", 1)]
 
@@ -771,12 +769,8 @@ def test_a_grandchilds_root_wears_the_hue_its_dispatchers_page_draws_it_in(tmp_p
     )
     served = serve(root)
 
-    def contexts_of_page(session: str) -> list[dict]:
-        page = served.get(f"page/{session}")[2].decode("utf-8")
-        return json.loads(page.split("const D = ", 1)[1].split(";\n", 1)[0])["contexts"]
-
-    child_contexts = contexts_of_page("s-child")
-    grand_root = contexts_of_page("s-grand")[0]
+    child_contexts = page_data(served.get("page/s-child")[2].decode("utf-8"))["contexts"]
+    grand_root = page_data(served.get("page/s-grand")[2].decode("utf-8"))["contexts"][0]
     drawn = next(context["hue"] for context in child_contexts if context["id"] == "s-grand")
 
     assert (child_contexts[0]["id"], child_contexts[0]["hue"]) == ("main", 2)

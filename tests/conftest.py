@@ -1,5 +1,6 @@
 """Fixtures every test runs under, and the helpers and values more than one test module shares."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -27,3 +28,8 @@ def settings_file(tmp_path: Path, text: str) -> Path:
     path = tmp_path / "devpro.cfg"
     path.write_text(text, encoding="utf-8")
     return path
+
+
+def page_data(page: str) -> dict:
+    """The JSON a profiler page inlines at its data slot, whichever carrier served it."""
+    return json.loads(page.split("const D = ", 1)[1].split(";\n", 1)[0])

@@ -68,6 +68,7 @@ from devpro.profiler.pages import (
 )
 from devpro.profiler.stores import repair_child_ids
 from devpro.profiler.values import CAPTURED_EVENTS, TRACE_STORES, _epoch_ms
+from tests.conftest import page_data
 from tests.fixtures import fixture_file
 from tests.test_devpro_install import _claude_plugin, _definition_install
 
@@ -217,9 +218,17 @@ def _serve(launcher: Path, *, cwd: Path, env: dict[str, str] | None = None) -> I
             watcher.join(_SERVE_TIMEOUT_S)
 
 
-def _page_data(page: str) -> dict:
-    """The JSON the page template inlines at its data slot."""
-    return json.loads(page.split("const D = ", 1)[1].split(";\n", 1)[0])
+def index_head_classes(index: str) -> list[str]:
+    """The `col-*` classes the index's header cells carry, in order."""
+    head = index.split("<thead>", 1)[1].split("</thead>", 1)[0]
+    return [cls for cls in re.findall(r'<th class="([^"]+)"', head) if cls.startswith("col-")]
+
+
+def index_row_colspan(index: str) -> int:
+    """The span the index's row script gives a full-width row — the table's column count as its own
+    script states it."""
+    script = index.split("<script>", 1)[1].split("</script>", 1)[0]
+    return int(re.search(r"cell\.colSpan = (\d+);", script).group(1))
 
 
 def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> None:
@@ -243,7 +252,7 @@ def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> N
     assert record["args"] == "ls"
     page = _run(launcher, "tree", "--format", "html", cwd=project)
     assert page.returncode == 0, page.stderr
-    data = _page_data(page.stdout)
+    data = page_data(page.stdout)
     assert _PAGE_KEYS <= set(data), sorted(data)
     assert data["session"] == "s-profiler"
     assert _CALL_KEYS <= set(data["calls"][0]), sorted(data["calls"][0])
@@ -287,7 +296,7 @@ def test_a_capture_records_the_model_its_transcript_names(tmp_path: Path) -> Non
 
     assert (record["model"], record["context_tokens"]) == ("claude-opus-4-5", 10)
     assert page.returncode == 0, page.stderr
-    data = _page_data(page.stdout)
+    data = page_data(page.stdout)
     assert (data["calls"][0]["model"], data["contexts"][0]["models"], data["models"]) == (
         "claude-opus-4-5",
         ["claude-opus-4-5"],
@@ -310,7 +319,7 @@ def test_a_session_whose_trace_holds_the_data_mark_renders(tmp_path: Path) -> No
     page = _run(_launcher(tmp_path / "harness"), "tree", "--format", "html", cwd=project)
 
     assert page.returncode == 0, page.stderr
-    assert _page_data(page.stdout)["calls"][0]["args"] == args
+    assert page_data(page.stdout)["calls"][0]["args"] == args
 
 
 def test_a_capture_writes_its_line_in_the_bytes_it_measured(tmp_path: Path) -> None:
@@ -973,17 +982,11 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     # row states — the layer's `--zebra`, which the layer switches with the color scheme itself, so
     # the template carries no second rule for it.
     assert '<tbody id="rows"></tbody>' in index and 'href="/page/' not in index
-    assert re.search(
-        r'<th class="col-harness">harness</th><th class="col-session">session</th>'
-        r'<th class="col-model">model</th>'
-        r'<th class="col-records" aria-sort="none"><button type="button" class="sort" data-sort="records">'
-        r'records</button></th><th class="col-agents" aria-sort="none"><button type="button" class="sort" '
-        r'data-sort="agents">dispatched agents</button></th><th class="col-one" aria-sort="none">'
-        r'<button type="button" class="sort" data-sort="first">first to last</button></th>'
-        r'<th class="col-span" aria-sort="none"><button type="button" class="sort" data-sort="span">'
-        r"span</button></th>",
-        index,
-    )
+    # The header and the row script agree on the table's columns: every head carries a `col-*` class of
+    # its own, and the span the script gives a full-width row is that many. A column added to the head
+    # and not to the script's span, or to neither the head nor the widths, overruns the table.
+    head_classes = index_head_classes(index)
+    assert len(head_classes) == len(set(head_classes)) == index_row_colspan(index)
     # Each column's share of the table comes from the page's own stylesheet, beside the header's class,
     # and the table's layout is the fixed one that gives that share to header and body alike.
     assert re.search(r"table \{ border-collapse: collapse; table-layout: fixed; \}", index)
@@ -994,7 +997,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     assert re.search(r'<p id="notice" class="notice" role="alert" hidden></p>', index)
     assert re.search(r"tr:nth-child\(odd\) td \{ background: var\(--zebra\); \}", index)
     assert "prefers-color-scheme: dark" not in index.split("<style>", 1)[1].split("</style>", 1)[0]
-    assert _page_data(page)["session"] == "s-claude"
+    assert page_data(page)["session"] == "s-claude"
 
 
 def test_a_session_naming_itself_as_a_child_is_drawn_once_in_its_own_place(tmp_path: Path) -> None:
@@ -1048,8 +1051,8 @@ def test_a_claude_child_agent_id_groups_no_session(tmp_path: Path) -> None:
 
     assert [entry["id"] for entry in feed] == ["s-claude", "s-named"]
     assert not any("dispatcher" in entry for entry in feed)
-    assert _page_data(page)["calls"][0]["child"] == "s-named"
-    assert _page_data(page)["calls"][0]["childPage"] is None
+    assert page_data(page)["calls"][0]["child"] == "s-named"
+    assert page_data(page)["calls"][0]["childPage"] is None
 
 
 def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_path: Path) -> None:
@@ -1084,7 +1087,7 @@ def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> Non
 
     printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
     assert printed.returncode == 0, printed.stderr
-    assert _page_data(served) == _page_data(printed.stdout)
+    assert page_data(served) == page_data(printed.stdout)
     # The serve path names the layer's one file where the file flow inlines its text: one source, two
     # carriers.
     assert served.count(LAYER_LINK) == 1 and SHARED_CSS not in served
@@ -1416,21 +1419,27 @@ def test_a_call_that_is_not_an_agent_keeps_its_recorded_name() -> None:
     assert call_label("Skill", "devpro-docdicer") == "devpro-docdicer (skill)"
 
 
-def test_the_text_tree_draws_a_moment_in_the_machines_zone(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.fixture
+def kolkata(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """The machine pinned to a zone four and a half hours ahead of UTC for one test, its zone back
+    afterwards whether the test passed or failed."""
+    monkeypatch.setenv("TZ", "Asia/Kolkata")
+    time.tzset()
+    yield
+    time.tzset()
+
+
+def test_the_text_tree_draws_a_moment_in_the_machines_zone(kolkata: None) -> None:
     """`clauses.TEST_PRECONDITION`: the defect is the text tree's time column and session stamps
     reading UTC — a reader four and a half hours ahead sees a call at midnight as `18:30:00` of the
-    day before, and `stamp` takes a session dict it no longer needs.
+    day before.
 
     The zone is pinned with `TZ` and read through `time.tzset`, the machine's zone being whatever the
     runner carries; Asia/Kolkata's half-hour offset also fails a formatter that drops the minutes."""
-    with monkeypatch.context() as patch:
-        patch.setenv("TZ", "Asia/Kolkata")
-        time.tzset()
-        midnight = _epoch_ms("2026-01-01T00:00:00.000Z")
-        assert midnight is not None
-        assert clock(midnight) == "05:30:00"
-        assert stamp(midnight) == "2026-01-01 05:30:00"
-    time.tzset()
+    midnight = _epoch_ms("2026-01-01T00:00:00.000Z")
+    assert midnight is not None
+    assert clock(midnight) == "05:30:00"
+    assert stamp(midnight) == "2026-01-01 05:30:00"
 
 
 def test_the_doctor_names_the_stores_the_readers_read(tmp_path: Path) -> None:

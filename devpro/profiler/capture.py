@@ -124,16 +124,9 @@ def result_of(payload: dict) -> str | None:
     return text or None
 
 
-def usage_by_tool_use(line: str) -> dict[str, int | float]:
-    """tool_use id -> context tokens, for one transcript line."""
+def usage_by_tool_use(message: dict) -> dict[str, int | float]:
+    """tool_use id -> context tokens, for one assistant message."""
     found: dict[str, int | float] = {}
-    try:
-        entry = json.loads(line)
-    except ValueError:
-        return found
-    message = entry.get("message") if isinstance(entry, dict) else None
-    if not isinstance(message, dict):
-        return found
     usage = message.get("usage")
     if not usage or not isinstance(message.get("content"), list):
         return found
@@ -159,8 +152,8 @@ def tool_use_facts(payload: dict) -> dict:
     where that line states it.
 
     The line is read from the tail of Claude Code's transcript, the subagent's where the call ran in
-    one. The transcript format is Claude Code's own and undocumented, so any miss leaves the keys
-    out."""
+    one, and parsed once: both facts come off the same message. The transcript format is Claude Code's
+    own and undocumented, so any miss leaves the keys out."""
     try:
         if not payload.get("transcript_path") or not payload.get("tool_use_id"):
             return {}
@@ -179,20 +172,29 @@ def tool_use_facts(payload: dict) -> dict:
     for line in reversed(text.split("\n")):
         if payload["tool_use_id"] not in line:
             continue
-        found = usage_by_tool_use(line).get(payload["tool_use_id"])
+        message = _assistant_message(line)
+        if message is None:
+            continue
+        found = usage_by_tool_use(message).get(payload["tool_use_id"])
         if found is not None:
-            return {"context_tokens": found, **_model_of(line)}
+            return {"context_tokens": found, **_model_of(message)}
     return {}
 
 
-def _model_of(line: str) -> dict:
-    """The model an assistant transcript line names, masked and clipped as a record's name is, or no key
-    where the line names none."""
+def _assistant_message(line: str) -> dict | None:
+    """The `message` an assistant transcript line carries, or `None` where the line parses to none."""
     try:
-        message = json.loads(line).get("message")
-    except (ValueError, AttributeError):
-        return {}
-    model = message.get("model") if isinstance(message, dict) else None
+        entry = json.loads(line)
+    except ValueError:
+        return None
+    message = entry.get("message") if isinstance(entry, dict) else None
+    return message if isinstance(message, dict) else None
+
+
+def _model_of(message: dict) -> dict:
+    """The model an assistant message names, masked and clipped as a record's name is, or no key where
+    the message names none."""
+    model = message.get("model")
     return {"model": clip(mask(model), NAME_LIMIT)} if isinstance(model, str) and model else {}
 
 
@@ -234,8 +236,11 @@ def fill_context_tokens(records: list[dict]) -> list[dict]:
         if text is None:
             continue
         for line in text.split("\n"):
-            if '"tool_use"' in line:
-                found.update(usage_by_tool_use(line))
+            if '"tool_use"' not in line:
+                continue
+            message = _assistant_message(line)
+            if message is not None:
+                found.update(usage_by_tool_use(message))
     return [
         (
             {**record, "context_tokens": found[record["tool_use_id"]]}
