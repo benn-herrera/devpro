@@ -32,6 +32,14 @@ subagent's run, so the fix is also what makes the two harnesses' records compare
 
 ## Features
 
+### add installed agents directory to claude development skill
+
+The claude session seat does not get path information. Render the relative path
+`.claude/skills/devpro/agents/` into SKILL.md, identifying it as the path to the agents files.
+This is necessary because some instructions require that the main session read the agent definition
+before dispatching. The model usually finds it, but it is an awkward step and we should just
+provide the information. This will be a harness-specific overlay.
+
 ### Group traces with plans — the operational-context stamp
 
 Sessions recorded by the profiler carry their operational context, so the dashboard can answer
@@ -215,6 +223,11 @@ Having them on by default is not helpful. The code is also crufty.
 It does not have tunable initial values for any of the controls. It has a hard default of
 'checked' for the initial value of all checkboxes and only appends parameter values when a checkbox
 value is false (again, hard value check)
+
+### Eliminate profiler `repair` verb
+
+This was a one-off for while getting the profiler working and was never intended to persist
+as user-facing code we drag behind us and test forever.
 
 ### Git Flow light: publish the rework history
 
