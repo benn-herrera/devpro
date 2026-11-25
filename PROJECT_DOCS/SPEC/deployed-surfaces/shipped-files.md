@@ -150,7 +150,8 @@ alike consume, the palette living there, the profiler page's re-style to the kan
 made through that shared layer, never as a second reskin. The legend's text has one home and two
 carriers, one source both read: the rendering side holds it once — the standalone render injects
 it into the page it renders, the template carrying no second copy — and the dashboard's frame band
-reads the same source, so the served page's legend comes from the frame. The pages and the records
+reads the same source, so the served session page's legend comes from the frame and the served
+index carries none. The pages and the records
 stay local: reachable only from the
 machine that runs the server. Every presentation of a recorded moment — the pages, the index, the
 text tree and `profiler doctor`'s lines — reads in the reader's local time, and none shows UTC, a
