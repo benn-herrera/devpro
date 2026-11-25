@@ -301,6 +301,12 @@ tests); the SPEC dicing leaves that state the forms —
   volume's `entry-point.md`. Content whose growth would require splitting the head is misplaced the
   same way; needing the split is the indication of misuse, and the remedy is moving the content,
   never splitting the file.
+- Leaf splitting has two paths, and they cover entry-point content too. **Simple fission** — a leaf
+  that has grown laterally, denser or accumulated coverage at the same logical level, splits into
+  sibling leaves. **Sub-dicing** — a leaf that has grown hierarchically, subtopics getting covered
+  of their own, breaks out a new subdirectory with `index.md`; at the omnibus root, that sub-dicing
+  is a new volume with `entry-point.md`. The decision is the growth's shape: hierarchical subtopics
+  sub-dice, lateral accumulation fissures.
 - The manifest is not needed for creation or reconstruction: `dice-docs`, `devpro/dicing/manifest.py`
   and the manifest concept retire. Check, which must print nothing and is P4's done-line:
   `git grep -n 'dice-docs\|manifest\|links\.tsv' -- devpro/dicing devpro/cli.py justfile` and
