@@ -69,6 +69,11 @@ const took = (c) => (c.running ? 'running' : dur(c.dur));
 const dur = (ms) => (ms < 1000 ? `${ms} ms` : Math.round(ms / 100) < 100 ? `${(Math.round(ms / 100) / 10).toFixed(1)} s` : `${Math.round(ms / 1000)} s`);
 const tok = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : `${n}`) + ' tok';
 const count = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : `${n}`);
+// A session's or a context's models as its line words them: the id where its calls recorded one, their
+// count where several, and nothing where none — a record that names no model shows no empty separator.
+const modelWords = (models) => (!models || !models.length ? '' : models.length === 1 ? `model ${models[0]}` : `models ${models.length}`);
+// The same on a context's sub-line, where every other fact is led by the separator.
+const modelTail = (models) => (!models || !models.length ? '' : models.length === 1 ? ` · ${models[0]}` : ` · ${models.length} models`);
 const modelCalls = (n) => `${n} model call${n === 1 ? '' : 's'}`;
 const spentTip = (c) => `${c.label}: ${modelCalls(c.spent.calls)}, each sending the context's whole history again.\n`
   + `${c.spent.new} new input tokens (plain input and cache writes)\n${c.spent.cached} read from the prompt cache\n${c.spent.out} output tokens\n`
@@ -132,7 +137,7 @@ if (Number.isFinite(first)) {
   moment.textContent = localDay(at) + ' ' + localClock(at);
   head.append(moment);
 }
-head.append([head.childNodes.length ? ' · ' : '', D.branch ? `branch ${D.branch}` : '', `${D.calls.length} calls`, `${D.contexts.length} contexts`].filter(Boolean).join(''));
+head.append([head.childNodes.length ? ' · ' : '', D.branch ? `branch ${D.branch}` : '', `${D.calls.length} calls`, `${D.contexts.length} contexts`, D.models.length ? ` · ${modelWords(D.models)}` : ''].filter(Boolean).join(''));
 
 // ---------- sequence diagram: one lifeline per context ----------
 
@@ -218,7 +223,11 @@ function drawSequence() {
   const fits = (px) => Math.max(4, Math.floor(px / CHAR_W));
 
   let s = `<text class="muted" x="8" y="24">time</text>`;
-  const tipOf = (c) => [`${c.label}${c.id === 'main' ? '' : ` (${short(c.id)})`}`, kindText(c)].filter(Boolean).join(': ');
+  const tipOf = (c) => [
+    `${c.label}${c.id === 'main' ? '' : ` (${short(c.id)})`}`,
+    kindText(c),
+    ...(c.models || []),
+  ].filter(Boolean).join('\n');
   members.forEach((list, k) => {
     const x = colX(k), first = list[0];
     s += `<line x1="${x}" x2="${x}" y1="${SEQ_HEAD}" y2="${height}" stroke="${css('--line')}" stroke-dasharray="4 4"/>`;
@@ -228,7 +237,7 @@ function drawSequence() {
     const name = shownName(first.tool, first.name) || first.label;
     const title = list.length === 1 ? name : `${name} ×${list.length}`;
     const sub = list.length === 1
-      ? (first.id === 'main' ? 'main context' : `${kindWord(first.tool)} · ${short(first.id)}${first.kind === 'copy' ? ` · copy of ${short(first.parent)}` : first.parent ? '' : ' · parent not recorded'}`)
+      ? clip((first.id === 'main' ? 'main context' : `${kindWord(first.tool)} · ${short(first.id)}${first.kind === 'copy' ? ` · copy of ${short(first.parent)}` : first.parent ? '' : ' · parent not recorded'}`) + modelTail(first.models), fits(colW - 30))
       : `${list.length} contexts, one after another`;
     s += `<g><rect ${box} fill="${color(first.id)}"/>`
       + `<text class="head${accentChip(first.id)}" x="${x}" y="24" text-anchor="middle">${esc(clip(title, fits(colW - 30)))}</text>`
@@ -301,7 +310,7 @@ function drawSequence() {
       return;
     }
     const c = D.calls[e.i];
-    const tip = `<title>${esc(`${label(c.tool, c.name)} · ${clock(c.start)} · ${took(c)}${c.ok ? '' : ' · failed'}${c.result ? `\n-> ${c.result}` : ''}`)}</title>`;
+    const tip = `<title>${esc(`${label(c.tool, c.name)} · ${clock(c.start)} · ${took(c)}${c.ok ? '' : ' · failed'}${c.model ? ` · ${c.model}` : ''}${c.result ? `\n-> ${c.result}` : ''}`)}</title>`;
     if (e.type === 'self') {
       const x = lx.get(e.at) + 5, inline = c.tool === 'Skill';
       const name = shownName(c.tool, c.name) || kindWord(c.tool), kind = ` (${kindWord(c.tool)})`;
@@ -422,6 +431,7 @@ function drawTree() {
         + `<span class="words">${esc(words(c))}</span>${c.ok ? '' : '<span class="fail">failed</span>'}<span class="gist">${esc(gist(c))}</span></span></div>`;
       h += `<div class="detail" id="d${it.i}" hidden style="margin-left:${pad + 20}px;border-color:${color(c.ctx)}">`
         + `<b>context</b>${esc(ctxName(c.ctx))}\n`
+        + (c.model ? `<b>model</b>${esc(c.model)}\n` : '')
         + (c.ctxTokens ? `<b>history</b>${esc(tok(c.ctxTokens))} in the context when it made this call\n` : '')
         + (c.args ? `<b>args</b>${esc(c.args)}\n` : '')
         + `<b>result</b>${esc(resultText(c))}</div>`;

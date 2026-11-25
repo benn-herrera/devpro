@@ -610,7 +610,10 @@ def session_data(session: dict, *, dispatcher: "Dispatcher | None" = None) -> di
     draws them, one source for the standalone render and the served page alike.
 
     A dispatched session's root context — its id still `main` — is named and colored by the call
-    `dispatcher` names, in the hue that call's own context wears on its dispatcher's page."""
+    `dispatcher` names, in the hue that call's own context wears on its dispatcher's page. The models
+    are the calls' own: the session's, and each context's of the calls it holds, in the order they
+    first appear. The calls are the merged list the page draws, which carries the tokens
+    `fill_context_tokens` fills at render where the capture left them out."""
     calls = unique_calls(fill_context_tokens(session["records"]))
     contexts, markers = contexts_of(
         session["records"],
@@ -618,10 +621,17 @@ def session_data(session: dict, *, dispatcher: "Dispatcher | None" = None) -> di
         root_hue=dispatcher.hue if dispatcher else 0,
     )
     spend = _context_spend(session["records"])
+    by_context: dict[str, list[dict]] = {}
+    for record in calls:
+        by_context.setdefault(context_of(record), []).append(record)
     return {
         "session": session["id"],
         "branch": next((record.get("branch") for record in calls if record.get("branch")), None),
-        "contexts": [{**context, "spent": spend.get(context["id"])} for context in contexts],
+        "models": models_in(calls),
+        "contexts": [
+            {**context, "spent": spend.get(context["id"]), "models": models_in(by_context.get(context["id"], []))}
+            for context in contexts
+        ],
         "markers": markers,
         "calls": [
             {
@@ -632,6 +642,7 @@ def session_data(session: dict, *, dispatcher: "Dispatcher | None" = None) -> di
                 "dur": record.get("duration_ms") or 0,
                 "ok": record.get("ok") is not False,
                 "ctxTokens": record.get("context_tokens"),
+                "model": record.get("model"),
                 "args": record.get("args"),
                 "result": record.get("result"),
                 "child": record.get("child_agent_id"),
@@ -813,6 +824,17 @@ def session_harness(session: dict) -> str:
     return clip(mask(str(harness)), NAME_LIMIT)
 
 
+def models_in(records: list[dict]) -> list[str]:
+    """The distinct models calls name, in the order they first appear, and none where no call names one.
+    An event record is no call, so a marker naming a model states none."""
+    models: list[str] = []
+    for record in records:
+        model = record.get("model")
+        if record.get("tool") and isinstance(model, str) and model and model not in models:
+            models.append(model)
+    return models
+
+
 def dispatches(sessions: list[dict]) -> dict[str, tuple[str, str, str | None]]:
     """child session id -> the session that dispatched it, that call's name and the tool it ran as.
 
@@ -867,16 +889,16 @@ def traces_feed(directory: Path | str) -> list[dict]:
     """The feed `/api/traces` answers, the index's rows' one source: one JSON entry per recorded
     session, in the order the index draws them.
 
-    A session's entry carries its harness, its id, its record count, the count of the dispatched
-    agents it holds, its first and last moments as epoch milliseconds and its span in seconds, and —
-    where an opencode record names a dispatcher for it — that dispatcher's session id and the
-    dispatching call's name, the two halves `dispatches` holds; an entry so dispatched follows its
-    dispatcher's, so the feed is in the order the index draws the rows. A store the exact names find
-    and cannot read raises out of here: the answer is the handler's failed request, not an entry.
-    Where the feed holds no session, it is one `{stores: <count>}` entry: the stores the exact names
-    read, none of which held a record to draw — the count a zero-record store renders, which no
-    session would otherwise tell apart from a tree with no store at all. This is the schema's one
-    definition: the index's own script renders the rows from exactly these keys."""
+    A session's entry carries its harness, its id, the models its calls recorded, its record count, the
+    count of the dispatched agents it holds, its first and last moments as epoch milliseconds and its
+    span in seconds, and — where an opencode record names a dispatcher for it — that dispatcher's
+    session id and the dispatching call's name, the two halves `dispatches` holds; an entry so
+    dispatched follows its dispatcher's, so the feed is in the order the index draws the rows. A store
+    the exact names find and cannot read raises out of here: the answer is the handler's failed
+    request, not an entry. Where the feed holds no session, it is one `{stores: <count>}` entry: the
+    stores the exact names read, none of which held a record to draw — the count a zero-record store
+    renders, which no session would otherwise tell apart from a tree with no store at all. This is the
+    schema's one definition: the index's own script renders the rows from exactly these keys."""
     sessions = read_sessions(directory)
     dispatched = dispatches(sessions)
     children: dict[str, list[dict]] = {}
@@ -901,6 +923,7 @@ def _feed_entry(session: dict, dispatcher: tuple[str, str, str | None] | None, a
     entry = {
         "harness": session_harness(session),
         "id": session["id"],
+        "models": models_in(session["records"]),
         "records": len(session["records"]),
         "agents": agents,
         "first": int(session["first"]),
@@ -1006,7 +1029,7 @@ main { overflow-x: auto; }
 table { border-collapse: collapse; table-layout: fixed; }
 /* The table's floor is the sum of its columns' shares: narrower than that, it overruns the viewport
    and `main` scrolls it, so no column is squeezed under what its content needs. */
-table { min-width: 62rem; }
+table { min-width: 74rem; }
 th, td { text-align: left; padding: 0.4rem 1rem 0.4rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-weight: 600; color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
 td { overflow-wrap: anywhere; }
@@ -1021,7 +1044,8 @@ tr td:first-child.child + td { padding-left: 2.4rem; }
    never by a cell's content. The agents column still holds its label's own line unbroken, so the
    label sits over the count it heads rather than folding a word of itself. */
 .col-harness { width: 7.5rem; }
-.col-session { width: 40%; }
+.col-session { width: 22%; }
+.col-model { width: 12rem; }
 .col-records { width: 8rem; }
 .col-agents { width: 8rem; }
 .col-one { width: 15rem; }
@@ -1056,7 +1080,7 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 </div>
 <p id="notice" class="notice" role="alert" hidden></p>
 <table>
-<thead><tr><th class="col-harness">harness</th><th class="col-session">session</th><th class="col-records" aria-sort="none"><button type="button" class="sort" data-sort="records">records</button></th><th class="col-agents" aria-sort="none"><button type="button" class="sort" data-sort="agents">dispatched agents</button></th><th class="col-one" aria-sort="none"><button type="button" class="sort" data-sort="first">first to last</button></th><th class="col-span" aria-sort="none"><button type="button" class="sort" data-sort="span">span</button></th></tr></thead>
+<thead><tr><th class="col-harness">harness</th><th class="col-session">session</th><th class="col-model">model</th><th class="col-records" aria-sort="none"><button type="button" class="sort" data-sort="records">records</button></th><th class="col-agents" aria-sort="none"><button type="button" class="sort" data-sort="agents">dispatched agents</button></th><th class="col-one" aria-sort="none"><button type="button" class="sort" data-sort="first">first to last</button></th><th class="col-span" aria-sort="none"><button type="button" class="sort" data-sort="span">span</button></th></tr></thead>
 <tbody id="rows"></tbody>
 </table>
 </main>
@@ -1067,7 +1091,7 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 // dispatched by another is drawn under its dispatcher, its dispatcher's row carrying the count of the
 // children beneath it. The moments are epoch
 // milliseconds and become the row's `<time>` elements, drawn local at birth — the reader's clock,
-// 24-hour. Reads the entry's own keys and nothing else: `harness`, `id`,
+// 24-hour. Reads the entry's own keys and nothing else: `harness`, `id`, `models`,
 // `records`, `agents`, `first`, `last`, `span`, `dispatcher`, and
 // `stores` on a feed that drew nothing, naming how many stores the exact names read. The page's body is
 // wrapped: the controls' state and the sort in force live in the page's URL, and the helpers for
@@ -1165,6 +1189,7 @@ const row = ({ session, dispatched, children = 0 }) => {
   tr.append(
     harness,
     id,
+    el('td', session.models.join(', '), 'col-model'),
     el('td', session.records + ' records', 'col-records'),
     el('td', session.agents ? count : '', 'col-agents'),
     window,
@@ -1177,7 +1202,7 @@ const row = ({ session, dispatched, children = 0 }) => {
 // it draws no session.
 const wideRow = (text) => {
   const cell = el('td', text);
-  cell.colSpan = 6;
+  cell.colSpan = 7;
   const tr = el('tr');
   tr.append(cell);
   return tr;

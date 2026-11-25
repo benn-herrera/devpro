@@ -256,6 +256,13 @@ function childAgentTypeOf(tool: string, input: Record<string, unknown>, result: 
   return undefined
 }
 
+// The model each session's last reported `model.request` named, as `providerID/id`. The agent loop is
+// sequential per session — a request fires before its assistant message is built, that message's tool
+// calls run, then the next request — so the last one a session reported is the model that issued the
+// call `execute.after` records. A session's entry goes at its idle, below: a new turn's request
+// precedes any call that turn makes, and the map holds a live session's entry alone.
+const models = new Map<string, string>()
+
 // The record's fields are `devpro/profiler/capture.py`'s `build_record` / `build_event_record` in their schema order, every
 // one present so a reader never meets a missing key. A field a hook supplies no value for takes the
 // field's empty rendering: `null` where the devpro profiler leaves the key out, `false` where the tree reads
@@ -278,6 +285,7 @@ type CallRecord = {
   child_spend: null
   tokens: number | null
   context_tokens: null
+  model: string | null
   branch: null
   args: string | null
   result: string | null
@@ -312,6 +320,10 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
     child_spend: null,
     tokens: null,
     context_tokens: null,
+    // The model the session's last reported request named: `providerID/id`, as the devpro profiler's
+    // claude record takes its own model from the transcript. `null` where the session has run none the
+    // hook reported — a host whose plugin surface offers no such hook records none.
+    model: models.get(call.sessionID) ?? null,
     // A branch is the checkout's, which the devpro profiler reads beside the capture it runs; the capture here runs
     // in the host's process, and opencode's hooks report no branch.
     branch: null,
@@ -454,12 +466,30 @@ export default Plugin.define({
         append(root, call.sessionID, callRecord(call, start, end))
       })
     })
+    // The model a request goes to, as the ref's `providerID/id`: the last one a session reports before
+    // the calls that turn makes. The hook is not on any surface opencode 2.3.0's floor guarantees, so a
+    // host offering none fails this registration, and `silently` keeps it from raising out of `setup`:
+    // there the map stays empty and every record names no model.
+    silently(() => {
+      void ctx.session.hook("model.request", (request) => {
+        silently(() => {
+          const model = request.model ? clip(`${request.model.providerID}/${request.model.id}`, NAME_LIMIT) : null
+          if (model === null) return
+          // Bounded as `started` is: a live session's entry is replaced, and the oldest goes once the map
+          // holds as many as a start may.
+          const oldest = models.keys().next().value
+          if (oldest !== undefined && models.size >= MAX_STARTED && !models.has(request.sessionID)) models.delete(oldest)
+          models.set(request.sessionID, model)
+        })
+      })
+    })
     await ctx.session.hook("experimental.idle", (idle) => {
       silently(() => {
         const prefix = `${String(idle.sessionID)}.`
         for (const key of started.keys()) {
           if (key.startsWith(prefix)) started.delete(key)
         }
+        models.delete(String(idle.sessionID))
         append(root, idle.sessionID, eventRecord(idle.sessionID, "experimental.idle", Date.now()))
       })
     })

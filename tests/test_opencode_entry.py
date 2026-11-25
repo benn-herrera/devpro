@@ -144,9 +144,9 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     assert out["id"] == NAME
     # Registration order follows the code: the guardrail's `execute.before`, the entry's reminder
     # `execute.after`, then the capture's pair. The capture's setup runs before the entry's own
-    # registrations, so its idle hook precedes the entry's.
+    # registrations, so its `model.request` and its idle hook precede the entry's idle.
     assert out["hooks"] == ["execute.before", "execute.before", "execute.after", "execute.after"]
-    assert out["sessionHooks"] == ["experimental.idle", "experimental.idle"]
+    assert out["sessionHooks"] == ["model.request", "experimental.idle", "experimental.idle"]
     assert set(first["agents"]) == {a["id"] for a in registry["agents"]}
     assert set(first["skills"]) == {s["id"] for s in registry["skills"]}
     assert first["commands"] == {"kbase-probe": "A probe"}

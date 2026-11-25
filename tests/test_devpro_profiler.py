@@ -96,7 +96,7 @@ _PAYLOAD = json.dumps(
 _RECORD_FIELDS = {"v", "harness", "at", "session", "tool", "name", "ok", "args", "branch"}
 
 # The keys `view.html` reads from the page's data and from one call row.
-_PAGE_KEYS = {"session", "branch", "contexts", "markers", "calls"}
+_PAGE_KEYS = {"session", "branch", "models", "contexts", "markers", "calls"}
 _CALL_KEYS = {
     "ctx",
     "tool",
@@ -105,6 +105,7 @@ _CALL_KEYS = {
     "dur",
     "ok",
     "ctxTokens",
+    "model",
     "args",
     "result",
     "child",
@@ -245,6 +246,51 @@ def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> N
     assert data["session"] == "s-profiler"
     assert _CALL_KEYS <= set(data["calls"][0]), sorted(data["calls"][0])
     assert data["calls"][0]["tool"] == "Bash"
+
+
+def test_a_capture_records_the_model_its_transcript_names(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect is a capture that leaves out the model its transcript
+    names: before the change the record has `context_tokens` 10 and no `model`, so a claude session's
+    calls show which model spent the tokens and never which model itself.
+
+    A transcript holding the assistant message that made the call — its `model` and its `usage`, its
+    `tool_use` carrying the call's id — gives the record both facts from that one line, and the page's
+    data names the model for the call, for the context that made it and for the session."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    transcript = tmp_path / "transcript.jsonl"
+    transcript.write_text(
+        json.dumps(
+            {
+                "type": "assistant",
+                "message": {
+                    "model": "claude-opus-4-5",
+                    "usage": {"input_tokens": 10},
+                    "content": [{"type": "tool_use", "id": "toolu_1"}],
+                },
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    payload = {**json.loads(_PAYLOAD), "transcript_path": str(transcript), "tool_use_id": "toolu_1"}
+    launcher = _launcher(tmp_path / "harness")
+    capture = _run(launcher, "capture", "claude", cwd=project, stdin=json.dumps(payload))
+    assert capture.returncode == 0, capture.stderr
+
+    trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
+    [record] = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
+    page = _run(launcher, "tree", "--format", "html", cwd=project)
+
+    assert (record["model"], record["context_tokens"]) == ("claude-opus-4-5", 10)
+    assert page.returncode == 0, page.stderr
+    data = _page_data(page.stdout)
+    assert (data["calls"][0]["model"], data["contexts"][0]["models"], data["models"]) == (
+        "claude-opus-4-5",
+        ["claude-opus-4-5"],
+        ["claude-opus-4-5"],
+    )
 
 
 def test_a_session_whose_trace_holds_the_data_mark_renders(tmp_path: Path) -> None:
@@ -499,6 +545,11 @@ def test_the_capture_builds_its_record_over_host_shape_inputs(tmp_path: Path) ->
     top-level id that is not a string refused, the read falling through to the output's id. The
     session's idle appends its lifecycle record.
 
+    `clauses.TEST_PRECONDITION`. The defect: an opencode record that names no model where its
+    session's request named one, or one that names a model no request reported. Each `ses_capture`
+    call carries the model the one fired `model.request` named, and a call in a session that fired
+    none carries `null`.
+
     The host shapes and the plugin context are inputs, both shaped here: nothing the test asserts is a
     claim about what the host reports, only about what the capture builds from them."""
     project = tmp_path / "project"
@@ -506,7 +557,7 @@ def test_the_capture_builds_its_record_over_host_shape_inputs(tmp_path: Path) ->
     out = json.loads(_run_ts(_HERE / "profiler_contract_runner.ts", directory=project).stdout)
     records = out["records"]
 
-    calls = [record for record in records if record.get("event") is None]
+    calls = [record for record in records if record.get("event") is None and record["session"] == "ses_capture"]
     assert [(record["tool"], record["name"]) for record in calls] == [
         ("shell", "printf 'hi\\n'"),
         ("shell", "rm -rf /"),
@@ -529,6 +580,12 @@ def test_the_capture_builds_its_record_over_host_shape_inputs(tmp_path: Path) ->
     # The top-level id is not a string: the guard refuses it and the read falls through to the output.
     assert (calls[6]["child_agent_id"], calls[6]["child_agent_type"]) == ("ses_guard", "devpro-typescript-coder")
     assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"]
+    # The model: the one request `ses_capture` fired, `providerID/id`, on every call the session made
+    # after it; `null` on a call in a session that fired none.
+    fired = "wafer.ai/GLM-5.3-Flash"
+    assert [record["model"] for record in calls] == [fired] * 7
+    [modelless] = [record for record in records if record.get("session") == "ses_modelless"]
+    assert modelless["model"] is None
 
 
 def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path) -> None:
@@ -841,7 +898,15 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
-    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
+    _write_store(
+        project,
+        ".profiler-claude",
+        "s-claude",
+        "2026-01-01T00:00:00.000Z",
+        harness="claude",
+        records=2,
+        extra={"model": "claude-opus-4-5"},
+    )
     _write_store(project, ".profiler-opencode", "s-opencode", "2026-01-01T00:00:05.000Z", harness="opencode")
     _write_store(
         project,
@@ -863,6 +928,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
         {
             "harness": "claude",
             "id": "s-claude",
+            "models": ["claude-opus-4-5"],
             "records": 2,
             "agents": 0,
             "first": _epoch_ms("2026-01-01T00:00:00.000Z"),
@@ -872,6 +938,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
         {
             "harness": "opencode",
             "id": "s-opencode",
+            "models": [],
             "records": 1,
             "agents": 0,
             "first": _epoch_ms("2026-01-01T00:00:05.000Z"),
@@ -881,6 +948,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
         {
             "harness": "opencode",
             "id": "s-dispatcher",
+            "models": [],
             "records": 1,
             "agents": 1,
             "first": _epoch_ms("2026-01-01T00:00:06.000Z"),
@@ -890,6 +958,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
         {
             "harness": "opencode",
             "id": "s-child",
+            "models": [],
             "records": 2,
             "agents": 0,
             "first": _epoch_ms("2026-01-01T00:00:07.000Z"),
@@ -904,6 +973,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     assert '<tbody id="rows"></tbody>' in index and 'href="/page/' not in index
     assert re.search(
         r'<th class="col-harness">harness</th><th class="col-session">session</th>'
+        r'<th class="col-model">model</th>'
         r'<th class="col-records" aria-sort="none"><button type="button" class="sort" data-sort="records">'
         r'records</button></th><th class="col-agents" aria-sort="none"><button type="button" class="sort" '
         r'data-sort="agents">dispatched agents</button></th><th class="col-one" aria-sort="none">'

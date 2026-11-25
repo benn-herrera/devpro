@@ -90,17 +90,22 @@ prints, `http://127.0.0.1:<port>/board/` — so opening it shows the kanban boar
 current state.
 
 The profiler view is the second view, at `/profiler/` (trailing slash, the board panel's convention):
-the index of record files, every store the readers read, one row per session — harness,
-session id, record count, the count of the dispatched agents it holds, first and last moments, and
-the span between them — each linking to `/page/<session-id>`, which serves that session's page in
+the index of record files, every store the readers read,
+one row per session — harness,
+session id, the models its calls recorded, record count, the count of the dispatched agents it
+holds, first and last moments, and the span between them —
+each linking to `/page/<session-id>`, which serves that session's page in
 memory, the render's page carrying the same page data `tree --format html` produces. The header row
 and the body's rows take their column widths from one source, so every header sits over the column it
 names at every width the data produces, and the first-to-last column is wide enough that its line
 never wraps. The index's page file is static — no row is in its text — and
 its script renders the feed the server answers at `/api/traces`: one JSON entry per session carrying
-`harness`, `id`, `records`, `agents`, `first`, `last`, `span`, and `dispatcher` where a session was
-dispatched. The script puts `harness` and `records` under their own names, `id` in the session column,
-`agents` in the dispatched-agents count, `first` and `last` in the first-to-last line, `span` in the
+`harness`, `id`, `models`, `records`, `agents`, `first`, `last`, `span`, and `dispatcher` where a
+session was dispatched — `models` the distinct models the session's records name, in the order
+they first appear, empty where none does. The script puts `harness` and `records` under their own
+names, `id` in the session column, `models` in the model column, joined by `, `,
+`agents` in the dispatched-agents count,
+`first` and `last` in the first-to-last line, `span` in the
 span column, and draws `dispatcher` in no column at all, as the child row under its dispatcher's row.
 The agents cell reads the count with the postscript `agents` — `1 agent`, `3 agents`. The index's row
 links and the session page's return link carry the query, so the controls' state and the sort in
@@ -152,7 +157,11 @@ dashboard serves the assembled page and changes nothing in it. The nav's server 
 both views: the decoration's one script polls `GET /api/state` — the endpoint every view's server
 answers `{"state": "live"}` while it serves, and that a closed server answers not at all — so a page
 that carries no payload of its own reads the state the board reads, and the stop posts the board
-panel's `/api/stop`. No file is written for the traces. The page shows a session's calls: a session of
+panel's `/api/stop`. No file is written for the traces.
+The page names the models its calls recorded — the session's in
+its header line, a context's in its lifeline's header where that header holds it alone, where it
+recorded one, and their count where several, a call's in its detail —
+and shows a session's calls: a session of
 nothing but tool calls renders those calls as its calls content, never an empty tree under a calls
 header. The server runs until interrupted (Ctrl-C) or stopped from the page; either exits 0.
 
@@ -239,10 +248,15 @@ line in bytes, `name` and `session` clipped at the root before `result` and `arg
 a killed process left torn would fuse the next record onto it, so an append finds the last newline in
 the file's tail and truncates to it, renaming the whole store aside where the file holds no newline at
 all. The Python capture has no such repair: it appends as it stands, and its reader skips the torn
-line. An opencode record carries no token counts, so the tree's token columns are blank for its
-sessions; claude's counts come from its own transcripts under `~/.claude/projects/`, which is
-claude's data, not a source the install configures. An opencode record's `branch` is empty on its own
-account: the capture runs in the host's process, and the hooks report no branch, so `tree --branch`
+line. An opencode record carries no token counts, so the tree's token columns are blank for
+its sessions; claude's counts and each claude call's `model` come from
+its own transcripts under `~/.claude/projects/`, which is
+claude's data, not a source the install configures — the model is that of the assistant message holding the call's tool use, the entry the
+capture reads the call's context tokens from, and is recorded at capture alone. An opencode
+record's `model` names the model call that issued the tool call, as `providerID/modelID`, the last
+one the session's `model.request` hook reported when the record is written, and is recorded at
+capture alone: `null` where none has run — a host whose plugin surface offers no such hook records
+none. An opencode record's `branch` is empty on its own account: the capture runs in the host's process, and the hooks report no branch, so `tree --branch`
 selects no opencode session.
 
 **The repair.** `devpro profiler repair`, run once from the project's root, reads each standing

@@ -101,7 +101,7 @@ def test_the_profiler_view_serves_its_list_and_its_pages(tmp_path: Path, serve) 
     assert (data["session"], [call["name"] for call in data["calls"]]) == ("s-one", ["ls"])
 
 
-SESSION_KEYS = {"harness", "id", "records", "agents", "first", "last", "span"}
+SESSION_KEYS = {"harness", "id", "models", "records", "agents", "first", "last", "span"}
 DISPATCHED_KEYS = SESSION_KEYS | {"dispatcher"}
 
 
@@ -141,6 +141,7 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
         {
             "harness": "opencode",
             "id": "s-parent",
+            "models": [],
             "records": 1,
             "agents": 1,
             "first": 1767225605000,
@@ -150,6 +151,7 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
         {
             "harness": "opencode",
             "id": "s-child",
+            "models": [],
             "records": 1,
             "agents": 0,
             "first": 1767225607000,
@@ -160,6 +162,7 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
         {
             "harness": "claude",
             "id": "s-claude",
+            "models": [],
             "records": 1,
             "agents": 0,
             "first": 1767225609000,

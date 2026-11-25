@@ -5,7 +5,8 @@
 // Stdin: JSON {directory}: a project root whose `.devpro-temp/.profiler-opencode/` receives the store.
 // Stdout: JSON {records} — the records the shipped `profiler.ts` wrote through a stub plugin context:
 // a completed call, a failed one, a skill call, a subagent dispatch in each of opencode 2.3.0's,
-// 2.3.2's and 2.4.1's result shapes, one whose top-level id is not a string, and the session's idle.
+// 2.3.2's and 2.4.1's result shapes, one whose top-level id is not a string, and the session's idle —
+// then a second session's completed call, made with no `model.request` fired for it.
 //
 // The host shapes below are inputs, and the test claims nothing about what the host reports: the
 // events are shaped as the three releases' results are said to ride, and each shape's own home is
@@ -34,9 +35,9 @@ const fire = async (name: string, event: unknown) => {
 }
 
 const session = "ses_capture"
-const call = (id: string, tool: string, callInput: unknown) => ({
+const call = (id: string, tool: string, callInput: unknown, inSession: string = session) => ({
   tool,
-  sessionID: session,
+  sessionID: inSession,
   agent: "build",
   messageID: "msg_1",
   id,
@@ -45,6 +46,15 @@ const call = (id: string, tool: string, callInput: unknown) => ({
 // A subagent dispatch's input: the host's `agent` is the kind, and the description and prompt are the
 // brief the record's `args` carries.
 const dispatch = (agent: string) => ({ agent, description: "port it", prompt: "port hp.py" })
+
+// The model `ses_capture`'s requests go to, fired before the turn's calls as the host fires it. Its
+// `variant` is the host's own refinement of the ref and the record ignores it.
+await fire("model.request", {
+  sessionID: session,
+  agent: "build",
+  kind: "call",
+  model: { id: "GLM-5.3-Flash", providerID: "wafer.ai", variant: "reasoning" },
+})
 
 await fire("execute.before", call("call_1", "shell", { command: "printf 'hi\\n'" }))
 await fire("execute.after", {
@@ -105,9 +115,20 @@ await fire("execute.after", {
 
 await fire("experimental.idle", { sessionID: session, background: [] })
 
-const file = `${input.directory}/.devpro-temp/.profiler-opencode/${session}.jsonl`
-const records = (await Bun.file(file).text())
-  .trim()
-  .split("\n")
-  .map((line: string) => JSON.parse(line))
+// A second session whose completed call runs with no request fired for it: the record names no model.
+// Each session has a store file of its own, so the read below walks both.
+const modelless = "ses_modelless"
+await fire("execute.before", call("call_8", "shell", { command: "uname -s" }, modelless))
+await fire("execute.after", {
+  ...call("call_8", "shell", { command: "uname -s" }, modelless),
+  status: "completed",
+  result: { output: "Darwin\n" },
+})
+
+const records: Record<string, unknown>[] = []
+for (const id of [session, modelless]) {
+  const file = `${input.directory}/.devpro-temp/.profiler-opencode/${id}.jsonl`
+  const text = await Bun.file(file).text()
+  records.push(...text.trim().split("\n").map((line: string) => JSON.parse(line)))
+}
 console.log(JSON.stringify({ records }))

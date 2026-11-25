@@ -153,14 +153,17 @@ def subagent_transcript(main: Path | str, agent_id: str) -> Path:
     return _without_jsonl(main) / "subagents" / f"agent-{agent_id}.jsonl"
 
 
-def context_tokens_of(payload: dict) -> int | float | None:
-    """How full the calling context was when the model asked for this call: the usage on the assistant
-    message that holds the tool_use, read from the tail of Claude Code's transcript.
+def tool_use_facts(payload: dict) -> dict:
+    """What the assistant message holding this call's tool_use states: its `context_tokens` — how full
+    the calling context was when the model asked for the call — and its `model`, each present only
+    where that line states it.
 
-    The transcript format is Claude Code's own and undocumented, so any miss leaves the field out."""
+    The line is read from the tail of Claude Code's transcript, the subagent's where the call ran in
+    one. The transcript format is Claude Code's own and undocumented, so any miss leaves the keys
+    out."""
     try:
         if not payload.get("transcript_path") or not payload.get("tool_use_id"):
-            return None
+            return {}
         file = (
             subagent_transcript(payload["transcript_path"], payload["agent_id"])
             if payload.get("agent_id")
@@ -172,14 +175,25 @@ def context_tokens_of(payload: dict) -> int | float | None:
             handle.seek(size - length)
             text = handle.read(length).decode("utf-8", "replace")
     except (OSError, ValueError, TypeError):
-        return None
+        return {}
     for line in reversed(text.split("\n")):
         if payload["tool_use_id"] not in line:
             continue
         found = usage_by_tool_use(line).get(payload["tool_use_id"])
         if found is not None:
-            return found
-    return None
+            return {"context_tokens": found, **_model_of(line)}
+    return {}
+
+
+def _model_of(line: str) -> dict:
+    """The model an assistant transcript line names, masked and clipped as a record's name is, or no key
+    where the line names none."""
+    try:
+        message = json.loads(line).get("message")
+    except (ValueError, AttributeError):
+        return {}
+    model = message.get("model") if isinstance(message, dict) else None
+    return {"model": clip(mask(model), NAME_LIMIT)} if isinstance(model, str) and model else {}
 
 
 def transcript_files(records: list[dict]) -> list[dict]:
@@ -317,7 +331,7 @@ def build_record(payload: dict, harness: str) -> dict:
         "background": background or None,
         "child_spend": spent,
         "tokens": response.get("totalTokens") if _is_number(response.get("totalTokens")) else None,
-        "context_tokens": context_tokens_of(payload),
+        **tool_use_facts(payload),
         "branch": branch_of(payload.get("cwd") or os.getcwd()),
         "args": _args_text(args) if args else None,
         "result": clip(mask(result), RESULT_LIMIT) if result else None,

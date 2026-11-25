@@ -176,7 +176,11 @@ child's page and heads a child page with its dispatcher, naming the child page's
 the dispatching call's agent, in the color the context that call opened wears on its dispatcher's
 page, and the stores stay flat — the child never
 knows its parent at write time, the hierarchy being metadata the parent side builds, and claude
-holding no child session records at all. The index's rows alternate their tone — a zebra the eye reads across the
+holding no child session records at all.
+A call's record names the model that made it where its harness states it: the index names the models a session's
+calls recorded, and a session's page names them for the session, for each context and for each
+call, showing none where no record names one.
+The index's rows alternate their tone — a zebra the eye reads across the
 columns — and each row's harness carries its own mark, a dot in the harness's brand colors:
 opencode's periwinkle, claude's coral. On the page of a session nothing dispatched, the session's
 own context wears the motif's accent, its labels dark enough to read on it; on a dispatched
