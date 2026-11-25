@@ -64,7 +64,7 @@ file P2's rehome removes, and P3 regenerates the trees the re-dice standardizes.
 | Package | State | Rating | Agent | Scope |
 | --- | --- | --- | --- | --- |
 | P1 | landed | expert | `devpro:python-coder` | the dicer writes every section's heading ladder re-based to an H1 top; reassembly and undice restore it |
-| P2 | dispatchable | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
+| P2 | in progress | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
 | P3 | drafted | expert | `devpro:python-coder` | the three standing trees re-diced under the new behavior |
 | P4 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
@@ -145,28 +145,36 @@ into `PROJECT_DOCS/ARCHITECTURE/harness-profiler/`); `PROJECT_DOCS/ARCHITECTURE/
 
 **Guidance.**
 
-1. Promote the file's sixteen bold run-in titles to `####` headings, wording unchanged: the run-in's
-   bold text becomes the heading, the sentence's remainder stays the paragraph's opening text; a
-   title keeps its terminal period — heading text is not re-punctuated (all sixteen carry one). The
-   intro paragraph above the first run-in stays under the `### Harness profiler` heading.
+1. Two promotions, wording unchanged in each. The file's own `### Harness profiler` title becomes
+   `# Harness profiler`, and the intro paragraph stays under it. The sixteen bold run-in titles
+   become `####` headings: the run-in's bold text becomes the heading, the sentence's remainder
+   stays the paragraph's opening text; a title keeps its terminal period — heading text is not
+   re-punctuated (all sixteen carry one).
 2. Dice to `.devpro-temp/harness-profiler-fresh/`. If the run reports `dangling:` on stderr, write
    the link map from those numbers and dice again into a second empty directory with the map; the
-   mapped run is the one moved. Then place the area: `git rm` the old
-   `install/harness-profiler.md`; move `index.md` and the section files of the fresh dice into
-   `PROJECT_DOCS/ARCHITECTURE/harness-profiler/`. The fresh dice's `entry-point.md` is the
-   sub-dice's tree-root head and is **not** moved: a directory that is not a tree root opens at
-   `index.md` (`heads.py:directory_head`), as `install/` and `rendering/` do today. After the move,
-   `harness-profiler/index.md` opens `# Harness profiler` with the intro paragraph (`head -3` shows
-   it).
-3. Rewrite the citations: `install/index.md`'s member link is removed (the install area's list
-   shrinks) and any install-area prose that pointed below at the profiler is checked;
-   `ARCHITECTURE/entry-point.md`'s line — the install leaf's link — becomes the area entry
-   `harness-profiler/`; the title parentheticals — six occurrences on five lines,
-   `repo-layout.md:15` twice, `:16`, `:22`, `subsystem-map.md:80`, `install/opencode-entry.md:46` —
-   change `(Install, Harness profiler)` to `(Harness profiler)`, the area they name having changed.
-   The two link sites are rewritten by these edits.
-4. Check: `just check-links` over `PROJECT_DOCS` with `problems: 0`; `check-tree` over the new
-   tree; and `git grep -n 'Install, Harness profiler' PROJECT_DOCS` prints nothing.
+   mapped run is the one moved. The fresh tree is the area whole, and it is one level: its
+   `entry-point.md` — the tree root's head, holding the `# Harness profiler` title and the intro
+   paragraph — and its sixteen section files (one `.md` per promoted run-in, no subdirectory, no
+   `index.md`) move to `PROJECT_DOCS/ARCHITECTURE/harness-profiler/`, `entry-point.md` at the area
+   root (a tree root's head; roots alone carry one, `heads.py:directory_head`), and `git rm` removes
+   the old `install/harness-profiler.md`. `PROJECT_DOCS/ARCHITECTURE/harness-profiler/` must not
+   exist before the move (a `mv` into an existing directory nests the tree one level deeper); where
+   a partial move left it, `git rm -r` it and move again. After the move,
+   `ls ARCHITECTURE/harness-profiler | wc -l` is 17 and `head -3
+   ARCHITECTURE/harness-profiler/entry-point.md` shows the title, the intro's first line and its
+   third.
+3. Rewrite the citations: `install/index.md`'s member link at :29 is removed (the install area's
+   list shrinks by one line); `ARCHITECTURE/entry-point.md`'s line at :20 — the install leaf's
+   link — becomes the area entry `harness-profiler/entry-point.md`; the title parentheticals — six
+   occurrences on five lines, `repo-layout.md:15` twice, `:16`, `:22`, `subsystem-map.md:80`,
+   `install/opencode-entry.md:46` — change `(Install, Harness profiler)` to `(Harness profiler)`,
+   the area they name having changed. Those are the complete set: after the edits
+   `grep -rn 'harness-profiler\.md' PROJECT_DOCS` prints nothing.
+4. Check: `just check-links` over `PROJECT_DOCS` with `problems: 0` — the recipe is `check-links`
+   then `check-tree PROJECT_DOCS` (`justfile:180-183`), so this is the check that the moved area is
+   every one of its own documents' parent's link, and is reachable from the volume's entry point;
+   `PYTHONPATH=. python3 -m devpro check-tree PROJECT_DOCS/ARCHITECTURE/harness-profiler` with
+   `problems: 0`; and `git grep -n 'Install, Harness profiler' PROJECT_DOCS` prints nothing.
 
 **Done-line.** `just test-changed`, then `just lint`, then `just dev-check-links`. The checkpoint
 gate runs once before the commit, as P1 states.
