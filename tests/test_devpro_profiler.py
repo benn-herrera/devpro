@@ -968,8 +968,8 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
         },
     ]
     # The page file is static: the rows' empty table, no session's row, and every column heading a
-    # row states, each harness's mark, and the zebra's one rule — the layer's `--zebra`, which the
-    # layer switches with the color scheme itself, so the template carries no second rule for it.
+    # row states — the layer's `--zebra`, which the layer switches with the color scheme itself, so
+    # the template carries no second rule for it.
     assert '<tbody id="rows"></tbody>' in index and 'href="/page/' not in index
     assert re.search(
         r'<th class="col-harness">harness</th><th class="col-session">session</th>'
@@ -992,8 +992,6 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     assert re.search(r'<p id="notice" class="notice" role="alert" hidden></p>', index)
     assert re.search(r"tr:nth-child\(odd\) td \{ background: var\(--zebra\); \}", index)
     assert "prefers-color-scheme: dark" not in index.split("<style>", 1)[1].split("</style>", 1)[0]
-    assert re.search(r"\.harness\.opencode \{ background: #7b7bf0; \}", index)
-    assert re.search(r"\.harness\.claude \{ background: #d97757; \}", index)
     assert _page_data(page)["session"] == "s-claude"
 
 

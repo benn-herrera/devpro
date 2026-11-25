@@ -6,6 +6,9 @@
    the brand at 80% brightness (the active view's smaller text), --on-accent the text that reads on the
    accent, and --view-inactive the gray a
    view wears when it is not the one shown — lifted, so it reads available rather than disabled.
+   The sequence diagram's palette is the layer's too — --c0…--c7, one color per hue, no hue reading as
+   the accent in the mode shown — as is each harness's mark, --harness-claude and --harness-opencode,
+   the harness brands' colors themselves in both modes.
    The site's own light-mode green mapping and its dim value are superseded: the light
    brand is the bright amber, dimmed only for the active view's smaller text. No second brand color
    and no underline: the weight and the color are the selection. */
@@ -23,6 +26,16 @@
   --on-accent: #1d1d1f;
   --view-inactive: #63636b;
   --alert: #b3261e;
+  --c0: #c55e5d;
+  --c1: #2f7f86;
+  --c2: #5d6d7e;
+  --c3: #6c58b5;
+  --c4: #3f8a4a;
+  --c5: #b0517f;
+  --c6: #3d6fb3;
+  --c7: #8a6a4f;
+  --harness-claude: #d97757;
+  --harness-opencode: #7b7bf0;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font: 14px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -41,6 +54,14 @@
     --on-accent: #18181b;
     --view-inactive: #a6a6ad;
     --alert: #ff8a80;
+    --c0: #e07d7b;
+    --c1: #4fb0b8;
+    --c2: #d6a542;
+    --c3: #9b89e0;
+    --c4: #9aa8ba;
+    --c5: #dd7fae;
+    --c6: #6f9ee0;
+    --c7: #c29a76;
   }
 }
 

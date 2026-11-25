@@ -34,7 +34,7 @@ the file at `/board/board.css`, the render inlines it into the page it prints, a
 the same file into the pages it serves, the layer fetched from the server's own origin, which the
 site's content-security policy allows. The board's component rules may be scoped so their selectors
 cannot reach the profiler page's DOM, and the template's own rules draw the sequence diagram's colors
-from the layer, no palette of its own: hue 0 — the root context's on a page nothing dispatched, and
+from the layer: hue 0 — the root context's on a page nothing dispatched, and
 its copies' — the layer's `--accent`, its labels in the layer's `--on-accent`, and every other hue
 the palette's `--c0`…`--c7`; no palette hue reads as the accent in the mode shown.
 

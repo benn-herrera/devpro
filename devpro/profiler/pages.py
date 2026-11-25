@@ -1019,8 +1019,9 @@ RETURN_MARK = "<!--RETURN-->"
 # `<!--LAYER-->` stands in the template, as it does on a page, and the serve path fills it with the
 # link (`served_page`) — the render's own carrier for a page being the layer's text. The three band
 # marks are the last thing before the body's own content, their text no stylesheet's.
-# A harness's dot wears its brand color, the page's own rule rather than the site's — the dots are
-# the only brand-marked part of a row — and its class is the name the feed's entry carries where the
+# A harness's dot wears its brand color, which the layer holds as `--harness-<name>` — the site's
+# color rather than the page's, the page's rule only naming the variable. The dots are the only
+# brand-marked part of a row, and a dot's class is the name the feed's entry carries where the
 # script's `HARNESSES` holds that harness.
 INDEX = """<!doctype html>
 <html lang="en">
@@ -1063,8 +1064,8 @@ tr td:first-child.child + td { padding-left: 2.4rem; }
    folding the line. */
 .moments { white-space: nowrap; }
 .harness { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; }
-.harness.opencode { background: #7b7bf0; }
-.harness.claude { background: #d97757; }
+.harness.opencode { background: var(--harness-opencode); }
+.harness.claude { background: var(--harness-claude); }
 .controls { display: flex; gap: 1rem; margin: 0 0 0.6rem; font-size: 0.9rem; color: var(--muted); }
 .sort { font: inherit; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }
 .sort:hover, .sort:focus-visible { color: var(--accent); }

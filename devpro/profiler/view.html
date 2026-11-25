@@ -5,10 +5,8 @@
 <!--LAYER-->
 <style>
 :root { --panel:#fff; --track:#f1f2f0; --fresh:#8d969e;
-  --c0:#c55e5d; --c1:#2f7f86; --c2:#5d6d7e; --c3:#6c58b5; --c4:#3f8a4a; --c5:#b0517f; --c6:#3d6fb3; --c7:#8a6a4f;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --sans: system-ui, -apple-system, "Segoe UI", sans-serif; }
-@media (prefers-color-scheme: dark) { :root { --panel:#1b2025; --track:#20262b; --fresh:#79828a;
-  --c0:#e07d7b; --c1:#4fb0b8; --c2:#d6a542; --c3:#9b89e0; --c4:#9aa8ba; --c5:#dd7fae; --c6:#6f9ee0; --c7:#c29a76; } }
+@media (prefers-color-scheme: dark) { :root { --panel:#1b2025; --track:#20262b; --fresh:#79828a; } }
 body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 var(--sans); padding:24px max(16px, 3vw); }
 h1 { font-size:18px; margin:0 0 2px; } h2 { font-size:14px; margin:22px 0 8px; }
 .sub { color:var(--muted); font:12px var(--mono); margin-bottom:10px; }
@@ -16,12 +14,11 @@ h1 { font-size:18px; margin:0 0 2px; } h2 { font-size:14px; margin:22px 0 8px; }
 .intro summary { cursor:pointer; color:var(--muted); font-size:12px; }
 .intro p { margin:6px 0 0; }
 .chip { width:12px; height:12px; border-radius:3px; display:inline-block; flex:none; align-self:center; }
-.chip.on-accent { background:var(--accent) !important; }
 .symbols { display:flex; flex-wrap:wrap; gap:6px 20px; font-size:12px; color:var(--muted); margin:0 0 14px; }
 .symbols span { display:inline-flex; align-items:center; gap:6px; }
 .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; overflow-x:auto; }
 svg { display:block; } svg text { font:12px var(--sans); fill:var(--fg); } svg .muted { fill:var(--muted); font-size:11px; }
-svg .head { fill:#fff; font-weight:600; } svg .head.on-accent { fill:var(--on-accent); } svg .head.sub { font-weight:400; font-size:11px; fill-opacity:.9; } svg .head.chip { font-size:11px; } svg .mono { font-family:var(--mono); } svg .failtext { fill:var(--c0); font-weight:600; }
+svg .head { fill:#fff; font-weight:600; } svg .head.on-accent { fill:var(--on-accent); } @media (prefers-color-scheme: dark) { svg .head.on-palette { fill:var(--on-accent); } } svg .head.sub { font-weight:400; font-size:11px; fill-opacity:.9; } svg .head.chip { font-size:11px; } svg .mono { font-family:var(--mono); } svg .failtext { fill:var(--c0); font-weight:600; }
 svg .kind { fill:var(--muted); font-weight:400; } svg .spent text { font-weight:600; } svg .spent text.kind { font-weight:400; }
 svg .hit { cursor:pointer; } svg .hit:hover rect, svg .hit:hover path { stroke:var(--fg); stroke-width:1.5; }
 svg .flabel { font:11px var(--sans); fill:#fff; pointer-events:none; } svg .failed rect { fill-opacity:.4; } svg .failed .flabel { fill:var(--fg); }
@@ -107,11 +104,15 @@ const callOf = new Map(D.calls.map((c, i) => [c.child, i]).filter(([child]) => c
 const order = new Map(D.contexts.map((c, i) => [c.id, i]));
 // Hue 0 is the root context — a page nothing dispatched — and its copies: the accent, its labels in
 // the token that reads on it. Every other hue is the palette's own color, and no palette hue reads as
-// the accent in either mode.
+// the accent in either mode. The root's own bar takes a stroke in the layer's `--line`, so it reads
+// as a surface against the panel in the light mode, where the accent is under 3:1 on white.
 const hueColor = (h) => (h === 0 ? 'var(--accent)' : `var(--c${h % PALETTE})`);
 const color = (id) => hueColor(byId.get(id) ? byId.get(id).hue : 0);
-const accentChip = (id) => ((byId.get(id) ? byId.get(id).hue : 0) === 0 ? ' on-accent' : '');
+// A header's labels read on its own fill: the dark token on the accent, and on every palette hue in
+// the dark mode, where each of the palette's colors is light enough that white text is unreadable.
+const headClass = (id) => (byId.get(id) ? byId.get(id).hue : 0) === 0 ? ' on-accent' : ' on-palette';
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const ROOT_BAR = `stroke="${css('--line')}" stroke-width="1"`;
 const kindText = (c) => c.kind === 'root' ? 'the session itself'
   : c.kind === 'copy' ? `starts with a copy of ${byId.get(c.parent) ? byId.get(c.parent).label : 'its parent'}'s history`
   : c.parent ? '' : 'its parent call was not recorded';
@@ -240,8 +241,8 @@ function drawSequence() {
       ? clip((first.id === 'main' ? 'main context' : `${kindWord(first.tool)} · ${short(first.id)}${first.kind === 'copy' ? ` · copy of ${short(first.parent)}` : first.parent ? '' : ' · parent not recorded'}`) + modelTail(first.models), fits(colW - 30))
       : `${list.length} contexts, one after another`;
     s += `<g><rect ${box} fill="${color(first.id)}"/>`
-      + `<text class="head${accentChip(first.id)}" x="${x}" y="24" text-anchor="middle">${esc(clip(title, fits(colW - 30)))}</text>`
-      + `<text class="head sub${accentChip(first.id)}" x="${x}" y="40" text-anchor="middle">${esc(sub)}</text>`
+      + `<text class="head${headClass(first.id)}" x="${x}" y="24" text-anchor="middle">${esc(clip(title, fits(colW - 30)))}</text>`
+      + `<text class="head sub${headClass(first.id)}" x="${x}" y="40" text-anchor="middle">${esc(sub)}</text>`
       + `<title>${esc(list.map(tipOf).join('\n'))}</title></g>`;
   });
   // Contexts of different colors took turns in this column, so no one color
@@ -264,7 +265,7 @@ function drawSequence() {
     const chips = list.map((c, i) => {
       const w = widths(n)[i], text = names[i] && n > 1 ? clip(names[i], n) : '';
       const chip = `<g><rect x="${cx}" y="10" width="${w}" height="17" rx="3" fill="${color(c.id)}"/>`
-        + (text ? `<text class="head chip${accentChip(c.id)}" x="${cx + w / 2}" y="22.5" text-anchor="middle">${esc(text)}</text>` : '')
+        + (text ? `<text class="head chip${headClass(c.id)}" x="${cx + w / 2}" y="22.5" text-anchor="middle">${esc(text)}</text>` : '')
         + `<title>${esc(tipOf(c))}</title></g>`;
       cx += w + GAP;
       return chip;
@@ -278,7 +279,7 @@ function drawSequence() {
     const call = callOf.get(c.id);
     const y0 = c.id === 'main' ? SEQ_HEAD + 4 : yOf(rowOf.get(`call${call}`));
     const y1 = c.id === 'main' ? height - 6 : yOf(rowOf.get(`return${call}`) ?? rows.length);
-    s += `<rect x="${x - 5}" y="${y0}" width="10" height="${Math.max(4, y1 - y0)}" fill="${color(c.id)}" fill-opacity=".85" rx="2"><title>${esc(tipOf(c) + (c.spent ? `\n${spentTip(c)}` : ''))}</title></rect>`;
+    s += `<rect x="${x - 5}" y="${y0}" width="10" height="${Math.max(4, y1 - y0)}" fill="${color(c.id)}" fill-opacity=".85" rx="2"${c.hue === 0 ? ` ${ROOT_BAR}` : ''}><title>${esc(tipOf(c) + (c.spent ? `\n${spentTip(c)}` : ''))}</title></rect>`;
     // What the context spent sits next to the top of its bar: right of a
     // subagent's, where the call message arrives from the left, and left of
     // main's, which nothing else uses. Three rows, numbers right-aligned.
@@ -349,8 +350,8 @@ function drawSequence() {
       + `${tip}</g>`;
   });
   // UML: a filled head is a synchronous call, an open one an asynchronous call
-  // the caller doesn't wait for. `main` is hue 0's head — the accent — and every other head takes its
-  // hue's palette color through the same `hueColor` the lifelines do, so a head never disagrees with
+  // the caller doesn't wait for. `head-main` is hue 0's — the accent — and every other head takes its
+  // hue's own `--c${h}` through the same `hueColor` the lifelines do, so a head never disagrees with
   // the bar it points at.
   const heads = Array.from({ length: PALETTE }, (_, h) => `<marker id="head-${h}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="${hueColor(h)}"/></marker>`
     + `<marker id="head-open-${h}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10" fill="none" stroke="${hueColor(h)}" stroke-width="1.8"/></marker>`).join('')
