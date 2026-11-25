@@ -252,16 +252,31 @@ harnesses' text go unchecked. The sentence check the previous ticket adds raises
 overlay text and other harnesses escape at sentence granularity, where a shared sentence is small
 enough to hide inside a paragraph that differs.
 
-### The family-map pins are checksums; retire the mirror
+### The pin plague: a test commissioned only on a defect it dies on, and a sweep that refuses the mirror
 
-`tests/test_devpro.py` pins the claude family's model assignments twice as literals:
-`test_each_family_pins_the_member_of_every_category` asserts the map equals a hand-copied dict of
-itself, and `test_claude_frontmatter_holds_the_field_order_and_spelling` carries `model: opus`
-inside a tuple whose subject is field order and spelling. Both are the checksum
-`clauses.TESTS_PROTECT_LOGIC` forbids: they photograph owner tuning, so every deliberate retune
-lands red — 829f7e7 did, and the gate ran red until the pins followed. The retune's diff in the
-generated agent files is the visible record; the pin adds only the paired edit. Work: keep the
-form asserts that are contract (order, spelling, quoting, required fields), assert the `model:`
-line is present without pinning its value, rework or retire the members mirror, and sweep the
-suite for the same shape — a literal restating source data no consumer fixes — before declaring
-it gone.
+The pin test is a coverage-mandate fossil: invented to satisfy 100%-coverage metrics, not to find
+defects — shaped like a test while doing the metric's job. Human projects mass-produced it under
+those mandates, the training data carries it, and so agents reproduce it however often the rule
+forbids it; rules alone have had modest effect against a prior fed by ten thousand
+coverage-gaming suites. Slack beyond the ~80% unit tests reasonably cover belongs to the
+integration test, never to the pin. A test protects only where a defect exists that it dies on
+while the source reads correct to its author — behavior, not text. A change-detector that knows
+what it is (a hash against a literal) is not a test either; where detecting change is load-bearing
+— generated files, frozen contracts — the mechanism is the regeneration check or an integration
+test over the behavior.
+
+Found instances: `tests/test_devpro.py` pins the claude family's model assignments twice as
+literals — `test_each_family_pins_the_member_of_every_category` asserts the map equals a
+hand-copied dict of itself, and `test_claude_frontmatter_holds_the_field_order_and_spelling`
+carries `model: opus` inside a tuple whose subject is field order and spelling. Both photograph
+owner tuning: 829f7e7 landed and the gate ran red until the pins followed.
+
+Work, three parts: (1) prune — keep the form asserts that are contract (order, spelling, quoting,
+required fields), assert the `model:` line is present without pinning its value, rework or retire
+the members mirror; (2) commissioning — everywhere a test can be born, not only plan packages, it
+exists only with its defect named and the planted-defect run shown, the `clauses.TEST_PRECONDITION`
+shape; (3) the machine — a devtools sweep in the `dupe_sweep` mold flagging the mirror shape (a
+test literal that also appears in the source it tests; an equality between test-local data and
+loaded source data), so the gate refuses the pattern no reviewer has to catch. The review-side
+complement is the per-test ledger — one line per test, `dies on:` — the per-item shape the
+over-100ms ticket uses; a test whose only answer is "the source changing" convicts itself.
