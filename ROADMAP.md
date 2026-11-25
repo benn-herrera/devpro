@@ -5,24 +5,6 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
-### A package row with no compliant heading passes check-plan silently
-
-Verified in `devpro/doccheck/planform.py`: `_title(package_id, headings)` matches the ID anchored
-at the heading's start and returns `("", None)` on no match — and no caller raises a breach on a
-missing heading. A status-table row whose package has no heading opening with its ID, or no
-heading at all, passes `check-plan`; the board then names a package the plan body never defines,
-and a dispatch brief citing that package section finds nothing. B1's probe run left this as
-session residue.
-
-Owner's ruling: the two reachable cases — a heading that exists but fails to open with the ID
-(`### The staging rule (B5)`), and a heading that merely mentions the ID
-(`### carry out what B5 says`) — cannot be reliably distinguished mechanically, so the breach is
-one report whose text covers both possibilities and both remedies (move the ID to the front;
-reconcile the heading with the row it names). Open for the design: the message's exact form under
-the project's breach-message conventions; whether an orphan heading (one opening with an ID no
-table row uses) is the same defect, its own, or out of scope; and the test that pins it, by the
-test-precondition clause.
-
 ## Features
 
 ### A child session's page names itself for the agent and wears that call's color

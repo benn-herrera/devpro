@@ -143,13 +143,15 @@ def test_no_project_root_is_refused(tmp_path, monkeypatch):
 def test_breach_message_carries_file_line_found_and_accepted(tmp_path, text, kind):
     _write(tmp_path, {"plan.md": text})
     plan = str(tmp_path / "plan.md")
-    (breach,) = read_plan(plan).breaches
+    breach = next(b for b in read_plan(plan).breaches if b.kind == kind)
     assert breach.kind == kind
 
     status, out, err = _run(plan)
 
     assert status == 1
-    (line,) = err.splitlines()
+    # A fixture plan may carry more than one breach at the same line with the same found (the ID);
+    # the accepted text is the per-kind discriminator.
+    (line,) = [line for line in err.splitlines() if breach.accepted in line]
     assert f"{plan}:{breach.line}" in line
     assert breach.found in line
     assert breach.accepted in line
@@ -169,8 +171,8 @@ def test_found_text_is_quoted_whole(tmp_path, row, found):
     status, _, err = _run(str(tmp_path / "plan.md"))
 
     assert status == 1
-    (line,) = err.splitlines()
-    assert found in line
+    # The plan may carry a second breach (the missing-heading one) beside the named one.
+    (line,) = [line for line in err.splitlines() if found in line]
 
 
 def test_a_read_failure_naming_no_file_names_the_plan(tmp_path, monkeypatch):

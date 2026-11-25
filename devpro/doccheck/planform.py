@@ -70,6 +70,7 @@ class BreachKind(Enum):
     RELEASE_EMPTY = "release-empty"
     RATING_MISSING = "rating-missing"
     RATING_WORD = "rating-word"
+    HEADING_MISSING = "heading-missing"
     REVIEW_UNPAIRED = "review-unpaired"
     BURNDOWN_UNPAIRED = "burndown-unpaired"
     DELTA_MISSPELLED = "delta-misspelled"
@@ -488,6 +489,14 @@ def _packages(table: _StatusTable, headings: list[Heading], breaches: list[Breac
                 accepted = f"a Rating cell opening with {_RATING_FORM}"
                 breaches.append(Breach(BreachKind.RATING_WORD, table_path, no, cells[rating_col], accepted))
         title, heading = _title(package_id, headings)
+        if heading is None:
+            accepted = (
+                "a heading, at any level, opening with the package's ID, then its title: `### <ID> <title>`. A"
+                " heading naming the package without opening with the ID takes the ID moved to its front; a"
+                " heading that only mentions the ID, or none at all, gives the package a heading opening with"
+                " the ID. The two cases are not told apart here, so this report covers both"
+            )
+            breaches.append(Breach(BreachKind.HEADING_MISSING, table_path, no, package_id, accepted))
         packages.append(
             WorkPackage(package_id, title, word, note, lifetime, rating, rating_note, table_path, no, heading)
         )

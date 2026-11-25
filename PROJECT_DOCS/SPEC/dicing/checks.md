@@ -122,14 +122,14 @@ line or neither post-plan package is valid. A plan has a breach where:
 | a release line is not the first non-blank line after the plan's H1 heading, the first level-1 heading | the line | the line |
 | a release line, in that place, has no version | the line | the line |
 | a post-plan review package where the plan has no post-plan burndown package, or a post-plan burndown package where it has no post-plan review package | that package's row | the ID, a space, and the title, as `P4 Post-plan review` |
+| a work package with no heading, at any level, opening with its row's ID | the row | the ID |
 
 The form also has a work package's heading, at any level, open with its row's ID and then its
-title. The post-plan burndown's drafting ticket pairs by title alone, as the Terms define it: a
-heading pairs whether or not a `## Post-plan burndown` section is present, the section the
-[plan status form](../plan-status-form.md) has hold that ticket. `check-plan` reads titles (Terms)
-for the post-plan pairing, but does not check the heading, and reports no missing heading: a heading
-that fails to open with the ID cannot be told from one that only mentions it. Tools reading the plan
-show such a package untitled.
+title, as the table's breach holds. A heading that fails to open with the ID cannot be told from
+one that only mentions it, so the breach does not try: its accepted form states both cases, each
+with its remedy. The post-plan burndown's drafting ticket pairs by title alone, as the Terms define
+it: a heading pairs whether or not a `## Post-plan burndown` section is present, the section the
+[plan status form](../plan-status-form.md) has hold that ticket.
 
 **The plan checked.** With `<plan>`, that plan. Without it, the active plan of the project the verb
 runs in. The **project root** is the nearest ancestor of the current directory, the directory

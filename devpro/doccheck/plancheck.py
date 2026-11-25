@@ -37,6 +37,7 @@ _PROBLEMS = {
     BreachKind.RELEASE_EMPTY: "`Release:` line names no version",
     BreachKind.RATING_MISSING: "status table has no Rating column",
     BreachKind.RATING_WORD: "Rating cell opens with no rating word",
+    BreachKind.HEADING_MISSING: "no heading opens with the package ID",
     BreachKind.REVIEW_UNPAIRED: "post-plan review has no post-plan burndown package",
     BreachKind.BURNDOWN_UNPAIRED: "post-plan burndown has no post-plan review package",
     BreachKind.DELTA_MISSPELLED: "delta heading misspelled",

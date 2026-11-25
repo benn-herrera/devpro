@@ -1,2 +1,4 @@
 stderr	plan.md	3	| Package | State |
-stdout	plan.md	2	1
+stderr	plan.md	5	P1
+stderr	plan.md	6	P2
+stdout	plan.md	2	3

@@ -234,23 +234,37 @@ def test_title_and_release(tmp_path, text, title, release, hardening):
             "## Status\n\n"
             + _RATED
             + "| P1 | drafted | expert |\n| P2 | drafted | expert |\n| P1 | landed | expert |\n",
-            [(BreachKind.ID_REPEATED, 7, "P1 (first row: line 5)")],
+            [
+                (BreachKind.HEADING_MISSING, 5, "P1"),
+                (BreachKind.HEADING_MISSING, 6, "P2"),
+                (BreachKind.ID_REPEATED, 7, "P1 (first row: line 5)"),
+                (BreachKind.HEADING_MISSING, 7, "P1"),
+            ],
             id="id-repeated",
         ),
         pytest.param(
             "## Status\n\n" + _RATED + "| P1 Correction texts | drafted | expert |\n",
-            [(BreachKind.ID_SPACE, 5, "P1 Correction texts")],
+            [(BreachKind.ID_SPACE, 5, "P1 Correction texts"), (BreachKind.HEADING_MISSING, 5, "P1 Correction texts")],
             id="id-holds-a-space",
         ),
         pytest.param(
             "## Status\n\n" + _RATED + "| P3 | drafted | expert |\n\n## Network usage (P3)\n",
-            [],
-            id="heading-mentioning-id-is-no-breach",
+            [(BreachKind.HEADING_MISSING, 5, "P3")],
+            id="heading-only-mentioning-the-id",
+        ),
+        pytest.param(
+            "## Status\n\n" + _RATED + "| P3 | drafted | expert |\n\n## P4 Real heading\n",
+            [(BreachKind.HEADING_MISSING, 5, "P3")],
+            id="no-heading-names-the-package",
         ),
         pytest.param(
             "## Status\n\n" + _TABLE + "| P1 | drafted |\n| P2 | drafted |\n",
-            [(BreachKind.RATING_MISSING, 3, "| Package | State |")],
-            id="no-rating-column-one-breach-at-the-header",
+            [
+                (BreachKind.RATING_MISSING, 3, "| Package | State |"),
+                (BreachKind.HEADING_MISSING, 5, "P1"),
+                (BreachKind.HEADING_MISSING, 6, "P2"),
+            ],
+            id="no-rating-column-breach-at-the-header",
         ),
         pytest.param(
             "## Status\n\n" + _TABLE,
@@ -263,9 +277,13 @@ def test_title_and_release(tmp_path, text, title, release, hardening):
             + "| A | drafted | |\n| B | drafted | Expert |\n| C | drafted | **expert** |\n| D | drafted | trivial: one line |\n",
             [
                 (BreachKind.RATING_WORD, 5, ""),
+                (BreachKind.HEADING_MISSING, 5, "A"),
                 (BreachKind.RATING_WORD, 6, "Expert"),
+                (BreachKind.HEADING_MISSING, 6, "B"),
                 (BreachKind.RATING_WORD, 7, "**expert**"),
+                (BreachKind.HEADING_MISSING, 7, "C"),
                 (BreachKind.RATING_WORD, 8, "trivial: one line"),
+                (BreachKind.HEADING_MISSING, 8, "D"),
             ],
             id="rating-cell-opening-with-neither-word",
         ),
@@ -276,9 +294,13 @@ def test_title_and_release(tmp_path, text, title, release, hardening):
             + "| D | **landed** | expert |\n",
             [
                 (BreachKind.STATE_WORD, 5, "done"),
+                (BreachKind.HEADING_MISSING, 5, "A"),
                 (BreachKind.STATE_WORD, 6, "not started"),
+                (BreachKind.HEADING_MISSING, 6, "B"),
                 (BreachKind.STATE_WORD, 7, "Landed"),
+                (BreachKind.HEADING_MISSING, 7, "C"),
                 (BreachKind.STATE_WORD, 8, "**landed**"),
+                (BreachKind.HEADING_MISSING, 8, "D"),
             ],
             id="state-cell-opening-with-another-word",
         ),
@@ -303,7 +325,10 @@ def test_title_and_release(tmp_path, text, title, release, hardening):
             "## Status\n\n"
             + _RATED
             + "| P1 | drafted | expert |\n| P2 | drafted | expert |\n\n## P1 — Post-plan review\n",
-            [(BreachKind.REVIEW_UNPAIRED, 5, "P1 Post-plan review")],
+            [
+                (BreachKind.REVIEW_UNPAIRED, 5, "P1 Post-plan review"),
+                (BreachKind.HEADING_MISSING, 6, "P2"),
+            ],
             id="review-without-burndown",
         ),
         pytest.param(
@@ -332,7 +357,11 @@ def test_title_and_release(tmp_path, text, title, release, hardening):
             "## Status\n\n"
             + _RATED
             + "| P1 | drafted | expert |\n| P2 | done | expert |\n\n## P1 — Post-plan review\n",
-            [(BreachKind.REVIEW_UNPAIRED, 5, "P1 Post-plan review"), (BreachKind.STATE_WORD, 6, "done")],
+            [
+                (BreachKind.REVIEW_UNPAIRED, 5, "P1 Post-plan review"),
+                (BreachKind.STATE_WORD, 6, "done"),
+                (BreachKind.HEADING_MISSING, 6, "P2"),
+            ],
             id="pairing-breach-in-reading-order",
         ),
     ],
@@ -344,7 +373,7 @@ def test_breaches(tmp_path, text, breaches):
 
 def test_state_word_breach_reports_an_empty_cell(tmp_path):
     plan = _read(tmp_path, "## Status\n\n" + _RATED + "| P1 | | expert |\n")
-    (breach,) = plan.breaches
+    (breach,) = (b for b in plan.breaches if b.kind == BreachKind.STATE_WORD)
     assert (breach.kind, breach.found) == (BreachKind.STATE_WORD, "")
 
 
@@ -356,7 +385,7 @@ def test_state_word_breach_reports_an_empty_cell(tmp_path):
         pytest.param("## P1 — Post-plan reviewer\n", [], id="prefix-then-letter"),
         pytest.param("## P1 — Post-plan review2\n", [], id="prefix-then-digit"),
         pytest.param("## P1 — post-plan review\n", [], id="prefix-is-case-sensitive"),
-        pytest.param("## The Post-plan review (P1)\n", [], id="untitled-is-neither-kind"),
+        pytest.param("## The Post-plan review (P1)\n", [BreachKind.HEADING_MISSING], id="untitled-is-neither-kind"),
     ],
 )
 def test_post_plan_title_rule(tmp_path, heading, kinds):
@@ -398,6 +427,7 @@ def test_breaches_are_in_reading_order_by_file_then_line(tmp_path):
     plan = read_plan(str(tmp_path / "plan/entry-point.md"))
     assert _breaches(plan, tmp_path) == [
         (BreachKind.STATE_WORD, "plan/entry-point.md", 7, "done"),
+        (BreachKind.HEADING_MISSING, "plan/entry-point.md", 7, "P1"),
         (BreachKind.RELEASE_MISPLACED, "plan/leaf.md", 1, "Release: 1.0"),
     ]
 
