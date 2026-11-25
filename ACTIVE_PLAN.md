@@ -70,7 +70,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | P4 | landed | expert | `devpro:python-coder` | the dicer's two patterns: volumes and broken-out sections; the manifest retires |
 | P4b | landed | expert | `devpro:python-coder` | the reconstruction's stragglers, the re-integration links, and the links.tsv cache retires |
 | P5 | landed | expert | `devpro:python-coder` | the three standing trees re-diced under the settled model |
-| P6 | in progress | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
+| P6 | landed | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
 
 ## P1 — the dicer writes every section's heading ladder re-based to an H1 top
