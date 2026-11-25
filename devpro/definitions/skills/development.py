@@ -317,6 +317,12 @@ A work package is dispatchable only when:
   *Purpose:* the board turns a package's row `landed` in the commit that
   carries its work, and work spanning several commits has none.
 
+Sequencing is not one of the conditions: a package whose run order places it behind another is
+`dispatchable` all the same, the sequence living where the plan states its run order. A row may
+carry the wait as a note (`dispatchable: sequenced behind P1`), never as a lesser state. *Purpose:*
+the state answers *is this ready to hand to an agent*, and a yes muddied by *is it next* leaves a
+ready package reading unready.
+
 A plan whose packages fail this is neither offered for approval nor dispatched. *Purpose:* what is
 approved can run as approved.
 
