@@ -495,6 +495,13 @@ trip's map clause) and `reassembly.md` (the undice best-effort entry).
    set is exactly the files the run declares; a second run over the same tree and output directory
    adds no file and changes none — the relocated cache this case catches and a "no sideband files"
    assertion does not.
+7. The re-integration case: a link between two documents of the same dice resolves
+   tree-internally — relative between their positions in the output tree — never against the
+   directory the monolith was read from or the run directory. `Linker.written`'s base for a written
+   leaf is the leaf's own directory in the output tree. Corpus case: dice a two-volume tree, move
+   the whole tree to a different parent, and assert `check-links` stays green and the tree undices
+   identically. Defect: links written against the run directory resolve only where the dice ran
+   (evidence: SPEC's re-dice blocked, `.devpro-temp/p5-spec-finding.md`).
 
 **Done-line.** `just test-changed`, then `just lint`, then the inventory's `git grep`, which prints
 nothing: `git grep -in 'links\.tsv\|link map\|--map' -- devpro tests justfile PROJECT_DOCS` (and
