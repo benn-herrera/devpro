@@ -5,10 +5,10 @@
 <!--LAYER-->
 <style>
 :root { --panel:#fff; --track:#f1f2f0; --fresh:#8d969e;
-  --c0:#c55e5d; --c1:#2f7f86; --c2:#b07d1f; --c3:#6c58b5; --c4:#3f8a4a; --c5:#b0517f; --c6:#3d6fb3; --c7:#8a6a4f;
+  --c0:#c55e5d; --c1:#2f7f86; --c2:#5d6d7e; --c3:#6c58b5; --c4:#3f8a4a; --c5:#b0517f; --c6:#3d6fb3; --c7:#8a6a4f;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --sans: system-ui, -apple-system, "Segoe UI", sans-serif; }
 @media (prefers-color-scheme: dark) { :root { --panel:#1b2025; --track:#20262b; --fresh:#79828a;
-  --c0:#e07d7b; --c1:#4fb0b8; --c2:#d6a542; --c3:#9b89e0; --c4:#6cc07a; --c5:#dd7fae; --c6:#6f9ee0; --c7:#c29a76; } }
+  --c0:#e07d7b; --c1:#4fb0b8; --c2:#d6a542; --c3:#9b89e0; --c4:#9aa8ba; --c5:#dd7fae; --c6:#6f9ee0; --c7:#c29a76; } }
 body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 var(--sans); padding:24px max(16px, 3vw); }
 h1 { font-size:18px; margin:0 0 2px; } h2 { font-size:14px; margin:22px 0 8px; }
 .sub { color:var(--muted); font:12px var(--mono); margin-bottom:10px; }
@@ -16,11 +16,12 @@ h1 { font-size:18px; margin:0 0 2px; } h2 { font-size:14px; margin:22px 0 8px; }
 .intro summary { cursor:pointer; color:var(--muted); font-size:12px; }
 .intro p { margin:6px 0 0; }
 .chip { width:12px; height:12px; border-radius:3px; display:inline-block; flex:none; align-self:center; }
+.chip.on-accent { background:var(--accent) !important; }
 .symbols { display:flex; flex-wrap:wrap; gap:6px 20px; font-size:12px; color:var(--muted); margin:0 0 14px; }
 .symbols span { display:inline-flex; align-items:center; gap:6px; }
 .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; overflow-x:auto; }
 svg { display:block; } svg text { font:12px var(--sans); fill:var(--fg); } svg .muted { fill:var(--muted); font-size:11px; }
-svg .head { fill:#fff; font-weight:600; } svg .head.sub { font-weight:400; font-size:11px; fill-opacity:.9; } svg .head.chip { font-size:11px; } svg .mono { font-family:var(--mono); } svg .failtext { fill:var(--c0); font-weight:600; }
+svg .head { fill:#fff; font-weight:600; } svg .head.on-accent { fill:var(--on-accent); } svg .head.sub { font-weight:400; font-size:11px; fill-opacity:.9; } svg .head.chip { font-size:11px; } svg .mono { font-family:var(--mono); } svg .failtext { fill:var(--c0); font-weight:600; }
 svg .kind { fill:var(--muted); font-weight:400; } svg .spent text { font-weight:600; } svg .spent text.kind { font-weight:400; }
 svg .hit { cursor:pointer; } svg .hit:hover rect, svg .hit:hover path { stroke:var(--fg); stroke-width:1.5; }
 svg .flabel { font:11px var(--sans); fill:#fff; pointer-events:none; } svg .failed rect { fill-opacity:.4; } svg .failed .flabel { fill:var(--fg); }
@@ -97,7 +98,12 @@ const short = (id) => (id === 'main' ? 'main' : id.slice(0, 6));
 const byId = new Map(D.contexts.map((c) => [c.id, c]));
 const callOf = new Map(D.calls.map((c, i) => [c.child, i]).filter(([child]) => child));
 const order = new Map(D.contexts.map((c, i) => [c.id, i]));
-const color = (id) => `var(--c${(byId.get(id) ? byId.get(id).hue : 0) % PALETTE})`;
+// Hue 0 is the root context — a page nothing dispatched — and its copies: the accent, its labels in
+// the token that reads on it. Every other hue is the palette's own color, and no palette hue reads as
+// the accent in either mode.
+const hueColor = (h) => (h === 0 ? 'var(--accent)' : `var(--c${h % PALETTE})`);
+const color = (id) => hueColor(byId.get(id) ? byId.get(id).hue : 0);
+const accentChip = (id) => ((byId.get(id) ? byId.get(id).hue : 0) === 0 ? ' on-accent' : '');
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const kindText = (c) => c.kind === 'root' ? 'the session itself'
   : c.kind === 'copy' ? `starts with a copy of ${byId.get(c.parent) ? byId.get(c.parent).label : 'its parent'}'s history`
@@ -223,8 +229,8 @@ function drawSequence() {
       ? (first.id === 'main' ? 'main context' : `${kindWord(first.tool)} · ${short(first.id)}${first.kind === 'copy' ? ` · copy of ${short(first.parent)}` : first.parent ? '' : ' · parent not recorded'}`)
       : `${list.length} contexts, one after another`;
     s += `<g><rect ${box} fill="${color(first.id)}"/>`
-      + `<text class="head" x="${x}" y="24" text-anchor="middle">${esc(clip(title, fits(colW - 30)))}</text>`
-      + `<text class="head sub" x="${x}" y="40" text-anchor="middle">${esc(sub)}</text>`
+      + `<text class="head${accentChip(first.id)}" x="${x}" y="24" text-anchor="middle">${esc(clip(title, fits(colW - 30)))}</text>`
+      + `<text class="head sub${accentChip(first.id)}" x="${x}" y="40" text-anchor="middle">${esc(sub)}</text>`
       + `<title>${esc(list.map(tipOf).join('\n'))}</title></g>`;
   });
   // Contexts of different colors took turns in this column, so no one color
@@ -247,7 +253,7 @@ function drawSequence() {
     const chips = list.map((c, i) => {
       const w = widths(n)[i], text = names[i] && n > 1 ? clip(names[i], n) : '';
       const chip = `<g><rect x="${cx}" y="10" width="${w}" height="17" rx="3" fill="${color(c.id)}"/>`
-        + (text ? `<text class="head chip" x="${cx + w / 2}" y="22.5" text-anchor="middle">${esc(text)}</text>` : '')
+        + (text ? `<text class="head chip${accentChip(c.id)}" x="${cx + w / 2}" y="22.5" text-anchor="middle">${esc(text)}</text>` : '')
         + `<title>${esc(tipOf(c))}</title></g>`;
       cx += w + GAP;
       return chip;
@@ -324,15 +330,21 @@ function drawSequence() {
     const body = isCall
       ? `${esc(clip(name, room - kind.length))}<tspan class="kind">${esc(kind)}${esc(clip(args, Math.max(0, room - name.length - kind.length)))}</tspan>`
       : esc(clip(`${c.result ? c.result : 'done'} · ${dur(c.dur)}`, room));
-    s += `<g class="hit" data-i="${e.i}"><line x1="${x0}" x2="${x1}" y1="${y}" y2="${y}" stroke="${stroke}" stroke-width="${isCall ? 2 : 1.5}"${isCall ? '' : ' stroke-dasharray="5 4"'} marker-end="url(#${isCall ? `head-${c.background ? 'open-' : ''}${child.hue % PALETTE}` : 'head-return'})"/>`
+    const toHue = child.hue;
+    const head = toHue === 0 ? 'main' : String(toHue % PALETTE);
+    s += `<g class="hit" data-i="${e.i}"><line x1="${x0}" x2="${x1}" y1="${y}" y2="${y}" stroke="${stroke}" stroke-width="${isCall ? 2 : 1.5}"${isCall ? '' : ' stroke-dasharray="5 4"'} marker-end="url(#${isCall ? `head-${c.background ? 'open-' : ''}${head}` : 'head-return'})"/>`
       + `<text class="${isCall ? 'msg' : 'msg muted'}${c.ok || isCall ? '' : ' failtext'}" x="${lx0}" y="${y - 6}">${body}</text>`
       + (isCall && (child.kind === 'copy' || c.background) ? `<text class="muted" x="${lx0}" y="${y + 14}">${esc(clip([child.kind === 'copy' && 'starts with a copy of this history', c.background && (c.running ? 'still running in the background' : 'runs in the background')].filter(Boolean).join(', '), room))}</text>` : '')
       + `${tip}</g>`;
   });
   // UML: a filled head is a synchronous call, an open one an asynchronous call
-  // the caller doesn't wait for.
-  const heads = Array.from({ length: PALETTE }, (_, h) => `<marker id="head-${h}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--c${h})"/></marker>`
-    + `<marker id="head-open-${h}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10" fill="none" stroke="var(--c${h})" stroke-width="1.8"/></marker>`).join('')
+  // the caller doesn't wait for. `main` is hue 0's head — the accent — and every other head takes its
+  // hue's palette color through the same `hueColor` the lifelines do, so a head never disagrees with
+  // the bar it points at.
+  const heads = Array.from({ length: PALETTE }, (_, h) => `<marker id="head-${h}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="${hueColor(h)}"/></marker>`
+    + `<marker id="head-open-${h}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10" fill="none" stroke="${hueColor(h)}" stroke-width="1.8"/></marker>`).join('')
+    + `<marker id="head-main" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="${hueColor(0)}"/></marker>`
+    + `<marker id="head-open-main" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10" fill="none" stroke="${hueColor(0)}" stroke-width="1.8"/></marker>`
     + `<marker id="head-return" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10" fill="none" stroke="${css('--muted')}" stroke-width="1.5"/></marker>`
     + `<marker id="head-self" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="${css('--muted')}"/></marker>`;
   svg.setAttribute('width', W); svg.setAttribute('height', height); svg.setAttribute('viewBox', `0 0 ${W} ${height}`);
@@ -403,7 +415,7 @@ function drawTree() {
       h += `<div class="row" id="r${it.i}" data-i="${it.i}"><span class="muted">${clock(c.start)}</span><span class="num">${esc(took(c))}</span>`
         + `<span class="bar"><i style="width:${barWidth(c.running ? 0 : c.dur, longest)}px;background:${hue}"></i></span>`
         + (spent ? [spent.new, spent.cached, spent.out].map((n) => `<span class="num" title="${n}">${count(n)}</span>`).join('') : '<span></span><span></span><span></span>')
-        + `<span class="call" style="padding-left:${pad}px"><i class="chip" style="background:${hue}"></i>`
+        + `<span class="call" style="padding-left:${pad}px"><i class="chip${c.child && byId.has(c.child) ? accentChip(c.child) : accentChip(c.ctx)}" style="background:${hue}"></i>`
         + `<span>${c.childPage ? `<a href="${esc(c.childPage)}">${name}</a>` : name}${c.name ? ` (${esc(kindWord(c.tool))})` : ''}</span>`
         + `<span class="words">${esc(words(c))}</span>${c.ok ? '' : '<span class="fail">failed</span>'}<span class="gist">${esc(gist(c))}</span></span></div>`;
       h += `<div class="detail" id="d${it.i}" hidden style="margin-left:${pad + 20}px;border-color:${color(c.ctx)}">`

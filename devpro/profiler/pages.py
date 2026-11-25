@@ -70,22 +70,22 @@ LEGEND = (
     "history again: new input, input read from the prompt cache (far cheaper), and output. Hover for "
     "the exact numbers. Click a message to see the call's arguments and result.</p>\n"
     '<div class="symbols" style="margin-top:8px">\n'
-    '  <span><svg width="34" height="12"><line x1="0" x2="26" y1="6" y2="6" stroke="var(--c0)" '
-    'stroke-width="2"/><path d="M24 1 L34 6 L24 11 z" fill="var(--c0)"/></svg>call that starts a '
+    '  <span><svg width="34" height="12"><line x1="0" x2="26" y1="6" y2="6" stroke="var(--accent)" '
+    'stroke-width="2"/><path d="M24 1 L34 6 L24 11 z" fill="var(--accent)"/></svg>call that starts a '
     "context</span>\n"
-    '  <span><svg width="34" height="12"><line x1="0" x2="32" y1="6" y2="6" stroke="var(--c0)" '
-    'stroke-width="2"/><path d="M24 1 L34 6 L24 11" fill="none" stroke="var(--c0)" stroke-width="2"/>'
+    '  <span><svg width="34" height="12"><line x1="0" x2="32" y1="6" y2="6" stroke="var(--accent)" '
+    'stroke-width="2"/><path d="M24 1 L34 6 L24 11" fill="none" stroke="var(--accent)" stroke-width="2"/>'
     "</svg>one that runs in the background</span>\n"
     '  <span><svg width="34" height="12"><line x1="0" x2="30" y1="6" y2="6" stroke="var(--muted)" '
     'stroke-width="1.5" stroke-dasharray="5 4"/><path d="M26 1 L34 6 L26 11" fill="none" '
     'stroke="var(--muted)" stroke-width="1.5"/></svg>return with the result</span>\n'
-    '  <span><svg width="14" height="14"><path d="M7 1 l6 6 l-6 6 l-6 -6 z" fill="var(--c0)"/>'
+    '  <span><svg width="14" height="14"><path d="M7 1 l6 6 l-6 6 l-6 -6 z" fill="var(--accent)"/>'
     "</svg>skill loaded inline: its text joins this context; several in a row share one diamond, click "
     "it to list them</span>\n"
     '  <span><svg width="26" height="14"><rect x="1" y="1" width="24" height="12" fill="none" '
     'stroke="var(--fg)" stroke-width="1.5"/></svg>compacted: history replaced by a summary</span>\n'
     '  <span><svg width="10" height="16"><rect x="0" y="0" width="10" height="16" rx="2" '
-    'fill="var(--c0)" fill-opacity=".85"/></svg>context at work</span>\n'
+    'fill="var(--accent)" fill-opacity=".85"/></svg>context at work</span>\n'
     "</div></details>"
 )
 # The frame band's way-back control label, and the dispatcher line's lead — the band's own text.
@@ -994,7 +994,7 @@ tr td:first-child.child + td { padding-left: 2.4rem; }
    folding the line. */
 .moments { white-space: nowrap; }
 .harness { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; }
-.harness.opencode { background: #4a9eea; }
+.harness.opencode { background: #7b7bf0; }
 .harness.claude { background: #d97757; }
 .controls { display: flex; gap: 1rem; margin: 0 0 0.6rem; font-size: 0.9rem; color: var(--muted); }
 .sort { font: inherit; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }

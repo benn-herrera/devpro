@@ -176,7 +176,10 @@ child's page and heads a child page with its dispatcher, and the stores stay fla
 knows its parent at write time, the hierarchy being metadata the parent side builds, and claude
 holding no child session records at all. The index's rows alternate their tone — a zebra the eye reads across the
 columns — and each row's harness carries its own mark, a dot in the harness's brand colors:
-opencode's blue, claude's coral.
+opencode's periwinkle, claude's coral. On the page of a session nothing dispatched, the session's
+own context wears the motif's accent, its labels dark enough to read on it; on a dispatched
+session's page it wears the color the context its dispatching call opened wears on the
+dispatcher's page; and no other context wears a hue that reads as the accent in the mode shown.
 
 A claude project install also carries the plan-state reminder in that registration: one ungated
 `PostToolUse` entry matched on `Agent`, running `<install-dir>/hooks/state-table-reminder.sh`, which

@@ -3,7 +3,8 @@
    view, the nav grammar and the scanline treatment — lives here for both views.
 
    The light motif carries the warm phosphor, the dark the green: --brand is the phosphor, --accent
-   the brand at 80% brightness (the active view's smaller text), and --view-inactive the gray a
+   the brand at 80% brightness (the active view's smaller text), --on-accent the text that reads on the
+   accent, and --view-inactive the gray a
    view wears when it is not the one shown — lifted, so it reads available rather than disabled.
    The site's own light-mode green mapping and its dim value are superseded: the light
    brand is the bright amber, dimmed only for the active view's smaller text. No second brand color
@@ -19,6 +20,7 @@
   --line: #c9c9cf;
   --brand: #e8a020;
   --accent: #d09020;
+  --on-accent: #1d1d1f;
   --view-inactive: #63636b;
   --alert: #b3261e;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -36,6 +38,7 @@
     --line: #45454d;
     --brand: #3cf077;
     --accent: #31c260;
+    --on-accent: #18181b;
     --view-inactive: #a6a6ad;
     --alert: #ff8a80;
   }

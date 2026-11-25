@@ -922,7 +922,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     assert re.search(r'<p id="notice" class="notice" role="alert" hidden></p>', index)
     assert re.search(r"tr:nth-child\(odd\) td \{ background: var\(--zebra\); \}", index)
     assert "prefers-color-scheme: dark" not in index.split("<style>", 1)[1].split("</style>", 1)[0]
-    assert re.search(r"\.harness\.opencode \{ background: #4a9eea; \}", index)
+    assert re.search(r"\.harness\.opencode \{ background: #7b7bf0; \}", index)
     assert re.search(r"\.harness\.claude \{ background: #d97757; \}", index)
     assert _page_data(page)["session"] == "s-claude"
 
