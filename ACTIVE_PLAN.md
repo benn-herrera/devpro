@@ -48,6 +48,7 @@ Implements [ACTIVE_DESIGN.md](ACTIVE_DESIGN.md): its [SPEC delta](ACTIVE_DESIGN.
 | B4 | landed | expert | `devpro:typescript-coder` | the screenshot tool honors `--base`, its contract and its bounds |
 | B5 | landed | expert | `devpro:python-coder` | test pins loosened, the zone reset owned, the capture parses once |
 | B6 | landed | expert | `devpro:prompt-engineer` | the changed leaves read true and resolve |
+| B7 | dispatchable | expert | `devpro:typescript-coder` | the screenshot tool settles on the page's readiness, not on network silence |
 
 ## P1 — `just screenshot`, the development loop's page screenshot
 
@@ -834,3 +835,62 @@ Fixes R32–R38. Agent `devpro:prompt-engineer` (writer mode). B1's, B2's and B3
   markup no reader is shown." (R38).
 
 **Done-line.** `just check-links`.
+
+### B7 — the screenshot tool settles on the page's readiness, not on network silence
+
+Fixes the finding no R-ID carries — it postdates `ACTIVE_PLAN_REVIEW.md`, raised in B4's closure on
+2026-11-25 with its evidence under `.devpro-temp/b4/` — against P1's settle facts, "Settle, in
+order: `goto` with `waitUntil: 'networkidle0'`, then `document.fonts.ready`, then
+`waitForSelector(<selector>)` where one is given" and "if it is not, report the observed behavior as
+a finding rather than changing the settle order": the owner's decision of the same day is to change
+the order, and this item is that finding and that change together. Agent `devpro:typescript-coder`.
+
+**Scope.** `devtools/screenshot.ts` (the header comment's settle sentence, the usage's `--wait-for`
+line, and `shoot`); `devtools/tests/test_screenshot.py`; `justfile` (the note above the `screenshot`
+recipe); `PROJECT_DOCS/ARCHITECTURE/recipes.md` (the screenshot paragraph's settle sentence).
+
+**Facts.**
+
+- Measured 2026-11-25 against the live dashboard, probe under `.devpro-temp/b4/`: `/board/` and
+  `/profiler/` show zero requests in flight for seconds after load and `networkidle0` is still never
+  reached; in one window `/profiler/` shot while `/` and `/board/` did not. Network idle is computed
+  from browser lifecycle signals, not observed traffic, and the driver is Firefox over WebDriver
+  BiDi, where those signals are the least reliable — which closes "the page is still fetching" as
+  the hypothesis.
+- The deco polls `/api/state` every 2000 ms (`devpro/profiler/deco.js:20`, `EVERY_MS`), so a 500 ms
+  quiet window fits between polls; the polling is not itself the blocker.
+- `page.waitForNetworkIdle` takes an absolute bound; no part of the tool tracks an elapsed budget
+  across steps.
+
+**Guidance.**
+
+1. `shoot`'s order becomes: `goto` with `waitUntil: 'load'`; `document.fonts.ready`;
+   `waitForSelector(<selector>)` where one is given; then `page.waitForNetworkIdle({ idleTime: 500 })`
+   bounded by `--timeout`, as every other step is — not by a remainder computed across them, which no
+   part of the tool tracks. The idle wait is advisory: its expiry, and an error from it, are swallowed
+   and the shot proceeds; it never produces exit 1. It is skipped where a `--wait-for` selector was
+   given and appeared: the selector is the stronger readiness signal, and a page that polls can never
+   quiet.
+2. The exit-code contract reads: 0 prints the PNG's absolute path and nothing else; 2 is a usage
+   error; 1 is a load or a settle failure — the load, the fonts, the `--wait-for` selector where one
+   is given — or no `firefox` on PATH, and the run names the cause and writes no PNG. `--help` prints
+   the usage and exits 0. The browser closes on every path.
+3. The tool's header comment's settle sentence reads: "Settle is in order: the load lands, the fonts
+   are ready, the `--wait-for` selector appears where one is given, and then — where no selector was
+   given — a bounded wait for network idle that is advisory: its expiry never fails the run, since a
+   page that polls or holds a stream is still ready to shoot." The usage's `--wait-for` line drops
+   "after the load settles" for "after the load lands". The note above the `screenshot` recipe reads:
+   "Screenshots a page once it has settled, for viewing: the load, the fonts, the `--wait-for`
+   selector, then — where no selector was given — a bounded, advisory wait for network idle; a page
+   that keeps requesting is shot when the bound expires, not failed." `recipes.md`'s screenshot
+   paragraph's settle sentence states the same order and the advisory wait.
+4. Tests. The two existing cases hold unchanged. Add one case: a page whose script re-fetches every
+   300 ms and carries a `--wait-for` marker, run with `--timeout 3000 --out <tmp>/poll.png` — exit 0,
+   the PNG's path printed alone, and the file opens with the PNG signature. Also pin the advisory
+   wait directly: the same page with no `--wait-for` and `--timeout 3000` exits 0 and writes the PNG.
+   Defect: a settle whose idle wait is mandatory — the polling page never quiets, the run fails, and
+   the tool cannot shoot the pages it exists for. Before the change, with
+   `waitUntil: 'networkidle0'`, the run is either a `--timeout` expiry (exit 1, the common case) or
+   a late shot, driver-timing dependent.
+
+**Done-line.** `just test-changed`, then `just lint`.

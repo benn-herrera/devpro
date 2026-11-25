@@ -45,5 +45,7 @@ throws on, the run throws on too. A case may name a
 working directory: `guardrail.pl` receives it as the input `cwd` beside `CLAUDE_PROJECT_DIR` set to
 the case's root, as Claude Code sends both, and `guardrail.ts` as the shell call's `workdir`. A
 missing `bun` fails the test rather than skipping it, because a skip would hide drift between the
-two. There is no verdict code: `cli.main` maps every `InputError` and `OSError` to exit 2.
+two; the `dupe_sweep` surface's screenshot test fails on a missing `firefox` the same way, `firefox`
+being its browser. There is no verdict code: `cli.main` maps every `InputError` and `OSError` to
+exit 2.
 
