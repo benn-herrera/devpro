@@ -64,4 +64,3 @@ holds its banner lines alone. Under opencode a file has no frontmatter, and the 
 holds a record for every such file whose definition is an agent: its id, `<plugin>-<name>`, its
 `description`, `mode: subagent` and, unless its model renders empty, the `model`. A document's
 record is `hidden`.
-

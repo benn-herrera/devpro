@@ -50,4 +50,3 @@ exits 0; where nothing would change it says the harness directory is up to date.
 install would remove is listed with a trailing `/`. Every path it prints and every refusal it reports
 names the path. What the install would leave alone or skip, with the reason, is reported on stderr
 on an up-to-date run and a dry run as on a changing one. It reports the refusals it can foresee.
-

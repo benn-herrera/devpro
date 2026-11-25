@@ -503,17 +503,37 @@ checkpoint gate runs once before the commit, as P1 states.
 
 ## P5 — the three standing trees re-diced under the settled model
 
-**State.** ARCHITECTURE and CONVENTIONS are re-diced and placed: each undiced (`reassemble ok`,
-CONVENTIONS `dead: 0`, ARCHITECTURE `dead: 3` run-directory links restored by hand to their `HEAD`
-form) and re-diced from the undice, the fresh tree replacing the old one; each re-diced tree undices
-again clean. **SPEC is not re-diced.** Its `dicing/` volume holds same-level siblings in `dice.md`
-and `reassembly.md` that the re-based write form collapses, so no split level dices SPEC's monolith
-back to its tree; the tree is the artifact that gets repaired, below, then re-diced under the
-repaired shape. The first run of `just undice PROJECT_DOCS/SPEC` reports the shape:
-`.devpro-temp/p5-verify.log` — `reassemble: cannot read PROJECT_DOCS/SPEC/dicing-and-checks.md` and
-six `would be re-diced as` lines. Both earlier P4 defects (`dicedoc._placed_level` and
-`Linker.written`'s `root=run_dir`) are repaired (P4b, landed) and are not SPEC's blocker. The
-package stays `in progress` until SPEC re-dices as Guidance step 1 directs.
+**State.** ARCHITECTURE and CONVENTIONS are re-diced and placed (from P5's first run, committed at
+`6d118e2`): each undiced and re-diced from the undice, the fresh tree replacing the old one, and
+each undices again clean — ARCHITECTURE `reassemble ok: 1694 lines`, CONVENTIONS `reassemble ok: 558
+lines`, both `dead: 0`.
+
+**SPEC is restructured and passes every tree check, but is not re-diced at its destination.** The
+restructure is done as the section below directs: `dice.md` split into `dice.md` + `undice.md`;
+`reassembly.md` split into eight leaves (`reassembly.md`, `link-check.md`, `check-links.md`,
+`check-tree.md`, `check-plan.md`, `check-design.md`, `check-roadmap.md`, `limits.md`); `kanban/`,
+`link-rewriting/` and `the-diced-tree/` sub-diced into `index.md` plus their children; the volume
+directory is `dicing-and-checks/`, the slug of its heading `Dicing and Checks` (the tool derives a
+section's directory from its heading, so the directory had to take that name — no title is coined);
+every leaf's file name equals its heading's slug; the entry point's member list and the volume
+index rebuilt. Wording is unchanged: each leaf is its section's text, cut at heading lines, with
+only its top heading promoted to level 1. Measured: `check-links PROJECT_DOCS *.md` -> 421 links,
+`broken: 0`; `check-tree PROJECT_DOCS` -> 140 documents, `problems: 0`; `just undice
+PROJECT_DOCS/SPEC` -> `reassemble ok: 2218 lines`, `dead: 0`.
+
+The re-dice itself is blocked by a third tool defect, not a tree defect: `dice` writes an
+intra-tree link relative to the run directory rather than to the leaf's own directory in the output
+tree, so the tree it writes resolves only where it was diced. Diced into a sibling scratch directory
+the tree is a fixed point (`diff` empty across `.devpro-temp/p5-final-back` ->
+`.devpro-temp/p5-fb-u` -> `.devpro-temp/p5-fb-back2`); moved to `PROJECT_DOCS/SPEC/` its links no
+longer resolve and undice cannot reproduce it. The simple case is sound — an 8-file fixture with
+cross links between sibling section directories round-trips byte-identically
+(`.devpro-temp/p5-mini3/`) — so the failing class is an intra-tree link written while the document
+is read from a directory other than the tree's destination, which is exactly the situation Guidance
+1 creates. Reported in `.devpro-temp/p5-spec-finding.md`; `devpro/dicing/linkrewrite.py`
+(`Linker.written` and the `document_dir` `dicedoc.dice` passes) is P4b/P1's file, outside P5's
+scope, and is not patched here. The package stays `in progress` until that is repaired and SPEC
+re-dices at its destination.
 
 **Scope.** `PROJECT_DOCS/SPEC/`, `PROJECT_DOCS/ARCHITECTURE/`, `PROJECT_DOCS/CONVENTIONS/`
 (regenerated whole; SPEC additionally restructured, below); the monoliths are work products under

@@ -87,4 +87,3 @@ dropped whole, and the rest of the definition is unchanged.
 
 An install renders the definitions under the tuning arguments it was given and the devpro settings
 file, where it supplies entries; Generated files, below, holds whatever they are.
-

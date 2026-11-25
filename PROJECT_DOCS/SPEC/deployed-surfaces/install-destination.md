@@ -118,4 +118,3 @@ An install directory may be any directory prepared to receive the install produc
 names a directory inside the target: an absolute path, or one that leaves the target, is refused
 with nothing written. That refusal names `--subdir` as typed. Every other refusal names the path
 made absolute, with `..` collapsed.
-

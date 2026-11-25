@@ -10,4 +10,3 @@ truncated. The install does not check it.
 The extracted body does not carry the definition's model line, which
 stays in the frontmatter, or under opencode in the registry, where the rendered definition carries
 one: a caller that uses the body without a harness that reads either supplies the model itself.
-

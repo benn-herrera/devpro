@@ -22,4 +22,3 @@ A definition that fails to render refuses the install with nothing written.
 
 A file without a generated banner is not a rendered definition this repository produced, and is
 outside this guarantee — Write Safety, below, is what governs meeting one at a destination.
-

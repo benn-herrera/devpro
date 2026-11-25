@@ -1,16 +1,23 @@
 ## Dicing and Checks
 
-These hold for every verb of the dicing surface ([its outcome and verbs](../../entry-point.md));
+These hold for every verb of the dicing surface ([its outcome and verbs](../entry-point.md));
 each leaf states its verbs' contract beside them.
 
 Contents:
 
-- [The diced tree](the-diced-tree.md)
-- [Link rewriting](link-rewriting.md)
-- [Dicing verbs](dice.md)
-- [The checks](reassembly.md)
-- [The board](kanban.md)
-
+- [kanban](kanban/index.md)
+- [Link rewriting](link-rewriting/index.md)
+- [The diced tree](the-diced-tree/index.md)
+- [check-design](check-design.md)
+- [check-links](check-links.md)
+- [check-plan](check-plan.md)
+- [check-roadmap](check-roadmap.md)
+- [check-tree](check-tree.md)
+- [dice](dice.md)
+- [Limits](limits.md)
+- [Link check](link-check.md)
+- [Reassembly](reassembly.md)
+- [undice](undice.md)
 A leaf of this document is a file named for its heading; a section holding sections below it is a
 directory named for its heading, whose `index.md` holds the section and lists its children.
 
@@ -29,5 +36,5 @@ including `\r` and bytes that are not valid UTF-8, are preserved from input to o
 written is terminated by `\n`, so a file whose last line was unterminated gains a final newline.
 
 **Split level.** `dice` and `undice` take the option `--split-level <level>`, which sets the
-deepest split level ([which headings split](the-diced-tree.md#which-headings-split)): `2`, `3` or `4`,
+deepest split level ([which headings split](the-diced-tree/which-headings-split.md#which-headings-split)): `2`, `3` or `4`,
 default `4`; any other value is a usage error.
