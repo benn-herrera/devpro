@@ -69,7 +69,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | P3 | landed | expert | `devpro:prompt-engineer` | CONVENTIONS and ARCHITECTURE round-trip, the head convention corrected; SPEC's residue re-homed to P4 (the tool defect) and P5 (re-dice under the settled model) |
 | P4 | landed | expert | `devpro:python-coder` | the dicer's two patterns: volumes and broken-out sections; the manifest retires |
 | P4b | in progress | expert | `devpro:python-coder` | the reconstruction's stragglers: `_placed_level` and the link re-base |
-| P4c | drafted | expert | `devpro:python-coder` | the links.tsv cache retires: the map is an input, never an artifact |
+| P4c | drafted | expert | `devpro:python-coder` | the links.tsv cache retires: resolution at run time, nothing persisted, the tree holds documents |
 | P5 | in progress | expert | `devpro:python-coder` | the three standing trees re-diced under the settled model |
 | P6 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
@@ -271,16 +271,15 @@ module docstring, whose stale volume-head sentence the repairs contradict.
 ## P4 — the dicer's two patterns: volumes and broken-out sections; the manifest retires
 
 **Scope.** `devpro/dicing/heads.py` (the head convention re-ruled); `devpro/dicing/dicedoc.py`
-(`_restored`, `_undiced_lines`, `_placed_level`, `_all_reproduced`, `verify`, and the map's write
-and read — reconstruction and checking per the two patterns); `devpro/dicing/linkrewrite.py`
-(`Linker.written`, and the map handling in the rewriter); `devpro/dicing/split.py` (the writer:
+(`_restored`, `_undiced_lines`, `_placed_level`, `_all_reproduced`, `verify` — reconstruction and
+checking per the two patterns); `devpro/dicing/linkrewrite.py` (`Linker.written`; the map's removal
+is P4c's, declared in P4's commit as deferred — P4's row); `devpro/dicing/split.py` (the writer:
 volume heads for input documents); `devpro/dicing/dice.py` (the writer's multi-input entry, in this
 package: the `manifest.py` it absorbs); `devpro/dicing/treecheck.py` (the head wording of the two
 patterns); `devpro/dicing/manifest.py` (deleted) and `devpro/dicing/cli.py` (the `dice-docs` verb
-removed, the `--map` flag removed); `devpro/cli.py` (`DICING_VERBS`); the `justfile` recipes
-`dice-docs` and `dice`'s map argument; `tests/dicing/` (corpus and tests, the `links.tsv`
-expectations included); the SPEC dicing leaves that state the forms —
-`PROJECT_DOCS/SPEC/dicing/{index,links,tree,checks,verbs}.md` — and
+removed); `devpro/cli.py` (`DICING_VERBS`); the `justfile` recipe `dice-docs`; `tests/dicing/`
+(corpus and tests; the `links.tsv` expectations are P4c's); the SPEC dicing leaves that state the
+forms — `PROJECT_DOCS/SPEC/dicing/{index,link-rewriting,the-diced-tree,reassembly,dice}.md` — and
 `PROJECT_DOCS/SPEC/package-and-command.md` (the surface verb list); and the management rules — the
 two splitting paths, the growth-shape decision, the omnibus-head bounds and misuses — land in the
 `devpro-docdicer` skill's definition, `devpro/definitions/skills/docdicer.py`, which is the text a
@@ -329,10 +328,9 @@ reader consults while managing a tree; the SPEC leaves carry the mechanics and s
   heading structure, the tree's two-pattern conventions, and the anchors' deterministic
   disambiguation of repeated heading text — and a cached resolution disagrees with the docs silently
   when they move. Links resolve at run time from the documents and the tree; a target that resolves
-  nowhere is reported (`dangling:`), never cached. The tree holds documents and nothing else; an
-  operation's inputs are declared on its command line, and it gains no ambient dependency on state a
-  previous run left. The rest of `manifest.py` — its manifest reader, the group-index and entry
-  writers, and the post-write check — has no caller and is deleted, not ported.
+  nowhere is reported (`dangling:`), never cached. The rest of `manifest.py` — its manifest reader,
+  the group-index and entry writers, and the post-write check — has no caller and is deleted, not
+  ported; the map outlives it in P4's tree and is retired by P4c, whose Facts carry the analysis.
 - Today's writer writes each section at the path `plan_sections` computes — `<name>/index.md` for a
   section with children, `<name>.md` otherwise (`outline.py:101`, `split.py:76`) — so the section
   half of the model is already the standing behavior; the writer has no head-name abstraction and
@@ -445,22 +443,38 @@ corpus and tests).
    exits its directory, diced one level deep, links unchanged in the written tree.
 3. Tests, per `clauses.TEST_PRECONDITION` (defect: the reconstruction restores a section index's
    child at its own depth, and the link re-base roots at the run directory): both reproduction
-   shapes as corpus cases, demonstrated red before the fix.
+   shapes as corpus cases, demonstrated red before the fix. The round-trip test's
+   `skip="links.tsv"` and the corpus's `links.tsv` expectations are P4c's: this package adds its
+   cases beside them and removes neither.
 
 **Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
 commit, as P1 states.
 
 ## P4c — the links.tsv cache retires
 
-Fixes the sideband defect the map's implementation carried: the map was a compute cache — every row
-derivable from the documents and the tree — and its persistence gave the dicing operations an
-ambient dependency on state a previous run left. Agent `devpro:python-coder`.
+Removes the map the dicing verbs persisted beside their trees: a file whose every row the documents
+and the tree already answer, and whose persistence gives a later run's result a dependency on an
+earlier run's state. Agent `devpro:python-coder`.
 
-**Scope.** `devpro/dicing/dicedoc.py` (the map's write and read); `devpro/dicing/linkrewrite.py`
-(the map handling in the rewriter); `devpro/dicing/cli.py` (the `--map` flag); the `justfile`
-`dice` recipe's map argument; `tests/dicing/` (the `links.tsv` expectations and the round-trip
-test's `skip`); the SPEC dicing leaf naming the map (`PROJECT_DOCS/SPEC/dicing/links.md`); the
-`devpro-docdicer` skill definition where it names the map.
+**Dependency.** After P4b, whose `_placed_level` and `Linker.written` root fix touch both files this
+package edits; P4c's own tests are green before and after P4b, so the order is P4b's requirement, not
+P4c's. What P4c must not undo: the link re-base's root is the document's own directory
+(`Linker.written`'s `base`), and a restored part's level comes from its place in the tree
+(`_placed_level`); removing the map's branch from `_rebase` leaves both as P4b wrote them. `dice`'s
+call in `cli.py` is the only caller of the changed signature; update it in step 1 with the flag. The
+round-trip test's `skip="links.tsv"` (Guidance step 3) is this package's, not P4b's: P4b's corpus
+work adds cases beside it and removes neither.
+
+**Scope.** `devpro/dicing/dicedoc.py` (the map's write and read: `_map_rows`, `_run_path`, `_tree`'s
+map path, `dice`'s map argument and its `not a file` fault, `_document`'s load, and `Volume`'s
+docstring clause); `devpro/dicing/linkrewrite.py` (`LinkMap`, `Tree.link_map`, the map branches of
+`written` and `_rebase`, and `_QUOTED_HEADING`/`_BARE_TAIL` with them); `devpro/dicing/cli.py`
+(`--map`, and the call it forwards to `dice`); the `justfile` `dice` recipe's comment; `tests/dicing/`
+(the round-trip test's `skip="links.tsv"` and its "without a map" wording, and the `dice-map` and
+`dice-map-not-file` cases); and the three SPEC leaves where the map is stated —
+`PROJECT_DOCS/SPEC/dicing/link-rewriting.md` (§The link map and link-target rule 3),
+`dice.md` (the usage line, `--map`'s fault, undice's map branch, and the round trip's map clause) and
+`reassembly.md` (the undice best-effort entry).
 
 **Facts.**
 
@@ -471,25 +485,52 @@ test's `skip`); the SPEC dicing leaf naming the map (`PROJECT_DOCS/SPEC/dicing/l
 - Resolution is deterministic without a cache: repeated heading text disambiguates by the anchors'
   document-order suffixes; a target that resolves nowhere is reported `dangling:` — the honest
   behavior, never a cached guess.
-- An in-memory mapping, built at run time and persisting for the execution's duration, is standard
-  coding efficiency and is not what retires — persistence and re-ingestion are. `dice` and `undice`
-  are self-contained: all inputs on the command line, all outputs declared; the tree holds documents
-  and nothing else.
+- What stays is the mapping in memory: built at run time from the inputs on the command line, alive
+  for the execution, and written nowhere. What retires is persistence and re-ingestion — no file of
+  a run survives it, so no later run reads anything a previous one wrote. `dice` and `undice` are
+  self-contained: all inputs on the command line, all outputs declared, and the tree holds documents
+  and nothing else — a file that is not one of its documents is a file the verb wrote and a later run
+  may read.
+- The inventory: `git grep -in 'links\.tsv\|link map\|--map' -- devpro tests justfile PROJECT_DOCS`
+  names seven tracked files at this package's start — the three code sites, the `justfile` comment,
+  `test_dicer.py`, the two `dice-map` cases, and the three SPEC leaves (`link-rewriting.md`,
+  `dice.md`, `reassembly.md`) — and prints nothing after this package. `git grep -in 'link map' --
+  devpro/definitions/` prints nothing now and after: the skill definition names no map.
+  `PROJECT_DOCS/SPEC/dicing/index.md:23`'s "or a link map" is in the same Scope, read with
+  `link-rewriting.md`.
 
 **Guidance.**
 
 1. Remove the map's write and read (`dicedoc.py:217,238,391` region) and the `--map` flag: `dice`
-   writes nothing into the output tree but the tree itself, and `undice` reads no map.
-2. Remove the map handling from `linkrewrite.py` the write/read served.
-3. Tests: remove the `links.tsv` expectations and the round-trip test's `skip="links.tsv"` — a tree
-   compares whole; add a corpus case asserting a diced tree holds only documents, no sideband files.
-   Defect, per `clauses.TEST_PRECONDITION`: sideband data persisted into the tree, giving the
-   operation an ambient dependency on a previous run's state.
-4. The SPEC dicing leaf's map wording retires with the concept; the skill definition's verb wording
-   is checked for map references.
+   writes nothing into the output tree but the tree itself, and `undice` reads no map. `dice`'s call
+   in `cli.py` is the only caller of the changed signature.
+2. Remove the map handling from `linkrewrite.py` the write/read served — `LinkMap`, `Tree.link_map`,
+   the map branches of `written` and `_rebase`, and the regexes they alone use. `Tree` is a dataclass
+   whose construction sites are all in this package's scope except `tests/dicing/test_linkrewrite.py`,
+   which already names exactly its remaining fields and takes no edit. Check:
+   `grep -rn 'Tree(' --include=*.py devpro tests` names every construction site and each names the
+   fields the class declares; `grep -rn 'dice(' --include=*.py devpro tests` names one call site, in
+   `cli.py`, whose argument count matches the definition.
+3. Tests: remove the `links.tsv` expectations and the round-trip test's `skip` — a tree compares
+   whole — and the `dice-map` and `dice-map-not-file` cases with the flag and its fault they
+   exercise. Replace them with a case that asks the model's question of every file: `dice` a
+   multi-input document into a tree, then read the tree's files whole and assert each is one the
+   tree's head convention places — a volume root's `entry-point.md`, a section directory's
+   `index.md`, a leaf elsewhere, every one `.md` — and that the set is exactly the files the run
+   declares. A second run over the same tree and output directory adds no file and changes none.
+   Defect, per `clauses.TEST_PRECONDITION`: a sideband file persisted into the tree, giving a later
+   run an ambient dependency on a previous run's state — the relocated cache this case catches and
+   a "no sideband files" assertion does not.
+4. The SPEC leaves' map wording retires with the concept, under this package's Scope clause for them:
+   `link-rewriting.md`'s §The link map and link-target rule 3, `dice.md`'s usage line, `--map`'s
+   fault, undice's map branch and the round trip's map clause — whose Round trip paragraph becomes:
+   "For a tree as `dice` wrote it at `<level>`: move `<tree-dir>` aside, `undice` it to `<out-dir>`,
+   then `dice` the documents `<out-dir>` holds at `<level>`, with `--section` where the tree is a
+   section, from `<out-dir>` as the current directory; every file of the new tree equals the old byte
+   for byte." — and `reassembly.md`'s undice best-effort entry is deleted outright.
 
-**Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
-commit, as P1 states.
+**Done-line.** `just test-changed`, then `just lint`, then the inventory's `git grep`, which prints
+nothing. The checkpoint gate runs once before the commit, as P1 states.
 
 ## P5 — the three standing trees re-diced under the settled model
 
