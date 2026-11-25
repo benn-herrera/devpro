@@ -294,11 +294,12 @@ tests); the SPEC dicing leaves that state the forms —
   collision and exits 2 writing nothing. `undice T/` emits one document per directory carrying
   `entry-point.md`; `index.md`-headed directories never become documents. No nested subvolumes: a
   joining document becomes a top-level volume or is subsumed and loses separate-document identity.
-- The omnibus's own head carries text, and it is bounded text: it orients the reader in the content
-  and themes or guides navigation, and it stays concise — under 100 lines, not counting the
-  volume-listing section. Content whose growth would require splitting it is misplaced — it belongs
-  in a volume of its own, in a volume's own `entry-point.md`, or further down the tree. Needing to
-  split the omnibus head is the indication of that misuse, and the remedy is moving the content,
+- The omnibus's own head carries bounded text: it orients the reader in the content and themes or
+  guides navigation, and stays concise — under 100 lines, not counting the volume-listing section.
+  Two misuses count even under the bound: specificity that belongs in a leaf, and covering material
+  that belongs to one of the volumes — the first goes to the leaf it describes, the second to that
+  volume's `entry-point.md`. Content whose growth would require splitting the head is misplaced the
+  same way; needing the split is the indication of misuse, and the remedy is moving the content,
   never splitting the file.
 - The manifest is not needed for creation or reconstruction: `dice-docs`, `devpro/dicing/manifest.py`
   and the manifest concept retire. Check, which must print nothing and is P4's done-line:
