@@ -22,6 +22,12 @@ STANDING = {
     ("limits.md", 18): "board's",
 }
 
+# A link text that names a leaf by meaning, not by its H1's words: "the board" is the kanban board's
+# section, whose H1 is `# kanban`, so the predicate above never fires on it and the two sites B2
+# retargeted by hand would pass a regression unheard. Each entry is the text and the leaf it names,
+# tree-relative; the target must be exactly that leaf.
+SYNONYMS = {"the board": "kanban/index.md"}
+
 
 def _leaves() -> dict[str, list[Path]]:
     """Each leaf's H1 anchor, mapped to the files in the tree carrying that title."""
@@ -55,6 +61,10 @@ def wrong_targets() -> list[str]:
                     continue
                 target_path = target.split("#", 1)[0]
                 landed = (path.parent / target_path).resolve() if target_path else path.resolve()
+                expected = SYNONYMS.get(text.casefold())
+                if expected and landed != (TREE / expected).resolve():
+                    wrong.append(f"{path.relative_to(ROOT)}:{no}: {target} -> expected {expected}")
+                    continue
                 elsewhere = [leaf for leaf in leaves.get(github_anchor(text), []) if leaf != landed]
                 if elsewhere:
                     named = ", ".join(str(leaf.relative_to(ROOT)) for leaf in elsewhere)
