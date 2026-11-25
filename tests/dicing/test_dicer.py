@@ -236,3 +236,31 @@ def test_a_tree_holds_only_the_documents_its_form_places_and_no_run_adds_one(tmp
     second = _dicing(run, ["dice", "alpha.md", "beta.md", "--out", "tree"], env)
     assert second.returncode == 2, second.stderr
     assert _files(tree) == files
+
+
+def test_a_trees_links_between_its_own_documents_resolve_wherever_the_tree_stands(tmp_path: Path) -> None:
+    """A link between two documents of one dice resolves between their positions in the tree, so it
+    is the same link wherever the tree is placed: move the whole tree under another parent and every
+    link still resolves and the tree undices to the same document.
+
+    The defect: links written against the directory the documents were read from resolve only at the
+    place the dice ran; moved, a tree whose shape is right no longer resolves, as SUB's re-dice of
+    SPEC showed."""
+    source = TESTDATA / "dice-reintegration" / "input"
+    run = tmp_path / "run"
+    shutil.copytree(source, run, symlinks=True)
+    env = _case_env(run)
+    diced = _dicing(run, ["dice", "alpha.md", "beta.md", "--out", "tree"], env)
+    assert diced.returncode == 0, diced.stderr
+    tree = run / "tree"
+    before = _files(tree)
+    # the tree moves into a parent it did not stand under, and the run directory's documents go
+    # with it, so anything resolved against them would break
+    moved = tmp_path / "moved" / "deeper"
+    moved.mkdir(parents=True)
+    shutil.move(str(tree), str(moved / "tree"))
+    shutil.rmtree(run)
+    placed = moved / "tree"
+    links = _dicing(moved, ["check-links", "tree"], env)
+    assert links.returncode == 0, links.stderr
+    assert _files(placed) == before

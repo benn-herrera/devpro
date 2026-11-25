@@ -40,12 +40,10 @@ def check_reassembly(
     *,
     out: TextIO,
     err: TextIO,
-    document_dir: str = "",
 ) -> bool:
     """Compare the tree's files with the monolith line for line, each section's path written under
-    tree.out. document_dir is the directory the monolith's outside links are relative to, the tree's
-    own directory where it is empty: the directory a dice read the volume's document from, or the one
-    an undice wrote its document into."""
+    tree.out. Each line's written form is the one its file's own place in the tree gives it, so the
+    comparison holds wherever the tree is read from."""
     linker = Linker(Outline(sections), tree, lines)
     fenced = fence_flags(lines)
     k = 0
@@ -76,7 +74,7 @@ def check_reassembly(
             want = ""
             if k < len(lines):
                 next_line = lines[k + 1] if k + 1 < len(lines) else ""
-                want = lines[k] if fenced[k] else linker.written(lines[k], leaf_dir, next_line, document_dir)
+                want = lines[k] if fenced[k] else linker.written(lines[k], leaf_dir, next_line)
             k += 1
             if got != want:
                 print(

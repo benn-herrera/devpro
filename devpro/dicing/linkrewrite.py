@@ -6,7 +6,7 @@ files are what a link is resolved against, and nothing a previous run wrote is r
 
 import posixpath
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .anchors import heading_anchor_list
 from .linkscan import OnLink, OnRef, scan
@@ -34,11 +34,16 @@ def parent_dir(path: str) -> str:
 
 @dataclass
 class Tree:
-    """A diced document's output directory and the absolute paths its links resolve against."""
+    """A diced document's output directory and the absolute paths its links resolve against.
+    documents maps a document's base name, as the monolith's links name it, to the tree path its
+    head is written at: the dice's own inputs, so a link from one document of a dice to another is
+    known even though the tree holds no file of the source's name."""
 
     out: str  # as given, prefixed to the files written and the paths reported
     outabs: str  # out, absolute and with symlinks resolved
     root: str  # the run directory, absolute: links in the monolith are relative to it
+    documents: dict[str, str] = field(default_factory=dict)
+    volume: str = ""  # the volume being written or checked, relative to outabs: "" at the root
 
 
 def _anchor_homes(outline: Outline, lines: list[str]) -> dict[str, tuple[str, str]]:
@@ -83,26 +88,12 @@ class Linker:
     def rebase_only(self, line: str, leaf_dir: str, next_line: str) -> str:
         return scan(line, self._rebaser(leaf_dir, next_line))
 
-    def written(self, line: str, leaf_dir: str, next_line: str, document_dir: str = "") -> str:
-        """A monolith line as the tree's file at leaf_dir writes it: its outside links made relative
-        to leaf_dir from the directory the monolith's own links are written from (the tree's root
-        where it is empty). leaf_dir is a path in the tree, so it is resolved under the tree's
-        outabs; document_dir is an absolute directory on the file system, and the tree's outabs never
-        applies to it. A link to a second document is rebased with every other relative link: it
-        names the file beside the document, which the tree does not hold."""
-        base = document_dir or self.tree.outabs
-        source = self.tree.outabs
-
-        def rebase(raw: str, text: str, target: str, after: str) -> str:
-            if target.startswith("#") and target[1:] in self.anchors:
-                return f"[{text}]({self._rebase(target, leaf_dir, after, next_line)})"
-            if never_rebased(target):
-                return raw
-            path, hash_, fragment = target.partition("#")
-            there = posixpath.normpath(posixpath.join(base, path))
-            return f"[{text}]({rel(self._here(leaf_dir, source), there)}{hash_}{fragment})"
-
-        return scan(line, rebase)
+    def written(self, line: str, leaf_dir: str, next_line: str) -> str:
+        """A monolith line as the tree's file at leaf_dir writes it, section references left as the
+        source has them: the reassembly check's expected line. Its links are made against the leaf's
+        own place in the tree, so a link between two documents of one dice lands between their
+        positions in the tree whatever directory the verb ran in or the documents were read from."""
+        return self.rebase_only(line, leaf_dir, next_line)
 
     def revert(self, line: str, leaf_dir: str) -> str:
         """Undo the section links `forward` made; every other link stays."""
@@ -123,9 +114,28 @@ class Linker:
             anchor = self._anchor_linked(target, leaf_dir)
             if anchor:
                 return f"[{text}](#{anchor})"
+            document = self._document_linked(target, leaf_dir)
+            if document:
+                return f"[{text}]({document})"
             return f"[{text}]({self._unrebase(target, leaf_dir)})"
 
         return scan(line, restore_link)
+
+    def _document_linked(self, target: str, leaf_dir: str) -> str:
+        """The document name a target under leaf_dir restores as, when the target lands on another
+        document's head in the tree: the name a monolith's link to a second document carried. "" where
+        it lands anywhere else. documents maps each document's name to the tree path of its head, and
+        a target is resolved from the volume being restored, which is where the tree's links are
+        made from."""
+        if never_rebased(target):
+            return ""
+        path = target.partition("#")[0]
+        here = posixpath.join(self.tree.volume, leaf_dir) if self.tree.volume else leaf_dir
+        landed = posixpath.normpath(posixpath.join(here, path))
+        for name, head in self.tree.documents.items():
+            if posixpath.normpath(head) == landed:
+                return name
+        return ""
 
     def _rebaser(self, leaf_dir: str, next_line: str) -> OnLink:
         def rebase(raw: str, text: str, target: str, after: str) -> str:
@@ -177,15 +187,21 @@ class Linker:
         return self._anchor_at.get((posixpath.normpath(posixpath.join(leaf_dir, path)), fragment), "")
 
     def _rebase(self, target: str, leaf_dir: str, after: str, next_line: str) -> str:
-        """An outside link target, relative to the run directory, made relative to leaf_dir: a heading
-        of the document goes to its home in the tree, and every other target is rebased to the file
-        its path names from the run directory."""
+        """An outside link target made relative to leaf_dir: a heading of the document goes to its
+        home in the tree, a link to a second document of the same dice goes to that document's head
+        in the tree, and every other target is rebased to the file its path names from the run
+        directory."""
         if target.startswith("#") and target[1:] in self.anchors:
             path, anchor = self.anchors[target[1:]]
             return rel(leaf_dir, path) + (f"#{anchor}" if anchor else "")
         if never_rebased(target):
             return target
         path, _, fragment = target.partition("#")
+        document = self.tree.documents.get(path)
+        if document is not None:
+            fragment = ""
+            destination = posixpath.normpath(f"{self.tree.outabs}/{document}")
+            return rel(self._here(leaf_dir), destination)
         destination = posixpath.normpath(f"{self.tree.root}/{path}")
         return rel(self._here(leaf_dir), destination) + ("#" + fragment if fragment else "")
 
@@ -201,11 +217,11 @@ class Linker:
             here.pop()
         return rel(self.tree.root, "/".join([*here, path])) + hash_ + fragment
 
-    def _here(self, leaf_dir: str, base: str | None = None) -> str:
-        """The absolute path of leaf_dir, a directory of the tree, or of a directory base it sits
-        under where base is given: the tree's own directory is what a leaf is made from."""
-        here = self.tree.outabs if base is None else base
-        return here + (f"/{leaf_dir}" if leaf_dir else "")
+    def _here(self, leaf_dir: str) -> str:
+        """The absolute path of leaf_dir, a directory of the tree, under the volume being written or
+        checked: the tree's root where no volume stands below it."""
+        here = posixpath.join(self.tree.outabs, self.tree.volume) if self.tree.volume else self.tree.outabs
+        return posixpath.join(here, leaf_dir) if leaf_dir else here
 
 
 def never_rebased(target: str) -> bool:

@@ -132,8 +132,16 @@ def _omnibus_lines(volumes: list[Volume]) -> list[str]:
 def _volume_tree(out: str, root: str, base: str) -> Tree:
     """The tree as one volume of it is checked: tree.out is the volume's own directory and tree.outabs
     the tree's, so a section's path is read from the volume's directory while the links it finds are
-    resolved under the tree's. base is the volume directory the tree's root holds the volume at."""
-    return Tree(out=os.path.join(out, base) if base else out, outabs=os.path.realpath(out), root=root)
+    resolved under the tree's. base is the volume directory the tree's root holds the volume at. out
+    is taken as relative to root, the directory the verb ran in, so the tree's absolute path does not
+    depend on the process's own working directory."""
+    out_dir = out if os.path.isabs(out) else os.path.join(root, out)
+    return Tree(
+        out=os.path.join(out, base) if base else out,
+        outabs=os.path.realpath(out_dir),
+        root=root,
+        volume=base,
+    )
 
 
 def dice(
@@ -175,6 +183,8 @@ def dice(
     if not section:
         write_lines(os.path.join(out, ENTRY_POINT), _omnibus_lines(volumes))
     tree = _tree(out, root)
+    documents = {os.path.basename(volume.source): volume.head for volume in volumes}
+    tree.documents = documents
     failed = False
     for volume, monolith in zip(volumes, monoliths):
         lines = texts[volume.head]
@@ -193,6 +203,7 @@ def dice(
                 volume,
                 texts[volume.head],
                 sections,
+                documents,
                 out=out,
                 root=root,
                 stdout=stdout,
@@ -226,7 +237,9 @@ def _volume_documents(out: str) -> list[Volume]:
             path = posixpath.normpath(target.partition("#")[0])
             if posixpath.basename(path) == ENTRY_POINT and "/" in path:
                 head = os.path.join(out, path)
-                volumes.append(Volume(path, posixpath.dirname(path), title_of(read_lines(head))))
+                volume = Volume(path, posixpath.dirname(path), title_of(read_lines(head)))
+                volume.source = posixpath.basename(volume.directory) + ".md"
+                volumes.append(volume)
     if volumes:
         return volumes
     return [Volume(root_head, "", title_of(read_lines(os.path.join(out, root_head))))]
@@ -345,13 +358,22 @@ def _placed_level(path: str) -> int:
     return depth + 2
 
 
-def _document(volume: Volume, parts: list[tuple[str, list[str]]], *, out: str, root: str, deepest: int) -> list[str]:
+def _document(
+    volume: Volume, parts: list[tuple[str, list[str]]], *, out: str, root: str, deepest: int, documents: dict[str, str]
+) -> list[str]:
     """A volume's document: its head's own lines, then each part read after it, its ladder restored
     and its links restored against the document. root is the run directory the document's links are
-    relative to."""
+    relative to, and documents maps each volume's head to the document name a link to it restores
+    as."""
     head, *rest = parts
     relative = [(_document_path(volume, path), own) for path, own in rest]
-    tree = Tree(out=out, outabs=os.path.realpath(out), root=os.path.realpath(root))
+    tree = Tree(
+        out=os.path.join(out, volume.directory) if volume.directory else out,
+        outabs=os.path.realpath(out),
+        root=os.path.realpath(root),
+        documents=documents,
+        volume=volume.directory,
+    )
     return _restored((_document_path(volume, head[0]), head[1]), relative, tree, deepest=deepest)
 
 
@@ -369,10 +391,15 @@ def undice(tree_dir: str, out: str, *, stdout: TextIO, stderr: TextIO, deepest: 
     os.makedirs(out, exist_ok=True)
     tree_base = os.path.basename(os.path.normpath(tree_dir))
     document_root = os.path.realpath(out)
+    tree_root = os.path.realpath(tree_dir)
+    volumes = _volume_documents(tree_dir)
+    # a link to a volume's head in the tree restores as that volume's document name: the name a
+    # monolith's link to a second document of the same dice carried
+    documents = {volume.source: volume.head for volume in volumes if volume.source}
     ok = True
-    for volume in _volume_documents(tree_dir):
+    for volume in volumes:
         parts, reads, all_read = _walk(tree_dir, volume.head, err=stderr)
-        lines = _document(volume, parts, out=tree_dir, root=document_root, deepest=deepest)
+        lines = _document(volume, parts, out=tree_dir, root=document_root, deepest=deepest, documents=documents)
         name = os.path.basename(volume.directory) if volume.directory else tree_base
         document = os.path.join(out, f"{name}.md")
         write_lines(document, lines)
@@ -384,8 +411,10 @@ def undice(tree_dir: str, out: str, *, stdout: TextIO, stderr: TextIO, deepest: 
                 lines,
                 parts,
                 reads,
+                documents,
                 out=tree_dir,
                 root=document_root,
+                tree_root=tree_root,
                 deepest=deepest,
                 stdout=stdout,
                 stderr=stderr,
@@ -402,6 +431,7 @@ def _write_check(
     volume: Volume,
     lines: list[str],
     sections: list[Section],
+    documents: dict[str, str],
     *,
     out: str,
     root: str,
@@ -409,9 +439,11 @@ def _write_check(
     stderr: TextIO,
 ) -> bool:
     """One document just written against its volume: the reassembly check (the sections reproduce
-    the document line for line) and the link check."""
+    the document line for line) and the link check. documents maps the dice's own documents to the
+    heads their links resolve to."""
     tree = _volume_tree(out, root, volume.directory)
-    rebuilt = check_reassembly(sections, lines, tree, out=stdout, err=stderr, document_dir=volume.document_dir)
+    tree.documents = documents
+    rebuilt = check_reassembly(sections, lines, tree, out=stdout, err=stderr)
     linked = check_links(sections, tree, out=stdout, err=stderr)
     return rebuilt and linked
 
@@ -424,9 +456,11 @@ def _self_check(
     lines: list[str],
     parts: list[tuple[str, list[str]]],
     reads: list[tuple[str, int | None]],
+    documents: dict[str, str],
     *,
     out: str,
     root: str,
+    tree_root: str,
     deepest: int,
     stdout: TextIO,
     stderr: TextIO,
@@ -439,8 +473,9 @@ def _self_check(
     _warn_duplicate_numbers(sections, err=stderr)
     if not planned:
         return False
-    tree = _volume_tree(out, root, volume.directory)
-    rebuilt = check_reassembly(sections, lines, tree, out=stdout, err=stderr, document_dir=root)
+    tree = _volume_tree(tree_root, root, volume.directory)
+    tree.documents = documents
+    rebuilt = check_reassembly(sections, lines, tree, out=stdout, err=stderr)
     linked = check_links(sections, tree, out=stdout, err=stderr)
     reproduced = _reproduced(volume, sections, reads, out=out, err=stderr, deepest=deepest)
     return rebuilt and linked and reproduced

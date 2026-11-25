@@ -25,11 +25,12 @@ DOC = [
 
 
 def _linker(tmp_path: Path) -> Linker:
-    """A Linker for DOC diced into <tmp_path>/out, run from tmp_path."""
+    """A Linker for DOC diced into <tmp_path>/out, the verb run there: the tree's root is the output
+    directory itself, so a leaf's path and a target's path are both tree-relative."""
     sections, ok = plan_sections(DOC, err=io.StringIO())
     assert ok
-    root = tmp_path.resolve()
-    tree = Tree(out=str(root / "out"), outabs=str(root / "out"), root=str(root))
+    out = (tmp_path / "out").resolve()
+    tree = Tree(out=str(out), outabs=str(out), root=str(tmp_path.resolve()))
     return Linker(Outline(sections), tree, DOC)
 
 

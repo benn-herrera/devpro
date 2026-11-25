@@ -71,10 +71,13 @@ def write_tree(sections: list[Section], lines: list[str], tree: Tree, *, err: Te
     section's."""
     outline = Outline(sections)
     linker = Linker(outline, tree, lines)
+    # the tree carries the volume being written, so a leaf's links are made from the volume's place
+    # in the tree; one tree serves every volume of a run, so each write names its own
+    tree.volume = base
     fenced = fence_flags(lines)
     unrebased = []
     for s in sections:
-        leaf_dir = parent_dir(f"{base}/{s.path}" if base else s.path)
+        leaf_dir = parent_dir(s.path)
         if not _fits(lines, s, fenced):
             print(f"heading too deep to re-base at line {s.first} ({s.level}): written at its monolith level", file=err)
             unrebased.append(s.id)

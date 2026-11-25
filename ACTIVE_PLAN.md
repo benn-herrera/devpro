@@ -68,7 +68,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | P2 | landed | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
 | P3 | landed | expert | `devpro:prompt-engineer` | CONVENTIONS and ARCHITECTURE round-trip, the head convention corrected; SPEC's residue re-homed to P4 (the tool defect) and P5 (re-dice under the settled model) |
 | P4 | landed | expert | `devpro:python-coder` | the dicer's two patterns: volumes and broken-out sections; the manifest retires |
-| P4b | in progress | expert | `devpro:python-coder` | the reconstruction's stragglers, and the links.tsv cache retires |
+| P4b | landed | expert | `devpro:python-coder` | the reconstruction's stragglers, the re-integration links, and the links.tsv cache retires |
 | P5 | in progress | expert | `devpro:python-coder` | the three standing trees re-diced under the settled model |
 | P6 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
