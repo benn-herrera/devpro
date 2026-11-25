@@ -267,11 +267,14 @@ load-bearing — generated files, frozen contracts — the mechanism is the rege
 integration test over the behavior. Coverage that unit tests cannot reasonably reach belongs to the
 integration test, never to a pin.
 
-Found instances, both in `tests/test_devpro.py`, both pinning the claude family's model
-assignments. `test_each_family_pins_the_member_of_every_category` asserts the category map equals
-a hand-copied dict of itself. `test_claude_frontmatter_holds_the_field_order_and_spelling`, whose
-subject is field order and spelling, carries `model: opus` in its expected tuple. Both photograph
-owner tuning: `829f7e7` changed one model entry and the gate ran red until the pins followed.
+Found instances. Two pin the claude family's model assignments, both in `tests/test_devpro.py`:
+`test_each_family_pins_the_member_of_every_category` asserts the category map equals a hand-copied
+dict of itself; `test_claude_frontmatter_holds_the_field_order_and_spelling`, whose subject is
+field order and spelling, carries `model: opus` in its expected tuple. Both photograph owner
+tuning: `829f7e7` changed one model entry and the gate ran red until the pins followed. The third
+pins presentation text: `tests/test_devpro_profiler.py`'s index test asserts the whole
+`table { … }` declaration, so a layout change the presentation layer invites — P3's column
+widths — cannot land without either shaping the CSS around the pin or editing it.
 
 Four parts:
 
