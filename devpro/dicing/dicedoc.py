@@ -20,7 +20,7 @@ from typing import TextIO
 
 from .heads import CONTENTS, ENTRY_POINT, HEADS, INDEX, contents_line
 from .linkcheck import check_links, markdown_files
-from .linkrewrite import Linker, LinkMap, Tree, parent_dir
+from .linkrewrite import Linker, Tree, parent_dir
 from .linkscan import link_targets, plain_text
 from .outline import _HEADING, DEEPEST_SPLIT_LEVEL, Outline, Section, plan_sections, split_number
 from .reassemble import _top_is_rebased, check_reassembly, own_end
@@ -32,12 +32,14 @@ from .textfile import FenceTracker, read_lines, write_lines
 class Volume:
     """One document of a tree: the tree path of its head file, the tree path of the directory its
     sections are written in, the title it is listed under, and the document's own path as the verbs
-    read or write it — the link map keys a document by that path's base name."""
+    read or write it. document_dir is the directory the document was read from, which its links are
+    relative to: "" where that is the directory the verb ran in."""
 
     head: str
     directory: str
     title: str
     source: str = ""
+    document_dir: str = ""
 
 
 def _warn_duplicate_numbers(sections: list[Section], *, err: TextIO) -> None:
@@ -45,10 +47,9 @@ def _warn_duplicate_numbers(sections: list[Section], *, err: TextIO) -> None:
         print(f"duplicate section number {number}", file=err)
 
 
-def _tree(out: str, root: str = "", map_path: str = "") -> Tree:
+def _tree(out: str, root: str = "") -> Tree:
     """Links in a monolith are relative to the run directory root, so it anchors their rebasing."""
-    link_map = LinkMap.load(map_path) if map_path and os.path.isfile(map_path) else LinkMap()
-    return Tree(out=out, outabs=os.path.realpath(out), root=root, link_map=link_map)
+    return Tree(out=out, outabs=os.path.realpath(out), root=root)
 
 
 def title_of(lines: list[str]) -> str:
@@ -128,32 +129,16 @@ def _omnibus_lines(volumes: list[Volume]) -> list[str]:
     return lines + [contents_line("", text=volume.title, path=volume.head) for volume in volumes]
 
 
-def _map_rows(volumes: list[Volume], plans: dict[str, list[Section]], *, out: str, root: str) -> list[str]:
-    """The link map's rows, keyed by the base name of the document each volume holds: its head, then
-    one row per distinct title in section order, the first section of a title winning. A row's path
-    is relative to the run directory the verb was given."""
-    rows = []
-    for volume in volumes:
-        key = os.path.basename(volume.source)
-        rows.append(f"{key}\t{_run_path(out, root, volume.head)}")
-        seen: set[str] = set()
-        for s in plans[volume.head][1:]:
-            if s.title and s.title not in seen:
-                seen.add(s.title)
-                rows.append(f"{key}\t{s.title}\t{_run_path(out, root, _tree_path(volume, s.path))}")
-    return rows
-
-
-def _run_path(out: str, root: str, tree_path: str) -> str:
-    """A tree path as the run directory path the link map carries: the document's target relative to
-    root, which is where the monolith's links were written from."""
-    return posixpath.relpath(posixpath.join(out, tree_path), root or ".")
+def _volume_tree(out: str, root: str, base: str) -> Tree:
+    """The tree as one volume of it is checked: tree.out is the volume's own directory and tree.outabs
+    the tree's, so a section's path is read from the volume's directory while the links it finds are
+    resolved under the tree's. base is the volume directory the tree's root holds the volume at."""
+    return Tree(out=os.path.join(out, base) if base else out, outabs=os.path.realpath(out), root=root)
 
 
 def dice(
     monoliths: list[str],
     out: str,
-    map_path: str,
     *,
     root: str,
     stdout: TextIO,
@@ -170,9 +155,6 @@ def dice(
         if not os.path.isfile(monolith):
             print(f"not a file: {monolith}", file=stderr)
             return 2
-    if map_path and not os.path.isfile(map_path):
-        print(f"not a file: {map_path}", file=stderr)
-        return 2
     if not _out_ready(out, err=stderr):
         return 2
     volumes = _volumes(monoliths, section=section)
@@ -181,6 +163,7 @@ def dice(
     for volume, monolith in zip(volumes, monoliths):
         lines = texts[volume.head]
         volume.title = title_of(lines)
+        volume.document_dir = os.path.dirname(os.path.abspath(os.path.join(root, monolith)))
         sections, ok = _plan(lines, volume, err=stderr, deepest=deepest)
         if not ok:
             return 1
@@ -191,12 +174,7 @@ def dice(
     os.makedirs(out, exist_ok=True)
     if not section:
         write_lines(os.path.join(out, ENTRY_POINT), _omnibus_lines(volumes))
-    # the caller's map is read first and this dice's own rows added to it: a document linking into
-    # a second document is a link, and only this run knows where it diced each input
-    tree = _tree(out, root, map_path)
-    rows = [f"{key}\t{path}" for key, path in tree.link_map.documents.items()]
-    rows += [f"{key}\t{heading}\t{path}" for (key, heading), path in tree.link_map.headings.items()]
-    write_lines(os.path.join(out, "links.tsv"), rows + _map_rows(volumes, plans, out=out, root=root))
+    tree = _tree(out, root)
     failed = False
     for volume, monolith in zip(volumes, monoliths):
         lines = texts[volume.head]
@@ -217,7 +195,6 @@ def dice(
                 sections,
                 out=out,
                 root=root,
-                map_path=os.path.join(out, "links.tsv"),
                 stdout=stdout,
                 stderr=stderr,
             )
@@ -317,18 +294,21 @@ def _restored(
     restored against the sections, split at level 2 to deepest.
 
     A part whose top heading reads level 1 is the re-based write form and has its ladder put back to
-    the shallowest level its place in the tree permits (`_placed_level`), fenced lines as they stand;
-    a part whose top reads any other level is the pre-change form and passes through as it stands. A
-    part that opens no heading, or that no level can place, is written as it stands: the self-check
-    reports it, as it reports any file of the tree the planned sections do not reproduce. The head is
-    the volume and not a section: its own text is the document's title and opening paragraphs, and it
-    writes as it stands, the head's title included.
+    the level its place in the tree fixes (`_placed_level`), fenced lines as they stand; a part whose
+    top reads any other level is the pre-change form and passes through as it stands. A part that
+    opens no heading is written as it stands: the self-check reports it, as it reports any file of
+    the tree the planned sections do not reproduce. A head's own text is its document's title and
+    opening text, and writes as it stands: a volume's head holds them, and a broken-out section's
+    head is that section's opening, which the document it folds into holds above its children.
+
+    The sections are planned over the head's text and the parts together, the head's title being the
+    plan's title: the parts' first level is the document's first section, and the plan reads it there.
     """
 
     def restore_ladder(document_path: str, own: list[str]) -> list[str]:
-        level = _placed_level(document_path, own, deepest) if _top_is_rebased(own) else None
-        if level is None:
+        if not _top_is_rebased(own):
             return own
+        level = _placed_level(document_path)
         fence = FenceTracker()
         restored = []
         for no, line in enumerate(own):
@@ -341,7 +321,8 @@ def _restored(
     links, _ = plan_sections(whole, err=io.StringIO(), deepest=deepest)
     linker = Linker(Outline(links), tree, whole)
     fence = FenceTracker()
-    restored = [[line if fence.inside(line) else linker.restore(line, "") for line in head[1]]]
+    head_dir = parent_dir(head[0])
+    restored = [[line if fence.inside(line) else linker.restore(line, head_dir) for line in head[1]]]
     for path, own in placed:
         fence = FenceTracker()
         leaf_dir = parent_dir(path)
@@ -349,25 +330,19 @@ def _restored(
     return [line for run in restored for line in run]
 
 
-def _placed_level(path: str, own: list[str], deepest: int) -> int | None:
-    """The level a part's top heading is restored to: the shallowest level its place in the tree
-    permits — a section file sits one level below its parent's head, so a section at the document's
-    first level takes level 2 — that keeps every heading below the top deeper than the deepest split
-    level, so the restored document splits where the tree's directories do and nowhere else. A part
-    with no heading below its top cannot be split again and takes its place's level. None where no
-    level to 6 permits the ladder: the tree then holds one no document at this split level has, and
-    that is reported rather than guessed. `path` is the part's document path, and a directory's depth
-    counts the section that directory holds: `a/index.md` is a section at the document's first
-    level, `a/b.md` at its second."""
+def _placed_level(path: str) -> int:
+    """The level a part's top heading is restored to: the level its place in the tree fixes, and
+    nothing else. Every section file sits one level below its parent's head, so a section of the
+    document's first level takes level 2 and one at depth d takes level d + 1, a directory holding a
+    section index counting as that index's level: `a/index.md` is a section at the document's first
+    level, `a/b.md` at its second. A part's own headings never move it: the writer re-bases each
+    part's ladder to a level-1 top whatever depth it had, so its headings are relative to its own
+    top, and the deepest split level bounds the document the parts are planned into."""
     directory = parent_dir(path)
     depth = len(directory.split("/")) if directory else 0
     if directory and posixpath.basename(path) == INDEX:
         depth -= 1
-    fence = FenceTracker()
-    levels = [(_HEADING.match(line).end() - 1) for line in own if not fence.inside(line) and _HEADING.match(line)]
-    below = max((level - levels[0] for level in levels[1:]), default=0) if levels else 0
-    spans = [level for level in range(depth + 2, 7) if level + below <= 6 and (below == 0 or level + below > deepest)]
-    return spans[0] if spans else None
+    return depth + 2
 
 
 def _document(volume: Volume, parts: list[tuple[str, list[str]]], *, out: str, root: str, deepest: int) -> list[str]:
@@ -376,9 +351,7 @@ def _document(volume: Volume, parts: list[tuple[str, list[str]]], *, out: str, r
     relative to."""
     head, *rest = parts
     relative = [(_document_path(volume, path), own) for path, own in rest]
-    map_path = os.path.join(out, "links.tsv")
-    link_map = LinkMap.load(map_path) if os.path.isfile(map_path) else LinkMap()
-    tree = Tree(out=out, outabs=os.path.realpath(out), root=os.path.realpath(root), link_map=link_map)
+    tree = Tree(out=out, outabs=os.path.realpath(out), root=os.path.realpath(root))
     return _restored((_document_path(volume, head[0]), head[1]), relative, tree, deepest=deepest)
 
 
@@ -432,16 +405,14 @@ def _write_check(
     *,
     out: str,
     root: str,
-    map_path: str,
     stdout: TextIO,
     stderr: TextIO,
 ) -> bool:
     """One document just written against its volume: the reassembly check (the sections reproduce
     the document line for line) and the link check."""
-    tree = _tree(out, root, map_path)
-    base = volume.directory
-    rebuilt = check_reassembly(sections, lines, tree, out=stdout, err=stderr, base=base, document_dir=root)
-    linked = check_links(sections, tree, out=stdout, err=stderr, base=base)
+    tree = _volume_tree(out, root, volume.directory)
+    rebuilt = check_reassembly(sections, lines, tree, out=stdout, err=stderr, document_dir=volume.document_dir)
+    linked = check_links(sections, tree, out=stdout, err=stderr)
     return rebuilt and linked
 
 
@@ -468,10 +439,9 @@ def _self_check(
     _warn_duplicate_numbers(sections, err=stderr)
     if not planned:
         return False
-    tree = _tree(out, root)
-    base = volume.directory
-    rebuilt = check_reassembly(sections, lines, tree, out=stdout, err=stderr, base=base, document_dir=root)
-    linked = check_links(sections, tree, out=stdout, err=stderr, base=base)
+    tree = _volume_tree(out, root, volume.directory)
+    rebuilt = check_reassembly(sections, lines, tree, out=stdout, err=stderr, document_dir=root)
+    linked = check_links(sections, tree, out=stdout, err=stderr)
     reproduced = _reproduced(volume, sections, reads, out=out, err=stderr, deepest=deepest)
     return rebuilt and linked and reproduced
 

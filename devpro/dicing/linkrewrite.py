@@ -1,26 +1,21 @@
 """Link rewriting: section references become links to their files, links outside the document are
-rebased to resolve from each leaf, and links to diced documents go through the link map.
-
-Map rows (TSV): "<target>\t<path from the run directory>" sends a link to a diced document to that
-path; "<target>\t<heading>\t<path>" sends a link whose following text quotes that heading, as
-`, "The walk"`, to the heading's leaf.
+rebased to resolve from each leaf, and a link to another document is rebased to that document's own
+path in the tree. Every resolution is run-time: the document's headings, its anchors and the tree's
+files are what a link is resolved against, and nothing a previous run wrote is read.
 """
 
 import posixpath
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from .anchors import heading_anchor_list
 from .linkscan import OnLink, OnRef, scan
 from .outline import Outline
-from .textfile import read_lines
 
 URL_SCHEME = re.compile(r"[a-z]+:")
 _SECTION_LINK_TEXT = re.compile(r"§[0-9]")
 _NAMED_CHILD = re.compile(r" `([^`]+)`")
 _OTHER_DOCUMENT = re.compile(r"(?:SPEC|ARCHITECTURE|THESIS|CONVENTIONS)(?:\.md)? $")
-_BARE_TAIL = re.compile(r",? *")
-_QUOTED_HEADING = re.compile(r',? *"([^"]+)"')
 
 
 def rel(from_dir: str, to: str) -> str:
@@ -38,30 +33,12 @@ def parent_dir(path: str) -> str:
 
 
 @dataclass
-class LinkMap:
-    documents: dict[str, str] = field(default_factory=dict)
-    headings: dict[tuple[str, str], str] = field(default_factory=dict)
-
-    @classmethod
-    def load(cls, path: str) -> "LinkMap":
-        link_map = cls()
-        for line in read_lines(path):
-            fields = line.split("\t")
-            if len(fields) == 2:
-                link_map.documents[fields[0]] = fields[1]
-            elif len(fields) == 3:
-                link_map.headings[(fields[0], fields[1])] = fields[2]
-        return link_map
-
-
-@dataclass
 class Tree:
     """A diced document's output directory and the absolute paths its links resolve against."""
 
     out: str  # as given, prefixed to the files written and the paths reported
     outabs: str  # out, absolute and with symlinks resolved
     root: str  # the run directory, absolute: links in the monolith are relative to it
-    link_map: LinkMap
 
 
 def _anchor_homes(outline: Outline, lines: list[str]) -> dict[str, tuple[str, str]]:
@@ -108,9 +85,13 @@ class Linker:
 
     def written(self, line: str, leaf_dir: str, next_line: str, document_dir: str = "") -> str:
         """A monolith line as the tree's file at leaf_dir writes it: its outside links made relative
-        to leaf_dir, the monolith's own relative to document_dir (the tree's root where it is
-        empty), a link the map names going to its diced document."""
-        base = document_dir or self.tree.root
+        to leaf_dir from the directory the monolith's own links are written from (the tree's root
+        where it is empty). leaf_dir is a path in the tree, so it is resolved under the tree's
+        outabs; document_dir is an absolute directory on the file system, and the tree's outabs never
+        applies to it. A link to a second document is rebased with every other relative link: it
+        names the file beside the document, which the tree does not hold."""
+        base = document_dir or self.tree.outabs
+        source = self.tree.outabs
 
         def rebase(raw: str, text: str, target: str, after: str) -> str:
             if target.startswith("#") and target[1:] in self.anchors:
@@ -118,10 +99,8 @@ class Linker:
             if never_rebased(target):
                 return raw
             path, hash_, fragment = target.partition("#")
-            if path in self.tree.link_map.documents:
-                return f"[{text}]({self._rebase(target, leaf_dir, after, next_line)})"
             there = posixpath.normpath(posixpath.join(base, path))
-            return f"[{text}]({rel(self._here(leaf_dir), there)}{hash_}{fragment})"
+            return f"[{text}]({rel(self._here(leaf_dir, source), there)}{hash_}{fragment})"
 
         return scan(line, rebase)
 
@@ -198,26 +177,17 @@ class Linker:
         return self._anchor_at.get((posixpath.normpath(posixpath.join(leaf_dir, path)), fragment), "")
 
     def _rebase(self, target: str, leaf_dir: str, after: str, next_line: str) -> str:
-        """An outside link target, relative to the run directory, made relative to leaf_dir; a
-        target in the link map goes to its diced tree instead (the heading's leaf when the text
-        after the link quotes a mapped heading, which may open the next line)."""
+        """An outside link target, relative to the run directory, made relative to leaf_dir: a heading
+        of the document goes to its home in the tree, and every other target is rebased to the file
+        its path names from the run directory."""
         if target.startswith("#") and target[1:] in self.anchors:
             path, anchor = self.anchors[target[1:]]
             return rel(leaf_dir, path) + (f"#{anchor}" if anchor else "")
         if never_rebased(target):
             return target
-        path, hash_, fragment = target.partition("#")
-        fragment = hash_ + fragment
-        dest = path
-        link_map = self.tree.link_map
-        if path in link_map.documents:
-            dest, fragment = link_map.documents[path], ""
-            if _BARE_TAIL.fullmatch(after):
-                after = f"{after} {next_line}"
-            m = _QUOTED_HEADING.match(after)
-            if m:
-                dest = link_map.headings.get((path, m.group(1)), dest)
-        return rel(self._here(leaf_dir), posixpath.normpath(f"{self.tree.root}/{dest}")) + fragment
+        path, _, fragment = target.partition("#")
+        destination = posixpath.normpath(f"{self.tree.root}/{path}")
+        return rel(self._here(leaf_dir), destination) + ("#" + fragment if fragment else "")
 
     def _unrebase(self, target: str, leaf_dir: str) -> str:
         """A target relative to leaf_dir made relative to the run directory again: the lexical
@@ -231,9 +201,11 @@ class Linker:
             here.pop()
         return rel(self.tree.root, "/".join([*here, path])) + hash_ + fragment
 
-    def _here(self, leaf_dir: str) -> str:
-        """The absolute path of leaf_dir, a directory of the tree."""
-        return self.tree.outabs + (f"/{leaf_dir}" if leaf_dir else "")
+    def _here(self, leaf_dir: str, base: str | None = None) -> str:
+        """The absolute path of leaf_dir, a directory of the tree, or of a directory base it sits
+        under where base is given: the tree's own directory is what a leaf is made from."""
+        here = self.tree.outabs if base is None else base
+        return here + (f"/{leaf_dir}" if leaf_dir else "")
 
 
 def never_rebased(target: str) -> bool:

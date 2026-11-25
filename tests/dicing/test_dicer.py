@@ -12,7 +12,7 @@ digit beside it, nor a `.` or `-` joined to one), compared as UTF-8 bytes with s
 
 COLUMNS is set wide so that argparse never wraps a usage line. Cases are written from SPEC.md.
 
-Each case that dices without a map and exits 0 is also a round-trip test: its tree, undiced and
+Each case that dices and exits 0 is also a round-trip test: its tree, undiced and
 then diced again from the same run directory at the case's `--split-level`, comes back byte for
 byte.
 """
@@ -162,14 +162,13 @@ def test_cases(case: Path, tmp_path: Path) -> None:
 
 
 def test_round_trip_cases_exist() -> None:
-    assert _round_trip_cases(), "no case dices without a map and exits 0"
+    assert _round_trip_cases(), "no case dices and exits 0"
 
 
 @pytest.mark.parametrize("case", _round_trip_cases(), ids=lambda case: case.name)
 def test_undice_then_dice_reproduces_the_tree(case: Path, tmp_path: Path) -> None:
-    """A tree the case dices without a map: undiced to its document, then diced again from the same
-    run directory, both at the case's split level, it comes back byte for byte, both runs exiting
-    0."""
+    """A tree the case dices: undiced to its document, then diced again from the same run
+    directory, both at the case's split level, it comes back byte for byte, both runs exiting 0."""
     run = tmp_path / "run"
     shutil.copytree(case / "expected" / "tree", run, symlinks=True)
     split_level, args = _split_level_apart(_args(case))
@@ -191,6 +190,49 @@ def test_undice_then_dice_reproduces_the_tree(case: Path, tmp_path: Path) -> Non
         capture_output=True,
     )
     assert rediced.returncode == 0, rediced.stderr
-    # the map is generator output keyed by the input document's base name, which the undiced
-    # document's own name does not repeat; every other file of the tree is the tree's
-    assert _files(run / out, skip="links.tsv") == _files(run / "diced", skip="links.tsv")
+    assert _files(run / out) == _files(run / "diced")
+
+
+def _unplaced(files: dict[str, bytes]) -> list[str]:
+    """The tree's files that are not a document its form places: every one is `.md`, and its name is
+    a head's (`entry-point.md`, `index.md`) or it is a leaf under a directory that has a head."""
+    names = set(files)
+    unplaced = []
+    for path in files:
+        if not path.endswith(".md"):
+            unplaced.append(path)
+            continue
+        name = path.rsplit("/", 1)[-1]
+        directory = path.rsplit("/", 1)[0] if "/" in path else ""
+        if name in ("entry-point.md", "index.md"):
+            continue
+        if directory and any(f"{directory}/{head}" in names for head in ("entry-point.md", "index.md")):
+            continue
+        unplaced.append(path)
+    return sorted(unplaced)
+
+
+def test_a_tree_holds_only_the_documents_its_form_places_and_no_run_adds_one(tmp_path: Path) -> None:
+    """A tree `dice` writes is its documents and nothing else: every file is one the head convention
+    places, and a second run over the same tree and output directory adds no file and changes none.
+
+    The defect: sideband data persisted into the tree — the retired map cache — gave a later run an
+    ambient dependency on a previous run's state, and no assertion over the files a run declares
+    catches a file a run leaves behind."""
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "alpha.md").write_text("# Alpha\n\nIntro.\n\n## One\n\none text\n", encoding="utf-8")
+    (run / "beta.md").write_text("# Beta\n\nIntro.\n\n## First\n\nfirst text\n", encoding="utf-8")
+    env = _case_env(run)
+    first = _dicing(run, ["dice", "alpha.md", "beta.md", "--out", "tree"], env)
+    assert first.returncode == 0, first.stderr
+    tree = run / "tree"
+    files = _files(tree)
+    assert list(files), "the dice wrote no tree"
+    assert _unplaced(files) == []
+    assert any(path.endswith("entry-point.md") for path in files), "the dice wrote no volume head"
+    # the second run targets the same tree and output directory: a tree that is not empty is refused
+    # rather than merged into, so no file can be added to the first one
+    second = _dicing(run, ["dice", "alpha.md", "beta.md", "--out", "tree"], env)
+    assert second.returncode == 2, second.stderr
+    assert _files(tree) == files

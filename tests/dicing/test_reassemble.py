@@ -69,17 +69,19 @@ def test_only_a_level_1_top_is_the_written_form(leaf, rebased):
 
 
 @pytest.mark.parametrize(
-    "path, own, level",
+    "path, level",
     [
-        pytest.param("2-two.md", ["# 2. Two"], 2, id="root-leaf"),
-        pytest.param("1-one/index.md", ["# 1. One"], 2, id="root-index"),
-        pytest.param("1-one/1.1-sub.md", ["# 1.1 Sub"], 3, id="child-of-an-index"),
-        pytest.param("1-one/index.md", ["# 1. One", "", "## Sub"], 4, id="raised-off-the-split-level"),
-        pytest.param("a/b/c/d/e/f.md", ["# Six", "", "## Deep"], None, id="no-level-fits"),
+        pytest.param("2-two.md", 2, id="root-leaf"),
+        pytest.param("1-one/index.md", 2, id="root-index"),
+        pytest.param("1-one/1.1-sub.md", 3, id="child-of-an-index"),
+        pytest.param("sec/sub.md", 3, id="child-carrying-a-deeper-heading-sits-beside-its-siblings"),
+        pytest.param("a/b/c/d/e/f.md", 7, id="a-placement-no-legal-heading-reaches-is-reported"),
     ],
 )
-def test_a_part_is_restored_to_the_shallowest_level_its_ladder_permits(path, own, level):
+def test_a_part_is_restored_to_the_level_its_place_in_the_tree_fixes(path, level):
     """The tree does not carry the level a re-based section came from, so a restored heading sits at
-    its directory's level, raised where a heading below it would land at a split level and split it
-    into two sections; a ladder no level at this split depth can hold is reported, not guessed."""
-    assert _placed_level(path, own, 4) == level
+    its place's level: a directory holding a section index counts as that index's level, so a section
+    index's children and a childless section at the same depth sit beside each other. A part's own
+    ladder never moves it, and no clamp to level 6 stands: a tree too deep for the document it holds
+    is reported by the self-check, not guessed around."""
+    assert _placed_level(path) == level

@@ -407,9 +407,6 @@ Known limits:
   a ticket moved into a diced design
   ([moves between Roadmap and Design](index.md#dicing-and-checks)); moving such a
   ticket back to Roadmap is refused, since the head has no line linking its leaf.
-- [undice](dice.md) on a volume a link map diced is best effort: links made through a link
-  map come back as the map's paths, and its self-check ([undice](dice.md)) reports what does
-  not round-trip.
 - A project root with no name of its own, the file-system root `/`, gives the
   [board's](index.md#dicing-and-checks) page an empty `<project>`.
 - A pair's block whose closing fence is immediately followed by another opening fence reads as one

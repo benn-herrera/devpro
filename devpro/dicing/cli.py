@@ -41,7 +41,6 @@ def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]")
     _add_split_level(dice_many)
     dice_many.add_argument("monoliths", nargs="+", metavar="monolith", help="each markdown document to dice")
     dice_many.add_argument("--out", required=True, metavar="DIR", help="output directory, absent or empty")
-    dice_many.add_argument("--map", default="", metavar="TSV", help="link map TSV")
     dice_many.add_argument(
         "--section",
         action="store_true",
@@ -85,7 +84,6 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
         return dice(
             args.monoliths,
             args.out,
-            args.map,
             root=run_dir,
             stdout=out,
             stderr=err,

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from devpro.dicing.linkrewrite import Linker, LinkMap, Tree, rel
+from devpro.dicing.linkrewrite import Linker, Tree, rel
 from devpro.dicing.outline import Outline, plan_sections
 
 # Diced as: entry-point.md (1-2), 1-alpha.md (3-5), 2-beta/index.md (6), 2-beta/the-walk-step.md (7),
@@ -23,23 +23,13 @@ DOC = [
     "##### Notes",
 ]
 
-MAP = LinkMap(
-    documents={"other.md": "vol/other/entry-point.md"},
-    headings={("other.md", "The walk"): "vol/other/2-the-walk.md"},
-)
 
-
-def _linker(tmp_path: Path, link_map: LinkMap | None = None) -> Linker:
+def _linker(tmp_path: Path) -> Linker:
     """A Linker for DOC diced into <tmp_path>/out, run from tmp_path."""
     sections, ok = plan_sections(DOC, err=io.StringIO())
     assert ok
     root = tmp_path.resolve()
-    tree = Tree(
-        out=str(root / "out"),
-        outabs=str(root / "out"),
-        root=str(root),
-        link_map=LinkMap() if link_map is None else link_map,
-    )
+    tree = Tree(out=str(root / "out"), outabs=str(root / "out"), root=str(root))
     return Linker(Outline(sections), tree, DOC)
 
 
@@ -93,29 +83,11 @@ def test_forward_counts_linked_and_dangling_references(tmp_path: Path) -> None:
         pytest.param("[t](/abs/x.md)", "2-beta", "", "[t](/abs/x.md)", id="root-absolute"),
         pytest.param("[t](https://e.com/x.md)", "2-beta", "", "[t](https://e.com/x.md)", id="url"),
         pytest.param("[t](mailto:a@b.c)", "2-beta", "", "[t](mailto:a@b.c)", id="mailto"),
-        pytest.param("[o](other.md)", "", "", "[o](../vol/other/entry-point.md)", id="map-entry-point"),
-        pytest.param("[o](other.md#frag)", "", "", "[o](../vol/other/entry-point.md)", id="map-fragment-dropped"),
-        pytest.param("[o](other.md)", "2-beta", "", "[o](../../vol/other/entry-point.md)", id="map-from-subdir"),
-        pytest.param(
-            '[o](other.md), "The walk" x', "", "", '[o](../vol/other/2-the-walk.md), "The walk" x', id="map-heading"
-        ),
-        pytest.param(
-            '[o](other.md) "The walk"', "", "", '[o](../vol/other/2-the-walk.md) "The walk"', id="map-heading-no-comma"
-        ),
-        pytest.param(
-            "[o](other.md),", "", '"The walk" next', "[o](../vol/other/2-the-walk.md),", id="map-heading-next-line"
-        ),
-        pytest.param(
-            "[o](other.md) and", "", '"The walk"', "[o](../vol/other/entry-point.md) and", id="map-next-line-not-read"
-        ),
-        pytest.param(
-            '[o](other.md), "Elsewhere"',
-            "",
-            "",
-            '[o](../vol/other/entry-point.md), "Elsewhere"',
-            id="map-heading-not-listed",
-        ),
-        pytest.param("[o](sub/other.md)", "", "", "[o](../sub/other.md)", id="map-key-must-equal-path"),
+        pytest.param("[o](other.md)", "", "", "[o](../other.md)", id="second-document-rebased"),
+        pytest.param("[o](other.md#frag)", "", "", "[o](../other.md#frag)", id="second-document-fragment-kept"),
+        pytest.param("[o](other.md)", "2-beta", "", "[o](../../other.md)", id="second-document-from-subdir"),
+        pytest.param("[o](other.md),", "", '"The walk" next', "[o](../other.md),", id="quoted-heading-not-read"),
+        pytest.param("[o](sub/other.md)", "", "", "[o](../sub/other.md)", id="second-document-in-subdir"),
         pytest.param("[t](docs/x.md#sec)", "", "", "[t](../docs/x.md#sec)", id="rebased-fragment-kept"),
         pytest.param("[t](docs/x.md)", "2-beta", "", "[t](../../docs/x.md)", id="rebased-from-subdir"),
         pytest.param("[t](../up.md)", "", "", "[t](../../up.md)", id="rebased-parent"),
@@ -124,7 +96,7 @@ def test_forward_counts_linked_and_dangling_references(tmp_path: Path) -> None:
     ],
 )
 def test_forward_link_targets(tmp_path: Path, line: str, leaf_dir: str, next_line: str, expected: str) -> None:
-    assert _linker(tmp_path, MAP).forward(line, leaf_dir, next_line) == expected
+    assert _linker(tmp_path).forward(line, leaf_dir, next_line) == expected
 
 
 @pytest.mark.parametrize(

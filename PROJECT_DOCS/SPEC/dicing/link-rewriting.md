@@ -45,14 +45,7 @@ Each link's target is classified in this order:
 2. **Left unchanged:** an empty target, any other `#...` target, a target opening with `/`, and a
    target opening with a scheme: one or more lowercase ASCII letters followed by `:` (`https:`,
    `mailto:`).
-3. **A diced document in the link map** ([the link map](#the-link-map)): the target's path part
-   (before any `#`) equals a map document key. The target becomes that document's head and
-   any fragment is dropped; if the text following the link opens with an optional comma, spaces and
-   a double-quoted heading title that the map lists for that document, the target is that heading's
-   leaf instead. The text after the link is the rest of its line; when that rest is empty or only
-   `,` and spaces, the next line is taken as its continuation. The quoted text itself is left in
-   place.
-4. **Any other relative path** is rebased ([shared behaviors](index.md#dicing-and-checks)) to reach
+3. **Any other relative path** is rebased ([shared behaviors](index.md#dicing-and-checks)) to reach
    the same file from the directory of the file it now sits in, fragment kept.
 
 ### Anchors
@@ -64,19 +57,3 @@ space, `-` or `_` deleted (letters and digits include non-ASCII ones), spaces ma
 `### [Plan Status Form](x)` anchors as `plan-status-form`. The Nth repeat of an anchor in one file
 takes the suffix `-<N-1>` for N>1 (`setup`, `setup-1`, `setup-2`). In the source, repeats are
 counted over the whole document; in a diced file, over that file's headings alone.
-
-## The link map
-
-A UTF-8 TSV file used by `dice` and written by it beside its tree as `<out-dir>/links.tsv`. Each line
-has two or three tab-separated fields; other lines are ignored.
-
-| Fields | Meaning |
-|---|---|
-| `<target>\t<path>` | A link whose path part is `<target>` goes to `<path>`, the diced document's head. |
-| `<target>\t<heading>\t<path>` | A link to `<target>` whose following text quotes `"<heading>"` goes to `<path>`, that heading's leaf. `<heading>` is the title without its number. |
-
-`dice` reads the map `--map` names, if given, and writes `<out-dir>/links.tsv` holding every row it
-read and then its own: per document named, one head row, then one heading row per distinct title in
-section order (the first section of a title wins). A row's `<target>` is the document's base name,
-and its `<path>` is the head's or the leaf's path from the directory the verb ran in. A document
-linking into a second document is therefore still a link, not a path.

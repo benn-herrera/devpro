@@ -1,9 +1,0 @@
-doc.md	out/entry-point.md
-doc.md	Introduction	out/1-introduction/index.md
-doc.md	First part	out/1-introduction/1.1-first-part/index.md
-doc.md	Deep part	out/1-introduction/1.1-first-part/1.1.1-deep-part.md
-doc.md	Second	out/2-second/index.md
-doc.md	Alpha `alpha` item	out/2-second/alpha-alpha-item.md
-doc.md	Beta `beta` item	out/2-second/beta-beta-item.md
-doc.md	Appendix: `odd` Name!	out/appendix-odd-name/index.md
-doc.md	Child of appendix	out/appendix-odd-name/child-of-appendix.md

@@ -1,9 +1,8 @@
 ## dice
 
-`devpro dice [--split-level <level>] [--section] <monolith.md>... --out <out-dir> [--map <map.tsv>]`
+`devpro dice [--split-level <level>] [--section] <monolith.md>... --out <out-dir>`
 dices one or more documents ([the diced tree](index.md#dicing-and-checks), [link rewriting](index.md#dicing-and-checks)) at the deepest
-split level `<level>` ([shared behaviors](index.md#dicing-and-checks)), using `<map.tsv>` as the link
-map ([the link map](index.md#dicing-and-checks)) if given.
+split level `<level>` ([shared behaviors](index.md#dicing-and-checks)).
 
 **The form written.** Every document named becomes a volume ([the model](index.md#dicing-and-checks)). One
 document is written at the output root, its head `<out-dir>/entry-point.md`: this is the one-document
@@ -23,7 +22,6 @@ Order of effects and failures:
 | Condition | stderr | Exit |
 |---|---|---|
 | a `<monolith.md>` is not a file | `not a file: <monolith.md>` | 2 |
-| `--map` given and not a file | `not a file: <map.tsv>` | 2 |
 | `<out-dir>` exists and is not a directory | `not a directory: <out-dir>` | 2 |
 | `<out-dir>` exists and is not empty | `out-dir not empty: <out-dir>` | 2 |
 | Planning fails ([file names and layout](index.md#dicing-and-checks)) | that section's message | 1 |
@@ -82,17 +80,13 @@ code and code spans, relative to `<out-dir>`:
 - A link to a heading's place in the tree, as [link targets](index.md#dicing-and-checks) step 1 writes
   it, becomes `#<anchor>`, the heading's anchor in the document
   ([anchors](index.md#dicing-and-checks)).
-- A link to a diced document the tree's link map names becomes the path the map gives, made
-  relative to `<out-dir>`.
 - Every other relative link is rebased from its file's directory to `<out-dir>`, fragment kept.
   Links left unchanged by [link targets](index.md#dicing-and-checks) step 2 stay unchanged.
 
-**Round trip.** For a tree as `dice` wrote it at `<level>` without a map: move `<tree-dir>` aside,
-`undice` it to `<out-dir>`, then `dice` the documents `<out-dir>` holds at `<level>`, without a map,
-with `--section` where the tree is a section, from `<out-dir>` as the current directory, into
-`<tree-dir>`; every file of the new tree but its link map equals the old byte for byte. The map is
-generator output, keyed by the input documents' base names, which undice's own output names and
-`<out-dir>` do not repeat.
+**Round trip.** For a tree as `dice` wrote it at `<level>`: move `<tree-dir>` aside, `undice` it to
+`<out-dir>`, then `dice` the documents `<out-dir>` holds at `<level>`, with `--section` where the
+tree is a section, from `<out-dir>` as the current directory, into `<tree-dir>`; every file of the
+new tree equals the old byte for byte.
 
 **Self-check.** After writing each document, it is planned at `<level>` ([the diced tree](index.md#dicing-and-checks),
 its messages to stderr as in [dice](#dice)); a planning failure exits 1 there. Otherwise the

@@ -154,10 +154,10 @@ render-agents-file harness out:
 _harness-value harness key:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" ./devtools/scripts/_harness-value.sh "$@"
 
-# Splits by heading level, one or more documents into a tree of volumes, an optional link map TSV
-# read and this run's own rows written beside it, then checks every volume reassembles its document
-# and every relative link resolves. --section writes the tree as a broken-out section instead: its
-# root's head is index.md, and no omnibus stands above it. Every argument forwards verbatim.
+# Splits by heading level, one or more documents into a tree of volumes, then checks every volume
+# reassembles its document and every relative link resolves. --section writes the tree as a
+# broken-out section instead: its root's head is index.md, and no omnibus stands above it. Every
+# argument forwards verbatim.
 [doc("dice markdown documents into linked leaves")]
 dice *args:
     @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro dice {{args}}

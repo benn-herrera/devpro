@@ -40,19 +40,17 @@ def check_reassembly(
     *,
     out: TextIO,
     err: TextIO,
-    base: str = "",
     document_dir: str = "",
 ) -> bool:
-    """Compare the tree's files with the monolith line for line. base is the directory the sections'
-    paths are relative to, the tree's root where it is empty: a volume's sections are its document's,
-    planned relative to the volume's head. document_dir is the directory the monolith's outside
-    links are relative to, the tree's root where it is empty: the run directory a dice was given, or
-    the directory an undice wrote its document into."""
+    """Compare the tree's files with the monolith line for line, each section's path written under
+    tree.out. document_dir is the directory the monolith's outside links are relative to, the tree's
+    own directory where it is empty: the directory a dice read the volume's document from, or the one
+    an undice wrote its document into."""
     linker = Linker(Outline(sections), tree, lines)
     fenced = fence_flags(lines)
     k = 0
     for s in sections:
-        path = f"{tree.out}/{base}/{s.path}" if base else f"{tree.out}/{s.path}"
+        path = f"{tree.out}/{s.path}"
         try:
             leaf = read_lines(path)
         except OSError:
@@ -64,8 +62,7 @@ def check_reassembly(
                 print(f"reassemble: no Contents block in {path}", file=err)
                 return False
             leaf = leaf[:cut]
-        leaf_dir = f"{base}/{s.path}" if base else s.path
-        leaf_dir = parent_dir(leaf_dir)
+        leaf_dir = parent_dir(s.path)
         fence = FenceTracker()
         # a leaf in the re-based form has its ladder shifted back for the compare; one in the
         # pre-change form is already at the monolith's levels and compares as it stands
