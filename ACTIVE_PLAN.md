@@ -41,7 +41,13 @@ Implements [ACTIVE_DESIGN.md](ACTIVE_DESIGN.md): its [SPEC delta](ACTIVE_DESIGN.
 | P5 | landed | expert | `devpro:python-coder` | a child page names its root for the dispatching agent, in that call's hue |
 | P6 | landed | expert | `devpro:python-coder` | claude and opencode calls record their model; index and page show it |
 | P7 | landed: 38 findings in `ACTIVE_PLAN_REVIEW.md` | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
-| B0 | drafted | expert | session | Post-plan burndown drafting |
+| B0 | landed: six items drafted | expert | session | Post-plan burndown drafting |
+| B1 | dispatchable | expert | `devpro:python-coder` | a dispatched page's fresh contexts skip the root's hue |
+| B2 | dispatchable | expert | `devpro:web-app-expert` | the palette and the harness dots live in the shared layer |
+| B3 | dispatchable | expert | `devpro:web-app-expert` | one formatter per notation; the pages' small layout defects |
+| B4 | dispatchable | expert | `devpro:typescript-coder` | the screenshot tool honors `--base`, its contract and its bounds |
+| B5 | dispatchable | expert | `devpro:python-coder` | test pins loosened, the zone reset owned, the capture parses once |
+| B6 | dispatchable | expert | `devpro:prompt-engineer` | the changed leaves read true and resolve |
 
 ## P1 — `just screenshot`, the development loop's page screenshot
 
@@ -561,6 +567,270 @@ Each writes a review under `.devpro-temp/`. The session synthesizes them into
 
 ## Post-plan burndown
 
+Drafted from `ACTIVE_PLAN_REVIEW.md`; each item cites the findings it fixes by their R-IDs there,
+whose entries carry the seats' findings and proposed fixes; each item quotes the lines it acts on.
+Not fixed, by the owner's direction: R9 (the index's last moment keeps its time only — multi-day
+sessions are not a case yet); R14 (no headless-browser test in the suite — the page scripts are
+checked in the `just screenshot` loop of every web change). R28–R31, and R15's hook-order pin in
+`tests/test_opencode_entry.py`, are opencode's, handed to the opencode session.
+
+B1–B3 view their pages before reporting done: `just dev-dashboard` runs in the background, its
+printed URL is `<url>`, and `just screenshot /profiler/ --base <url>` and
+`just screenshot /page/<id> --base <url>` run with `--color-scheme light` and `--color-scheme dark`.
+Each item's **Screenshot** line names the page and what it must show; the PNG paths go in the
+report.
+
+Run serially, in ID order: B1–B3 share `pages.py` or `view.html`, B5 shares `test_server.py` with
+B1 and `test_devpro_profiler.py` with B2, and every item shares the test build. Line numbers below
+are as of the plan's drafting; where an earlier item has moved them, find the quoted text.
+
 ### B0 — Post-plan burndown drafting
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Drafts the items below from `ACTIVE_PLAN_REVIEW.md`.
+
+### B1 — a dispatched page's fresh contexts skip the root's hue
+
+Fixes R2, R7, R27. Agent `devpro:python-coder`.
+
+**Scope.** `devpro/profiler/pages.py`: `contexts_of`, `dispatcher_of`, `class Dispatcher`;
+`tests/dashboard/test_server.py` (`test_a_child_page_names_its_root_for_the_call_that_dispatched_it`,
+`:648`); `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md` (the `dispatcher_of` sentence).
+
+**Facts.**
+- `pages.py:343-351` — `next_hue = 1` … `context["hue"] = max(next_hue, 1)` /
+  `next_hue = context["hue"] + 1`: fresh hues never compare against `root_hue`. Step 4's first test
+  fails on today's tree.
+- `pages.py:875` — `dispatcher_of`'s docstring: "`contexts_of` with hue 0 for its own root".
+- `harness-profiler.md:145` — "`pages.dispatcher_of` reads both from the dispatcher's records at
+  render".
+
+**Guidance.**
+1. In `contexts_of`, a fresh context takes the next hue from 1 up that is not `root_hue`; delete the
+   `max(…, 1)` clamp. Copies keep their parent's hue, as now.
+2. `dispatcher_of` computes the dispatcher's contexts with the dispatcher's own root hue: the
+   dispatcher's own `dispatcher_of` result, walked up the chain at read time with a visited set.
+   The top of the chain — a dispatcher nothing dispatched, or the session where the walk revisits
+   one — has root hue 0. Nothing is written at capture.
+3. Delete the `0` default in `dispatcher_of`'s hue `next(…, 0)` (R7) and the unreachable `[]`
+   default in its records `next(…)` (R27); move `class Dispatcher` above its first user and unquote
+   every `"Dispatcher | None"` annotation (R27). Rewrite `dispatcher_of`'s docstring to state the
+   chain walk, dropping "with hue 0 for its own root".
+4. Tests in `tests/dashboard/test_server.py` beside `:648`:
+   - a child page whose root wears hue 1 and whose own records open one fresh Agent context; that
+     context's hue is not the root's. Defect: R2 — a dispatched page's fresh context takes the
+     root's hue.
+   - `s-parent` dispatches `s-child` (its context hue 1), and `s-child` dispatches `s-grand`;
+     `s-grand`'s root hue equals the hue `s-child`'s page draws `s-grand`'s context in. Defect: R2 —
+     `dispatcher_of` computes the dispatcher's hues with root hue 0, so the grandchild's root
+     disagrees with its dispatcher's page.
+   - The `:648` docstring reads "`s-one`'s root is `coder` in hue 2 — `devpro-architect`'s context
+     took hue 1".
+5. `harness-profiler.md:145` reads "reads both from the dispatcher's records at render, and the
+   dispatcher's own root hue from its own dispatcher's, up the chain".
+
+**Screenshot.** A child page whose session opened its own subagent: the root and every other
+lifeline differ in color.
+
+**Done-line.** `just test-changed`, then `just lint`.
+
+### B2 — the palette and the harness dots live in the shared layer
+
+Fixes R3, R4, R5, R6, R8. Agent `devpro:web-app-expert`.
+
+**Scope.** `devpro/kanban/assets/board.css`; `devpro/profiler/view.html` (`:root` palette block,
+marker loop, `accentChip`, the `.chip.on-accent` and `svg .head` rules); `devpro/profiler/pages.py`
+`INDEX` (`.harness.opencode`, `.harness.claude`, and the comment above `INDEX` on the harness
+dot); the tests pinning the dot hexes (`tests/test_devpro_profiler.py:995-996`);
+`PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md` (the second "no palette of its own").
+
+**Facts.**
+- `view.html:8,11` define `--c0`…`--c7` for light and dark; `grep -n -- '--c[0-7]'
+  devpro/kanban/assets/board.css` finds nothing.
+- `view.html:355` — markers `head-${h}` filled `${hueColor(h)}`; `view.html:111` —
+  `hueColor = (h) => (h === 0 ? 'var(--accent)' : …)`, so hue 8's head (`head-0`) is the accent.
+- `view.html:24` — `svg .head { fill:#fff; …}`; dark `--c4:#9aa8ba` reads 2.42:1 under it.
+
+**Guidance.**
+1. Move `--c0`…`--c7` (both modes) out of `view.html` into `board.css`'s light and dark blocks,
+   beside `--accent`/`--on-accent`, values unchanged. Add `--harness-claude: #d97757` and
+   `--harness-opencode: #7b7bf0` in the light `:root` block only (they hold in both modes);
+   `INDEX`'s two `.harness.*` rules read them. The comment above `INDEX` (`pages.py:1014-1016`, "A
+   harness's dot wears its brand color, the page's own rule rather than the site's") is reworded so
+   the dot's color is the layer's `--harness-*`.
+2. Palette markers `head-${h}` / `head-open-${h}` for h 0–7 fill `var(--c${h})`; `head-main` stays
+   the only accent marker and is selected for hue 0 only (R3).
+3. In dark mode, a head label on a palette hue fills `var(--on-accent)` (R5).
+4. Delete the `.chip.on-accent` rule and the `accentChip` call on the call-tree chip; compute the
+   child-or-context id once where `:422` and `:429` both compute it (R6).
+5. The root lifeline bar and the main context's head bar carry a 1px `var(--line)` stroke in both
+   modes (R8).
+6. Delete the harness-dot hex assertions at `tests/test_devpro_profiler.py:995-996` (R15, the dot
+   half).
+7. `harness-profiler.md:37`: cut ", no palette of its own", keeping the statement at `:25`.
+
+**Screenshot.** A session with nine or more fresh contexts (this tree has 39): the arrowhead into
+hue 8 matches its `--c0` lifeline; in dark mode, head labels on palette hues are dark; the root bar
+shows its stroke in both modes. The index: both harness dots in their colors.
+
+**Done-line.** `just test-changed`, then `just lint`.
+
+### B3 — one formatter per notation, and the pages' small layout defects
+
+Fixes R1, R10, R11, R12, R13. Agent `devpro:web-app-expert`.
+
+**Scope.** `devpro/profiler/deco.js`; `devpro/profiler/view.html` (`dur`, `padTwo`, `localDay`,
+`localClock`, `clock`, `modelWords`, `modelTail`, the `head.append(…)` that joins the header items);
+`devpro/profiler/pages.py` `INDEX` (`pad`, `localDay`, `localClock`, `span`, the `.col-*` widths,
+`table { min-width }`) and `render_html`; `PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`
+(`:24`, `:52-58`, `:137`, and the span sentence at `:139-141`). The tests pinning the deco and the
+page scripts' scope, updating them in scope: `test_every_page_script_wraps_its_body_in_an_iife`
+(`tests/test_devpro_profiler.py`), `test_the_decoration_and_the_pages_script_share_one_scope` and
+`test_the_decoration_script_is_served_as_the_file_its_pages_name` (`tests/dashboard/test_server.py`).
+
+**Facts.**
+- `view.html:69` — `const dur = (ms) => (ms < 1000 ? \`${ms} ms\` : … \`${Math.round(ms / 1000)} s\`)`.
+- `pages.py` `INDEX` — `const span = (seconds) => { if (seconds < 60) return String(seconds) + 's'; …
+  return left ? hours + 'h ' + left + 'm' : hours + 'h'; }`.
+- `view.html:47` and `pages.py:1073` — `<script src="/profiler/deco.js"></script>`; `deco.js` wraps
+  its body in an IIFE; `render_html` (`pages.py:687-695`) inlines the shared layer but not the deco.
+- `harness-profiler.md:24` calls the `tree --format html` page "self-contained"; `:137` says "the
+  deco reads none" of the moments; `:141` states "`0s` for a zero-length span".
+
+**Guidance.**
+1. `deco.js` gains the one local-time formatter (`localDay`, `localClock`, the 24-hour clock with
+   seconds) and the one duration formatter. Its IIFE exposes them as one deliberate global,
+   `devproFormat`, the only name it adds to the page's scope. `view.html` and `INDEX` drop their
+   copies and call `devproFormat.…` (R13). `render_html` carries `deco.js`'s text inline where the
+   served page links it, so the `tree --format html` page's script finds the formatters.
+   `harness-profiler.md`: state the global and the inlining in the sentence at `:52-58`, and `:137`
+   says the deco formats moments and reads none.
+2. The duration formatter, from milliseconds: zero reads `0s`; under 1s `217ms`; under 10s one
+   decimal, `4.2s`; under 60s `48s`; under an hour `18m 49s` (`18m` when the seconds are 0); from an
+   hour `1h 2m` (`1h` when the minutes are 0). No space between number and unit. The call tree's
+   duration column and the index's span column (`seconds * 1000`) both use it (R1). A running call
+   still reads `running`.
+3. `harness-profiler.md:139-141`: the span sentence states that call durations take the same form,
+   from the one formatter; its `0s` stands.
+4. One model wording: `3 models` / the model id, from one function the callers prefix with their
+   separator; drop the `D.models.length ? … : ''` guard (R11).
+5. Each header-line item is a `white-space: nowrap` span, so the line breaks only at a separator
+   (R12).
+6. Each index column's width is a custom property (`--w-harness` … `--w-span`) its `.col-*` rule
+   reads, and `table { min-width }` is the `calc()` sum of those properties; no width is written
+   twice. `--w-session` holds an indented 30-character id at 1280px (`calc(32ch + 2.4rem)` in the
+   cell's font, or the nearest width that does) (R10).
+
+**Screenshot.** A session page with long calls: durations read `18m 49s`, `1h 2m`, `48s`, `217ms`.
+The index at 1280px: span column in the same form, child-row session ids on one line. A narrow
+session page (`--viewport 400x800`): the header line breaks only between items. The `tree --format
+html` page, opened from disk: its diagram draws and its times are local.
+
+**Done-line.** `just test-changed`, then `just lint`.
+
+### B4 — the screenshot tool honors `--base`, its own contract and its bounds
+
+Fixes R19–R25. Agent `devpro:typescript-coder`.
+
+**Scope.** `devtools/screenshot.ts`; `devtools/tests/test_screenshot.py`; `justfile` (`_js-deps`,
+`js-lock`).
+
+**Facts.**
+- `just screenshot / --base http://127.0.0.1:9` exits 0 and writes Firefox's `file:///` listing.
+- `justfile:250` `bun install --frozen-lockfile` writes to stdout; `justfile:249` and `:256` repeat
+  the bun-on-PATH guard.
+- `screenshot.ts:253-254` — `await shoot(…)` then `await scheme(…)`.
+- `:192` — `return first.split(" #").filter(Boolean).join(" ")`; `:258` — `` `error: ${reason(err)}` ``
+  in `main`'s catch, and `:268` in the top-level catch.
+- `:206` — `await page.evaluate(() => globalThis.document.fonts.ready)`, no timeout.
+- `:108` — `if (values.help) throw new ScreenshotError(USAGE, 2)`; `:18-19` two `node:fs` imports;
+  `:261` `await browser.close()` in `finally`.
+
+**Guidance.**
+1. With `--base`, a page starting with `/` is a route, resolved before any filesystem test; only
+   without `--base` does a `/`-path fall through to the file check (R19).
+2. `_js-deps` sends `bun install --frozen-lockfile`'s output to stderr (R20). The bun-on-PATH guard
+   moves to one private recipe that both `_js-deps` and `js-lock` depend on; `js-lock` does not
+   depend on `_js-deps`, whose frozen install fails on the stale lock `js-lock` rewrites (R25).
+3. `scheme()` runs after `goto` and before `page.screenshot`; a mismatch writes no PNG (R21).
+4. `reason()` keeps the first-line cut and drops the `" #"` split; `main`'s catch prefixes `error: `
+   to the message the tool composed, without re-running `reason()` (R22).
+5. `document.fonts.ready` is bounded by `--timeout` (R23). Every wrapped error passes
+   `{ cause: err }` (R24).
+6. R25: `--help` prints usage to stdout and exits 0; `onPath` stays (no Bun type package is added),
+   and accepts only a regular file; `browser.close()` in `finally` is `.catch(() => {})`; one
+   `node:fs` import; the comment at `:25` reads "The defaults `--help` lists: the recipe passes its
+   arguments through, and the tool holds them."
+7. Tests in `test_screenshot.py`:
+   - a page served at `/` by a local `http.server`, shot with
+     `/ --base http://127.0.0.1:<port> --wait-for <marker>`, exits 0. Defect: a route naming an
+     existing path is shot as a file (R19).
+   - a page whose own script redefines `window.matchMedia` to report dark, shot with
+     `--color-scheme light --out <tmp>/x.png`, exits 1 and leaves no file at `<tmp>/x.png`. Defect:
+     the scheme check runs after `page.screenshot` wrote the PNG, so the failed run leaves it behind
+     (R21).
+
+**Done-line.** `just test-changed`, then `just lint`.
+
+### B5 — test pins loosened, the zone reset owned, the capture parses once
+
+Fixes R15 (the `<thead>` half), R16, R17, R18, R26. Agent `devpro:python-coder`.
+
+**Scope.** `tests/test_devpro_profiler.py` (the `<thead>` regex at `:974-984`, the zone test
+`test_the_text_tree_draws_a_moment_in_the_machines_zone`, `_page_data`);
+`tests/dashboard/test_server.py` (the first served-page test's `json.loads(… "const D = " …)`
+parse, the no-legend assertion `assert "How to read this" not in index`, and `contexts_of_page`
+inside `test_a_child_page_names_its_root_for_the_call_that_dispatched_it`); `tests/conftest.py`;
+`devpro/profiler/capture.py` (`tool_use_facts`, `usage_by_tool_use`, `_model_of`).
+
+**Facts.** `git grep -n "usage_by_tool_use\|_model_of" -- devpro tests` → `capture.py:182`, `:184`,
+`:238` only; no test calls either.
+
+**Guidance.**
+1. Replace the `<thead>` regex with an effect check: the header's `<th>` classes, parsed, equal the
+   `col-*` classes the row script appends, in order (R15).
+2. The no-legend assertion becomes `assert LEGEND not in index`, importing `LEGEND` from
+   `devpro.profiler.pages` (R16).
+3. The zone test's `setenv` + `time.tzset()` move into a yield fixture whose teardown calls
+   `tzset()`; drop the docstring's signature-only second defect (R17).
+4. One page-data parser, a `page_data` function in `tests/conftest.py`, replaces `_page_data` and
+   both `test_server.py` parses (R18).
+5. `tool_use_facts` parses a transcript line once and hands the parsed message to the usage and
+   model reads; `usage_by_tool_use` and `_model_of` take the parsed message (R26).
+
+**Done-line.** `just test-changed`, then `just lint`.
+
+### B6 — the changed leaves read true and resolve
+
+Fixes R32–R38. Agent `devpro:prompt-engineer` (writer mode). B1's, B2's and B3's
+`harness-profiler.md` edits stand; B6 does not undo them.
+
+**Scope.** `PROJECT_DOCS/ARCHITECTURE/recipes.md`; `PROJECT_DOCS/ARCHITECTURE/repo-layout.md`;
+`PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`;
+`PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md`;
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-lint-recipe-is-read-only.md`.
+
+**Facts.**
+- `recipes.md:53-78` is one paragraph: the screenshot text (`:67-76`) sits between "… takes the
+  latest at run time." (`:66`) and "The check's mandate is what ships: … outside it." (`:77-78`);
+  `:53` opens "The suite needs `bun`, `perl`, `firefox` …".
+- `harness-profiler.md:161-163` — "…a context's in its lifeline's header where that header holds it
+  alone…"; `harness-profiler.md:145` — "reads both" (as B1 leaves it).
+- `shipped-files.md:175-177` and `:186-188` both state the child root's color.
+
+**Guidance.** Each finding's entry in `ACTIVE_PLAN_REVIEW.md` names the defect; the changes:
+- `recipes.md`: move "The check's mandate is what ships: … outside it." to follow "… takes the
+  latest at run time.", scoped to the first run; then add that a second
+  `bunx tsc -p devtools/tsconfig.json --noEmit` checks the repository's own
+  `devtools/screenshot.ts`, a dev tool checked though it does not ship. Start a new paragraph at
+  `` `just screenshot` `` (R32). `:53`: state which test surface needs which tool — `firefox` the
+  `dupe_sweep` surface's screenshot test (R38).
+- `repo-layout.md`: list `devtools/tsconfig.json`; the screenshot row names role and recipe only
+  (R32, R36).
+- CONVENTIONS `a-lint-recipe-is-read-only.md`: its `tsc` line covers the devtools program (R32).
+- `harness-profiler.md`: the models sentence one condition per item (R33); define hue and copy where
+  first used (R34); "reads both" names its two (R37); "the accent rule" becomes "the accent-colored
+  border" (R38).
+- `shipped-files.md`: the child root's color stated once (R35); end the `datetime` sentence at "…in
+  markup no reader is shown." (R38).
+
+**Done-line.** `just check-links`.
