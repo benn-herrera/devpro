@@ -5,6 +5,24 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
+### A background dispatch's tool call times the spawn, not the child's run
+
+Under opencode 2.4.1, a backgrounded subagent dispatch is recorded — by the capture's
+`execute.before`/`execute.after` pair and by the host's own `session_part` storage alike — as a
+tool call completed in single-digit milliseconds. The window is the cost of firing the dispatch,
+not the child's work: durations cluster at 17–21 ms regardless of how long the child then runs,
+and the completed part's own `metadata` carries `"status": "running"` for the child session it
+names. Measured 2026-11-25 over twelve background dispatches in one project: tool-call durations
+of 2–21 ms against child-session spans of 0.2–10.9 minutes. Under the claude harness the same
+dispatch's Task-tool duration covers the subagent's run, so the two harnesses' records do not
+compare.
+
+The ticket is first the upstream report to opencode — the summary, the storage example with its
+running-inside-completed contradiction, and the twelve-dispatch table — and then, where upstream
+exposes no surface a plugin can read, the capture's compensation: a dispatch's duration measured
+from its child session's records rather than the hook pair, so the profiler's pages do not show
+minutes of work as 19 ms.
+
 ## Features
 
 ### Group traces with plans — the operational-context stamp
