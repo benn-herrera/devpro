@@ -1,4 +1,4 @@
-## 1. One
+# 1. One
 
 See [§1](1-inner-one.md) here.
 

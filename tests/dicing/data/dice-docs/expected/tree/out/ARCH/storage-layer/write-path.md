@@ -1,4 +1,4 @@
-### Write path
+# Write path
 
 appends then syncs
 and then acknowledges.

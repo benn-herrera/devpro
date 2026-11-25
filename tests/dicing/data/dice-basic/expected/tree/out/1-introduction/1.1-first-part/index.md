@@ -1,4 +1,4 @@
-### 1.1 First part
+# 1.1 First part
 
 A link [up](../../../other/notes.md) and an [anchor](#top) and [mail](mailto:x@example.com).
 

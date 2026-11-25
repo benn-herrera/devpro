@@ -1,4 +1,4 @@
-### 1. Inner one
+# 1. Inner one
 
 Inner text.
 

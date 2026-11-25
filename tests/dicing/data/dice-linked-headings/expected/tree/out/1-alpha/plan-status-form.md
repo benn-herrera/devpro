@@ -1,3 +1,3 @@
-### [Plan Status Form](../../other.md#x)
+# [Plan Status Form](../../other.md#x)
 
 Form text.

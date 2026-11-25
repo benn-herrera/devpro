@@ -1,3 +1,3 @@
-## Rubric
+# Rubric
 
 Points.

@@ -4,8 +4,14 @@ Passes when the files [file names and layout](tree.md#file-names-and-layout) ass
 section order with each entry point's and index's Contents block dropped (from its last line that
 is exactly `Contents:`) and [section references](links.md#section-references) step 3 links undone,
 equal the source lines with their other links as rewritten by
-[link targets](links.md#link-targets). Success prints `reassemble ok: <N> lines` to stdout; each
-failure prints to the verb's error stream:
+[link targets](links.md#link-targets). A file whose top heading reads level 1 is in the re-based
+form ([file content](tree.md#file-content)) and has its heading ladder shifted back before the
+compare: its top compares at its section's source level, and every other heading gains its
+section's level minus 1, fenced lines compared as they stand. A file whose top reads any other
+level is the pre-change form, already at the source's levels, and compares as it stands; the
+pre-change form never presents a level-1 top, since no section is planned at level 1
+([which headings split](tree.md#which-headings-split)). Success prints
+`reassemble ok: <N> lines` to stdout; each failure prints to the verb's error stream:
 
 | Fault | Message |
 |---|---|

@@ -63,7 +63,7 @@ file P2's rehome removes, and P3 regenerates the trees the re-dice standardizes.
 
 | Package | State | Rating | Agent | Scope |
 | --- | --- | --- | --- | --- |
-| P1 | in progress | expert | `devpro:python-coder` | the dicer writes every section's heading ladder re-based to an H1 top; reassembly and undice restore it |
+| P1 | landed | expert | `devpro:python-coder` | the dicer writes every section's heading ladder re-based to an H1 top; reassembly and undice restore it |
 | P2 | dispatchable | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
 | P3 | drafted | expert | `devpro:python-coder` | the three standing trees re-diced under the new behavior |
 | P4 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |

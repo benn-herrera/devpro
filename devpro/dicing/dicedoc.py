@@ -5,13 +5,13 @@ import os
 import posixpath
 from typing import TextIO
 
-from .heads import ENTRY_POINT, HEADS
+from .heads import ENTRY_POINT, HEADS, INDEX
 from .linkcheck import check_links, markdown_files
 from .linkrewrite import Linker, LinkMap, Tree, parent_dir
 from .linkscan import link_targets
-from .outline import DEEPEST_SPLIT_LEVEL, Outline, Section, plan_sections
-from .reassemble import check_reassembly, own_end
-from .split import write_tree
+from .outline import _HEADING, DEEPEST_SPLIT_LEVEL, Outline, Section, plan_sections
+from .reassemble import _top_is_rebased, check_reassembly, own_end
+from .split import _rebased, write_tree
 from .textfile import FenceTracker, read_lines, split_lines, write_lines
 
 
@@ -60,7 +60,8 @@ def dice_doc(
     _warn_duplicate_numbers(sections, err=stderr)
     for s in sections:
         os.makedirs(os.path.join(out, posixpath.dirname(s.path)), exist_ok=True)
-    write_tree(sections, lines, tree, err=stderr)
+    if write_tree(sections, lines, tree, err=stderr):
+        return 1
     if not check_reassembly(sections, lines, tree, out=stdout, err=stderr):
         return 1
     return 0 if check_links(sections, tree, out=stdout, err=stderr) else 1
@@ -74,8 +75,8 @@ def _own_and_contents(out: str, path: str) -> tuple[list[str], list[str]]:
 
 
 def _undiced_lines(tree: Tree, *, err: TextIO, deepest: int) -> tuple[list[str], bool, list[tuple[str, int | None]]]:
-    """The entry point, then each file its Contents block lists, Contents dropped, links restored
-    at split level deepest;
+    """The entry point, then each file its Contents block lists, Contents dropped, its heading
+    ladder restored and links restored at split level deepest;
     whether every listed file could be read (each that could not is reported to err); and, for
     every read in reading order, its normalized path and the 1-based line of the result its own
     lines start at, None when it holds none."""
@@ -99,13 +100,56 @@ def _undiced_lines(tree: Tree, *, err: TextIO, deepest: int) -> tuple[list[str],
     return lines, all_read, reads
 
 
+def _placed_level(path: str, own: list[str], deepest: int) -> int | None:
+    """The level a part's top heading is restored to: the shallowest level its place in the tree
+    permits — a directory's own section at that directory's level, any other file one below, child
+    of the index beside it — that keeps every heading below the top deeper than the deepest split
+    level, so the restored document splits where the tree's directories do and nowhere else. A part
+    with no heading below its top cannot be split again and takes its place's level. None where no
+    level to 6 permits the ladder: the tree then holds one no document at this split level has, and
+    that is reported rather than guessed."""
+    directory = parent_dir(path)
+    depth = len(directory.split("/")) if directory else 0
+    # an index is its directory's own section, at that directory's level; any other file is one
+    # level below, since its section is a child of the index beside it
+    own_level = depth + 1 if os.path.basename(path) == INDEX else depth + 2
+    fence = FenceTracker()
+    levels = [(_HEADING.match(line).end() - 1) for line in own if not fence.inside(line) and _HEADING.match(line)]
+    below = max((level - levels[0] for level in levels[1:]), default=0) if levels else 0
+    spans = [level for level in range(own_level, 7) if level + below <= 6 and (below == 0 or level + below > deepest)]
+    return spans[0] if spans else None
+
+
 def _restored(parts: list[tuple[str, list[str]]], tree: Tree, lines: list[str], *, deepest: int) -> list[str]:
-    """The parts' own lines with links restored against the sections, split at level 2 to deepest,
-    and headings of lines."""
-    sections, _ = plan_sections(lines, err=io.StringIO(), deepest=deepest)
-    linker = Linker(Outline(sections), tree, lines)
+    """The parts' own lines with their heading ladders restored, links restored against the
+    sections, split at level 2 to deepest, and headings of lines.
+
+    A part whose top heading reads level 1 is the re-based write form and has its ladder put back to
+    the shallowest level its position in the tree permits (`_placed_level`), fenced lines as they
+    stand; a part whose top reads any other level is the pre-change form and passes through as it
+    stands. A part that opens no heading, or that no level can place, is written as it stands: the
+    self-check reports it, as it reports any file of the tree the planned sections do not reproduce.
+    A part's entry point is its own title, written as the tree holds it.
+    """
+
+    def restore_ladder(path: str, own: list[str]) -> list[str]:
+        level = _placed_level(path, own, deepest) if path != ENTRY_POINT and _top_is_rebased(own) else None
+        if level is None:
+            return own
+        fence = FenceTracker()
+        restored = []
+        for no, line in enumerate(own):
+            inside = fence.inside(line)
+            heading = not inside and _HEADING.match(line)
+            restored.append(_rebased(line, delta=level - 1, top=level if no == 0 else None) if heading else line)
+        return restored
+
+    placed = [(path, restore_ladder(path, own)) for path, own in parts]
+    whole = [line for _, own in placed for line in own]
+    sections, _ = plan_sections(whole, err=io.StringIO(), deepest=deepest)
+    linker = Linker(Outline(sections), tree, whole)
     restored = []
-    for path, own in parts:
+    for path, own in placed:
         fence = FenceTracker()
         leaf_dir = parent_dir(path)
         restored += [line if fence.inside(line) else linker.restore(line, leaf_dir) for line in own]

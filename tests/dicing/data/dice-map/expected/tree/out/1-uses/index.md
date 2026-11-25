@@ -1,4 +1,4 @@
-## 1. Uses
+# 1. Uses
 
 Read [the spec](../../vol/SPEC/entry-point.md) first, then [the spec](../../vol/SPEC/2-the-walk.md), "The walk" for detail.
 A wrapped quote: [the spec](../../vol/SPEC/2-the-walk.md),

@@ -1,4 +1,4 @@
-## [1. Alpha](../../other.md)
+# [1. Alpha](../../other.md)
 
 Alpha text.
 

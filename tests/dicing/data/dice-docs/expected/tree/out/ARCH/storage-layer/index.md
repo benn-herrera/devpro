@@ -1,4 +1,4 @@
-## Storage layer
+# Storage layer
 
 Contents:
 

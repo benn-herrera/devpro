@@ -71,8 +71,22 @@ resolves to the last heading that carries it
 
 ### File content
 
-Each file holds, in order, exactly the source lines of its section, heading line included, with
-links rewritten ([link rewriting](links.md)).
+Each file holds, in order, exactly the source lines of its section, heading line included, with the
+section's heading ladder re-based and links rewritten ([link rewriting](links.md)).
+
+**The heading ladder.** A section's own text opens with its top heading, and every file of the tree
+but the entry point holds it at level 1, whatever level that heading had in the source: a leaf's
+file is a document, not a fragment of one. Every other heading of the section's text moves with it
+by the same shift, the top's source level minus 1, so its distance below the top is unchanged — a
+`####` heading under a `##` top writes at `###`. The heading's text and its number are not touched,
+so a section's file name ([file names and layout](#file-names-and-layout)) does not move with the
+ladder. The entry point's own text is the source's, its title at its own level. No line inside
+fenced code is a heading and none is re-based ([which headings split](#which-headings-split)).
+
+A section whose text holds a heading that this shift would carry above level 1 or below level 6 has
+no ladder the tree can hold: it is reported as
+`heading too deep to re-base at line <N> (<level>): written at its monolith level`, written at its
+source levels, and the verb exits 1.
 
 The entry point and every index end with a **Contents block** appended directly after the section's
 own lines (no separator line is added):

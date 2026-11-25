@@ -6,7 +6,8 @@ from typing import TextIO
 
 from .heads import CONTENTS, HEADS
 from .linkrewrite import Linker, Tree, parent_dir
-from .outline import Outline, Section
+from .outline import _HEADING, Outline, Section
+from .split import _rebased
 from .textfile import FenceTracker, fence_flags, read_lines
 
 
@@ -23,6 +24,13 @@ def own_end(path: str, lines: list[str]) -> int:
     else at the file's end."""
     cut = contents_cut(lines) if os.path.basename(path) in HEADS else -1
     return cut if cut >= 0 else len(lines)
+
+
+def _top_is_rebased(leaf: list[str]) -> bool:
+    """Whether a section's file opens at the re-based write form, its top heading at level 1. The
+    pre-change form never does: no planned section is level 1 (`outline.plan_sections`). The entry
+    point is not a section and its title is written as the monolith has it."""
+    return bool(leaf and _HEADING.match(leaf[0]) and _HEADING.match(leaf[0]).end() == 2)
 
 
 def check_reassembly(sections: list[Section], lines: list[str], tree: Tree, *, out: TextIO, err: TextIO) -> bool:
@@ -44,8 +52,15 @@ def check_reassembly(sections: list[Section], lines: list[str], tree: Tree, *, o
             leaf = leaf[:cut]
         leaf_dir = parent_dir(s.path)
         fence = FenceTracker()
-        for line in leaf:
-            got = line if fence.inside(line) else linker.revert(line, leaf_dir)
+        # a leaf in the re-based form has its ladder shifted back for the compare; one in the
+        # pre-change form is already at the monolith's levels and compares as it stands
+        rebased = s.id > 0 and _top_is_rebased(leaf)
+        for index, line in enumerate(leaf):
+            inside = fence.inside(line)
+            got = line if inside else linker.revert(line, leaf_dir)
+            if rebased and not inside and _HEADING.match(got):
+                # the writer moved the ladder up by 1 - s.level; the compare moves it back down
+                got = _rebased(got, delta=s.level - 1, top=s.level if index == 0 else None)
             want = ""
             if k < len(lines):
                 next_line = lines[k + 1] if k + 1 < len(lines) else ""

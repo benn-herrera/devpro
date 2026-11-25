@@ -14,6 +14,7 @@ Order of effects and failures:
 | `out-dir` exists and is not a directory | `not a directory: <out-dir>` | 2 |
 | `out-dir` exists and is not empty | `out-dir not empty: <out-dir>` | 2 |
 | Planning fails ([file names and layout](tree.md#file-names-and-layout)) | that section's message | 1 |
+| A section's heading ladder cannot be re-based ([file content](tree.md#file-content)) | `heading too deep to re-base at line <N> (<level>): written at its monolith level` | 1 |
 
 Otherwise `out-dir` is created if absent, the tree is written, and stderr receives the
 `refs linked` line ([section references](links.md#section-references)) and any warnings of
@@ -44,7 +45,16 @@ directory, into `<tree-dir>`; the new tree equals the old byte for byte.
 that order; a linked file that cannot be read prints `undice: cannot read <tree-dir>/<target>` to
 stderr, is left out, and fails the verb (exit 1). From each file read that is named
 `entry-point.md` or `index.md`, the Contents block and every line after it are dropped
-([reassembly](checks.md#reassembly)'s cut). Links are restored outside fenced code and code spans:
+([reassembly](checks.md#reassembly)'s cut). Each other file's heading ladder is restored before it
+is written: a file whose top heading reads level 1 is in the re-based form
+([file content](tree.md#file-content)) and is put back at the shallowest level its place in the tree
+permits — one below its directory's depth, raised where a heading below its top would otherwise
+land at a split level and split it into two sections — and a file whose top reads any other level is
+the pre-change form and is written as it stands. The tree does not record the level a re-based
+section came from, and no two documents with the same tree can be told apart, so the document
+written is the one the tree holds: it need not be the document the tree was diced from, and it
+dices back to the same tree ([undice](#undice)'s round trip). Links are restored outside fenced code
+and code spans:
 
 - A section link ([section references](links.md#section-references), step 3) becomes its link text:
   `§<number>`, or `§<number>` and the backticked name.
