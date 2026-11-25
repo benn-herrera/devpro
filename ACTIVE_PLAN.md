@@ -2,8 +2,9 @@
 
 No design stands behind this plan: the requirements are the rulings below, stated in Facts, and the
 work goes straight to the plan. Every work package below is **shipped**, and each closes in one
-commit. The packages run serially, in ID order: P2's re-dice of ARCHITECTURE would resurrect the
-file P2's rehome removes, and P3 regenerates the trees the re-dice standardizes.
+commit. The packages run serially, in ID order: the re-dice follows the repair, because it
+regenerates the trees from their undiced monoliths and would otherwise freeze their defects in
+regenerated form.
 
 ## Facts the packages rely on
 
@@ -65,8 +66,9 @@ file P2's rehome removes, and P3 regenerates the trees the re-dice standardizes.
 | --- | --- | --- | --- | --- |
 | P1 | landed | expert | `devpro:python-coder` | the dicer writes every section's heading ladder re-based to an H1 top; reassembly and undice restore it |
 | P2 | landed | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
-| P3 | drafted | expert | `devpro:python-coder` | the three standing trees re-diced under the new behavior |
-| P4 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
+| P3 | drafted | expert | `devpro:prompt-engineer` | the standing trees round-trip: repair what undice exposes |
+| P4 | drafted | expert | `devpro:python-coder` | the three standing trees re-diced under the new behavior |
+| P5 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
 
 ## P1 — the dicer writes every section's heading ladder re-based to an H1 top
@@ -179,7 +181,59 @@ into `PROJECT_DOCS/ARCHITECTURE/harness-profiler/`); `PROJECT_DOCS/ARCHITECTURE/
 **Done-line.** `just test-changed`, then `just lint`, then `just dev-check-links`. The checkpoint
 gate runs once before the commit, as P1 states.
 
-## P3 — the three standing trees re-diced under the new behavior
+## P3 — the standing trees round-trip: repair what undice exposes
+
+Agent `devpro:prompt-engineer` (writer mode; the `devpro-docdicer` skill's conventions govern every
+repair).
+
+**Scope.** `PROJECT_DOCS/SPEC/entry-point.md`, `PROJECT_DOCS/SPEC/dicing-and-checks.md`;
+`PROJECT_DOCS/CONVENTIONS/entry-point.md` and the two CONVENTIONS leaves whose headings disagree
+with their file names; `PROJECT_DOCS/ARCHITECTURE/harness-profiler/` (its head file) and
+`PROJECT_DOCS/ARCHITECTURE/entry-point.md` (the area entry line).
+
+**Facts.**
+
+- The round-trip failures, run 2026-11-25, logs `.devpro-temp/p3-spec-undice.log`,
+  `.devpro-temp/p3-conventions-undice.log`, `.devpro-temp/p3-architecture-undice.log`:
+  `just undice PROJECT_DOCS/SPEC .devpro-temp/spec-undiced.md` exits 1 with `reassemble: cannot read
+  PROJECT_DOCS/SPEC/shared-behaviors.md`; CONVENTIONS exits 1 with `cannot read
+  .../a-sentence-two-harness-resources-carry-is-one-text.md`; ARCHITECTURE exits 1 with `cannot read
+  PROJECT_DOCS/ARCHITECTURE/install/harness-profiler.md`.
+- SPEC declares its dicing volume twice: `SPEC/entry-point.md:31` links `dicing/index.md`, and
+  `SPEC/dicing-and-checks.md` — a leaf — carries a Contents block repeating the same `dicing/*`
+  leaves; undice plans `dicing/index.md` as a section, which collides, and reports strays.
+- CONVENTIONS: `entry-point.md:41` links `a-sentence-two-resources-carry-is-one-text.md` under the
+  title "A sentence two harness resources carry is one text", and `entry-point.md:53` links
+  `a-delta-application-ends-by-searching-the-doc-set.md` under "A delta application is followed by a
+  search of the doc set" — each link text names a title the leaf's own heading does not carry, the
+  heading–file-name disagreement. And two leaves stand in `planning-and-execution/` with no
+  entry-point line: `evidence-commands-run-before-they-ship.md`,
+  `source-line-width-is-not-enforced.md`.
+- ARCHITECTURE: the failure traces to the area's head — `harness-profiler/entry-point.md` is a
+  tree-root head inside a volume. `heads.py:directory_head` is the convention and is not
+  configurable: ENTRY_POINT where tree_root, INDEX otherwise — ARCHITECTURE's nested volumes
+  (`install/`, `rendering/`) and SPEC's (`dicing/`) open at `index.md`.
+
+**Guidance.**
+
+1. Load the `devpro-docdicer` skill before editing; its undice-fix conventions govern (a leaf whose
+   heading disagrees with its file name: edit the heading to match the name, not the file, which
+   would move the path).
+2. SPEC: one declaration per nested volume — diagnose from the undice log which Contents block the
+   planner reads, and leave the volume declared once, by `entry-point.md`'s member list.
+3. CONVENTIONS: edit the two mismatched headings to the titles their file names and entry-point
+   links carry, and add the two omitted leaves to the entry point's list.
+4. ARCHITECTURE: rename the area's head to the nested-volume convention
+   (`harness-profiler/entry-point.md` → `harness-profiler/index.md`) and update
+   `ARCHITECTURE/entry-point.md`'s area entry to `harness-profiler/index.md`. The owner's
+   root-headed-area ruling names the area's standing — its own folder, first-class beside `SPEC/`
+   and `CONVENTIONS/` — not the head file's name; the head name is the tool's convention.
+5. Verification per tree: `just undice <tree-dir> .devpro-temp/<name>-undiced.md` exits 0 with
+   `reassemble ok`, and `just check-links` reports `problems: 0`.
+
+**Done-line.** `just dev-check-links`.
+
+## P4 — the three standing trees re-diced under the new behavior
 
 **Scope.** `PROJECT_DOCS/SPEC/`, `PROJECT_DOCS/ARCHITECTURE/`, `PROJECT_DOCS/CONVENTIONS/`
 (regenerated whole); the monoliths are work products under `.devpro-temp/`.
@@ -190,7 +244,7 @@ gate runs once before the commit, as P1 states.
    target), then `just dice-doc .devpro-temp/<name>-undiced.md .devpro-temp/<name>-fresh/`. Undice
    and dice at the default split level 4, the level the trees were diced at. Take `reassemble ok`
    from the undice and `reassemble ok` plus `dead: 0` from the dice as the preconditions of step 2;
-   a difference reported by either is a finding for P1, not something P3 patches. This is also the
+   a difference reported by either is a finding for P1, not something P4 patches. This is also the
    first end-to-end exercise of P1's form-conditional shift on a tree P1 did not write.
 2. Replace, don't merge: `git rm -r <tree-dir>`, then
    `mv .devpro-temp/<name>-fresh <tree-dir>`. The fresh tree is the whole of the directory
@@ -202,18 +256,18 @@ gate runs once before the commit, as P1 states.
    counts are taken after P2, which changes ARCHITECTURE's inventory; no pre-measured baseline
    belongs in this plan.
 
-P3 runs after P2 and not before: the ARCHITECTURE re-dice regenerates the tree from its undiced
-monolith, and run first it would write `install/harness-profiler.md` back, undoing P2's `git rm`.
+P4 runs after P3 and not before: the re-dice regenerates the trees from their undiced monoliths, and
+running it before the repair would freeze the trees' defects into regenerated form.
 
 **Done-line.** `just test-changed`, then `just lint`, then `just dev-check-links`. The checkpoint
 gate runs once before the commit, as P1 states.
 
-## P4 — Post-plan review
+## P5 — Post-plan review
 
 **Lifetime.** The review package lands nothing but `ACTIVE_PLAN_REVIEW.md`; its row is `landed` in
 the commit that adds the file.
 
-The post-plan reviewers review what P1–P3 shipped, and get the project documents, not this plan:
+The post-plan reviewers review what P1–P4 shipped, and get the project documents, not this plan:
 
 - `devpro:python-coder`, for the dicing tool and its tests;
 - `devpro:architect`, for the structure and the documents' claims about the tool;
