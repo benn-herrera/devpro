@@ -257,12 +257,13 @@ enough to hide inside a paragraph that differs.
 A test protects only where a defect exists that it dies on while the source reads correct to its
 author. It must assert behavior, not text.
 
-The pin test — a source literal restated in the test and compared back to the source — is a
-coverage-mandate fossil: built to satisfy a 100%-coverage metric, not to find a defect. It is
-shaped like a test while doing the metric's job. Human projects mass-produced it, the training
-data carries it, and agents reproduce it however often a rule forbids it; prohibition alone has had
-modest effect against a prior fed by ten thousand coverage-gaming suites. The same holds for a
-change-detector that knows it is one, a hash against a literal. Where detecting change is
+The pin test — a source literal restated in the test and compared back to the source, an exact
+log output check, a polyglot 'is this doing all the things' check against an multi-property 
+artifact — is a coverage-mandate fossil: built to satisfy a 100%-coverage metric, not to find a
+defect. It is shaped like a test while doing the metric's job. Human projects mass-produced it, the 
+training data carries it, and agents reproduce it however often a rule forbids it; prohibition alone
+has had modest effect against a prior fed by ten thousand coverage-gaming suites. The same holds for
+a change-detector that knows it is one, a hash against a literal. Where detecting change is
 load-bearing — generated files, frozen contracts — the mechanism is the regeneration check or an
 integration test over the behavior. Coverage that unit tests cannot reasonably reach belongs to the
 integration test, never to a pin.
