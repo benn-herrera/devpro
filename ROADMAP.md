@@ -13,15 +13,16 @@ tool call completed in single-digit milliseconds. The window is the cost of firi
 not the child's work: durations cluster at 17–21 ms regardless of how long the child then runs,
 and the completed part's own `metadata` carries `"status": "running"` for the child session it
 names. Measured 2026-11-25 over twelve background dispatches in one project: tool-call durations
-of 2–21 ms against child-session spans of 0.2–10.9 minutes. Under the claude harness the same
-dispatch's Task-tool duration covers the subagent's run, so the two harnesses' records do not
-compare.
+of 2–21 ms against child-session spans of 0.2–10.9 minutes. The hook pair is not wrong about what
+it measures — it brackets the tool's execution, and a background dispatch's execution is the
+firing. The capture is what presents that window as the dispatch's duration, and that is the
+defect.
 
-The ticket is first the upstream report to opencode — the summary, the storage example with its
-running-inside-completed contradiction, and the twelve-dispatch table — and then, where upstream
-exposes no surface a plugin can read, the capture's compensation: a dispatch's duration measured
-from its child session's records rather than the hook pair, so the profiler's pages do not show
-minutes of work as 19 ms.
+The ticket is the capture doing this right: a background dispatch's duration measured from its
+child session's records — the child's own span — rather than the hook pair, so the profiler's
+pages show minutes of work as minutes. Foreground calls, which no child session carries, keep the
+hook pair. Under the claude harness the same dispatch's Task-tool duration already covers the
+subagent's run, so the compensation is also what makes the two harnesses' records compare.
 
 ## Features
 
