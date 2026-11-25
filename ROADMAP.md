@@ -211,6 +211,10 @@ grouping and child pages this extends.
 
 ## Maintenance
 
+### Profiler child rows off by default
+
+Having them on by default is not helpful
+
 ### Git Flow light: publish the rework history
 
 Move development from squash-style landing to Git Flow light — work branches with granular
