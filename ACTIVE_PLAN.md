@@ -72,11 +72,11 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | P5 | landed | expert | `devpro:python-coder` | the three standing trees re-diced under the settled model |
 | P6 | landed | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | landed | expert | session | Post-plan burndown drafting |
-| B1 | drafted | expert | `devpro:prompt-engineer` | restore the dicing-and-checks index preamble and the `--split-level` contract |
-| B2 | drafted | expert | `devpro:prompt-engineer` | the anchor retarget class: every link lands on the leaf whose text it names |
-| B3 | drafted | expert | `devpro:python-coder` | the tool: one classifier, honest faults, no dead code |
-| B4 | drafted | expert | `devpro:architect` | single-home the model rules, and the corpus's missing shapes — first act: R2's decision |
-| B5 | drafted | expert | `devpro:prompt-engineer` | the contract gaps the run named |
+| B1 | dispatchable | expert | `devpro:prompt-engineer` | restore the dicing-and-checks index preamble and the `--split-level` contract |
+| B2 | dispatchable | expert | `devpro:prompt-engineer` | the anchor retarget class: every link lands on the leaf whose text it names |
+| B3 | dispatchable | expert | `devpro:python-coder` | the tool: one classifier, honest faults, no dead code |
+| B4 | dispatchable | expert | `devpro:architect` | single-home the model rules, and the corpus's missing shapes — first act: R2's decision |
+| B5 | dispatchable | expert | `devpro:prompt-engineer` | the contract gaps the run named |
 
 ## P1 — the dicer writes every section's heading ladder re-based to an H1 top
 
