@@ -232,34 +232,40 @@ _lint-shell:
     @command -v shellcheck > /dev/null || { printf '%s\n' "error: just lint requires shellcheck on PATH" >&2; exit 1; }
     @git ls-files -z '*.sh' | xargs -0 shellcheck
 
-# A missing bun, or an install that cannot reach the registry, fails the lint through `_js-deps`,
-# never as a skip. The declarations the resources import arrive through `package.json`'s lockfile,
-# `bun.lock`, which is pinned to the host version the resources name; `tsconfig.json` scopes the program
-# to what ships, the test runners' TypeScript being dev-time only, and `devtools/tsconfig.json` is the
-# repository's own TypeScript, a dev tool rather than a shipped resource.
+# A missing bun, or an install that cannot reach the registry, fails the recipe that needs it,
+# through `_js-deps`, never as a skip. The declarations the resources import arrive through
+# `package.json`'s lockfile, `bun.lock`, which is pinned to the host version the resources name.
+# `tsconfig.json` scopes the program to what ships, the test runners' TypeScript being dev-time only,
+# and `devtools/tsconfig.json` is the repository's own TypeScript, a dev tool rather than a shipped
+# resource.
 _lint-typescript: _js-deps
     @cd "{{PROJECT_ROOT}}" && bunx tsc --noEmit
     @cd "{{PROJECT_ROOT}}" && bunx tsc -p devtools/tsconfig.json --noEmit
 
-# The private install the recipes needing the root `package.json`'s dependencies depend on. A missing
-# bun, or an install that cannot reach the registry, fails the recipe that needs it, never skips the
-# step. The install is read-only: it updates `node_modules/` and leaves `package.json` and `bun.lock`
-# as it found them, or fails where the lockfile does not match them.
-_js-deps:
+# The bun-on-PATH guard the recipes that need the root `package.json`'s dependencies depend on. A
+# missing bun fails the recipe that needs it, never skips the step.
+_bun-required:
     @command -v bun > /dev/null || { printf '%s\n' "error: this recipe requires bun on PATH" >&2; exit 1; }
-    @cd "{{PROJECT_ROOT}}" && bun install --frozen-lockfile
+
+# The private install those recipes depend on. A missing bun, or an install that cannot reach the
+# registry, fails the recipe that needs it, never skips the step. The install is read-only: it
+# updates `node_modules/` and leaves `package.json` and `bun.lock` as it found them, or fails where
+# the lockfile does not match them. Its output goes to stderr: stdout carries the caller's result —
+# the PNG path `screenshot` prints.
+_js-deps: _bun-required
+    @cd "{{PROJECT_ROOT}}" && bun install --frozen-lockfile >&2
 
 # Run after changing `package.json`'s dependencies: every other recipe installs frozen and fails on a
-# stale `bun.lock`.
+# stale `bun.lock`. The unfrozen install is where a rewritten `bun.lock` comes from.
 [doc("[dev] install the root package.json's dependencies, rewriting bun.lock to match")]
-js-lock:
-    @command -v bun > /dev/null || { printf '%s\n' "error: this recipe requires bun on PATH" >&2; exit 1; }
+js-lock: _bun-required
     @cd "{{PROJECT_ROOT}}" && bun install
 
 # Screenshots a page once it has settled, for viewing. <page> is an http(s) URL, a route starting `/`
 # with `--base <url>`, or a file path; the options are `--viewport <W>x<H>`, `--wait-for <selector>`,
 # `--color-scheme light|dark`, `--timeout <ms>` and `--out <png>`, and `bun devtools/screenshot.ts
-# --help` lists their defaults. It prints the PNG's path.
+# --help` lists their defaults. It prints the PNG's path. The install `_js-deps` runs writes its own
+# output to stderr, so stdout holds the path alone.
 [doc("[dev] screenshot a page after it settles, for viewing")]
 screenshot *args: _js-deps
     @cd "{{PROJECT_ROOT}}" && bun devtools/screenshot.ts "$@"

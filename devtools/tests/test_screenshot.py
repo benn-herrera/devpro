@@ -2,12 +2,18 @@
 
 The page is a static file whose own script, 300 ms after load, adds the `#ready` element and makes the
 body 1200px tall; until then it is shorter than the viewport. The shot is read from its PNG header,
-which carries the width and height the image was taken at.
+which carries the width and height the image was taken at. The route case serves its page from a local
+`http.server`, which is the page form `--base` exists for.
 """
 
+import functools
 import shutil
 import struct
 import subprocess
+import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 TOOL = Path(__file__).resolve().parent.parent / "screenshot.ts"
@@ -23,6 +29,22 @@ setTimeout(() => {
 }, 300);
 </script></body></html>
 """
+# A page that reports the dark scheme whatever it is shown in, so a `--color-scheme light` run's check
+# can fail against a real page.
+DARK_PAGE = """<!doctype html>
+<html><head><meta charset="utf-8"><title>dark</title></head>
+<body><p id="ready">redefined</p>
+<script>
+window.matchMedia = () => ({ matches: true });
+</script></body></html>
+"""
+
+
+class _QuietHandler(SimpleHTTPRequestHandler):
+    """The static file server, silent: its request log is the server's, not the test's output."""
+
+    def log_message(self, format: str, *args: object) -> None:
+        pass
 
 
 def _run(*args: str) -> subprocess.CompletedProcess[str]:
@@ -47,6 +69,21 @@ def _tools() -> None:
     """Names every missing tool at once; a missing one fails the case rather than skipping it."""
     missing = [name for name in ("bun", "firefox") if shutil.which(name) is None]
     assert not missing, f"the screenshot test needs {', '.join(missing)} on PATH"
+
+
+@contextmanager
+def _served(root: Path) -> Iterator[int]:
+    """Serves `root` over HTTP on a free local port, and stops the server on the way out."""
+    handler = functools.partial(_QuietHandler, directory=str(root))
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield server.server_address[1]
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
 
 
 def test_a_settled_page_is_shot_whole_at_the_viewport(tmp_path: Path) -> None:
@@ -81,4 +118,41 @@ def test_a_selector_that_never_appears_fails_naming_it_and_the_timeout(tmp_path:
     assert result.returncode == 1, result.stderr
     assert "#never" in result.stderr
     assert "2000" in result.stderr
+    assert not shot.exists()
+
+
+def test_a_route_is_resolved_against_base_before_the_filesystem(tmp_path: Path) -> None:
+    """The defect is a route that names an existing path on disk read as a `file://` page.
+
+    `/` is such a route and always exists, so the tool shot the filesystem's root listing instead of
+    the served page and exited 0; `#ready` exists on the served page alone. Before the change the run
+    exited 1 with `#ready` never appearing.
+    """
+    _tools()
+    (tmp_path / "index.html").write_text(PAGE, encoding="utf-8")
+    shot = tmp_path / "route.png"
+
+    with _served(tmp_path) as port:
+        result = _run("/", "--base", f"http://127.0.0.1:{port}", "--wait-for", "#ready", "--out", str(shot))
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == f"{shot}\n"
+    assert shot.exists()
+
+
+def test_a_page_shown_in_the_wrong_scheme_fails_and_writes_no_png(tmp_path: Path) -> None:
+    """The defect is a failed color-scheme check that leaves its PNG behind, having already written it.
+
+    The page reports dark from its own script, so `--color-scheme light` must fail the run; before the
+    change `scheme()` ran after the shot, so the run exited 1 with the wrong-scheme PNG at `--out`.
+    """
+    _tools()
+    page = tmp_path / "dark.html"
+    page.write_text(DARK_PAGE, encoding="utf-8")
+    shot = tmp_path / "x.png"
+
+    result = _run(str(page), "--color-scheme", "light", "--out", str(shot))
+
+    assert result.returncode == 1, result.stderr
+    assert "dark" in result.stderr
     assert not shot.exists()

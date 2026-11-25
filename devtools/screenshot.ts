@@ -8,22 +8,22 @@
 // picture, for a reader's eye.
 //
 // `page` is one of three forms — an `http://` or `https://` URL; a route starting with `/`, resolved
-// against `--base`; a file path, opened as its `file://` URL. Settle is in order: the load holds
-// network idle, the fonts are ready, and the `--wait-for` selector appears where one is given. Each
-// step is bounded by `--timeout`.
+// against `--base`; a file path, opened as its `file://` URL. `--base` decides the form of a
+// `/`-path, before any filesystem test: with it the path is a route, and without it the path is
+// looked for on disk. Settle is in order: the load holds network idle, the fonts are ready, and the
+// `--wait-for` selector appears where one is given. Each step is bounded by `--timeout`, as is the
+// color scheme's check, which runs before the shot so a page shown in the wrong scheme writes no PNG.
 //
 // Exit codes: 0 prints the PNG's absolute path and nothing else; 2 is a usage error; 1 is a page that
-// failed to load or settle, or no `firefox` on PATH, and no PNG is written. The browser closes on
-// every path, the failure's included.
-import { existsSync, mkdirSync } from "node:fs"
-import { accessSync, constants } from "node:fs"
+// failed to load or settle, or no `firefox` on PATH, and no PNG is written. `--help` prints the usage
+// and exits 0. The browser closes on every path, the failure's included.
+import { accessSync, constants, existsSync, mkdirSync, statSync } from "node:fs"
 import { delimiter, dirname, join, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 import { parseArgs } from "node:util"
 import puppeteer, { type Browser, type Page } from "puppeteer-core"
 
-// The defaults the recipe's usage line states (ARCHITECTURE, Recipes): the recipe passes its
-// arguments through and the tool holds them.
+// The defaults `--help` lists: the recipe passes its arguments through, and the tool holds them.
 const DEFAULT_VIEWPORT = "1280x800"
 const DEFAULT_COLOR_SCHEME = "light"
 const DEFAULT_TIMEOUT_MS = 30_000
@@ -46,8 +46,8 @@ const USAGE = `usage: bun devtools/screenshot.ts <page> [options]
 class ScreenshotError extends Error {
   readonly exitCode: 1 | 2
 
-  constructor(message: string, exitCode: 1 | 2) {
-    super(message)
+  constructor(message: string, exitCode: 1 | 2, options?: ErrorOptions) {
+    super(message, options)
     this.name = "ScreenshotError"
     this.exitCode = exitCode
   }
@@ -84,7 +84,9 @@ function viewport(text: string): { width: number; height: number } {
   return { width: positive(w, "--viewport"), height: positive(h, "--viewport") }
 }
 
-function options(argv: string[]): Options {
+// The parsed command line, or the usage text where `--help` was asked for: asking for help is not a
+// usage error, so the caller prints it and exits 0.
+function options(argv: string[]): Options | string {
   let parsed
   try {
     parsed = parseArgs({
@@ -105,7 +107,7 @@ function options(argv: string[]): Options {
     throw usage(err instanceof Error ? err.message.split("\n")[0] ?? err.message : String(err))
   }
   const { values, positionals } = parsed
-  if (values.help) throw new ScreenshotError(USAGE, 2)
+  if (values.help) return USAGE
   if (positionals.length !== 1) {
     throw usage(positionals.length === 0 ? "a page is required" : `one page is taken, not ${positionals.length}`)
   }
@@ -126,15 +128,18 @@ function options(argv: string[]): Options {
   }
 }
 
-// The URL a page form names: a URL as it stands, a file path as its `file://` URL, a route resolved
-// against `--base`. The file path is read before the route, so an absolute path names a file and a
-// route names a route.
+// The URL a page form names: a URL as it stands, a route resolved against `--base`, a file path as
+// its `file://` URL. `--base` decides a `/`-path's form before any filesystem test, because every
+// route starts with `/` and an absolute path that exists on disk — `/`, the dashboard's index — would
+// otherwise be read as a file.
 function targetUrl(page: string, base: string | undefined): string {
   if (/^https?:\/\//.test(page)) return page
-  const path = resolve(page)
-  if (existsSync(path)) return pathToFileURL(path).href
   if (page.startsWith("/")) {
-    if (base === undefined) throw usage(`the route ${page} needs --base <url> to resolve against`)
+    if (base === undefined) {
+      const path = resolve(page)
+      if (existsSync(path)) return pathToFileURL(path).href
+      throw usage(`the route ${page} needs --base <url> to resolve against, and no such file: ${path}`)
+    }
     let origin: URL
     try {
       origin = new URL(base)
@@ -143,6 +148,8 @@ function targetUrl(page: string, base: string | undefined): string {
     }
     return new URL(page, origin).href
   }
+  const path = resolve(page)
+  if (existsSync(path)) return pathToFileURL(path).href
   throw usage(`no such file: ${path} — pass an http(s) URL, a /route with --base, or a file`)
 }
 
@@ -154,16 +161,36 @@ function slug(url: string): string {
   return `${host}${path}`.replaceAll(/[^A-Za-z0-9._-]+/g, "_") || "index"
 }
 
-// The executable `name` on PATH, as a shell's command lookup finds it.
+// The executable `name` on PATH, as a shell's command lookup finds it: a regular file with the
+// execute bit, so a directory sharing the name is not mistaken for the browser.
 function onPath(name: string): string | undefined {
   for (const dir of (process.env.PATH ?? "").split(delimiter)) {
     const path = join(dir === "" ? "." : dir, name)
     try {
       accessSync(path, constants.X_OK)
-      return path
+      if (statSync(path).isFile()) return path
     } catch {}
   }
   return undefined
+}
+
+function isTimeout(err: unknown): boolean {
+  if (!(err instanceof Error)) return false
+  return err.name === "TimeoutError" || err.name === "Timeout" || /timeout/i.test(err.message)
+}
+
+// A failure's cause, one line: the driver's protocol errors carry the browser's own stack after the
+// message, which names the run's problem no better than the message does.
+function reason(err: unknown): string {
+  if (!(err instanceof Error)) return String(err)
+  return err.message.split("\n")[0] ?? err.message
+}
+
+// Rejects after `ms`, so a wait the driver does not bound can be raced against one that is.
+function after(ms: number, what: string): Promise<never> {
+  return new Promise((_, reject) => {
+    setTimeout(() => reject(new Error(`${what} did not finish within ${ms} ms`)), ms)
+  })
 }
 
 // The color scheme the page is shown in. Firefox 160 over WebDriver BiDi takes no media emulation
@@ -172,40 +199,38 @@ function onPath(name: string): string | undefined {
 // reports the scheme the run asked for, and a scheme it did not report fails the run rather than
 // leaving a screenshot in the wrong one.
 async function scheme(page: Page, opts: Options): Promise<void> {
-  const shown = await page.evaluate(() => globalThis.matchMedia("(prefers-color-scheme: dark)").matches)
+  const ms = opts.timeoutMs
+  let shown: unknown
+  try {
+    shown = await Promise.race([
+      page.evaluate(() => globalThis.matchMedia("(prefers-color-scheme: dark)").matches),
+      after(ms, "reading the page's color scheme"),
+    ])
+  } catch (err) {
+    throw new Error(`reading the color scheme of the page failed: ${reason(err)}`, { cause: err })
+  }
   const wanted = opts.colorScheme === "dark"
   if (shown !== wanted) {
-    throw new Error(`the browser shows ${shown ? "dark" : "light"} where --color-scheme ${opts.colorScheme} was asked for`)
+    throw new Error(`the browser shows ${shown === true ? "dark" : "light"} where --color-scheme ${opts.colorScheme} was asked for`)
   }
 }
 
-function isTimeout(err: unknown): boolean {
-  if (!(err instanceof Error)) return false
-  return err.name === "TimeoutError" || /timeout/i.test(err.message)
-}
-
-// A failure's cause, one line: the driver's protocol errors carry the browser's own stack after the
-// message, which names the run's problem no better than the message does.
-function reason(err: unknown): string {
-  if (!(err instanceof Error)) return String(err)
-  const first = err.message.split("\n")[0] ?? err.message
-  return first.split(" #").filter(Boolean).join(" ")
-}
-
 // Settles the page and writes its full-page screenshot. Every failure is thrown described, so the
-// caller prints one cause.
+// caller prints one cause. The scheme is checked once the load has landed and before the shot, so a
+// page shown in the wrong scheme leaves no file behind.
 async function shoot(page: Page, target: string, opts: Options, out: string): Promise<void> {
   const ms = opts.timeoutMs
   try {
     await page.goto(target, { waitUntil: "networkidle0", timeout: ms })
   } catch (err) {
     const what = isTimeout(err) ? `loading ${target} did not settle within ${ms} ms` : `loading ${target} failed`
-    throw new Error(`${what}: ${reason(err)}`)
+    throw new Error(`${what}: ${reason(err)}`, { cause: err })
   }
+  await scheme(page, opts)
   try {
-    await page.evaluate(() => globalThis.document.fonts.ready)
+    await Promise.race([page.evaluate(() => globalThis.document.fonts.ready), after(ms, "the page's fonts")])
   } catch (err) {
-    throw new Error(`the fonts of ${target} were not ready within ${ms} ms: ${reason(err)}`)
+    throw new Error(`the fonts of ${target} were not ready within ${ms} ms: ${reason(err)}`, { cause: err })
   }
   if (opts.waitFor !== undefined) {
     try {
@@ -214,22 +239,23 @@ async function shoot(page: Page, target: string, opts: Options, out: string): Pr
       const what = isTimeout(err)
         ? `${opts.waitFor} did not appear within ${ms} ms`
         : `waiting for ${opts.waitFor} failed`
-      throw new Error(`${what}: ${reason(err)}`)
+      throw new Error(`${what}: ${reason(err)}`, { cause: err })
     }
   }
   try {
     await page.screenshot({ path: out, fullPage: true })
   } catch (err) {
-    throw new Error(`writing ${out} failed: ${reason(err)}`)
+    throw new Error(`writing ${out} failed: ${reason(err)}`, { cause: err })
   }
 }
 
 async function main(argv: string[]): Promise<string> {
   const opts = options(argv)
+  if (typeof opts === "string") return opts
   const target = targetUrl(opts.page, opts.base)
   const executablePath = onPath("firefox")
   if (executablePath === undefined) {
-    throw new ScreenshotError("error: just screenshot requires firefox on PATH", 1)
+    throw new ScreenshotError("error: the screenshot tool requires firefox on PATH", 1)
   }
   const out = opts.out === undefined ? join(DEFAULT_OUT_DIR, `${slug(target)}.png`) : resolve(opts.out)
   mkdirSync(dirname(out), { recursive: true })
@@ -242,23 +268,29 @@ async function main(argv: string[]): Promise<string> {
         executablePath,
         headless: true,
         protocol: "webDriverBiDi",
+        // Every driver call bounded by the run's own timeout, the protocol's 180 s default otherwise.
+        protocolTimeout: opts.timeoutMs,
         // Firefox's preference names the scheme its content is shown in: 0 dark, 1 light, 2 the
         // system's.
         extraPrefsFirefox: { "layout.css.prefers-color-scheme.content-override": opts.colorScheme === "dark" ? 0 : 1 },
       })
     } catch (err) {
-      throw new Error(`starting ${executablePath} failed: ${reason(err)}`)
+      throw new Error(`starting ${executablePath} failed: ${reason(err)}`, { cause: err })
     }
     const page = await browser.newPage()
     await page.setViewport({ width: opts.width, height: opts.height })
     await shoot(page, target, opts, out)
-    await scheme(page, opts)
   } catch (err) {
-    // Each step's failure is an `Error` naming it; a usage error that reached this far keeps its 2.
-    const code = err instanceof ScreenshotError ? err.exitCode : 1
-    throw new ScreenshotError(err instanceof ScreenshotError ? err.message : `error: ${reason(err)}`, code)
+    // Each step's failure is an `Error` naming its step, so it is reported as composed, never run
+    // through `reason()` again: that would cut a selector the tool was given.
+    if (err instanceof ScreenshotError) throw err
+    throw new ScreenshotError(`error: ${err instanceof Error ? err.message : String(err)}`, 1, { cause: err })
   } finally {
-    if (browser !== undefined) await browser.close()
+    // A close that fails or hangs is the run's cleanup, not its result: it never replaces the error
+    // the shot raised, and it never holds the process past the run's own bound.
+    if (browser !== undefined) {
+      await Promise.race([browser.close().catch(() => {}), after(opts.timeoutMs, "closing the browser").catch(() => {})])
+    }
   }
   return out
 }
