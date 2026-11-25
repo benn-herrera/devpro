@@ -268,6 +268,10 @@ load-bearing — generated files, frozen contracts — the mechanism is the rege
 integration test over the behavior. Coverage that unit tests cannot reasonably reach belongs to the
 integration test, never to a pin.
 
+The reason this category of test is an antipattern and anathema - it produces pure friction for
+no benefit. It is a suit of armor with fixed joints that requires a plasma cutter and welder
+for every change of pose.
+
 Found instances. Two pin the claude family's model assignments, both in `tests/test_devpro.py`:
 `test_each_family_pins_the_member_of_every_category` asserts the category map equals a hand-copied
 dict of itself; `test_claude_frontmatter_holds_the_field_order_and_spelling`, whose subject is
