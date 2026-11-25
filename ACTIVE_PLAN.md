@@ -2,7 +2,8 @@
 
 No design stands behind this plan: the requirements are the rulings below, stated in Facts, and the
 work goes straight to the plan. Every work package below is **shipped**, and each closes in one
-commit.
+commit. The packages run serially, in ID order: P2's re-dice of ARCHITECTURE would resurrect the
+file P2's rehome removes, and P3 regenerates the trees the re-dice standardizes.
 
 ## Facts the packages rely on
 
@@ -63,7 +64,7 @@ commit.
 | Package | State | Rating | Agent | Scope |
 | --- | --- | --- | --- | --- |
 | P1 | in progress | expert | `devpro:python-coder` | the dicer writes every section's heading ladder re-based to an H1 top; reassembly and undice restore it |
-| P2 | dispatchable: sequenced behind P1 | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
+| P2 | dispatchable | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
 | P3 | drafted | expert | `devpro:python-coder` | the three standing trees re-diced under the new behavior |
 | P4 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |

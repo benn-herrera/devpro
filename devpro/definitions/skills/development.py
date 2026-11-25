@@ -240,7 +240,9 @@ plan the same way.
   after the word is a note (`landed: inventory 49`). `drafted`: not yet ready to hand to an agent as it
   stands. `dispatchable`: the package meets every condition in
   *Dispatchability* now — set in the turn the last condition holds, never at authoring time, however
-  settled the package's text looks. `in progress`: dispatched and not landed. `landed`: accepted and
+  settled the package's text looks. Run order neither makes a package dispatchable nor withholds the
+  state, and a waiting package carries no note for the wait — the wait is a fact of run order, not a
+  condition that makes the row what it is. `in progress`: dispatched and not landed. `landed`: accepted and
   committed.
 - Each package's `Rating` cell opens with `mechanical` or `expert`, rated as *Dispatch* rates its
   dispatch; anything after the word is a note, and names no model (*Dispatch*). *Purpose:* whoever reads the table sees which work runs on the
@@ -316,12 +318,6 @@ A work package is dispatchable only when:
   would need more than one commit is split into packages that each need one.
   *Purpose:* the board turns a package's row `landed` in the commit that
   carries its work, and work spanning several commits has none.
-
-Sequencing is not one of the conditions: a package whose run order places it behind another is
-`dispatchable` all the same, the sequence living where the plan states its run order. A row may
-carry the wait as a note (`dispatchable: sequenced behind P1`), never as a lesser state. *Purpose:*
-the state answers *is this ready to hand to an agent*, and a yes muddied by *is it next* leaves a
-ready package reading unready.
 
 A plan whose packages fail this is neither offered for approval nor dispatched. *Purpose:* what is
 approved can run as approved.
