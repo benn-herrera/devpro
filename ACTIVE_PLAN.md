@@ -324,7 +324,9 @@ tests); the SPEC dicing leaves that state the forms —
    or a direct child of the tree root holding an `entry-point.md`; every other directory holding an
    `index.md` is a broken-out section. `directory_head`'s callers state which pattern they are
    writing, and the function states it in its name, not as a boolean `tree_root`: `volume_head()`
-   beside `section_head()`, or one function taking the pattern. The docstring states the model, the
+   beside `section_head()`, or one function taking the pattern. The distinction is a checksum of
+   structure: a top-level directory — the tree root's direct child — whose head is `index.md` is a
+   misplaced section, and `check-tree` names it as one. The docstring states the model, the
    function implements it; `treecheck.py`'s module docstring and its `_head` state the same split,
    and the SPEC's `check-tree` section restates it. `heads.py` was P3's to correct (its committed
    docstring reads "every directory inside the tree opens at INDEX, the tree's own volumes
