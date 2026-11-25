@@ -66,7 +66,7 @@ regenerated form.
 | --- | --- | --- | --- | --- |
 | P1 | landed | expert | `devpro:python-coder` | the dicer writes every section's heading ladder re-based to an H1 top; reassembly and undice restore it |
 | P2 | landed | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
-| P3 | drafted | expert | `devpro:prompt-engineer` | the standing trees round-trip: repair what undice exposes |
+| P3 | in progress | expert | `devpro:prompt-engineer` | the standing trees round-trip: repair what undice exposes |
 | P4 | drafted | expert | `devpro:python-coder` | the three standing trees re-diced under the new behavior |
 | P5 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
@@ -189,7 +189,8 @@ repair).
 **Scope.** `PROJECT_DOCS/SPEC/entry-point.md`, `PROJECT_DOCS/SPEC/dicing-and-checks.md`;
 `PROJECT_DOCS/CONVENTIONS/entry-point.md` and the two CONVENTIONS leaves whose headings disagree
 with their file names; `PROJECT_DOCS/ARCHITECTURE/harness-profiler/` (its head file) and
-`PROJECT_DOCS/ARCHITECTURE/entry-point.md` (the area entry line).
+`PROJECT_DOCS/ARCHITECTURE/entry-point.md` (the area entry line); and `devpro/dicing/heads.py`'s
+module docstring, whose stale volume-head sentence the repairs contradict.
 
 **Facts.**
 
@@ -219,15 +220,19 @@ with their file names; `PROJECT_DOCS/ARCHITECTURE/harness-profiler/` (its head f
 1. Load the `devpro-docdicer` skill before editing; its undice-fix conventions govern (a leaf whose
    heading disagrees with its file name: edit the heading to match the name, not the file, which
    would move the path).
-2. SPEC: one declaration per nested volume — diagnose from the undice log which Contents block the
-   planner reads, and leave the volume declared once, by `entry-point.md`'s member list.
+2. SPEC: the dicing volume is declared once, by `entry-point.md`'s member list, and
+   `dicing-and-checks.md` is a plain leaf: its internal subsection structure becomes bold run-in
+   titles (wording unchanged, the docdicer convention), so the planner reads it as the leaf it is
+   and the `dicing/` volume's own index carries the leaves.
 3. CONVENTIONS: edit the two mismatched headings to the titles their file names and entry-point
    links carry, and add the two omitted leaves to the entry point's list.
 4. ARCHITECTURE: rename the area's head to the nested-volume convention
    (`harness-profiler/entry-point.md` → `harness-profiler/index.md`) and update
    `ARCHITECTURE/entry-point.md`'s area entry to `harness-profiler/index.md`. The owner's
    root-headed-area ruling names the area's standing — its own folder, first-class beside `SPEC/`
-   and `CONVENTIONS/` — not the head file's name; the head name is the tool's convention.
+   and `CONVENTIONS/` — not the head file's name; the head name is the tool's convention. Correct
+   `heads.py`'s module docstring to state the convention the function and the standing trees carry:
+   the tree's root opens at ENTRY_POINT; every directory inside the tree opens at INDEX.
 5. Verification per tree: `just undice <tree-dir> .devpro-temp/<name>-undiced.md` exits 0 with
    `reassemble ok`, and `just check-links` reports `problems: 0`.
 
