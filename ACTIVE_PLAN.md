@@ -68,7 +68,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | P2 | landed | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
 | P3 | landed | expert | `devpro:prompt-engineer` | CONVENTIONS and ARCHITECTURE round-trip, the head convention corrected; SPEC's residue re-homed to P4 (the tool defect) and P5 (re-dice under the settled model) |
 | P4 | landed | expert | `devpro:python-coder` | the dicer's two patterns: volumes and broken-out sections; the manifest retires |
-| P5 | drafted | expert | `devpro:python-coder` | the three standing trees re-diced under the settled model |
+| P5 | in progress | expert | `devpro:python-coder` | the three standing trees re-diced under the settled model |
 | P6 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
 
@@ -430,6 +430,13 @@ commit, as P1 states.
 P5 runs after P4 and P3: the re-dice regenerates the trees from their undiced monoliths, and running
 it before the repair would freeze the trees' defects into regenerated form, while running it before
 the model change would write trees the reconstruction cannot read.
+
+**Fallback** (owner-directed, for a sideways run). Restore `PROJECT_DOCS/` to its state at P1's
+landing (`9b0f8df` — the harness-profiler leaf still in `install/`, the dicer fix landed) with a
+path-scoped `git checkout 9b0f8df -- PROJECT_DOCS`; then `undice`/`dice` each tree — the round trip
+fixes the heading form; then move the leaf to the top of `ARCHITECTURE/` and dice it in place; then
+rename its head `entry-point.md` → `index.md` and fix the links into it. Those chores are small and
+deterministic, and every step's result is verified by the round trip and `check-links`.
 
 **Done-line.** `just test-changed`, then `just lint`, then `just dev-check-links`. The checkpoint
 gate runs once before the commit, as P1 states.
