@@ -277,7 +277,10 @@ documents); `devpro/dicing/dice.py` (the writer's multi-input entry, in this pac
 `devpro/cli.py` (`DICING_VERBS`); the `justfile` recipe `dice-docs`; `tests/dicing/` (corpus and
 tests); the SPEC dicing leaves that state the forms —
 `PROJECT_DOCS/SPEC/dicing/{index,links,tree,checks,verbs}.md` — and
-`PROJECT_DOCS/SPEC/package-and-command.md` (the surface verb list).
+`PROJECT_DOCS/SPEC/package-and-command.md` (the surface verb list); and the management rules — the
+two splitting paths, the growth-shape decision, the omnibus-head bounds and misuses — land in the
+`devpro-docdicer` skill's definition, `devpro/definitions/skills/docdicer.py`, which is the text a
+reader consults while managing a tree; the SPEC leaves carry the mechanics and state none of it.
 
 **Facts.**
 
@@ -306,7 +309,9 @@ tests); the SPEC dicing leaves that state the forms —
   sibling leaves. **Sub-dicing** — a leaf that has grown hierarchically, subtopics getting covered
   of their own, breaks out a new subdirectory with `index.md`; at the omnibus root, that sub-dicing
   is a new volume with `entry-point.md`. The decision is the growth's shape: hierarchical subtopics
-  sub-dice, lateral accumulation fissures.
+  sub-dice, lateral accumulation fissures. This rule, with the omnibus-head rules above, is
+  management guidance and lands in the `devpro-docdicer` skill; the SPEC dicing leaves keep the
+  mechanics — what the tool writes and reconstructs — and state none of it.
 - The manifest is not needed for creation or reconstruction: `dice-docs`, `devpro/dicing/manifest.py`
   and the manifest concept retire. Check, which must print nothing and is P4's done-line:
   `git grep -n 'dice-docs\|manifest\|links\.tsv' -- devpro/dicing devpro/cli.py justfile` and
