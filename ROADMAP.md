@@ -252,40 +252,44 @@ harnesses' text go unchecked. The sentence check the previous ticket adds raises
 overlay text and other harnesses escape at sentence granularity, where a shared sentence is small
 enough to hide inside a paragraph that differs.
 
-### The pin plague: a test commissioned only on a defect it dies on, and a sweep that refuses the mirror
+### Tests exist only with a defect they die on, and the gate refuses the mirror
 
-The pin test is a coverage-mandate fossil: invented to satisfy 100%-coverage metrics, not to find
-defects — shaped like a test while doing the metric's job. Human projects mass-produced it under
-those mandates, the training data carries it, and so agents reproduce it however often the rule
-forbids it; rules alone have had modest effect against a prior fed by ten thousand
-coverage-gaming suites. Slack beyond the ~80% unit tests reasonably cover belongs to the
-integration test, never to the pin. A test protects only where a defect exists that it dies on
-while the source reads correct to its author — behavior, not text. A change-detector that knows
-what it is (a hash against a literal) is not a test either; where detecting change is load-bearing
-— generated files, frozen contracts — the mechanism is the regeneration check or an integration
-test over the behavior.
+A test protects only where a defect exists that it dies on while the source reads correct to its
+author. It must assert behavior, not text.
 
-Found instances: `tests/test_devpro.py` pins the claude family's model assignments twice as
-literals — `test_each_family_pins_the_member_of_every_category` asserts the map equals a
-hand-copied dict of itself, and `test_claude_frontmatter_holds_the_field_order_and_spelling`
-carries `model: opus` inside a tuple whose subject is field order and spelling. Both photograph
-owner tuning: 829f7e7 landed and the gate ran red until the pins followed.
+The pin test — a source literal restated in the test and compared back to the source — is a
+coverage-mandate fossil: built to satisfy a 100%-coverage metric, not to find a defect. It is
+shaped like a test while doing the metric's job. Human projects mass-produced it, the training
+data carries it, and agents reproduce it however often a rule forbids it; prohibition alone has had
+modest effect against a prior fed by ten thousand coverage-gaming suites. The same holds for a
+change-detector that knows it is one, a hash against a literal. Where detecting change is
+load-bearing — generated files, frozen contracts — the mechanism is the regeneration check or an
+integration test over the behavior. Coverage that unit tests cannot reasonably reach belongs to the
+integration test, never to a pin.
 
-Work, four parts: (1) prune — keep the form asserts that are contract (order, spelling, quoting,
-required fields), assert the `model:` line is present without pinning its value, rework or retire
-the members mirror; (2) commissioning — everywhere a test can be born, not only plan packages, it
-exists only with its defect named and the planted-defect run shown, the `clauses.TEST_PRECONDITION`
-shape; (3) the machine — a devtools sweep in the `dupe_sweep` mold flagging the mirror shape (a
-test literal that also appears in the source it tests; an equality between test-local data and
-loaded source data), so the gate refuses the pattern no reviewer has to catch. The review-side
-complement is the per-test ledger — one line per test, `dies on:` — the per-item shape the
-over-100ms ticket uses; a test whose only answer is "the source changing" convicts itself.
-(4) the standing triage — a test failing on behavior the work does not state it changes is
-reported as a finding today, and the finding's disposition is nothing: it surfaces or it does not.
-Instead it lands in the active plan at once as an interrupt, a work item with its own row and
-one-commit close that the package which tripped it does not proceed past; full stop, that test is
-settled before the work continues. Triage has three verdicts: the test checks nothing — axe it;
-it checks something at the cost of sensitivity to changes outside its subject — refactor it to
-isolate its own logical test; it checks something real and the work broke it — the test is
-acquitted and the work is the suspect, which stops the package for the opposite reason. The
-owner's surface of the report is not guaranteed and is not the mechanism: the plan is.
+Found instances, both in `tests/test_devpro.py`, both pinning the claude family's model
+assignments. `test_each_family_pins_the_member_of_every_category` asserts the category map equals
+a hand-copied dict of itself. `test_claude_frontmatter_holds_the_field_order_and_spelling`, whose
+subject is field order and spelling, carries `model: opus` in its expected tuple. Both photograph
+owner tuning: `829f7e7` changed one model entry and the gate ran red until the pins followed.
+
+Four parts:
+
+1. **Prune the instances.** Keep the form asserts that are contract — order, spelling, quoting,
+   required fields. Assert the `model:` line is present, not its value. Rework or retire the
+   members mirror.
+2. **Commission tests.** Wherever a test can be born, not only in plan packages, it exists only
+   with its defect named and the run that fails under that defect shown — the
+   `clauses.TEST_PRECONDITION` shape.
+3. **Build the machine.** A devtools sweep in the `dupe_sweep` mold refuses the mirror shape at
+   the gate: a test literal that also appears in the source it tests, or an equality between
+   test-local data and loaded source data. Its review-side complement is a per-test ledger, one
+   line per test, `dies on:` — the per-item shape the over-100ms ticket uses. A test whose only
+   answer is "the source changed" convicts itself there.
+4. **Triage a test that fails on unstated behavior, at once.** The work does not state it changes
+   this behavior, yet the test fails on it: the test enters the active plan immediately as an
+   interrupt — its own row, closed by one commit — and the package that tripped it does not
+   proceed until the row closes. Three verdicts: *axe* (the test checks nothing); *isolate* (it
+   checks something, too sensitively — refactor it to depend only on its own subject); *acquit*
+   (it checks something real and the work broke it — the work is the suspect). The report to the
+   owner is not the mechanism; the plan is.
