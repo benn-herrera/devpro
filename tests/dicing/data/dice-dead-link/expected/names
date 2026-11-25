@@ -1,5 +1,8 @@
 stdout	9
 stdout	6	2
+stderr	volume
+stderr	section
+stderr	section
 stderr	0	0
-stderr	out/section/index.md	3	../../missing.md
-stderr	out/section/deeper.md	3	../../sub/gone.md
+stderr	missing.md
+stderr	gone.md

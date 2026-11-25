@@ -33,12 +33,26 @@ def _top_is_rebased(leaf: list[str]) -> bool:
     return bool(leaf and _HEADING.match(leaf[0]) and _HEADING.match(leaf[0]).end() == 2)
 
 
-def check_reassembly(sections: list[Section], lines: list[str], tree: Tree, *, out: TextIO, err: TextIO) -> bool:
+def check_reassembly(
+    sections: list[Section],
+    lines: list[str],
+    tree: Tree,
+    *,
+    out: TextIO,
+    err: TextIO,
+    base: str = "",
+    document_dir: str = "",
+) -> bool:
+    """Compare the tree's files with the monolith line for line. base is the directory the sections'
+    paths are relative to, the tree's root where it is empty: a volume's sections are its document's,
+    planned relative to the volume's head. document_dir is the directory the monolith's outside
+    links are relative to, the tree's root where it is empty: the run directory a dice was given, or
+    the directory an undice wrote its document into."""
     linker = Linker(Outline(sections), tree, lines)
     fenced = fence_flags(lines)
     k = 0
     for s in sections:
-        path = f"{tree.out}/{s.path}"
+        path = f"{tree.out}/{base}/{s.path}" if base else f"{tree.out}/{s.path}"
         try:
             leaf = read_lines(path)
         except OSError:
@@ -50,7 +64,8 @@ def check_reassembly(sections: list[Section], lines: list[str], tree: Tree, *, o
                 print(f"reassemble: no Contents block in {path}", file=err)
                 return False
             leaf = leaf[:cut]
-        leaf_dir = parent_dir(s.path)
+        leaf_dir = f"{base}/{s.path}" if base else s.path
+        leaf_dir = parent_dir(leaf_dir)
         fence = FenceTracker()
         # a leaf in the re-based form has its ladder shifted back for the compare; one in the
         # pre-change form is already at the monolith's levels and compares as it stands
@@ -64,7 +79,7 @@ def check_reassembly(sections: list[Section], lines: list[str], tree: Tree, *, o
             want = ""
             if k < len(lines):
                 next_line = lines[k + 1] if k + 1 < len(lines) else ""
-                want = lines[k] if fenced[k] else linker.rebase_only(lines[k], leaf_dir, next_line)
+                want = lines[k] if fenced[k] else linker.written(lines[k], leaf_dir, next_line, document_dir)
             k += 1
             if got != want:
                 print(

@@ -106,6 +106,25 @@ class Linker:
     def rebase_only(self, line: str, leaf_dir: str, next_line: str) -> str:
         return scan(line, self._rebaser(leaf_dir, next_line))
 
+    def written(self, line: str, leaf_dir: str, next_line: str, document_dir: str = "") -> str:
+        """A monolith line as the tree's file at leaf_dir writes it: its outside links made relative
+        to leaf_dir, the monolith's own relative to document_dir (the tree's root where it is
+        empty), a link the map names going to its diced document."""
+        base = document_dir or self.tree.root
+
+        def rebase(raw: str, text: str, target: str, after: str) -> str:
+            if target.startswith("#") and target[1:] in self.anchors:
+                return f"[{text}]({self._rebase(target, leaf_dir, after, next_line)})"
+            if never_rebased(target):
+                return raw
+            path, hash_, fragment = target.partition("#")
+            if path in self.tree.link_map.documents:
+                return f"[{text}]({self._rebase(target, leaf_dir, after, next_line)})"
+            there = posixpath.normpath(posixpath.join(base, path))
+            return f"[{text}]({rel(self._here(leaf_dir), there)}{hash_}{fragment})"
+
+        return scan(line, rebase)
+
     def revert(self, line: str, leaf_dir: str) -> str:
         """Undo the section links `forward` made; every other link stays."""
 
@@ -198,7 +217,7 @@ class Linker:
             m = _QUOTED_HEADING.match(after)
             if m:
                 dest = link_map.headings.get((path, m.group(1)), dest)
-        return rel(self._here(leaf_dir), f"{self.tree.root}/{dest}") + fragment
+        return rel(self._here(leaf_dir), posixpath.normpath(f"{self.tree.root}/{dest}")) + fragment
 
     def _unrebase(self, target: str, leaf_dir: str) -> str:
         """A target relative to leaf_dir made relative to the run directory again: the lexical

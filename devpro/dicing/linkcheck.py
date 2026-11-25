@@ -22,11 +22,13 @@ def prose_links(lines: list[str]) -> Iterator[tuple[int, str]]:
                 yield no, target
 
 
-def check_links(sections: list[Section], tree: Tree, *, out: TextIO, err: TextIO) -> bool:
+def check_links(sections: list[Section], tree: Tree, *, out: TextIO, err: TextIO, base: str = "") -> bool:
+    """Probe every relative link of the sections' files, each section's path relative to base, the
+    tree's root where it is empty."""
     links = []  # (path to probe, "file:line" of the link, target as written)
     for s in sections:
-        path = f"{tree.out}/{s.path}"
-        leaf_dir = parent_dir(s.path)
+        path = f"{tree.out}/{base}/{s.path}" if base else f"{tree.out}/{s.path}"
+        leaf_dir = parent_dir(f"{base}/{s.path}" if base else s.path)
         try:
             leaf = read_lines(path)
         except OSError:

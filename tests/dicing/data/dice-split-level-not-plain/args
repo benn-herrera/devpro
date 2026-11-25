@@ -1,5 +1,6 @@
-dice-doc
+dice
 --split-level
 04
 doc.md
+--out
 out

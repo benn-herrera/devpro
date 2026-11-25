@@ -1,8 +1,9 @@
-"""Unit tests for undice's stray-file check: which `.md` files under a tree are reported, and as what.
+"""Unit tests for undice's stray-file check: which `.md` files under a volume are reported, and as
+what.
 
 Each report is identified by the tree paths it carries: a file read as another section names it and
 the path it would be re-diced as, a file that opens no section names it alone, an unread file names
-it and the tree's entry point.
+it and its volume's entry point.
 """
 
 import io
@@ -11,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from devpro.dicing.dicedoc import _all_reproduced
+from devpro.dicing.dicedoc import Volume, _reproduced
 from devpro.dicing.outline import DEEPEST_SPLIT_LEVEL, plan_sections
 
 # Planned as entry-point.md (line 1), alpha.md (lines 2-3), beta.md (line 4).
@@ -39,11 +40,10 @@ ASSIGNED = ["entry-point.md", "alpha.md", "beta.md"]
             ["a.md", "b.md"], [], [["a.md", "entry-point.md"], ["b.md", "entry-point.md"]], id="each-stray-reported"
         ),
         pytest.param(["sub/y.md"], [], [["sub/y.md", "entry-point.md"]], id="subdirectory-without-entry-point"),
-        pytest.param(["vol/entry-point.md", "vol/x.md", "vol/sub/y.md"], [], [], id="nested-volume-exempt"),
         pytest.param(["img.png"], [], [], id="not-markdown"),
     ],
 )
-def test_all_reproduced(
+def test_reproduced(
     tmp_path: Path, extra: list[str], reads: list[tuple[str, int | None]], reports: list[list[str]]
 ) -> None:
     out = tmp_path / "out"
@@ -54,7 +54,9 @@ def test_all_reproduced(
     assert ok
     err = io.StringIO()
 
-    passed = _all_reproduced(str(out), sections, reads, err=err, deepest=DEEPEST_SPLIT_LEVEL)
+    passed = _reproduced(
+        Volume("entry-point.md", "", "Doc"), sections, reads, out=str(out), err=err, deepest=DEEPEST_SPLIT_LEVEL
+    )
 
     assert passed == (not reports)
     reported = [re.findall(r"\S+\.md\b", line) for line in err.getvalue().splitlines()]

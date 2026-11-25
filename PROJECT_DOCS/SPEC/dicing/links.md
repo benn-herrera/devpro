@@ -41,12 +41,12 @@ Each link's target is classified in this order:
 1. **Anchor of this document** (`#frag`, where `frag` is the GitHub-style anchor of one of the
    document's headings; [anchors](#anchors)). The target becomes the file holding that heading,
    relative to the linking file; plus `#<anchor within that file>` unless the heading is the first
-   line of a non-entry file. The entry point's own headings keep their anchor.
+   line of a non-head file. A head's own headings keep their anchor.
 2. **Left unchanged:** an empty target, any other `#...` target, a target opening with `/`, and a
    target opening with a scheme: one or more lowercase ASCII letters followed by `:` (`https:`,
    `mailto:`).
 3. **A diced document in the link map** ([the link map](#the-link-map)): the target's path part
-   (before any `#`) equals a map document key. The target becomes that document's entry point and
+   (before any `#`) equals a map document key. The target becomes that document's head and
    any fragment is dropped; if the text following the link opens with an optional comma, spaces and
    a double-quoted heading title that the map lists for that document, the target is that heading's
    leaf instead. The text after the link is the rest of its line; when that rest is empty or only
@@ -67,14 +67,16 @@ counted over the whole document; in a diced file, over that file's headings alon
 
 ## The link map
 
-A UTF-8 TSV file used by `dice-doc` and produced by `dice-docs`. Each line has two or three
-tab-separated fields; other lines are ignored.
+A UTF-8 TSV file used by `dice` and written by it beside its tree as `<out-dir>/links.tsv`. Each line
+has two or three tab-separated fields; other lines are ignored.
 
 | Fields | Meaning |
 |---|---|
-| `<target>\t<path>` | A link whose path part is `<target>` goes to `<path>`, the diced document's entry point. |
+| `<target>\t<path>` | A link whose path part is `<target>` goes to `<path>`, the diced document's head. |
 | `<target>\t<heading>\t<path>` | A link to `<target>` whose following text quotes `"<heading>"` goes to `<path>`, that heading's leaf. `<heading>` is the title without its number. |
 
-`dice-docs` writes the map to `<work-dir>/links.tsv`: per document, one entry-point row, then one
-heading row per distinct title in section order (the first section of a title wins). The `entry`
-document of a manifest gets an entry-point row keyed by its base name.
+`dice` reads the map `--map` names, if given, and writes `<out-dir>/links.tsv` holding every row it
+read and then its own: per document named, one head row, then one heading row per distinct title in
+section order (the first section of a title wins). A row's `<target>` is the document's base name,
+and its `<path>` is the head's or the leaf's path from the directory the verb ran in. A document
+linking into a second document is therefore still a link, not a path.

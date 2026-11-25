@@ -21,7 +21,7 @@ pre-change form never presents a level-1 top, since no section is planned at lev
 | line count | `reassemble: leaves hold <K> lines, monolith <M>` |
 
 The check compares lines, not final newlines ([shared behaviors](index.md#shared-behaviors)). Lines
-added after a Contents block ([manifest](verbs.md#manifest)) are not checked.
+added after a Contents block are not checked.
 
 ## Link check
 
@@ -67,6 +67,13 @@ each `.md` file under the root other than the root's `entry-point.md`:
 | no parent document inside the root | `<file>: no parent document (an index.md or entry-point.md beside it or above it)` |
 | parent has no link to it | `<file>: not linked from its parent <parent>` |
 | not reachable by following links from the root's `entry-point.md` | `<file>: not reachable from <entry-point>` |
+| a volume directory of a volume tree opens at `index.md` | `<file>: a volume directory of this tree opens at entry-point.md, not index.md: a volume's sections sit below it` |
+
+The last problem names a [misplaced section](tree.md#the-model): a tree whose root's Contents links
+an `entry-point.md` below it is the omnibus form, and every top-level directory under it is a
+volume's; one opening at `index.md` stands where a volume must. A tree whose root links no such head
+is one document's, and its top-level directories are sections — `dice`'s one-document form and a
+project document tree such as `SPEC/` both are — so none of them is reported.
 
 Links count as in [check-links](#check-links). The summary
 `documents checked: <N>, problems: <P>` goes to stdout, summed over roots; `<N>` counts every
@@ -400,9 +407,9 @@ Known limits:
   a ticket moved into a diced design
   ([moves between Roadmap and Design](kanban.md#moves-between-roadmap-and-design)); moving such a
   ticket back to Roadmap is refused, since the head has no line linking its leaf.
-- [undice](verbs.md#undice) on a `dice-docs` volume is best effort: links made through a link map
-  come back as paths, and its self-check ([undice](verbs.md#undice)) reports what does not
-  round-trip.
+- [undice](verbs.md#undice) on a volume a link map diced is best effort: links made through a link
+  map come back as the map's paths, and its self-check ([undice](verbs.md#undice)) reports what does
+  not round-trip.
 - A project root with no name of its own, the file-system root `/`, gives the
   [board's](kanban.md#columns-and-cards) page an empty `<project>`.
 - A pair's block whose closing fence is immediately followed by another opening fence reads as one

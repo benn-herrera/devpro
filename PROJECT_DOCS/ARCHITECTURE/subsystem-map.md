@@ -49,7 +49,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   applied-mathematician carries the `fam-ask-vs-stipulate` anchor.
 - **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered by every
   install.
-  `docdicer.py` routes the session to devpro's dicing verbs — `dice-doc`, `undice` and the check
+  `docdicer.py` routes the session to devpro's dicing verbs — `dice`, `undice` and the check
   verbs — run from the command line through the installation's wrapper, which `clauses.WRAPPER`
   names: `../../tools/devpro.sh` resolved from the skill's directory (SPEC.md, Deployed Surfaces,
   Installed tree), run with the project root as working directory. It does not restate the verbs'

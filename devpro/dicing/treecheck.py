@@ -1,9 +1,12 @@
 """The tree check: in a diced tree, every document is linked from its parent, and every document is
 reachable by links from the root's entry point.
 
-A directory's head is its `entry-point.md` where it has one (the root, a diced volume), else its
-`index.md`. A document's parent is its directory's head; a head's parent is its parent directory's
-head; the root's entry point has none.
+A tree has two structural patterns ([heads](heads.py)). Its root is a volume, opening at
+`entry-point.md`; a direct child of the root holding an `entry-point.md` is a volume of its own; and
+every other directory holding an `index.md` is a broken-out section. A top-level directory whose head
+is `index.md` is neither: it is a section where the tree's own form says a volume stands, and it is
+reported as one. A document's parent is its directory's head; a head's parent is its parent
+directory's head; the root's own head has none.
 """
 
 import os
@@ -22,6 +25,29 @@ def _head(directory: str) -> str | None:
         if os.path.isfile(path):
             return path
     return None
+
+
+def _misplaced_head(root: str) -> set[str]:
+    """The top-level directories of a volume tree that open at `index.md` instead of `entry-point.md`:
+    a tree whose root's head links an `entry-point.md` below it is the omnibus form, and every
+    top-level directory under it is a volume's. A tree whose root links none is one document's, and
+    its top-level directories are sections. Neither is misplacement; both are valid trees."""
+    entry = os.path.join(root, ENTRY_POINT)
+    volumes = {
+        os.path.dirname(target.partition("#")[0])
+        for _, target in prose_links(read_lines(entry))
+        if target.partition("#")[0].endswith(f"/{ENTRY_POINT}")
+    }
+    if not volumes:
+        return set()
+    misplaced = set()
+    for name in os.listdir(root):
+        directory = os.path.join(root, name)
+        if not os.path.isdir(directory) or name in volumes:
+            continue
+        if os.path.isfile(os.path.join(directory, INDEX)) and not os.path.isfile(os.path.join(directory, ENTRY_POINT)):
+            misplaced.add(os.path.realpath(directory))
+    return misplaced
 
 
 def _links_to(path: str) -> set[str]:
@@ -44,6 +70,7 @@ def check_tree(root: str, *, err: TextIO) -> tuple[int, int]:
     files = markdown_files([root])
     real = {os.path.realpath(f): f for f in files}
     links = {f: _links_to(f) for f in files}
+    misplaced = _misplaced_head(root)
     problems = 0
     root_real = os.path.realpath(root)
     for f in files:
@@ -52,6 +79,12 @@ def check_tree(root: str, *, err: TextIO) -> tuple[int, int]:
             continue
         own_head = _head(directory)
         is_head = own_head is not None and os.path.realpath(own_head) == os.path.realpath(f)
+        if is_head and os.path.realpath(directory) in misplaced:
+            print(
+                f"{f}: a volume directory of this tree opens at {ENTRY_POINT}, not {INDEX}: a volume's sections sit below it",
+                file=err,
+            )
+            problems += 1
         parent = _head(os.path.dirname(directory)) if is_head else own_head
         if parent is None or not os.path.realpath(os.path.dirname(parent)).startswith(root_real):
             print(f"{f}: no parent document (an {INDEX} or {ENTRY_POINT} beside it or above it)", file=err)

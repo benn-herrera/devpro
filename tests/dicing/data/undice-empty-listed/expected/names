@@ -1,3 +1,4 @@
+stdout	undoc
 stdout	5
 stdout	2	0
-stderr	out/empty.md	opens no section
+stderr	empty.md	1-one.md

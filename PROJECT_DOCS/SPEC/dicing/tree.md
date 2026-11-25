@@ -6,6 +6,47 @@ it carries, shown in `<angle brackets>` (a file, a line, a heading, a count), an
 names. The wording itself is not: the messages below give current wording, which the tests pin as
 they stand.
 
+### The model
+
+A diced tree has two structural patterns and no third.
+
+- A **volume** is an original whole document, and its top document is `entry-point.md`. The tree's
+  root is a volume, and so is each directory directly under the root that holds an
+  `entry-point.md` — the omnibus form `dice A.md B.md T/` writes. Each volume's `entry-point.md`
+  holds its document's title at level 1 and the document's own text above its first split heading.
+- A **broken-out section** is a piece diced out of a parent, and its top document is `index.md`.
+  Every other directory holding a head is one: a section that has child sections writes
+  `<name>/index.md`, and the directory holds its children.
+
+Which pattern a directory is follows from the tree, never from the file. A one-document tree — the
+form `dice` writes for one document, and the form of a project document tree such as `SPEC/` — has
+no volume directory: its root's `entry-point.md` holds its document and its sections sit beneath it,
+the top-level ones among them being sections, not misplaced volumes. A volume tree's top-level
+directories are volumes; one opening at `index.md` is a section in a volume's place, and
+[check-tree](checks.md#check-tree) reports it.
+
+`undice` reads any directory with a head file, so a broken-out section round-trips as text without
+becoming a document: its `index.md` and its children fold back into the document of the volume above
+it, and `dice --section` states the identity on the way back.
+
+No nested subvolumes: a joining document becomes a top-level volume or is subsumed and loses
+separate-document identity.
+
+### The head files
+
+A tree's head files are fixed by convention and never configurable: a reader moving between projects
+relies on finding them, and the standing project trees carry the same rule. The constant names are
+`entry-point.md` for a volume's head and `index.md` for a broken-out section's
+([shared behaviors](index.md#shared-behaviors) names the module that holds them).
+
+- A head's Contents block opens at its last line that is exactly `Contents:`; its lines are each
+  `- [<link text>](<path>)`, indented by spaces as [file content](#file-content) gives them.
+- `check-tree` reads a directory's head as its `entry-point.md` where it has one, else its
+  `index.md`; a tree's root must open at `entry-point.md`
+  ([check-tree](checks.md#check-tree)).
+- `undice` reads a tree's root at whichever of the two it holds, so a broken-out section undices as
+  its own document ([undice](verbs.md#undice)).
+
 ### Which headings split
 
 A heading is a line of 1 to 6 `#` at column 0 followed by a space, outside fenced code. A fenced
@@ -52,9 +93,10 @@ an error.
 
 | Section | Path |
 |---|---|
-| Tree root (the output directory) | `entry-point.md` |
+| Tree root (the output directory) | `entry-point.md`; `index.md` where `--section` writes it |
 | Has child sections | `<parent dir>/<name>/index.md` |
 | No child sections | `<parent dir>/<name>.md` |
+| A volume directory (`dice` with several documents) | `<out dir>/<document base name>/entry-point.md` |
 
 **Errors, all exit 1 with nothing written to the tree** (the output directory may be left created
 and empty):
@@ -64,9 +106,8 @@ and empty):
   collision is reported, each against the previous holder of the path.
 
 **Duplicate numbers.** Headings sharing a number are reported on stderr as
-`duplicate section number <number>`, once per `dice-doc`, per `undice` and per volume
-[dice-docs](verbs.md#dice-docs-and-the-manifest) dices. Dicing continues; a reference to the number
-resolves to the last heading that carries it
+`duplicate section number <number>`, once per document `dice` dices and per document `undice`
+writes. Dicing continues; a reference to the number resolves to the last heading that carries it
 ([section references](links.md#section-references)).
 
 ### File content
@@ -75,20 +116,21 @@ Each file holds, in order, exactly the source lines of its section, heading line
 section's heading ladder re-based and links rewritten ([link rewriting](links.md)).
 
 **The heading ladder.** A section's own text opens with its top heading, and every file of the tree
-but the entry point holds it at level 1, whatever level that heading had in the source: a leaf's
-file is a document, not a fragment of one. Every other heading of the section's text moves with it
-by the same shift, the top's source level minus 1, so its distance below the top is unchanged — a
-`####` heading under a `##` top writes at `###`. The heading's text and its number are not touched,
-so a section's file name ([file names and layout](#file-names-and-layout)) does not move with the
-ladder. The entry point's own text is the source's, its title at its own level. No line inside
-fenced code is a heading and none is re-based ([which headings split](#which-headings-split)).
+but a document's own head holds it at level 1, whatever level that heading had in the source: a
+leaf's file is a document, not a fragment of one. Every other heading of the section's text moves
+with it by the same shift, the top's source level minus 1, so its distance below the top is
+unchanged — a `####` heading under a `##` top writes at `###`. The heading's text and its number are
+not touched, so a section's file name ([file names and layout](#file-names-and-layout)) does not move
+with the ladder. A document's own head (`entry-point.md`, or a section's `index.md`) holds its
+document's title and opening text as the source has them, the title at level 1. No line inside fenced
+code is a heading and none is re-based ([which headings split](#which-headings-split)).
 
 A section whose text holds a heading that this shift would carry above level 1 or below level 6 has
 no ladder the tree can hold: it is reported as
 `heading too deep to re-base at line <N> (<level>): written at its monolith level`, written at its
 source levels, and the verb exits 1.
 
-The entry point and every index end with a **Contents block** appended directly after the section's
+The head and every index end with a **Contents block** appended directly after the section's
 own lines (no separator line is added):
 
 ```markdown
@@ -97,8 +139,10 @@ Contents:
 - [<link text>](<path>)
 ```
 
-- The entry point lists every other section in document order, one line each, indented two spaces
-  per depth below the first level, each `<path>` relative to the tree root.
+- A document's head lists every other section of its document in document order, one line each,
+  indented two spaces per depth below the first level, each `<path>` relative to the head's
+  directory. The omnibus's own head lists each volume's `entry-point.md`, its link text the volume
+  document's title ([dice](verbs.md#dice)).
 - An index lists its direct children in order, unindented, each `<path>` relative to the index's
   directory.
 - A block with nothing to list is `Contents:` and a blank line.

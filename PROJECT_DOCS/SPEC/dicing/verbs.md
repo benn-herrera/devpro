@@ -1,153 +1,114 @@
-## dice-doc
+## dice
 
-`devpro dice-doc [--split-level <level>] <monolith.md> <out-dir> [map.tsv]` dices one document
-([the diced tree](tree.md), [link rewriting](links.md)) at the deepest split level `<level>`
-([shared behaviors](index.md#shared-behaviors)), using `map.tsv` as the link map
-([the link map](links.md#the-link-map)) if given.
+`devpro dice [--split-level <level>] [--section] <monolith.md>... --out <out-dir> [--map <map.tsv>]`
+dices one or more documents ([the diced tree](tree.md), [link rewriting](links.md)) at the deepest
+split level `<level>` ([shared behaviors](index.md#shared-behaviors)), using `<map.tsv>` as the link
+map ([the link map](links.md#the-link-map)) if given.
+
+**The form written.** Every document named becomes a volume ([the model](tree.md#the-model)). One
+document is written at the output root, its head `<out-dir>/entry-point.md`: this is the one-document
+form. Several documents each get a
+directory at the output root named for the document's base name without `.md`, holding that
+volume's `entry-point.md` and its section children, and the root's `entry-point.md` is then the
+omnibus's own head. With `--section` the tree is a broken-out section's: one document, its head
+`<out-dir>/index.md`, and no omnibus above it.
+
+**The omnibus's head** is a level-1 title, `# Omnibus`, and a Contents block whose every line links
+a volume's `entry-point.md`, its link text the volume document's title — the plain text of its
+opening level-1 heading, without its number. It carries no other line and no per-volume text: a
+Contents link ends at its target, so a volume's purpose has no place there.
 
 Order of effects and failures:
 
 | Condition | stderr | Exit |
 |---|---|---|
-| `monolith` is not a file | `not a file: <monolith>` | 2 |
-| `map` given and not a file | `not a file: <map>` | 2 |
-| `out-dir` exists and is not a directory | `not a directory: <out-dir>` | 2 |
-| `out-dir` exists and is not empty | `out-dir not empty: <out-dir>` | 2 |
+| a `<monolith.md>` is not a file | `not a file: <monolith.md>` | 2 |
+| `--map` given and not a file | `not a file: <map.tsv>` | 2 |
+| `<out-dir>` exists and is not a directory | `not a directory: <out-dir>` | 2 |
+| `<out-dir>` exists and is not empty | `out-dir not empty: <out-dir>` | 2 |
 | Planning fails ([file names and layout](tree.md#file-names-and-layout)) | that section's message | 1 |
 | A section's heading ladder cannot be re-based ([file content](tree.md#file-content)) | `heading too deep to re-base at line <N> (<level>): written at its monolith level` | 1 |
+| two documents named share a base name | `volume <name>: two documents of one name` | 2 |
 
-Otherwise `out-dir` is created if absent, the tree is written, and stderr receives the
-`refs linked` line ([section references](links.md#section-references)) and any warnings of
-[the diced tree](tree.md). The [reassembly check](checks.md#reassembly) then runs; on failure its
-message goes to stderr and the verb exits 1 without running the link check. The
-[link check](checks.md#link-check) follows; its `dead link` lines go to stderr and its summary to
-stdout. Exit 0 only when both checks pass. Files already written remain on failure.
+A refusal writes nothing: every document is planned before anything is written, and a refusal found
+there leaves `<out-dir>` untouched. Otherwise `<out-dir>` is created if absent and the tree written.
+Stderr receives, per document, a `=== volume head <path>` line for its head and a `=== section <path>`
+line for each section file, then the `refs linked` line
+([section references](links.md#section-references)) and any warnings of [the diced tree](tree.md).
+The [reassembly](checks.md#reassembly) and [link checks](checks.md#link-check) then run over each
+volume; their messages go to stderr and their summaries to stdout. Exit 0 only when every check
+passes. Files already written remain on failure.
 
 ## undice
 
-`devpro undice [--split-level <level>] <tree-dir> <monolith.md>` writes the document a diced tree
-holds as one file. `<level>` ([shared behaviors](index.md#shared-behaviors)) names the deepest
-split level the tree was diced at; links are restored at that level. `<monolith.md>` need not be
-the document the tree was diced from.
+`devpro undice [--split-level <level>] <tree-dir> <out-dir>` writes each document a diced tree holds
+into `<out-dir>`. `<level>` ([shared behaviors](index.md#shared-behaviors)) names the deepest split
+level the tree was diced at; links are restored at that level. `<out-dir>` must be absent or empty.
 
-**Round trip.** For a tree as `dice-doc` wrote it at `<level>` without a map, with well-formed
-Contents links ([file content](tree.md#file-content)): move `<tree-dir>` aside and dice the
-unchanged `<monolith.md>` with `dice-doc` at `<level>`, without a map, from the same current
-directory, into `<tree-dir>`; the new tree equals the old byte for byte.
+**Which documents it writes.** One per volume ([the model](tree.md#the-model)): for each head the
+root's Contents block links below it, the document that volume holds, named for the volume's
+directory — `T/A/entry-point.md` writes `<out-dir>/A.md`. A tree whose root links no head below it
+holds one document, named for the tree's own directory — `SPEC/entry-point.md` writes
+`<out-dir>/SPEC.md` — and a broken-out section (`<tree-dir>/index.md` at the root) writes
+`<out-dir>/<tree-dir base name>.md`. An `index.md`-headed directory is never a document of its own: its
+sections fold into the document of the volume above it. The omnibus root's own head is not written: it
+is generator output, and the volumes are the documents the tree holds.
 
 | Condition | stderr | Exit |
 |---|---|---|
-| `<tree-dir>/entry-point.md` is not a readable file | `not a tree: <tree-dir>` | 2 |
-| `monolith` exists | `<monolith> exists: name another output, or move or delete it` | 2 |
-| `monolith` cannot be written | `cannot write: <monolith>` | 2 |
+| `<tree-dir>` holds neither `entry-point.md` nor `index.md` | `not a tree: <tree-dir>` | 2 |
+| `<out-dir>` exists and is not a directory | `not a directory: <out-dir>` | 2 |
+| `<out-dir>` exists and is not empty | `out-dir not empty: <out-dir>` | 2 |
 
-**Content.** The entry point's lines, then each file linked from its last `Contents:` line on, in
-that order; a linked file that cannot be read prints `undice: cannot read <tree-dir>/<target>` to
-stderr, is left out, and fails the verb (exit 1). From each file read that is named
-`entry-point.md` or `index.md`, the Contents block and every line after it are dropped
-([reassembly](checks.md#reassembly)'s cut). Each other file's heading ladder is restored before it
-is written: a file whose top heading reads level 1 is in the re-based form
-([file content](tree.md#file-content)) and is put back at the shallowest level its place in the tree
-permits — one below its directory's depth, raised where a heading below its top would otherwise
-land at a split level and split it into two sections — and a file whose top reads any other level is
-the pre-change form and is written as it stands. The tree does not record the level a re-based
-section came from, and no two documents with the same tree can be told apart, so the document
-written is the one the tree holds: it need not be the document the tree was diced from, and it
-dices back to the same tree ([undice](#undice)'s round trip). Links are restored outside fenced code
-and code spans:
+**Content.** A volume's head lines, then each file its Contents links reach, depth first in link
+order and each once; a linked file that cannot be read prints
+`undice: cannot read <tree-dir>/<target>` to stderr, is left out, and fails the verb (exit 1). From
+each head file read that is named `entry-point.md` or `index.md`, the Contents block and every line
+after it are dropped ([reassembly](checks.md#reassembly)'s cut). Each other file's heading ladder is
+restored before it is written: a file whose top heading reads level 1 is in the re-based form
+([file content](tree.md#file-content)) and is put back at the shallowest level its place in the
+tree permits — a section file sits one level below its parent's head, so a section at the
+document's first level is level 2 — raised where a heading below its top would otherwise land at a
+split level and split it into two sections, and a file whose top reads any other level is the
+pre-change form and is written as it stands. A volume's head is its document's title and opening
+text, and it writes as it stands, its title at level 1. The tree does not record the level a
+re-based section came from, and no two documents with the same tree can be told apart, so the
+document written is the one the tree holds: it need not be the document the tree was diced from, and
+it dices back to the same tree ([undice](#undice)'s round trip). Links are restored outside fenced
+code and code spans, relative to `<out-dir>`:
 
 - A section link ([section references](links.md#section-references), step 3) becomes its link text:
   `§<number>`, or `§<number>` and the backticked name.
 - A link to a heading's place in the tree, as [link targets](links.md#link-targets) step 1 writes
-  it, becomes `#<anchor>`, the heading's anchor in `<monolith.md>`
+  it, becomes `#<anchor>`, the heading's anchor in the document
   ([anchors](links.md#anchors)).
-- Every other relative link is rebased from its file's directory to the current directory, fragment
-  kept. Links left unchanged by [link targets](links.md#link-targets) step 2 stay unchanged.
+- A link to a diced document the tree's link map names becomes the path the map gives, made
+  relative to `<out-dir>`.
+- Every other relative link is rebased from its file's directory to `<out-dir>`, fragment kept.
+  Links left unchanged by [link targets](links.md#link-targets) step 2 stay unchanged.
 
-**Self-check.** After writing, `<monolith.md>` is planned at `<level>` ([the diced tree](tree.md),
-its messages to stderr as in [dice-doc](#dice-doc)); a planning failure exits 1 there. Otherwise
-the [reassembly](checks.md#reassembly) and [link checks](checks.md#link-check) run on it against
-`<tree-dir>`, with their messages and streams as in [dice-doc](#dice-doc). Every `.md` file under
-`<tree-dir>` must also be one [file names and layout](tree.md#file-names-and-layout) assigns,
-except files under a directory below the root that holds its own `entry-point.md` (a nested
-volume). Each other prints to stderr, naming the remedy rather than applying one:
+**Round trip.** For a tree as `dice` wrote it at `<level>` without a map: move `<tree-dir>` aside,
+`undice` it to `<out-dir>`, then `dice` the documents `<out-dir>` holds at `<level>`, without a map,
+with `--section` where the tree is a section, from `<out-dir>` as the current directory, into
+`<tree-dir>`; every file of the new tree but its link map equals the old byte for byte. The map is
+generator output, keyed by the input documents' base names, which undice's own output names and
+`<out-dir>` do not repeat.
+
+**Self-check.** After writing each document, it is planned at `<level>` ([the diced tree](tree.md),
+its messages to stderr as in [dice](#dice)); a planning failure exits 1 there. Otherwise the
+[reassembly](checks.md#reassembly) and [link checks](checks.md#link-check) run on it against its
+volume, with their messages and streams as in [dice](#dice). Every `.md` file of the volume must be
+one [file names and layout](tree.md#file-names-and-layout) assigns. Each other prints to stderr,
+naming the remedy rather than applying one:
 
 | The file | Message |
 |---|---|
 | was read as a section that [file names and layout](tree.md#file-names-and-layout) places at another path | `undice: <file> would be re-diced as <tree-dir>/<path>: rename the file or edit its heading to match` |
-| was read, but opens no section | `undice: <file> opens no section: start it with a level 2 to <level> heading, or remove it and its Contents line` |
+| was read, but opens no section | `undice: <file> opens no section: start it with a heading the document splits on (level 2 to <level> in the document, written at level 1), or remove it and its Contents line` |
 | was not read | `undice: not reproduced: <file>: link it from <tree-dir>/entry-point.md's Contents, or remove it` |
 
-A file was read when a link from the entry point's last `Contents:` line on resolves to it. It was
-read as a section when its first line opens a section of `<monolith.md>` other than the entry
-point; a file read more than once was read as the first such section in document order. Contents
-blocks are not compared, so a hand-edited block is regenerated by the round trip without a report.
-Exit 0 if all pass, else 1; `<monolith.md>` is kept either way.
-
-## dice-docs and the manifest
-
-`devpro dice-docs <manifest.tsv> <src-dir> <work-dir>` dices several documents into one tree of
-**volumes** that link to each other.
-
-### Manifest
-
-Tab-separated rows of `file`, `outdir`, `flags`, `label`; missing trailing fields are empty. Empty
-lines and lines starting with `#` are skipped.
-
-| Field | Meaning |
-|---|---|
-| `file` | Source file under `<src-dir>`. Other documents link to this volume by this text ([link targets](links.md#link-targets), step 3). |
-| `outdir` | Output directory of the volume. |
-| `flags` | Comma list, may be empty: `entry` (see below). |
-| `label` | Title of a volume group (below). |
-
-A row flagged `entry` is not diced: its file is copied verbatim to `<outdir>/entry-point.md`,
-followed by a blank line, `Volumes:`, a blank line, and one line per volume whose `outdir` has
-`<outdir>` as its parent directory, in manifest order:
-
-```markdown
-- [<volume dir name>](<volume dir name>/entry-point.md): <purpose>
-```
-
-`<purpose>` is the first sentence of the volume document's opening paragraph (the first paragraph
-after its first `# ` line, joined into one line, as plain text
-([what is a link](links.md#what-is-a-link)); the sentence ends at the first `. `, else the whole
-paragraph). A manifest has at most one effective `entry` row (the last wins).
-
-A volume whose `outdir` is `<parent>/<group>/<name>`, where `<parent>` is another volume's `outdir`,
-belongs to a **group**. The group directory gets an `index.md` — `# <label>`, a blank line,
-`Contents:`, a blank line, then `- [<document title>](<name>/entry-point.md)` for each of its
-volumes in manifest order — and the parent volume's `entry-point.md` gains the line
-`- [<label>](<group>/index.md)` after its Contents block. `<label>` is taken from the first volume
-of the group; `<document title>` is the plain text of the heading text
-([file names and layout](tree.md#file-names-and-layout)) of the volume document's first `# ` line.
-Parents must precede their children in the manifest. Other nesting depths are unspecified.
-
-### Effects
-
-In order:
-
-1. A manifest that is not a file exits 2 with `not a file: <manifest>`; a source directory that is
-   not a directory exits 2 with `not a directory: <src-dir>`. `<work-dir>` is then created if
-   absent.
-2. Rows are read in order. A row whose source is absent ends the verb (stderr
-   `missing source: <src-dir>/<file>`, exit 2). A row whose `flags` hold anything but `entry` ends
-   the verb (stderr `unknown flag: <flag> in row for <file> (the only flag is entry)`, exit 2).
-3. The link map is written ([the link map](links.md#the-link-map)).
-4. Before dicing: the `entry` row's `<outdir>/entry-point.md` is removed (its directory is
-   created), and each volume's output directory is removed with its contents unless it lies inside
-   another volume's output directory.
-5. Each volume is diced as by [dice-doc](#dice-doc) with the link map. Its output is preceded by
-   `=== <file>` on stdout; its stderr is merged into stdout, and its `dead link:` lines are
-   suppressed. A failed dicing does not stop the others; it surfaces in step 7.
-6. Group indexes and the entry point are written ([manifest](#manifest)).
-7. The [reassembly](checks.md#reassembly) and [link checks](checks.md#link-check) run on every
-   volume with the link map — the dicing's own commit gate
-   ([Dicing and Checks](../entry-point.md)), applied per volume.
-8. A final check over the files written in step 6 prints
-   `=== files written by this script: link targets exist`, then `  checked <file>` per file, and
-   `  DEAD <file> -> <target>` for each link ([what is a link](links.md#what-is-a-link)) in the
-   text ([link rewriting](links.md)) of those files whose target ends in `.md`, has no `#`, and
-   names no existing file relative to the file's directory.
-
-Exit 0 only if step 7 and step 8 pass; otherwise 1.
+A file was read when a link from a head's last `Contents:` line on resolves to it. It was read as a
+section when its first line opens a section of its document other than the head; a file read more than
+once was read as the first such section in document order. Contents blocks are not compared, so a
+hand-edited block is regenerated by the round trip without a report. Exit 0 if all pass, else 1; the
+documents are kept either way.

@@ -51,12 +51,22 @@ def section_name(text: str) -> str:
     return f"{number}-{name_slug}" if number and name_slug else number + name_slug
 
 
-def plan_sections(lines: list[str], *, err: TextIO, deepest: int = DEEPEST_SPLIT_LEVEL) -> tuple[list[Section], bool]:
+def plan_sections(
+    lines: list[str],
+    *,
+    err: TextIO,
+    deepest: int = DEEPEST_SPLIT_LEVEL,
+    root_path: str = ENTRY_POINT,
+    titled: bool = True,
+) -> tuple[list[Section], bool]:
     """The sections of a monolith split at headings of level 2 to deepest, entry point first, and
     whether planning succeeded.
 
-    An empty slug stops planning, so the sections returned stop before it; same-path siblings
-    are reported and planning goes on.
+    The entry point is written at root_path, the head of the document's own directory. Where titled,
+    the document's first level-1 heading is its title, written as the document has it and listed
+    nowhere; where not, the document has no title of its own and every level-1 heading is a
+    section's, so one keeps the level a section is written at instead. An empty slug stops planning,
+    so the sections returned stop before it; same-path siblings are reported and planning goes on.
     """
     headings = []  # (level, line number, plain text)
     fence = FenceTracker()
@@ -68,6 +78,9 @@ def plan_sections(lines: list[str], *, err: TextIO, deepest: int = DEEPEST_SPLIT
             continue
         level = m.end() - 1
         if level == 1:
+            if not titled:
+                headings.append((level, no, plain_text(line[m.end() :].rstrip(" "))))
+                continue
             if seen_title:
                 print(f"extra level-1 heading at line {no} kept as text", file=err)
             seen_title = True
@@ -86,7 +99,7 @@ def plan_sections(lines: list[str], *, err: TextIO, deepest: int = DEEPEST_SPLIT
         has_children.add(parent)
 
     entry_last = headings[0][1] - 1 if headings else len(lines)
-    sections = [Section(0, 0, "E", ENTRY_POINT, 1, entry_last, "", 1, "")]
+    sections = [Section(0, 0, "E", root_path, 1, entry_last, "", 1, "")]
     dirs = {0: ""}
     path_line: dict[str, int] = {}
     ok = True

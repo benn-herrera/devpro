@@ -31,8 +31,12 @@ HERE = Path(__file__).resolve().parent
 TESTDATA = HERE / "data"
 
 
-def _files(root: Path) -> dict[str, bytes]:
-    return {p.relative_to(root).as_posix(): p.read_bytes() for p in sorted(root.rglob("*")) if p.is_file()}
+def _files(root: Path, skip: str = "") -> dict[str, bytes]:
+    return {
+        p.relative_to(root).as_posix(): p.read_bytes()
+        for p in sorted(root.rglob("*"))
+        if p.is_file() and p.relative_to(root).as_posix() != skip
+    }
 
 
 def _case_env(case: Path) -> dict[str, str]:
@@ -59,8 +63,8 @@ def _round_trip_cases() -> list[Path]:
     return [
         case
         for case in _cases()
-        if _args(case)[0] == "dice-doc"
-        and len(_split_level_apart(_args(case))[1]) == 3
+        if _args(case)[0] == "dice"
+        and "--out" in _args(case)
         and (case / "expected" / "exit").read_text(encoding="utf-8") == "0\n"
     ]
 
@@ -163,15 +167,30 @@ def test_round_trip_cases_exist() -> None:
 
 @pytest.mark.parametrize("case", _round_trip_cases(), ids=lambda case: case.name)
 def test_undice_then_dice_reproduces_the_tree(case: Path, tmp_path: Path) -> None:
-    """A tree the case dices without a map: undiced, then diced again from the same run directory,
-    both at the case's split level, it comes back byte for byte, both runs exiting 0."""
+    """A tree the case dices without a map: undiced to its document, then diced again from the same
+    run directory, both at the case's split level, it comes back byte for byte, both runs exiting
+    0."""
     run = tmp_path / "run"
     shutil.copytree(case / "expected" / "tree", run, symlinks=True)
     split_level, args = _split_level_apart(_args(case))
-    out, env = args[2], _case_env(case)
-    undiced = _dicing(run, ["undice", *split_level, out, "mono.md"], env)
+    out = args[args.index("--out") + 1]
+    env = _case_env(case)
+    undiced = _dicing(run, ["undice", *split_level, out, "undoc"], env)
     assert undiced.returncode == 0, undiced.stderr
+    section = ["--section"] if "--section" in args else []
     (run / out).rename(run / "diced")
-    rediced = _dicing(run, ["dice-doc", *split_level, "mono.md", out], env)
+    # a document's links are relative to the directory the verb runs in, which is where undice
+    # wrote the documents; a volume tree's undice writes one document per volume, the omnibus's own
+    # head is not written, and those documents are what the re-dice is given
+    (run / "undoc").rename(run / "documents")
+    documents = sorted(p.name for p in (run / "documents").glob("*.md"))
+    rediced = subprocess.run(
+        [sys.executable, f"-m{MODULE}", "dice", *split_level, *section, *documents, "--out", f"../{out}"],
+        cwd=run / "documents",
+        env=env,
+        capture_output=True,
+    )
     assert rediced.returncode == 0, rediced.stderr
-    assert _files(run / out) == _files(run / "diced")
+    # the map is generator output keyed by the input document's base name, which the undiced
+    # document's own name does not repeat; every other file of the tree is the tree's
+    assert _files(run / out, skip="links.tsv") == _files(run / "diced", skip="links.tsv")

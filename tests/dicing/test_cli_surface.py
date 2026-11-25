@@ -1,7 +1,7 @@
 """The dicing surface is offered as `devpro <verb>`: `devpro --help` lists every dicing verb.
 
-The defect: the nine dicing verbs are the absorbed dicing surface's command-line offering, and
-without them `devpro dice-doc` is refused by argparse (`invalid choice: 'dice-doc'`, exit 2) — the
+The defect: the dicing verbs are the absorbed dicing surface's command-line offering, and
+without them `devpro dice` is refused by argparse (`invalid choice: 'dice'`, exit 2) — the
 offered surface does not include them. `devpro --help` lacks every verb name before the change.
 """
 

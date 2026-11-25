@@ -1,3 +1,6 @@
 stdout	11
 stdout	6	0
+stderr	volume
+stderr	section
+stderr	section
 stderr	2	0

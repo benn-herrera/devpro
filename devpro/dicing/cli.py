@@ -1,6 +1,6 @@
 """The dicing verbs' argparse surface and dispatch: `devpro <verb>` for each of them.
 
-`add_verbs` adds the five verbs to `devpro.cli.build_parser`'s subparsers; `run` dispatches one and
+`add_verbs` adds the dicing verbs to `devpro.cli.build_parser`'s subparsers; `run` dispatches one and
 returns its exit status: 0 on success, 1 when a check or step fails, 2 on a refusal. A verb's
 implementation is imported where that verb is dispatched, so registering the verbs imports none.
 """
@@ -35,29 +35,27 @@ def _add_split_level(parser: argparse.ArgumentParser) -> None:
 
 def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
     """Add the five dicing verbs to subparsers, each refusing abbreviations."""
-    dice_one = subparsers.add_parser(
-        "dice-doc", help="dice one document, then check it reassembles and its links resolve", allow_abbrev=False
+    dice_many = subparsers.add_parser(
+        "dice", help="dice one or more documents into a tree of volumes, then check every volume", allow_abbrev=False
     )
-    _add_split_level(dice_one)
-    dice_one.add_argument("monolith", help="the markdown document to dice")
-    dice_one.add_argument("out", help="output directory, absent or empty")
-    dice_one.add_argument("map", nargs="?", default="", help="link map TSV")
+    _add_split_level(dice_many)
+    dice_many.add_argument("monoliths", nargs="+", metavar="monolith", help="each markdown document to dice")
+    dice_many.add_argument("--out", required=True, metavar="DIR", help="output directory, absent or empty")
+    dice_many.add_argument("--map", default="", metavar="TSV", help="link map TSV")
+    dice_many.add_argument(
+        "--section",
+        action="store_true",
+        help="write the tree as a broken-out section: its root's head is index.md, not entry-point.md",
+    )
 
     undicing = subparsers.add_parser(
         "undice",
-        help="write a diced tree back out as one document, then check it dices back",
+        help="write each document a diced tree holds into a directory, then check each against it",
         allow_abbrev=False,
     )
     _add_split_level(undicing)
-    undicing.add_argument("tree", help="a diced tree's directory, holding its entry-point.md")
-    undicing.add_argument("monolith", help="the document to write; must not exist")
-
-    many = subparsers.add_parser(
-        "dice-docs", help="dice the documents a manifest TSV lists, then verify them all", allow_abbrev=False
-    )
-    many.add_argument("manifest", help="manifest TSV naming the documents and their output directories")
-    many.add_argument("src", help="directory the manifest's files are read from")
-    many.add_argument("work", help="directory for intermediates")
+    undicing.add_argument("tree", help="a diced tree's directory, holding its entry-point.md or its index.md")
+    undicing.add_argument("out", help="output directory, absent or empty")
 
     links = subparsers.add_parser(
         "check-links", help="check the relative links and anchors of markdown files", allow_abbrev=False
@@ -81,20 +79,23 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
     out, err = sys.stdout, sys.stderr
     run_dir = os.getcwd()  # the one read of the working directory: every pass below is given it
     verb = args.verb
-    if verb == "dice-doc":
-        from .dicedoc import dice_doc
+    if verb == "dice":
+        from .dicedoc import dice
 
-        return dice_doc(
-            args.monolith, args.out, args.map, root=run_dir, stdout=out, stderr=err, deepest=int(args.split_level)
+        return dice(
+            args.monoliths,
+            args.out,
+            args.map,
+            root=run_dir,
+            stdout=out,
+            stderr=err,
+            deepest=int(args.split_level),
+            section=args.section,
         )
     if verb == "undice":
         from .dicedoc import undice
 
-        return undice(args.tree, args.monolith, root=run_dir, stdout=out, stderr=err, deepest=int(args.split_level))
-    if verb == "dice-docs":
-        from .manifest import dice_docs
-
-        return dice_docs(args.manifest, args.src, args.work, root=run_dir, stdout=out, stderr=err)
+        return undice(args.tree, args.out, stdout=out, stderr=err, deepest=int(args.split_level))
     if verb == "check-links":
         missing = [root for root in args.roots if not os.path.exists(root)]
         if missing:

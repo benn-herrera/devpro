@@ -1,0 +1,4 @@
+doc.md	out/entry-point.md
+doc.md	One	out/1-one/index.md
+doc.md	Inner one	out/1-one/1-inner-one.md
+doc.md	Two	out/2-two.md

@@ -26,8 +26,8 @@ Deployed Surfaces, Plugins states.
 devpro also runs from a checkout of this repository, as `PYTHONPATH=<clone> python3 -m devpro
 install …` (Deployed Surfaces). The install product is the same from a checkout or from an installed package.
 
-The command also carries the dicing and check surface: `devpro dice-doc`, `devpro undice`,
-`devpro dice-docs`, `devpro check-links`, `devpro check-tree`, `devpro check-plan`,
+The command also carries the dicing and check surface: `devpro dice`, `devpro undice`,
+`devpro check-links`, `devpro check-tree`, `devpro check-plan`,
 `devpro check-design` and `devpro check-roadmap` (Dicing and Checks), and the
 `devpro dashboard [<project-dir>] [--port <number>]` verb — devpro's one loopback server for the
 web interface: its profiler view the rendering the retired `devpro profiler serve` drove, its board

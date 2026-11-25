@@ -154,23 +154,21 @@ render-agents-file harness out:
 _harness-value harness key:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" ./devtools/scripts/_harness-value.sh "$@"
 
-# Splits by heading level, with an optional link map TSV, then checks the leaves reassemble the
-# monolith and every relative link resolves.
-[doc("dice a markdown monolith into linked leaves")]
-dice-doc monolith out map="":
-    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro dice-doc "{{monolith}}" "{{out}}" "{{map}}"
+# Splits by heading level, one or more documents into a tree of volumes, an optional link map TSV
+# read and this run's own rows written beside it, then checks every volume reassembles its document
+# and every relative link resolves. --section writes the tree as a broken-out section instead: its
+# root's head is index.md, and no omnibus stands above it. Every argument forwards verbatim.
+[doc("dice markdown documents into linked leaves")]
+dice *args:
+    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro dice {{args}}
 
-# Reads the listed documents from src-dir, keeps intermediates in work-dir, then verifies all
-# trees.
-[doc("dice a manifest's documents into volumes")]
-dice-docs manifest src work:
-    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro dice-docs "{{manifest}}" "{{src}}" "{{work}}"
-
-# <tree> is the directory holding its entry-point.md; <monolith> must not exist. Then checks the
-# monolith dices back to the same tree.
-[doc("write a diced tree back out as one document")]
-undice tree monolith:
-    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro undice "{{tree}}" "{{monolith}}"
+# <tree> is the directory holding its entry-point.md, or its index.md for a broken-out section;
+# <out> must be absent or empty. One document is written per volume, named for its volume directory,
+# and a tree holding one document is named for the tree's directory. Then checks each document
+# against its tree.
+[doc("write the documents a diced tree holds into a directory")]
+undice tree out:
+    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro undice "{{tree}}" "{{out}}"
 
 # Checks every relative link and #anchor in PROJECT_DOCS and the top-level *.md files, then that
 # every PROJECT_DOCS document is listed by its parent and reachable from its entry point; exits 1 on

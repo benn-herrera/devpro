@@ -1,18 +1,43 @@
-"""Dicing one document, undicing a tree back into one, and re-checking trees that already exist."""
+"""Dicing one document or several, undicing a tree back into its documents, and re-checking trees
+that already exist.
+
+A tree has two structural patterns and no third ([heads](heads.py)): a volume's top document is
+`entry-point.md` and a broken-out section's is `index.md`. `dice A.md B.md T/` makes every input
+document a volume under the omnibus — `T/A/entry-point.md` and `T/B/entry-point.md` beside the
+omnibus's own `T/entry-point.md` — and one input is written with its head at the tree's root and its
+sections beneath, the one-document form.
+
+A verb passes around two kinds of path. A **tree path** is relative to the tree's root and names a
+file there. A **document path** is relative to a volume's head: the path a section would have if the
+volume's document were planned at that head, which is what planning and reassembly compare.
+"""
 
 import io
 import os
 import posixpath
+from dataclasses import dataclass
 from typing import TextIO
 
-from .heads import ENTRY_POINT, HEADS, INDEX
+from .heads import CONTENTS, ENTRY_POINT, HEADS, INDEX, contents_line
 from .linkcheck import check_links, markdown_files
 from .linkrewrite import Linker, LinkMap, Tree, parent_dir
-from .linkscan import link_targets
-from .outline import _HEADING, DEEPEST_SPLIT_LEVEL, Outline, Section, plan_sections
+from .linkscan import link_targets, plain_text
+from .outline import _HEADING, DEEPEST_SPLIT_LEVEL, Outline, Section, plan_sections, split_number
 from .reassemble import _top_is_rebased, check_reassembly, own_end
 from .split import _rebased, write_tree
-from .textfile import FenceTracker, read_lines, split_lines, write_lines
+from .textfile import FenceTracker, read_lines, write_lines
+
+
+@dataclass
+class Volume:
+    """One document of a tree: the tree path of its head file, the tree path of the directory its
+    sections are written in, the title it is listed under, and the document's own path as the verbs
+    read or write it — the link map keys a document by that path's base name."""
+
+    head: str
+    directory: str
+    title: str
+    source: str = ""
 
 
 def _warn_duplicate_numbers(sections: list[Section], *, err: TextIO) -> None:
@@ -20,14 +45,113 @@ def _warn_duplicate_numbers(sections: list[Section], *, err: TextIO) -> None:
         print(f"duplicate section number {number}", file=err)
 
 
-def _tree(root: str, out: str, map_path: str) -> Tree:
+def _tree(out: str, root: str = "", map_path: str = "") -> Tree:
     """Links in a monolith are relative to the run directory root, so it anchors their rebasing."""
     link_map = LinkMap.load(map_path) if map_path and os.path.isfile(map_path) else LinkMap()
     return Tree(out=out, outabs=os.path.realpath(out), root=root, link_map=link_map)
 
 
-def dice_doc(
-    monolith: str,
+def title_of(lines: list[str]) -> str:
+    """A document's title: the plain text of its opening level-1 heading, outside fenced code and
+    without its number. "" where the document opens no level-1 heading."""
+    fence = FenceTracker()
+    for line in lines:
+        m = _HEADING.match(line) if not fence.inside(line) else None
+        if m and m.end() == 2:
+            return split_number(plain_text(line[2:].rstrip(" ")))[1]
+    return ""
+
+
+def _out_ready(out: str, *, err: TextIO) -> bool:
+    """Whether out is a directory a verb may write: absent or empty. A refusal is reported."""
+    if os.path.exists(out) and not os.path.isdir(out):
+        print(f"not a directory: {out}", file=err)
+        return False
+    if os.path.isdir(out) and os.listdir(out):
+        print(f"out-dir not empty: {out}", file=err)
+        return False
+    return True
+
+
+def _document_path(volume: Volume, tree_path: str) -> str:
+    """A tree path as the document path it is in the volume: below its head's directory."""
+    return posixpath.relpath(tree_path, volume.directory) if volume.directory else tree_path
+
+
+def _tree_path(volume: Volume, document_path: str) -> str:
+    """A document path as the tree path the volume writes it at."""
+    return f"{volume.directory}/{document_path}" if volume.directory else document_path
+
+
+def _plan(lines: list[str], volume: Volume, *, err: TextIO, deepest: int) -> tuple[list[Section], bool]:
+    """A volume's document's sections, planned with its head's document path as the entry point's."""
+    return plan_sections(lines, err=err, deepest=deepest, root_path=_document_path(volume, volume.head))
+
+
+# --- dice ---------------------------------------------------------------------------------------------------------
+
+
+def _volumes(monoliths: list[str], *, section: bool) -> list[Volume]:
+    """One volume per input: the single input's at the tree's root, and each of several in a
+    directory named for its base name without `.md`. A section is one document, written at the tree's
+    root, its head the root's `index.md`."""
+    volumes = []
+    for monolith in monoliths:
+        base = os.path.basename(monolith)
+        name = base[: -len(".md")] if base.endswith(".md") else base
+        directory = "" if len(monoliths) == 1 else name
+        volumes.append(Volume(f"{name}/{ENTRY_POINT}" if directory else ENTRY_POINT, directory, "", monolith))
+    if section:
+        volumes[0].head = INDEX
+    return volumes
+
+
+def _refusals(volumes: list[Volume], *, err: TextIO) -> bool:
+    """Report a name a volume directory cannot take, and whether one does. Two documents of one base
+    name would both claim `<out-dir>/<name>`, so the name is refused. A section directory cannot
+    collide with a volume directory: a volume's sits at the output root and a section's inside it, so
+    no name is shared between them."""
+    refused = False
+    taken: set[str] = set()
+    for volume in volumes:
+        if volume.directory in taken:
+            print(f"volume {volume.directory}: two documents of one name", file=err)
+            refused = True
+        taken.add(volume.directory)
+    return refused
+
+
+def _omnibus_lines(volumes: list[Volume]) -> list[str]:
+    """The omnibus root's own head: a level-1 title and a Contents block listing each volume's head,
+    its link text the volume's title."""
+    lines = ["# Omnibus", "", CONTENTS, ""]
+    return lines + [contents_line("", text=volume.title, path=volume.head) for volume in volumes]
+
+
+def _map_rows(volumes: list[Volume], plans: dict[str, list[Section]], *, out: str, root: str) -> list[str]:
+    """The link map's rows, keyed by the base name of the document each volume holds: its head, then
+    one row per distinct title in section order, the first section of a title winning. A row's path
+    is relative to the run directory the verb was given."""
+    rows = []
+    for volume in volumes:
+        key = os.path.basename(volume.source)
+        rows.append(f"{key}\t{_run_path(out, root, volume.head)}")
+        seen: set[str] = set()
+        for s in plans[volume.head][1:]:
+            if s.title and s.title not in seen:
+                seen.add(s.title)
+                rows.append(f"{key}\t{s.title}\t{_run_path(out, root, _tree_path(volume, s.path))}")
+    return rows
+
+
+def _run_path(out: str, root: str, tree_path: str) -> str:
+    """A tree path as the run directory path the link map carries: the document's target relative to
+    root, which is where the monolith's links were written from."""
+    return posixpath.relpath(posixpath.join(out, tree_path), root or ".")
+
+
+def dice(
+    monoliths: list[str],
     out: str,
     map_path: str,
     *,
@@ -35,252 +159,363 @@ def dice_doc(
     stdout: TextIO,
     stderr: TextIO,
     deepest: int = DEEPEST_SPLIT_LEVEL,
+    section: bool = False,
 ) -> int:
-    """Split a monolith at headings of level 2 to deepest into a tree under out (empty or absent),
-    then check that the tree reassembles the monolith and that its links resolve; root is the run
-    directory the monolith's links are relative to. 0 ok, 1 a failed step, 2 bad arguments."""
-    if not os.path.isfile(monolith):
-        print(f"not a file: {monolith}", file=stderr)
-        return 2
+    """Dice every document named into a tree under out (empty or absent), the one form both the
+    single-input and the several-input spelling take, then check every volume. With section, the
+    tree is a broken-out section's: its root's head is `index.md` and no omnibus stands above it.
+    root is the run directory the documents' links are relative to. 0 ok, 1 a failed step, 2 a
+    refusal."""
+    for monolith in monoliths:
+        if not os.path.isfile(monolith):
+            print(f"not a file: {monolith}", file=stderr)
+            return 2
     if map_path and not os.path.isfile(map_path):
         print(f"not a file: {map_path}", file=stderr)
         return 2
-    if os.path.exists(out) and not os.path.isdir(out):
-        print(f"not a directory: {out}", file=stderr)
+    if not _out_ready(out, err=stderr):
         return 2
-    if os.path.isdir(out) and os.listdir(out):
-        print(f"out-dir not empty: {out}", file=stderr)
+    volumes = _volumes(monoliths, section=section)
+    texts = {v.head: read_lines(monolith) for v, monolith in zip(volumes, monoliths)}
+    plans: dict[str, list[Section]] = {}
+    for volume, monolith in zip(volumes, monoliths):
+        lines = texts[volume.head]
+        volume.title = title_of(lines)
+        sections, ok = _plan(lines, volume, err=stderr, deepest=deepest)
+        if not ok:
+            return 1
+        plans[volume.head] = sections
+        _warn_duplicate_numbers(sections, err=stderr)
+    if _refusals(volumes, err=stderr):
         return 2
     os.makedirs(out, exist_ok=True)
-    tree = _tree(root, out, map_path)
-    lines = read_lines(monolith)
-    sections, ok = plan_sections(lines, err=stderr, deepest=deepest)
-    if not ok:
+    if not section:
+        write_lines(os.path.join(out, ENTRY_POINT), _omnibus_lines(volumes))
+    # the caller's map is read first and this dice's own rows added to it: a document linking into
+    # a second document is a link, and only this run knows where it diced each input
+    tree = _tree(out, root, map_path)
+    rows = [f"{key}\t{path}" for key, path in tree.link_map.documents.items()]
+    rows += [f"{key}\t{heading}\t{path}" for (key, heading), path in tree.link_map.headings.items()]
+    write_lines(os.path.join(out, "links.tsv"), rows + _map_rows(volumes, plans, out=out, root=root))
+    failed = False
+    for volume, monolith in zip(volumes, monoliths):
+        lines = texts[volume.head]
+        sections = plans[volume.head]
+        for s in sections:
+            os.makedirs(os.path.join(out, posixpath.dirname(_tree_path(volume, s.path))), exist_ok=True)
+        if write_tree(sections, lines, tree, err=stderr, base=volume.directory):
+            failed = True
+    if failed:
         return 1
-    _warn_duplicate_numbers(sections, err=stderr)
-    for s in sections:
-        os.makedirs(os.path.join(out, posixpath.dirname(s.path)), exist_ok=True)
-    if write_tree(sections, lines, tree, err=stderr):
-        return 1
-    if not check_reassembly(sections, lines, tree, out=stdout, err=stderr):
-        return 1
-    return 0 if check_links(sections, tree, out=stdout, err=stderr) else 1
+    ok = True
+    for volume in volumes:
+        sections = plans[volume.head]
+        ok = (
+            _write_check(
+                volume,
+                texts[volume.head],
+                sections,
+                out=out,
+                root=root,
+                map_path=os.path.join(out, "links.tsv"),
+                stdout=stdout,
+                stderr=stderr,
+            )
+            and ok
+        )
+    return 0 if ok else 1
 
 
-def _own_and_contents(out: str, path: str) -> tuple[list[str], list[str]]:
+# --- undice -------------------------------------------------------------------------------------------------------
+
+
+def _own(out: str, tree_path: str) -> tuple[list[str], list[str]]:
     """A tree file's own lines and, for a head, its Contents block with every line after it."""
-    lines = read_lines(os.path.join(out, path))
-    end = own_end(path, lines)
+    lines = read_lines(os.path.join(out, tree_path))
+    end = own_end(tree_path, lines)
     return lines[:end], lines[end:]
 
 
-def _undiced_lines(tree: Tree, *, err: TextIO, deepest: int) -> tuple[list[str], bool, list[tuple[str, int | None]]]:
-    """The entry point, then each file its Contents block lists, Contents dropped, its heading
-    ladder restored and links restored at split level deepest;
-    whether every listed file could be read (each that could not is reported to err); and, for
-    every read in reading order, its normalized path and the 1-based line of the result its own
-    lines start at, None when it holds none."""
-    entry, contents = _own_and_contents(tree.out, ENTRY_POINT)
-    parts = [(ENTRY_POINT, entry)]
-    all_read = True
+def _volume_documents(out: str) -> list[Volume]:
+    """The documents a tree holds: one for each head the root's Contents links below it, and the
+    root's own head as the one document where no such head is linked. The root's head is never
+    itself a volume; `dice` writes the omnibus there. A root opening at `index.md` is a broken-out
+    section, and its head holds its document."""
+    root_head = INDEX if os.path.isfile(os.path.join(out, INDEX)) else ENTRY_POINT
+    _, contents = _own(out, root_head)
+    volumes = []
     for line in contents:
-        for path in link_targets(line):
-            try:
-                parts.append((path, _own_and_contents(tree.out, path)[0]))
-            except OSError:
-                print(f"undice: cannot read {tree.out}/{path}", file=err)
-                all_read = False
-    whole = [line for _, own in parts for line in own]
-    lines = _restored(parts, tree, whole, deepest=deepest)
-    reads = []
-    first = 1 + len(entry)
-    for path, own in parts[1:]:
-        reads.append((posixpath.normpath(path), first if own else None))
-        first += len(own)
-    return lines, all_read, reads
+        for target in link_targets(line):
+            path = posixpath.normpath(target.partition("#")[0])
+            if posixpath.basename(path) == ENTRY_POINT and "/" in path:
+                head = os.path.join(out, path)
+                volumes.append(Volume(path, posixpath.dirname(path), title_of(read_lines(head))))
+    if volumes:
+        return volumes
+    return [Volume(root_head, "", title_of(read_lines(os.path.join(out, root_head))))]
 
 
-def _placed_level(path: str, own: list[str], deepest: int) -> int | None:
-    """The level a part's top heading is restored to: the shallowest level its place in the tree
-    permits — a directory's own section at that directory's level, any other file one below, child
-    of the index beside it — that keeps every heading below the top deeper than the deepest split
-    level, so the restored document splits where the tree's directories do and nowhere else. A part
-    with no heading below its top cannot be split again and takes its place's level. None where no
-    level to 6 permits the ladder: the tree then holds one no document at this split level has, and
-    that is reported rather than guessed."""
-    directory = parent_dir(path)
-    depth = len(directory.split("/")) if directory else 0
-    # an index is its directory's own section, at that directory's level; any other file is one
-    # level below, since its section is a child of the index beside it
-    own_level = depth + 1 if os.path.basename(path) == INDEX else depth + 2
-    fence = FenceTracker()
-    levels = [(_HEADING.match(line).end() - 1) for line in own if not fence.inside(line) and _HEADING.match(line)]
-    below = max((level - levels[0] for level in levels[1:]), default=0) if levels else 0
-    spans = [level for level in range(own_level, 7) if level + below <= 6 and (below == 0 or level + below > deepest)]
-    return spans[0] if spans else None
+def _walk(
+    out: str, head: str, *, err: TextIO
+) -> tuple[list[tuple[str, list[str]]], list[tuple[str, int | None]], bool]:
+    """A volume's parts in reading order: its head file, then each file its Contents links reach,
+    depth first in link order and once each. A linked file that cannot be read is reported and left
+    out. Returns each part's tree path with its own lines, each part's directory-relative path with
+    the document line it starts at, and whether every linked file was read."""
+    directory = posixpath.dirname(head)
+    parts: list[tuple[str, list[str]]] = []
+    reads: list[tuple[str, int | None]] = []
+    seen: set[str] = set()
+    all_read = True
+
+    def add(tree_path: str) -> tuple[list[str], list[str]]:
+        """Record a part and its own lines, and give them back with its Contents block."""
+        own, contents = _own(out, tree_path)
+        first = sum(len(lines) for _, lines in parts) + 1
+        reads.append((posixpath.relpath(tree_path, directory) if directory else tree_path, first))
+        parts.append((tree_path, own))
+        seen.add(tree_path)
+        return own, contents
+
+    def visit(referrer: str, target: str) -> None:
+        nonlocal all_read
+        tree_path = posixpath.normpath(posixpath.join(posixpath.dirname(referrer), target.partition("#")[0]))
+        if tree_path in seen:
+            return
+        try:
+            own, contents = _own(out, tree_path)
+        except OSError:
+            print(f"undice: cannot read {out}/{tree_path}", file=err)
+            all_read = False
+            return
+        seen.add(tree_path)
+        first = sum(len(lines) for _, lines in parts) + 1
+        reads.append((posixpath.relpath(tree_path, directory) if directory else tree_path, first))
+        parts.append((tree_path, own))
+        for line in contents:
+            for link in link_targets(line):
+                visit(tree_path, link)
+
+    try:
+        own, contents = _own(out, head)
+    except OSError:
+        print(f"undice: cannot read {out}/{head}", file=err)
+        return parts, reads, False
+    seen.add(head)
+    parts.append((head, own))
+    reads.append((posixpath.relpath(head, directory) if directory else head, 1))
+    for line in contents:
+        for target in link_targets(line):
+            visit(head, target)
+    return parts, reads, all_read
 
 
-def _restored(parts: list[tuple[str, list[str]]], tree: Tree, lines: list[str], *, deepest: int) -> list[str]:
-    """The parts' own lines with their heading ladders restored, links restored against the
-    sections, split at level 2 to deepest, and headings of lines.
+def _restored(
+    head: tuple[str, list[str]], parts: list[tuple[str, list[str]]], tree: Tree, *, deepest: int
+) -> list[str]:
+    """The head's own lines and then the parts' with their heading ladders restored, their links
+    restored against the sections, split at level 2 to deepest.
 
     A part whose top heading reads level 1 is the re-based write form and has its ladder put back to
-    the shallowest level its position in the tree permits (`_placed_level`), fenced lines as they
-    stand; a part whose top reads any other level is the pre-change form and passes through as it
-    stands. A part that opens no heading, or that no level can place, is written as it stands: the
-    self-check reports it, as it reports any file of the tree the planned sections do not reproduce.
-    A part's entry point is its own title, written as the tree holds it.
+    the shallowest level its place in the tree permits (`_placed_level`), fenced lines as they stand;
+    a part whose top reads any other level is the pre-change form and passes through as it stands. A
+    part that opens no heading, or that no level can place, is written as it stands: the self-check
+    reports it, as it reports any file of the tree the planned sections do not reproduce. The head is
+    the volume and not a section: its own text is the document's title and opening paragraphs, and it
+    writes as it stands, the head's title included.
     """
 
-    def restore_ladder(path: str, own: list[str]) -> list[str]:
-        level = _placed_level(path, own, deepest) if path != ENTRY_POINT and _top_is_rebased(own) else None
+    def restore_ladder(document_path: str, own: list[str]) -> list[str]:
+        level = _placed_level(document_path, own, deepest) if _top_is_rebased(own) else None
         if level is None:
             return own
         fence = FenceTracker()
         restored = []
         for no, line in enumerate(own):
-            inside = fence.inside(line)
-            heading = not inside and _HEADING.match(line)
+            heading = not fence.inside(line) and _HEADING.match(line)
             restored.append(_rebased(line, delta=level - 1, top=level if no == 0 else None) if heading else line)
         return restored
 
     placed = [(path, restore_ladder(path, own)) for path, own in parts]
-    whole = [line for _, own in placed for line in own]
-    sections, _ = plan_sections(whole, err=io.StringIO(), deepest=deepest)
-    linker = Linker(Outline(sections), tree, whole)
-    restored = []
+    whole = head[1] + [line for _, own in placed for line in own]
+    links, _ = plan_sections(whole, err=io.StringIO(), deepest=deepest)
+    linker = Linker(Outline(links), tree, whole)
+    fence = FenceTracker()
+    restored = [[line if fence.inside(line) else linker.restore(line, "") for line in head[1]]]
     for path, own in placed:
         fence = FenceTracker()
         leaf_dir = parent_dir(path)
-        restored += [line if fence.inside(line) else linker.restore(line, leaf_dir) for line in own]
-    return restored
+        restored.append([line if fence.inside(line) else linker.restore(line, leaf_dir) for line in own])
+    return [line for run in restored for line in run]
 
 
-def _all_reproduced(
+def _placed_level(path: str, own: list[str], deepest: int) -> int | None:
+    """The level a part's top heading is restored to: the shallowest level its place in the tree
+    permits — a section file sits one level below its parent's head, so a section at the document's
+    first level takes level 2 — that keeps every heading below the top deeper than the deepest split
+    level, so the restored document splits where the tree's directories do and nowhere else. A part
+    with no heading below its top cannot be split again and takes its place's level. None where no
+    level to 6 permits the ladder: the tree then holds one no document at this split level has, and
+    that is reported rather than guessed. `path` is the part's document path, and a directory's depth
+    counts the section that directory holds: `a/index.md` is a section at the document's first
+    level, `a/b.md` at its second."""
+    directory = parent_dir(path)
+    depth = len(directory.split("/")) if directory else 0
+    if directory and posixpath.basename(path) == INDEX:
+        depth -= 1
+    fence = FenceTracker()
+    levels = [(_HEADING.match(line).end() - 1) for line in own if not fence.inside(line) and _HEADING.match(line)]
+    below = max((level - levels[0] for level in levels[1:]), default=0) if levels else 0
+    spans = [level for level in range(depth + 2, 7) if level + below <= 6 and (below == 0 or level + below > deepest)]
+    return spans[0] if spans else None
+
+
+def _document(volume: Volume, parts: list[tuple[str, list[str]]], *, out: str, root: str, deepest: int) -> list[str]:
+    """A volume's document: its head's own lines, then each part read after it, its ladder restored
+    and its links restored against the document. root is the run directory the document's links are
+    relative to."""
+    head, *rest = parts
+    relative = [(_document_path(volume, path), own) for path, own in rest]
+    map_path = os.path.join(out, "links.tsv")
+    link_map = LinkMap.load(map_path) if os.path.isfile(map_path) else LinkMap()
+    tree = Tree(out=out, outabs=os.path.realpath(out), root=os.path.realpath(root), link_map=link_map)
+    return _restored((_document_path(volume, head[0]), head[1]), relative, tree, deepest=deepest)
+
+
+def undice(tree_dir: str, out: str, *, stdout: TextIO, stderr: TextIO, deepest: int = DEEPEST_SPLIT_LEVEL) -> int:
+    """Write each document a diced tree holds into the directory out, which must be absent or empty:
+    one document per volume, named for its head's directory, and a tree holding one document named
+    for the tree's own directory. Then check each document against its volume. root is the directory
+    every document is written in, which its links come out relative to. 0 ok, 1 a failed check, 2 a
+    bad argument."""
+    if not any(os.path.isfile(os.path.join(tree_dir, head)) for head in HEADS):
+        print(f"not a tree: {tree_dir}", file=stderr)
+        return 2
+    if not _out_ready(out, err=stderr):
+        return 2
+    os.makedirs(out, exist_ok=True)
+    tree_base = os.path.basename(os.path.normpath(tree_dir))
+    document_root = os.path.realpath(out)
+    ok = True
+    for volume in _volume_documents(tree_dir):
+        parts, reads, all_read = _walk(tree_dir, volume.head, err=stderr)
+        lines = _document(volume, parts, out=tree_dir, root=document_root, deepest=deepest)
+        name = os.path.basename(volume.directory) if volume.directory else tree_base
+        document = os.path.join(out, f"{name}.md")
+        write_lines(document, lines)
+        print(f"=== {document}", file=stdout)
+        checks = [
+            all_read,
+            _self_check(
+                volume,
+                lines,
+                parts,
+                reads,
+                out=tree_dir,
+                root=document_root,
+                deepest=deepest,
+                stdout=stdout,
+                stderr=stderr,
+            ),
+        ]
+        ok = all(checks) and ok
+    return 0 if ok else 1
+
+
+# --- the checks the write side runs -------------------------------------------------------------------------------
+
+
+def _write_check(
+    volume: Volume,
+    lines: list[str],
+    sections: list[Section],
+    *,
     out: str,
+    root: str,
+    map_path: str,
+    stdout: TextIO,
+    stderr: TextIO,
+) -> bool:
+    """One document just written against its volume: the reassembly check (the sections reproduce
+    the document line for line) and the link check."""
+    tree = _tree(out, root, map_path)
+    base = volume.directory
+    rebuilt = check_reassembly(sections, lines, tree, out=stdout, err=stderr, base=base, document_dir=root)
+    linked = check_links(sections, tree, out=stdout, err=stderr, base=base)
+    return rebuilt and linked
+
+
+# --- the checks the read side runs --------------------------------------------------------------------------------
+
+
+def _self_check(
+    volume: Volume,
+    lines: list[str],
+    parts: list[tuple[str, list[str]]],
+    reads: list[tuple[str, int | None]],
+    *,
+    out: str,
+    root: str,
+    deepest: int,
+    stdout: TextIO,
+    stderr: TextIO,
+) -> bool:
+    """One document against the volume it was written from: planned at the deepest split level, its
+    sections must reproduce the volume's files line for line, its links must resolve, and no file of
+    the volume may go unwritten. A planning failure is reported and fails the check. root is the
+    directory the document was written in, which its links are relative to."""
+    sections, planned = _plan(lines, volume, err=stderr, deepest=deepest)
+    _warn_duplicate_numbers(sections, err=stderr)
+    if not planned:
+        return False
+    tree = _tree(out, root)
+    base = volume.directory
+    rebuilt = check_reassembly(sections, lines, tree, out=stdout, err=stderr, base=base, document_dir=root)
+    linked = check_links(sections, tree, out=stdout, err=stderr, base=base)
+    reproduced = _reproduced(volume, sections, reads, out=out, err=stderr, deepest=deepest)
+    return rebuilt and linked and reproduced
+
+
+def _reproduced(
+    volume: Volume,
     sections: list[Section],
     reads: list[tuple[str, int | None]],
     *,
+    out: str,
     err: TextIO,
     deepest: int,
 ) -> bool:
-    """Report each `.md` under out that the sections do not write, nested volumes aside, naming the
-    remedy: a file read as a section is renamed or its heading edited, a file read that opens none
-    gets a heading or is removed, any other is linked or removed.
-    reads are the (path, first line) pairs of `_undiced_lines`."""
+    """Report each `.md` file of a volume the document's sections do not write, naming the remedy: a
+    file read as a section is renamed or its heading edited, a file read that opens none gets a
+    heading or is removed, any other is linked or removed. Returns whether the volume holds none.
+    reads are the volume's (document path, line the part starts at) pairs, the first part's lines
+    starting at line 1 of the document."""
     assigned = {s.path for s in sections}
-    opened_at = {s.first: s for s in sections if s.path != ENTRY_POINT}
+    opened = {s.first: s for s in sections if s.id > 0}
     read_as: dict[str, Section] = {}
-    read: set[str] = set()
+    read = {path for path, _ in reads}
     for path, first in reads:
-        read.add(path)
-        if first in opened_at:
-            read_as.setdefault(path, opened_at[first])
+        if first in opened:
+            read_as.setdefault(path, opened[first])
     strays = 0
-    for f in markdown_files([out]):
-        parts = os.path.relpath(f, out).split(os.sep)
-        rel = "/".join(parts)
-        nested = any(os.path.isfile(os.path.join(out, *parts[:i], ENTRY_POINT)) for i in range(1, len(parts)))
-        if rel in assigned or nested:
+    for f in markdown_files([os.path.join(out, volume.directory) if volume.directory else out]):
+        path = _document_path(volume, "/".join(os.path.relpath(f, out).split(os.sep)))
+        if path in assigned:
             continue
         strays += 1
-        if rel in read_as:
-            planned = f"{out}/{read_as[rel].path}"
+        if path in read_as:
             print(
-                f"undice: {f} would be re-diced as {planned}: rename the file or edit its heading to match",
+                f"undice: {f} would be re-diced as {out}/{_tree_path(volume, read_as[path].path)}:"
+                " rename the file or edit its heading to match",
                 file=err,
             )
-        elif rel in read:
+        elif path in read:
             print(
-                f"undice: {f} opens no section: start it with a level 2 to {deepest} heading, or remove it and its Contents line",
+                f"undice: {f} opens no section: start it with a heading the document splits on"
+                f" (level 2 to {deepest} in the document, written at level 1), or remove it and its Contents line",
                 file=err,
             )
         else:
-            print(
-                f"undice: not reproduced: {f}: link it from {out}/{ENTRY_POINT}'s Contents, or remove it",
-                file=err,
-            )
+            head = os.path.join(out, volume.head)
+            print(f"undice: not reproduced: {f}: link it from {head}'s Contents, or remove it", file=err)
     return not strays
-
-
-def undice(
-    out: str, monolith: str, *, root: str, stdout: TextIO, stderr: TextIO, deepest: int = DEEPEST_SPLIT_LEVEL
-) -> int:
-    """Write the document the tree under out, diced at headings of level 2 to deepest, holds to
-    monolith, which must not exist, then check that dicing it at deepest reproduces the tree; root
-    is the run directory the document's links are relative to. 0 ok, 1 a failed check, 2 bad
-    arguments."""
-    try:
-        read_lines(os.path.join(out, ENTRY_POINT))
-    except OSError:
-        print(f"not a tree: {out}", file=stderr)
-        return 2
-    if os.path.lexists(monolith):
-        print(f"{monolith} exists: name another output, or move or delete it", file=stderr)
-        return 2
-    tree = _tree(root, out, "")
-    lines, all_read, reads = _undiced_lines(tree, err=stderr, deepest=deepest)
-    try:
-        write_lines(monolith, lines)
-    except OSError:
-        print(f"cannot write: {monolith}", file=stderr)
-        return 2
-    sections, planned = plan_sections(lines, err=stderr, deepest=deepest)
-    if not planned:
-        return 1
-    _warn_duplicate_numbers(sections, err=stderr)
-    checks = [
-        all_read,
-        check_reassembly(sections, lines, tree, out=stdout, err=stderr),
-        check_links(sections, tree, out=stdout, err=stderr),
-        _all_reproduced(out, sections, reads, err=stderr, deepest=deepest),
-    ]
-    return 0 if all(checks) else 1
-
-
-def _leaf_count(out: str) -> int:
-    count = 0
-    for _, _, files in os.walk(out):
-        count += sum(n.endswith(".md") and n not in HEADS for n in files)
-    return count
-
-
-def verify(
-    map_path: str,
-    pairs: list[tuple[str, str]],
-    *,
-    root: str,
-    stdout: TextIO,
-    stderr: TextIO,
-    deepest: int = DEEPEST_SPLIT_LEVEL,
-) -> int:
-    """Re-run the reassembly and link checks on each (monolith, out) tree, diced at headings of
-    level 2 to deepest, once every tree a link points into exists; root is the run directory the
-    monoliths' links are relative to. 0 when every check passes, else 1."""
-    rc = 0
-    for monolith, out in pairs:
-        if not os.path.isdir(out):
-            print(f"not a directory: {out}", file=stderr)
-            rc = 1
-            continue
-        tree = _tree(root, out, map_path)
-        print(f"=== {monolith} -> {out}", file=stdout)
-        try:
-            lines = read_lines(monolith)
-        except OSError:
-            print(f"cannot read: {monolith}", file=stderr)
-            rc = 1
-            continue
-        sections, ok = plan_sections(lines, err=stderr, deepest=deepest)
-        _warn_duplicate_numbers(sections, err=stderr)
-        if not ok:
-            rc = 1
-        if not check_reassembly(sections, lines, tree, out=stdout, err=stdout):
-            rc = 1
-        log = io.StringIO()
-        if not check_links(sections, tree, out=log, err=log):
-            rc = 1
-        for line in split_lines(log.getvalue()):
-            print(f"  {line}", file=stdout)
-        print(f"  leaves: {_leaf_count(out)}", file=stdout)
-    return rc

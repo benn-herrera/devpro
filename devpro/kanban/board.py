@@ -18,7 +18,7 @@ from dataclasses import asdict, dataclass, replace
 from typing import Any, TypeVar
 from urllib.parse import quote
 
-from ..dicing.heads import CONTENTS, ENTRY_POINT, HEADS, INDEX, contents_line, directory_head
+from ..dicing.heads import CONTENTS, ENTRY_POINT, HEADS, INDEX, contents_line, section_head, volume_head
 from ..dicing.linkcheck import markdown_files, prose_links
 from ..dicing.linkrewrite import never_rebased, rel
 from ..dicing.linkscan import link_targets, scan
@@ -467,7 +467,7 @@ def _new_leaf(root: str, now: _Read, head: int | None, title: str, ticket: Calla
     else:
         directory = os.path.join(top, DRAFTS_DIRECTORY)
         leaf = os.path.join(directory, f"{name}.md")
-        index = directory_head(directory, tree_root=False)
+        index = section_head(directory)
         created = [leaf, index]
         listing = [
             contents_line("", text=DRAFTS, path=f"{DRAFTS_DIRECTORY}/{INDEX}"),
@@ -492,7 +492,7 @@ def _ticket_removed(root: str, now: _Read, part: Part) -> list[_Change]:
     lines = now.lines[part.path]
     by_path = {os.path.normpath(p): p for p in now.lines}
     directory = os.path.dirname(part.path)
-    heads = [os.path.normpath(directory_head(directory, tree_root=is_root)) for is_root in (True, False)]
+    heads = [os.path.normpath(head) for head in (volume_head(directory), section_head(directory))]
     head = next((by_path[p] for p in heads if p in by_path), None)
     whole = all(is_blank(line) for line in lines[: part.first] + lines[part.last + 1 :])
     if not whole or head is None or os.path.basename(part.path) in HEADS:

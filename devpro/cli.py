@@ -30,9 +30,8 @@ from devpro.vocabulary import HarnessText, key
 _DRY_RUN_HELP = "print what the install would create, change and remove; write nothing"
 
 DICING_VERBS = (
-    "dice-doc",
+    "dice",
     "undice",
-    "dice-docs",
     "check-links",
     "check-tree",
 )
@@ -91,7 +90,7 @@ def _add_maintainer_verbs(verbs: argparse._SubParsersAction) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     """One verb, required: `install TARGET [--subdir DIR] [--verbose] [--dry-run]` with the tuning flags;
-    `install-agents-file DIR [--harness NAME] [--dry-run]`; the five dicing verbs
+    `install-agents-file DIR [--harness NAME] [--dry-run]`; the four dicing verbs
     `devpro.dicing.cli.add_verbs` adds, the three check verbs `devpro.doccheck.cli.add_verbs` adds, the
     `profiler` verb `devpro.profiler.cli.add_verbs` adds, the `dashboard` verb
     `devpro.dashboard.cli.add_verbs` adds; and, only where the environment's `DEVPRO_DEV` is `1`, the

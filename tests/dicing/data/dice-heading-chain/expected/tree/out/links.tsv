@@ -1,0 +1,4 @@
+doc.md	out/entry-point.md
+doc.md	A	out/1-a.md
+doc.md	B on §1	out/2-b-on-1.md
+doc.md	C on §2	out/3-c-on-2.md

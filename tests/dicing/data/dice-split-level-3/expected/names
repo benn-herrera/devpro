@@ -1,3 +1,7 @@
 stdout	19
 stdout	7	0
+stderr	volume
+stderr	section
+stderr	section
+stderr	section
 stderr	2	0
