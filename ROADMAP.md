@@ -211,7 +211,10 @@ home: CONVENTIONS, beside the dispatchability rules a Facts entry serves.
 
 ### Profiler child rows off by default
 
-Having them on by default is not helpful
+Having them on by default is not helpful. The code is also crufty.
+It does not have tunable initial values for any of the controls. It has a hard default of
+'checked' for the initial value of all checkboxes and only appends parameter values when a checkbox
+value is false (again, hard value check)
 
 ### Git Flow light: publish the rework history
 
