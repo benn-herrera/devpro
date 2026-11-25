@@ -243,7 +243,8 @@ plan the same way.
   settled the package's text looks. Run order neither makes a package dispatchable nor withholds the
   state, and a waiting package carries no note for the wait — the wait is a fact of run order, not a
   condition that makes the row what it is. `in progress`: dispatched and not landed. `landed`: accepted and
-  committed.
+  committed. The user's `go` is not needed to promote from `drafted` to `dispatchable` once the
+  conditions have been met.
 - Each package's `Rating` cell opens with `mechanical` or `expert`, rated as *Dispatch* rates its
   dispatch; anything after the word is a note, and names no model (*Dispatch*). *Purpose:* whoever reads the table sees which work runs on the
   {STEP_DOWN_MODEL_TERM}.
