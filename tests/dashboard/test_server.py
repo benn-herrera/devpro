@@ -526,12 +526,11 @@ def _band(page: str) -> str:
 
 
 def test_a_session_page_is_served_without_reading_the_stores_a_second_time(tmp_path: Path, serve, monkeypatch) -> None:
-    """One `/page/<id>` request walks the stores twice and groups the sessions one of those times for
-    the band: the page's read is its own, and the lookup's is beside it — the session that dispatched
-    this one is not among the records the render holds, so a page naming its dispatcher reads the
-    stores again, once. What this pins is that the index's grouping over every session is not built
-    again: a second full grouping parses and masks every trace the project holds for one name, and a
-    page that pays for the view's whole history per render has lost the cost the first read already
+    """One `/page/<id>` request walks the stores twice and groups the sessions once over the whole tree
+    — the page's own read from which the tree's grouping falls out, and the dispatcher lookup's, which
+    groups the sessions then too — while the walk up the dispatcher chain it starts stays inside the
+    sessions the lookup already holds: a chain that re-read a store per step pays a read for every
+    ancestor a session has, and a page paying that per render has lost the cost the first read already
     paid."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
@@ -563,7 +562,7 @@ def test_a_session_page_is_served_without_reading_the_stores_a_second_time(tmp_p
     page = served.get("page/s-one")[2].decode("utf-8")
 
     assert reads == [str(root), str(root)]
-    assert groupings == [1]
+    assert groupings == [1, 1]
     assert re.search(r'<strong>Dispatched by</strong> <a href="/page/s-parent">s-parent</a> — coder', page)
 
 
@@ -685,6 +684,103 @@ def test_a_child_page_names_its_root_for_the_call_that_dispatched_it(tmp_path: P
 
     assert (child_root["id"], child_root["label"], child_root["hue"]) == ("main", "coder", 2)
     assert (dispatcher_root["id"], dispatcher_root["label"], dispatcher_root["hue"]) == ("main", "main", 0)
+
+
+def test_a_child_pages_fresh_context_skips_the_roots_hue(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a dispatched page whose own fresh context wears its
+    root's hue — before the change, `page/s-child`'s first fresh context takes hue 2 beside a root
+    in hue 2, so the page draws two conversations in one color and the bar cannot tell them apart.
+
+    A page's fresh contexts take hues from 1 up, and its root holds its own hue whether or not a
+    fresh context counted past it: `s-child` is a dispatched page whose root wears hue 2, so its one
+    fresh context opens in hue 1."""
+    root = project(tmp_path / "proj", {})
+    store(
+        root,
+        "s-parent",
+        [
+            record("2026-01-01T00:00:00.000Z", tool="Agent", name="devpro-architect", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "s-other"},
+            record("2026-01-01T00:00:01.000Z", tool="Agent", name="devpro-coder", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "s-child"},
+        ],
+        directory=".profiler-opencode",
+    )
+    store(
+        root,
+        "s-child",
+        [
+            record("2026-01-01T00:00:05.000Z", tool="Agent", name="devpro-tech-writer", session="s-child")
+            | {"harness": "opencode", "child_agent_id": "s-grand"},
+            _tool_call("s-child", "2026-01-01T00:00:06.000Z", "ls") | {"harness": "opencode"},
+        ],
+        directory=".profiler-opencode",
+    )
+    store(
+        root,
+        "s-grand",
+        [_tool_call("s-grand", "2026-01-01T00:00:07.000Z", "ls") | {"harness": "opencode"}],
+        directory=".profiler-opencode",
+    )
+    page = serve(root).get("page/s-child")[2].decode("utf-8")
+    contexts = json.loads(page.split("const D = ", 1)[1].split(";\n", 1)[0])["contexts"]
+
+    assert [(context["id"], context["hue"]) for context in contexts] == [("main", 2), ("s-grand", 1)]
+
+
+def test_a_grandchilds_root_wears_the_hue_its_dispatchers_page_draws_it_in(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a grandchild's root hue computed off a dispatcher
+    whose own page is drawn with root hue 0 — before the change, `page/s-grand` opens its root in hue
+    1, the hue its own first fresh context takes on `page/s-child`, where the dispatcher's page draws
+    that context in hue 2.
+
+    The hue a dispatching call's context wears is a fact of the dispatcher's page, read up the chain:
+    `s-child`'s own page takes its root hue from `s-parent`'s, and `s-parent` is a page nothing
+    dispatched, its root in hue 0. The contexts `s-child` opens take hues from 1 up, skipping its own
+    root's: `s-grand`'s context is hue 1 there, where the root itself is hue 2, and `s-grand`'s page
+    must open its root in that same hue — a grandchild's root hue read off a dispatcher page drawn at
+    hue 0 disagrees with the page that actually draws it."""
+    root = project(tmp_path / "proj", {})
+    store(
+        root,
+        "s-parent",
+        [
+            record("2026-01-01T00:00:00.000Z", tool="Agent", name="devpro-architect", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "s-other"},
+            record("2026-01-01T00:00:01.000Z", tool="Agent", name="devpro-coder", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "s-child"},
+        ],
+        directory=".profiler-opencode",
+    )
+    store(
+        root,
+        "s-child",
+        [
+            record("2026-01-01T00:00:05.000Z", tool="Agent", name="devpro-tech-writer", session="s-child")
+            | {"harness": "opencode", "child_agent_id": "s-grand"},
+            _tool_call("s-child", "2026-01-01T00:00:06.000Z", "ls") | {"harness": "opencode"},
+        ],
+        directory=".profiler-opencode",
+    )
+    store(
+        root,
+        "s-grand",
+        [_tool_call("s-grand", "2026-01-01T00:00:07.000Z", "ls") | {"harness": "opencode"}],
+        directory=".profiler-opencode",
+    )
+    served = serve(root)
+
+    def contexts_of_page(session: str) -> list[dict]:
+        page = served.get(f"page/{session}")[2].decode("utf-8")
+        return json.loads(page.split("const D = ", 1)[1].split(";\n", 1)[0])["contexts"]
+
+    child_contexts = contexts_of_page("s-child")
+    grand_root = contexts_of_page("s-grand")[0]
+    drawn = next(context["hue"] for context in child_contexts if context["id"] == "s-grand")
+
+    assert (child_contexts[0]["id"], child_contexts[0]["hue"]) == ("main", 2)
+    assert (grand_root["id"], grand_root["label"]) == ("main", "tech-writer")
+    assert grand_root["hue"] == drawn
 
 
 def test_the_agents_cell_reads_the_count_as_agents(tmp_path: Path, serve) -> None:

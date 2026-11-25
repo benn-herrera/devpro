@@ -142,7 +142,8 @@ the hour — `3m 20s` — seconds below the minute, and `0s` for a zero-length s
 carries its dispatcher in the frame band, linked to that session's page, where one dispatched it, and
 then names its own root context — its id still `main` — for the dispatching call's agent, the
 prefix dropped, in the hue the context that call opened wears on the dispatcher's page:
-`pages.dispatcher_of` reads both from the dispatcher's records at render, the child's own records
+`pages.dispatcher_of` reads both from the dispatcher's records at render, the dispatcher's
+own root hue from its own dispatcher's, up the chain, the child's own records
 naming no parent, and the page's other contexts take hues from 1 up, skipping the root's hue. A page nothing dispatched names
 its root `main`, in hue 0. A call row whose tool is `Agent` links to the child session's page where the record names one: a
 child's page the dashboard does not serve answers the 404 any unrecorded session's page answers.

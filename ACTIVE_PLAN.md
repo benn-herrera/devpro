@@ -42,7 +42,7 @@ Implements [ACTIVE_DESIGN.md](ACTIVE_DESIGN.md): its [SPEC delta](ACTIVE_DESIGN.
 | P6 | landed | expert | `devpro:python-coder` | claude and opencode calls record their model; index and page show it |
 | P7 | landed: 38 findings in `ACTIVE_PLAN_REVIEW.md` | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | landed: six items drafted | expert | session | Post-plan burndown drafting |
-| B1 | dispatchable | expert | `devpro:python-coder` | a dispatched page's fresh contexts skip the root's hue |
+| B1 | landed | expert | `devpro:python-coder` | a dispatched page's fresh contexts skip the root's hue |
 | B2 | dispatchable | expert | `devpro:web-app-expert` | the palette and the harness dots live in the shared layer |
 | B3 | dispatchable | expert | `devpro:web-app-expert` | one formatter per notation; the pages' small layout defects |
 | B4 | dispatchable | expert | `devpro:typescript-coder` | the screenshot tool honors `--base`, its contract and its bounds |
