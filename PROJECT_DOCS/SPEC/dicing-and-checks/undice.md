@@ -1,7 +1,7 @@
 # undice
 
 `devpro undice [--split-level <level>] <tree-dir> <out-dir>` writes each document a diced tree holds
-into `<out-dir>`. `<level>` ([shared behaviors](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)) names the deepest split
+into `<out-dir>`. `<level>` ([shared behaviors](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#shared-behaviors)) names the deepest split
 level the tree was diced at; links are restored at that level. `<out-dir>` must be absent or empty.
 
 **Which documents it writes.** One per volume ([the model](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)): for each head the

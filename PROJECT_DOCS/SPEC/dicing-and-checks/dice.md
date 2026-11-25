@@ -2,7 +2,7 @@
 
 `devpro dice [--split-level <level>] [--section] <monolith.md>... --out <out-dir>`
 dices one or more documents ([the diced tree](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks), [link rewriting](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)) at the deepest
-split level `<level>` ([shared behaviors](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)).
+split level `<level>` ([shared behaviors](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#shared-behaviors)).
 
 **The form written.** Every document named becomes a volume ([the model](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)). One
 document is written at the output root, its head `<out-dir>/entry-point.md`: this is the one-document

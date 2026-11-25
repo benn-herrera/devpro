@@ -9,5 +9,5 @@ Each link's target is classified in this order:
 2. **Left unchanged:** an empty target, any other `#...` target, a target opening with `/`, and a
    target opening with a scheme: one or more lowercase ASCII letters followed by `:` (`https:`,
    `mailto:`).
-3. **Any other relative path** is rebased ([shared behaviors](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)) to reach
+3. **Any other relative path** is rebased ([shared behaviors](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#shared-behaviors)) to reach
    the same file from the directory of the file it now sits in, fragment kept.

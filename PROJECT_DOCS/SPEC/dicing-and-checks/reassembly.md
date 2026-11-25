@@ -20,5 +20,5 @@ pre-change form never presents a level-1 top, since no section is planned at lev
 | no Contents block | `reassemble: no Contents block in <file>` |
 | line count | `reassemble: leaves hold <K> lines, monolith <M>` |
 
-The check compares lines, not final newlines ([shared behaviors](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)). Lines
+The check compares lines, not final newlines ([shared behaviors](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#shared-behaviors)). Lines
 added after a Contents block are not checked.

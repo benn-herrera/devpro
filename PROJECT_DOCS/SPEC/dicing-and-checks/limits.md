@@ -4,7 +4,7 @@ Input outside this specification is refused with a message naming what to fix, n
 Known limits:
 
 - A source's links must be written relative to the current directory
-  ([shared behaviors](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)); a document run from elsewhere gets mis-rebased
+  ([shared behaviors](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#shared-behaviors)); a document run from elsewhere gets mis-rebased
   links, which the [link check](../../../PROJECT_DOCS/SPEC/dicing-and-checks/link-check.md#link-check) reports only if the result no longer resolves.
 - A section's Contents link text ([file content](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)) is not escaped: a title
   containing `]` or unbalanced brackets yields a malformed Contents link that no verb repairs.
