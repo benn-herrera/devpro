@@ -68,7 +68,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | P2 | landed | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
 | P3 | landed | expert | `devpro:prompt-engineer` | CONVENTIONS and ARCHITECTURE round-trip, the head convention corrected; SPEC's residue re-homed to P4 (the tool defect) and P5 (re-dice under the settled model) |
 | P4 | landed | expert | `devpro:python-coder` | the dicer's two patterns: volumes and broken-out sections; the manifest retires |
-| P4b | drafted | expert | `devpro:python-coder` | the reconstruction's stragglers: `_placed_level` and the link re-base |
+| P4b | in progress | expert | `devpro:python-coder` | the reconstruction's stragglers: `_placed_level` and the link re-base |
 | P5 | in progress | expert | `devpro:python-coder` | the three standing trees re-diced under the settled model |
 | P6 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
@@ -270,13 +270,15 @@ module docstring, whose stale volume-head sentence the repairs contradict.
 ## P4 — the dicer's two patterns: volumes and broken-out sections; the manifest retires
 
 **Scope.** `devpro/dicing/heads.py` (the head convention re-ruled); `devpro/dicing/dicedoc.py`
-(`_restored`, `_undiced_lines`, `_placed_level`, `_all_reproduced`, `verify` — reconstruction and
-checking per the two patterns); `devpro/dicing/split.py` (the writer: volume heads for input
-documents); `devpro/dicing/dice.py` (the writer's multi-input entry, in this package: the
-`manifest.py` it absorbs); `devpro/dicing/treecheck.py` (the head wording of the two patterns);
-`devpro/dicing/manifest.py` (deleted) and `devpro/dicing/cli.py` (the `dice-docs` verb removed);
-`devpro/cli.py` (`DICING_VERBS`); the `justfile` recipe `dice-docs`; `tests/dicing/` (corpus and
-tests); the SPEC dicing leaves that state the forms —
+(`_restored`, `_undiced_lines`, `_placed_level`, `_all_reproduced`, `verify`, and the map's write
+and read — reconstruction and checking per the two patterns); `devpro/dicing/linkrewrite.py`
+(`Linker.written`, and the map handling in the rewriter); `devpro/dicing/split.py` (the writer:
+volume heads for input documents); `devpro/dicing/dice.py` (the writer's multi-input entry, in this
+package: the `manifest.py` it absorbs); `devpro/dicing/treecheck.py` (the head wording of the two
+patterns); `devpro/dicing/manifest.py` (deleted) and `devpro/dicing/cli.py` (the `dice-docs` verb
+removed, the `--map` flag removed); `devpro/cli.py` (`DICING_VERBS`); the `justfile` recipes
+`dice-docs` and `dice`'s map argument; `tests/dicing/` (corpus and tests, the `links.tsv`
+expectations included); the SPEC dicing leaves that state the forms —
 `PROJECT_DOCS/SPEC/dicing/{index,links,tree,checks,verbs}.md` — and
 `PROJECT_DOCS/SPEC/package-and-command.md` (the surface verb list); and the management rules — the
 two splitting paths, the growth-shape decision, the omnibus-head bounds and misuses — land in the
@@ -322,10 +324,14 @@ reader consults while managing a tree; the SPEC leaves carry the mechanics and s
   and the manifest concept retire. Check, which must print nothing and is P4's done-line:
   `git grep -n 'dice-docs\|manifest\|links\.tsv' -- devpro/dicing devpro/cli.py justfile` and
   `git grep -n 'dice-docs\|manifest' -- PROJECT_DOCS/SPEC tests/dicing`.
-- The map subsists the verb: `dice` writes `<out>/links.tsv` by `dice-doc`'s rules, because a
-  document linking into a second document is still a link, not a path. The rest of `manifest.py` —
-  its manifest reader, the group-index and entry writers, and the post-write check — has no caller
-  and is deleted, not ported.
+- The map retires entirely: it was a compute cache — every row derivable from the document's own
+  heading structure, the tree's two-pattern conventions, and the anchors' deterministic
+  disambiguation of repeated heading text — and a cached resolution disagrees with the docs silently
+  when they move. Links resolve at run time from the documents and the tree; a target that resolves
+  nowhere is reported (`dangling:`), never cached. The tree holds documents and nothing else; an
+  operation's inputs are declared on its command line, and it gains no ambient dependency on state a
+  previous run left. The rest of `manifest.py` — its manifest reader, the group-index and entry
+  writers, and the post-write check — has no caller and is deleted, not ported.
 - Today's writer writes each section at the path `plan_sections` computes — `<name>/index.md` for a
   section with children, `<name>.md` otherwise (`outline.py:101`, `split.py:76`) — so the section
   half of the model is already the standing behavior; the writer has no head-name abstraction and
@@ -439,6 +445,13 @@ corpus and tests).
 3. Tests, per `clauses.TEST_PRECONDITION` (defect: the reconstruction restores a section index's
    child at its own depth, and the link re-base roots at the run directory): both reproduction
    shapes as corpus cases, demonstrated red before the fix.
+4. The map retires entirely: remove the `links.tsv` write (`dicedoc.py:217,238,391`), the `--map`
+   flag, and the round-trip test's skip of the file — a tree compares whole. Links resolve at run
+   time from the document's heading structure, the tree's two-pattern conventions, and the anchors'
+   deterministic disambiguation; a target that resolves nowhere is reported `dangling:`. Defect:
+   sideband data persisted into the tree, giving the operation an ambient dependency on state a
+   previous run left. The corpus's `links.tsv` expectations are removed with the write, and the
+   SPEC leaves' map wording retires with the concept.
 
 **Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
 commit, as P1 states.
