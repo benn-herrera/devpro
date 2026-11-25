@@ -58,9 +58,11 @@ from devpro.profiler.pages import (
     RETURN_MARK,
     SHARED_CSS,
     call_label,
+    clock,
     index_html,
     list_sessions,
     read_sessions,
+    stamp,
 )
 from devpro.profiler.stores import repair_child_ids
 from devpro.profiler.values import CAPTURED_EVENTS, TRACE_STORES, _epoch_ms
@@ -1286,6 +1288,23 @@ def test_a_call_that_is_not_an_agent_keeps_its_recorded_name() -> None:
     The drop is the Agent tool's: every other tool's name is rendered as recorded."""
     assert call_label("Bash", "devpro-tool") == "devpro-tool (Bash)"
     assert call_label("Skill", "devpro-docdicer") == "devpro-docdicer (skill)"
+
+
+def test_the_text_tree_draws_a_moment_in_the_machines_zone(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is the text tree's time column and session stamps
+    reading UTC — a reader four and a half hours ahead sees a call at midnight as `18:30:00` of the
+    day before, and `stamp` takes a session dict it no longer needs.
+
+    The zone is pinned with `TZ` and read through `time.tzset`, the machine's zone being whatever the
+    runner carries; Asia/Kolkata's half-hour offset also fails a formatter that drops the minutes."""
+    with monkeypatch.context() as patch:
+        patch.setenv("TZ", "Asia/Kolkata")
+        time.tzset()
+        midnight = _epoch_ms("2026-01-01T00:00:00.000Z")
+        assert midnight is not None
+        assert clock(midnight) == "05:30:00"
+        assert stamp(midnight) == "2026-01-01 05:30:00"
+    time.tzset()
 
 
 def test_the_doctor_names_the_stores_the_readers_read(tmp_path: Path) -> None:

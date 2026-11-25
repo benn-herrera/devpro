@@ -8,7 +8,7 @@ import json
 import math
 import os
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 SCHEMA_VERSION = 2
@@ -84,9 +84,9 @@ def _iso(moment: datetime) -> str:
     return moment.strftime("%Y-%m-%dT%H:%M:%S.") + f"{moment.microsecond // 1000:03d}Z"
 
 
-def _utc(ms: float) -> datetime:
-    """Epoch milliseconds as an aware UTC moment."""
-    return datetime.fromtimestamp(ms / 1000, timezone.utc)
+def _local(ms: float) -> datetime:
+    """Epoch milliseconds as an aware moment in the machine's local zone."""
+    return datetime.fromtimestamp(ms / 1000).astimezone()
 
 
 def _epoch_ms(value: object) -> int | None:

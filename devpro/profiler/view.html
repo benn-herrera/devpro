@@ -73,13 +73,13 @@ const spentTip = (c) => `${c.label}: ${modelCalls(c.spent.calls)}, each sending 
   + `${c.spent.new} new input tokens (plain input and cache writes)\n${c.spent.cached} read from the prompt cache\n${c.spent.out} output tokens\n`
   + 'A cache read reuses work the model already did for that prefix, so it costs less than new input; output costs the most.';
 const spentOf = (id) => (byId.get(id) || {}).spent;
-const clock = (t) => new Date(t).toISOString().slice(11, 19);
 // The reader's clock, built from the date's own local fields — 24-hour, the separator and the digits
 // this page's rather than the reader's locale's, which `toLocaleTimeString` reads off whatever
 // browser it runs in.
 const padTwo = (n) => String(n).padStart(2, '0');
 const localDay = (d) => `${d.getFullYear()}-${padTwo(d.getMonth() + 1)}-${padTwo(d.getDate())}`;
 const localClock = (d) => `${padTwo(d.getHours())}:${padTwo(d.getMinutes())}`;
+const clock = (ms) => { const d = new Date(ms); return `${localClock(d)}:${padTwo(d.getSeconds())}`; };
 const KIND_WORDS = { Skill: 'skill', Agent: 'agent' };
 const kindWord = (tool) => KIND_WORDS[tool] || tool;
 // A call's name as the page renders it: an Agent call's set prefix dropped, every other name as
@@ -113,19 +113,18 @@ document.getElementById('sid').textContent = D.session.slice(0, 8);
 const starts = D.calls.map((c) => c.start).concat(D.markers.map((m) => m.at));
 const first = Math.min(...starts);
 // The header's stamp is the session's first call as a `<time>`, drawn local at birth: the reader's
-// clock, 24-hour, with its date — the page's title names no day — the machine form its `datetime`
-// and the raw UTC its title, as on every moment the pages show. No second pass reads it: a page
-// whose script does not run carries no moment.
+// clock, 24-hour, with its date — the page's title names no day — the machine form its `datetime`, as
+// on every moment the pages show. No second pass reads it: a page whose script does not run carries
+// no moment.
 const head = document.getElementById('subline');
 if (Number.isFinite(first)) {
   const at = new Date(first);
   const moment = document.createElement('time');
   moment.dateTime = at.toISOString();
   moment.textContent = localDay(at) + ' ' + localClock(at);
-  moment.title = at.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
   head.append(moment);
 }
-head.append([head.childNodes.length ? ' · ' : '', D.branch ? `branch ${D.branch}` : '', `${D.calls.length} calls`, `${D.contexts.length} contexts`].filter(Boolean).join(' · '));
+head.append([head.childNodes.length ? ' · ' : '', D.branch ? `branch ${D.branch}` : '', `${D.calls.length} calls`, `${D.contexts.length} contexts`].filter(Boolean).join(''));
 
 // ---------- sequence diagram: one lifeline per context ----------
 

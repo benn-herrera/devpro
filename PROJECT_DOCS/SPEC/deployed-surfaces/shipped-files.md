@@ -152,7 +152,10 @@ carriers, one source both read: the rendering side holds it once — the standal
 it into the page it renders, the template carrying no second copy — and the dashboard's frame band
 reads the same source, so the served page's legend comes from the frame. The pages and the records
 stay local: reachable only from the
-machine that runs the server. Six hook entries, one per
+machine that runs the server. Every presentation of a recorded moment — the pages, the index, the
+text tree and `profiler doctor`'s lines — reads in the reader's local time, and none shows UTC, a
+hover title included. UTC stays in what the records store and in markup no reader is shown, such
+as a `<time>` element's `datetime`. Six hook entries, one per
 event (`PostToolUse`, `PostToolUseFailure`, `PreCompact`, `PostCompact`, `SessionStart`,
 `SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each runs the
 install directory's `tools/devpro.sh profiler capture claude`, appends one line to the project's

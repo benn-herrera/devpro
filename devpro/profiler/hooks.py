@@ -21,16 +21,14 @@ from pathlib import Path
 
 from devpro.install_base import PACKAGE_ROOT
 
-from .pages import UsageError, list_sessions
+from .pages import UsageError, list_sessions, stamp
 from .stores import OLD_STORE_SUFFIX, old_store_name, rename_stores
 from .values import (
     CAPTURED_EVENTS,
     PROFILER_SKILL,
     TRACE_DIR,
     TRACE_STORES,
-    _iso,
     _json,
-    _utc,
     git_root,
     project_dir,
     read_json,
@@ -275,6 +273,6 @@ def doctor(cwd: Path | str) -> str:
             lines.append(f"old:     {store} is not a store tree reads; {remedy}")
     lines += [
         f"update:  the committed hook {stale}; run devpro profiler init claude again and commit" if stale else None,
-        f"newest:  {_iso(_utc(newest)) if newest is not None else 'no calls recorded yet'}",
+        f"newest:  {stamp(newest) if newest is not None else 'no calls recorded yet'}",
     ]
     return "\n".join(line for line in lines if line)

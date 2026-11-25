@@ -119,11 +119,15 @@ it — a dispatch's child one level deep; deeper chains read on the session's pa
 every dispatch as a context — that session's row carrying the count of the rows beneath it and each
 child's naming the call that dispatched it; the rows alternate their tone, and each carries its
 harness's mark. The pages' own scripts draw every moment local at birth — the moments cells, the
-index's first-to-last line, the session page's header stamp — in the reader's local time, 24-hour, one
+index's first-to-last line, the session page's header stamp, its diagram's and its call tree's
+times — in the reader's local time, 24-hour, one
 notation: the first end of a pair carries its date whole beside its time, the second its time only,
 the clock's being 24-hour making a span across midnight plain by the numbers, no branch to state. The
-machine form stands in the `<time>` elements' `datetime` attributes and the raw UTC in the titles; a
-page carries no moments where its script does not run, and the deco reads none. The span is its own
+machine form stands in the `<time>` elements' `datetime` attributes alone, and no title carries a
+moment's UTC; a
+page carries no moments where its script does not run, and the deco reads none. `tree`'s text reads
+its time column and its session stamps in the machine's local zone, through `values._local`, which
+doctor's `newest:` line reads too. The span is its own
 column, drawn from the feed's seconds as whole hours and minutes — `3h 2m` — minutes and seconds below
 the hour — `3m 20s` — seconds below the minute, and `0s` for a zero-length span. A session's page
 carries its dispatcher in the frame band, linked to that session's page, where one dispatched it, and

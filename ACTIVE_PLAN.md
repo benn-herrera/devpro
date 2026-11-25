@@ -35,7 +35,7 @@ Implements [ACTIVE_DESIGN.md](ACTIVE_DESIGN.md): its [SPEC delta](ACTIVE_DESIGN.
 | Package | State | Rating | Agent | Scope |
 | --- | --- | --- | --- | --- |
 | P1 | landed | expert | `devpro:typescript-coder` | `just screenshot`: the development loop's page screenshot |
-| P2 | dispatchable | mechanical | `devpro:python-coder` | every presented moment local; the header line's one separator |
+| P2 | landed | expert: re-rated after three step-down dispatches went idle without completing or reporting | `devpro:python-coder` | every presented moment local; the header line's one separator |
 | P3 | dispatchable | expert | `devpro:web-app-expert` | index: no legend, narrower agents column, one-line first-to-last, no child lead-in |
 | P4 | dispatchable | expert | `devpro:web-app-expert` | main context in devpro's accent; palette clear of it; opencode's dot |
 | P5 | dispatchable | expert | `devpro:python-coder` | a child page names its root for the dispatching agent, in that call's hue |

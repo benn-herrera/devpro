@@ -34,8 +34,8 @@ from .values import (
     TREE_WIDTH,
     _epoch_ms,
     _json,
+    _local,
     _round_half_up,
-    _utc,
     clip,
     mask,
     read_text,
@@ -159,8 +159,8 @@ def format_count(n: int | float) -> str:
 
 
 def clock(ms: int | float) -> str:
-    """Epoch milliseconds as the tree's time column: UTC, to the second."""
-    return _utc(ms).strftime("%H:%M:%S")
+    """Epoch milliseconds as the tree's time column: local, to the second."""
+    return _local(ms).strftime("%H:%M:%S")
 
 
 def subagent_stops(records: list[dict]) -> dict[str, dict]:
@@ -727,9 +727,9 @@ def parse_tree_args(argv: list[str]) -> dict:
     return options
 
 
-def stamp(session: dict) -> str:
-    """A session's first call, UTC, to the second."""
-    return _utc(session["first"]).strftime("%Y-%m-%d %H:%M:%S") + " UTC"
+def stamp(ms: int | float) -> str:
+    """A moment's date and clock, local, to the second."""
+    return _local(ms).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
@@ -761,7 +761,7 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
         chosen = [max(sessions, key=lambda session: session["last"])]
     if options["format"] == "html":
         if len(chosen) > 1:
-            listing = "\n".join(f"  {session['id'][:SESSION_WIDTH]}  {stamp(session)}" for session in chosen)
+            listing = "\n".join(f"  {session['id'][:SESSION_WIDTH]}  {stamp(session['first'])}" for session in chosen)
             raise UsageError(f"The html page shows one session. Pick one by id prefix:\n{listing}")
         return render_html(chosen[0], dispatcher=dispatcher_of(chosen[0]["id"], sessions))
     if not branch:
@@ -769,7 +769,7 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
     blocks = []
     for session in chosen:
         rendered = render_tree(session["records"], verbose=options["verbose"], color=color)
-        blocks.append(f"# session {session['id']} ({stamp(session)})\n{rendered}")
+        blocks.append(f"# session {session['id']} ({stamp(session['first'])})\n{rendered}")
     return "\n\n".join(blocks)
 
 
@@ -1018,7 +1018,7 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 // dispatched by another is drawn under its dispatcher, its dispatcher's row carrying the count of the
 // children beneath it. The moments are epoch
 // milliseconds and become the row's `<time>` elements, drawn local at birth — the reader's clock,
-// 24-hour — their titles keeping the raw UTC for a hover. Reads the entry's own keys and nothing else: `harness`, `id`,
+// 24-hour. Reads the entry's own keys and nothing else: `harness`, `id`,
 // `records`, `agents`, `first`, `last`, `span`, `dispatcher`, and
 // `stores` on a feed that drew nothing, naming how many stores the exact names read. The page's body is
 // wrapped: the controls' state and the sort in force live in the page's URL, and the helpers for
@@ -1059,17 +1059,6 @@ const span = (seconds) => {
   return left ? hours + 'h ' + left + 'm' : hours + 'h';
 };
 
-// A moment's UTC reading, the one a title states: the first to the second, the last with its
-// milliseconds — `2026-01-01 00:00:00 UTC` and `2026-01-01T00:00:05.000Z`.
-const day = (d) => d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
-const clock = (d) => pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ':' + pad(d.getUTCSeconds());
-const utcStamp = (ms) => day(new Date(ms)) + ' ' + clock(new Date(ms)) + ' UTC';
-const isoStamp = (ms) => {
-  const d = new Date(ms);
-  const fraction = d.getUTCMilliseconds() ? '.' + String(d.getUTCMilliseconds()).padStart(3, '0') : '';
-  return day(d) + 'T' + clock(d) + fraction + 'Z';
-};
-
 // The reader's clock, built from the date's own local fields — 24-hour, the separator and the digits
 // this page's rather than the reader's locale's, which `toLocaleTimeString` reads off whatever
 // browser it runs in.
@@ -1078,21 +1067,19 @@ const localClock = (d) => pad(d.getHours()) + ':' + pad(d.getMinutes());
 
 // A moment as the index draws one, local at birth: its text the reading this script writes — there
 // is no second pass to correct it, so a page whose script does not run carries no moment — the
-// machine form in the `<time>` element's `datetime`, the raw UTC in its title.
+// machine form in the `<time>` element's `datetime`.
 const moment = (ms, text) => {
   const node = el('time', text);
-  node.setAttribute('datetime', isoStamp(ms));
-  node.title = utcStamp(ms);
+  node.setAttribute('datetime', new Date(ms).toISOString());
   return node;
 };
 
 // The two moments' cell: the first end carries its date whole beside its time, the second its time
 // only — the clock's being 24-hour makes a span across midnight plain by the numbers, no branch to
-// state. The cell's title keeps the pair's raw UTC for a hover.
+// state.
 const moments = (session) => {
   const [first, last] = [new Date(session.first), new Date(session.last)];
   const cell = el('span', undefined, 'moments');
-  cell.title = utcStamp(session.first) + ' to ' + isoStamp(session.last);
   cell.append(
     moment(session.first, localDay(first) + ' ' + localClock(first)),
     ' to ',
