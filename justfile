@@ -207,7 +207,7 @@ render-diff a="reference-claude" b="latest":
 # flag (-k, -x, -q, ...) keeps the surface directory, a file or file::test path narrows the run to
 # it, and a path outside the surface's directory is refused.
 [doc("[dev] run the tests, or one surface's")]
-test surface="" *pytest_args: _venv
+test surface="" *pytest_args: _venv _js-deps
     @PROJECT_ROOT="{{PROJECT_ROOT}}" VENV_PYTHON={{VENV_PYTHON}} JUST="{{just_executable()}}" JUSTFILE="{{justfile()}}" ./devtools/scripts/test.sh "$@"
 
 FLAKE8_IGNORE := "E122,E201,E202,E203,E225,E226,E228,E261,E265,E302,E303,E501,E704,E731,W291,W293,W391,W503"
@@ -232,14 +232,37 @@ _lint-shell:
     @command -v shellcheck > /dev/null || { printf '%s\n' "error: just lint requires shellcheck on PATH" >&2; exit 1; }
     @git ls-files -z '*.sh' | xargs -0 shellcheck
 
-# A missing bun, or an install that cannot reach the registry, fails the lint, never skips the step.
-# The declarations the resources import arrive through `package.json`'s lockfile, `bun.lock`, which is
-# pinned to the host version the resources name; `tsconfig.json` scopes the program to what ships, the
-# test runners' TypeScript being dev-time only.
-_lint-typescript:
-    @command -v bun > /dev/null || { printf '%s\n' "error: just lint requires bun on PATH" >&2; exit 1; }
-    @cd "{{PROJECT_ROOT}}" && bun install --frozen-lockfile
+# A missing bun, or an install that cannot reach the registry, fails the lint through `_js-deps`,
+# never as a skip. The declarations the resources import arrive through `package.json`'s lockfile,
+# `bun.lock`, which is pinned to the host version the resources name; `tsconfig.json` scopes the program
+# to what ships, the test runners' TypeScript being dev-time only, and `devtools/tsconfig.json` is the
+# repository's own TypeScript, a dev tool rather than a shipped resource.
+_lint-typescript: _js-deps
     @cd "{{PROJECT_ROOT}}" && bunx tsc --noEmit
+    @cd "{{PROJECT_ROOT}}" && bunx tsc -p devtools/tsconfig.json --noEmit
+
+# The private install the recipes needing the root `package.json`'s dependencies depend on. A missing
+# bun, or an install that cannot reach the registry, fails the recipe that needs it, never skips the
+# step. The install is read-only: it updates `node_modules/` and leaves `package.json` and `bun.lock`
+# as it found them, or fails where the lockfile does not match them.
+_js-deps:
+    @command -v bun > /dev/null || { printf '%s\n' "error: this recipe requires bun on PATH" >&2; exit 1; }
+    @cd "{{PROJECT_ROOT}}" && bun install --frozen-lockfile
+
+# Run after changing `package.json`'s dependencies: every other recipe installs frozen and fails on a
+# stale `bun.lock`.
+[doc("[dev] install the root package.json's dependencies, rewriting bun.lock to match")]
+js-lock:
+    @command -v bun > /dev/null || { printf '%s\n' "error: this recipe requires bun on PATH" >&2; exit 1; }
+    @cd "{{PROJECT_ROOT}}" && bun install
+
+# Screenshots a page once it has settled, for viewing. <page> is an http(s) URL, a route starting `/`
+# with `--base <url>`, or a file path; the options are `--viewport <W>x<H>`, `--wait-for <selector>`,
+# `--color-scheme light|dark`, `--timeout <ms>` and `--out <png>`, and `bun devtools/screenshot.ts
+# --help` lists their defaults. It prints the PNG's path.
+[doc("[dev] screenshot a page after it settles, for viewing")]
+screenshot *args: _js-deps
+    @cd "{{PROJECT_ROOT}}" && bun devtools/screenshot.ts "$@"
 
 # Emits candidates, never verdicts, and exits zero with findings: whether two sites are one idea is
 # a judgment, and a gate here would be claiming it.
@@ -280,6 +303,8 @@ PROJECT_DOCS/ docs
 *.md docs
 images/ docs
 pyproject.toml wheel
+package.json dupe_sweep
+bun.lock dupe_sweep
 justfile ALL
 devtools/scripts/ ALL
 "

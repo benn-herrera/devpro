@@ -25,6 +25,7 @@ devtools/               repository-maintenance tooling — never installed; impo
   reference-maps/       the two static devpro settings files `retake-reference` names with --config-file, one harness's model map each (justfile)
   render_diff.py        the text comparison of two rendered slots (justfile `render-diff`); reads rendered output only and never imports the generator
   clause_join_sites.py  the list of definition-body units that join a `clauses.*` interpolation to the module's own text (justfile `clause-join-sites`); splits units with `render_diff.py`'s line classification, `line_kinds`
+  screenshot.ts         the development loop's page screenshot (justfile `screenshot`): Puppeteer driving the system Firefox headless, the page settled, a PNG written under `.devpro-temp/`; run under bun, never imported
   dupe_sweep/           the duplication sweep, run as `python3 -m devtools.dupe_sweep` — enumerates one-idea-two-places candidates over the owned python trees, the string literals the rendered-prose modules carry — `devpro/definitions/`, `devpro/harnesses/`, `devpro/clauses.py`, `devpro/families/` (definition_text.py's `DEFINITION_TEXT_PREFIXES`) — among its sentence units (justfile `sweep-python`)
     __init__.py         package docstring (what the sweep is for, its passes, candidates not verdicts)
     __main__.py         the `-m` entry
@@ -39,7 +40,7 @@ devtools/               repository-maintenance tooling — never installed; impo
     report.py           headers, candidate lists, the file-pair tally
     passes.py           the `python` pass and its defaults
     cli.py              argparse surface and dispatch
-  tests/                the devtools test suite — dupe_sweep (`test_dupe_sweep` and its import-structure test), clause_join_sites and render_diff — run as the `dupe_sweep` test surface (`just test dupe_sweep`)
+  tests/                the devtools test suite — dupe_sweep (`test_dupe_sweep` and its import-structure test), clause_join_sites, render_diff and screenshot — run as the `dupe_sweep` test surface (`just test dupe_sweep`)
 tests/                  the root test suite, the `devpro` package's tests and the repository-wide checks, run as the `devpro` test surface (`just test devpro`) with the `cold_read` marker excluded by default — the cold-read suite's subprocess cases run as the `cold-read` surface (`just test cold-read`) — never installed; the double-delivery check among the repository-wide checks compares sentences
 ```
 

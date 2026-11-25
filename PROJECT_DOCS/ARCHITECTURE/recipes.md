@@ -50,9 +50,10 @@ dev-check recipes run the absorbed verbs. The `_venv`
 recipe creates `.venv`
 where its python is absent or older than the floor, from the first `python3` on `PATH`. It installs
 the `dev` dependency group `pyproject.toml` declares, with pip, so the first run needs the network.
-The suite needs `bun`, `perl` and `kbase` (at least `KBASE_MIN_VERSION`) on `PATH`.
-`tests/test_guardrail.py`, `tests/test_opencode_entry.py` and `tests/test_kbase_surface.py` fail
-rather than skip without them, because a skip would hide drift. `just lint` needs `shellcheck` on
+The suite needs `bun`, `perl`, `firefox` and `kbase` (at least `KBASE_MIN_VERSION`) on `PATH`.
+`tests/test_guardrail.py`, `tests/test_opencode_entry.py`, `tests/test_kbase_surface.py` and
+`devtools/tests/test_screenshot.py` fail rather than skip without them, because a skip would hide
+drift. `just lint` needs `shellcheck` on
 `PATH`, and where it is absent the recipe fails, naming it, rather than skip the shell check.
 `just lint` also type-checks what ships: the opencode harness's shipped TypeScript resources
 (`index.ts`, `guardrail.ts`, `profiler.ts`) through `bunx tsc --noEmit` under a `tsconfig`, checked
@@ -63,5 +64,15 @@ reads what ships: the host's transitive declarations are not this check's mandat
 keeping the program over the resources. The check settles the declared surface only: where the
 host's runtime reports something its declarations do not publish, the reads are observed, shipped
 behavior and the gap is the opencode doc's. The compiler rides unpinned — `bunx` takes the latest at
-run time. The check's mandate is what ships: the test runners' TypeScript is dev-time only and
+run time. `just screenshot <page> [--base <url>] [--viewport <W>x<H>] [--color-scheme light|dark]
+[--wait-for <selector>] [--timeout <ms>] [--out <png>]` runs
+`devtools/screenshot.ts` under bun: `puppeteer-core`, a dev dependency in the same root
+`package.json`, drives the `firefox` on `PATH` headless over WebDriver BiDi — Puppeteer owning the
+profile, the flags and the handshake, no browser downloaded — settles the page on network idle,
+the fonts ready and the selector where one is given, and writes a PNG, by default under
+`.devpro-temp/screenshots/`, printing its path. It is the development loop's view of a rendered
+page and asserts nothing about the pixels. The private `_js-deps` recipe installs that
+`package.json`'s dependencies from `bun.lock`, frozen, for `screenshot`, `lint` and `test`;
+`just js-lock` installs them unfrozen, rewriting `bun.lock`, after a change to that
+`package.json`'s dependencies. The check's mandate is what ships: the test runners' TypeScript is dev-time only and
 outside it.
