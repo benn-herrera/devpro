@@ -16,7 +16,7 @@ and its content is never read as a breach of a form.
 | deeper than the deepest split level | Text. |
 
 The **deepest split level** is the deepest heading level that splits;
-[shared behaviors](../index.md#dicing-and-checks) gives the option that sets it.
+[shared behaviors](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks) gives the option that sets it.
 
 A split heading's parent is the nearest preceding split heading of a lower level, or the tree's
 root if none; levels may be skipped.

@@ -1,7 +1,7 @@
 # File names and layout
 
 The heading text is what follows the `#` run, with leading and trailing spaces removed. A heading
-is **numbered** when the plain text ([what is a link](../index.md#dicing-and-checks)) of its heading text
+is **numbered** when the plain text ([what is a link](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)) of its heading text
 opens with digits optionally followed by `.digits` groups, an optional `.`, and a space (`1.`, `2 `,
 `1.1.1.`). Its **number** is that prefix without the trailing `.`; its **title** is the rest. An
 unnumbered heading's title is its whole plain text: `### [Plan Status Form](x)` is titled
@@ -32,4 +32,4 @@ and empty):
 **Duplicate numbers.** Headings sharing a number are reported on stderr as
 `duplicate section number <number>`, once per document `dice` dices and per document `undice`
 writes. Dicing continues; a reference to the number resolves to the last heading that carries it
-([section references](../index.md#dicing-and-checks)).
+([section references](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)).

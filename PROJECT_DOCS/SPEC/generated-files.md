@@ -1,4 +1,4 @@
-## Generated files
+# Generated files
 
 Every rendered definition in the deployed surfaces (`agents/`, `commands/`, `skills/`) is rendered
 rather than hand-authored; a definition with no source here is never rendered and never installed.

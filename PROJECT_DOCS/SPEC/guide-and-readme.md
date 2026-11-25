@@ -1,4 +1,4 @@
-## Guide and README
+# Guide and README
 
 The `guide` skill is where a session starts or continues work with devpro. Every install carries it
 under every harness (SPEC.md, Deployed Surfaces, Plugins). It applies when the user wants to start

@@ -1,4 +1,4 @@
-### Install destination
+# Install destination
 
 An install names a **target**, its first argument that is not a flag. A target that is not an
 existing directory is refused with nothing written. Where the target starts with a literal `~`,

@@ -1,4 +1,4 @@
-### Surfaces and layout
+# Surfaces and layout
 
 The repository exposes exactly three deployed surfaces, `agents/`, `commands/` and `skills/`: the
 trees of rendered definitions, and one part of the install product (below). Every definition is

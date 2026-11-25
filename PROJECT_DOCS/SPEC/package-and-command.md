@@ -1,4 +1,4 @@
-## Package and Command
+# Package and Command
 
 The devpro package installs on Python 3.11 or later, with no third-party runtime dependency. It has
 two install sources: a release tag's git URL,

@@ -1,4 +1,4 @@
-## Plan Status Form
+# Plan Status Form
 
 The `development` skill gives plans one form for package headings, status and release,
 gives a design one final form and the roadmap's tickets one form, and gives one place for the

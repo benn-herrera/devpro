@@ -1,4 +1,4 @@
-## Agents File
+# Agents File
 
 The repository publishes a recommended agents file as one agents-file definition, rendered per
 supported harness. Its content depends on the harness, the plugin and where it is installed, never on

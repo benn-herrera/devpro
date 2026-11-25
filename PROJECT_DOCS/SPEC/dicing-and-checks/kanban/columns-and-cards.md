@@ -2,7 +2,7 @@
 
 The board has six columns, left to right: Roadmap, Design, Drafted, Dispatchable, In progress,
 Landed. Drafted through Landed are the **plan columns**, which are read-only
-([the plan columns are read-only](the-plan-columns-are-read-only.md#the-plan-columns-are-read-only)).
+([the plan columns are read-only](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-plan-columns-are-read-only.md#the-plan-columns-are-read-only)).
 
 | Column | Cards |
 |---|---|
@@ -18,16 +18,16 @@ title over the ticket's text. Lines above the first category, and lines of a cat
 first ticket, are not shown.
 
 **Parked work.** A piece of parked work that a roadmap ticket links, by a link whose path names one
-of its files ([the project's files](the-project-s-files.md#the-projects-files)), has no card of its own: it shows inside
+of its files ([the project's files](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-project-s-files.md#the-projects-files)), has no card of its own: it shows inside
 the card of the ticket that links it. A link in a design ticket other than a link ticket leaves the
 parked work on Roadmap. Only a roadmap ticket's link naming a piece's file links it; links inside
 parked work are not followed. A piece of parked work that no roadmap ticket links, and whose link
-ticket ([the project's files](the-project-s-files.md#the-projects-files)) is not in the active design, gets a **parked
-card**, titled by its parked name ([the project's files](the-project-s-files.md#the-projects-files)). The parked cards
+ticket ([the project's files](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-project-s-files.md#the-projects-files)) is not in the active design, gets a **parked
+card**, titled by its parked name ([the project's files](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-project-s-files.md#the-projects-files)). The parked cards
 follow all the cards of tickets, ordered among themselves by parked name, below a separator of
 their own labelled `ROADMAP_DESIGNS`, drawn where there is any parked card; the parked cards and
 that separator exist only on the board. A piece of parked work whose link ticket
-([the project's files](the-project-s-files.md#the-projects-files)) is in the active design shows there as a Design card,
+([the project's files](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-project-s-files.md#the-projects-files)) is in the active design shows there as a Design card,
 and not in Roadmap.
 
 **Design cards.** The board reads the active design in the layout
@@ -35,7 +35,7 @@ and not in Roadmap.
 ([check-design](../reassembly.md)); in a diced design each heading is read from the file that
 holds it. A category, a delta among them, is not a card: its heading is a separator drawn in its
 place among the cards. Each ticket is a card titled by its title over the ticket's text; a link
-ticket's ([the project's files](the-project-s-files.md#the-projects-files)) is a link ticket's card (**Card links**). A
+ticket's ([the project's files](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-project-s-files.md#the-projects-files)) is a link ticket's card (**Card links**). A
 ticket in a delta is an **entry card**. Lines above the first category, and lines of a category
 before its first ticket, are not shown. Cards and separators follow document order.
 
@@ -45,9 +45,9 @@ column's end, and doing so again shows them; the band stays, its marker shows th
 in place of the expanded band's, and every card outside the range keeps its place. A band takes
 keyboard focus, toggles with Enter or Space, keeps that focus across the toggle, and reports
 whether it is expanded. A collapse belongs to the page and to no file
-([the board stores nothing](the-board-stores-nothing.md#the-board-stores-nothing)): a redraw keeps it, a reload loses it, and
+([the board stores nothing](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-board-stores-nothing.md#the-board-stores-nothing)): a redraw keeps it, a reload loses it, and
 a card added to a collapsed category, by a move
-([moves between Roadmap and Design](moves-between-roadmap-and-design.md#moves-between-roadmap-and-design)) or by an edit, stays hidden
+([moves between Roadmap and Design](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/moves-between-roadmap-and-design.md#moves-between-roadmap-and-design)) or by an edit, stays hidden
 until the category expands.
 
 **Content outside the layout.** Each breach [check-roadmap](../reassembly.md) reports in
@@ -62,11 +62,11 @@ defines it; an untitled package shows untitled. A plan whose table has no `Ratin
 shown, its packages unrated. Cards in a plan column follow the status table's row order.
 
 **Card links.** Each card other than a parked card links to the file holding its heading, with that
-heading's anchor ([anchors](../index.md#dicing-and-checks), repeats counted over that file) as the fragment: a
+heading's anchor ([anchors](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks), repeats counted over that file) as the fragment: a
 ticket's card to the ticket's heading, a work package's card to the heading its title is read from
 ([check-plan](../reassembly.md)). An untitled work package's card links to the file holding its
 status-table row, with no fragment. A parked card links to each of its piece's files, with no
-fragment; a link ticket's card ([the project's files](the-project-s-files.md#the-projects-files)), besides its heading,
+fragment; a link ticket's card ([the project's files](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-project-s-files.md#the-projects-files)), besides its heading,
 links each file of the piece of parked work it links, with no fragment. Each link reaches its file
 as the server serves it (**Start**, above).
 

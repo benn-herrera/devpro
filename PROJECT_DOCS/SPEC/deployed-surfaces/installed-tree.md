@@ -1,4 +1,4 @@
-### Installed tree
+# Installed tree
 
 An installed tree is not for local edit: a re-install overwrites the files that carry this
 repository's banner and removes what this repository no longer produces, and over any other file at

@@ -13,13 +13,13 @@ In a diced design, a **leaf** is a file other than a head file
 ([check-design](../reassembly.md)) whose directory has a head
 ([check-tree](../reassembly.md)), and the **full listing** is the list under the last
 `Contents:` line of `entry-point.md`, where that list holds a line linking a file that is not
-beside `entry-point.md` ([file content](../index.md#dicing-and-checks)). A line added to the full listing
+beside `entry-point.md` ([file content](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)). A line added to the full listing
 links the added file by its path from the directory of `entry-point.md`; it is indented two spaces
 more than the line linking the head ([check-tree](../reassembly.md)) of the file's directory,
 and follows that line and the lines below it indented deeper. Where no line of the full listing
 links that head, it goes at the end of the full listing, indented two spaces. In the Contents lines
-a move adds for a new leaf, `<text>` is the link text [file content](../index.md#dicing-and-checks) gives
-the leaf's section: for a ticket title [file names and layout](../index.md#dicing-and-checks) reads
+a move adds for a new leaf, `<text>` is the link text [file content](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks) gives
+the leaf's section: for a ticket title [file names and layout](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks) reads
 as numbered, `§<number> ` and the rest of the title; else the title.
 
 **Roadmap to Design.** Dropping a roadmap card or a parked card on Design adds a ticket at the end
@@ -28,14 +28,14 @@ of the design's `## Drafts` category, the first category whose heading text is `
 reaches its final form:
 
 - *roadmap card*: the ticket's lines are removed from `ROADMAP.md` and added to the design;
-- *parked card*: its link ticket ([the project's files](the-project-s-files.md#the-projects-files)) is added; the piece
+- *parked card*: its link ticket ([the project's files](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-project-s-files.md#the-projects-files)) is added; the piece
   of parked work's files and `ROADMAP.md` are not touched.
 
 | The active design | The addition |
 |---|---|
 | absent | `ACTIVE_DESIGN.md` is created, opening with the level-1 heading `# ACTIVE DESIGN`, then `## Drafts` and the ticket, a blank line parting each from the line above |
 | a monolith | the ticket is added at the end of `## Drafts`; where there is none, `## Drafts` and the ticket are appended to the file, a blank line parting each from the text above, where there is any |
-| a diced tree whose `## Drafts` heading opens an `index.md` | the ticket is a new leaf beside that `index.md`, named `<name>.md`, `<name>` being the [file names and layout](../index.md#dicing-and-checks) name of the ticket's title; the line `- [<text>](<name>.md)` is added at the end of the list under that `index.md`'s last `Contents:` line, and a line `- [<text>](<path>)` for the leaf to the full listing, where `entry-point.md` has one |
+| a diced tree whose `## Drafts` heading opens an `index.md` | the ticket is a new leaf beside that `index.md`, named `<name>.md`, `<name>` being the [file names and layout](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks) name of the ticket's title; the line `- [<text>](<name>.md)` is added at the end of the list under that `index.md`'s last `Contents:` line, and a line `- [<text>](<path>)` for the leaf to the full listing, where `entry-point.md` has one |
 | a diced tree with no `## Drafts` | the ticket is the new leaf `drafts/<name>.md`, named as above, the directory `drafts` beside `entry-point.md` made where it does not exist; `drafts/index.md` is created holding `## Drafts`, a blank line, `Contents:`, a blank line and the line `- [<text>](<name>.md)`; and the lines `- [Drafts](../index.md)` and `  - [<text>](drafts/<name>.md)` are added at the end of the list under the last `Contents:` line of `entry-point.md`, or in a Contents block added at its end where it has none |
 | a diced tree whose `## Drafts` is elsewhere | the ticket is added at the end of `## Drafts` in the file holding it; in a head file ([check-design](../reassembly.md)), before its Contents block |
 
@@ -45,9 +45,9 @@ Where `ROADMAP.md` has categories, the ticket is added at the end of the categor
 is nearest above the place the drop landed, whether on a card or on a separator; at the end of the
 first category where no category's separator is above that place, or where that category is no
 longer on the board. The `ROADMAP_DESIGNS` separator
-([columns and cards](columns-and-cards.md#columns-and-cards)) is not a category's. A link ticket is removed and nothing
+([columns and cards](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/columns-and-cards.md#columns-and-cards)) is not a category's. A link ticket is removed and nothing
 is added; its parked card shows in Roadmap again
-([columns and cards](columns-and-cards.md#columns-and-cards)).
+([columns and cards](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/columns-and-cards.md#columns-and-cards)).
 
 | `ROADMAP.md` | The addition |
 |---|---|
@@ -61,18 +61,18 @@ head and, where that head is not `entry-point.md` and the full listing holds a l
 leaf, from the full listing too; then the leaf is deleted. Any other ticket is removed from the
 file holding it.
 
-**Links.** A move rebases each relative link target in the text ([link rewriting](../index.md#dicing-and-checks)) of the
+**Links.** A move rebases each relative link target in the text ([link rewriting](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)) of the
 ticket's lines, resolved from the directory of the file the ticket leaves, to reach the same file
 from the directory of the file it joins, fragment kept; targets that
-[link targets](../index.md#dicing-and-checks) step 2 leaves unchanged stay unchanged. A `#<anchor>` target
+[link targets](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks) step 2 leaves unchanged stay unchanged. A `#<anchor>` target
 stays as written in both directions: it names a heading of the file holding it, so it keeps
 reaching a heading the ticket carries. It breaks only where
-[anchors](../index.md#dicing-and-checks)' per-file repeat count gives that heading another anchor in the file
+[anchors](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)' per-file repeat count gives that heading another anchor in the file
 joined, or where it named a heading outside the ticket;
 [check-links](../reassembly.md) reports either break. Between files in one directory, as
-`ROADMAP.md` and a single-file active design are ([the project's files](the-project-s-files.md#the-projects-files)), no
+`ROADMAP.md` and a single-file active design are ([the project's files](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-project-s-files.md#the-projects-files)), no
 link changes. A link ticket is written, not moved: its links are made for the file that holds it
-([the project's files](the-project-s-files.md#the-projects-files)).
+([the project's files](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-project-s-files.md#the-projects-files)).
 
 **Refusals.** A move is refused, and nothing is written, where:
 
@@ -80,10 +80,10 @@ link changes. A link ticket is written, not moved: its links are made for the fi
   existence or absence different from when the board last read it, checked for every such file
   immediately before the first write; a change after that check is not detected;
 - what is dropped on Roadmap is an entry card or a separator, in a drop request the page would not
-  make ([the plan columns are read-only](the-plan-columns-are-read-only.md#the-plan-columns-are-read-only)), such as one from a page
+  make ([the plan columns are read-only](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-plan-columns-are-read-only.md#the-plan-columns-are-read-only)), such as one from a page
   showing a board that has since changed; refused with a message naming that cause;
 - the active design is a diced tree, the move adds a leaf, and the title's
-  [file names and layout](../index.md#dicing-and-checks) name is empty (an unnumbered title with an
+  [file names and layout](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks) name is empty (an unnumbered title with an
   empty slug), refused with a message naming that cause;
 - the active design is a diced tree and a file the move creates already exists, refused with a
   message naming that cause;

@@ -6,11 +6,11 @@ visibly set apart, by form and not by colour alone, from the cards that can be d
 the Roadmap column's cards and the Design column's other cards. Neither an entry card nor a
 separator can be dragged; a separator is drawn as a band, not as a card. A work package's state
 changes only by an edit to the plan file, which the board shows
-([live following](live-following.md#live-following)).
+([live following](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/live-following.md#live-following)).
 
 **Drops not accepted.** The only drops accepted are a roadmap or parked card on Design and a design
 card other than an entry card on Roadmap (both
-[moves between Roadmap and Design](moves-between-roadmap-and-design.md#moves-between-roadmap-and-design)). Any other drop is not
+[moves between Roadmap and Design](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/moves-between-roadmap-and-design.md#moves-between-roadmap-and-design)). Any other drop is not
 accepted and the card returns to its column. A departure from the common path, such as a plan with
 no design or a skipped step, is not refused for being one (only the moves'
 **Refusals** refuse a move) and never asks for confirmation.

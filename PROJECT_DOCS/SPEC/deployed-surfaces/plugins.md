@@ -1,4 +1,4 @@
-### Plugins
+# Plugins
 
 An install delivers one **plugin**, the devpro plugin, and the optional **components** the
 invocation names: `devpro install TARGET` or `devpro install TARGET --components=kbase`. Every

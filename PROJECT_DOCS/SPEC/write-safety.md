@@ -1,4 +1,4 @@
-## Write Safety
+# Write Safety
 
 An install overwrites every rendered definition where the destination is absent or carries a
 generated banner: the `!GENERATED!` line inside the frontmatter, or the comment form a supporting

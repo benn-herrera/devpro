@@ -1,4 +1,4 @@
-### Shipped files
+# Shipped files
 
 A **shipped package** is plain code, never rendered and so never carrying a generated banner,
 installed at its **package destination**, a fixed directory under the install directory. Its

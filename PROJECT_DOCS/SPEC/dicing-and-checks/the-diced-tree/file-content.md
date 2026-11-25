@@ -1,17 +1,17 @@
 # File content
 
 Each file holds, in order, exactly the source lines of its section, heading line included, with the
-section's heading ladder re-based and links rewritten ([link rewriting](../index.md#dicing-and-checks)).
+section's heading ladder re-based and links rewritten ([link rewriting](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)).
 
 **The heading ladder.** A section's own text opens with its top heading, and every file of the tree
 but a document's own head holds it at level 1, whatever level that heading had in the source: a
 leaf's file is a document, not a fragment of one. Every other heading of the section's text moves
 with it by the same shift, the top's source level minus 1, so its distance below the top is
 unchanged — a `####` heading under a `##` top writes at `###`. The heading's text and its number are
-not touched, so a section's file name ([file names and layout](file-names-and-layout.md#file-names-and-layout)) does not move
+not touched, so a section's file name ([file names and layout](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/file-names-and-layout.md#file-names-and-layout)) does not move
 with the ladder. A document's own head (`entry-point.md`, or a section's `index.md`) holds its
 document's title and opening text as the source has them, the title at level 1. No line inside fenced
-code is a heading and none is re-based ([which headings split](which-headings-split.md#which-headings-split)).
+code is a heading and none is re-based ([which headings split](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/which-headings-split.md#which-headings-split)).
 
 A section whose text holds a heading that this shift would carry above level 1 or below level 6 has
 no ladder the tree can hold: it is reported as

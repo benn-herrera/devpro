@@ -1,4 +1,4 @@
-## Bodies usable without frontmatter
+# Bodies usable without frontmatter
 
 The body of every rendered definition under `agents/`, the content after its banner carrier, is
 usable without frontmatter as an external (non-Claude) model's system prompt. The banner carrier is

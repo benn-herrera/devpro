@@ -1,10 +1,10 @@
 # dice
 
 `devpro dice [--split-level <level>] [--section] <monolith.md>... --out <out-dir>`
-dices one or more documents ([the diced tree](index.md#dicing-and-checks), [link rewriting](index.md#dicing-and-checks)) at the deepest
-split level `<level>` ([shared behaviors](index.md#dicing-and-checks)).
+dices one or more documents ([the diced tree](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks), [link rewriting](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)) at the deepest
+split level `<level>` ([shared behaviors](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)).
 
-**The form written.** Every document named becomes a volume ([the model](index.md#dicing-and-checks)). One
+**The form written.** Every document named becomes a volume ([the model](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)). One
 document is written at the output root, its head `<out-dir>/entry-point.md`: this is the one-document
 form. Several documents each get a
 directory at the output root named for the document's base name without `.md`, holding that
@@ -24,15 +24,15 @@ Order of effects and failures:
 | a `<monolith.md>` is not a file | `not a file: <monolith.md>` | 2 |
 | `<out-dir>` exists and is not a directory | `not a directory: <out-dir>` | 2 |
 | `<out-dir>` exists and is not empty | `out-dir not empty: <out-dir>` | 2 |
-| Planning fails ([file names and layout](index.md#dicing-and-checks)) | that section's message | 1 |
-| A section's heading ladder cannot be re-based ([file content](index.md#dicing-and-checks)) | `heading too deep to re-base at line <N> (<level>): written at its monolith level` | 1 |
+| Planning fails ([file names and layout](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)) | that section's message | 1 |
+| A section's heading ladder cannot be re-based ([file content](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)) | `heading too deep to re-base at line <N> (<level>): written at its monolith level` | 1 |
 | two documents named share a base name | `volume <name>: two documents of one name` | 2 |
 
 A refusal writes nothing: every document is planned before anything is written, and a refusal found
 there leaves `<out-dir>` untouched. Otherwise `<out-dir>` is created if absent and the tree written.
 Stderr receives, per document, a `=== volume head <path>` line for its head and a `=== section <path>`
 line for each section file, then the `refs linked` line
-([section references](index.md#dicing-and-checks)) and any warnings of [the diced tree](index.md#dicing-and-checks).
+([section references](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)) and any warnings of [the diced tree](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks).
 The [reassembly](reassembly.md) and [link checks](reassembly.md) then run over each
 volume; their messages go to stderr and their summaries to stdout. Exit 0 only when every check
 passes. Files already written remain on failure.

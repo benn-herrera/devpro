@@ -1,4 +1,4 @@
-## Rendering
+# Rendering
 
 A **model family** (`--family`) is a named group of models that assigns a model to each category and
 may add tuning text at anchors (below). A **category map** assigns one model, the category's

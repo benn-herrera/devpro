@@ -7,7 +7,7 @@ post-plan review or burndown package without the other; what is otherwise absent
 **Terms.**
 
 - **plan**: a tracked markdown document that lays out work as work packages and records their
-  progress. It is a monolith, one file, or a diced tree ([the diced tree](index.md#dicing-and-checks)) given by its
+  progress. It is a monolith, one file, or a diced tree ([the diced tree](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)) given by its
   `entry-point.md`: a file named `entry-point.md` is read as one plan together with every other
   `.md` file beneath its directory, in **the plan's file order**, the entry point first.
 - **work package**: one unit of a plan's work, a row of the plan's status table, named by the ID in
