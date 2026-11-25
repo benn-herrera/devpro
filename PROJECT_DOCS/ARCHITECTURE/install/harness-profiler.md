@@ -93,7 +93,8 @@ session id, record count, the count of the dispatched agents it holds, first and
 the span between them — each linking to `/page/<session-id>`, which serves that session's page in
 memory, the render's page carrying the same page data `tree --format html` produces. The header row
 and the body's rows take their column widths from one source, so every header sits over the column it
-names at every width the data produces. The index's page file is static — no row is in its text — and
+names at every width the data produces, and the first-to-last column is wide enough that its line
+never wraps. The index's page file is static — no row is in its text — and
 its script renders the feed the server answers at `/api/traces`: one JSON entry per session carrying
 `harness`, `id`, `records`, `agents`, `first`, `last`, `span`, and `dispatcher` where a session was
 dispatched. The script puts `harness` and `records` under their own names, `id` in the session column,
@@ -117,7 +118,8 @@ feed the page's script reads.
 A session an opencode record names as its dispatch's child is drawn under the session that dispatched
 it — a dispatch's child one level deep; deeper chains read on the session's page, whose tree draws
 every dispatch as a context — that session's row carrying the count of the rows beneath it and each
-child's naming the call that dispatched it; the rows alternate their tone, and each carries its
+child's naming, after its id and with no lead-in, the call that dispatched it — the indent, the
+accent rule at its left edge and its tone mark it a child; the rows alternate their tone, and each carries its
 harness's mark. The pages' own scripts draw every moment local at birth — the moments cells, the
 index's first-to-last line, the session page's header stamp, its diagram's and its call tree's
 times — in the reader's local time, 24-hour, one
@@ -137,8 +139,8 @@ child's page the dashboard does not serve answers the 404 any unrecorded session
 A top nav persists across both views — the `devpro` brand, then `kanban` and `profiler`, the active
 view in the motif's accent and the inactive one a lifted gray, then the server block right-justified
 at the nav's flex edge: the live/idle state indicator and the stop — and in the profiler view a frame
-band sits under it, carrying the how-to-read legend at its top and, on a session's page, `Return to
-list` back to `/profiler/`; drill-down is ordinary page navigation, and no inner frame exists. The nav
+band sits under it, carrying on a session's page the how-to-read legend at its top and `Return to
+list` back to `/profiler/`, and on the index neither; drill-down is ordinary page navigation, and no inner frame exists. The nav
 and the band are the view's pages' own text, assembled with the page by the one strict fill; the
 dashboard serves the assembled page and changes nothing in it. The nav's server block is the same on
 both views: the decoration's one script polls `GET /api/state` — the endpoint every view's server

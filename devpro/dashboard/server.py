@@ -133,7 +133,8 @@ class DashboardServer(ThreadingHTTPServer):
 
     def profiler_index(self) -> str:
         """The profiler view's static index, as the dashboard serves it: the page's own text under
-        the nav and the band, the legend once — its rows rendered by its script from `traces`.
+        the nav and the band, the band carrying no legend — a session's page carries the how-to-read
+        one — and its rows rendered by its script from `traces`.
 
         `CLAUDE_PROJECT_DIR` is not followed — it names the outermost claude session's launch
         directory, which for a terminal-launched server is another project."""

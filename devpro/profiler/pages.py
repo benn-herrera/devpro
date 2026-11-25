@@ -655,7 +655,7 @@ def _rendering(session: dict, *, dispatcher: tuple[str, str, str | None] | None,
         {
             DATA_MARK: _inlined_session_data(session),
             AGENT_PREFIX_MARK: AGENT_PREFIX_LINE,
-            **band_fills(dispatcher=dispatcher, return_to=return_to),
+            **band_fills(dispatcher=dispatcher, return_to=return_to, legend=True),
         },
     )
 
@@ -882,11 +882,14 @@ def index_html() -> str:
 
     The index carries the presentation layer and names no view of its own: opened on its own it
     stands beside no board, so the deco — the nav, the frame band and the decoration's script — is
-    the template's own text, the band's legend filled here from its one home (the index carrying no
-    dispatcher and no way back), and the layer's carriage left at its mark — filled by the serve path
-    with its link (`served_page`), its one consumer, since no file flow writes the index. The
-    script's mark is the one prefix line, `AGENT_PREFIX_LINE`, filled here."""
-    return strict_fill(INDEX.replace(AGENT_PREFIX_MARK, AGENT_PREFIX_LINE), band_fills(dispatcher=None, return_to=None))
+    the template's own text, the band filled with none of its per-page facts (the index carrying no
+    legend, no dispatcher and no way back), and the layer's carriage left at its mark — filled by the
+    serve path with its link (`served_page`), its one consumer, since no file flow writes the index.
+    The script's mark is the one prefix line, `AGENT_PREFIX_LINE`, filled here."""
+    return strict_fill(
+        INDEX.replace(AGENT_PREFIX_MARK, AGENT_PREFIX_LINE),
+        band_fills(dispatcher=None, return_to=None, legend=False),
+    )
 
 
 def served_page(text: str) -> str:
@@ -918,14 +921,14 @@ def dispatcher_html(dispatcher: tuple[str, str, str | None]) -> str:
     )
 
 
-def band_fills(*, dispatcher: tuple[str, str, str | None] | None, return_to: str | None) -> dict[str, str]:
-    """The frame band's per-page fills for the strict fill: the legend from its one home `LEGEND`,
-    the dispatch line, and the way back. A fact this page carries none of fills its mark empty — the
-    dispatcher where none dispatched it, and the way back on the index, which is the list itself —
-    and the strict fill does not raise on an empty value, so a page with neither carries the band
-    bare."""
+def band_fills(*, dispatcher: tuple[str, str, str | None] | None, return_to: str | None, legend: bool) -> dict[str, str]:
+    """The frame band's per-page fills for the strict fill: the legend from its one home `LEGEND`
+    where the page carries one, the dispatch line, and the way back. A fact this page carries none of
+    fills its mark empty — the legend on the index, the dispatcher where none dispatched it, and the
+    way back on the index, which is the list itself — and the strict fill does not raise on an empty
+    value, so a page carrying none of them carries the band bare."""
     return {
-        BAND_LEGEND: LEGEND,
+        BAND_LEGEND: LEGEND if legend else "",
         DISPATCHED_MARK: dispatcher_html(dispatcher) if dispatcher else "",
         RETURN_MARK: f'<a class="return" href="{return_to}">{RETURN_LABEL}</a>' if return_to else "",
     }
@@ -962,7 +965,11 @@ h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem; }
 /* One width per column, declared on the header row's cells: `table-layout: fixed` gives each column
    the width its cell declares and measures no cell's content, so the body's rows stand in the columns
    the header names — a header whose label outruns its column wraps inside it. */
+main { overflow-x: auto; }
 table { border-collapse: collapse; table-layout: fixed; }
+/* The table's floor is the sum of its columns' shares: narrower than that, it overruns the viewport
+   and `main` scrolls it, so no column is squeezed under what its content needs. */
+table { min-width: 62rem; }
 th, td { text-align: left; padding: 0.4rem 1rem 0.4rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-weight: 600; color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
 td { overflow-wrap: anywhere; }
@@ -974,13 +981,18 @@ tr td:first-child.child { border-left: 3px solid var(--accent); }
 tr td:first-child.child + td { padding-left: 2.4rem; }
 /* Each column's share of the table, declared here and nowhere else: the fixed layout gives it to
    header and body alike, and a share below the table's width is grown by the layout's distribution,
-   never by a cell's content. */
+   never by a cell's content. The agents column still holds its label's own line unbroken, so the
+   label sits over the count it heads rather than folding a word of itself. */
 .col-harness { width: 7.5rem; }
 .col-session { width: 40%; }
 .col-records { width: 8rem; }
-.col-agents { width: 12rem; }
-.col-one { width: 8rem; }
+.col-agents { width: 8rem; }
+.col-one { width: 15rem; }
 .col-span { width: 7rem; }
+/* The first-to-last cell's line never wraps: its column is wide enough for the longest pair the data
+   produces, and a narrower viewport keeps the column and lets the table overrun it, rather than
+   folding the line. */
+.moments { white-space: nowrap; }
 .harness { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; }
 .harness.opencode { background: #4a9eea; }
 .harness.claude { background: #d97757; }
@@ -1089,7 +1101,9 @@ const moments = (session) => {
 };
 
 // One row: a dispatcher's carries the count of the children the feed holds in the agents column; a
-// child's carries the accent bar's empty cell and names the call that dispatched it. Both carry the
+// child's carries the class `child` on its first cell — the harness cell, where the rule at the row's
+// left edge and the session cell's indent are drawn from — and names after its id the call that
+// dispatched it, no lead-in: the indent, the rule and its tone mark it a child. Both carry the
 // harness with its mark where the page holds one, their own count, moments and span. A row's sort
 // keys are the entry's own: the dispatched-agent count, the record count, the first moment and the
 // span.
@@ -1098,15 +1112,15 @@ const row = ({ session, dispatched, children = 0 }) => {
   tr.setAttribute('data-records', String(session.records));
   tr.setAttribute('data-first', String(session.first));
   tr.setAttribute('data-span', String(session.span));
-  const harness = el('td', undefined, 'col-harness');
+  const harness = el('td', undefined, dispatched ? 'col-harness child' : 'col-harness');
   const mark = HARNESSES.includes(session.harness) ? session.harness : '';
   harness.append(el('span', undefined, ('harness ' + mark).trim()), session.harness);
-  const id = el('td', undefined, dispatched ? 'col-session child' : 'col-session');
+  const id = el('td', undefined, 'col-session');
   id.title = session.id;
   id.append(link(session.id));
   if (dispatched) {
     const shown = dispatched.tool === AGENT_TOOL ? dispatched.name.replace(AGENT_PREFIX, '') : dispatched.name;
-    id.append(' ', el('small', '↳ child — ' + shown));
+    id.append(' ', el('small', shown));
   }
   const window = el('td', undefined, 'col-one');
   window.append(moments(session));

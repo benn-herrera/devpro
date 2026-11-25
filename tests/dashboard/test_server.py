@@ -420,15 +420,16 @@ def test_every_page_answer_forbids_sniffing_and_restricts_its_sources(tmp_path: 
     assert "Content-Security-Policy" not in headers
 
 
-def test_the_profiler_view_carries_its_nav_and_legend_once(tmp_path: Path, serve) -> None:
-    """`/profiler/` carries the frame band — the how-to-read legend present exactly once — and the
-    nav with `profiler` the active view and `kanban` linking `/board/`: a band that drops the legend
-    loses the view's how-to-read, one that shows it twice breaks one home and two carriers, and a nav
-    naming no active view leaves the reader unable to tell which view is shown."""
+def test_the_profiler_view_carries_its_nav_and_no_legend(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is the index carrying the legend, which the view keeps
+    for a session's page alone. `/profiler/` carries the frame band without it, and the nav with
+    `profiler` the active view and `kanban` linking `/board/`: an index that shows the how-to-read
+    spends the band on a page no diagram draws, and a nav naming no active view leaves the reader
+    unable to tell which view is shown."""
     client = serve(project(tmp_path / "proj", {}))
     index = client.get("profiler/")[2].decode("utf-8")
 
-    assert index.count("How to read this") == 1
+    assert "How to read this" not in index
     assert 'class="frame-band' in index
     assert re.search(r'<a class="view active" href="/profiler/" aria-current="page">profiler</a>', index)
     assert re.search(r'<a class="view" href="/board/">kanban</a>', index)

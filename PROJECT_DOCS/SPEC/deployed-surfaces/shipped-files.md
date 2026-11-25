@@ -139,8 +139,8 @@ voice — the layout, spacing and componentry are ordinary modern web, no TUI re
 scanline treatment may appear in the deco, the nav or the frame band, never on a card surface,
 its placement the pass's executor call. The server's elements persist across every view, the nav's
 server block right-justified at its flex edge: a live/idle state indicator and, when live, a stop
-control; starting is the CLI's alone, no served page starting its own server. In the profiler view the how-to-read legend sits at the top of the
-view's frame band and persists there across drill-down, the same band carrying a return-to-list
+control; starting is the CLI's alone, no served page starting its own server. In the profiler view the how-to-read legend sits at the top of a session page's frame band — the
+index carries none — the same band carrying a return-to-list
 control, its label `Return to list`, revisable at execution as a one-string change — the pass's
 second executor call; drill-down is ordinary page navigation, the trace list to the session page
 with
