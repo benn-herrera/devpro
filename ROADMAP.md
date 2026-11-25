@@ -7,51 +7,6 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Features
 
-### A child session's page names itself for the agent and wears that call's color
-
-Owner's notes: a child session's page top context is named `main`, not for the agent whose call
-created it, and it carries no color. It should (1) be named for the agent — the dispatch record
-already names it, and the parent's index row shows the same name — and (2) wear the color that
-agent call carries in the parent context, so the child page reads as *that* agent's session at a
-glance. Open for the design: where the binding lives (the dispatch record's name and the call's
-color at capture, or a join at read time); what a page shows when the agent name is absent or the
-call's color is not in the palette.
-
-### The profiler's primary color theme is devpro green, not claude orange
-
-Owner's note: the primary color theme should not be claude orange — it should be devpro green.
-The harness dots keep their per-harness colors; the theme in question is the profiler's own accent
-(harnesses' orange reads as claude's brand, not devpro's). Open for the design: which surfaces
-carry the primary accent and where its token lives, so the change is one home's edit rather than a
-sweep.
-
-Owner's addition: opencode's dot color changes to the purple-blue opencode's TUI now uses — the
-periwinkle blue of their "Build" headings (screenshot in session, 2026-11-24; approximately a
-#7B7BF0-class violet-blue, the design picks the exact token against the TUI). Claude's dot keeps
-its color; opencode's is the change.
-
-### The profiler surfaces the model name each session and agent used
-
-Owner's note: the records already carry the model name used in each session and agent — the
-capture stores it — and the profiler surfaces it nowhere, neither on the index nor on a session
-page. Open for the design: where it surfaces (an index column, the session page's band or detail,
-per-agent rows); what "the model" means for a session whose records name several (a session's
-own model beside each dispatched agent's); and how it reads beside the dispatched-agents count
-the index already renders. The capture's records are the data source; no capture changes are
-implied.
-
-### The index spends less width on the dispatched-agents column and the child-row prefix
-
-Owner's notes from live use (screenshot in session, 2026-11-24): the first-to-last column needs to
-be widened — its dates and times are the wrapping the reader sees, and they belong on one line;
-the dispatched-agents column can be narrowed further to fund that width (the cells read
-`102 agents` and the column still takes more width than its content needs); and the child row's
-`↳ child —` prefix before the agent name can be eliminated to save horizontal space — the child
-row's indent and tone already signal what it is, and the session id beside it carries the identity.
-Open for the design: what marks a child row once the prefix is gone (indent alone, or the row's
-tone carrying it); whether the agents cell or its column definition narrows, and how the freed
-width reaches first-to-last (column definition, not just cell text).
-
 ### Group traces with plans — the operational-context stamp
 
 Sessions recorded by the profiler carry their operational context, so the dashboard can answer
@@ -108,6 +63,10 @@ the agents column.
   ticket that matches the running PE color. when getting revised, the revising agent's color
   is used. same treatment for tickets in the 'in progress' column. the reason the previous 2-column
   proposal doesn't work is that agents can be working on tickets in more columns than just 'in-progress'
+
+### Antigravity TUI harness support
+
+Add the ability to install as a plugin to Google's antigravity under `.agents/`
 
 ### Codex CLI harness support
 
@@ -286,30 +245,23 @@ the result the hook receives, and the observation dated and recorded where the h
 leaf's account of the capture cites it. Which of the three the current releases still report, and
 whether the floor's range still needs all three, is what the dispatch answers.
 
-### Browser-driven visual verification
-
-The dashboard's served pages need a check that a page not only serves but renders. Firefox's
-`--screenshot` cannot provide it: the shot is taken when the document finishes parsing, so nothing
-inside the page can be settled first, and no assertion over the PNG's bytes separates a rendered
-page from a blank one.
-
-Decided — the driver and its dependency: Puppeteer driving the system's Firefox over WebDriver
-BiDi, the binary from `PATH` (`executablePath`), Puppeteer owning the plumbing — throwaway profile,
-flags, the BiDi handshake — no browser download, no second Firefox. The lightest way first: if the
-combination fails or shows a hole the check cannot live with, the upgrade is Puppeteer's own
-hermetic Firefox build. BiDi is the standard protocol, so the system binary's version skew surfaces
-as `UnsupportedOperation` — named, not silent.
-
-Still open for the design work: what the check asserts and which pages it covers. Screenshot-byte
-comparison is out of it — a pin on pixels is the photograph antipattern, the class of test this
-project eliminates. The primary first use is the development loop, not a hard test: the model
-working on the pages sees what it rendered and iterates toward what it intends, and the
-assertion set distills second, from what that loop shows matters. Rides with the UX
-pass, where the visual work lives.
-
 ### The double-delivery check fills only the claude family under the claude harness
 
 `tests/test_devpro.py` `_prompts` fills with `_CLAUDE_RENDER`, so family overlay text and other
 harnesses' text go unchecked. The sentence check the previous ticket adds raises the stakes:
 overlay text and other harnesses escape at sentence granularity, where a shared sentence is small
 enough to hide inside a paragraph that differs.
+
+### The family-map pins are checksums; retire the mirror
+
+`tests/test_devpro.py` pins the claude family's model assignments twice as literals:
+`test_each_family_pins_the_member_of_every_category` asserts the map equals a hand-copied dict of
+itself, and `test_claude_frontmatter_holds_the_field_order_and_spelling` carries `model: opus`
+inside a tuple whose subject is field order and spelling. Both are the checksum
+`clauses.TESTS_PROTECT_LOGIC` forbids: they photograph owner tuning, so every deliberate retune
+lands red — 829f7e7 did, and the gate ran red until the pins followed. The retune's diff in the
+generated agent files is the visible record; the pin adds only the paired edit. Work: keep the
+form asserts that are contract (order, spelling, quoting, required fields), assert the `model:`
+line is present without pinning its value, rework or retire the members mirror, and sweep the
+suite for the same shape — a literal restating source data no consumer fixes — before declaring
+it gone.
