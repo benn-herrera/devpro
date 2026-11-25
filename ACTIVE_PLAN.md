@@ -68,6 +68,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | P2 | landed | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
 | P3 | landed | expert | `devpro:prompt-engineer` | CONVENTIONS and ARCHITECTURE round-trip, the head convention corrected; SPEC's residue re-homed to P4 (the tool defect) and P5 (re-dice under the settled model) |
 | P4 | landed | expert | `devpro:python-coder` | the dicer's two patterns: volumes and broken-out sections; the manifest retires |
+| P4b | drafted | expert | `devpro:python-coder` | the reconstruction's stragglers: `_placed_level` and the link re-base |
 | P5 | in progress | expert | `devpro:python-coder` | the three standing trees re-diced under the settled model |
 | P6 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
@@ -405,6 +406,43 @@ reader consults while managing a tree; the SPEC leaves carry the mechanics and s
 **Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
 commit, as P1 states.
 
+## P4b — the reconstruction's stragglers: `_placed_level` and the link re-base
+
+Fixes the two P4 tool defects P5's State section records, both found by the re-dice and reported,
+not patched. Agent `devpro:python-coder`.
+
+**Scope.** `devpro/dicing/dicedoc.py` (`_placed_level`, `dice`'s re-base root);
+`devpro/dicing/linkrewrite.py` (`Linker.written`); `tests/dicing/` (the reproduction cases as
+corpus and tests).
+
+**Facts.**
+
+- `_placed_level` (`dicedoc.py:352`) raises a section index's child by the child's own heading
+  depth: a leaf opening `## X` with `###` beneath restores at level 4 beside a sibling at level 3,
+  so the re-plan reads the section index as a leaf. Minimal reproduction, four files, no SPEC
+  content: `.devpro-temp/p5-repro-tree/`; the shape is the spec — any section index whose children
+  carry deeper headings than a sibling.
+- `dice` rebases a monolith's relative links against the run directory rather than the monolith's
+  own directory (`linkrewrite.Linker.written`, `dice`'s `root=run_dir`), adding spurious `../`
+  segments to every cross-tree link at any depth other than the output root's. Reproduction:
+  `.devpro-temp/p5-lk/`.
+
+**Guidance.**
+
+1. `_placed_level` computes a restored part's level from its position in the tree and its own head's
+   pattern — never from the part's heading depth relative to a sibling: a section index's child
+   restores beside its siblings, not below them by its own depth. The two-pattern model is the
+   authority; the corpus case pins it.
+2. `Linker.written`'s re-base roots at the document's own directory, never the run directory: a
+   cross-tree link survives a dice and an undice unchanged. Corpus case: a monolith whose link
+   exits its directory, diced one level deep, links unchanged in the written tree.
+3. Tests, per `clauses.TEST_PRECONDITION` (defect: the reconstruction restores a section index's
+   child at its own depth, and the link re-base roots at the run directory): both reproduction
+   shapes as corpus cases, demonstrated red before the fix.
+
+**Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
+commit, as P1 states.
+
 ## P5 — the three standing trees re-diced under the settled model
 
 **State.** ARCHITECTURE and CONVENTIONS are re-diced and placed: each undiced (`reassemble ok`, CONVENTIONS `dead: 0`, ARCHITECTURE `dead: 3` run-directory links restored by hand to their `HEAD` form) and re-diced from the undice, the fresh tree replacing the old one; each re-diced tree undices again clean. SPEC is repaired but **not** re-diced: its tree passes `check-links` and `check-tree` (193 links `broken: 0`, 21 documents `problems: 0`) but undice exits 1 on a P4 tool defect — `dicedoc._placed_level` (`devpro/dicing/dicedoc.py:352`) raises a section index's child by the child's own heading depth, so a leaf opening `## X` with `###` beneath restores at level 4 while its sibling restores at level 3, and the re-plan then reads the section index as a leaf `dicing-and-checks.md`. Minimal reproduction, 4 files, no SPEC content: `.devpro-temp/p5-repro-tree/`. Reported in `.devpro-temp/p5-spec-finding.md`; not patched. A second P4 defect, `dice` rebasing a monolith's relative links against the run directory rather than the monolith's own directory (`linkrewrite.Linker.written`, `dicedoc.dice`'s `root=run_dir`), adds three `../` segments to every cross-tree link at a depth other than the output root's; reproduced in `.devpro-temp/p5-lk/`, and worked around by hand for ARCHITECTURE's three such links. Both are code (`devpro/dicing/`), outside P5's scope. The package stays `in progress` until both are repaired and SPEC re-dices as Guidance step 1 directs.
@@ -425,9 +463,9 @@ commit, as P1 states.
    afterwards; a file the old tree held and the fresh tree does not is gone.
 3. After all three replacements: `just check-links` with `problems: 0`, and
    `just dev-check-links`. The commit body names each tree re-diced and its leaf count — the count
-   comes from a per-tree `devpro check-tree <tree-dir>` run's `leaves:` line, the method stated in
-   the commit body. The counts are taken after P2 and P4, which change ARCHITECTURE's inventory; no
-   pre-measured baseline belongs in this plan.
+   comes from the per-tree `check-tree` run's `documents checked:` line less that tree's head files
+   (`entry-point.md`/`index.md`), the method stated in the commit body. The counts are taken after
+   P2 and P4, which change ARCHITECTURE's inventory; no pre-measured baseline belongs in this plan.
 
 P5 runs after P4 and P3: the re-dice regenerates the trees from their undiced monoliths, and running
 it before the repair would freeze the trees' defects into regenerated form, while running it before
