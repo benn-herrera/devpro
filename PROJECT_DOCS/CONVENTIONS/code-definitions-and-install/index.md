@@ -26,7 +26,7 @@ Contents:
 - [A devtools tool joins the tests](a-devtools-tool-joins-the-tests.md)
 - [A lint recipe is read-only](a-lint-recipe-is-read-only.md)
 - [Shell in this repository is bash](shell-in-this-repository-is-bash.md)
-- [A harness resource's floor is behavioral](a-harness-resource-s-floor-is-behavioral.md)
+- [A harness resource's version claims testing](a-harness-resource-s-version-claims-testing.md)
 - [A hook contract is read, not assumed](a-hook-contract-is-read-not-assumed.md)
 - [A sentence two harness resources carry is one text](a-sentence-two-resources-carry-is-one-text.md)
 - [A host version is checked against the host's declarations](a-host-version-is-checked-against-the-host-s-declarations.md)
