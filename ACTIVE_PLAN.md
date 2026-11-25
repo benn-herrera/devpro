@@ -75,7 +75,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | B1 | drafted | expert | `devpro:prompt-engineer` | restore the dicing-and-checks index preamble and the `--split-level` contract |
 | B2 | drafted | expert | `devpro:prompt-engineer` | the anchor retarget class: every link lands on the leaf whose text it names |
 | B3 | drafted | expert | `devpro:python-coder` | the tool: one classifier, honest faults, no dead code |
-| B4 | drafted | expert | `devpro:prompt-engineer` | single-home the model rules, and the corpus's missing shapes |
+| B4 | drafted | expert | `devpro:architect` | single-home the model rules, and the corpus's missing shapes — first act: R2's decision |
 | B5 | drafted | expert | `devpro:prompt-engineer` | the contract gaps the run named |
 
 ## P1 — the dicer writes every section's heading ladder re-based to an H1 top
@@ -640,65 +640,129 @@ Drafts the items below from `ACTIVE_PLAN_REVIEW.md`.
 
 Fixes R1. Agent `devpro:prompt-engineer`.
 
-**Scope.** `PROJECT_DOCS/SPEC/dicing-and-checks/index.md`; `PROJECT_DOCS/SPEC/dicing/cli.py`-facing
-wording wherever the split-level contract is restated.
+**Scope.** `PROJECT_DOCS/SPEC/dicing-and-checks/index.md`; `the-diced-tree/the-head-files.md:6`;
+the leaves whose citations resolve to `devpro/dicing/cli.py:24-33`'s contract — `dice.md:3-5`,
+`undice.md:3-4`; `devpro/dicing/cli.py` (no change expected; listed so a coder edit is not made
+silently from a writer's item).
 
-**Guidance.** Restore the preamble's content from `git show f08a3d7^:PROJECT_DOCS/SPEC/dicing-and-checks/index.md`:
-the usage-error definition, Streams, Current directory, Text, and the `--split-level` contract
-(values 2/3/4, default 4, usage-error on an out-of-range value). Re-state the contract to the code's
-current behavior (`dicing/cli.py:24-33`). The seven `[shared behaviors]` citations resolve again;
-verify with `git grep -n 'shared behaviors' PROJECT_DOCS/SPEC` and a check-links run.
+**Facts.**
+
+- `git show f08a3d7^:PROJECT_DOCS/SPEC/dicing-and-checks/index.md` prints the source: a `## Dicing
+  and Checks` heading, the Contents block, then **five** paragraphs with no headings — the
+  usage-error definition; `**Streams.**`; `**Current directory.**`; `**Text.**`; `**Split level.**`
+  — four bold run-ins, no `#streams` or `#split-level` anchor anywhere in the file.
+- The code's contract: `.venv/bin/python -m devpro dice --help` → `--split-level {2,3,4}`, deepest
+  heading level that splits into sections (default 4); an out-of-range value exits 2 with argparse's
+  `invalid choice`. `devpro/dicing/cli.py:24-33` is the function that sets the choices, default and
+  help string.
+- The seven citations: `git grep -n 'shared behaviors' PROJECT_DOCS/SPEC` → 7 sites, all linking
+  `dicing-and-checks/index.md#dicing-and-checks`. One of them, `the-head-files.md:6`, claims the
+  shared behaviors "names the module that holds them"; no module SPEC names holds it.
+
+**Guidance.**
+
+1. **The restore, in place.** In `dicing-and-checks/index.md`, below the Contents block (a section
+   index legitimately holds its section's text), write the five paragraphs as `##` sections with
+   "Shared behaviors" as their heading, then the four bold run-ins as they stand; rewrite the
+   `## Split level` link to `the-diced-tree/which-headings-split.md` — its slug is
+   `#which-headings-split`. The restored anchor is `#shared-behaviors`, not `#dicing-and-checks`;
+   the seven sites' fragments change too — state each: `#shared-behaviors`.
+2. **Live in the head, not in a leaf.** The preamble is the volume's own text and is restored there;
+   no leaf is cut for it — the index's H1 must be the volume's title (`# Dicing and Checks`), and
+   `the-head-files.md:6`'s claim about a module is deleted.
+3. **The split-level contract.** Keep `## Split level` in the index as the source restored it;
+   re-state the contract to the code's current behavior: values `2`, `3`, `4`; default `4`; any other
+   value a usage error. This is what the code does; do not invent a different message.
+4. **The seven sites.** Re-point all seven to `#shared-behaviors`. `the-head-files.md:6`'s
+   parenthetical is deleted (B2 owns that file's other line).
+5. **The check.** `git grep -n 'shared behaviors' PROJECT_DOCS/SPEC` shows the seven sites, each
+   fragment `#shared-behaviors`; `git grep -n '#streams\|#split-level\|#shared-behaviors'
+   PROJECT_DOCS/SPEC` shows the anchors the index now carries and every site that names them.
+   `just dev-check-links` exits 0.
 
 **Done-line.** `just dev-check-links`.
 
-### B2 — the anchor retarget class: every link lands on the leaf whose text it names
+### B2 — every link lands on the leaf whose text it names
 
 Fixes R5, R8. Agent `devpro:prompt-engineer`.
 
-**Scope.** The 62 volume-H1 citations (`index.md#dicing-and-checks`), the 28 `../reassembly.md`
-verb links, `limits.md`'s fragment opening, `kanban/index.md`'s absorbed orientation text and its
-`(Start, above)` cross-file referent, `check-design.md:9`'s dangling `(below:`, and
-`[link checks](reassembly.md)`/`[dice](dice.md)` referents — all under `PROJECT_DOCS/SPEC/dicing/`
-and `PROJECT_DOCS/ARCHITECTURE/`.
+**Scope.** `PROJECT_DOCS/SPEC/dicing-and-checks/` (every leaf holding a site below);
+`PROJECT_DOCS/SPEC/dicing-and-checks/reassembly.md` (its opening sentence names the check it is);
+`PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/the-head-files.md` (the parenthetical whose
+referent is stated in B1's index text).
 
-**Guidance.** Map each citation to the leaf whose heading text the anchor names (the mapping is the
-site-class work of the restructure); where the text was cut in the restructure, B1's restored
-preamble is the target. `check-links` passes on a wrong-leaf anchor — the check here is manual
-verification of each retarget's referent, listed in the commit body.
+**Facts.**
 
-**Done-line.** `just dev-check-links`.
+- The sites are the output of two commands. `git grep -n 'index\.md#dicing-and-checks'
+  PROJECT_DOCS/SPEC` → 59 sites: 10 `[file names and layout]`, 7 `[shared behaviors]`, 7
+  `[link targets]`, 6 `[file content]`, 5 `[link rewriting]`, 4 `[the diced tree]`, 4
+  `[section references]`, 4 `[anchors]`, 2 `[which headings split]`, 2 `[what is a link]`, 2
+  `[the model]`, 2 `[the board]`, 1 `[the project's files]`, 1 `[moves between Roadmap and Design]`,
+  1 `[misplaced section]`, 2 `[board's]`. `git grep -n '(\.\./reassembly\.md)' PROJECT_DOCS/SPEC` →
+  28 sites: 8 `[check-plan]`, 8 `[check-roadmap]`, 7 `[check-design]`, 4 `[check-tree]`, 1
+  `[check-links]`. `devpro check-links PROJECT_DOCS *.md` → `links checked: 420, broken: 0`, so none
+  of the 87 is a broken link.
+- Every one of the 87 is a retarget. The 7 `[shared behaviors]` sites land on the preamble B1
+  restores, at `#shared-behaviors`; each of the other 80 lands on the leaf whose H1 is its link
+  text — except `[misplaced section]` and the two `[board's]`, whose referent is
+  `dicing-and-checks/index.md` and which stay as they stand. The 77 that land on the volume today
+  are the class `check-links` cannot see.
+- **B1 lands before this item**; until `dicing-and-checks/index.md` holds the preamble again, the
+  seven `[shared behaviors]` sites have no target and are left as they stand.
+
+**Guidance.**
+
+1. Retarget the 87 sites by the mapping above; each retarget's referent is the leaf whose heading
+   text the link names — verify by reading the target's H1 (`head -1`), and state the count of
+   sites whose anchor is not their target's H1 in the commit body.
+2. Pin the class with a test in `tests/dicing/` that reads the tree and asserts the list is empty,
+   printing the same list before the fix (the red state). `check-links` cannot settle it, and a
+   commit-body list does not.
+
+**Done-line.** `just test-changed`, then `just lint`, then `just dev-check-links`, then the test,
+whose output states the count — zero after the fix.
 
 ### B3 — the tool: one classifier, honest faults, no dead code
 
-Fixes R3, R4, R6, R7, R10, R11, R12. Agent `devpro:python-coder`.
+Fixes R3, R4, R6, R7, R10, R11, R12, R18's code half. Agent `devpro:python-coder`.
 
-**Scope.** `devpro/dicing/split.py` (`write_tree`'s unrebased report); `devpro/dicing/treecheck.py`
-and `dicedoc.py` (the single volume/section classifier); `devpro/dicing/linkrewrite.py`;
-`tests/dicing/`.
+**Scope.** `devpro/dicing/split.py` (`write_tree`, `_fits`);
+`devpro/dicing/treecheck.py` (`_misplaced_head`);
+`devpro/dicing/dicedoc.py` (`_volume_documents`, `_placed_level`, the `add` closure in `_walk`,
+the title-less-volume refusal); `devpro/dicing/linkrewrite.py`; `_top_is_rebased`'s rename
+(`reassemble.py:29`, touching `dicedoc.py` and `split.py`); `tests/dicing/` (the corpus cases and
+any unit test pinning the four functions).
 
-**Guidance.** Per R3/R12, one classifier answers "is this directory a volume or a section" and both
-readers call it. Per R4, the unrebased report names the offending heading (file, line, level) and
-lists every offender in the section. Per R6, `_placed_level` clamps to the model's rule. Per R7,
-`check_reassembly` does not compare declared-unrebased sections. Per R10, delete the dead `add`
-closure and duplicate logic. Per R11, a title-less volume refuses with a named fault, never writes
-`- [](...)`. Each fix lands with its corpus case red-before-green.
+**Guidance.** Each fix lands with its corpus case red before the fix, per
+`clauses.TEST_PRECONDITION`; the defect and case, one per fix:
+R3 — one stray prose link to `x/entry-point.md` in a root head flips `check-tree` on a valid
+one-document tree; case: that tree, `problems: 0`. R4 — a `--split-level 2` document whose leaf
+holds `###### Heading` names the section's first line; case: `dice-heading-too-deep`, `names` holds
+the offending line and level. R6 — `_placed_level('a/b/c/d/e/f.md')` is 7; case: the unit test
+returns `None`. R7 — `dice` of a document with an unrebased section prints the writer's line and no
+`reassemble: first difference` line; case: `names` asserts the absence. R10 —
+`grep -c 'def add' devpro/dicing/dicedoc.py` → 1 and `visit` calls it. R11 — a title-less document
+dices to exit 2, `volume b: no opening level-1 heading`, nothing written. R12 — it is R3.
 
-**Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
-commit, as P1 states.
+**Done-line.** `just test-changed`, then `just lint`; `just dev-check-links` once B1 lands. The
+checkpoint gate runs once before the commit, as P1 states.
 
 ### B4 — single-home the model rules, and the corpus's missing shapes
 
-Fixes R2, R9, R13, R14, R15, R17, R18. Agent `devpro:prompt-engineer`.
+Fixes R2, R9, R13, R14, R15, R17. Agent `devpro:architect` — R2 is a decision, and this seat owns it.
 
-**Scope.** `PROJECT_DOCS/SPEC/dicing/{check-tree,the-model-the-diced-tree,link-rewriting}.md`;
-`devpro/dicing/` where R18's notes live; `tests/dicing/` corpus cases.
+**Scope.** `PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/the-model.md`;
+`PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/file-content.md`;
+`PROJECT_DOCS/SPEC/dicing-and-checks/check-tree.md`;
+`PROJECT_DOCS/SPEC/dicing-and-checks/link-rewriting/link-targets.md`;
+`PROJECT_DOCS/SPEC/dicing-and-checks/undice.md` (R9's restore half, R14's tree statement).
 
-**Guidance.** One rule, one home: `the-diced-tree/` states the volume/section classification;
-`check-tree.md` references it (R2, R17). `link-rewriting.md` states the cross-document link rule
-(R9). Corpus cases: a level-1 heading inside a section (R13), a one-document tree with root-level
-leaves (R14 — after the SPEC decision the review's R14 records), `_fits`/level-5-6 (R15). R18's
-notes: delete `_fits`'s restated arithmetic, route `_volumes` through `heads.py`, delete the dead
-`Volume.document_dir`, rename `_top_is_rebased` or export it.
+**Guidance.** R2's decision is taken before any other entry here, and is this seat's: which of
+`the-model.md`'s `SPEC/` clause and `check-tree.md`'s example list is the contract; this item's
+executor writes the model's sentence and reduces `check-tree.md` to a reference. R14's tree
+statement lands in `the-model.md`, beside R2's sentence. `link-rewriting.md` states the
+cross-document link rule (R9) and `link-targets.md`'s rule 3 is amended. The corpus cases (R13, R14,
+R15) wait on R2's decision; R18's `_top_is_rebased` rename is B3's.
 
 **Done-line.** `just test-changed`, then `just lint`, then `just dev-check-links`.
 
@@ -706,14 +770,25 @@ notes: delete `_fits`'s restated arithmetic, route `_volumes` through `heads.py`
 
 Fixes G1, G2, G4, G5 and the re-based/rebased spelling. Agent `devpro:prompt-engineer`.
 
-**Scope.** `PROJECT_DOCS/CONVENTIONS/planning-and-execution/`; `devpro/definitions/skills/development.py`
-(Verification evidence paragraph); the SPEC dicing leaves' spelling.
+**Scope.** `PROJECT_DOCS/CONVENTIONS/planning-and-execution/` (`the-gates.md` or
+`evidence-commands-run-before-they-ship.md` for G5 — the item names one);
+`CONVENTIONS/planning-and-execution/index.md` (each new leaf's Contents line);
+`devpro/definitions/skills/development.py` (*Verification evidence*, for G5's sentence; G2's probe
+line); `devpro/clauses.py` (`PE_LEAD`'s section, for G4 — it renders into every coder definition);
+`PROJECT_DOCS/SPEC/dicing-and-checks/` (the `re-based`/`rebased` spelling sites:
+`git grep -n 're-based\|rebased' PROJECT_DOCS/SPEC`).
 
 **Guidance.** G1: a format change that narrows the expressible set names the inputs that no longer
-fit, and the tool refuses them by name. G2: a probe re-imports through `PYTHONPATH=. .venv/bin/python`
-or a fresh process after touching source. G4: where two commits' halves share a call graph such that
-either alone leaves the gate red, the split is a Blocker naming the shared definitions. G5: a
-verification entry lists the artifacts the run produced, by path. Spelling: pick one of
-re-based/rebased across the SPEC dicing leaves.
+fit, and the tool refuses them by name — the leaf cites R11 as its worked instance, and its home is
+`planning-and-execution/` because the review proposed it there. G4: where two commits' halves share
+a call graph such that either alone leaves the gate red, the split is a Blocker naming the shared
+definitions — one edit in `clauses.py`'s `PE_LEAD` section reaches every coder definition; the
+worked instance is the P4b/P4c merge (`313f95d`, `c9b4cd0`: "P4c merges into P4b — the halves share
+one call graph"). G5: a verification entry lists the artifacts the run produced, by path. G2's
+probe line states which interpreter the rule means, scoped to this repository's checkout. Spelling:
+pick one of re-based/rebased across the SPEC dicing leaves. G3 — a section directory's name must
+equal its heading's slug — lands in the `devpro-docdicer` skill's tree conventions
+(`devpro/definitions/skills/docdicer.py`), beside the two-pattern model; B4's restructure is the
+worked instance.
 
 **Done-line.** `just dev-check-links`.
