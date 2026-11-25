@@ -18,14 +18,17 @@ it measures — it brackets the tool's execution, and a background dispatch's ex
 firing. The capture is what presents that window as the dispatch's duration, and that is the
 defect.
 
-The ticket is the capture watching what completes: a background dispatch's call opens on the
-launch acknowledgment `execute.after` already receives and closes on the terminal
-`session.execution.*` event — `succeeded`, `failed`, or `interrupted` — naming the child's session
-id. The parent's inbox delivery is not the marker: an agent that purposefully or erroneously sends
-no work back still terminates, and termination is the event's guarantee, delivery's is not.
-Foreground calls, which no child session carries, keep the hook pair. Under the claude harness the
-same dispatch's Task-tool duration already covers the subagent's run, so the fix is also what makes
-the two harnesses' records compare.
+The ticket is the capture watching the window itself: a background dispatch's call opens on the
+launch acknowledgment `execute.after` already receives — the dispatch's intent — and on the child's
+own opening events, `session.agent.selected` and `session.model.selected`, which carry the
+actualized run: the agent actually running and the model actually selected, where the dispatch side
+names only what was asked for. The records' `child_agent_type` reads null today for exactly this
+reason. The call closes on the terminal `session.execution.*` event — `succeeded`, `failed`, or
+`interrupted` — naming the child's session id. The parent's inbox delivery is not the marker: an
+agent that purposefully or erroneously sends no work back still terminates, and termination is the
+event's guarantee, delivery's is not. Foreground calls, which no child session carries, keep the
+hook pair. Under the claude harness the same dispatch's Task-tool duration already covers the
+subagent's run, so the fix is also what makes the two harnesses' records compare.
 
 ## Features
 
