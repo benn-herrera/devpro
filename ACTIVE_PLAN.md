@@ -67,7 +67,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | P1 | landed | expert | `devpro:python-coder` | the dicer writes every section's heading ladder re-based to an H1 top; reassembly and undice restore it |
 | P2 | landed | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
 | P3 | landed | expert | `devpro:prompt-engineer` | CONVENTIONS and ARCHITECTURE round-trip, the head convention corrected; SPEC's residue re-homed to P4 (the tool defect) and P5 (re-dice under the settled model) |
-| P4 | drafted | expert | `devpro:python-coder` | the dicer's two patterns: volumes and broken-out sections; the manifest retires |
+| P4 | in progress | expert | `devpro:python-coder` | the dicer's two patterns: volumes and broken-out sections; the manifest retires |
 | P5 | drafted | expert | `devpro:python-coder` | the three standing trees re-diced under the settled model |
 | P6 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
@@ -297,6 +297,11 @@ reader consults while managing a tree; the SPEC leaves carry the mechanics and s
   collision and exits 2 writing nothing. `undice T/` emits one document per directory carrying
   `entry-point.md`; `index.md`-headed directories never become documents. No nested subvolumes: a
   joining document becomes a top-level volume or is subsumed and loses separate-document identity.
+  A broken-out section round-trips as text without becoming a document: `undice` reads any head
+  directory — an `index.md`-headed section undices to one document, its children folded — and
+  `dice --section` states the identity on the way back, writing the section root's head as
+  `index.md` and re-basing the ladder by the same arithmetic. The flag carries one bit: this
+  document is a section, not a volume.
 - The omnibus's own head carries bounded text: it orients the reader in the content and themes or
   guides navigation, and stays concise — under 100 lines, not counting the volume-listing section.
   Two misuses count even under the bound: specificity that belongs in a leaf, and covering material
@@ -387,6 +392,15 @@ reader consults while managing a tree; the SPEC leaves carry the mechanics and s
    document, while the directory above it that carries `entry-point.md` always is; and two cases for
    the directory collision the model admits: an input whose base name is a section's directory name
    exits 2 writing nothing, and the same for two inputs of one base name.
+6. The section round-trip. `undice` works on any directory with a head file: an `index.md`-headed
+   section undices to one document — its title from the head, its children folded by the same
+   ladder arithmetic as a volume's. `dice --section <md> <out-dir>` writes the output root's head
+   as `index.md` and applies the inverse shift — the flag states the identity the head name
+   records, so the demotion is declared, never inferred. The round trip is byte-checkable:
+   `dice --section` of an undiced section reproduces the original directory. Tests, per
+   `clauses.TEST_PRECONDITION` (defect: a section cannot be revised whole — the writer's own form
+   strands it): `undice` of a section directory, then `dice --section` of the result, byte-equal
+   tree.
 
 **Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
 commit, as P1 states.
