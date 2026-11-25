@@ -693,31 +693,39 @@ referent is stated in B1's index text).
 
 **Facts.**
 
-- The sites are the output of two commands. `git grep -n 'index\.md#dicing-and-checks'
-  PROJECT_DOCS/SPEC` → 59 sites: 10 `[file names and layout]`, 7 `[shared behaviors]`, 7
-  `[link targets]`, 6 `[file content]`, 5 `[link rewriting]`, 4 `[the diced tree]`, 4
-  `[section references]`, 4 `[anchors]`, 2 `[which headings split]`, 2 `[what is a link]`, 2
-  `[the model]`, 2 `[the board]`, 1 `[the project's files]`, 1 `[moves between Roadmap and Design]`,
-  1 `[misplaced section]`, 2 `[board's]`. `git grep -n '(\.\./reassembly\.md)' PROJECT_DOCS/SPEC` →
-  28 sites: 8 `[check-plan]`, 8 `[check-roadmap]`, 7 `[check-design]`, 4 `[check-tree]`, 1
-  `[check-links]`. `devpro check-links PROJECT_DOCS *.md` → `links checked: 420, broken: 0`, so none
-  of the 87 is a broken link.
-- Every one of the 87 is a retarget. The 7 `[shared behaviors]` sites land on the preamble B1
-  restores, at `#shared-behaviors`; each of the other 80 lands on the leaf whose H1 is its link
-  text — except `[misplaced section]` and the two `[board's]`, whose referent is
-  `dicing-and-checks/index.md` and which stay as they stand. The 77 that land on the volume today
-  are the class `check-links` cannot see.
-- **B1 lands before this item**; until `dicing-and-checks/index.md` holds the preamble again, the
-  seven `[shared behaviors]` sites have no target and are left as they stand.
+- The sites are the output of two commands, re-run against the tree as it stands, counting
+  occurrences (`git grep -o`, not `-c`: a line can carry two sites): `git grep -o
+  'index\.md#dicing-and-checks' PROJECT_DOCS/SPEC` and `git grep -o '(\.\./reassembly\.md)'
+  PROJECT_DOCS/SPEC`. Measured at `5dba56b` the classes were 59 and 28; B1 then moved the seven
+  `[shared behaviors]` fragments to `#shared-behaviors`, so the volume-anchor class now counts 52
+  (verified at `ece8977`) and the pair 80. A first attempt to reconcile read 52 as a mismatch; the
+  arithmetic above is the reconciliation. `.devpro-temp/p5-spec-links.py` is P5-era scratch,
+  pre-restructure, superseded — not this item's mapping. `devpro check-links PROJECT_DOCS *.md` →
+  `links checked: 420, broken: 0`, so none is a broken link.
+- Every one of the 80 is a candidate. The seven `[shared behaviors]` sites are B1's, at
+  `#shared-behaviors`, and are out of this item's scope. The criterion is the **link text**: each
+  retarget lands on the leaf whose H1 is its link text — `[file names and layout]` lands on
+  `the-diced-tree/file-names-and-layout.md` — not the fragment, which named the volume's head by
+  design; that volume-head reading is the defect R5 records, not a legitimate state. Three sites
+  stay as they stand: `[misplaced section]` and the two `[board's]`, whose referent is
+  `dicing-and-checks/index.md` itself. So 77 retargets. The 77 are the class `check-links` cannot
+  see.
+- **B1 is landed** (`9062292`); the preamble is in place.
 
 **Guidance.**
 
-1. Retarget the 87 sites by the mapping above; each retarget's referent is the leaf whose heading
-   text the link names — verify by reading the target's H1 (`head -1`), and state the count of
-   sites whose anchor is not their target's H1 in the commit body.
-2. Pin the class with a test in `tests/dicing/` that reads the tree and asserts the list is empty,
-   printing the same list before the fix (the red state). `check-links` cannot settle it, and a
-   commit-body list does not.
+1. Retarget the 77 sites by the mapping above; each retarget's referent is the leaf whose heading
+   text the link names — verify by reading the target's H1 (`head -1`), and state in the commit body
+   the count of sites retargeted and the three left standing.
+2. Pin the class with a test in `tests/dicing/` whose predicate is the link **text**: a citation
+   whose link text is (a normalized match for) a leaf's H1 in the same tree must target that leaf's
+   file, with the three standing sites enumerated as exceptions. The fragment is not the predicate —
+   the volume-head fragments are the defect's shape, and a fragment-based test asserts the wrong
+   rule. The test reads the tree, prints each offending site as `<file>:<line>: <target> -> <the
+   leaf its text names>` and asserts the list empty, printing the same list before the fix (the red
+   state). Establish the red state with a probe written to `.devpro-temp/` through the write tool
+   and run from disk, two consecutive runs returning the identical list; a probe whose runs disagree
+   is a finding to report, not a loop to push through.
 
 **Done-line.** `just test-changed`, then `just lint`, then `just dev-check-links`, then the test,
 whose output states the count — zero after the fix.
