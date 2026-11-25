@@ -44,7 +44,7 @@ from urllib.parse import unquote, urlsplit
 
 from devpro import __version__
 from devpro.profiler import pages
-from devpro.profiler.pages import PAGE_PREFIX, PROFILER_PATH, dispatcher_of, read_sessions
+from devpro.profiler.pages import PAGE_PREFIX, PROFILER_PATH, Dispatcher, dispatcher_of, read_sessions
 from devpro.profiler.values import git_root
 
 from ..errors import InputError
@@ -71,7 +71,7 @@ _REFUSED_HOST = '{"error": "requests must name the host the dashboard is served 
 _NO_SUCH_PAGE = "No such page"
 
 
-def profiler_page(session: dict, *, return_to: str | None, dispatcher: tuple[str, str, str | None] | None) -> str:
+def profiler_page(session: dict, *, return_to: str | None, dispatcher: Dispatcher | None) -> str:
     """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
     frame band, the decoration's script, the shared layer linked — assembled by `page_for`, this
     module adding the band's per-page facts, the way back and the dispatcher its lookup names."""

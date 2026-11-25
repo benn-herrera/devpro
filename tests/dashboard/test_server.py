@@ -642,6 +642,48 @@ def test_the_indexs_row_links_and_the_session_pages_way_back_carry_the_query(tmp
     assert "back.href = back.pathname + location.search" in page
 
 
+def test_a_child_page_names_its_root_for_the_call_that_dispatched_it(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a child page whose root is labelled `main` in hue 0
+    — before the change, `page/s-one`'s `contexts[0]` is `main`, hue 0.
+
+    A dispatched session's page names its own root context, its id still `main`, for the dispatching
+    call's agent with the set's prefix dropped, and colors it in the hue that call opened its context
+    in on the dispatcher's page: `s-one` was dispatched by `devpro-coder`, whose context on
+    `s-parent`'s page is fresh and takes hue 1, so `s-one`'s root is `coder` in hue 2 — 1 skipped, the
+    root's own. A page nothing dispatched keeps `main` in hue 0. A root reading `main` on a child's
+    page is the page naming the conversation rather than the agent it is the work of."""
+    root = project(tmp_path / "proj", {})
+    for session in ("s-one", "s-other"):
+        store(
+            root,
+            session,
+            [_tool_call(session, "2026-01-01T00:00:05.000Z", "ls") | {"harness": "opencode"}],
+            directory=".profiler-opencode",
+        )
+    store(
+        root,
+        "s-parent",
+        [
+            record("2026-01-01T00:00:00.000Z", tool="Agent", name="devpro-architect", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "s-other"},
+            record("2026-01-01T00:00:01.000Z", tool="Agent", name="devpro-coder", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "s-one"},
+        ],
+        directory=".profiler-opencode",
+    )
+    served = serve(root)
+
+    def contexts_of_page(session: str) -> list[dict]:
+        page = served.get(f"page/{session}")[2].decode("utf-8")
+        return json.loads(page.split("const D = ", 1)[1].split(";\n", 1)[0])["contexts"]
+
+    child_root = contexts_of_page("s-one")[0]
+    dispatcher_root = contexts_of_page("s-parent")[0]
+
+    assert (child_root["id"], child_root["label"], child_root["hue"]) == ("main", "coder", 2)
+    assert (dispatcher_root["id"], dispatcher_root["label"], dispatcher_root["hue"]) == ("main", "main", 0)
+
+
 def test_the_agents_cell_reads_the_count_as_agents(tmp_path: Path, serve) -> None:
     """`clauses.TEST_PRECONDITION`: the defect is the cell reading `1 dispatched agent` under a
     `dispatched agents` column head — the head names the column, so the cell repeating it spends a

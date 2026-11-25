@@ -38,7 +38,7 @@ Implements [ACTIVE_DESIGN.md](ACTIVE_DESIGN.md): its [SPEC delta](ACTIVE_DESIGN.
 | P2 | landed | expert: re-rated after three step-down dispatches went idle without completing or reporting | `devpro:python-coder` | every presented moment local; the header line's one separator |
 | P3 | landed | expert | `devpro:web-app-expert` | index: no legend, narrower agents column, one-line first-to-last, no child lead-in |
 | P4 | landed | expert | `devpro:web-app-expert` | main context in devpro's accent; palette clear of it; opencode's dot |
-| P5 | dispatchable | expert | `devpro:python-coder` | a child page names its root for the dispatching agent, in that call's hue |
+| P5 | landed | expert | `devpro:python-coder` | a child page names its root for the dispatching agent, in that call's hue |
 | P6 | dispatchable | expert | `devpro:python-coder` | claude and opencode calls record their model; index and page show it |
 | P7 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |

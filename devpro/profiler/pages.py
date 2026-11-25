@@ -16,6 +16,7 @@ import math
 import re
 from importlib.resources import files
 from pathlib import Path
+from typing import NamedTuple
 from urllib.parse import quote
 
 from .capture import fill_context_tokens, spent_tokens, transcript_files
@@ -287,14 +288,16 @@ def short_id(identifier: str) -> str:
     return MAIN if identifier == MAIN else identifier[:CONTEXT_WIDTH]
 
 
-def contexts_of(records: list[dict]) -> tuple[list[dict], list[dict]]:
+def contexts_of(records: list[dict], *, root_label: str = MAIN, root_hue: int = 0) -> tuple[list[dict], list[dict]]:
     """The trace's contexts and markers.
 
     A context is one conversation history: main, or a subagent started by a forked Skill or an Agent
     call. Inline skills and compactions are markers in one. A `fork` subagent starts with a copy of its
-    parent's history; every other subagent starts with its prompt only."""
+    parent's history; every other subagent starts with its prompt only. The root keeps the id `main`,
+    and takes the label and hue a child's page names it by — the call that dispatched the session,
+    in the color that call's own context wears on its dispatcher's page."""
     calls = unique_calls(records)
-    contexts: list[dict] = [{"id": MAIN, "parent": None, "kind": "root", "label": MAIN}]
+    contexts: list[dict] = [{"id": MAIN, "parent": None, "kind": "root", "label": root_label}]
     known = {MAIN}
     for record in calls:
         child = record.get("child_agent_id")
@@ -334,15 +337,18 @@ def contexts_of(records: list[dict]) -> tuple[list[dict], list[dict]]:
     # contexts it starts. Unrecorded parents go last.
     contexts[1:] = sorted(contexts[1:], key=lambda context: context.get("start", math.inf))
 
-    # Color follows history: a copy keeps its parent's hue, a fresh context gets the next one.
+    # Color follows history: a copy keeps its parent's hue, a fresh context gets the next one — never
+    # the root's, which a page's root holds whether or not a fresh context counted past it.
     hues: dict[str, int] = {}
-    next_hue = 0
+    next_hue = 1
     for context in contexts:
-        if context["kind"] == "copy" and context.get("parent") in hues:
+        if context["id"] == MAIN:
+            context["hue"] = root_hue
+        elif context["kind"] == "copy" and context.get("parent") in hues:
             context["hue"] = hues[context["parent"]]
         else:
-            context["hue"] = next_hue
-            next_hue += 1
+            context["hue"] = max(next_hue, 1)
+            next_hue = context["hue"] + 1
         hues[context["id"]] = context["hue"]
 
     markers = [
@@ -599,11 +605,18 @@ def render_tree(records: list[dict], *, verbose: bool = False, color: bool = Fal
     return "\n".join([tree_header()] + [format_line(node, depth, **options) for node, depth in shown])
 
 
-def session_data(session: dict) -> dict:
+def session_data(session: dict, *, dispatcher: "Dispatcher | None" = None) -> dict:
     """The page data `view.html` inlines at its data mark: the session's calls as the file flow
-    draws them, one source for the standalone render and the served page alike."""
+    draws them, one source for the standalone render and the served page alike.
+
+    A dispatched session's root context — its id still `main` — is named and colored by the call
+    `dispatcher` names, in the hue that call's own context wears on its dispatcher's page."""
     calls = unique_calls(fill_context_tokens(session["records"]))
-    contexts, markers = contexts_of(session["records"])
+    contexts, markers = contexts_of(
+        session["records"],
+        root_label=(rendered_name(dispatcher.name, dispatcher.tool) or MAIN) if dispatcher else MAIN,
+        root_hue=dispatcher.hue if dispatcher else 0,
+    )
     spend = _context_spend(session["records"])
     return {
         "session": session["id"],
@@ -637,14 +650,14 @@ def session_data(session: dict) -> dict:
     }
 
 
-def _inlined_session_data(session: dict) -> str:
+def _inlined_session_data(session: dict, *, dispatcher: "Dispatcher | None") -> str:
     """`session_data` as the JSON a page's script inlines: `<` escaped so tool output cannot close the
     script tag, and `/` escaped so it cannot spell a fill's mark — `/*DATA*/null` among them, which
     the strict fill refuses in a value."""
-    return _json(session_data(session)).replace("<", "\\u003c").replace("/", "\\/")
+    return _json(session_data(session, dispatcher=dispatcher)).replace("<", "\\u003c").replace("/", "\\/")
 
 
-def _rendering(session: dict, *, dispatcher: tuple[str, str, str | None] | None, return_to: str | None) -> str:
+def _rendering(session: dict, *, dispatcher: "Dispatcher | None", return_to: str | None) -> str:
     """The page's one rendering: the template's own text with the session's data, the band's facts and
     the prefix line filled, the layer's mark left standing for its carrier's fill — `render_html`
     inlines the layer's text, a file being unable to link a server's origin, and the serve path fills
@@ -653,14 +666,14 @@ def _rendering(session: dict, *, dispatcher: tuple[str, str, str | None] | None,
     return strict_fill(
         template,
         {
-            DATA_MARK: _inlined_session_data(session),
+            DATA_MARK: _inlined_session_data(session, dispatcher=dispatcher),
             AGENT_PREFIX_MARK: AGENT_PREFIX_LINE,
             **band_fills(dispatcher=dispatcher, return_to=return_to, legend=True),
         },
     )
 
 
-def render_html(session: dict, *, dispatcher: tuple[str, str, str | None] | None) -> str:
+def render_html(session: dict, *, dispatcher: "Dispatcher | None") -> str:
     """One self-contained page: the package's template with the presentation layer, the how-to-read
     legend and the trace inlined, and the frame band's per-page facts the session's stores name — the
     way back to the list, and the dispatcher where one dispatched it — the same facts the served
@@ -818,11 +831,36 @@ def dispatches(sessions: list[dict]) -> dict[str, tuple[str, str, str | None]]:
     return found
 
 
-def dispatcher_of(session: str, sessions: list[dict]) -> tuple[str, str, str | None] | None:
-    """The session that dispatched `session`, the call that did and the tool it ran as, named by the
-    stores' other sessions — the band's per-page fact, the one lookup whoever fills the band runs, so
-    the dump's page and the served page's name the same dispatcher."""
-    return dispatches([other for other in sessions if other["id"] != session]).get(session)
+class Dispatcher(NamedTuple):
+    """A session's dispatcher, as the band and the page's root context read it: the session that
+    dispatched this one, the call that did, the tool it ran as, and the hue that call's context wears
+    on its dispatcher's page."""
+
+    session: str
+    name: str
+    tool: str | None
+    hue: int
+
+
+def dispatcher_of(session: str, sessions: list[dict]) -> "Dispatcher | None":
+    """The session that dispatched `session`, the call that did, the tool it ran as and the hue that
+    call opened its context in — named by the stores' other sessions. The band's per-page fact and
+    the page's root context both read it: the one lookup whoever fills either runs, so the dump's
+    page and the served page name the same dispatcher, and the child's root wears the color the
+    dispatcher's own page draws that context in.
+
+    The child's records name no parent, so the hue is read off the dispatcher's records, through
+    `contexts_of` with hue 0 for its own root: the child's record is the context whose id is the
+    child's session id. Hue 0 where the dispatcher's records hold no such context, which is the
+    root's own color on a page nothing dispatched."""
+    found = dispatches([other for other in sessions if other["id"] != session]).get(session)
+    if not found:
+        return None
+    parent, name, tool = found
+    records = next((other["records"] for other in sessions if other["id"] == parent), [])
+    contexts, _ = contexts_of(records)
+    hue = next((context["hue"] for context in contexts if context["id"] == session), 0)
+    return Dispatcher(parent, name, tool, hue)
 
 
 def traces_feed(directory: Path | str) -> list[dict]:
@@ -911,17 +949,16 @@ def _session_link(identifier: str) -> str:
     return _link(PAGE_PREFIX + quote(identifier), identifier)
 
 
-def dispatcher_html(dispatcher: tuple[str, str, str | None]) -> str:
+def dispatcher_html(dispatcher: Dispatcher) -> str:
     """The frame band's dispatch line: the session that dispatched this page, linked to its page, and
     the call that dispatched it — an Agent call, its record's tool gating the prefix's drop."""
-    session, name, tool = dispatcher
     return (
-        f'<span class="dispatched"><strong>Dispatched by</strong> {_session_link(session)} — '
-        f"{html.escape(rendered_name(name, tool) or '')}</span>"
+        f'<span class="dispatched"><strong>Dispatched by</strong> {_session_link(dispatcher.session)} — '
+        f"{html.escape(rendered_name(dispatcher.name, dispatcher.tool) or '')}</span>"
     )
 
 
-def band_fills(*, dispatcher: tuple[str, str, str | None] | None, return_to: str | None, legend: bool) -> dict[str, str]:
+def band_fills(*, dispatcher: Dispatcher | None, return_to: str | None, legend: bool) -> dict[str, str]:
     """The frame band's per-page fills for the strict fill: the legend from its one home `LEGEND`
     where the page carries one, the dispatch line, and the way back. A fact this page carries none of
     fills its mark empty — the legend on the index, the dispatcher where none dispatched it, and the
@@ -1350,7 +1387,7 @@ def session_for(path: str, directory: Path | str) -> dict | None:
     return next((session for session in sessions if session["id"] == path[len(PAGE_PREFIX) :]), None)
 
 
-def page_for(session: dict, *, return_to: str | None, dispatcher: tuple[str, str, str | None] | None) -> str:
+def page_for(session: dict, *, return_to: str | None, dispatcher: "Dispatcher | None") -> str:
     """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
     frame band with its legend, the decoration's script, the presentation layer linked — the band's
     per-page facts the dashboard's own lookup names, one legend on the page and the script once. The

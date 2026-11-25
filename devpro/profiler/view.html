@@ -94,8 +94,10 @@ const back = document.querySelector('.frame-band a.return');
 if (back) back.href = back.pathname + location.search;
 // The name leads and the kind follows, quieter: review (skill).
 const label = (tool, n) => (shownName(tool, n) ? `${shownName(tool, n)} (${kindWord(tool)})` : kindWord(tool));
-const short = (id) => (id === 'main' ? 'main' : id.slice(0, 6));
 const byId = new Map(D.contexts.map((c) => [c.id, c]));
+// The root keeps the id `main` on every page; its name is the page's to give — read after `byId`, a
+// dispatched session's root being named for the call that dispatched it.
+const short = (id) => (id === 'main' ? byId.get('main').label : id.slice(0, 6));
 const callOf = new Map(D.calls.map((c, i) => [c.child, i]).filter(([child]) => child));
 const order = new Map(D.contexts.map((c, i) => [c.id, i]));
 // Hue 0 is the root context — a page nothing dispatched — and its copies: the accent, its labels in
