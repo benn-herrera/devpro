@@ -5,18 +5,6 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
-### profiler session pages fail to render with a console error
-
-This error occurs for both opencode and claude session records:
-```
-Uncaught TypeError: globalThis.devproFormat is undefined
-    <anonymous> http://127.0.0.1:50617/page/ses_def9b31ecffeL42M3tEb1PWbgf?child-rows=on:74
-    <anonymous> http://127.0.0.1:50617/page/ses_def9b31ecffeL42M3tEb1PWbgf?child-rows=on:475
- ses_def9b31ecffeL42M3tEb1PWbgf:74:42
-    <anonymous> http://127.0.0.1:50617/page/ses_def9b31ecffeL42M3tEb1PWbgf?child-rows=on:74
-    <anonymous> http://127.0.0.1:50617/page/ses_def9b31ecffeL42M3tEb1PWbgf?child-rows=on:475
-```
-
 ### A background dispatch's tool call times the spawn, not the child's run
 
 Under opencode 2.4.1, a backgrounded subagent dispatch is recorded — by the capture's
