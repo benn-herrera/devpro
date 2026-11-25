@@ -1,6 +1,7 @@
 # Limits
 
 Input outside this specification is refused with a message naming what to fix, not accommodated.
+
 Known limits:
 
 - A source's links must be written relative to the current directory
