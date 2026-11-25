@@ -5,6 +5,18 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
+### profiler session pages fail to render with a console error
+
+This error occurs for both opencode and claude session records:
+```
+Uncaught TypeError: globalThis.devproFormat is undefined
+    <anonymous> http://127.0.0.1:50617/page/ses_def9b31ecffeL42M3tEb1PWbgf?child-rows=on:74
+    <anonymous> http://127.0.0.1:50617/page/ses_def9b31ecffeL42M3tEb1PWbgf?child-rows=on:475
+ ses_def9b31ecffeL42M3tEb1PWbgf:74:42
+    <anonymous> http://127.0.0.1:50617/page/ses_def9b31ecffeL42M3tEb1PWbgf?child-rows=on:74
+    <anonymous> http://127.0.0.1:50617/page/ses_def9b31ecffeL42M3tEb1PWbgf?child-rows=on:475
+```
+
 ### A background dispatch's tool call times the spawn, not the child's run
 
 Under opencode 2.4.1, a backgrounded subagent dispatch is recorded — by the capture's
@@ -224,9 +236,9 @@ It does not have tunable initial values for any of the controls. It has a hard d
 'checked' for the initial value of all checkboxes and only appends parameter values when a checkbox
 value is false (again, hard value check)
 
-### Eliminate profiler `repair` verb
+### Eliminate profiler `repair` and `doctor`
 
-This was a one-off for while getting the profiler working and was never intended to persist
+These were one-off tools used while getting the profiler working and was never intended to persist
 as user-facing code we drag behind us and test forever.
 
 ### Git Flow light: publish the rework history
