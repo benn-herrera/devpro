@@ -175,17 +175,6 @@ predicted code, is one possible workaround. Brownfield evaluation overlaps the l
 skill item above, which this would serve rather than absorb. Separate skill or `development` addition
 is undecided.
 
-### Every test over 100ms justifies its existence
-
-The suite's full run is ~57-60s for ~1,700 tests, and the weight has accumulated unexamined. A
-pass where every test whose setup+call+teardown exceeds 100ms justifies its existence, one of four
-verdicts: *earns* (pins a real defect no cheaper test pins, or exercises a real integration no
-fixture can stand in for), *cheapens* (rewritten to a fixture so it drops under threshold),
-*merges* (duplicate coverage with a sibling), or *goes*. Open for the design: whether a `slow`
-marker (the `cold_read` pattern) is a third way for tests that earn their cost but not their place
-in the default run; any target for total full-run wall time. First probe, already in
-`.devpro-temp/weight-durations.txt`: pytest `--durations=100` over the full default run.
-
 ### Legacy project comprehension skill
 
 How a session enters a brownfield project with known and unknown issues, builds familiarity with
@@ -280,6 +269,17 @@ whether the floor's range still needs all three, is what the dispatch answers.
 harnesses' text go unchecked. The sentence check the previous ticket adds raises the stakes:
 overlay text and other harnesses escape at sentence granularity, where a shared sentence is small
 enough to hide inside a paragraph that differs.
+
+### Every test over 100ms justifies its existence
+
+The suite's full run is ~57-60s for ~1,700 tests, and the weight has accumulated unexamined. A
+pass where every test whose setup+call+teardown exceeds 100ms justifies its existence, one of four
+verdicts: *earns* (pins a real defect no cheaper test pins, or exercises a real integration no
+fixture can stand in for), *cheapens* (rewritten to a fixture so it drops under threshold),
+*merges* (duplicate coverage with a sibling), or *goes*. Open for the design: whether a `slow`
+marker (the `cold_read` pattern) is a third way for tests that earn their cost but not their place
+in the default run; any target for total full-run wall time. First probe, already in
+`.devpro-temp/weight-durations.txt`: pytest `--durations=100` over the full default run.
 
 ### Tests exist only with a defect they die on
 
