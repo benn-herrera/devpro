@@ -289,5 +289,6 @@ Three parts:
    interrupt — its own row, closed by one commit — and the package that tripped it does not
    proceed until the row closes. Three verdicts: *axe* (the test checks nothing); *isolate* (it
    checks something, too sensitively — refactor it to depend only on its own subject); *acquit*
-   (it checks something real and the work broke it — the work is the suspect). The report to the
-   owner is not the mechanism; the plan is.
+   (it checks something real and the work broke it — the work is the suspect *or* it was an unavoidable
+   side-effect of the required change and the test needs legitimate rework). A report to the owner
+   is not the mechanism; the updated plan is.
