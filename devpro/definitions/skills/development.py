@@ -356,6 +356,11 @@ approved can run as approved.
   writing the code cannot comply with limits it was never given.
 - Packages that share a build run serially in the shared tree. *Purpose:* one package's half-done
   edit does not fail another's build.
+- When dispatches are concurrent, a package stages and commits only its own paths
+  (`git commit -- <paths>`), never the shared index whole; where the index holds a path another
+  package staged, that path is unstaged before the commit, or the commit waits. *Purpose:* disjoint
+  edits stay disjoint when two agents share a working tree — a commit that reads the whole index
+  either carries another package's work or leaves it behind.
 
 ## Acceptance
 
