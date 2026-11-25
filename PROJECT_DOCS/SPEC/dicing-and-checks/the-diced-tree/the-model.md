@@ -15,7 +15,7 @@ form `dice` writes for one document, and the form of a project document tree suc
 no volume directory: its root's `entry-point.md` holds its document and its sections sit beneath it,
 the top-level ones among them being sections, not misplaced volumes. A volume tree's top-level
 directories are volumes; one opening at `index.md` is a section in a volume's place, and
-[check-tree](../reassembly.md) reports it.
+[check-tree](../check-tree.md#check-tree) reports it.
 
 `undice` reads any directory with a head file, so a broken-out section round-trips as text without
 becoming a document: its `index.md` and its children fold back into the document of the volume above

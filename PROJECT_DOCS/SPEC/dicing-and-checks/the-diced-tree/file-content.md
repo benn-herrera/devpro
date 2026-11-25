@@ -1,7 +1,7 @@
 # File content
 
 Each file holds, in order, exactly the source lines of its section, heading line included, with the
-section's heading ladder re-based and links rewritten ([link rewriting](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)).
+section's heading ladder re-based and links rewritten ([link rewriting](../link-rewriting/index.md#link-rewriting)).
 
 **The heading ladder.** A section's own text opens with its top heading, and every file of the tree
 but a document's own head holds it at level 1, whatever level that heading had in the source: a

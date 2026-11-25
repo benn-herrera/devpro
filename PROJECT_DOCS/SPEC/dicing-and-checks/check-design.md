@@ -24,14 +24,14 @@ layout, category, ticket, old-form item), are used as defined there, with these 
   Each head file is read without its Contents block and what follows it.
 - **H1**: the design's first level-1 heading, as for a plan ([check-plan](../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-plan.md#check-plan)).
 - **delta heading**: a level-2 heading whose text
-  ([file names and layout](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks): after the `#` run, surrounding spaces
+  ([file names and layout](the-diced-tree/file-names-and-layout.md#file-names-and-layout): after the `#` run, surrounding spaces
   removed) is exactly `SPEC delta`, `ARCHITECTURE delta` or `Code delta`; that is their **order**.
   Its **delta** runs to the next heading of level 1 or 2, or the end of the design.
 - **entry**: a ticket ([check-roadmap](../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-roadmap.md#check-roadmap)) inside a delta. A delta with no entries is
   valid.
 - **target**: the file an entry heading's one link names, resolved relative to the file the entry
-  is in ([link rewriting](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)). A heading whose link is empty, opens with `#`, or opens with
-  a scheme ([link targets](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks), step 2) gives no target; a fragment-only link's
+  is in ([link rewriting](link-rewriting/index.md#link-rewriting)). A heading whose link is empty, opens with `#`, or opens with
+  a scheme ([link targets](link-rewriting/link-targets.md#link-targets), step 2) gives no target; a fragment-only link's
   fragment is not resolved here, [check-links](../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-links.md#check-links) doing that. An entry heading that
   carries more than one link gives no target.
 - **pair**: in an entry with a target, an `**As it stands:**` line — outside fenced code, alone on
@@ -88,7 +88,7 @@ breach line is followed on stderr by
 checks read their targets, never write them.
 
 **The design checked.** With `<design>`, that design. Without it, the active design of the project
-root ([check-plan](../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-plan.md#check-plan)), at the path [the project's files](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks)
+root ([check-plan](../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-plan.md#check-plan)), at the path [the project's files](kanban/the-project-s-files.md#the-projects-files)
 gives; where both exist as files, the verb exits 2 before reading either.
 
 **Output.** One stderr line per breach, in the form [check-plan](../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-plan.md#check-plan) gives

@@ -5,8 +5,8 @@ block opens at a line of at least three backticks or tildes (indentation by spac
 backtick fence's info string holds no backtick) and closes at a line of the same character, at
 least as many, followed only by spaces; an unclosed fence runs to the end of the document. No line
 inside fenced code is read as a heading, table, list item or other element of any plan, design,
-layout or roadmap form ([check-plan](../reassembly.md) through
-[check-roadmap](../reassembly.md) read those forms); it is text of the part that holds it,
+layout or roadmap form ([check-plan](../check-plan.md#check-plan) through
+[check-roadmap](../check-roadmap.md#check-roadmap) read those forms); it is text of the part that holds it,
 and its content is never read as a breach of a form.
 
 | Level | Role |

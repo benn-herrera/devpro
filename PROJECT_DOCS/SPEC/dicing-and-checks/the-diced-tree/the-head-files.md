@@ -9,6 +9,6 @@ relies on finding them, and the standing project trees carry the same rule. The 
   `- [<link text>](<path>)`, indented by spaces as [file content](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/file-content.md#file-content) gives them.
 - `check-tree` reads a directory's head as its `entry-point.md` where it has one, else its
   `index.md`; a tree's root must open at `entry-point.md`
-  ([check-tree](../reassembly.md)).
+  ([check-tree](../check-tree.md#check-tree)).
 - `undice` reads a tree's root at whichever of the two it holds, so a broken-out section undices as
-  its own document ([undice](../dice.md)).
+  its own document ([undice](../undice.md#undice)).

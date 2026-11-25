@@ -73,7 +73,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | P6 | landed | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | landed | expert | session | Post-plan burndown drafting |
 | B1 | landed | expert | `devpro:prompt-engineer` | restore the dicing-and-checks index preamble and the `--split-level` contract |
-| B2 | in progress | expert | `devpro:prompt-engineer` | the anchor retarget class: every link lands on the leaf whose text it names |
+| B2 | landed | expert | `devpro:prompt-engineer` | the anchor retarget class: every link lands on the leaf whose text it names |
 | B3 | dispatchable | expert | `devpro:python-coder` | the tool: one classifier, honest faults, no dead code |
 | B4 | dispatchable | expert | `devpro:architect` | single-home the model rules, and the corpus's missing shapes — first act: R2's decision |
 | B5 | dispatchable | expert | `devpro:prompt-engineer` | the contract gaps the run named |
@@ -702,24 +702,30 @@ referent is stated in B1's index text).
   arithmetic above is the reconciliation. `.devpro-temp/p5-spec-links.py` is P5-era scratch,
   pre-restructure, superseded — not this item's mapping. `devpro check-links PROJECT_DOCS *.md` →
   `links checked: 420, broken: 0`, so none is a broken link.
-- Every one of the 80 is a candidate. The seven `[shared behaviors]` sites are B1's, at
-  `#shared-behaviors`, and are out of this item's scope. The criterion is the **link text**: each
-  retarget lands on the leaf whose H1 is its link text — `[file names and layout]` lands on
-  `the-diced-tree/file-names-and-layout.md` — not the fragment, which named the volume's head by
-  design; that volume-head reading is the defect R5 records, not a legitimate state. Three sites
-  stay as they stand: `[misplaced section]` and the two `[board's]`, whose referent is
-  `dicing-and-checks/index.md` itself. So 77 retargets. The 77 are the class `check-links` cannot
-  see.
+- Every one of the 80 is a candidate; the sub-bullets account for each. The seven `[shared behaviors]`
+  sites are B1's, at `#shared-behaviors`, and are out of this item's scope. The criterion is the
+  **link text**: each retarget lands on the leaf whose H1 is its link text — `[file names and
+  layout]` lands on `the-diced-tree/file-names-and-layout.md` — not the fragment, which named the
+  volume's head by design; that volume-head reading is the defect R5 records, not a legitimate
+  state.
+  - Class A's 52 = 48 retargets by the test's predicate + `[the board]`'s 2 (no leaf named, but
+    targets `kanban/index.md`, at `check-roadmap.md:4` and `limits.md:13`) + 2 standing
+    (`[misplaced section]`, `[board's]`, whose referent is `dicing-and-checks/index.md`).
+  - All of class B's 28 are retargets.
+  - The test's link-text predicate also catches two sites neither grep sees:
+    `[undice](dice.md)` at `limits.md:12` and `[undice](../dice.md)` at
+    `the-diced-tree/the-head-files.md:14`, both naming `undice.md`.
+  - So 80 retargets, 2 standing; the test's pre-fix list is its predicate's 48 + 28 + 2 = 78.
 - **B1 is landed** (`9062292`); the preamble is in place.
 
 **Guidance.**
 
-1. Retarget the 77 sites by the mapping above; each retarget's referent is the leaf whose heading
+1. Retarget the sites by the mapping above; each retarget's referent is the leaf whose heading
    text the link names — verify by reading the target's H1 (`head -1`), and state in the commit body
-   the count of sites retargeted and the three left standing.
+   the count of sites retargeted and the two left standing.
 2. Pin the class with a test in `tests/dicing/` whose predicate is the link **text**: a citation
    whose link text is (a normalized match for) a leaf's H1 in the same tree must target that leaf's
-   file, with the three standing sites enumerated as exceptions. The fragment is not the predicate —
+   file, with the two standing sites enumerated as exceptions. The fragment is not the predicate —
    the volume-head fragments are the defect's shape, and a fragment-based test asserts the wrong
    rule. The test reads the tree, prints each offending site as `<file>:<line>: <target> -> <the
    leaf its text names>` and asserts the list empty, printing the same list before the fix (the red

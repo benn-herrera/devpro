@@ -9,4 +9,4 @@ nothing that the page's own state could otherwise hold. The board's only writes 
 ([moves between Roadmap and Design](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/moves-between-roadmap-and-design.md#moves-between-roadmap-and-design)). It does not reorder
 tickets, move a ticket between categories of one document, or edit any ticket's or category's
 text. The project root is found by looking at the file system
-([check-plan](../reassembly.md)).
+([check-plan](../check-plan.md#check-plan)).

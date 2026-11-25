@@ -8,11 +8,11 @@ Landed. Drafted through Landed are the **plan columns**, which are read-only
 |---|---|
 | Roadmap | each category of `ROADMAP.md` as a separator; each ticket of it, one card each; each parked card (**Parked work**, below), and above those the `ROADMAP_DESIGNS` separator |
 | Design | each category of the active design as a separator; each ticket of it, one card each |
-| Drafted | each work package whose State cell opens with `drafted`; a State cell opening with no state word breaches [check-plan](../reassembly.md), and the board draws no card for its package |
+| Drafted | each work package whose State cell opens with `drafted`; a State cell opening with no state word breaches [check-plan](../check-plan.md#check-plan), and the board draws no card for its package |
 | Dispatchable, In progress, Landed | as the Drafted row, for their state words |
 
 **Roadmap cards.** The board reads `ROADMAP.md` in the layout
-([check-roadmap](../reassembly.md)), in document order. A category is not a card: its
+([check-roadmap](../check-roadmap.md#check-roadmap)), in document order. A category is not a card: its
 heading is a **separator** drawn in its place among the cards. Each ticket is a card titled by its
 title over the ticket's text. Lines above the first category, and lines of a category before its
 first ticket, are not shown.
@@ -31,8 +31,8 @@ that separator exist only on the board. A piece of parked work whose link ticket
 and not in Roadmap.
 
 **Design cards.** The board reads the active design in the layout
-([check-roadmap](../reassembly.md)), in document order
-([check-design](../reassembly.md)); in a diced design each heading is read from the file that
+([check-roadmap](../check-roadmap.md#check-roadmap)), in document order
+([check-design](../check-design.md#check-design)); in a diced design each heading is read from the file that
 holds it. A category, a delta among them, is not a card: its heading is a separator drawn in its
 place among the cards. Each ticket is a card titled by its title over the ticket's text; a link
 ticket's ([the project's files](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-project-s-files.md#the-projects-files)) is a link ticket's card (**Card links**). A
@@ -50,21 +50,21 @@ a card added to a collapsed category, by a move
 ([moves between Roadmap and Design](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/moves-between-roadmap-and-design.md#moves-between-roadmap-and-design)) or by an edit, stays hidden
 until the category expands.
 
-**Content outside the layout.** Each breach [check-roadmap](../reassembly.md) reports in
+**Content outside the layout.** Each breach [check-roadmap](../check-roadmap.md#check-roadmap) reports in
 `ROADMAP.md`, and each breach of the layout in the active design, is shown as a notice at the head
 of its document's column, naming its file, as a path from the project root, its line, the text
 found and the form accepted there.
 
 **Work package cards.** A card shows the package's ID, its title, its rating word (`mechanical` or
 `expert`) or that it is unrated, and its lifetime where the status table has a `Lifetime` column,
-matched without regard to case. A package's title is as [check-plan](../reassembly.md) Terms
+matched without regard to case. A package's title is as [check-plan](../check-plan.md#check-plan) Terms
 defines it; an untitled package shows untitled. A plan whose table has no `Rating` column is still
 shown, its packages unrated. Cards in a plan column follow the status table's row order.
 
 **Card links.** Each card other than a parked card links to the file holding its heading, with that
-heading's anchor ([anchors](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#dicing-and-checks), repeats counted over that file) as the fragment: a
+heading's anchor ([anchors](../link-rewriting/anchors.md#anchors), repeats counted over that file) as the fragment: a
 ticket's card to the ticket's heading, a work package's card to the heading its title is read from
-([check-plan](../reassembly.md)). An untitled work package's card links to the file holding its
+([check-plan](../check-plan.md#check-plan)). An untitled work package's card links to the file holding its
 status-table row, with no fragment. A parked card links to each of its piece's files, with no
 fragment; a link ticket's card ([the project's files](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-project-s-files.md#the-projects-files)), besides its heading,
 links each file of the piece of parked work it links, with no fragment. Each link reaches its file

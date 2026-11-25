@@ -14,13 +14,13 @@ board then shows ([the plan columns are read-only](../../../../PROJECT_DOCS/SPEC
 ([the board stores nothing](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-board-stores-nothing.md#the-board-stores-nothing)).
 
 The board reads the files as they are, `ROADMAP.md` in the layout
-[check-roadmap](../reassembly.md) checks, a plan in the form
-[check-plan](../reassembly.md) checks and the active design in the form
-[check-design](../reassembly.md) checks, and shows a document that holds breaches of its form
-all the same. Terms of [check-plan](../reassembly.md) (plan, work package, state, rating,
+[check-roadmap](../check-roadmap.md#check-roadmap) checks, a plan in the form
+[check-plan](../check-plan.md#check-plan) checks and the active design in the form
+[check-design](../check-design.md#check-design) checks, and shows a document that holds breaches of its form
+all the same. Terms of [check-plan](../check-plan.md#check-plan) (plan, work package, state, rating,
 title, status table, release line, project root, active plan), of
-[check-design](../reassembly.md) (design, delta, entry, document order) and of
-[check-roadmap](../reassembly.md) (layout, category, ticket, a ticket's title) are used as
+[check-design](../check-design.md#check-design) (design, delta, entry, document order) and of
+[check-roadmap](../check-roadmap.md#check-roadmap) (layout, category, ticket, a ticket's title) are used as
 defined there.
 
 **Start.** `<project-dir>` names a directory inside the project; without it the project is the one
