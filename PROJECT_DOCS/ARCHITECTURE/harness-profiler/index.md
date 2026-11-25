@@ -1,6 +1,6 @@
 # Harness profiler
 
-Every claude project install ships the activity profiler as payload, not as a companion plugin
+Every claude project install ships the activity profiler as payload
 (SPEC.md, Deployed Surfaces, Shipped files). The profiler is devpro's own port of the harness-profiler
 plugin by Aleksandr Furmanov (MIT, `github.com/afurmanov/harness-profiler`), credited in README.md,
 and carries no version stamp on it.
