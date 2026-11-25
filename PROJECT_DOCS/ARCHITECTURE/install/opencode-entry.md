@@ -5,8 +5,8 @@ Surfaces, Shipped files). It is written for opencode 2.4.1 (floor 2.3.0), and it
 `ctx.session.hook("experimental.idle")` for a session whose `parentID` is set, injecting
 `ctx.session.synthetic` into the parent session at agent dispatch and agent completion, gated by
 the active plan (`ACTIVE_PLAN.md` or the diced `ACTIVE_PLAN/` tree; SPEC, Shipped files). The
-install copies it, with `guardrail.ts` and, on a project install, the capture `profiler.ts` (Install,
-Harness profiler), to the install directory as a harness resource (Renders
+install copies it, with `guardrail.ts` and, on a project install, the capture `profiler.ts` (Harness
+profiler), to the install directory as a harness resource (Renders
 and copies); a user-level install copies the entry alone.
 
 The floor is a behavioral one, not an API one: every API the entry uses exists at 2.2.6, but there
@@ -43,7 +43,7 @@ opencode itself: the tests run the entry under a stub of this surface
   before registering anything or starting the watcher, so a failed guardrail leaves no watcher
   running. A user-level install has no `guardrail.ts`, and none runs.
 - *The capture.* Where `profiler.ts` stands beside it, `setup` awaits that module's `setup` the same
-  way, which registers the activity capture's three hooks (Install, Harness profiler). A user-level
+  way, which registers the activity capture's three hooks (Harness profiler). A user-level
   install ships none, and nothing records.
 - *Registry read.* It parses `registry.json` as the shape the opencode harness renders and validates
   nothing; the renderer is the only writer (Rendering, Harnesses and families). It reads each agent

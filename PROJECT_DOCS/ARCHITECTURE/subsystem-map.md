@@ -77,7 +77,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   plain tree draws the placeholder and marker nodes and the calls whose tool is in `PARENT_TOOLS`.
   The skill runs the profiler through that one wrapper, which dispatches the `profiler` verb and its
   `tree` subcommand
-  (Install, Harness profiler).
+  (Harness profiler).
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
   under every harness. Its board section routes the board to the `docdicer` skill and names no

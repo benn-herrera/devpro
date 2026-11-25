@@ -26,5 +26,4 @@ Contents:
 - [Guardrail hook](guardrail-hook.md)
 - [Guardrail registration](guardrail-registration.md)
 - [Opencode entry](opencode-entry.md)
-- [Harness profiler](harness-profiler.md)
 - [Installing this repository](installing-this-repository.md)
