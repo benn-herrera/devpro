@@ -59,7 +59,7 @@ source and the SPEC.
 | B2 | landed: 09c934a | mechanical | the development skill's reworded sentences: Periodic review, items' identity, re-wrap |
 | B3 | landed: 1f6a905 | mechanical | the guide's walkthrough: reviewer/revision named, steps 4 and 6, re-wrap |
 | B4 | landed: 361c6be | mechanical | the CONVENTIONS lines the run earned: width-prohibition trap, staging practice note |
-| B5 | in progress | mechanical | the staging rule joins the skill's Dispatch section (the design's fourth pair) |
+| B5 | landed: eb5c6ce | mechanical | the staging rule joins the skill's Dispatch section (the design's fourth pair) |
 
 ## Sequencing
 
@@ -290,7 +290,8 @@ only (the *Dispatch* section's staging bullet). Runs after B2: same file.
 - Applied verbatim; the delta check is the witness of the application.
 
 **Done-line.** `just test devpro`, then `just test-changed`, then the delta check:
-`just dev-check-design-deltas-applied` exits 1 with `pairs: 9, landed: 6, pending: 0, drifted: 3`
-— every `pending` line gone; the three `drifted` lines are the pairs B1's title-only improvements
-superseded (the development.py first pair and the two SPEC pairs), named as expected; any other
-`drifted` or `conflicting` line, or any `pending` line, fails the package.
+`just dev-check-design-deltas-applied` exits 1 with `pairs: 9, landed: 2, pending: 0, drifted: 7`
+— the staging pair among the `landed` lines (`pending: 0`); the seven `drifted` lines are the
+pairs B1 (three), B2 (two) and B3 (two) superseded, named in their done-lines; any `pending`
+line, any `conflicting` line, or a `drifted` line naming a file no item reworded, fails the
+package.
