@@ -18,11 +18,14 @@ it measures — it brackets the tool's execution, and a background dispatch's ex
 firing. The capture is what presents that window as the dispatch's duration, and that is the
 defect.
 
-The ticket is the capture doing this right: a background dispatch's duration measured from its
-child session's records — the child's own span — rather than the hook pair, so the profiler's
-pages show minutes of work as minutes. Foreground calls, which no child session carries, keep the
-hook pair. Under the claude harness the same dispatch's Task-tool duration already covers the
-subagent's run, so the compensation is also what makes the two harnesses' records compare.
+The ticket is the capture watching what completes: a background dispatch's call opens on the
+launch acknowledgment `execute.after` already receives and closes on the terminal
+`session.execution.*` event — `succeeded`, `failed`, or `interrupted` — naming the child's session
+id. The parent's inbox delivery is not the marker: an agent that purposefully or erroneously sends
+no work back still terminates, and termination is the event's guarantee, delivery's is not.
+Foreground calls, which no child session carries, keep the hook pair. Under the claude harness the
+same dispatch's Task-tool duration already covers the subagent's run, so the fix is also what makes
+the two harnesses' records compare.
 
 ## Features
 
