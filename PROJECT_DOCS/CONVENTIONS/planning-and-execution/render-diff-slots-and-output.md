@@ -1,4 +1,4 @@
-### `render-diff` slots and output
+# `render-diff` slots and output
 
 `just render-diff [a] [b]` takes its two slots positionally and reports pairs, not spans. Both
 slots are positional parameters with defaults: `just render-diff` compares `reference-claude` against

@@ -1,4 +1,4 @@
-## Agents File
+# Agents File
 
 The agents file is rendered from the agents-file definition
 (`devpro/definitions/harness_agents_file.py`), a definition of the agents-file kind. Its body is

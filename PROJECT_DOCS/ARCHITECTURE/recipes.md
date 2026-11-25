@@ -1,4 +1,4 @@
-## Recipes
+# Recipes
 
 `just agents`, `just render`, `just retake-reference`, `just tag`, `just check-wheel` and
 `just dev-dashboard` reach `python3 -m devpro`; no recipe stands in front of `install` or

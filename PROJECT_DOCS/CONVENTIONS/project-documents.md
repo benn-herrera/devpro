@@ -1,4 +1,4 @@
-## Project Documents
+# Project Documents
 
 SPEC, ARCHITECTURE and CONVENTIONS are trees of small files under `PROJECT_DOCS/`, each section one
 file; THESIS is the one file `PROJECT_DOCS/entry-point.md`, whose `Volumes:` list links them. The

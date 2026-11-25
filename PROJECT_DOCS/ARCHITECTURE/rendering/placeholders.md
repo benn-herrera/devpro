@@ -1,4 +1,4 @@
-### Placeholders
+# Placeholders
 
 Rendering is string formatting with named placeholders: a body's placeholders are filled per
 harness and model family, and the result is written to one file per output path (Install, Renders

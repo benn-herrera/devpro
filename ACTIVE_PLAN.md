@@ -407,6 +407,8 @@ commit, as P1 states.
 
 ## P5 — the three standing trees re-diced under the settled model
 
+**State.** ARCHITECTURE and CONVENTIONS are re-diced and placed: each undiced (`reassemble ok`, CONVENTIONS `dead: 0`, ARCHITECTURE `dead: 3` run-directory links restored by hand to their `HEAD` form) and re-diced from the undice, the fresh tree replacing the old one; each re-diced tree undices again clean. SPEC is repaired but **not** re-diced: its tree passes `check-links` and `check-tree` (193 links `broken: 0`, 21 documents `problems: 0`) but undice exits 1 on a P4 tool defect — `dicedoc._placed_level` (`devpro/dicing/dicedoc.py:352`) raises a section index's child by the child's own heading depth, so a leaf opening `## X` with `###` beneath restores at level 4 while its sibling restores at level 3, and the re-plan then reads the section index as a leaf `dicing-and-checks.md`. Minimal reproduction, 4 files, no SPEC content: `.devpro-temp/p5-repro-tree/`. Reported in `.devpro-temp/p5-spec-finding.md`; not patched. A second P4 defect, `dice` rebasing a monolith's relative links against the run directory rather than the monolith's own directory (`linkrewrite.Linker.written`, `dicedoc.dice`'s `root=run_dir`), adds three `../` segments to every cross-tree link at a depth other than the output root's; reproduced in `.devpro-temp/p5-lk/`, and worked around by hand for ARCHITECTURE's three such links. Both are code (`devpro/dicing/`), outside P5's scope. The package stays `in progress` until both are repaired and SPEC re-dices as Guidance step 1 directs.
+
 **Scope.** `PROJECT_DOCS/SPEC/`, `PROJECT_DOCS/ARCHITECTURE/`, `PROJECT_DOCS/CONVENTIONS/`
 (regenerated whole); the monoliths are work products under `.devpro-temp/`.
 

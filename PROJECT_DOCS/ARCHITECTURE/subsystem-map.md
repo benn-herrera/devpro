@@ -1,4 +1,4 @@
-## Subsystem Map
+# Subsystem Map
 
 Every entry below but the last is rendered from the definition module under `devpro/definitions/`
 named for its output path, or for its group module (Rendering). A shared-text name given

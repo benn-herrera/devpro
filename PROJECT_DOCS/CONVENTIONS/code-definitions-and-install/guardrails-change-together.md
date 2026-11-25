@@ -1,4 +1,4 @@
-### Guardrails change together
+# Guardrails change together
 
 `guardrail.ts` (opencode, installed inside the plugin beside the entry
 `index.ts`, which imports it) and `guardrail.pl` (claude) are to block the same calls, except the one

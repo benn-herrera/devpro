@@ -1,4 +1,4 @@
-### Structural rules
+# Structural rules
 
 The substitution-depth, shared-paragraph and prompt checks fix the properties in SPEC.md, Rendering;
 the clause group check holds its *Kind membership* — every definition of a kind carries the clauses

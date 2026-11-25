@@ -1,4 +1,4 @@
-### Where it goes
+# Where it goes
 
 One module in `devpro/definitions/`, `devpro/definitions/agents/` or `devpro/definitions/skills/`; its
 existence is its enrollment, and nothing imports it by name. A module is registered by existing under

@@ -1,4 +1,4 @@
-### Agents file changes explicitly
+# Agents file changes explicitly
 
 The agents file reaches the operator's global configuration by explicit act, and its content
 changes by explicit act: publishing is a manual edit, never generated. Publish by hand: edit

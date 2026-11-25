@@ -14,13 +14,13 @@ board then shows ([the plan columns are read-only](#the-plan-columns-are-read-on
 ([the board stores nothing](#the-board-stores-nothing)).
 
 The board reads the files as they are, `ROADMAP.md` in the layout
-[check-roadmap](checks.md#check-roadmap) checks, a plan in the form
-[check-plan](checks.md#check-plan) checks and the active design in the form
-[check-design](checks.md#check-design) checks, and shows a document that holds breaches of its form
-all the same. Terms of [check-plan](checks.md#check-plan) (plan, work package, state, rating,
+[check-roadmap](reassembly.md) checks, a plan in the form
+[check-plan](reassembly.md) checks and the active design in the form
+[check-design](reassembly.md) checks, and shows a document that holds breaches of its form
+all the same. Terms of [check-plan](reassembly.md) (plan, work package, state, rating,
 title, status table, release line, project root, active plan), of
-[check-design](checks.md#check-design) (design, delta, entry, document order) and of
-[check-roadmap](checks.md#check-roadmap) (layout, category, ticket, a ticket's title) are used as
+[check-design](reassembly.md) (design, delta, entry, document order) and of
+[check-roadmap](reassembly.md) (layout, category, ticket, a ticket's title) are used as
 defined there.
 
 **Start.** `<project-dir>` names a directory inside the project; without it the project is the one
@@ -56,9 +56,9 @@ Under the project root the files are at fixed paths; nothing relocates them.
 
 | Document | Path |
 |---|---|
-| roadmap tickets ([check-roadmap](checks.md#check-roadmap)) | `ROADMAP.md` |
+| roadmap tickets ([check-roadmap](reassembly.md)) | `ROADMAP.md` |
 | **active design** | `ACTIVE_DESIGN.md`, else `ACTIVE_DESIGN/entry-point.md` |
-| active plan ([check-plan](checks.md#check-plan)) | `ACTIVE_PLAN.md`, else `ACTIVE_PLAN/entry-point.md` |
+| active plan ([check-plan](reassembly.md)) | `ACTIVE_PLAN.md`, else `ACTIVE_PLAN/entry-point.md` |
 | **parked-designs directory** | `ROADMAP_DESIGNS/` |
 | **project-documents directory** (where present) | `PROJECT_DOCS/` |
 
@@ -89,11 +89,11 @@ Landed. Drafted through Landed are the **plan columns**, which are read-only
 |---|---|
 | Roadmap | each category of `ROADMAP.md` as a separator; each ticket of it, one card each; each parked card (**Parked work**, below), and above those the `ROADMAP_DESIGNS` separator |
 | Design | each category of the active design as a separator; each ticket of it, one card each |
-| Drafted | each work package whose State cell opens with `drafted`; a State cell opening with no state word breaches [check-plan](checks.md#check-plan), and the board draws no card for its package |
+| Drafted | each work package whose State cell opens with `drafted`; a State cell opening with no state word breaches [check-plan](reassembly.md), and the board draws no card for its package |
 | Dispatchable, In progress, Landed | as the Drafted row, for their state words |
 
 **Roadmap cards.** The board reads `ROADMAP.md` in the layout
-([check-roadmap](checks.md#check-roadmap)), in document order. A category is not a card: its
+([check-roadmap](reassembly.md)), in document order. A category is not a card: its
 heading is a **separator** drawn in its place among the cards. Each ticket is a card titled by its
 title over the ticket's text. Lines above the first category, and lines of a category before its
 first ticket, are not shown.
@@ -112,8 +112,8 @@ that separator exist only on the board. A piece of parked work whose link ticket
 and not in Roadmap.
 
 **Design cards.** The board reads the active design in the layout
-([check-roadmap](checks.md#check-roadmap)), in document order
-([check-design](checks.md#check-design)); in a diced design each heading is read from the file that
+([check-roadmap](reassembly.md)), in document order
+([check-design](reassembly.md)); in a diced design each heading is read from the file that
 holds it. A category, a delta among them, is not a card: its heading is a separator drawn in its
 place among the cards. Each ticket is a card titled by its title over the ticket's text; a link
 ticket's ([the project's files](#the-projects-files)) is a link ticket's card (**Card links**). A
@@ -131,21 +131,21 @@ a card added to a collapsed category, by a move
 ([moves between Roadmap and Design](#moves-between-roadmap-and-design)) or by an edit, stays hidden
 until the category expands.
 
-**Content outside the layout.** Each breach [check-roadmap](checks.md#check-roadmap) reports in
+**Content outside the layout.** Each breach [check-roadmap](reassembly.md) reports in
 `ROADMAP.md`, and each breach of the layout in the active design, is shown as a notice at the head
 of its document's column, naming its file, as a path from the project root, its line, the text
 found and the form accepted there.
 
 **Work package cards.** A card shows the package's ID, its title, its rating word (`mechanical` or
 `expert`) or that it is unrated, and its lifetime where the status table has a `Lifetime` column,
-matched without regard to case. A package's title is as [check-plan](checks.md#check-plan) Terms
+matched without regard to case. A package's title is as [check-plan](reassembly.md) Terms
 defines it; an untitled package shows untitled. A plan whose table has no `Rating` column is still
 shown, its packages unrated. Cards in a plan column follow the status table's row order.
 
 **Card links.** Each card other than a parked card links to the file holding its heading, with that
-heading's anchor ([anchors](links.md#anchors), repeats counted over that file) as the fragment: a
+heading's anchor ([anchors](index.md#dicing-and-checks), repeats counted over that file) as the fragment: a
 ticket's card to the ticket's heading, a work package's card to the heading its title is read from
-([check-plan](checks.md#check-plan)). An untitled work package's card links to the file holding its
+([check-plan](reassembly.md)). An untitled work package's card links to the file holding its
 status-table row, with no fragment. A parked card links to each of its piece's files, with no
 fragment; a link ticket's card ([the project's files](#the-projects-files)), besides its heading,
 links each file of the piece of parked work it links, with no fragment. Each link reaches its file
@@ -171,21 +171,21 @@ parting it from the heading. A ticket removed takes the blank lines directly abo
 category's heading stays.
 
 In a diced design, a **leaf** is a file other than a head file
-([check-design](checks.md#check-design)) whose directory has a head
-([check-tree](checks.md#check-tree)), and the **full listing** is the list under the last
+([check-design](reassembly.md)) whose directory has a head
+([check-tree](reassembly.md)), and the **full listing** is the list under the last
 `Contents:` line of `entry-point.md`, where that list holds a line linking a file that is not
-beside `entry-point.md` ([file content](tree.md#file-content)). A line added to the full listing
+beside `entry-point.md` ([file content](index.md#dicing-and-checks)). A line added to the full listing
 links the added file by its path from the directory of `entry-point.md`; it is indented two spaces
-more than the line linking the head ([check-tree](checks.md#check-tree)) of the file's directory,
+more than the line linking the head ([check-tree](reassembly.md)) of the file's directory,
 and follows that line and the lines below it indented deeper. Where no line of the full listing
 links that head, it goes at the end of the full listing, indented two spaces. In the Contents lines
-a move adds for a new leaf, `<text>` is the link text [file content](tree.md#file-content) gives
-the leaf's section: for a ticket title [file names and layout](tree.md#file-names-and-layout) reads
+a move adds for a new leaf, `<text>` is the link text [file content](index.md#dicing-and-checks) gives
+the leaf's section: for a ticket title [file names and layout](index.md#dicing-and-checks) reads
 as numbered, `§<number> ` and the rest of the title; else the title.
 
 **Roadmap to Design.** Dropping a roadmap card or a parked card on Design adds a ticket at the end
 of the design's `## Drafts` category, the first category whose heading text is `Drafts`.
-`## Drafts` is not a delta, so [check-design](checks.md#check-design) reports it until the design
+`## Drafts` is not a delta, so [check-design](reassembly.md) reports it until the design
 reaches its final form:
 
 - *roadmap card*: the ticket's lines are removed from `ROADMAP.md` and added to the design;
@@ -196,9 +196,9 @@ reaches its final form:
 |---|---|
 | absent | `ACTIVE_DESIGN.md` is created, opening with the level-1 heading `# ACTIVE DESIGN`, then `## Drafts` and the ticket, a blank line parting each from the line above |
 | a monolith | the ticket is added at the end of `## Drafts`; where there is none, `## Drafts` and the ticket are appended to the file, a blank line parting each from the text above, where there is any |
-| a diced tree whose `## Drafts` heading opens an `index.md` | the ticket is a new leaf beside that `index.md`, named `<name>.md`, `<name>` being the [file names and layout](tree.md#file-names-and-layout) name of the ticket's title; the line `- [<text>](<name>.md)` is added at the end of the list under that `index.md`'s last `Contents:` line, and a line `- [<text>](<path>)` for the leaf to the full listing, where `entry-point.md` has one |
-| a diced tree with no `## Drafts` | the ticket is the new leaf `drafts/<name>.md`, named as above, the directory `drafts` beside `entry-point.md` made where it does not exist; `drafts/index.md` is created holding `## Drafts`, a blank line, `Contents:`, a blank line and the line `- [<text>](<name>.md)`; and the lines `- [Drafts](drafts/index.md)` and `  - [<text>](drafts/<name>.md)` are added at the end of the list under the last `Contents:` line of `entry-point.md`, or in a Contents block added at its end where it has none |
-| a diced tree whose `## Drafts` is elsewhere | the ticket is added at the end of `## Drafts` in the file holding it; in a head file ([check-design](checks.md#check-design)), before its Contents block |
+| a diced tree whose `## Drafts` heading opens an `index.md` | the ticket is a new leaf beside that `index.md`, named `<name>.md`, `<name>` being the [file names and layout](index.md#dicing-and-checks) name of the ticket's title; the line `- [<text>](<name>.md)` is added at the end of the list under that `index.md`'s last `Contents:` line, and a line `- [<text>](<path>)` for the leaf to the full listing, where `entry-point.md` has one |
+| a diced tree with no `## Drafts` | the ticket is the new leaf `drafts/<name>.md`, named as above, the directory `drafts` beside `entry-point.md` made where it does not exist; `drafts/index.md` is created holding `## Drafts`, a blank line, `Contents:`, a blank line and the line `- [<text>](<name>.md)`; and the lines `- [Drafts](../index.md)` and `  - [<text>](drafts/<name>.md)` are added at the end of the list under the last `Contents:` line of `entry-point.md`, or in a Contents block added at its end where it has none |
+| a diced tree whose `## Drafts` is elsewhere | the ticket is added at the end of `## Drafts` in the file holding it; in a head file ([check-design](reassembly.md)), before its Contents block |
 
 **Design to Roadmap.** Dropping on Roadmap a design card other than an entry card removes its
 ticket from the design and, unless it is a link ticket, adds the ticket's lines to `ROADMAP.md`.
@@ -222,15 +222,15 @@ head and, where that head is not `entry-point.md` and the full listing holds a l
 leaf, from the full listing too; then the leaf is deleted. Any other ticket is removed from the
 file holding it.
 
-**Links.** A move rebases each relative link target in the text ([link rewriting](links.md)) of the
+**Links.** A move rebases each relative link target in the text ([link rewriting](index.md#dicing-and-checks)) of the
 ticket's lines, resolved from the directory of the file the ticket leaves, to reach the same file
 from the directory of the file it joins, fragment kept; targets that
-[link targets](links.md#link-targets) step 2 leaves unchanged stay unchanged. A `#<anchor>` target
+[link targets](index.md#dicing-and-checks) step 2 leaves unchanged stay unchanged. A `#<anchor>` target
 stays as written in both directions: it names a heading of the file holding it, so it keeps
 reaching a heading the ticket carries. It breaks only where
-[anchors](links.md#anchors)' per-file repeat count gives that heading another anchor in the file
+[anchors](index.md#dicing-and-checks)' per-file repeat count gives that heading another anchor in the file
 joined, or where it named a heading outside the ticket;
-[check-links](checks.md#check-links) reports either break. Between files in one directory, as
+[check-links](reassembly.md) reports either break. Between files in one directory, as
 `ROADMAP.md` and a single-file active design are ([the project's files](#the-projects-files)), no
 link changes. A link ticket is written, not moved: its links are made for the file that holds it
 ([the project's files](#the-projects-files)).
@@ -244,15 +244,15 @@ link changes. A link ticket is written, not moved: its links are made for the fi
   make ([the plan columns are read-only](#the-plan-columns-are-read-only)), such as one from a page
   showing a board that has since changed; refused with a message naming that cause;
 - the active design is a diced tree, the move adds a leaf, and the title's
-  [file names and layout](tree.md#file-names-and-layout) name is empty (an unnumbered title with an
+  [file names and layout](index.md#dicing-and-checks) name is empty (an unnumbered title with an
   empty slug), refused with a message naming that cause;
 - the active design is a diced tree and a file the move creates already exists, refused with a
   message naming that cause;
 - the active design is a diced tree and the move must remove a leaf's line from the Contents list
   of its directory's head and cannot find it, refused with a message naming that cause;
 - the ticket dropped on Roadmap is in a diced design and runs on past its file: its text in the
-  layout ([check-roadmap](checks.md#check-roadmap)) continues into the next file in document order
-  ([check-design](checks.md#check-design)), as a ticket whose level-4 sections were diced into
+  layout ([check-roadmap](reassembly.md)) continues into the next file in document order
+  ([check-design](reassembly.md)), as a ticket whose level-4 sections were diced into
   files of their own does; refused with a message naming that cause;
 - a document the move reads cannot be read, refused with `cannot read: <file>`, `<file>` as a path
   from the project root (a move never reads the active plan); or
@@ -327,4 +327,4 @@ nothing that the page's own state could otherwise hold. The board's only writes 
 ([moves between Roadmap and Design](#moves-between-roadmap-and-design)). It does not reorder
 tickets, move a ticket between categories of one document, or edit any ticket's or category's
 text. The project root is found by looking at the file system
-([check-plan](checks.md#check-plan)).
+([check-plan](reassembly.md)).

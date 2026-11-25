@@ -1,4 +1,4 @@
-### Annotations on the floor
+# Annotations on the floor
 
 The floor is 3.11: an annotation evaluates as written, and a union written `X | Y` evaluates there.
 `from __future__ import annotations` is cruft on this floor — do not add it, and remove it from code

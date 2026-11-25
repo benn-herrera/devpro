@@ -1,4 +1,4 @@
-### Untracked output is not source
+# Untracked output is not source
 
 An untracked file under `.claude/`, `.opencode/` or `rendered/` is render or install output, not
 source. SPEC.md states what an install ships and to which destination (Deployed Surfaces), and

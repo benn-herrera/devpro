@@ -1,4 +1,4 @@
-### Renders and copies
+# Renders and copies
 
 An install renders every definition its plugin ships — for a skill, its skill entry file and then
 each supporting file it lists — and every harness-rendered file whose owner ships (the plugin

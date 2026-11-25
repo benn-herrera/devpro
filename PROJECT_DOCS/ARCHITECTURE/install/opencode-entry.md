@@ -1,4 +1,4 @@
-### Opencode entry
+# Opencode entry
 
 `devpro/harnesses/resources/opencode/index.ts` is opencode's plugin entry (SPEC.md, Deployed
 Surfaces, Shipped files). It is written for opencode 2.4.1 (floor 2.3.0), and its setup registers `ctx.tool.hook("execute.after")` filtered to `subagent` and

@@ -1,4 +1,4 @@
-### Cross-references are placeholders
+# Cross-references are placeholders
 
 Definition text names another definition only through `clauses.ref(name="python-coder")`, which
 spells the reference placeholder `@!ref-python-coder!@` (ARCHITECTURE.md, Rendering, Placeholders).

@@ -1,4 +1,4 @@
-### Guardrail hook
+# Guardrail hook
 
 What the guardrails block and allow, and what a refusal reads, is SPEC.md, Deployed Surfaces,
 [Shipped files](../../SPEC/deployed-surfaces/shipped-files.md); this leaf is how they are built.

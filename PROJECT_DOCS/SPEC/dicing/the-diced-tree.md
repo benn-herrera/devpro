@@ -23,7 +23,7 @@ form `dice` writes for one document, and the form of a project document tree suc
 no volume directory: its root's `entry-point.md` holds its document and its sections sit beneath it,
 the top-level ones among them being sections, not misplaced volumes. A volume tree's top-level
 directories are volumes; one opening at `index.md` is a section in a volume's place, and
-[check-tree](checks.md#check-tree) reports it.
+[check-tree](reassembly.md) reports it.
 
 `undice` reads any directory with a head file, so a broken-out section round-trips as text without
 becoming a document: its `index.md` and its children fold back into the document of the volume above
@@ -37,15 +37,15 @@ separate-document identity.
 A tree's head files are fixed by convention and never configurable: a reader moving between projects
 relies on finding them, and the standing project trees carry the same rule. The constant names are
 `entry-point.md` for a volume's head and `index.md` for a broken-out section's
-([shared behaviors](index.md#shared-behaviors) names the module that holds them).
+([shared behaviors](index.md#dicing-and-checks) names the module that holds them).
 
 - A head's Contents block opens at its last line that is exactly `Contents:`; its lines are each
   `- [<link text>](<path>)`, indented by spaces as [file content](#file-content) gives them.
 - `check-tree` reads a directory's head as its `entry-point.md` where it has one, else its
   `index.md`; a tree's root must open at `entry-point.md`
-  ([check-tree](checks.md#check-tree)).
+  ([check-tree](reassembly.md)).
 - `undice` reads a tree's root at whichever of the two it holds, so a broken-out section undices as
-  its own document ([undice](verbs.md#undice)).
+  its own document ([undice](dice.md)).
 
 ### Which headings split
 
@@ -54,8 +54,8 @@ block opens at a line of at least three backticks or tildes (indentation by spac
 backtick fence's info string holds no backtick) and closes at a line of the same character, at
 least as many, followed only by spaces; an unclosed fence runs to the end of the document. No line
 inside fenced code is read as a heading, table, list item or other element of any plan, design,
-layout or roadmap form ([check-plan](checks.md#check-plan) through
-[check-roadmap](checks.md#check-roadmap) read those forms); it is text of the part that holds it,
+layout or roadmap form ([check-plan](reassembly.md) through
+[check-roadmap](reassembly.md) read those forms); it is text of the part that holds it,
 and its content is never read as a breach of a form.
 
 | Level | Role |
@@ -65,7 +65,7 @@ and its content is never read as a breach of a form.
 | deeper than the deepest split level | Text. |
 
 The **deepest split level** is the deepest heading level that splits;
-[shared behaviors](index.md#shared-behaviors) gives the option that sets it.
+[shared behaviors](index.md#dicing-and-checks) gives the option that sets it.
 
 A split heading's parent is the nearest preceding split heading of a lower level, or the tree's
 root if none; levels may be skipped.
@@ -77,7 +77,7 @@ if there is none.
 ### File names and layout
 
 The heading text is what follows the `#` run, with leading and trailing spaces removed. A heading
-is **numbered** when the plain text ([what is a link](links.md#what-is-a-link)) of its heading text
+is **numbered** when the plain text ([what is a link](index.md#dicing-and-checks)) of its heading text
 opens with digits optionally followed by `.digits` groups, an optional `.`, and a space (`1.`, `2 `,
 `1.1.1.`). Its **number** is that prefix without the trailing `.`; its **title** is the rest. An
 unnumbered heading's title is its whole plain text: `### [Plan Status Form](x)` is titled
@@ -108,12 +108,12 @@ and empty):
 **Duplicate numbers.** Headings sharing a number are reported on stderr as
 `duplicate section number <number>`, once per document `dice` dices and per document `undice`
 writes. Dicing continues; a reference to the number resolves to the last heading that carries it
-([section references](links.md#section-references)).
+([section references](index.md#dicing-and-checks)).
 
 ### File content
 
 Each file holds, in order, exactly the source lines of its section, heading line included, with the
-section's heading ladder re-based and links rewritten ([link rewriting](links.md)).
+section's heading ladder re-based and links rewritten ([link rewriting](index.md#dicing-and-checks)).
 
 **The heading ladder.** A section's own text opens with its top heading, and every file of the tree
 but a document's own head holds it at level 1, whatever level that heading had in the source: a
@@ -142,7 +142,7 @@ Contents:
 - A document's head lists every other section of its document in document order, one line each,
   indented two spaces per depth below the first level, each `<path>` relative to the head's
   directory. The omnibus's own head lists each volume's `entry-point.md`, its link text the volume
-  document's title ([dice](verbs.md#dice)).
+  document's title ([dice](dice.md)).
 - An index lists its direct children in order, unindented, each `<path>` relative to the index's
   directory.
 - A block with nothing to list is `Contents:` and a blank line.

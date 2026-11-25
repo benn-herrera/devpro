@@ -1,4 +1,4 @@
-### The gates
+# The gates
 
 ```
 checkpoint gate: `just test`, then `just sweep-python` (A checkpoint includes the sweep)

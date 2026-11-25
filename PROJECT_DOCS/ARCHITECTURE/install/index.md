@@ -1,4 +1,4 @@
-## Install
+# Install
 
 An install is a deploy step: each harness has its own layout, and the rendered definitions, the
 package copies and the harness resources are written to the places and names that layout gives. It

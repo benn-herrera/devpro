@@ -1,4 +1,4 @@
-### Harness resources are copied verbatim
+# Harness resources are copied verbatim
 
 The install stamps nothing on a file under `devpro/harnesses/resources/`, which never takes
 the package loop. A consuming project receives what the source holds, an installed banner the file

@@ -1,4 +1,4 @@
-## Why There Is No Verification Verb
+# Why There Is No Verification Verb
 
 There is no `check` verb. A render is the only thing that knows what a definition produces, so a verb that
 re-rendered a tree and compared would be asking the producer whether it agrees with itself: a

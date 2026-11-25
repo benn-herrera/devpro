@@ -1,4 +1,4 @@
-### Installing this repository
+# Installing this repository
 
 `just agents` installs this repository's own `.claude/` and `.opencode/` with the plain
 `install` verb, once per harness, as the devpro plugin, naming this repository as TARGET and the

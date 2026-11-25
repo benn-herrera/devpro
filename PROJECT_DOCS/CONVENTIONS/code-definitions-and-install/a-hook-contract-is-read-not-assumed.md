@@ -1,4 +1,4 @@
-### A hook contract is read, not assumed
+# A hook contract is read, not assumed
 
 An event's accepted output fields, and where its context lands, are the harness's statement in its
 hook reference, never an inference from where the hook fires: a field accepted on one event is

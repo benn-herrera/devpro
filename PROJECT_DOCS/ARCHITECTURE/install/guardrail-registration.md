@@ -1,4 +1,4 @@
-### Guardrail registration
+# Guardrail registration
 
 - **Probe.** Before `_refuse_foreign_targets`, the install runs the source script once, with
   `GUARDRAIL_INTERPRETER` and no `CLAUDE_PROJECT_DIR`, on one allowed Bash call, and requires exit

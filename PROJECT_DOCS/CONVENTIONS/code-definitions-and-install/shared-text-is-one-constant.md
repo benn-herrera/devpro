@@ -1,4 +1,4 @@
-### Shared text is one constant
+# Shared text is one constant
 
 Text two definitions share byte for byte is one constant, in `devpro/clauses.py`, or in a
 group module's private constants when only that group shares it. A definition never pastes shared

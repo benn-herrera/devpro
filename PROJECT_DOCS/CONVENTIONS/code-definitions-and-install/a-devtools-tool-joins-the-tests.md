@@ -1,4 +1,4 @@
-### A devtools tool joins the tests
+# A devtools tool joins the tests
 
 A module added under `devtools/` arrives with its test under `devtools/tests/` in the same change, as
 `render_diff` and `clause_join_sites` do. Nothing else reaches it: the `test-changed`

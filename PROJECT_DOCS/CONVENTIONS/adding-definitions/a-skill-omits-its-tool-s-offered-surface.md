@@ -1,4 +1,4 @@
-### A skill omits its tool's offered surface
+# A skill omits its tool's offered surface
 
 A skill's supporting file carries only what its tool's offered surface does not. A session sees the
 server instructions, each tool's description and its parameter descriptions, and each resource's

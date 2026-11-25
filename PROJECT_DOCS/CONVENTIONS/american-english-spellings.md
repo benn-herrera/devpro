@@ -1,4 +1,4 @@
-## American English spellings
+# American English spellings
 
 All tracked text uses American spellings. `just spellings` lists every tracked line the pattern
 still matches; it exits zero whatever it lists, so it is a listing to read against the survivor

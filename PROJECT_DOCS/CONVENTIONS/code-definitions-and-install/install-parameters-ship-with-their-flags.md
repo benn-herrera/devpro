@@ -1,4 +1,4 @@
-### Install parameters ship with their flags
+# Install parameters ship with their flags
 
 An install parameter and its CLI flag are one change. `devpro install` reaches the verb only
 through the flags `devpro/cli.py` declares in `build_parser`, so a parameter added to

@@ -1,4 +1,4 @@
-### Install entry
+# Install entry
 
 `devpro install` is the install's one entry, and `python3 -m devpro install` the same verb
 (Packaging); no recipe of this repository's runner file stands in front of it. The verb takes

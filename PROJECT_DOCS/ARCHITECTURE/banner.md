@@ -1,4 +1,4 @@
-## Banner
+# Banner
 
 Under claude and mage a rendered definition other than a supporting file carries two banner lines in
 its frontmatter, the generated banner and `# !TUNING!`, the tuning line (SPEC.md, Rendering). `render.GENERATED_MARK`

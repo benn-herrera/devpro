@@ -1,4 +1,4 @@
-## Repo Layout
+# Repo Layout
 
 ```
 PROJECT_DOCS/           the contract trees — THESIS, SPEC, ARCHITECTURE, CONVENTIONS — as small leaf files, one `entry-point.md` per volume; the root `THESIS.md`, `SPEC.md`, `ARCHITECTURE.md` and `CONVENTIONS.md` are pointers to them, not sources; checked by `just check-links`

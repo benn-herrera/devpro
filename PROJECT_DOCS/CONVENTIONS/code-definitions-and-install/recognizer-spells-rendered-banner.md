@@ -1,4 +1,4 @@
-### Recognizer spells rendered banner
+# Recognizer spells rendered banner
 
 The install's recognizer spells the banner the renderer writes. `install.py` builds its
 generated-file prefixes from `render.GENERATED_MARK`, and the package the banner's module path opens

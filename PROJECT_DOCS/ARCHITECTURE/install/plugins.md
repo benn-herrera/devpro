@@ -1,4 +1,4 @@
-### Plugins
+# Plugins
 
 What each install delivers is SPEC.md, Deployed Surfaces,
 [Plugins](../../SPEC/deployed-surfaces/plugins.md); this leaf is how an install selects and ships it.

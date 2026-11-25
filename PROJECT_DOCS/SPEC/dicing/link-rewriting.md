@@ -52,7 +52,7 @@ Each link's target is classified in this order:
    leaf instead. The text after the link is the rest of its line; when that rest is empty or only
    `,` and spaces, the next line is taken as its continuation. The quoted text itself is left in
    place.
-4. **Any other relative path** is rebased ([shared behaviors](index.md#shared-behaviors)) to reach
+4. **Any other relative path** is rebased ([shared behaviors](index.md#dicing-and-checks)) to reach
    the same file from the directory of the file it now sits in, fragment kept.
 
 ### Anchors

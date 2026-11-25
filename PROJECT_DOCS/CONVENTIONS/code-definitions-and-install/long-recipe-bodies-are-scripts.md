@@ -1,4 +1,4 @@
-### Long recipe bodies are scripts
+# Long recipe bodies are scripts
 
 A recipe body of up to three command lines stays in the justfile; moving it to a script buys only
 indirection. A recipe that bootstraps the venv the other recipes run from stays in the runner file,

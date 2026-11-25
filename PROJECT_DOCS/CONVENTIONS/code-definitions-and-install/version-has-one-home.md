@@ -1,4 +1,4 @@
-### Version has one home
+# Version has one home
 
 The version lives in `__version__` in `devpro/__init__.py` alone, and `just tag` cuts `v<version>`
 from it. A bump is `just bump-version M|m|p`, which edits that one constant in that one file and

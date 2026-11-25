@@ -1,4 +1,4 @@
-### Plugin membership has one home
+# Plugin membership has one home
 
 The definitions that ship are decided in one place in code, the member lists in
 `devpro/components.py`: the required set is every discovered definition no component names, the

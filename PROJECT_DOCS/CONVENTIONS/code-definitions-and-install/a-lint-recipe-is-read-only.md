@@ -1,4 +1,4 @@
-### A lint recipe is read-only
+# A lint recipe is read-only
 
 Formatting and linting are checked by a `lint` recipe that leaves the source as it found it —
 `shellcheck` over the tracked `*.sh` files, `black --check`, `isort --check-only` and `flake8` over

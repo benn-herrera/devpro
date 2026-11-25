@@ -1,4 +1,4 @@
-### Harnesses and families
+# Harnesses and families
 
 A harness is a `Harness` dataclass (`devpro/harness.py`) holding everything that differs between
 harnesses: the seven harness strings, typed `HarnessText` — `HarnessText.MCP_TOOL_PREFIX` among

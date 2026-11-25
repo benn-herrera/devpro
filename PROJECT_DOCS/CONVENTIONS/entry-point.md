@@ -38,7 +38,7 @@ Contents:
   - [Shell in this repository is bash](code-definitions-and-install/shell-in-this-repository-is-bash.md)
   - [A harness resource's version claims testing](code-definitions-and-install/a-harness-resource-s-version-claims-testing.md)
   - [A hook contract is read, not assumed](code-definitions-and-install/a-hook-contract-is-read-not-assumed.md)
-  - [A sentence two harness resources carry is one text](code-definitions-and-install/a-sentence-two-resources-carry-is-one-text.md)
+  - [A sentence two resources carry is one text](code-definitions-and-install/a-sentence-two-resources-carry-is-one-text.md)
   - [A host version is checked against the host's declarations](code-definitions-and-install/a-host-version-is-checked-against-the-host-s-declarations.md)
   - [A stand-in models the API's real semantics](code-definitions-and-install/a-stand-in-models-the-api-s-real-semantics.md)
   - [A formatted time test pins the locale](code-definitions-and-install/a-formatted-time-test-pins-the-locale.md)

@@ -1,4 +1,4 @@
-### A checkpoint includes the sweep
+# A checkpoint includes the sweep
 
 `just sweep-python` enumerates what no
 single file can report — one concept with two implementations, one constant with two definitions

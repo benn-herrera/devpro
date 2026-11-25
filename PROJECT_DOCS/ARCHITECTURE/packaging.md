@@ -1,4 +1,4 @@
-## Packaging
+# Packaging
 
 How the package and command of SPEC.md, Package and Command are built. `pyproject.toml` at the
 devpro project root is the whole build configuration.

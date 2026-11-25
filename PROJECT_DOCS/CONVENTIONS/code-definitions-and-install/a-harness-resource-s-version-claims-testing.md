@@ -1,4 +1,4 @@
-### A harness resource's version claims testing
+# A harness resource's version claims testing
 
 A version this project's harness resources name states what the resource has been used with most:
 a testing claim, not a compatibility promise. Versions below or above may work, unverified; a

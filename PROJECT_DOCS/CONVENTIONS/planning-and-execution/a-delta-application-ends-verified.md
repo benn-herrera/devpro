@@ -1,4 +1,4 @@
-### A delta application ends verified
+# A delta application ends verified
 
 Applying a design entry's passage pair ends with a mechanical byte-check, run before the
 application's commit: each `becomes` block of the entry occurs in its target leaf with each run of

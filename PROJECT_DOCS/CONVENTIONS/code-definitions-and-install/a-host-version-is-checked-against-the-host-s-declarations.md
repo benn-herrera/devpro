@@ -1,4 +1,4 @@
-### A host version is checked against the host's declarations
+# A host version is checked against the host's declarations
 
 A shipped resource that names a host version is type-checked against that host's published
 declarations for that version, never against a devpro-owned stub for a published package. The

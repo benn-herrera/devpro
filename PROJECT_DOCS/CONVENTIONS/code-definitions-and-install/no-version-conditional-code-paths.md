@@ -1,4 +1,4 @@
-### No version-conditional code paths
+# No version-conditional code paths
 
 Code runs on the floor and above with one path. A feature the floor provides is used presumptively;
 compat code for a version below it leaves by deletion — never as a check rewritten to branch the

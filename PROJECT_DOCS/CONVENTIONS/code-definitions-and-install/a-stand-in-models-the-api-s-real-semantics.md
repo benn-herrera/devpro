@@ -1,4 +1,4 @@
-### A stand-in models the API's real semantics
+# A stand-in models the API's real semantics
 
 Code that stands in for another piece's behavior — doctor's `devpro:` line naming the command that
 runs it, a runner's stub of a host's surface — models that behavior's

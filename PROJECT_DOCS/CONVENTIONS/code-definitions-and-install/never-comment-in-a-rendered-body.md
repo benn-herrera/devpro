@@ -1,4 +1,4 @@
-### Never comment in a rendered body
+# Never comment in a rendered body
 
 A definition's body, and every constant it interpolates,
 becomes an agent's system prompt; maintainer commentary there ships into every dispatch and is

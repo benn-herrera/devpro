@@ -1,16 +1,16 @@
 ## Reassembly
 
-Passes when the files [file names and layout](tree.md#file-names-and-layout) assigns, read in
+Passes when the files [file names and layout](index.md#dicing-and-checks) assigns, read in
 section order with each entry point's and index's Contents block dropped (from its last line that
-is exactly `Contents:`) and [section references](links.md#section-references) step 3 links undone,
+is exactly `Contents:`) and [section references](index.md#dicing-and-checks) step 3 links undone,
 equal the source lines with their other links as rewritten by
-[link targets](links.md#link-targets). A file whose top heading reads level 1 is in the re-based
-form ([file content](tree.md#file-content)) and has its heading ladder shifted back before the
+[link targets](index.md#dicing-and-checks). A file whose top heading reads level 1 is in the re-based
+form ([file content](index.md#dicing-and-checks)) and has its heading ladder shifted back before the
 compare: its top compares at its section's source level, and every other heading gains its
 section's level minus 1, fenced lines compared as they stand. A file whose top reads any other
 level is the pre-change form, already at the source's levels, and compares as it stands; the
 pre-change form never presents a level-1 top, since no section is planned at level 1
-([which headings split](tree.md#which-headings-split)). Success prints
+([which headings split](index.md#dicing-and-checks)). Success prints
 `reassemble ok: <N> lines` to stdout; each failure prints to the verb's error stream:
 
 | Fault | Message |
@@ -20,16 +20,16 @@ pre-change form never presents a level-1 top, since no section is planned at lev
 | no Contents block | `reassemble: no Contents block in <file>` |
 | line count | `reassemble: leaves hold <K> lines, monolith <M>` |
 
-The check compares lines, not final newlines ([shared behaviors](index.md#shared-behaviors)). Lines
+The check compares lines, not final newlines ([shared behaviors](index.md#dicing-and-checks)). Lines
 added after a Contents block are not checked.
 
 ## Link check
 
-Every link in the text ([link rewriting](links.md)) of every file
-[file names and layout](tree.md#file-names-and-layout) assigns, taken without its `#fragment`, must
+Every link in the text ([link rewriting](index.md#dicing-and-checks)) of every file
+[file names and layout](index.md#dicing-and-checks) assigns, taken without its `#fragment`, must
 name a readable file relative to that file's directory. Skipped: empty targets (bare `#frag`),
 targets opening with `/`, and targets with a URL scheme
-([link targets](links.md#link-targets), step 2). Everything else is probed relative to the file and
+([link targets](index.md#dicing-and-checks), step 2). Everything else is probed relative to the file and
 so is dead unless it exists there; a directory is dead. An assigned file that cannot be read
 contributes no links ([reassembly](#reassembly) reports it). Each dead link prints
 `dead link: <file>:<line> -> <target>` to the error stream; the summary
@@ -44,10 +44,10 @@ file so contributed must be readable as a file; before any link is checked, each
 `cannot read: <path>` to stderr and the verb exits 2.
 
 In text outside fenced code and code spans, every link is checked except those with an empty
-target, a target opening with `/`, or a URL scheme ([link targets](links.md#link-targets), step 2).
+target, a target opening with `/`, or a URL scheme ([link targets](index.md#dicing-and-checks), step 2).
 The target's path part (the linking file itself, if empty) must exist, else the problem is
 `missing file`; given a `#fragment` it must name a markdown file with a heading whose anchor equals
-the fragment ([anchors](links.md#anchors), repeats counted over the file), else `missing anchor`.
+the fragment ([anchors](index.md#dicing-and-checks), repeats counted over the file), else `missing anchor`.
 Each problem prints to stderr `<file>:<line>: <target>: <problem>`. The summary
 `links checked: <N>, broken: <B>` goes to stdout. Exit 1 if any link is broken.
 
@@ -69,7 +69,7 @@ each `.md` file under the root other than the root's `entry-point.md`:
 | not reachable by following links from the root's `entry-point.md` | `<file>: not reachable from <entry-point>` |
 | a volume directory of a volume tree opens at `index.md` | `<file>: a volume directory of this tree opens at entry-point.md, not index.md: a volume's sections sit below it` |
 
-The last problem names a [misplaced section](tree.md#the-model): a tree whose root's Contents links
+The last problem names a [misplaced section](index.md#dicing-and-checks): a tree whose root's Contents links
 an `entry-point.md` below it is the omnibus form, and every top-level directory under it is a
 volume's; one opening at `index.md` stands where a volume must. A tree whose root links no such head
 is one document's, and its top-level directories are sections — `dice`'s one-document form and a
@@ -89,7 +89,7 @@ post-plan review or burndown package without the other; what is otherwise absent
 **Terms.**
 
 - **plan**: a tracked markdown document that lays out work as work packages and records their
-  progress. It is a monolith, one file, or a diced tree ([the diced tree](tree.md)) given by its
+  progress. It is a monolith, one file, or a diced tree ([the diced tree](index.md#dicing-and-checks)) given by its
   `entry-point.md`: a file named `entry-point.md` is read as one plan together with every other
   `.md` file beneath its directory, in **the plan's file order**, the entry point first.
 - **work package**: one unit of a plan's work, a row of the plan's status table, named by the ID in
@@ -227,14 +227,14 @@ layout, category, ticket, old-form item), are used as defined there, with these 
   Each head file is read without its Contents block and what follows it.
 - **H1**: the design's first level-1 heading, as for a plan ([check-plan](#check-plan)).
 - **delta heading**: a level-2 heading whose text
-  ([file names and layout](tree.md#file-names-and-layout): after the `#` run, surrounding spaces
+  ([file names and layout](index.md#dicing-and-checks): after the `#` run, surrounding spaces
   removed) is exactly `SPEC delta`, `ARCHITECTURE delta` or `Code delta`; that is their **order**.
   Its **delta** runs to the next heading of level 1 or 2, or the end of the design.
 - **entry**: a ticket ([check-roadmap](#check-roadmap)) inside a delta. A delta with no entries is
   valid.
 - **target**: the file an entry heading's one link names, resolved relative to the file the entry
-  is in ([link rewriting](links.md)). A heading whose link is empty, opens with `#`, or opens with
-  a scheme ([link targets](links.md#link-targets), step 2) gives no target; a fragment-only link's
+  is in ([link rewriting](index.md#dicing-and-checks)). A heading whose link is empty, opens with `#`, or opens with
+  a scheme ([link targets](index.md#dicing-and-checks), step 2) gives no target; a fragment-only link's
   fragment is not resolved here, [check-links](#check-links) doing that. An entry heading that
   carries more than one link gives no target.
 - **pair**: in an entry with a target, an `**As it stands:**` line — outside fenced code, alone on
@@ -291,7 +291,7 @@ breach line is followed on stderr by
 checks read their targets, never write them.
 
 **The design checked.** With `<design>`, that design. Without it, the active design of the project
-root ([check-plan](#check-plan)), at the path [the project's files](kanban.md#the-projects-files)
+root ([check-plan](#check-plan)), at the path [the project's files](index.md#dicing-and-checks)
 gives; where both exist as files, the verb exits 2 before reading either.
 
 **Output.** One stderr line per breach, in the form [check-plan](#check-plan) gives
@@ -338,7 +338,7 @@ expected mid-execution state rather than a fault of the design.
 ## check-roadmap
 
 `devpro check-roadmap [<roadmap>]` checks that `ROADMAP.md` is written in the ticket layout below,
-so that the board shows every ticket it holds ([the board](kanban.md#kanban)).
+so that the board shows every ticket it holds ([the board](index.md#dicing-and-checks)).
 [check-design](#check-design) and the board read the active design in the same layout.
 
 **Terms.** [check-plan](#check-plan)'s terms are used as defined there, with these additions:
@@ -347,8 +347,8 @@ so that the board shows every ticket it holds ([the board](kanban.md#kanban)).
   or the end of the document.
 - **ticket**: a level-3 heading inside a category, and the lines below it up to the next heading
   of level 1, 2 or 3, or the end of the document; a heading of level 4 or more inside it is part of
-  its text. A ticket's **title** is the plain text ([what is a link](links.md#what-is-a-link)) of
-  its heading's text ([file names and layout](tree.md#file-names-and-layout)). The lines of a
+  its text. A ticket's **title** is the plain text ([what is a link](index.md#dicing-and-checks)) of
+  its heading's text ([file names and layout](index.md#dicing-and-checks)). The lines of a
   category before its first ticket are not a ticket.
 - **old-form item**: a line opening at column 0 with a list marker (`-`, `*`, `+`, or digits
   followed by `.` or `)`), a space and `**`.
@@ -398,22 +398,22 @@ Input outside this specification is refused with a message naming what to fix, n
 Known limits:
 
 - A source's links must be written relative to the current directory
-  ([shared behaviors](index.md#shared-behaviors)); a document run from elsewhere gets mis-rebased
+  ([shared behaviors](index.md#dicing-and-checks)); a document run from elsewhere gets mis-rebased
   links, which the [link check](#link-check) reports only if the result no longer resolves.
-- A section's Contents link text ([file content](tree.md#file-content)) is not escaped: a title
+- A section's Contents link text ([file content](index.md#dicing-and-checks)) is not escaped: a title
   containing `]` or unbalanced brackets yields a malformed Contents link that no verb repairs.
-  [check-tree](#check-tree) reports it, and [undice](verbs.md#undice) reports that section's file
-  as not reproduced. The same holds for the Contents lines [the board](kanban.md#kanban) writes for
+  [check-tree](#check-tree) reports it, and [undice](dice.md) reports that section's file
+  as not reproduced. The same holds for the Contents lines [the board](index.md#dicing-and-checks) writes for
   a ticket moved into a diced design
-  ([moves between Roadmap and Design](kanban.md#moves-between-roadmap-and-design)); moving such a
+  ([moves between Roadmap and Design](index.md#dicing-and-checks)); moving such a
   ticket back to Roadmap is refused, since the head has no line linking its leaf.
-- [undice](verbs.md#undice) on a volume a link map diced is best effort: links made through a link
-  map come back as the map's paths, and its self-check ([undice](verbs.md#undice)) reports what does
+- [undice](dice.md) on a volume a link map diced is best effort: links made through a link
+  map come back as the map's paths, and its self-check ([undice](dice.md)) reports what does
   not round-trip.
 - A project root with no name of its own, the file-system root `/`, gives the
-  [board's](kanban.md#columns-and-cards) page an empty `<project>`.
+  [board's](index.md#dicing-and-checks) page an empty `<project>`.
 - A pair's block whose closing fence is immediately followed by another opening fence reads as one
-  passage to the pair reader, not the two blocks [which headings split](tree.md#which-headings-split)'s
+  passage to the pair reader, not the two blocks [which headings split](index.md#dicing-and-checks)'s
   closer rule would give: the fence flags cannot tell the one block's closer from the other's
   opener. The two passages then match over text [check-design](#check-design) does not define as
   the pair's, and its per-pair breach lines do not say so.

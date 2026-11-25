@@ -1,4 +1,4 @@
-### A formatted time test pins the locale
+# A formatted time test pins the locale
 
 A test asserting a formatted time or date pins the reader's zone with `TZ`: the zone decides
 which day and clock a date draws into, so a pin holding no zone asserts on whatever the runner
