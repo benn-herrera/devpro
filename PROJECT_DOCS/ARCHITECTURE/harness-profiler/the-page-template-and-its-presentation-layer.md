@@ -1,6 +1,6 @@
 # The page template and its presentation layer.
 
-## The template and its three marks
+## The template and its marks
 
 `view.html` is the wheel's package data,
 `devpro/profiler/view.html`, read by `pages.py` through `importlib.resources` beside the module that
@@ -67,7 +67,8 @@ session's page. Every script the pages run — the deco's and the templates' own
 IIFE: its helpers are module-private, and the deliberate surface is only what the page calls, because
 classic scripts share one global scope and a helper redeclared across scripts is a page that drew
 nothing. The deco publishes exactly one name, `globalThis.devproFormat`: the notation the pages
-present moments and durations in (below), which the session page's and the index's own scripts read
+present moments and durations in ([the moments and their
+form](serving.md#the-moments-and-their-form)), which the session page's and the index's own scripts read
 from that one scope.
 
 ## The board page's nav
