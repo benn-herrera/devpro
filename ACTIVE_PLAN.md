@@ -411,14 +411,24 @@ reader consults while managing a tree; the SPEC leaves carry the mechanics and s
 **Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
 commit, as P1 states.
 
-## P4b — the reconstruction's stragglers: `_placed_level` and the link re-base
+## P4b — the reconstruction's stragglers, and the links.tsv cache retires
 
-Fixes the two P4 tool defects P5's State section records, both found by the re-dice and reported,
-not patched. Agent `devpro:python-coder`.
+Fixes the two P4 tool defects P5's State section records, and retires the links.tsv map beside
+them: the four changes share one call graph — `dicedoc.py`'s reconstruction and `linkrewrite.py`'s
+rewriter call into each other's definitions, and each half alone leaves the suite red — so they
+land as one package. Agent `devpro:python-coder`.
 
-**Scope.** `devpro/dicing/dicedoc.py` (`_placed_level`, `dice`'s re-base root);
-`devpro/dicing/linkrewrite.py` (`Linker.written`); `tests/dicing/` (the reproduction cases as
-corpus and tests).
+**Scope.** `devpro/dicing/dicedoc.py` (`_placed_level`, `dice`'s re-base root, the map's write and
+read: `_map_rows`, `_run_path`, `_tree`'s map path, `dice`'s map argument and its `not a file`
+fault, `_document`'s load, and `Volume`'s docstring clause); `devpro/dicing/linkrewrite.py`
+(`Linker.written`, `LinkMap`, `Tree.link_map`, the map branches of `written` and `_rebase`, and
+`_QUOTED_HEADING`/`_BARE_TAIL` with them); `devpro/dicing/cli.py` (the `--map` flag, and the call
+it forwards to `dice`); the `justfile` `dice` recipe's comment; `tests/dicing/` (the reproduction
+cases as corpus and tests, the `links.tsv` expectations, the round-trip test's `skip="links.tsv"`
+and its "without a map" wording, and the `dice-map` and `dice-map-not-file` cases); the SPEC dicing
+leaves where the map is stated — `PROJECT_DOCS/SPEC/dicing/link-rewriting.md` (§The link map and
+link-target rule 3), `dice.md` (the usage line, `--map`'s fault, undice's map branch, and the round
+trip's map clause) and `reassembly.md` (the undice best-effort entry).
 
 **Facts.**
 
@@ -431,53 +441,6 @@ corpus and tests).
   own directory (`linkrewrite.Linker.written`, `dice`'s `root=run_dir`), adding spurious `../`
   segments to every cross-tree link at any depth other than the output root's. Reproduction:
   `.devpro-temp/p5-lk/`.
-
-**Guidance.**
-
-1. `_placed_level` computes a restored part's level from its position in the tree and its own head's
-   pattern — never from the part's heading depth relative to a sibling: a section index's child
-   restores beside its siblings, not below them by its own depth. The two-pattern model is the
-   authority; the corpus case pins it.
-2. `Linker.written`'s re-base roots at the document's own directory, never the run directory: a
-   cross-tree link survives a dice and an undice unchanged. Corpus case: a monolith whose link
-   exits its directory, diced one level deep, links unchanged in the written tree.
-3. Tests, per `clauses.TEST_PRECONDITION` (defect: the reconstruction restores a section index's
-   child at its own depth, and the link re-base roots at the run directory): both reproduction
-   shapes as corpus cases, demonstrated red before the fix. The round-trip test's
-   `skip="links.tsv"` and the corpus's `links.tsv` expectations are P4c's: this package adds its
-   cases beside them and removes neither.
-
-**Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
-commit, as P1 states.
-
-## P4c — the links.tsv cache retires
-
-Removes the map the dicing verbs persisted beside their trees: a file whose every row the documents
-and the tree already answer, and whose persistence gives a later run's result a dependency on an
-earlier run's state. Agent `devpro:python-coder`.
-
-**Dependency.** After P4b, whose `_placed_level` and `Linker.written` root fix touch both files this
-package edits; P4c's own tests are green before and after P4b, so the order is P4b's requirement, not
-P4c's. What P4c must not undo: the link re-base's root is the document's own directory
-(`Linker.written`'s `base`), and a restored part's level comes from its place in the tree
-(`_placed_level`); removing the map's branch from `_rebase` leaves both as P4b wrote them. `dice`'s
-call in `cli.py` is the only caller of the changed signature; update it in step 1 with the flag. The
-round-trip test's `skip="links.tsv"` (Guidance step 3) is this package's, not P4b's: P4b's corpus
-work adds cases beside it and removes neither.
-
-**Scope.** `devpro/dicing/dicedoc.py` (the map's write and read: `_map_rows`, `_run_path`, `_tree`'s
-map path, `dice`'s map argument and its `not a file` fault, `_document`'s load, and `Volume`'s
-docstring clause); `devpro/dicing/linkrewrite.py` (`LinkMap`, `Tree.link_map`, the map branches of
-`written` and `_rebase`, and `_QUOTED_HEADING`/`_BARE_TAIL` with them); `devpro/dicing/cli.py`
-(`--map`, and the call it forwards to `dice`); the `justfile` `dice` recipe's comment; `tests/dicing/`
-(the round-trip test's `skip="links.tsv"` and its "without a map" wording, and the `dice-map` and
-`dice-map-not-file` cases); and the three SPEC leaves where the map is stated —
-`PROJECT_DOCS/SPEC/dicing/link-rewriting.md` (§The link map and link-target rule 3),
-`dice.md` (the usage line, `--map`'s fault, undice's map branch, and the round trip's map clause) and
-`reassembly.md` (the undice best-effort entry).
-
-**Facts.**
-
 - The map is a compute cache, not data: every row is derivable — in-dice targets from the heading
   structure, other inputs from the two-pattern convention, ambient targets from the same scan
   `check-links` already runs — and recomputation is cheaper than trust, because a cached resolution
@@ -491,46 +454,49 @@ docstring clause); `devpro/dicing/linkrewrite.py` (`LinkMap`, `Tree.link_map`, t
   self-contained: all inputs on the command line, all outputs declared, and the tree holds documents
   and nothing else — a file that is not one of its documents is a file the verb wrote and a later run
   may read.
-- The inventory: `git grep -in 'links\.tsv\|link map\|--map' -- devpro tests justfile PROJECT_DOCS`
-  names seven tracked files at this package's start — the three code sites, the `justfile` comment,
-  `test_dicer.py`, the two `dice-map` cases, and the three SPEC leaves (`link-rewriting.md`,
-  `dice.md`, `reassembly.md`) — and prints nothing after this package. `git grep -in 'link map' --
-  devpro/definitions/` prints nothing now and after: the skill definition names no map.
-  `PROJECT_DOCS/SPEC/dicing/index.md:23`'s "or a link map" is in the same Scope, read with
-  `link-rewriting.md`.
 
 **Guidance.**
 
-1. Remove the map's write and read (`dicedoc.py:217,238,391` region) and the `--map` flag: `dice`
-   writes nothing into the output tree but the tree itself, and `undice` reads no map. `dice`'s call
-   in `cli.py` is the only caller of the changed signature.
-2. Remove the map handling from `linkrewrite.py` the write/read served — `LinkMap`, `Tree.link_map`,
-   the map branches of `written` and `_rebase`, and the regexes they alone use. `Tree` is a dataclass
-   whose construction sites are all in this package's scope except `tests/dicing/test_linkrewrite.py`,
+1. `_placed_level` computes a restored part's level from its position in the tree and its own head's
+   pattern — never from the part's heading depth relative to a sibling: a section index's child
+   restores beside its siblings, not below them by its own depth. The two-pattern model is the
+   authority; the corpus case pins it.
+2. `Linker.written`'s re-base roots at the document's own directory, never the run directory: a
+   cross-tree link survives a dice and an undice unchanged. Corpus case: a monolith whose link
+   exits its directory, diced one level deep, links unchanged in the written tree.
+3. Tests, per `clauses.TEST_PRECONDITION` (defect: the reconstruction restores a section index's
+   child at its own depth, and the link re-base roots at the run directory): both reproduction
+   shapes as corpus cases, demonstrated red before the fix.
+4. The map retires entirely: remove its write and read (`dicedoc.py:217,238,391` region) and the
+   `--map` flag — `dice` writes nothing into the output tree but the tree itself, and `undice` reads
+   no map; remove the map handling from `linkrewrite.py` (`LinkMap`, `Tree.link_map`, the map
+   branches of `written` and `_rebase`, and the regexes they alone use). `Tree` is a dataclass whose
+   construction sites are all in this package's scope except `tests/dicing/test_linkrewrite.py`,
    which already names exactly its remaining fields and takes no edit. Check:
    `grep -rn 'Tree(' --include=*.py devpro tests` names every construction site and each names the
    fields the class declares; `grep -rn 'dice(' --include=*.py devpro tests` names one call site, in
    `cli.py`, whose argument count matches the definition.
-3. Tests: remove the `links.tsv` expectations and the round-trip test's `skip` — a tree compares
-   whole — and the `dice-map` and `dice-map-not-file` cases with the flag and its fault they
-   exercise. Replace them with a case that asks the model's question of every file: `dice` a
-   multi-input document into a tree, then read the tree's files whole and assert each is one the
-   tree's head convention places — a volume root's `entry-point.md`, a section directory's
-   `index.md`, a leaf elsewhere, every one `.md` — and that the set is exactly the files the run
-   declares. A second run over the same tree and output directory adds no file and changes none.
-   Defect, per `clauses.TEST_PRECONDITION`: a sideband file persisted into the tree, giving a later
-   run an ambient dependency on a previous run's state — the relocated cache this case catches and
-   a "no sideband files" assertion does not.
-4. The SPEC leaves' map wording retires with the concept, under this package's Scope clause for them:
-   `link-rewriting.md`'s §The link map and link-target rule 3, `dice.md`'s usage line, `--map`'s
-   fault, undice's map branch and the round trip's map clause — whose Round trip paragraph becomes:
-   "For a tree as `dice` wrote it at `<level>`: move `<tree-dir>` aside, `undice` it to `<out-dir>`,
-   then `dice` the documents `<out-dir>` holds at `<level>`, with `--section` where the tree is a
-   section, from `<out-dir>` as the current directory; every file of the new tree equals the old byte
-   for byte." — and `reassembly.md`'s undice best-effort entry is deleted outright.
+5. The SPEC leaves' map wording retires with the concept: `link-rewriting.md`'s §The link map and
+   link-target rule 3, `dice.md`'s usage line, `--map`'s fault, undice's map branch and the round
+   trip's map clause — whose Round trip paragraph becomes: "For a tree as `dice` wrote it at
+   `<level>`: move `<tree-dir>` aside, `undice` it to `<out-dir>`, then `dice` the documents
+   `<out-dir>` holds at `<level>`, with `--section` where the tree is a section, from `<out-dir>` as
+   the current directory; every file of the new tree equals the old byte for byte." — and
+   `reassembly.md`'s undice best-effort entry is deleted outright.
+6. Tests for the retirement, per `clauses.TEST_PRECONDITION` (defect: sideband data persisted into
+   the tree, giving a later run an ambient dependency on a previous run's state): the `dice-map` and
+   `dice-map-not-file` cases and the round-trip test's `skip` removed with the flag and its fault;
+   and a case that asks the model's question of every file — `dice` a multi-input document into a
+   tree, then assert each file is one the tree's head convention places (a volume root's
+   `entry-point.md`, a section directory's `index.md`, a leaf elsewhere, every one `.md`) and the
+   set is exactly the files the run declares; a second run over the same tree and output directory
+   adds no file and changes none — the relocated cache this case catches and a "no sideband files"
+   assertion does not.
 
 **Done-line.** `just test-changed`, then `just lint`, then the inventory's `git grep`, which prints
-nothing. The checkpoint gate runs once before the commit, as P1 states.
+nothing: `git grep -in 'links\.tsv\|link map\|--map' -- devpro tests justfile PROJECT_DOCS` (and
+`git grep -in 'link map' -- devpro/definitions/`, which prints nothing now and after). The
+checkpoint gate runs once before the commit, as P1 states.
 
 ## P5 — the three standing trees re-diced under the settled model
 
