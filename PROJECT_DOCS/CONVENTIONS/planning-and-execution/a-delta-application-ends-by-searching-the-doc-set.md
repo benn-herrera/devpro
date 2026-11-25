@@ -1,4 +1,4 @@
-### A delta application is followed by a search of the doc set
+### A delta application ends by searching the doc set
 
 An applied passage pair is followed by a search of the document set for the wording of the behavior
 it replaced (`git grep -l '<the replaced phrase>' -- PROJECT_DOCS`) and a read of each hit. A

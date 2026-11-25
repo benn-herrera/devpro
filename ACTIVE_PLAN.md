@@ -49,12 +49,11 @@ regenerated form.
   restore and `dangling: 0` is structural; a promoted-heading dice needs no link map (a 1-intro +
   3-run-in reproduction dices `dangling: 0`), and the map branch is taken only where the real run
   reports `dangling`.
-- The reference inventory for the rehome: five lines carry six occurrences of the title parenthetical
-  `(Install, Harness profiler)` — `repo-layout.md:15` twice, `:16`, `:22`, `subsystem-map.md:80`,
-  `install/opencode-entry.md:46` once each; two link sites: `install/index.md:29` and
-  `ARCHITECTURE/entry-point.md:20` (`git grep -n 'harness-profiler\.md' PROJECT_DOCS` finds exactly
-  those two). After the edits, `git grep -n 'Install, Harness profiler' PROJECT_DOCS` prints
-  nothing.
+- A root-head area is a first-class folder beside its siblings: a project document tree's root area
+  (`SPEC/`, `CONVENTIONS/`, `ARCHITECTURE/`), and `directory_head`'s `tree_root` marks that area and
+  no other. A directory inside the tree is not one, however the tree was built: it opens at
+  `index.md` (`heads.py`'s docstring carries the convention; P3 establishes it in the trees).
+  Check: none — the owner's ruling; P3 states it.
 - The runner targets: `just dice-doc monolith out [map]`, `just undice tree monolith`;
   `--split-level` defaults to 4 (`outline.py:15`, `DEEPEST_SPLIT_LEVEL = 4`); `dice-doc` refuses a
   non-empty out-dir. The checkpoint gate is `just test`, then `just sweep-python` (CONVENTIONS,
@@ -66,7 +65,7 @@ regenerated form.
 | --- | --- | --- | --- | --- |
 | P1 | landed | expert | `devpro:python-coder` | the dicer writes every section's heading ladder re-based to an H1 top; reassembly and undice restore it |
 | P2 | landed | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
-| P3 | in progress | expert | `devpro:prompt-engineer` | the standing trees round-trip: repair what undice exposes |
+| P3 | in progress | expert | `devpro:prompt-engineer` | CONVENTIONS and ARCHITECTURE round-trip and the head convention is corrected; SPEC's residue awaits a ruling |
 | P4 | drafted | expert | `devpro:python-coder` | the three standing trees re-diced under the new behavior |
 | P5 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
@@ -183,12 +182,19 @@ gate runs once before the commit, as P1 states.
 
 ## P3 — the standing trees round-trip: repair what undice exposes
 
+**State.** CONVENTIONS (`reassemble ok: 558 lines`, `dead: 0`), ARCHITECTURE (`reassemble ok: 1694
+lines`, `dead: 0`) and the head convention are repaired and committed. This package is not landed:
+the SPEC tree still fails undice, and its remedy is a code defect no document fix reaches — report,
+not make. When that defect is repaired, SPEC's repair as Guidance step 2 directs, its entry point's
+line 29 corrected at the same time, is the one commit that lands this package.
+
 Agent `devpro:prompt-engineer` (writer mode; the `devpro-docdicer` skill's conventions govern every
 repair).
 
-**Scope.** `PROJECT_DOCS/SPEC/entry-point.md`, `PROJECT_DOCS/SPEC/dicing-and-checks.md`;
-`PROJECT_DOCS/CONVENTIONS/entry-point.md` and the two CONVENTIONS leaves whose headings disagree
-with their file names; `PROJECT_DOCS/ARCHITECTURE/harness-profiler/` (its head file) and
+**Scope.** `PROJECT_DOCS/SPEC/entry-point.md`, `PROJECT_DOCS/SPEC/dicing-and-checks.md`,
+`PROJECT_DOCS/SPEC/dicing/`; `PROJECT_DOCS/CONVENTIONS/entry-point.md` and the two CONVENTIONS
+leaves whose headings disagree with their file names;
+`PROJECT_DOCS/ARCHITECTURE/harness-profiler/` (its head file) and
 `PROJECT_DOCS/ARCHITECTURE/entry-point.md` (the area entry line); and `devpro/dicing/heads.py`'s
 module docstring, whose stale volume-head sentence the repairs contradict.
 
@@ -214,27 +220,45 @@ module docstring, whose stale volume-head sentence the repairs contradict.
   tree-root head inside a volume. `heads.py:directory_head` is the convention and is not
   configurable: ENTRY_POINT where tree_root, INDEX otherwise — ARCHITECTURE's nested volumes
   (`install/`, `rendering/`) and SPEC's (`dicing/`) open at `index.md`.
+- SPEC's second defect, found by P3's run and confirmed in `dicedoc.py`: a volume must stand on its
+  own root. `_undiced_lines` reads exactly the entry point and its first Contents block, so
+  `dicing/index.md` is read as a section — and its child, the H1 top, lands at level 1, which
+  `plan_sections` reads as the tree's title: `undice: path collision: shared-behaviors.md`.
+  `dicedoc._all_reproduced` recognizes a nested tree only by an `entry-point.md` below the root, so a
+  volume headed `index.md` is read as four `not reproduced` strays. `manifest._write_group_indexes`
+  writes `entry-point.md` for every volume it builds. No arrangement of the tree's files satisfies
+  all three; the leaf's form is not the cause.
+- `.devpro-temp/p3-dev-check-links.log`: `dev-check-links` reports
+  `PROJECT_DOCS/SPEC/entry-point.md:29: dicing-and-checks.md: missing file` — the SPEC entry point
+  still declaring the leaf the repair retired. It stands while the remedy is unmet: relinking the
+  line to `dicing/index.md` leaves the tree's defect, and the entry point declaring its volume at a
+  `dicing/index.md` line is the form the tree carries today.
 
 **Guidance.**
 
 1. Load the `devpro-docdicer` skill before editing; its undice-fix conventions govern (a leaf whose
    heading disagrees with its file name: edit the heading to match the name, not the file, which
    would move the path).
-2. SPEC: the dicing volume is declared once, by `entry-point.md`'s member list, and
-   `dicing-and-checks.md` is a plain leaf: its internal subsection structure becomes bold run-in
-   titles (wording unchanged, the docdicer convention), so the planner reads it as the leaf it is
-   and the `dicing/` volume's own index carries the leaves.
+2. SPEC: the dicing volume is declared once, by `entry-point.md`'s member list, and the volume's
+   index stands on its own root — moved to `SPEC/dicing-and-checks.md` with its heading at H1, the
+   re-based write form its leaves carry, and no Contents block. A `dicing/index.md` cannot round-trip
+   (`dicedoc._all_reproduced` reads it as a stray, `plan_sections` collides its H1 top with the
+   tree's title); nothing inside `dicing/` declares the volume. Check: `just undice
+   PROJECT_DOCS/SPEC .devpro-temp/<name>-undiced.md` exits 0.
 3. CONVENTIONS: edit the two mismatched headings to the titles their file names and entry-point
    links carry, and add the two omitted leaves to the entry point's list.
 4. ARCHITECTURE: rename the area's head to the nested-volume convention
-   (`harness-profiler/entry-point.md` → `harness-profiler/index.md`) and update
-   `ARCHITECTURE/entry-point.md`'s area entry to `harness-profiler/index.md`. The owner's
-   root-headed-area ruling names the area's standing — its own folder, first-class beside `SPEC/`
-   and `CONVENTIONS/` — not the head file's name; the head name is the tool's convention. Correct
-   `heads.py`'s module docstring to state the convention the function and the standing trees carry:
-   the tree's root opens at ENTRY_POINT; every directory inside the tree opens at INDEX.
+   (`harness-profiler/entry-point.md` → `harness-profiler/index.md`), update
+   `ARCHITECTURE/entry-point.md`'s area entry to `harness-profiler/index.md`, and replace the removed
+   head's own Contents block with the area's members listed in the root entry point, below the area
+   line: a nested area's head carries no Contents block (`_undiced_lines` reads only the root's; the
+   dicer writes none). The owner's root-headed-area ruling names the area's standing — its own
+   folder, first-class beside `SPEC/` and `CONVENTIONS/` — not the head file's name; the head name is
+   the tool's convention. Correct `heads.py`'s module docstring to state the convention the function
+   and the standing trees carry: the tree's root opens at ENTRY_POINT; every directory inside the
+   tree opens at INDEX.
 5. Verification per tree: `just undice <tree-dir> .devpro-temp/<name>-undiced.md` exits 0 with
-   `reassemble ok`, and `just check-links` reports `problems: 0`.
+   `reassemble ok`, and `just dev-check-links` reports `broken: 0` and `problems: 0`.
 
 **Done-line.** `just dev-check-links`.
 

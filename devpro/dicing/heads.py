@@ -1,9 +1,11 @@
 """The head-file names of a diced tree, fixed by convention and never configurable: a reader moving
-between projects relies on finding them.
+between projects relies on finding them, and the standing project trees carry the same rule.
 
-A tree's root, and each diced volume, opens at ENTRY_POINT; every other directory opens at INDEX.
-directory_head gives a directory's head file's path. A head's Contents block opens at its last line
-that is exactly CONTENTS; contents_line spells each line it lists.
+A tree's root — the root-head area beside `SPEC/`, `CONVENTIONS/` or `ARCHITECTURE/` when the tree
+is one of a project's documents — opens at ENTRY_POINT; every directory inside the tree opens at
+INDEX, the tree's own volumes included. directory_head gives a directory's head file's path. A
+head's Contents block opens at its last line that is exactly CONTENTS; contents_line spells each
+line it lists.
 """
 
 ENTRY_POINT = "entry-point.md"

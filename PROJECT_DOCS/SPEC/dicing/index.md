@@ -1,6 +1,6 @@
 ## Shared behaviors
 
-These hold for every verb of the dicing surface ([Dicing and Checks](../dicing-and-checks.md));
+These hold for every verb of the dicing surface ([its outcome and verbs](../entry-point.md));
 each leaf states its verbs' contract beside them.
 
 Contents:

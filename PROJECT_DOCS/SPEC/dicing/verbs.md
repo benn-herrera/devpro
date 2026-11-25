@@ -143,7 +143,7 @@ In order:
 6. Group indexes and the entry point are written ([manifest](#manifest)).
 7. The [reassembly](checks.md#reassembly) and [link checks](checks.md#link-check) run on every
    volume with the link map — the dicing's own commit gate
-   ([Dicing and Checks](../dicing-and-checks.md)), applied per volume.
+   ([Dicing and Checks](../entry-point.md)), applied per volume.
 8. A final check over the files written in step 6 prints
    `=== files written by this script: link targets exist`, then `  checked <file>` per file, and
    `  DEAD <file> -> <target>` for each link ([what is a link](links.md#what-is-a-link)) in the

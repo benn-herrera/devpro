@@ -1,4 +1,4 @@
-### A sentence two harness resources carry is one text
+### A sentence two resources carry is one text
 
 A harness resource is copied, never rendered, so a sentence two of them carry has no constant to
 share ([Shared text is one constant](shared-text-is-one-constant.md)): it is one text by the edit that
