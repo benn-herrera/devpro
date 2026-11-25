@@ -137,7 +137,7 @@ if (Number.isFinite(first)) {
   moment.textContent = localDay(at) + ' ' + localClock(at);
   head.append(moment);
 }
-head.append([head.childNodes.length ? ' · ' : '', D.branch ? `branch ${D.branch}` : '', `${D.calls.length} calls`, `${D.contexts.length} contexts`, D.models.length ? ` · ${modelWords(D.models)}` : ''].filter(Boolean).join(''));
+head.append((head.childNodes.length ? ' · ' : '') + [D.branch ? `branch ${D.branch}` : '', `${D.calls.length} calls`, `${D.contexts.length} contexts`, D.models.length ? modelWords(D.models) : ''].filter(Boolean).join(' · '));
 
 // ---------- sequence diagram: one lifeline per context ----------
 
