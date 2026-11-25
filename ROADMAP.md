@@ -200,6 +200,15 @@ grouping and child pages this extends.
 
 ## Maintenance
 
+### A Facts entry's evidence survives its item's commit
+
+B7's Facts cite `.devpro-temp/b4/` as the finding's evidence directory; when B7 landed, the
+directory had been cleaned, and the measurement lived only in the plan's own text — a measurement
+with no artifact behind it is a claim. Scratch is scratch by design, so the fix is not "keep the
+directory": a Facts entry whose evidence is a probe either records the probe's essential output
+inline (the command, the runs, the exits) or the rule states where durable evidence goes. Proposed
+home: CONVENTIONS, beside the dispatchability rules a Facts entry serves.
+
 ### Profiler child rows off by default
 
 Having them on by default is not helpful
