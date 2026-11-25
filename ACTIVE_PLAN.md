@@ -2,9 +2,10 @@
 
 No design stands behind this plan: the requirements are the rulings below, stated in Facts, and the
 work goes straight to the plan. Every work package below is **shipped**, and each closes in one
-commit. The packages run serially, in ID order: the re-dice follows the repair, because it
-regenerates the trees from their undiced monoliths and would otherwise freeze their defects in
-regenerated form.
+commit. The packages run serially, in ID order: the repair (P3) precedes the model change (P4),
+because P4 restates the head convention P3 has just corrected and both edits touch `heads.py`; the
+model change precedes the re-dice (P5), because the re-dice writes the trees in the model P4 settles;
+and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC residue to be repaired.
 
 ## Facts the packages rely on
 
@@ -66,8 +67,9 @@ regenerated form.
 | P1 | landed | expert | `devpro:python-coder` | the dicer writes every section's heading ladder re-based to an H1 top; reassembly and undice restore it |
 | P2 | landed | expert | `devpro:python-coder` | the harness profiler rehomed to its own area and diced with the fixed tool |
 | P3 | in progress | expert | `devpro:prompt-engineer` | CONVENTIONS and ARCHITECTURE round-trip and the head convention is corrected; SPEC's residue awaits a ruling |
-| P4 | drafted | expert | `devpro:python-coder` | the three standing trees re-diced under the new behavior |
-| P5 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
+| P4 | drafted | expert | `devpro:python-coder` | the dicer's two patterns: volumes and broken-out sections; the manifest retires |
+| P5 | drafted | expert | `devpro:python-coder` | the three standing trees re-diced under the settled model |
+| P6 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
 
 ## P1 — the dicer writes every section's heading ladder re-based to an H1 top
@@ -163,7 +165,9 @@ into `PROJECT_DOCS/ARCHITECTURE/harness-profiler/`); `PROJECT_DOCS/ARCHITECTURE/
    a partial move left it, `git rm -r` it and move again. After the move,
    `ls ARCHITECTURE/harness-profiler | wc -l` is 17 and `head -3
    ARCHITECTURE/harness-profiler/entry-point.md` shows the title, the intro's first line and its
-   third.
+   third. This step's head-name sentence stated the pre-P3 convention; P3 established the
+   nested-area head (`index.md`) and P4's model confirms it — P2's landed tree is the authority
+   here, not this step's wording.
 3. Rewrite the citations: `install/index.md`'s member link at :29 is removed (the install area's
    list shrinks by one line); `ARCHITECTURE/entry-point.md`'s line at :20 — the install leaf's
    link — becomes the area entry `harness-profiler/entry-point.md`; the title parentheticals — six
@@ -262,7 +266,109 @@ module docstring, whose stale volume-head sentence the repairs contradict.
 
 **Done-line.** `just dev-check-links`.
 
-## P4 — the three standing trees re-diced under the new behavior
+## P4 — the dicer's two patterns: volumes and broken-out sections; the manifest retires
+
+**Scope.** `devpro/dicing/heads.py` (the head convention re-ruled); `devpro/dicing/dicedoc.py`
+(`_restored`, `_undiced_lines`, `_placed_level`, `_all_reproduced`, `verify` — reconstruction and
+checking per the two patterns); `devpro/dicing/split.py` (the writer: volume heads for input
+documents); `devpro/dicing/dice.py` (the writer's multi-input entry, in this package: the
+`manifest.py` it absorbs); `devpro/dicing/treecheck.py` (the head wording of the two patterns);
+`devpro/dicing/manifest.py` (deleted) and `devpro/dicing/cli.py` (the `dice-docs` verb removed);
+`devpro/cli.py` (`DICING_VERBS`); the `justfile` recipe `dice-docs`; `tests/dicing/` (corpus and
+tests); the SPEC dicing leaves that state the forms —
+`PROJECT_DOCS/SPEC/dicing/{index,links,tree,checks,verbs}.md` — and
+`PROJECT_DOCS/SPEC/package-and-command.md` (the surface verb list).
+
+**Facts.**
+
+- The model, the owner's ruling: two structural patterns only. `entry-point.md` is the top document
+  of a volume — an original whole document; `index.md` is the top document of a broken-out section —
+  a piece diced out of a parent. `dice A.md B.md T/` makes every input document a volume under the
+  omnibus: one directory per input at the output root, named for the input's base name without
+  `.md`, holding its `entry-point.md` and its section children — `T/A/entry-point.md`,
+  `T/B/entry-point.md` — and `T/entry-point.md` as the omnibus's own head. A volume's
+  `entry-point.md` holds its document's title at level 1 and the document's own text above its first
+  split heading; the document's title and its section ladders are written as `dice-doc` writes them.
+  Each input's name must be distinct among the inputs, and no volume directory may take the name an
+  `index.md` head already gives a section directory: where either would hold, the verb reports the
+  collision and exits 2 writing nothing. `undice T/` emits one document per directory carrying
+  `entry-point.md`; `index.md`-headed directories never become documents. No nested subvolumes: a
+  joining document becomes a top-level volume or is subsumed and loses separate-document identity.
+- The manifest is not needed for creation or reconstruction: `dice-docs`, `devpro/dicing/manifest.py`
+  and the manifest concept retire. Check, which must print nothing and is P4's done-line:
+  `git grep -n 'dice-docs\|manifest\|links\.tsv' -- devpro/dicing devpro/cli.py justfile` and
+  `git grep -n 'dice-docs\|manifest' -- PROJECT_DOCS/SPEC tests/dicing`.
+- The map subsists the verb: `dice` writes `<out>/links.tsv` by `dice-doc`'s rules, because a
+  document linking into a second document is still a link, not a path. The rest of `manifest.py` —
+  its manifest reader, the group-index and entry writers, and the post-write check — has no caller
+  and is deleted, not ported.
+- Today's writer writes each section at the path `plan_sections` computes — `<name>/index.md` for a
+  section with children, `<name>.md` otherwise (`outline.py:101`, `split.py:76`) — so the section
+  half of the model is already the standing behavior; the writer has no head-name abstraction and
+  the volume half is a change to the path plan, not just a head file: the plan's root section
+  becomes `entry-point.md` and each input's document becomes a second tree under the root. Check:
+  `git grep -n 'directory_head' devpro/dicing/*.py`.
+- Today's reconstruction recognizes a nested tree only by an `entry-point.md` below the root
+  (`dicedoc._all_reproduced`) — the form the model keeps for a volume, but it reads only the root's
+  first Contents block (`_undiced_lines`) and so cannot reconstruct the multi-volume form at all.
+  It also treats `index.md` as its directory's own section, one level above its siblings
+  (`_placed_level`): correct while every head was a section index, wrong under the fold, where an
+  `index.md` is a child of its volume's `entry-point.md` like any other section file. Check:
+  `git grep -n '_all_reproduced\|_undiced_lines\|_placed_level' devpro/dicing/dicedoc.py`.
+
+**Guidance.**
+
+1. `heads.py`: the head convention becomes the two patterns — a volume's top document is
+   `entry-point.md`, a broken-out section's top document is `index.md`. Which pattern a directory is
+   is answered by the tree, not by the file: a directory is a volume root where it is the tree root
+   or a direct child of the tree root holding an `entry-point.md`; every other directory holding an
+   `index.md` is a broken-out section. `directory_head`'s callers state which pattern they are
+   writing, and the function states it in its name, not as a boolean `tree_root`: `volume_head()`
+   beside `section_head()`, or one function taking the pattern. The docstring states the model, the
+   function implements it; `treecheck.py`'s module docstring and its `_head` state the same split,
+   and the SPEC's `check-tree` section restates it. `heads.py` was P3's to correct (its committed
+   docstring reads "every directory inside the tree opens at INDEX, the tree's own volumes
+   included", which this step supersedes); P3 has landed, so the sole edit here is allowed — state
+   it in the commit body. If a `heads.py` change outside this scope appears before this package
+   lands, report and stop rather than edit it.
+2. `dice` gains the multi-input form. Its output root holds exactly `entry-point.md` and one
+   directory per input. The root's `entry-point.md` is the omnibus's own head: a level-1 title and a
+   Contents block whose every section is a volume's `entry-point.md`, one line each, link text the
+   volume document's title (its first level-1 heading's plain text) — the block `undice` reads to
+   reach the volumes. A Contents link carries no text after it, so the volume's first-sentence
+   purpose has no place in the block: state this in the SPEC leaves rather than carry a `Volumes:`
+   block the form does not have. The single-input form is the multi-input form with one input, so a
+   one-document `dice-doc` tree and a one-volume omnibus differ only in the root's Contents line
+   count.
+3. `undice` takes a tree directory, not a target: it writes into a directory named on the command
+   line, one document per included directory — a volume directory `T/A/` writes `<out>/A.md` — and
+   no document for a directory headed `index.md`; the omnibus root's document writes
+   `<out>/<tree dir base name>.md`, and `<out>` must be absent or empty (exit 2 with that message,
+   by `dice-doc`'s rule). A volume's reconstruction folds its `index.md`-headed sections back into
+   its document — the sub-sections become the headings they had when the document was diced, by P1's
+   ladder arithmetic — and drop any non-contract section link target it sees when dicing it back. A
+   tree whose contents sit directly under its root (a one-document `dice-doc` tree, the three
+   project-document trees) reconstructs as one document named for the tree directory: the form
+   distinguishes them by whether `entry-point.md`'s direct sections are `index.md` or
+   `entry-point.md` files.
+4. Delete the manifest: `manifest.py`, the `dice-docs` verb and its recipe, and every test that
+   exercises them. `dicedoc.verify` is not deleted with it: it becomes the per-tree check the
+   re-dice and the board run, taking a tree directory instead of `(monolith, out)` pairs, and its
+   `leaves:` line is where P5 reads leaf counts. Retire the SPEC dicing leaves' manifest wording in
+   the same commit.
+5. Tests, per `clauses.TEST_PRECONDITION` (defect: the reconstruction cannot read the form the
+   writer writes, and the manifest is a third party where two patterns suffice): the owner's example
+   — `dice A.md B.md T/` produces the model tree; `undice T/` reproduces `A.md` and `B.md` with each
+   volume's sections restored to their pre-dice levels; a section with children — the
+   `index.md`-headed case, at any depth, with or without children of its own — is never emitted as a
+   document, while the directory above it that carries `entry-point.md` always is; and two cases for
+   the directory collision the model admits: an input whose base name is a section's directory name
+   exits 2 writing nothing, and the same for two inputs of one base name.
+
+**Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
+commit, as P1 states.
+
+## P5 — the three standing trees re-diced under the settled model
 
 **Scope.** `PROJECT_DOCS/SPEC/`, `PROJECT_DOCS/ARCHITECTURE/`, `PROJECT_DOCS/CONVENTIONS/`
 (regenerated whole); the monoliths are work products under `.devpro-temp/`.
@@ -273,30 +379,30 @@ module docstring, whose stale volume-head sentence the repairs contradict.
    target), then `just dice-doc .devpro-temp/<name>-undiced.md .devpro-temp/<name>-fresh/`. Undice
    and dice at the default split level 4, the level the trees were diced at. Take `reassemble ok`
    from the undice and `reassemble ok` plus `dead: 0` from the dice as the preconditions of step 2;
-   a difference reported by either is a finding for P1, not something P4 patches. This is also the
+   a difference reported by either is a finding for P1, not something P5 patches. This is also the
    first end-to-end exercise of P1's form-conditional shift on a tree P1 did not write.
 2. Replace, don't merge: `git rm -r <tree-dir>`, then
    `mv .devpro-temp/<name>-fresh <tree-dir>`. The fresh tree is the whole of the directory
    afterwards; a file the old tree held and the fresh tree does not is gone.
 3. After all three replacements: `just check-links` with `problems: 0`, and
    `just dev-check-links`. The commit body names each tree re-diced and its leaf count — the count
-   comes from a per-tree `devpro check-links <tree-dir>` run, its `documents checked:` line less
-   that tree's `index.md` and `entry-point.md` heads, the method stated in the commit body. The
-   counts are taken after P2, which changes ARCHITECTURE's inventory; no pre-measured baseline
-   belongs in this plan.
+   comes from a per-tree `devpro check-tree <tree-dir>` run's `leaves:` line, the method stated in
+   the commit body. The counts are taken after P2 and P4, which change ARCHITECTURE's inventory; no
+   pre-measured baseline belongs in this plan.
 
-P4 runs after P3 and not before: the re-dice regenerates the trees from their undiced monoliths, and
-running it before the repair would freeze the trees' defects into regenerated form.
+P5 runs after P4 and P3: the re-dice regenerates the trees from their undiced monoliths, and running
+it before the repair would freeze the trees' defects into regenerated form, while running it before
+the model change would write trees the reconstruction cannot read.
 
 **Done-line.** `just test-changed`, then `just lint`, then `just dev-check-links`. The checkpoint
 gate runs once before the commit, as P1 states.
 
-## P5 — Post-plan review
+## P6 — Post-plan review
 
 **Lifetime.** The review package lands nothing but `ACTIVE_PLAN_REVIEW.md`; its row is `landed` in
 the commit that adds the file.
 
-The post-plan reviewers review what P1–P4 shipped, and get the project documents, not this plan:
+The post-plan reviewers review what P1–P5 shipped, and get the project documents, not this plan:
 
 - `devpro:python-coder`, for the dicing tool and its tests;
 - `devpro:architect`, for the structure and the documents' claims about the tool;
