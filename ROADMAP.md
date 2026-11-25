@@ -271,7 +271,7 @@ hand-copied dict of itself, and `test_claude_frontmatter_holds_the_field_order_a
 carries `model: opus` inside a tuple whose subject is field order and spelling. Both photograph
 owner tuning: 829f7e7 landed and the gate ran red until the pins followed.
 
-Work, three parts: (1) prune — keep the form asserts that are contract (order, spelling, quoting,
+Work, four parts: (1) prune — keep the form asserts that are contract (order, spelling, quoting,
 required fields), assert the `model:` line is present without pinning its value, rework or retire
 the members mirror; (2) commissioning — everywhere a test can be born, not only plan packages, it
 exists only with its defect named and the planted-defect run shown, the `clauses.TEST_PRECONDITION`
@@ -280,3 +280,12 @@ test literal that also appears in the source it tests; an equality between test-
 loaded source data), so the gate refuses the pattern no reviewer has to catch. The review-side
 complement is the per-test ledger — one line per test, `dies on:` — the per-item shape the
 over-100ms ticket uses; a test whose only answer is "the source changing" convicts itself.
+(4) the standing triage — a test failing on behavior the work does not state it changes is
+reported as a finding today, and the finding's disposition is nothing: it surfaces or it does not.
+Instead it lands in the active plan at once as an interrupt, a work item with its own row and
+one-commit close that the package which tripped it does not proceed past; full stop, that test is
+settled before the work continues. Triage has three verdicts: the test checks nothing — axe it;
+it checks something at the cost of sensitivity to changes outside its subject — refactor it to
+isolate its own logical test; it checks something real and the work broke it — the test is
+acquitted and the work is the suspect, which stops the package for the opposite reason. The
+owner's surface of the report is not guaranteed and is not the mechanism: the plan is.
