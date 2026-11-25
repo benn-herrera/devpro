@@ -294,6 +294,11 @@ tests); the SPEC dicing leaves that state the forms —
   collision and exits 2 writing nothing. `undice T/` emits one document per directory carrying
   `entry-point.md`; `index.md`-headed directories never become documents. No nested subvolumes: a
   joining document becomes a top-level volume or is subsumed and loses separate-document identity.
+- The omnibus's own head does not grow: it holds the omnibus's title and its Contents, and nothing
+  more. Content whose growth would require splitting it is misplaced — it belongs in a volume of
+  its own, in a volume's own `entry-point.md`, or further down the tree. Needing to split the
+  omnibus head is the indication of that misuse, and the remedy is moving the content, never
+  splitting the file.
 - The manifest is not needed for creation or reconstruction: `dice-docs`, `devpro/dicing/manifest.py`
   and the manifest concept retire. Check, which must print nothing and is P4's done-line:
   `git grep -n 'dice-docs\|manifest\|links\.tsv' -- devpro/dicing devpro/cli.py justfile` and
