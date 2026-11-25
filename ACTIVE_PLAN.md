@@ -435,8 +435,13 @@ the model change would write trees the reconstruction cannot read.
 landing (`9b0f8df` — the harness-profiler leaf still in `install/`, the dicer fix landed) with a
 path-scoped `git checkout 9b0f8df -- PROJECT_DOCS`; then `undice`/`dice` each tree — the round trip
 fixes the heading form; then move the leaf to the top of `ARCHITECTURE/` and dice it in place; then
-rename its head `entry-point.md` → `index.md` and fix the links into it. Those chores are small and
-deterministic, and every step's result is verified by the round trip and `check-links`.
+rename its head `entry-point.md` → `index.md` and fix the links into it. Two addenda, from walking
+the sequence: (a) at `9b0f8df` the leaf's run-ins are still bold, not headings — re-apply the
+promotion (wording-neutral; the promoted file is `d58b1b1`'s) before dicing, or the dice splits
+nothing; (b) CONVENTIONS' two heading mismatches and SPEC's double-declared volume exist at that
+state too — re-apply `c8ac105`'s small edits when the undice names them; the failure is the repair
+list, not a tool defect. For a partial sideways run, the cheaper fallback is per-tree: CONVENTIONS
+and ARCHITECTURE are verified round-trippers at pre-P5 HEAD, so only the mangled tree restores.
 
 **Done-line.** `just test-changed`, then `just lint`, then `just dev-check-links`. The checkpoint
 gate runs once before the commit, as P1 states.
