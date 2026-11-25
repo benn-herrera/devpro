@@ -69,6 +69,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | P3 | landed | expert | `devpro:prompt-engineer` | CONVENTIONS and ARCHITECTURE round-trip, the head convention corrected; SPEC's residue re-homed to P4 (the tool defect) and P5 (re-dice under the settled model) |
 | P4 | landed | expert | `devpro:python-coder` | the dicer's two patterns: volumes and broken-out sections; the manifest retires |
 | P4b | in progress | expert | `devpro:python-coder` | the reconstruction's stragglers: `_placed_level` and the link re-base |
+| P4c | drafted | expert | `devpro:python-coder` | the links.tsv cache retires: the map is an input, never an artifact |
 | P5 | in progress | expert | `devpro:python-coder` | the three standing trees re-diced under the settled model |
 | P6 | drafted | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
 | B0 | drafted | expert | session | Post-plan burndown drafting |
@@ -445,13 +446,47 @@ corpus and tests).
 3. Tests, per `clauses.TEST_PRECONDITION` (defect: the reconstruction restores a section index's
    child at its own depth, and the link re-base roots at the run directory): both reproduction
    shapes as corpus cases, demonstrated red before the fix.
-4. The map retires entirely: remove the `links.tsv` write (`dicedoc.py:217,238,391`), the `--map`
-   flag, and the round-trip test's skip of the file — a tree compares whole. Links resolve at run
-   time from the document's heading structure, the tree's two-pattern conventions, and the anchors'
-   deterministic disambiguation; a target that resolves nowhere is reported `dangling:`. Defect:
-   sideband data persisted into the tree, giving the operation an ambient dependency on state a
-   previous run left. The corpus's `links.tsv` expectations are removed with the write, and the
-   SPEC leaves' map wording retires with the concept.
+
+**Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
+commit, as P1 states.
+
+## P4c — the links.tsv cache retires
+
+Fixes the sideband defect the map's implementation carried: the map was a compute cache — every row
+derivable from the documents and the tree — and its persistence gave the dicing operations an
+ambient dependency on state a previous run left. Agent `devpro:python-coder`.
+
+**Scope.** `devpro/dicing/dicedoc.py` (the map's write and read); `devpro/dicing/linkrewrite.py`
+(the map handling in the rewriter); `devpro/dicing/cli.py` (the `--map` flag); the `justfile`
+`dice` recipe's map argument; `tests/dicing/` (the `links.tsv` expectations and the round-trip
+test's `skip`); the SPEC dicing leaf naming the map (`PROJECT_DOCS/SPEC/dicing/links.md`); the
+`devpro-docdicer` skill definition where it names the map.
+
+**Facts.**
+
+- The map is a compute cache, not data: every row is derivable — in-dice targets from the heading
+  structure, other inputs from the two-pattern convention, ambient targets from the same scan
+  `check-links` already runs — and recomputation is cheaper than trust, because a cached resolution
+  disagrees with the docs silently when they move.
+- Resolution is deterministic without a cache: repeated heading text disambiguates by the anchors'
+  document-order suffixes; a target that resolves nowhere is reported `dangling:` — the honest
+  behavior, never a cached guess.
+- An in-memory mapping, built at run time and persisting for the execution's duration, is standard
+  coding efficiency and is not what retires — persistence and re-ingestion are. `dice` and `undice`
+  are self-contained: all inputs on the command line, all outputs declared; the tree holds documents
+  and nothing else.
+
+**Guidance.**
+
+1. Remove the map's write and read (`dicedoc.py:217,238,391` region) and the `--map` flag: `dice`
+   writes nothing into the output tree but the tree itself, and `undice` reads no map.
+2. Remove the map handling from `linkrewrite.py` the write/read served.
+3. Tests: remove the `links.tsv` expectations and the round-trip test's `skip="links.tsv"` — a tree
+   compares whole; add a corpus case asserting a diced tree holds only documents, no sideband files.
+   Defect, per `clauses.TEST_PRECONDITION`: sideband data persisted into the tree, giving the
+   operation an ambient dependency on a previous run's state.
+4. The SPEC dicing leaf's map wording retires with the concept; the skill definition's verb wording
+   is checked for map references.
 
 **Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
 commit, as P1 states.
