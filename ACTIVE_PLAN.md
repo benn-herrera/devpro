@@ -375,7 +375,10 @@ reader consults while managing a tree; the SPEC leaves carry the mechanics and s
    exercises them. `dicedoc.verify` is not deleted with it: it becomes the per-tree check the
    re-dice and the board run, taking a tree directory instead of `(monolith, out)` pairs, and its
    `leaves:` line is where P5 reads leaf counts. Retire the SPEC dicing leaves' manifest wording in
-   the same commit.
+   the same commit. The SPEC leaves state their coordination with the skill: they carry the
+   implementation spec — what the tool writes and reconstructs — and the `devpro-docdicer` skill
+   carries the usage conventions for managing a tree, and the two are to remain coordinated; a
+   change to one that touches the other changes both.
 5. Tests, per `clauses.TEST_PRECONDITION` (defect: the reconstruction cannot read the form the
    writer writes, and the manifest is a third party where two patterns suffice): the owner's example
    — `dice A.md B.md T/` produces the model tree; `undice T/` reproduces `A.md` and `B.md` with each
