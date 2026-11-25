@@ -261,11 +261,13 @@ _js-deps: _bun-required
 js-lock: _bun-required
     @cd "{{PROJECT_ROOT}}" && bun install
 
-# Screenshots a page once it has settled, for viewing. <page> is an http(s) URL, a route starting `/`
-# with `--base <url>`, or a file path; the options are `--viewport <W>x<H>`, `--wait-for <selector>`,
-# `--color-scheme light|dark`, `--timeout <ms>` and `--out <png>`, and `bun devtools/screenshot.ts
-# --help` lists their defaults. It prints the PNG's path. The install `_js-deps` runs writes its own
-# output to stderr, so stdout holds the path alone.
+# Screenshots a page once it has settled, for viewing: the load, the fonts, the `--wait-for`
+# selector, then — where no selector was given — a bounded, advisory wait for network idle; a page
+# that keeps requesting is shot when the bound expires, not failed. <page> is an http(s) URL, a route
+# starting `/` with `--base <url>`, or a file path; the options are `--viewport <W>x<H>`,
+# `--wait-for <selector>`, `--color-scheme light|dark`, `--timeout <ms>` and `--out <png>`, and
+# `bun devtools/screenshot.ts --help` lists their defaults. It prints the PNG's path. The install
+# `_js-deps` runs writes its own output to stderr, so stdout holds the path alone.
 [doc("[dev] screenshot a page after it settles, for viewing")]
 screenshot *args: _js-deps
     @cd "{{PROJECT_ROOT}}" && bun devtools/screenshot.ts "$@"

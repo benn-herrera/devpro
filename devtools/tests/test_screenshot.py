@@ -29,6 +29,16 @@ setTimeout(() => {
 }, 300);
 </script></body></html>
 """
+# A page that re-fetches every 300 ms, so its network never quiets for the driver's 500 ms idle window:
+# the page the settle exists to shoot, and the one a mandatory idle wait fails. The marker is present
+# from load.
+POLLER_PAGE = """<!doctype html>
+<html><head><meta charset="utf-8"><title>poller</title></head>
+<body style="margin:0"><p id="marker">polling</p>
+<script>
+setInterval(() => { fetch('poller.html?t=' + Date.now()).catch(() => {}); }, 300);
+</script></body></html>
+"""
 # A page that reports the dark scheme whatever it is shown in, so a `--color-scheme light` run's check
 # can fail against a real page.
 DARK_PAGE = """<!doctype html>
@@ -138,6 +148,63 @@ def test_a_route_is_resolved_against_base_before_the_filesystem(tmp_path: Path) 
     assert result.returncode == 0, result.stderr
     assert result.stdout == f"{shot}\n"
     assert shot.exists()
+
+
+def test_a_polling_page_with_a_selector_is_shot(tmp_path: Path) -> None:
+    """The defect is a settle whose idle wait is mandatory: a polling page never quiets, so the run
+    fails and the tool cannot shoot the pages it exists for.
+
+    Before the change the load waited on `networkidle0`, which a 300 ms poller never reaches: the
+    run exited 1 on a navigation timeout. The selector is given and appears, so the run settles on
+    it and exits 0 inside `--timeout`.
+    """
+    _tools()
+    (tmp_path / "poller.html").write_text(POLLER_PAGE, encoding="utf-8")
+    shot = tmp_path / "poll.png"
+
+    with _served(tmp_path) as port:
+        result = _run(
+            "/poller.html",
+            "--base",
+            f"http://127.0.0.1:{port}",
+            "--wait-for",
+            "#marker",
+            "--timeout",
+            "3000",
+            "--out",
+            str(shot),
+        )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == f"{shot}\n"
+    assert shot.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_a_polling_page_without_a_selector_still_shoots(tmp_path: Path) -> None:
+    """The defect is a mandatory idle wait: with no `--wait-for`, the polling page's idle wait must
+    be bounded and advisory, never a failure.
+
+    Before the change the load's `networkidle0` expired at `--timeout` and exited 1. After it, the
+    idle wait expires inside its own bound, is swallowed, and the PNG is written.
+    """
+    _tools()
+    (tmp_path / "poller.html").write_text(POLLER_PAGE, encoding="utf-8")
+    shot = tmp_path / "idle.png"
+
+    with _served(tmp_path) as port:
+        result = _run(
+            "/poller.html",
+            "--base",
+            f"http://127.0.0.1:{port}",
+            "--timeout",
+            "3000",
+            "--out",
+            str(shot),
+        )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == f"{shot}\n"
+    assert shot.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
 
 
 def test_a_page_shown_in_the_wrong_scheme_fails_and_writes_no_png(tmp_path: Path) -> None:

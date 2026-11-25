@@ -10,13 +10,16 @@
 // `page` is one of three forms — an `http://` or `https://` URL; a route starting with `/`, resolved
 // against `--base`; a file path, opened as its `file://` URL. `--base` decides the form of a
 // `/`-path, before any filesystem test: with it the path is a route, and without it the path is
-// looked for on disk. Settle is in order: the load holds network idle, the fonts are ready, and the
-// `--wait-for` selector appears where one is given. Each step is bounded by `--timeout`, as is the
-// color scheme's check, which runs before the shot so a page shown in the wrong scheme writes no PNG.
+// looked for on disk. Settle is in order: the load lands, the fonts are ready, the `--wait-for`
+// selector appears where one is given, and then — where no selector was given — a bounded wait for
+// network idle that is advisory: its expiry never fails the run, since a page that polls or holds a
+// stream is still ready to shoot. Each step is bounded by `--timeout`, as is the color scheme's
+// check, which runs before the shot so a page shown in the wrong scheme writes no PNG.
 //
-// Exit codes: 0 prints the PNG's absolute path and nothing else; 2 is a usage error; 1 is a page that
-// failed to load or settle, or no `firefox` on PATH, and no PNG is written. `--help` prints the usage
-// and exits 0. The browser closes on every path, the failure's included.
+// Exit codes: 0 prints the PNG's absolute path and nothing else; 2 is a usage error; 1 is a load or a
+// settle failure — the load, the fonts, the `--wait-for` selector where one is given — or no
+// `firefox` on PATH, and the run names the cause and writes no PNG. `--help` prints the usage and
+// exits 0. The browser closes on every path, the failure's included.
 import { accessSync, constants, existsSync, mkdirSync, statSync } from "node:fs"
 import { delimiter, dirname, join, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
@@ -35,7 +38,7 @@ const USAGE = `usage: bun devtools/screenshot.ts <page> [options]
   <page>                  an http(s) URL, a route starting with / (needs --base), or a file path
   --base <url>            the URL a route is resolved against (no default)
   --viewport <W>x<H>      the viewport (default ${DEFAULT_VIEWPORT})
-  --wait-for <selector>   a selector to wait for after the load settles (no default)
+  --wait-for <selector>   a selector to wait for after the load lands (no default)
   --color-scheme light|dark
                           the page's color scheme (default ${DEFAULT_COLOR_SCHEME})
   --out <png>             the file written (default .devpro-temp/screenshots/<slug>.png)
@@ -216,12 +219,14 @@ async function scheme(page: Page, opts: Options): Promise<void> {
 }
 
 // Settles the page and writes its full-page screenshot. Every failure is thrown described, so the
-// caller prints one cause. The scheme is checked once the load has landed and before the shot, so a
-// page shown in the wrong scheme leaves no file behind.
+// caller prints one cause. The load's `load` event is the page's own, not the driver's inference from
+// network lifecycle signals, which Firefox over WebDriver BiDi reports least reliably; network idle,
+// where it is waited for at all, is advisory and never fails the run. The scheme is checked once the
+// load has landed and before the shot, so a page shown in the wrong scheme leaves no file behind.
 async function shoot(page: Page, target: string, opts: Options, out: string): Promise<void> {
   const ms = opts.timeoutMs
   try {
-    await page.goto(target, { waitUntil: "networkidle0", timeout: ms })
+    await page.goto(target, { waitUntil: "load", timeout: ms })
   } catch (err) {
     const what = isTimeout(err) ? `loading ${target} did not settle within ${ms} ms` : `loading ${target} failed`
     throw new Error(`${what}: ${reason(err)}`, { cause: err })
@@ -241,6 +246,11 @@ async function shoot(page: Page, target: string, opts: Options, out: string): Pr
         : `waiting for ${opts.waitFor} failed`
       throw new Error(`${what}: ${reason(err)}`, { cause: err })
     }
+  } else {
+    // Advisory only: a page that polls or holds a stream never quiets, and it is still ready to
+    // shoot. Its expiry, and any error from it, are swallowed so the shot proceeds. Bounded by its
+    // own `--timeout`, as every step is.
+    await page.waitForNetworkIdle({ idleTime: 500, timeout: ms }).catch(() => {})
   }
   try {
     await page.screenshot({ path: out, fullPage: true })

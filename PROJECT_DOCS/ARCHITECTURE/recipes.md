@@ -74,10 +74,12 @@ it does not ship.
 [--wait-for <selector>] [--timeout <ms>] [--out <png>]` runs
 `devtools/screenshot.ts` under bun: `puppeteer-core`, a dev dependency in the same root
 `package.json`, drives the `firefox` on `PATH` headless over WebDriver BiDi — Puppeteer owning the
-profile, the flags and the handshake, no browser downloaded — settles the page on network idle,
-the fonts ready and the selector where one is given, and writes a PNG, by default under
-`.devpro-temp/screenshots/`, printing its path. It is the development loop's view of a rendered
-page and asserts nothing about the pixels. The private `_js-deps` recipe installs that
+profile, the flags and the handshake, no browser downloaded — settles the page as the load lands,
+the fonts come ready and the selector appears where one is given, then, where no selector was given,
+waits for network idle within a bound and advisably — its expiry never fails the run, since a page
+that keeps requesting is still ready to shoot — and writes a PNG, by default under
+`.devpro-temp/screenshots/`, printing its path. It is the development loop's view of a rendered page
+and asserts nothing about the pixels. The private `_js-deps` recipe installs that
 `package.json`'s dependencies from `bun.lock`, frozen, for `screenshot`, `lint` and `test`;
 `just js-lock` installs them unfrozen, rewriting `bun.lock`, after a change to that
 `package.json`'s dependencies.
