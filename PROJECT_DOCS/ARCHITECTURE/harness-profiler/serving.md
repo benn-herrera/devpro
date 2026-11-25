@@ -1,5 +1,7 @@
 # Serving.
 
+## The verb and the bind
+
 The dashboard renders in memory behind a local HTTP server: the
 `devpro dashboard [<project-dir>] [--port <number>]` verb binds `127.0.0.1` on a free port —
 `--port` pins one, 0 (its default) asking the system for a free one — and prints the served URL on
@@ -8,6 +10,8 @@ loads nothing from the network, so the records it renders never leave the machin
 dashboard's landing surface: its URL's root answers a `302` to `/board/`'s absolute URL — the one it
 prints, `http://127.0.0.1:<port>/board/` — so opening it shows the kanban board, the project's actual
 current state.
+
+## The index
 
 The profiler view is the second view, at `/profiler/` (trailing slash, the board panel's convention):
 the index of record files, every store the readers read,
@@ -42,12 +46,18 @@ and the sort in force live in the index page's URL, which the reader can copy, s
 and returning restores it. The session page's embedded payload is unchanged: it is, and stays, the
 feed the page's script reads.
 
+## Dispatched children
+
 A session an opencode record names as its dispatch's child is drawn under the session that dispatched
 it — a dispatch's child one level deep; deeper chains read on the session's page, whose tree draws
 every dispatch as a context — that session's row carrying the count of the rows beneath it and each
 child's naming, after its id and with no lead-in, the call that dispatched it — the indent, the
 accent-colored border at its left edge and its tone mark it a child; the rows alternate their tone,
-and each carries its harness's mark. The pages' own scripts draw every moment local at birth — the moments cells, the
+and each carries its harness's mark.
+
+## The moments and their form
+
+The pages' own scripts draw every moment local at birth — the moments cells, the
 index's first-to-last line, the session page's header stamp, its diagram's and its call tree's
 times — in the reader's local time, 24-hour, one
 notation: the first end of a pair carries its date whole beside its time, the second its time only,
@@ -62,7 +72,11 @@ column, drawn from the feed's seconds in the same form the call tree's duration 
 from the one formatter (`devproFormat.dur`): a duration from zero up reads `0s` at zero, `217ms`
 below the second, `4.2s` with one decimal below ten seconds, `48s` below the minute, `18m 49s`
 below the hour — `18m` when its seconds are zero — and `1h 2m` from the hour — `1h` when its
-minutes are zero. No space stands between a number and its unit. A session's page
+minutes are zero. No space stands between a number and its unit.
+
+## The dispatcher's frame
+
+A session's page
 carries its dispatcher in the frame band, linked to that session's page, where one dispatched it, and
 then names its own root context — its id still `main` — for the dispatching call's agent, the
 prefix dropped, in the hue the context that call opened wears on the dispatcher's page:
@@ -72,6 +86,8 @@ child's own records naming no parent, and the page's other contexts take hues fr
 the root's hue. A page nothing dispatched names
 its root `main`, in hue 0. A call row whose tool is `Agent` links to the child session's page where the record names one: a
 child's page the dashboard does not serve answers the 404 any unrecorded session's page answers.
+
+## The nav and the server block
 
 A top nav persists across both views — the `devpro` brand, then `kanban` and `profiler`, the active
 view in the motif's accent and the inactive one a lifted gray, then the server block right-justified
@@ -84,12 +100,17 @@ both views: the decoration's one script polls `GET /api/state` — the endpoint 
 answers `{"state": "live"}` while it serves, and that a closed server answers not at all — so a page
 that carries no payload of its own reads the state the board reads, and the stop posts the board
 panel's `/api/stop`. No file is written for the traces.
+
+## The models in the page
+
 The page names the models its calls recorded: the session's in
 its header line, each context's in its lifeline's header where that header holds it alone, and each
 call's in its detail — a context or a call showing none where it recorded none, and a count where a
 context recorded several — and shows a session's calls: a session of
 nothing but tool calls renders those calls as its calls content, never an empty tree under a calls
 header. The server runs until interrupted (Ctrl-C) or stopped from the page; either exits 0.
+
+## The board panel
 
 The dashboard's board panel is the profiler's sibling panel, `devpro.kanban.server`'s `KanbanServer`
 over the dashboard's root. The seam is `panel_handler`: the dashboard reads the request, hands it to a
