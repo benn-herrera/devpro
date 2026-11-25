@@ -44,7 +44,7 @@ Implements [ACTIVE_DESIGN.md](ACTIVE_DESIGN.md): its [SPEC delta](ACTIVE_DESIGN.
 | B0 | landed: six items drafted | expert | session | Post-plan burndown drafting |
 | B1 | landed | expert | `devpro:python-coder` | a dispatched page's fresh contexts skip the root's hue |
 | B2 | landed | expert | `devpro:web-app-expert` | the palette and the harness dots live in the shared layer |
-| B3 | dispatchable | expert | `devpro:web-app-expert` | one formatter per notation; the pages' small layout defects |
+| B3 | landed | expert | `devpro:web-app-expert` | one formatter per notation; the pages' small layout defects |
 | B4 | dispatchable | expert | `devpro:typescript-coder` | the screenshot tool honors `--base`, its contract and its bounds |
 | B5 | dispatchable | expert | `devpro:python-coder` | test pins loosened, the zone reset owned, the capture parses once |
 | B6 | dispatchable | expert | `devpro:prompt-engineer` | the changed leaves read true and resolve |

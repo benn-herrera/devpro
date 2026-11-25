@@ -2,6 +2,7 @@
 <!-- Written by devpro's profiler (`devpro profiler tree --format html`). The standalone render fetches nothing and runs from the file the flow wrote. -->
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>devpro — profiler view: session</title>
+<!--DECO-->
 <!--LAYER-->
 <style>
 :root { --panel:#fff; --track:#f1f2f0; --fresh:#8d969e;
@@ -9,7 +10,7 @@
 @media (prefers-color-scheme: dark) { :root { --panel:#1b2025; --track:#20262b; --fresh:#79828a; } }
 body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 var(--sans); padding:24px max(16px, 3vw); }
 h1 { font-size:18px; margin:0 0 2px; } h2 { font-size:14px; margin:22px 0 8px; }
-.sub { color:var(--muted); font:12px var(--mono); margin-bottom:10px; }
+.sub { color:var(--muted); font:12px var(--mono); margin-bottom:10px; white-space:nowrap; }
 .intro { max-width:760px; margin:0 0 14px; color:var(--fg); }
 .intro summary { cursor:pointer; color:var(--muted); font-size:12px; }
 .intro p { margin:6px 0 0; }
@@ -41,7 +42,6 @@ svg .spawn rect { stroke:var(--panel); stroke-width:1; }
   <button id="stop" class="nav-stop" type="button">Stop</button>
 </span></nav>
 <div class="frame-band scanlines"><!--LEGEND--><!--DISPATCHED--><!--RETURN--></div>
-<script src="/profiler/deco.js"></script>
 <h1>Session <span id="sid"></span></h1>
 <div class="sub" id="subline"></div>
 
@@ -61,28 +61,25 @@ const SEQ_GUTTER = 130, SEQ_RIGHT = 120, SEQ_COL = 230, SEQ_HEAD = 54, SEQ_ROW =
 const SEQ_SPENT_ROW = 62, LABEL_PAD = 12;
 const esc = (t) => String(t).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const clip = (t, n) => (t.length > n ? t.slice(0, n - 1) + '…' : t);
+// The moments' and durations' one notation, the deco's global (`devproFormat`): this page carries no
+// formatter of its own.
+const { localDay, clock, dur, scaled } = globalThis.devproFormat;
+// A header item is a span of its own, so the line is read item by item and never joined into a single
+// string that could break inside one; the header keeps it on one line (`.sub`).
+const item = (text) => { const span = document.createElement('span'); span.textContent = text; return span; };
 // A background call with no end recorded yet has no duration to show.
 const took = (c) => (c.running ? 'running' : dur(c.dur));
-const dur = (ms) => (ms < 1000 ? `${ms} ms` : Math.round(ms / 100) < 100 ? `${(Math.round(ms / 100) / 10).toFixed(1)} s` : `${Math.round(ms / 1000)} s`);
-const tok = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : `${n}`) + ' tok';
-const count = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : `${n}`);
+const tok = (n) => scaled(n) + ' tok';
+const count = scaled;
 // A session's or a context's models as its line words them: the id where its calls recorded one, their
-// count where several, and nothing where none — a record that names no model shows no empty separator.
-const modelWords = (models) => (!models || !models.length ? '' : models.length === 1 ? `model ${models[0]}` : `models ${models.length}`);
-// The same on a context's sub-line, where every other fact is led by the separator.
-const modelTail = (models) => (!models || !models.length ? '' : models.length === 1 ? ` · ${models[0]}` : ` · ${models.length} models`);
+// count where several, and the empty string where none — every caller prefixes its own separator, so a
+// record that names no model shows no empty one.
+const modelPhrase = (models) => (!models || !models.length ? '' : models.length === 1 ? models[0] : `${models.length} models`);
 const modelCalls = (n) => `${n} model call${n === 1 ? '' : 's'}`;
 const spentTip = (c) => `${c.label}: ${modelCalls(c.spent.calls)}, each sending the context's whole history again.\n`
   + `${c.spent.new} new input tokens (plain input and cache writes)\n${c.spent.cached} read from the prompt cache\n${c.spent.out} output tokens\n`
   + 'A cache read reuses work the model already did for that prefix, so it costs less than new input; output costs the most.';
 const spentOf = (id) => (byId.get(id) || {}).spent;
-// The reader's clock, built from the date's own local fields — 24-hour, the separator and the digits
-// this page's rather than the reader's locale's, which `toLocaleTimeString` reads off whatever
-// browser it runs in.
-const padTwo = (n) => String(n).padStart(2, '0');
-const localDay = (d) => `${d.getFullYear()}-${padTwo(d.getMonth() + 1)}-${padTwo(d.getDate())}`;
-const localClock = (d) => `${padTwo(d.getHours())}:${padTwo(d.getMinutes())}`;
-const clock = (ms) => { const d = new Date(ms); return `${localClock(d)}:${padTwo(d.getSeconds())}`; };
 const KIND_WORDS = { Skill: 'skill', Agent: 'agent' };
 const kindWord = (tool) => KIND_WORDS[tool] || tool;
 // A call's name as the page renders it: an Agent call's set prefix dropped, every other name as
@@ -135,10 +132,14 @@ if (Number.isFinite(first)) {
   const at = new Date(first);
   const moment = document.createElement('time');
   moment.dateTime = at.toISOString();
-  moment.textContent = localDay(at) + ' ' + localClock(at);
+  moment.textContent = `${localDay(at)} ${clock(at)}`;
   head.append(moment);
 }
-head.append((head.childNodes.length ? ' · ' : '') + [D.branch ? `branch ${D.branch}` : '', `${D.calls.length} calls`, `${D.contexts.length} contexts`, D.models.length ? modelWords(D.models) : ''].filter(Boolean).join(' · '));
+// One separator before the joined items, none inside them: a branch, the counts, and the model phrase
+// led by the model's own word — never an empty tail from a session that recorded none.
+const facts = [D.branch && `branch ${D.branch}`, `${D.calls.length} calls`, `${D.contexts.length} contexts`, modelPhrase(D.models) && `model ${modelPhrase(D.models)}`].filter(Boolean);
+if (Number.isFinite(first)) head.append(item(' · '));
+facts.forEach((text, i) => head.append(item(`${i ? ' · ' : ''}${text}`)));
 
 // ---------- sequence diagram: one lifeline per context ----------
 
@@ -238,7 +239,7 @@ function drawSequence() {
     const name = shownName(first.tool, first.name) || first.label;
     const title = list.length === 1 ? name : `${name} ×${list.length}`;
     const sub = list.length === 1
-      ? clip((first.id === 'main' ? 'main context' : `${kindWord(first.tool)} · ${short(first.id)}${first.kind === 'copy' ? ` · copy of ${short(first.parent)}` : first.parent ? '' : ' · parent not recorded'}`) + modelTail(first.models), fits(colW - 30))
+      ? clip((first.id === 'main' ? 'main context' : `${kindWord(first.tool)} · ${short(first.id)}${first.kind === 'copy' ? ` · copy of ${short(first.parent)}` : first.parent ? '' : ' · parent not recorded'}`) + (first.models.length ? ` · ${modelPhrase(first.models)}` : ''), fits(colW - 30))
       : `${list.length} contexts, one after another`;
     s += `<g><rect ${box} fill="${color(first.id)}"/>`
       + `<text class="head${headClass(first.id)}" x="${x}" y="24" text-anchor="middle">${esc(clip(title, fits(colW - 30)))}</text>`
@@ -294,7 +295,7 @@ function drawSequence() {
   rows.forEach((e, r) => {
     const y = yOf(r);
     const t = e.type === 'note' ? e.m.at : e.t;
-    s += `<text class="muted mono" x="8" y="${y + 4}">${clock(t)}</text>`;
+    s += `<text class="muted mono" x="8" y="${y + 4}">${clock(new Date(t))}</text>`;
     if (e.type === 'note') {
       const x = lx.get(e.at);
       s += `<rect x="${x + 10}" y="${y - 11}" width="${Math.min(colW - 20, 170)}" height="22" fill="${css('--panel')}" stroke="${css('--fg')}" stroke-width="1.5"/>`;
@@ -307,11 +308,11 @@ function drawSequence() {
       const text = `${e.is.length} skills: ${names.join(', ')}`;
       s += `<g class="hit" data-group="${e.is[0]}"><path d="M${x + 12} ${y - 7} l7 7 l-7 7 l-7 -7 z" fill="${color(e.at)}"/>`
         + `<text x="${x + 26}" y="${y + 4}">${esc(clip(text, fits(x + 26 > W - colW ? W - x - 36 : colW - 40)))}</text>`
-        + `<title>${esc(`${e.is.length} skills loaded inline, ${clock(D.calls[e.is[0]].start)} to ${clock(D.calls[e.is.at(-1)].start)}:\n${names.join('\n')}\nClick to show each one.`)}</title></g>`;
+        + `<title>${esc(`${e.is.length} skills loaded inline, ${clock(new Date(D.calls[e.is[0]].start))} to ${clock(new Date(D.calls[e.is.at(-1)].start))}:\n${names.join('\n')}\nClick to show each one.`)}</title></g>`;
       return;
     }
     const c = D.calls[e.i];
-    const tip = `<title>${esc(`${label(c.tool, c.name)} · ${clock(c.start)} · ${took(c)}${c.ok ? '' : ' · failed'}${c.model ? ` · ${c.model}` : ''}${c.result ? `\n-> ${c.result}` : ''}`)}</title>`;
+    const tip = `<title>${esc(`${label(c.tool, c.name)} · ${clock(new Date(c.start))} · ${took(c)}${c.ok ? '' : ' · failed'}${c.model ? ` · ${c.model}` : ''}${c.result ? `\n-> ${c.result}` : ''}`)}</title>`;
     if (e.type === 'self') {
       const x = lx.get(e.at) + 5, inline = c.tool === 'Skill';
       const name = shownName(c.tool, c.name) || kindWord(c.tool), kind = ` (${kindWord(c.tool)})`;
@@ -412,7 +413,7 @@ function drawTree() {
   const walk = (key, depth) => (kids.get(key) || []).forEach((it) => {
     const pad = depth * 22;
     if (it.type === 'compact') {
-      h += `<div class="row mark"><span>${clock(it.m.at)}</span><span></span><span></span><span></span><span></span><span></span>`
+      h += `<div class="row mark"><span>${clock(new Date(it.m.at))}</span><span></span><span></span><span></span><span></span><span></span>`
         + `<span class="call" style="padding-left:${pad}px">-- ${esc(short(it.ctx))} compacted (${esc(it.m.trigger || 'unknown trigger')})</span></div>`;
       return;
     }
@@ -420,14 +421,15 @@ function drawTree() {
     const shown = shownCall(c);
     if (shown) {
       const spent = c.child && spentOf(c.child);
-      const hue = color(c.child && byId.has(c.child) ? c.child : c.ctx);
+      const chipOf = c.child && byId.has(c.child) ? c.child : c.ctx;
+      const hue = color(chipOf);
       // The dispatch links to the child session's page, where the record's harness names one; a page
       // the dashboard serves nothing at answers its 404 like any unrecorded session's.
       const name = `<b>${esc(shownName(c.tool, c.name) || kindWord(c.tool))}</b>`;
-      h += `<div class="row" id="r${it.i}" data-i="${it.i}"><span class="muted">${clock(c.start)}</span><span class="num">${esc(took(c))}</span>`
+      h += `<div class="row" id="r${it.i}" data-i="${it.i}"><span class="muted">${clock(new Date(c.start))}</span><span class="num">${esc(took(c))}</span>`
         + `<span class="bar"><i style="width:${barWidth(c.running ? 0 : c.dur, longest)}px;background:${hue}"></i></span>`
         + (spent ? [spent.new, spent.cached, spent.out].map((n) => `<span class="num" title="${n}">${count(n)}</span>`).join('') : '<span></span><span></span><span></span>')
-        + `<span class="call" style="padding-left:${pad}px"><i class="chip${c.child && byId.has(c.child) ? accentChip(c.child) : accentChip(c.ctx)}" style="background:${hue}"></i>`
+        + `<span class="call" style="padding-left:${pad}px"><i class="chip" style="background:${hue}"></i>`
         + `<span>${c.childPage ? `<a href="${esc(c.childPage)}">${name}</a>` : name}${c.name ? ` (${esc(kindWord(c.tool))})` : ''}</span>`
         + `<span class="words">${esc(words(c))}</span>${c.ok ? '' : '<span class="fail">failed</span>'}<span class="gist">${esc(gist(c))}</span></span></div>`;
       h += `<div class="detail" id="d${it.i}" hidden style="margin-left:${pad + 20}px;border-color:${color(c.ctx)}">`

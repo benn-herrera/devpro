@@ -28,6 +28,9 @@ which fills with the presentation layer one way per carrier — the page's one r
 the dashboard's serve path (`served_page`) links the board's own stylesheet,
 `devpro/kanban/assets/board.css`, and `render_html` — `tree --format html`'s carrier — fills the
 layer's text inline, the one difference a file cannot avoid, being unable to link a server's origin.
+The deco's mark, `<!--DECO-->` (`DECO_MARK`), fills the same two ways: the serve path links
+`/profiler/deco.js`, and the render inlines that file's text, so the page opened from disk finds the
+notation below.
 What the dump writes is the page the dashboard serves: one template, one script, one band, one
 presentation. One CSS source serves both views, and `pages.SHARED_CSS` is that text: the board serves
 the file at `/board/board.css`, the render inlines it into the page it prints, and the dashboard links
@@ -56,8 +59,10 @@ profiler's pages link the same file; the band's legend carries the `Return to li
 session's page. Every script the pages run — the deco's and the templates' own — wraps its body in an
 IIFE: its helpers are module-private, and the deliberate surface is only what the page calls, because
 classic scripts share one global scope and a helper redeclared across scripts is a page that drew
-nothing. The board page carries the same nav grammar, written in its own `index.html`, with the same
-server block in the nav; it carries no legend.
+nothing. The deco publishes exactly one name, `globalThis.devproFormat`: the notation the pages
+present moments and durations in (below), which the session page's and the index's own scripts read
+from that one scope. The board page carries the same nav grammar, written in its own `index.html`,
+with the same server block in the nav; it carries no legend.
 
 **Wiring.** `harnesses/claude.py`'s `_registration_hooks` carries the profiler's six hook entries
 beside the guardrail's and the reminder's: `PostToolUse`, `PostToolUseFailure`, `PreCompact`,
@@ -134,11 +139,15 @@ notation: the first end of a pair carries its date whole beside its time, the se
 the clock's being 24-hour making a span across midnight plain by the numbers, no branch to state. The
 machine form stands in the `<time>` elements' `datetime` attributes alone, and no title carries a
 moment's UTC; a
-page carries no moments where its script does not run, and the deco reads none. `tree`'s text reads
+page carries no moments where its script does not run, and the deco formats the moments the pages
+present and reads none of them. `tree`'s text reads
 its time column and its session stamps in the machine's local zone, through `values._local`, which
 doctor's `newest:` line reads too. The span is its own
-column, drawn from the feed's seconds as whole hours and minutes — `3h 2m` — minutes and seconds below
-the hour — `3m 20s` — seconds below the minute, and `0s` for a zero-length span. A session's page
+column, drawn from the feed's seconds in the same form the call tree's duration column takes, both
+from the one formatter (`devproFormat.dur`): a duration from zero up reads `0s` at zero, `217ms`
+below the second, `4.2s` with one decimal below ten seconds, `48s` below the minute, `18m 49s`
+below the hour — `18m` when its seconds are zero — and `1h 2m` from the hour — `1h` when its
+minutes are zero. No space stands between a number and its unit. A session's page
 carries its dispatcher in the frame band, linked to that session's page, where one dispatched it, and
 then names its own root context — its id still `main` — for the dispatching call's agent, the
 prefix dropped, in the hue the context that call opened wears on the dispatcher's page:

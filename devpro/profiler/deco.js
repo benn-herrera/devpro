@@ -8,6 +8,44 @@
 //
 // The indicator's states are colored — the brand's phosphor where the server serves, the alert's
 // where it does not — and carry the serving version as hover text, the devpro the dashboard runs.
+//
+// It is also the one home of the notation the pages present moments and durations in: the local day
+// and clock, 24-hour with seconds, and a duration's words. The session page and the index call it
+// rather than each carrying a formatter of its own, and the standalone render inlines this file's
+// text for the page that cannot link it.
+
+// The one notation the pages present moments and durations in, exposed as one deliberate global —
+// `devproFormat` in the page's scope, the `globalThis` assignment where this file may be pasted into
+// a script that lives in a function rather than a program: the local day and clock, 24-hour with
+// seconds, a duration's words, and a token count's figure. The session page and the index call it
+// rather than each carrying a formatter of its own, and the standalone render inlines this file's
+// text for the page that cannot link it.
+globalThis.devproFormat = (() => {
+  const padTwo = (n) => String(n).padStart(2, "0");
+  // The reader's clock, built from the date's own local fields — the separator and the digits this
+  // file's rather than the reader's locale's, which `toLocaleTimeString` reads off whatever browser
+  // it runs in.
+  const localDay = (d) => `${d.getFullYear()}-${padTwo(d.getMonth() + 1)}-${padTwo(d.getDate())}`;
+  const clock = (d) => `${padTwo(d.getHours())}:${padTwo(d.getMinutes())}:${padTwo(d.getSeconds())}`;
+  // A duration from milliseconds: no space between number and unit, one decimal only below ten
+  // seconds, and the largest unit first from a minute up.
+  const dur = (ms) => {
+    if (!ms) return "0s";
+    if (ms < 1000) return `${ms}ms`;
+    if (ms < 9950) return `${(Math.round(ms / 100) / 10).toFixed(1)}s`;
+    if (ms < 60000) return `${Math.round(ms / 1000)}s`;
+    const seconds = Math.round(ms / 1000);
+    if (seconds < 3600) {
+      const rest = seconds % 60;
+      return rest ? `${Math.floor(seconds / 60)}m ${rest}s` : `${Math.floor(seconds / 60)}m`;
+    }
+    const minutes = Math.round(seconds / 60) % 60;
+    return minutes ? `${Math.floor(seconds / 3600)}h ${minutes}m` : `${Math.floor(seconds / 3600)}h`;
+  };
+  // The figure a token count carries — `1.2M`, `3.4k`, or the count itself.
+  const scaled = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : `${n}`);
+  return { localDay, clock, dur, scaled };
+})();
 
 // The nav's deco on every view.
 (() => {

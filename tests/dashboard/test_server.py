@@ -28,6 +28,7 @@ from devpro.dashboard.server import (
 from devpro.kanban.board import read_board
 from devpro.profiler.pages import (
     BAND_LEGEND,
+    DECO_MARK,
     DISPATCHED_MARK,
     LAYER_MARK,
     RETURN_MARK,
@@ -465,7 +466,7 @@ def test_every_profiler_view_page_renders_the_way_the_file_flow_renders_it(
     assert page.count('class="site-nav') == 1 and page.count('id="connection"') == 1 and page.count('id="stop"') == 1
     assert page.count("<script>") == scripts
     assert page.count('<script src="/profiler/deco.js">') == 1 and page.count("api/state") == 0
-    assert not [mark for mark in (LAYER_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK) if mark in page]
+    assert not [mark for mark in (LAYER_MARK, DECO_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK) if mark in page]
 
 
 def test_the_pages_csp_admits_the_pages_own_blocks(tmp_path: Path, serve) -> None:
@@ -864,6 +865,11 @@ def test_the_decoration_and_the_pages_script_share_one_scope(tmp_path: Path, ser
     and draws nothing, the session content blank while the nav's own script still runs. The two
     compile together, which is the hold a render-side check cannot give: each script compiles alone.
 
+    The one name the deco publishes is the notation the page calls, `globalThis.devproFormat`: the
+    page's script reads it from this scope, so the deco's body must run before it — a global assigned
+    inside a script that returned early, or one the page script re-declared as a `const`, is a page
+    whose tree and header draw nothing.
+
     A skip without bun is the fixture's own: the compile needs an engine, and the engines a test
     environment carries are the ones the profiler's own fixtures already require."""
     import shutil
@@ -876,6 +882,7 @@ def test_the_decoration_and_the_pages_script_share_one_scope(tmp_path: Path, ser
     page = served.get("page/s-one")[2].decode("utf-8")
     blocks = re.findall(r"<script>(.*?)</script>", page, re.S)
     deco = (files("devpro.profiler") / "deco.js").read_text(encoding="utf-8")
+    assert '<script src="/profiler/deco.js"></script>' in page
 
     script = tmp_path / "scope.js"
     script.write_text(deco + "\n" + "\n".join(blocks), encoding="utf-8")

@@ -52,6 +52,8 @@ from devpro.profiler.pages import (
     AGENT_PREFIX_MARK,
     BAND_LEGEND,
     DATA_MARK,
+    DECO_INLINE,
+    DECO_MARK,
     DISPATCHED_MARK,
     INDEX,
     LAYER_MARK,
@@ -1107,6 +1109,26 @@ def test_the_standalone_render_carries_the_shared_layer_and_the_legend_once(tmp_
     assert 'class="site-nav' in printed.stdout and 'class="frame-band' in printed.stdout
 
 
+def test_the_standalone_render_carries_the_decoration_its_pages_script_reads(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a `tree --format html` page whose own script calls
+    the deco's notation, `globalThis.devproFormat`, while the page carries neither the deco's link
+    nor its text — a file cannot link a server's origin, so the page's script throws before the
+    diagram and every time draw, and the page it prints is a table of nothing.
+
+    The render inlines the deco's text where the served page links the file, and the page's script
+    reads the global from it."""
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
+
+    printed = _run(_launcher(tmp_path / "harness"), "tree", "s-claude", "--format", "html", cwd=project)
+
+    assert printed.returncode == 0, printed.stderr
+    assert DECO_INLINE in printed.stdout
+    assert '<script src="/profiler/deco.js"></script>' not in printed.stdout
+    assert "const { localDay, clock, dur, scaled } = globalThis.devproFormat;" in printed.stdout
+
+
 # The form a page script's body opens with: an IIFE, its body inside and its helpers private to it —
 # the arrow the index's script and the deco use, the `function` spelling an equivalent.
 _IIFE_OPENINGS = ("(() => {", "(function () {")
@@ -1119,13 +1141,15 @@ def _inline_script_bodies(page: str) -> list[str]:
 
 
 def _opens_an_iife(body: str) -> bool:
-    """Whether `body`'s first statement opens an IIFE, a leading `'use strict';` directive — in either
-    quote the shipped scripts spell it in — and the comments ahead of it passed over."""
+    """Whether `body`'s first statement is the notation's one global or opens an IIFE, a leading
+    `'use strict';` directive — in either quote the shipped scripts spell it in — and the comments
+    ahead of it passed over. The deco's body opens with the one deliberate global (`devproFormat`,
+    the pages' notation), a single named export the other scripts live inside."""
     for line in body.splitlines():
         statement = line.strip()
         if not statement or statement.startswith("//") or statement in ("'use strict';", '"use strict";'):
             continue
-        return statement in _IIFE_OPENINGS
+        return statement in _IIFE_OPENINGS or statement == "globalThis.devproFormat = (() => {"
     return False
 
 
@@ -1135,7 +1159,9 @@ def test_every_page_script_wraps_its_body_in_an_iife() -> None:
     the deco's, so the next helper of one of those names would redeclare a `const` and the session
     page would draw nothing. Every script the pages run wraps its body in an IIFE; the shipped pages
     carrying an inline script are `view.html` and the `INDEX` template, and the scripts they load by
-    file — the deco and the board's — are in the same shared scope and wrap theirs the same way."""
+    file — the deco and the board's — are in the same shared scope and wrap theirs the same way. The
+    deco is the one exception to the bare IIFE, and it is the one name the design makes public: the
+    notation the pages call, `globalThis.devproFormat`."""
     pages = {
         "view.html": (_PACKAGE_ROOT / "devpro" / "profiler" / "view.html").read_text(encoding="utf-8"),
         "INDEX": INDEX,
@@ -1146,6 +1172,8 @@ def test_every_page_script_wraps_its_body_in_an_iife() -> None:
         assert all(_opens_an_iife(body) for body in bodies), f"{name}'s script does not open an IIFE"
     for name in ("devpro/profiler/deco.js", "devpro/kanban/assets/board.js"):
         assert _opens_an_iife((_PACKAGE_ROOT / name).read_text(encoding="utf-8")), f"{name} does not open an IIFE"
+    deco = (_PACKAGE_ROOT / "devpro" / "profiler" / "deco.js").read_text(encoding="utf-8")
+    assert re.findall(r"^globalThis\.(\w+)", deco, re.M) == ["devproFormat"], "the deco publishes one name"
 
 
 def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path) -> None:
@@ -1228,6 +1256,36 @@ def test_every_script_spelling_of_the_prefix_is_the_services_one(tmp_path: Path)
 
     assert run.returncode == 0, run.stderr
     assert run.stdout.split("\n")[:2] == ["coder", "coder (agent) / devpro-tool (Bash)"]
+
+
+def test_the_decoration_states_durations_in_the_one_notation(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is the two notations the index and the call tree each
+    carried — `1129 s` in one column and `3h 2m` in the other, and `2 ms` where a call took none —
+    so one duration read two ways on two pages.
+
+    The deco's one formatter reads a duration in milliseconds, no space between number and unit:
+    `0s` at zero, `217ms` below the second, `4.2s` with one decimal below ten seconds, `48s` below
+    the minute, `18m 49s` below the hour (`18m` when the seconds are zero) and `1h 2m` from the hour
+    (`1h` when the minutes are zero). The file runs whole against a stub document holding no nav, so
+    the deco's own body returns at its first element and the notation is what the page scope carries.
+    A missing bun fails rather than skips, as the file's other engine readings do."""
+    import shutil
+
+    if shutil.which("bun") is None:
+        pytest.fail("bun is not on PATH: the deco's notation cannot be read without it")
+    deco = (_PACKAGE_ROOT / "devpro" / "profiler" / "deco.js").read_text(encoding="utf-8")
+    script = tmp_path / "dur.js"
+    script.write_text(
+        "globalThis.document = { getElementById: () => null, querySelector: () => null };\n"
+        + deco
+        + "\nconsole.log([0, 217, 4200, 48000, 1129000, 1080000, 3720000, 3600000].map(devproFormat.dur).join(' '));\n",
+        encoding="utf-8",
+    )
+
+    run = subprocess.run(["bun", str(script)], capture_output=True, text=True, stdin=subprocess.DEVNULL)
+
+    assert run.returncode == 0, run.stderr
+    assert run.stdout.strip() == "0s 217ms 4.2s 48s 18m 49s 18m 1h 2m 1h"
 
 
 def test_a_script_naming_no_name_renders_no_word(tmp_path: Path) -> None:
@@ -1606,12 +1664,12 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     launcher = _launcher(tmp_path / "harness")
     printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
     assert printed.returncode == 0, printed.stderr
-    for mark in (LAYER_MARK, DATA_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
+    for mark in (LAYER_MARK, DECO_MARK, DATA_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
         assert mark not in printed.stdout, f"{mark} left standing in the rendered page"
     with _serve(launcher, cwd=project) as url:
         page = _fetch(f"{url}page/s-claude")
         index = _fetch(f"{url}profiler/")
-    for mark in (LAYER_MARK, DATA_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
+    for mark in (LAYER_MARK, DECO_MARK, DATA_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
         assert mark not in page, f"{mark} left standing in the served page"
         assert mark not in index, f"{mark} left standing in the served index"
     assert "$rows" not in index

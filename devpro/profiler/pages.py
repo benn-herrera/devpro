@@ -53,6 +53,10 @@ DATA_MARK = "/*DATA*/null"
 # the render fills it with the layer's text, the serve path with the link to the board panel's own file.
 LAYER_MARK = "<!--LAYER-->"
 LAYER_LINK = '<link rel="stylesheet" href="/board/board.css">'
+# The deco's carriage, the second thing the two carriers hold differently: the serve path names the
+# script by file, and the render — a page opened from disk — carries its text inline.
+DECO_MARK = "<!--DECO-->"
+DECO_LINK = '<script src="/profiler/deco.js"></script>'
 
 # The how-to-read legend, once for the whole presented interface. Its one home, filled by the strict
 # fill into the frame band both profiler templates carry — the standalone render's and the served
@@ -101,8 +105,10 @@ def shared_css() -> str:
 SHARED_CSS = shared_css()
 # The standalone page's own layer element: the shared layer's text in a style block of its own,
 # placed where the mark stands — before the template's own style block, so the layer's rules cascade
-# first and the template's own rules override them.
+# first and the template's own rules override them. The deco's element is its text in a script block
+# of its own, ahead of the page's own script, which reads the one global it publishes.
 LAYER_INLINE = "<style>\n" + SHARED_CSS + "\n</style>"
+DECO_INLINE = "<script>\n" + (files(__package__) / "deco.js").read_text(encoding="utf-8") + "\n</script>"
 
 
 def strict_fill(text: str, fills: dict[str, str]) -> str:
@@ -683,9 +689,9 @@ def _inlined_session_data(session: dict, *, dispatcher: Dispatcher | None) -> st
 
 def _rendering(session: dict, *, dispatcher: Dispatcher | None, return_to: str | None) -> str:
     """The page's one rendering: the template's own text with the session's data, the band's facts and
-    the prefix line filled, the layer's mark left standing for its carrier's fill — `render_html`
-    inlines the layer's text, a file being unable to link a server's origin, and the serve path fills
-    the link (`served_page`). One rendering, two carriers."""
+    the prefix line filled, the layer's and the deco's marks left standing for their carriers' fills —
+    `render_html` inlines both texts, a file being unable to load a server's file, and the serve path
+    fills the two links (`served_page`). One rendering, two carriers."""
     template = (files(__package__) / "view.html").read_text(encoding="utf-8")
     return strict_fill(
         template,
@@ -698,13 +704,14 @@ def _rendering(session: dict, *, dispatcher: Dispatcher | None, return_to: str |
 
 
 def render_html(session: dict, *, dispatcher: Dispatcher | None) -> str:
-    """One self-contained page: the package's template with the presentation layer, the how-to-read
-    legend and the trace inlined, and the frame band's per-page facts the session's stores name — the
-    way back to the list, and the dispatcher where one dispatched it — the same facts the served
-    page fills, the layer's carriage the one difference between the carriers."""
+    """One self-contained page: the package's template with the presentation layer, the deco, the
+    how-to-read legend and the trace inlined, and the frame band's per-page facts the session's stores
+    name — the way back to the list, and the dispatcher where one dispatched it — the same facts the
+    served page fills, the layer's and the deco's carriage the differences between the carriers: a file
+    links neither, so it carries both texts and the page's script finds the one notation they hold."""
     return strict_fill(
         _rendering(session, dispatcher=dispatcher, return_to=PROFILER_PATH),
-        {LAYER_MARK: LAYER_INLINE},
+        {LAYER_MARK: LAYER_INLINE, DECO_MARK: DECO_INLINE},
     )
 
 
@@ -950,10 +957,11 @@ def index_html() -> str:
     client-side. The rows' order and their dispatcher grouping are the feed's.
 
     The index carries the presentation layer and names no view of its own: opened on its own it
-    stands beside no board, so the deco — the nav, the frame band and the decoration's script — is
-    the template's own text, the band filled with none of its per-page facts (the index carrying no
-    legend, no dispatcher and no way back), and the layer's carriage left at its mark — filled by the
-    serve path with its link (`served_page`), its one consumer, since no file flow writes the index.
+    stands beside no board, so the deco — the nav, the frame band and the decoration's script, which
+    holds the one notation the page's script calls — is the template's own text, the band filled with
+    none of its per-page facts (the index carrying no legend, no dispatcher and no way back), and the
+    two carriage marks left standing — filled by the serve path with their links (`served_page`), its
+    one consumer, since no file flow writes the index.
     The script's mark is the one prefix line, `AGENT_PREFIX_LINE`, filled here."""
     return strict_fill(
         INDEX.replace(AGENT_PREFIX_MARK, AGENT_PREFIX_LINE),
@@ -964,10 +972,11 @@ def index_html() -> str:
 def served_page(text: str) -> str:
     """A page as the dashboard serves it: the presentation layer **linked** at its carriage mark — the
     dashboard's Content-Security-Policy refuses an inline stylesheet, and the one source is the board
-    panel's own file, which the board page and the profiler's pages link alike. The render's carrier is
-    the inline — a standalone page being self-contained — so the serve path fills the page's carriage
-    mark with the link where the render filled the layer's text, and a mark left standing refuses."""
-    return strict_fill(text, {LAYER_MARK: LAYER_LINK})
+    panel's own file, which the board page and the profiler's pages link alike — and the deco linked
+    at its own. The render's carrier is the inline — a standalone page being self-contained — so the
+    serve path fills the page's two carriage marks with the two links where the render filled their
+    texts, and a mark left standing refuses."""
+    return strict_fill(text, {LAYER_MARK: LAYER_LINK, DECO_MARK: DECO_LINK})
 
 
 def _link(href: str, text: str) -> str:
@@ -1016,8 +1025,9 @@ RETURN_MARK = "<!--RETURN-->"
 # The index's template: static. The rows' table is the one the template's own script fills (the feed
 # `/api/traces` as its payload), and that script's read of the feed is what the page's body carries;
 # the script is the template's own text, as the deco is, and served under the pages' policy.
-# `<!--LAYER-->` stands in the template, as it does on a page, and the serve path fills it with the
-# link (`served_page`) — the render's own carrier for a page being the layer's text. The three band
+# `<!--LAYER-->` and `<!--DECO-->` stand in the template, as they do on a page, and the serve path
+# fills them with their links (`served_page`) — the render's own carrier for a page being the layer's
+# text, and no index being written as a file. The three band
 # marks are the last thing before the body's own content, their text no stylesheet's.
 # A harness's dot wears its brand color, which the layer holds as `--harness-<name>` — the site's
 # color rather than the page's, the page's rule only naming the variable. The dots are the only
@@ -1027,18 +1037,13 @@ INDEX = """<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
 <title>devpro — profiler view: sessions</title>
+<!--DECO-->
 <!--LAYER-->
 <style>
 main { padding: 1rem; }
 h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem; }
-/* One width per column, declared on the header row's cells: `table-layout: fixed` gives each column
-   the width its cell declares and measures no cell's content, so the body's rows stand in the columns
-   the header names — a header whose label outruns its column wraps inside it. */
 main { overflow-x: auto; }
 table { border-collapse: collapse; table-layout: fixed; }
-/* The table's floor is the sum of its columns' shares: narrower than that, it overruns the viewport
-   and `main` scrolls it, so no column is squeezed under what its content needs. */
-table { min-width: 74rem; }
 th, td { text-align: left; padding: 0.4rem 1rem 0.4rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-weight: 600; color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
 td { overflow-wrap: anywhere; }
@@ -1048,17 +1053,23 @@ tr:nth-child(odd) td { background: var(--zebra); }
 td small { color: var(--muted); }
 tr td:first-child.child { border-left: 3px solid var(--accent); }
 tr td:first-child.child + td { padding-left: 2.4rem; }
-/* Each column's share of the table, declared here and nowhere else: the fixed layout gives it to
-   header and body alike, and a share below the table's width is grown by the layout's distribution,
-   never by a cell's content. The agents column still holds its label's own line unbroken, so the
-   label sits over the count it heads rather than folding a word of itself. */
-.col-harness { width: 7.5rem; }
-.col-session { width: 22%; }
-.col-model { width: 12rem; }
-.col-records { width: 8rem; }
-.col-agents { width: 8rem; }
-.col-one { width: 15rem; }
-.col-span { width: 7rem; }
+/* Each column's width, declared once as a custom property on the table: the `.col-*` rules read the
+   properties, and the table's floor below is their sum, so no width is written twice. The fixed layout
+   gives each column its width and measures no cell's content, so header and body stand in the same
+   columns; a viewport narrower than the floor overruns it and `main` scrolls the table. */
+table { --w-harness: 7.5rem; --w-session: 32ch; --w-model: 12rem; --w-records: 8rem; --w-agents: 8rem; --w-one: 15rem; --w-span: 7rem;
+  min-width: calc(var(--w-harness) + var(--w-session) + var(--w-model) + var(--w-records) + var(--w-agents) + var(--w-one) + var(--w-span)); }
+.col-harness { width: var(--w-harness); }
+.col-session { width: var(--w-session); }
+.col-model { width: var(--w-model); }
+.col-records { width: var(--w-records); }
+.col-agents { width: var(--w-agents); }
+.col-one { width: var(--w-one); }
+.col-span { width: var(--w-span); }
+/* A session's id and the agent that dispatched it stand on one line, the child's indent inside the
+   column; the model cell's list may wrap. */
+.col-session, .col-session a, .col-session small { white-space: nowrap; }
+.col-session small { margin-left: 0.4rem; }
 /* The first-to-last cell's line never wraps: its column is wide enough for the longest pair the data
    produces, and a narrower viewport keeps the column and lets the table overrun it, rather than
    folding the line. */
@@ -1079,7 +1090,6 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
   <button id="stop" class="nav-stop" type="button">Stop</button>
 </span></nav>
 <div class="frame-band scanlines"><!--LEGEND--><!--DISPATCHED--><!--RETURN--></div>
-<script src="/profiler/deco.js"></script>
 <main>
 <h1>Sessions</h1>
 <div class="controls">
@@ -1110,6 +1120,9 @@ const FEED = '/api/traces';
 const PAGE = '/page/';
 /*AGENT_PREFIX*/
 const AGENT_TOOL = 'Agent';
+// The moments' and durations' one notation, the deco's global (`devproFormat`): this page carries no
+// formatter of its own.
+const { localDay, clock, dur, scaled } = globalThis.devproFormat;
 // The harnesses the controls carry a box for, in the page's own order: a box's id is this name
 // behind `harness-`, and a row's dot classes it where the harness is one of these — the feed's name,
 // the controls' boxes and the style block's two rules changing together.
@@ -1130,23 +1143,6 @@ const link = (id) => {
   return anchor;
 };
 
-const pad = (n) => String(n).padStart(2, '0');
-// A span in whole seconds, as the index states it: hours and minutes, minutes alone, seconds below
-// a minute and `0s` for a zero-length span.
-const span = (seconds) => {
-  if (seconds < 60) return String(seconds) + 's';
-  const [minutes, rest] = [Math.floor(seconds / 60), seconds % 60];
-  if (minutes < 60) return rest ? minutes + 'm ' + rest + 's' : minutes + 'm';
-  const [hours, left] = [Math.floor(minutes / 60), minutes % 60];
-  return left ? hours + 'h ' + left + 'm' : hours + 'h';
-};
-
-// The reader's clock, built from the date's own local fields — 24-hour, the separator and the digits
-// this page's rather than the reader's locale's, which `toLocaleTimeString` reads off whatever
-// browser it runs in.
-const localDay = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-const localClock = (d) => pad(d.getHours()) + ':' + pad(d.getMinutes());
-
 // A moment as the index draws one, local at birth: its text the reading this script writes — there
 // is no second pass to correct it, so a page whose script does not run carries no moment — the
 // machine form in the `<time>` element's `datetime`.
@@ -1163,9 +1159,9 @@ const moments = (session) => {
   const [first, last] = [new Date(session.first), new Date(session.last)];
   const cell = el('span', undefined, 'moments');
   cell.append(
-    moment(session.first, localDay(first) + ' ' + localClock(first)),
+    moment(session.first, localDay(first) + ' ' + clock(first)),
     ' to ',
-    moment(session.last, localClock(last)),
+    moment(session.last, clock(last)),
   );
   return cell;
 };
@@ -1202,7 +1198,7 @@ const row = ({ session, dispatched, children = 0 }) => {
     el('td', session.records + ' records', 'col-records'),
     el('td', session.agents ? count : '', 'col-agents'),
     window,
-    el('td', span(session.span), 'col-span'),
+    el('td', dur(session.span * 1000), 'col-span'),
   );
   return tr;
 };
