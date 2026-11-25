@@ -249,7 +249,11 @@ module docstring, whose stale volume-head sentence the repairs contradict.
    re-based write form its leaves carry, and no Contents block. A `dicing/index.md` cannot round-trip
    (`dicedoc._all_reproduced` reads it as a stray, `plan_sections` collides its H1 top with the
    tree's title); nothing inside `dicing/` declares the volume. Check: `just undice
-   PROJECT_DOCS/SPEC .devpro-temp/<name>-undiced.md` exits 0.
+   PROJECT_DOCS/SPEC .devpro-temp/<name>-undiced.md` exits 0. **Superseded by P5's restructure:**
+   the volume's index keeps its directory (`SPEC/dicing/index.md`) and its heading, because a
+   section directory's head stays in the directory whose child sections it lists; the
+   "move to `SPEC/dicing-and-checks.md`" remedy applied when the leaves were the ones to move, and
+   the restructure is the one that moves them.
 3. CONVENTIONS: edit the two mismatched headings to the titles their file names and entry-point
    links carry, and add the two omitted leaves to the entry point's list.
 4. ARCHITECTURE: rename the area's head to the nested-volume convention
@@ -499,7 +503,17 @@ checkpoint gate runs once before the commit, as P1 states.
 
 ## P5 — the three standing trees re-diced under the settled model
 
-**State.** ARCHITECTURE and CONVENTIONS are re-diced and placed: each undiced (`reassemble ok`, CONVENTIONS `dead: 0`, ARCHITECTURE `dead: 3` run-directory links restored by hand to their `HEAD` form) and re-diced from the undice, the fresh tree replacing the old one; each re-diced tree undices again clean. SPEC is repaired but **not** re-diced: its tree passes `check-links` and `check-tree` (193 links `broken: 0`, 21 documents `problems: 0`) but undice exits 1 on a P4 tool defect — `dicedoc._placed_level` (`devpro/dicing/dicedoc.py:352`) raises a section index's child by the child's own heading depth, so a leaf opening `## X` with `###` beneath restores at level 4 while its sibling restores at level 3, and the re-plan then reads the section index as a leaf `dicing-and-checks.md`. Minimal reproduction, 4 files, no SPEC content: `.devpro-temp/p5-repro-tree/`. Reported in `.devpro-temp/p5-spec-finding.md`; not patched. A second P4 defect, `dice` rebasing a monolith's relative links against the run directory rather than the monolith's own directory (`linkrewrite.Linker.written`, `dicedoc.dice`'s `root=run_dir`), adds three `../` segments to every cross-tree link at a depth other than the output root's; reproduced in `.devpro-temp/p5-lk/`, and worked around by hand for ARCHITECTURE's three such links. Both are code (`devpro/dicing/`), outside P5's scope. The package stays `in progress` until both are repaired and SPEC re-dices as Guidance step 1 directs. **Superseded in part:** both defects are repaired (P4b, landed); the remaining blocker is the tree's shape — `SPEC/dicing/dice.md` and `reassembly.md` hold same-level sibling sections that the re-based form collapses, so no split level dices SPEC's monolith back to its tree (evidence `.devpro-temp/p5-blocker.md`). P5's scope expands to the restructure, below.
+**State.** ARCHITECTURE and CONVENTIONS are re-diced and placed: each undiced (`reassemble ok`,
+CONVENTIONS `dead: 0`, ARCHITECTURE `dead: 3` run-directory links restored by hand to their `HEAD`
+form) and re-diced from the undice, the fresh tree replacing the old one; each re-diced tree undices
+again clean. **SPEC is not re-diced.** Its `dicing/` volume holds same-level siblings in `dice.md`
+and `reassembly.md` that the re-based write form collapses, so no split level dices SPEC's monolith
+back to its tree; the tree is the artifact that gets repaired, below, then re-diced under the
+repaired shape. The first run of `just undice PROJECT_DOCS/SPEC` reports the shape:
+`.devpro-temp/p5-verify.log` — `reassemble: cannot read PROJECT_DOCS/SPEC/dicing-and-checks.md` and
+six `would be re-diced as` lines. Both earlier P4 defects (`dicedoc._placed_level` and
+`Linker.written`'s `root=run_dir`) are repaired (P4b, landed) and are not SPEC's blocker. The
+package stays `in progress` until SPEC re-dices as Guidance step 1 directs.
 
 **Scope.** `PROJECT_DOCS/SPEC/`, `PROJECT_DOCS/ARCHITECTURE/`, `PROJECT_DOCS/CONVENTIONS/`
 (regenerated whole; SPEC additionally restructured, below); the monoliths are work products under
@@ -510,8 +524,24 @@ sibling sections the re-based form collapses, so the tree as it stands is not re
 split `dicing/dice.md` into two leaves (`dice`, `undice`); split `dicing/reassembly.md` into its
 sections' own leaves; sub-dice `kanban`, `link-rewriting`, `the-diced-tree` into section directories
 with `index.md`; update `SPEC/entry-point.md`'s member list, every Contents block, and the links the
-move retargets (~47, per the re-dice probe); align every leaf's heading with its file name. The
-cited paths in `ARCHITECTURE/repo-layout.md` that name `dicing/` are updated in the same commit.
+move retargets. **The split targets, by the tree's headings:** `dice.md` → `dice.md` (its title and
+preamble) and `undice.md` (its `## undice` body); `reassembly.md` → `reassembly.md` (its preamble),
+`link-check.md`, `check-links.md`, `check-tree.md`, `check-plan.md`, `check-design.md`,
+`check-roadmap.md`, `limits.md` — eight leaves in `dicing/`; `kanban.md` → `kanban/index.md` plus
+its seven `###` children as leaves; `link-rewriting.md` → `link-rewriting/index.md` plus its four;
+`the-diced-tree.md` → `the-diced-tree/index.md` plus its five. A leaf keeps its section's text and
+title exactly; only its top heading's level moves, `##` to `#`. No new titles are coined.
+**Retargeted links, by site class:** each split leaf's own internal links and anchors — every
+`<leaf>.md#<anchor>` a split leaf names becomes `<leaf>/<child>.md#<anchor>` (or
+`<leaf>/index.md#<anchor>` where the anchor is the leaf's own title), and each cross-leaf link takes
+the split leaf's new directory; the mapping is worked out in `.devpro-temp/p5-spec-links.py`. The
+count is a derived number, not a target: `git grep -n 'dicing/' -- PROJECT_DOCS/SPEC` and
+`just dev-check-links` enumerate the sites. All citing sites: `SPEC/entry-point.md:30-35` (six
+member lines), each split leaf's own links, and `ARCHITECTURE/repo-layout.md:17,48-49` — but only
+where the cited path is a SPEC doc path; `dicing/` at `repo-layout.md:17` is the Python package and
+does not move. `ARCHITECTURE/packaging.md:28` and `devpro/definitions/skills/docdicer.py` cite
+dicing only as module names and verbs; they are unchanged. `PROJECT_DOCS/CONVENTIONS/` carries no
+`dicing/` path and needs no edit.
 
 **Guidance.**
 
@@ -519,7 +549,12 @@ cited paths in `ARCHITECTURE/repo-layout.md` that name `dicing/` are updated in 
    target), then `just dice-doc .devpro-temp/<name>-undiced.md .devpro-temp/<name>-fresh/`. Undice
    and dice at the default split level 4, the level the trees were diced at. Take `reassemble ok`
    from the undice and `reassemble ok` plus `dead: 0` from the dice as the preconditions of step 2;
-   a difference reported by either is a finding for P1, not something P5 patches. This is also the
+   a difference reported by either is a finding for P1, not something P5 patches — for ARCHITECTURE
+   and CONVENTIONS, which round-trip; for SPEC, the pre-restructure undice's `cannot read` and
+   `would be re-diced as` lines are this package's own State evidence, and `reassemble ok` is
+   reached only after the restructure. A difference the **post-restructure** undice reports is a P1
+   finding, or a defect in the restructure; name which from the failing leaf's heading, and stop
+   rather than patch either. This is also the
    first end-to-end exercise of P1's form-conditional shift on a tree P1 did not write.
 2. Replace, don't merge: `git rm -r <tree-dir>`, then
    `mv .devpro-temp/<name>-fresh <tree-dir>`. The fresh tree is the whole of the directory
