@@ -71,7 +71,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | P4b | landed | expert | `devpro:python-coder` | the reconstruction's stragglers, the re-integration links, and the links.tsv cache retires |
 | P5 | landed | expert | `devpro:python-coder` | the three standing trees re-diced under the settled model |
 | P6 | landed | expert | session | Post-plan review of what shipped, to `ACTIVE_PLAN_REVIEW.md` |
-| B0 | in progress | expert | session | Post-plan burndown drafting |
+| B0 | landed | expert | session | Post-plan burndown drafting |
 | B1 | drafted | expert | `devpro:prompt-engineer` | restore the dicing-and-checks index preamble and the `--split-level` contract |
 | B2 | drafted | expert | `devpro:prompt-engineer` | the anchor retarget class: every link lands on the leaf whose text it names |
 | B3 | drafted | expert | `devpro:python-coder` | the tool: one classifier, honest faults, no dead code |
