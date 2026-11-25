@@ -428,7 +428,7 @@ def test_claude_frontmatter_holds_the_field_order_and_spelling() -> None:
     assert _claude_frontmatter(agent_fields(_security_reviewer(), ctx)) == (
         "name: security-reviewer",
         _SECURITY_REVIEWER_DESCRIPTION,
-        "model: fable",
+        "model: opus",
         'color: "#DC2626"',
         "tools: Bash, Read, Grep, Glob, Write, Edit, WebSearch, WebFetch",
     )
@@ -1273,7 +1273,7 @@ def test_stock_excludes_the_overridden_category() -> None:
         (
             "claude",
             {
-                "stem-architect": "fable",
+                "stem-architect": "opus",
                 "stem-expert": "opus",
                 "stem-mechanical": "sonnet",
                 "comm-architect": "sonnet",
