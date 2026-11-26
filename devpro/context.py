@@ -22,8 +22,6 @@ DEFAULT_HARNESS = "claude"
 DEFAULT_FAMILY = "claude"
 SETTINGS_FILE = Path(".config/devpro/devpro.toml")
 """The devpro settings file, below the home directory, where `--config-file` names none."""
-NEWLINE = "\n"
-"""How a settings file's map entries join into a spec: a character no glob or model holds."""
 MODEL_MAP_TABLE = "model-map"
 """A harness's map is its dotted subtable: `[<harness>.model-map]`."""
 INSTALL_KEY = "install"
@@ -35,7 +33,7 @@ def parse_category_map(spec: str, *, supplier: str, separator: str = ",") -> dic
     """`spec`, the text form of a category map, as a total map in CATEGORIES order: `separator`-separated
     `<glob>=<model>` entries, each glob matched against the six category names and its model assigned to
     every category it matches, later entries silently overwriting earlier ones. `supplier` leads every
-    refusal: the provenance of the spec. The settings file reads its entries joined by `NEWLINE`, a
+    refusal: the provenance of the spec. The settings file reads its entries joined by a newline, a
     separator no glob or model holds.
 
     There is no per-category fallback to the family or to anything else. An entry matching no category is
@@ -199,23 +197,32 @@ def read_settings(config_file: str | None) -> tuple[dict[str, HarnessSettings] |
     names, taken as given, or the default under the home directory where no file is named: a missing
     default file is no config, an explicitly named file that does not exist is refused, naming the path.
 
-    The file's shape is validated here, so both render and install refuse on it: a table that is no
-    supported harness's settings or map table is refused, naming the table and the harnesses, and so
-    is a key in a settings table that is no setting of it, naming the model-map table it belongs in. A map
-    table's entries join, in file order, into the category spec `parse_category_map` parses, its
-    refusals leading with the table they came from. Neither setting value is judged here;
-    `devpro.install` judges `install` where it consumes it, and `build_render` the component list.
+    The file's shape is validated here, so both render and install refuse on it: a key at its top level
+    that is no harness's name is refused, naming the key and the harnesses, and so is a subtable of a
+    harness's table that is no model-map table, and a key in a settings table that is no setting of it,
+    naming the model-map table it belongs in, and either setting holding a value that is no string. A
+    quoted dotted top-level key is one such key: `["claude.model-map"]` is a table named `claude.model-map`,
+    not the map `[claude]` nests, and is refused. A map table's entries join, in file order, into the
+    category spec `parse_category_map` parses, its refusals leading with the table they came from. The
+    values are read as written and judged no further: `devpro.install` judges `install` where it consumes
+    it, and `build_render` the component list.
     """
     path = _settings_file(config_file)
     if path is None:
         return None, None
     known = harnesses()
     document = _settings_parser(path)
-    unknown = [table for table in _table_names(document) if _harness_of(table, known) is None]
+    unknown = [key for key in document if key not in known]
+    for key, table in document.items():
+        if not isinstance(table, dict):
+            continue
+        unknown += [
+            f"{key}.{inner}" for inner, nested in table.items() if isinstance(nested, dict) and inner != MODEL_MAP_TABLE
+        ]
     if unknown:
         raise InputError(
             f"devpro settings file '{path}', table '[{unknown[0]}]': no harness names it — a table is "
-            f"'[<harness>]' or '[<harness>.model-map]' for {', '.join(known)}"
+            f"'[<harness>]' or '[<harness>.{MODEL_MAP_TABLE}]' for {', '.join(known)}, and no key outside one"
         )
     settings: dict[str, HarnessSettings] = {}
     for name in known:
@@ -227,7 +234,7 @@ def read_settings(config_file: str | None) -> tuple[dict[str, HarnessSettings] |
             supplier = f"--config-file {path}, table '[{name}.{MODEL_MAP_TABLE}]'"
             entries = _settings_entries(map_table, path=path, table=f"{name}.{MODEL_MAP_TABLE}")
             supply = MapSupply(
-                category_map=parse_category_map(entries, supplier=supplier, separator=NEWLINE), supplier=supplier
+                category_map=parse_category_map(entries, supplier=supplier, separator="\n"), supplier=supplier
             )
         install, components = _settings_values(table, path=path, name=name)
         settings[name] = HarnessSettings(install=install, supply=supply, components=components)
@@ -260,30 +267,11 @@ def _settings_parser(path: Path) -> dict[str, object]:
         raise InputError(f"devpro settings file '{path}' does not parse: {exc}") from exc
 
 
-def _table_names(document: Mapping[str, object]) -> list[str]:
-    """Every table the file holds, dotted by its path: `claude`, and `claude.model-map` for a subtable —
-    `tomllib` nests a dotted table under its parent — plus a bare key's own name where the file sets one
-    at the top level."""
-    names = []
-    for key, value in document.items():
-        if not isinstance(value, dict):
-            continue
-        names.append(key)
-        names.extend(f"{key}.{inner}" for inner, nested in value.items() if isinstance(nested, dict))
-    return names
-
-
-def _harness_of(table: str, known: Mapping[str, Harness]) -> str | None:
-    """The harness a table belongs to, `[<harness>]` and `[<harness>.model-map]` alike; None where it
-    names none."""
-    name, _, rest = table.partition(".")
-    return name if name in known and rest in ("", MODEL_MAP_TABLE) else None
-
-
 def _settings_values(table: Mapping[str, object], *, path: Path, name: str) -> tuple[str | None, str | None]:
-    """`[<name>]`'s `install` and `components` values as written (None where the key is absent or holds
-    no string); a key that is no setting of the harness is refused, naming the keys a harness's table
-    takes and the model-map table the other keys belong in."""
+    """`[<name>]`'s `install` and `components` values as written, each None where the key is absent; a key
+    that is no setting of the harness is refused, naming the keys a harness's table takes and the
+    model-map table the other keys belong in, and so is either setting holding a value that is no
+    string, naming the key and the value's type."""
     legal = (INSTALL_KEY, COMPONENTS_KEY, MODEL_MAP_TABLE)
     for key in table:
         if key not in legal:
@@ -291,6 +279,13 @@ def _settings_values(table: Mapping[str, object], *, path: Path, name: str) -> t
                 f"devpro settings file '{path}', table '[{name}]': '{key}' is no setting of it — a "
                 f"harness's settings are {', '.join(legal)}, and map entries belong in "
                 f"'[{name}.{MODEL_MAP_TABLE}]'"
+            )
+    for key in (INSTALL_KEY, COMPONENTS_KEY):
+        value = table.get(key)
+        if value is not None and not isinstance(value, str):
+            raise InputError(
+                f"devpro settings file '{path}', table '[{name}]': '{key}' names a value that is no string — "
+                f"{key} is a string, and this one is of type {type(value).__name__}"
             )
     install, components = table.get(INSTALL_KEY), table.get(COMPONENTS_KEY)
     return (
@@ -312,7 +307,7 @@ def _settings_entries(entries: object, *, path: Path, table: str) -> str:
                 f"a model is a string"
             )
         spec.append(f"{glob}={model}")
-    return NEWLINE.join(spec)
+    return "\n".join(spec)
 
 
 def build_render(*, harness: str, components: str, family: str, supply: MapSupply | None = None) -> Render:

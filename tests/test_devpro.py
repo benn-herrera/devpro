@@ -276,6 +276,63 @@ def test_a_settings_section_key_that_is_no_setting_is_refused_naming_the_map_sec
 
 
 @pytest.mark.parametrize(
+    "table, key, type_name",
+    [
+        ('[claude]\ncomponents = ["kbase"]\n', "components", "list"),
+        ("[claude]\ninstall = true\n", "install", "bool"),
+        ("[claude]\ninstall = 5\n", "install", "int"),
+    ],
+    ids=["components-list", "install-bool", "install-int"],
+)
+def test_a_settings_value_that_is_no_string_is_refused_naming_the_table_key_and_type(
+    tmp_path: Path, table: str, key: str, type_name: str
+) -> None:
+    """A discarded value was read as absent: a component list installed with no component, an `install`
+    flag fell back to the detect default. A value that is no string is refused, naming where it sits."""
+    path = settings_file(tmp_path, table)
+    with pytest.raises(InputError) as caught:
+        read_settings(str(path))
+    message = str(caught.value)
+    assert "table '[claude]'" in message and f"'{key}'" in message and f"type {type_name}" in message
+
+
+def test_a_quoted_dotted_top_level_key_is_refused_naming_the_table(tmp_path: Path) -> None:
+    """`["claude.model-map"]` is a top-level table named `claude.model-map`, not the map `[claude]` nests:
+    the grammar accepts a bare harness name or a harness's map subtable, so it is refused, naming it."""
+    path = settings_file(tmp_path, '["claude.model-map"]\n"*" = "haiku"\n')
+    with pytest.raises(InputError) as caught:
+        read_settings(str(path))
+    message = str(caught.value)
+    assert "'[claude.model-map]'" in message and "claude, mage, opencode" in message
+
+
+def test_a_quoted_harness_table_is_read_as_the_table_it_names(tmp_path: Path) -> None:
+    """`["claude"]` is the one key `claude`: nothing sets the table another way, so its settings read."""
+    settings, _ = read_settings(str(settings_file(tmp_path, '["claude"]\ninstall = "always"\n')))
+    assert settings is not None and settings["claude"].install == "always"
+
+
+def test_a_bare_top_level_key_is_refused_as_a_table_no_harness_names(tmp_path: Path) -> None:
+    """`foo = "bar"` beside no table is a key the file sets where only a harness's tables belong."""
+    path = settings_file(tmp_path, 'install = "always"\n')
+    with pytest.raises(InputError) as caught:
+        read_settings(str(path))
+    message = str(caught.value)
+    assert "'[install]'" in message and "no harness names it" in message
+
+
+def test_a_map_entry_whose_value_holds_a_comma_is_one_model(tmp_path: Path) -> None:
+    """Map entries join on a newline, not the comma the rendered spec joins on: a model holding a comma
+    stays one model rather than splitting into two entries, and renders so for every category."""
+    path = settings_file(tmp_path, '[opencode.model-map]\n"*" = "omlx/a,b"\n')
+    settings, _ = read_settings(str(path))
+    assert settings is not None and (supply := settings["opencode"].supply) is not None
+    render = build_render(components="", harness="opencode", family="claude", supply=supply)
+    assert dict(render.category_map) == dict.fromkeys(CATEGORIES, "omlx/a,b")
+    assert [render.model(category) for category in CATEGORIES] == ["omlx/a,b"] * len(CATEGORIES)
+
+
+@pytest.mark.parametrize(
     "text",
     ["[claude]\nthis is not an entry\n", '[claude.model-map]\n"*" = "haiku"\n"*" = "opus"\n'],
     ids=["unparseable", "duplicate-key"],
