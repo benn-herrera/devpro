@@ -17,7 +17,9 @@
 # The `cold-read` surface is pytest with the `cold_read` marker as its default `-m`, the `slow`
 # surface its `slow` marker; the other pytest surfaces default to `-m "not cold_read and not slow"`
 # when the caller passes no `-m`, because the cold-read suite's subprocess cases cost about a fifth
-# of the full run and are a rare, manual surface. A caller's own `-m` wins over either default.
+# of the full run and are a rare, manual surface, and the `slow` cases — the screenshot suite, all
+# under `devtools/tests` — would otherwise add their share to the `dupe_sweep` surface's wall time,
+# which runs that same directory. A caller's own `-m` wins over either default.
 # The full run (no surface) runs both after pytest, and fails when any of them fails. It shows
 # check-wheel's last line only, its full output on failure, so the pytest result stays near the end
 # of the log.
