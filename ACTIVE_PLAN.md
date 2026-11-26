@@ -210,8 +210,9 @@ Scope: `devpro/vocabulary.py` (`OptionalHarnessText` gains the member `AGENTS_PA
 `reload_rule: str = ""` is the pattern — so opencode and mage supply nothing and need no edit: ""
 drops the paragraph),
 `devpro/harnesses/claude.py` (supplies it under claude alone, the sentence a module constant:
-"The plugin's agents files sit in `.claude/skills/devpro/agents/`." — the literal path, the same
-path `devpro/profiler/hooks.py` holds as `INSTALL_WRAPPER`), `devpro/clauses.py` (gains
+"The plugin's agents files sit in `.claude/skills/devpro/agents/`." — a literal path, not read
+from `devpro/profiler/hooks.py`, whose `INSTALL_WRAPPER` is the wrapper script, not the agents
+directory), `devpro/clauses.py` (gains
 `AGENTS_PATH = "@!hrn-agents-path!@"`; `hole()` maps the member value `agents_path` to
 `@!hrn-agents-path!@`), `devpro/definitions/skills/development.py` (a standalone paragraph directly
 under the `## Dispatch` heading, carrying `{clauses.AGENTS_PATH}` — standalone so the paragraph
