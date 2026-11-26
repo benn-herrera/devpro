@@ -60,6 +60,18 @@ if [[ -n "${stray_bytecode}" ]]; then
 then remove every __pycache__ the above names"
 fi
 
+# The build is the install's one filter, so this repository's own project documents must be in no
+# wheel: a `pyproject.toml` package-data glob that swept one in would deliver it to every consumer
+# install, the wheel==tree comparison above passing a copy of it committed under the package. Failing
+# on it, rather than excluding it, names each file.
+project_docs="$(grep -E '(^|/)(SPEC|ARCHITECTURE|CONVENTIONS|THESIS|ROADMAP|AGENTS|CLAUDE)\.md$' <<<"${in_wheel}" || true)"
+if [[ -n "${project_docs}" ]]; then
+  while IFS= read -r doc; do
+    printf 'check-wheel: a project document would ship in the wheel: %s\n' "${doc}" >&2
+  done <<<"${project_docs}"
+  fail "the wheel carries this repository's own project documents; keep them out of the package data pyproject.toml declares"
+fi
+
 if [[ "${in_wheel}" != "${in_tree}" ]]; then
   comm -13 <(printf '%s\n' "${in_wheel}") <(printf '%s\n' "${in_tree}") | sed 's/^/missing from the wheel: /' >&2
   comm -23 <(printf '%s\n' "${in_wheel}") <(printf '%s\n' "${in_tree}") | sed 's/^/extra in the wheel: /' >&2
@@ -105,21 +117,22 @@ module_help="$(from_wheel "${venv}/${PYBIN}/python${EXE}" -I -B -m devpro --help
 
 # Two projects of the same name: the install's agents file is titled with the project directory's
 # name, so both sides must be named `project`. The wheel is unpacked beside the two projects, into no
-# tree the comparison reads, and each side installs from one of its own: the first under the venv's
-# interpreter, running the console script; the second under the same interpreter with the unpacked
-# tree on PYTHONPATH, the shape `just agents` runs from. Both installs stage their package copy from
-# the wheel's content, so the two differ only in the interpreter's spelling of the wrapper: pip
-# installs the wheel with --no-compile, and a copy carries whatever `__pycache__` its source tree holds.
+# tree the comparison reads, and each side installs from one of its own: the first from the wheel
+# pip installed into the venv, running the console script; the second from that same wheel's unpacked
+# files, under the same interpreter with the unpacked tree on PYTHONPATH, the shape `just agents` runs
+# from. Both sides stage from the wheel's content, so the two differ only in the interpreter's spelling
+# of the wrapper: pip installs the wheel with --no-compile, and a copy carries whatever `__pycache__`
+# its source tree holds.
 unpacked="${scratch}/unpacked"
 mkdir -p "${unpacked}"
 unzip -q -o "${wheel}" -d "${unpacked}"
-for side in from-wheel from-checkout; do
+for side in from-installed-wheel from-unpacked-wheel; do
   mkdir -p "${side}/project/.claude"
   : > "${side}/project/justfile"
 done
-from_wheel "${venv}/${PYBIN}/devpro${EXE}" install "${scratch}/from-wheel/project" --components=kbase > /dev/null
-from_wheel env PYTHONPATH="${unpacked}" "${venv}/${PYBIN}/python${EXE}" -m "${GEN}" install "${scratch}/from-checkout/project" --components=kbase > /dev/null
-diff -r from-wheel from-checkout || fail "the wheel's install differs from the same wheel's unpacked files"
+from_wheel "${venv}/${PYBIN}/devpro${EXE}" install "${scratch}/from-installed-wheel/project" --components=kbase > /dev/null
+from_wheel env PYTHONPATH="${unpacked}" "${venv}/${PYBIN}/python${EXE}" -m "${GEN}" install "${scratch}/from-unpacked-wheel/project" --components=kbase > /dev/null
+diff -r from-installed-wheel from-unpacked-wheel || fail "the wheel's install differs from the same wheel's unpacked files"
 
 mkdir plugins
 from_wheel "${venv}/${PYBIN}/devpro${EXE}" install "${scratch}/plugins" --components=kbase --harness=mage > /dev/null

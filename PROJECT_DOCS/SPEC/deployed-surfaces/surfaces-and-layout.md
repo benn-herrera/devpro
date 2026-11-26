@@ -43,6 +43,7 @@ devpro install TARGET [--components=CSV] [--harness=NAME] [--subdir=DIR] [--fami
 ```
 
 Plugins states the `--components` default. From a checkout of this repository the same command runs as
-`PYTHONPATH=<clone> python3 -m devpro install …` (Package and Command); the repository's own
-installs stage from the built package the build produces first (Package and Command).
+`PYTHONPATH=<clone> python3 -m devpro install …` (Package and Command), and it stages the clone's tree
+as it stands; the repository's own installs stage from the built package the build produces first
+(Package and Command).
 `--dry-run` previews an install without writing anything (SPEC.md, Write Safety).

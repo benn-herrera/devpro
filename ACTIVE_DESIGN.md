@@ -102,10 +102,11 @@ this repository's own project documents. `README.md` is not in that exclusion: a
 An install writes into its install directory: every definition its plugin carries,
 rendered by that same invocation, together with the shipped packages those definitions read (Shipped files),
 each at its package destination, and the harness resources, copied into that same directory as they
-stand (Shipped files). What is not part of the install product does not travel: test suites and their
-fixtures, caches, `.DS_Store`, backup (`.bak`) copies, a `.venv` directory, and this repository's
-own project documentation — none of it installed at any depth under a package destination. No installed
-file refers its reader to one of
+stand (Shipped files). What an install produces is the built package's file set, and the build is
+the one thing that filters it: the wheel carries this repository's own project documentation
+nowhere, and neither test suites, caches nor a `.venv`. An install from a checkout of this
+repository (`PYTHONPATH=<clone> python3 -m devpro install …`) has no build between it and the
+source, so it stages the clone's tree as it stands. No installed file refers its reader to one of
 this repository's own project documents. `README.md` is not in that exclusion: a shipped package's
 `README.md` is installed.
 ```
@@ -161,8 +162,9 @@ Plugins states the `--components` default. From a checkout of this repository th
 **Becomes:**
 ```
 Plugins states the `--components` default. From a checkout of this repository the same command runs as
-`PYTHONPATH=<clone> python3 -m devpro install …` (Package and Command); the repository's own
-installs stage from the built package the build produces first (Package and Command).
+`PYTHONPATH=<clone> python3 -m devpro install …` (Package and Command), and it stages the clone's tree
+as it stands; the repository's own installs stage from the built package the build produces first
+(Package and Command).
 ```
 
 ## ARCHITECTURE delta
@@ -292,11 +294,13 @@ removes nothing `_shipped` excludes, so a file outside it is never stale.
 **Becomes:**
 ```
 Both staging paths stage from the built wheel: the package copy writes the files the running
-package holds — its content, once built, is the wheel's, `.dist-info/RECORD` its one manifest —
-and the harness resource copy copies its files as the resource trees stand in the wheel. A file
-the package data `pyproject.toml` declares (Packaging) is the only thing a copy can find, on either
-path, and `just check-wheel` holds that declared list equal to the tree. Every copy writes each
-file with the mode the
+package holds, and the harness resource copy copies its files as the resource trees stand. The
+wheel's content, once built, is what a consumer install writes: it is the install's whole file set,
+and the build is the one filter over it — `.dist-info/RECORD` that content's manifest, and
+`just check-wheel` holds the declared package data equal to the tree and fails on any of this
+repository's own project documents in the wheel (Packaging). An install run from a checkout
+(`PYTHONPATH=<clone>`) has no build under it and stages the clone's tree as it stands. Every copy
+writes each file with the mode the
 process umask gives a new file plus the source's execute bits, and `prune`
 keeps its own guard above.
 ```

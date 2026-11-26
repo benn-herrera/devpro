@@ -70,10 +70,11 @@ available after using `devpro install`, `/reload-plugins` rescans the agent list
 An install writes into its install directory: every definition its plugin carries,
 rendered by that same invocation, together with the shipped packages those definitions read (Shipped files),
 each at its package destination, and the harness resources, copied into that same directory as they
-stand (Shipped files). What is not part of the install product does not travel: test suites and their
-fixtures, caches, `.DS_Store`, backup (`.bak`) copies, a `.venv` directory, and this repository's
-own project documentation — none of it installed at any depth under a package destination. No installed
-file refers its reader to one of
+stand (Shipped files). What an install produces is the built package's file set, and the build is
+the one thing that filters it: the wheel carries this repository's own project documentation
+nowhere, and neither test suites, caches nor a `.venv`. An install from a checkout of this
+repository (`PYTHONPATH=<clone> python3 -m devpro install …`) has no build between it and the
+source, so it stages the clone's tree as it stands. No installed file refers its reader to one of
 this repository's own project documents. `README.md` is not in that exclusion: a shipped package's
 `README.md` is installed. The optional tuning arguments — `--family`, and the entries in the
 devpro settings file `--config-file=<file>` names — render the definitions under them (SPEC.md,

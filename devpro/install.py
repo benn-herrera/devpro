@@ -273,8 +273,10 @@ def _wheel_files(root: Path) -> list[Path]:
 
 def package_copies(root: Path, package: ShippedPackage) -> list[tuple[Path, Path]]:
     """(source file, target under `root`) for every file `package` delivers, each landing under its
-    destination. The source is the running package's own content, which once built is the wheel's:
-    `.dist-info/RECORD` is the one manifest of what ships."""
+    destination. The source is the running package's own content. Built, that content is the wheel's:
+    the wheel's file set is what a consumer install writes, the build is the one filter over it, and
+    `.dist-info/RECORD` is that content's manifest. Run from a checkout (`PYTHONPATH=<clone>`), the
+    source is the clone's tree as it stands, a `__pycache__` directory left out."""
     source_root = PACKAGE_ROOT / package.source
     return [
         (source, root / package.destination / source.relative_to(source_root)) for source in _wheel_files(source_root)

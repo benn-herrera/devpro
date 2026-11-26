@@ -579,9 +579,10 @@ def test_a_second_install_leaves_the_copied_plugin_standing_and_prunes_only_the_
 
 
 def test_the_package_copy_stages_every_file_the_running_package_holds(tmp_path: Path, _staged) -> None:
-    """The package copy takes its tree whole — the built package is the one filter — less the
-    `__pycache__` directories no wheel carries. Defect: a denylist here dropped a file the wheel
-    carried, so an installed copy was not the package it ran."""
+    """The package copy takes its source tree whole, less the `__pycache__` directories no wheel
+    carries: that source is the clone's own tree when the install runs from a checkout, which has no
+    build to filter it. Defect: a denylist here dropped a file the tree carried, so an installed copy
+    was not the package it ran."""
     _staged(
         tmp_path / "devpro",
         (
@@ -602,9 +603,9 @@ def test_the_package_copy_stages_every_file_the_running_package_holds(tmp_path: 
 
 
 def test_a_resource_copy_stages_every_file_the_tree_holds(tmp_path: Path, _staged) -> None:
-    """The harness resource copy reads its tree as the wheel carries it, filtering nothing the wheel
-    carries: a `.DS_Store` or a `.bak` beside a harness's own file is the wheel's, and no walk drops
-    what the build declared."""
+    """The harness resource copy reads its tree as it stands, filtering nothing: a `.DS_Store` or a
+    `.bak` beside a harness's own file is the source's, and no walk drops what the build or the
+    checkout delivered."""
     _staged(
         tmp_path,
         (

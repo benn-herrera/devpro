@@ -27,11 +27,13 @@ rendered before the first write. A file at a rendered-definition destination tha
 generated banner, or is a directory, refuses the install.
 
 Both staging paths stage from the built wheel: the package copy writes the files the running
-package holds — its content, once built, is the wheel's, `.dist-info/RECORD` its one manifest —
-and the harness resource copy copies its files as the resource trees stand in the wheel. A file
-the package data `pyproject.toml` declares (Packaging) is the only thing a copy can find, on either
-path, and `just check-wheel` holds that declared list equal to the tree. Every copy writes each
-file with the mode the
+package holds, and the harness resource copy copies its files as the resource trees stand. The
+wheel's content, once built, is what a consumer install writes: it is the install's whole file set,
+and the build is the one filter over it — `.dist-info/RECORD` that content's manifest, and
+`just check-wheel` holds the declared package data equal to the tree and fails on any of this
+repository's own project documents in the wheel (Packaging). An install run from a checkout
+(`PYTHONPATH=<clone>`) has no build under it and stages the clone's tree as it stands. Every copy
+writes each file with the mode the
 process umask gives a new file plus the source's execute bits, and `prune`
 keeps its own guard above.
 

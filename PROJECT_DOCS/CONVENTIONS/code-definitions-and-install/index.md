@@ -16,7 +16,7 @@ Contents:
 - [Recognizer spells rendered banner](recognizer-spells-rendered-banner.md)
 - [Harness resources are copied verbatim](harness-resources-are-copied-verbatim.md)
 - [Guardrails change together](guardrails-change-together.md)
-- [Install stages from the wheel](install-stages-from-the-wheel.md)
+- [The build is the install's one filter](the-build-is-the-installs-one-filter.md)
 - [Install parameters ship with their flags](install-parameters-ship-with-their-flags.md)
 - [Agents file changes explicitly](agents-file-changes-explicitly.md)
 - [Version has one home](version-has-one-home.md)
