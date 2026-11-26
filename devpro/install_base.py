@@ -1,8 +1,10 @@
 """What the install modules share: where this package and its checkout sit, the kbase skill's directory
 and the kb-tools package's destination inside it, the devpro tools package's directory and its wrapper,
-UTF-8 text reading that keeps each line's ending, and
+the one-line banners a carried file and a harness resource each state their origin in, UTF-8 text reading
+that keeps each line's ending, and
 the stderr report of what an install left alone."""
 
+import re
 import sys
 from pathlib import Path
 
@@ -30,6 +32,12 @@ KB_TOOLS_DIR = f"{KBASE_SKILL_DIR}/kb-tools"
 # — and the wrapper that runs that copy, which every installed hook and skill names by its own knowledge.
 TOOLS_DIR = "tools"
 WRAPPER = f"{TOOLS_DIR}/devpro.sh"
+# The mark a carried file's banner opens with: `stamped` writes it, and a harness resource carries it as
+# its own text on one of its first lines, in whatever comment syntax its format takes.
+INSTALLED_MARK = "!INSTALLED!"
+# A carried file's installed banner: the mark, a word naming where it came from, and the repository's
+# name. A harness resource and a rendered definition's digest (`devpro.profiler.directives`) read it.
+INSTALLED_BANNER = re.compile(re.escape(INSTALLED_MARK) + r" .* devpro")
 
 
 def untranslated_text(path: Path) -> str:

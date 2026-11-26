@@ -1,5 +1,5 @@
 """The activity profiler's contract, driven through the wrapper the install writes: one capture
-writes a schema-3 record, `tree --format html`'s page data carries the keys `view.html` parses, and the
+writes a schema-4 record, `tree --format html`'s page data carries the keys `view.html` parses, and the
 installed wrapper is the wrapper the install wrote. It fails on the port defect that renames or drops a
 record field the page data carries — the rename or drop ships green and renders an empty page.
 
@@ -23,6 +23,7 @@ and no test relies on a devpro installed on the host: the install runs in the te
 wrapper runs this checkout's code.
 """
 
+import hashlib
 import json
 import os
 import re
@@ -97,7 +98,7 @@ _PAYLOAD = json.dumps(
 
 # The fields this payload fills, in the schema `view.html` and `tree` read: a rename or a drop of
 # any of them changes the record's shape.
-_RECORD_FIELDS = {"v", "harness", "at", "session", "tool", "name", "ok", "args", "branch"}
+_RECORD_FIELDS = {"v", "harness", "at", "session", "tool", "name", "ok", "args", "branch", "plan", "directives"}
 
 # The keys `view.html` reads from the page's data and from one call row.
 _PAGE_KEYS = {"session", "branch", "models", "contexts", "markers", "calls"}
@@ -242,19 +243,28 @@ def index_row_colspan(index: str) -> int:
     return int(re.search(r"cell\.colSpan = (\d+);", script).group(1))
 
 
+def _plan(root: Path, title: str) -> None:
+    """The project's active plan at `root`, its first level-1 heading `title`."""
+    (root / "ACTIVE_PLAN.md").write_text(f"# {title}\n\nbody\n", encoding="utf-8")
+
+
 def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path, _wrapper: Path) -> None:
-    """One well-formed hook payload appends one line to the project's trace, carrying schema 3 and
+    """One well-formed hook payload appends one line to the project's trace, carrying schema 4 and
     the field names the unchanged page and tree read; the html page's data carries the keys
     `view.html` parses."""
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    _plan(project, "a plan")
+    definition = project / ".claude" / "skills" / "devpro" / "agents" / "coder.md"
+    definition.parent.mkdir(parents=True)
+    definition.write_text("<!-- !GENERATED! from devpro/definitions/agents/coder.py -->\nbody\n", encoding="utf-8")
     capture = _run(_wrapper, "capture", "claude", cwd=project, stdin=_PAYLOAD)
     assert capture.returncode == 0, capture.stderr
     assert capture.stdout == "" and capture.stderr == ""
     trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
     [record] = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
-    assert record["v"] == 3
+    assert record["v"] == 4
     assert _RECORD_FIELDS <= set(record), sorted(record)
     assert record["session"] == "s-profiler"
     assert record["tool"] == "Bash"
@@ -344,6 +354,74 @@ def test_a_capture_writes_its_line_in_the_bytes_it_measured(tmp_path: Path, _wra
     trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
     line = trace.read_bytes().decode("ascii")
     assert json.loads(line)["args"] == "echo h\u00e9 \ud800"
+
+
+def test_a_capture_stamps_every_record_with_the_sessions_operational_context(tmp_path: Path, _wrapper: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: a capture wrote records with no operational context, so
+    the render had no plan and no directives to answer what a session ran under.
+
+    A project holding an installed-looking definition under a harness directory, its `AGENTS.md` and a
+    plan: the first record's `plan` is the plan's first level-1 heading, and its `directives` the digest
+    the harness files and the agents file hash to, with that digest's manifest holding each file's own.
+    A directive and the plan then change, and the session's later records keep the stamp it started
+    under — taken once, not re-read per record."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    _plan(project, "the plan as it started")
+    definition = project / ".opencode" / "plugins" / "devpro" / "agents" / "coder.md"
+    definition.parent.mkdir(parents=True)
+    definition.write_text("<!-- !GENERATED! from devpro/definitions/agents/coder.py -->\nbody\n", encoding="utf-8")
+    agents_file = project / "AGENTS.md"
+    agents_file.write_text("# agents\n", encoding="utf-8")
+    capture = _run(_wrapper, "capture", "claude", cwd=project, stdin=_PAYLOAD)
+    assert capture.returncode == 0, capture.stderr
+    trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
+    [first] = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
+
+    expected = hashlib.sha256(
+        json.dumps(
+            sorted(
+                {
+                    "AGENTS.md": hashlib.sha256(agents_file.read_bytes()).hexdigest(),
+                    ".opencode/plugins/devpro/agents/coder.md": hashlib.sha256(definition.read_bytes()).hexdigest(),
+                }.items()
+            ),
+            separators=(",", ":"),
+        ).encode("ascii")
+    ).hexdigest()
+    assert (first["plan"], first["directives"]) == ("the plan as it started", expected)
+    manifest = project / ".devpro-temp" / ".profiler-directives" / f"{expected}.json"
+    assert sorted(json.loads(manifest.read_text(encoding="utf-8"))) == [
+        ".opencode/plugins/devpro/agents/coder.md",
+        "AGENTS.md",
+    ]
+
+    agents_file.write_text("# agents, edited\n", encoding="utf-8")
+    _plan(project, "the plan as it moved")
+    capture = _run(_wrapper, "capture", "claude", cwd=project, stdin=_PAYLOAD)
+    assert capture.returncode == 0, capture.stderr
+    records = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
+    assert [(record["plan"], record["directives"]) for record in records] == [(first["plan"], expected)] * 2
+
+
+def test_a_capture_leaves_out_the_stamp_fields_a_project_gives_it_nothing_for(tmp_path: Path, _wrapper: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: a capture wrote a stamp field for a project that gives it
+    nothing — no plan, no file carrying an installed banner — so a record stated a context the project
+    never had.
+
+    A project holding neither a plan nor an installed file: the record carries neither `plan` nor
+    `directives`, and no manifest stands."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    capture = _run(_wrapper, "capture", "claude", cwd=project, stdin=_PAYLOAD)
+    assert capture.returncode == 0, capture.stderr
+    trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
+    [record] = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
+
+    assert "plan" not in record and "directives" not in record
+    assert not (project / ".devpro-temp" / ".profiler-directives").exists()
 
 
 def test_the_capture_keeps_its_childs_output_off_the_hooks_stdout(tmp_path: Path, _wrapper: Path) -> None:
@@ -452,7 +530,7 @@ def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Pa
             json.dumps(record)
             for record in (
                 {
-                    "v": 3,
+                    "v": 4,
                     "harness": "opencode",
                     "at": "2026-01-01T00:00:00.000Z",
                     "session": "s-opencode",
@@ -463,7 +541,7 @@ def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Pa
                     "transcript": None,
                 },
                 {
-                    "v": 3,
+                    "v": 4,
                     "harness": "opencode",
                     "at": "2026-01-01T00:00:01.000Z",
                     "session": "s-opencode",
@@ -485,7 +563,7 @@ def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Pa
                     "result": "ok",
                 },
                 {
-                    "v": 3,
+                    "v": 4,
                     "harness": "opencode",
                     "at": "2026-01-01T00:00:02.000Z",
                     "session": "s-opencode",
@@ -621,7 +699,7 @@ def test_the_capture_builds_its_record_over_host_shape_inputs(tmp_path: Path) ->
     events = [record for record in records if record.get("event") is not None]
     idle_keys = {"v", "harness", "at", "session", "event", "trigger", "source", "context_tokens", "transcript"}
     assert [{key for key in record if key not in idle_keys} for record in events] == [
-        {"background", "agent_type", "model"}
+        {"background", "agent_type", "model", "plan", "directives"}
     ] * len(events)
     # The session whose only request was the host's own title request: it names no model or agent, and
     # the call the session made after it names neither, as a claude record with no transcript does.
@@ -666,7 +744,7 @@ def _idle_store(root: Path, session: str, idles: list[tuple[str, int]]) -> Path:
         "".join(
             json.dumps(
                 {
-                    "v": 3,
+                    "v": 4,
                     "harness": "opencode",
                     "at": at,
                     "session": session,
@@ -776,7 +854,7 @@ def _stop_at(root: Path, session: str, at: str, agent_id: str) -> None:
             ("\n" if not text.endswith("\n") else "")
             + json.dumps(
                 {
-                    "v": 3,
+                    "v": 4,
                     "harness": "claude",
                     "at": at,
                     "session": session,
@@ -1110,7 +1188,7 @@ def _write_store(
         "".join(
             json.dumps(
                 {
-                    "v": 3,
+                    "v": 4,
                     "harness": harness,
                     "at": (start + timedelta(seconds=second)).strftime("%Y-%m-%dT%H:%M:%S.") + "000Z",
                     "session": session,

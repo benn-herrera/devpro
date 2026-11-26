@@ -12,6 +12,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .directives import read_stamp, write_manifest
 from .values import (
     ARGS_LIMIT,
     CAPTURED_EVENTS,
@@ -403,6 +404,36 @@ def session_file(directory: Path | str, session: object) -> Path:
     return Path(directory) / TRACE_DIR / f"{safe}.jsonl"
 
 
+def store_stamp(file: Path) -> Json | None:
+    """The stamp the session's store already holds, read off its earliest-`at` record that carries one,
+    and nothing where the store holds no record or none carries one: the session's stamp is its first
+    record's, and every record after it copies that."""
+    stamped: Json | None = None
+    for line in (read_text(file) or "").split("\n"):
+        try:
+            record = json.loads(line) if line else None
+        except ValueError:
+            continue
+        if not isinstance(record, dict) or not ({"plan", "directives"} & set(record)):
+            continue
+        if stamped is None or str(record.get("at")) < str(stamped.get("at")):
+            stamped = record
+    return None if stamped is None else {key: stamped[key] for key in ("plan", "directives") if key in stamped}
+
+
+def session_stamp(file: Path, directory: Path) -> Json:
+    """The stamp a record being written to `file` carries: the store's own where it holds a stamped
+    record, and the project's state at `directory` where it does not — a session's first record, or a
+    store written before the stamp. Taken once per session, so a plan that moves or a directive edited
+    mid-session changes no later record."""
+    found = store_stamp(file) if file.exists() else None
+    if found is not None:
+        return found
+    fresh, digests = read_stamp(directory)
+    write_manifest(directory, digests)
+    return fresh
+
+
 def capture(harness: str, text: str) -> Path | None:
     """Append one record for `text`, the hook payload, and return the file it landed in."""
     payload = json.loads(text)
@@ -414,8 +445,9 @@ def capture(harness: str, text: str) -> Path | None:
     directory = project_dir(payload.get("cwd") or os.getcwd())
     file = session_file(directory, payload["session_id"])
     file.parent.mkdir(parents=True, exist_ok=True)
+    stamp = session_stamp(file, directory)
     record = build_record(payload, harness) if is_tool else build_event_record(payload, harness)
     # One small append per record keeps concurrent hooks from interleaving.
     with file.open("a", encoding="utf-8", errors="replace") as handle:
-        handle.write(serialize(record) + "\n")
+        handle.write(serialize({**record, **stamp}) + "\n")
     return file

@@ -20,14 +20,19 @@ import { Plugin } from "@opencode/plugin"
 import {
   appendFileSync,
   closeSync,
+  existsSync,
   fstatSync,
   mkdirSync,
   openSync,
+  readdirSync,
   readFileSync,
   readSync,
   renameSync,
+  statSync,
   truncateSync,
+  writeFileSync,
 } from "node:fs"
+import { createHash } from "node:crypto"
 import { basename, dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -58,7 +63,7 @@ function pluginId(): string {
 }
 
 // `devpro/profiler/capture.py`'s limits and spellings, so a record from either harness renders the same way.
-const SCHEMA_VERSION = 3
+const SCHEMA_VERSION = 4
 const TRACE_DIR = join(".devpro-temp", ".profiler-opencode")
 const NAME_LIMIT = 80
 const ARGS_LIMIT = 200
@@ -274,6 +279,10 @@ const models = new Map<string, Reported>()
 // one present so a reader never meets a missing key. A field a hook supplies no value for takes the
 // field's empty rendering: `null` where the devpro profiler leaves the key out, `false` where the tree reads
 // truthiness, zero for a duration the tree formats as a number.
+//
+// The stamp's two fields, `plan` and `directives`, are on every record, `null` where the project gives the
+// capture nothing for one, as the signal's fields are.
+type Stamp = { plan: string | null; directives: string | null }
 type CallRecord = {
   v: number
   harness: string
@@ -296,9 +305,11 @@ type CallRecord = {
   branch: null
   args: string | null
   result: string | null
+  plan: string | null
+  directives: string | null
 }
 
-function callRecord(call: Finished, start: number, end: number): CallRecord {
+function callRecord(call: Finished, start: number, end: number, sessionStamp: Stamp): CallRecord {
   const raw = call.tool
   const input = isRecord(call.input) ? call.input : {}
   // A completed call carries its result; a failed one carries the error instead.
@@ -339,6 +350,8 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
     branch: null,
     args: argsOf(raw, input) ?? null,
     result: resultOf(call) ?? null,
+    plan: sessionStamp.plan,
+    directives: sessionStamp.directives,
   }
 }
 
@@ -353,7 +366,13 @@ type Signal = { background: number | null; agent_type: string | null; model: str
 // no tool, so the tree draws it as a marker. `transcript` names claude's transcript file, which opencode
 // has none of. The record carries the signal's fields on every record, absent ones as `null` — the
 // capture's own invariant, one shape for every record a reader meets — and no other does.
-function eventRecord(session: string, event: string, at: number, signal: Signal): Record<string, unknown> {
+function eventRecord(
+  session: string,
+  event: string,
+  at: number,
+  signal: Signal,
+  sessionStamp: Stamp,
+): Record<string, unknown> {
   return {
     v: SCHEMA_VERSION,
     harness: "opencode",
@@ -367,6 +386,8 @@ function eventRecord(session: string, event: string, at: number, signal: Signal)
     background: signal.background,
     agent_type: signal.agent_type,
     model: signal.model,
+    plan: sessionStamp.plan,
+    directives: sessionStamp.directives,
   }
 }
 
@@ -390,6 +411,182 @@ function serialize(record: Record<string, unknown>): string {
 // sessionFile is the trace for one session, its id made path-safe as `devpro/profiler/capture.py` makes it.
 function sessionFile(root: string, session: string): string {
   return join(root, TRACE_DIR, `${session.replace(/[^\w.-]/g, "_")}.jsonl`)
+}
+
+// ---------- the operational-context stamp ----------
+
+// The stamp is two fields on every record a session writes, `plan` and `directives`, taken once per
+// session from the store the session writes: `devpro/profiler/directives.py` computed and hashed again in
+// TypeScript, so the two captures stamp one state alike. The plugin is long-lived in the host's process,
+// so a session's stamp stands in `stampOf` from its first record on; the store on disk is the read of
+// first resort, which is what a session whose records this process did not write — the host restarted
+// mid-session — still answers from, the same read the Python capture makes on every hook.
+const stampOf = new Map<string, Stamp>()
+// The project harness directories whose installed files are directives, and the project's agents file.
+// The set is `devpro/profiler/directives.py`'s, but this module cannot import it: it ships into the host
+// and loads no devpro package. opencode's own is `.opencode/`, which opencode also loads a `.claude/`
+// beside; mage's is `devpro/`; the agents file is the project root's `AGENTS.md`.
+const HARNESS_DIRS = [".opencode", ".claude", "devpro"]
+const AGENTS_FILE = "AGENTS.md"
+const PLAN_FILE = "ACTIVE_PLAN.md"
+const DICED_PLAN_FILE = join("ACTIVE_PLAN", "entry-point.md")
+// A rendered definition's banner is written first: `# !GENERATED! from …` in its frontmatter, or inside
+// the HTML comment a skill's supporting file opens with, and on the second line behind a frontmatter fence.
+const GENERATED_BANNER = "!GENERATED! from "
+const GENERATED_BANNER_HEAD = 2
+// A carried file's installed banner, on one of the first ten lines: `!INSTALLED!`, a word naming the
+// source, and the repository's name. `devpro/install_base.py` holds the same pattern as `INSTALLED_BANNER`.
+const INSTALLED_BANNER = /!INSTALLED! .* devpro/
+const INSTALLED_BANNER_LINES = 10
+// The bytes a store's stamp is read from. A session's stamp is its first record's, so its store's head
+// answers for every store this capture wrote; the bound is what a store written before the plugin started
+// is read within.
+const STORE_TAIL_BYTES = 4 * 1024 * 1024
+// A directory deeper than this is not one an install writes below a harness directory, and is not walked.
+const WALK_DEPTH = 8
+
+function sha256(data: string | Uint8Array): string {
+  return createHash("sha256").update(data).digest("hex")
+}
+
+// relative is a file's path from `root`, its separators the ones a project-relative path takes.
+function relative(file: string, root: string): string {
+  return file.startsWith(root) ? file.slice(root.length + 1).split("\\").join("/") : file.split("\\").join("/")
+}
+
+// filesBelow is every file below a directory, by name order, down to the depth an install writes at.
+function filesBelow(directory: string): string[] {
+  const found: string[] = []
+  const walk = (current: string, depth: number): void => {
+    if (depth > WALK_DEPTH) return
+    let entries
+    try {
+      entries = readdirSync(current, { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const entry of entries.sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0))) {
+      const path = join(current, entry.name)
+      if (entry.isDirectory()) walk(path, depth + 1)
+      else if (entry.isFile()) found.push(path)
+    }
+  }
+  walk(directory, 0)
+  return found
+}
+
+// isInstalled is the Python's `is_installed`: a rendered definition's banner on one of the file's first
+// two lines, or the installed banner on one of its first ten. A file that cannot be read is not installed.
+function isInstalled(file: string): boolean {
+  let text: string
+  try {
+    text = readFileSync(file, "utf8")
+  } catch {
+    return false
+  }
+  const lines = text.split("\n")
+  if (lines.slice(0, GENERATED_BANNER_HEAD).some((line) => line.includes(GENERATED_BANNER))) return true
+  return lines.slice(0, INSTALLED_BANNER_LINES).some((line) => INSTALLED_BANNER.test(line))
+}
+
+function planTitle(root: string): string | null {
+  for (const name of [PLAN_FILE, DICED_PLAN_FILE]) {
+    let text: string
+    try {
+      text = readFileSync(join(root, name), "utf8")
+    } catch {
+      continue
+    }
+    const heading = text.split("\n").find((line) => line.startsWith("# "))
+    if (heading !== undefined) return heading.slice(2).trim() || null
+  }
+  return null
+}
+
+// readStamp computes the stamp from the directives standing at `root` now, and returns the digest's
+// per-file digests beside it, which its manifest records.
+function readStamp(root: string): [Stamp, [string, string][]] {
+  const pairs: [string, string][] = []
+  for (const name of HARNESS_DIRS) {
+    for (const file of filesBelow(join(root, name))) {
+      if (!isInstalled(file)) continue
+      pairs.push([relative(file, root), sha256(readFileSync(file))])
+    }
+  }
+  const agentsFile = join(root, AGENTS_FILE)
+  if (existsSync(agentsFile) && statSync(agentsFile).isFile()) {
+    pairs.push([AGENTS_FILE.split("\\").join("/"), sha256(readFileSync(agentsFile))])
+  }
+  const sorted = pairs.sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+  return [
+    { plan: planTitle(root), directives: sorted.length ? sha256(compact(sorted)) : null },
+    sorted,
+  ]
+}
+
+// storeStamp is the stamp a session's store already holds, read off the record the store's earliest `at`
+// names that carries one, as the Python capture reads it: what the process did not write, a session's
+// store written before it started, or by a capture this one does not see.
+function storeStamp(root: string, session: string): Stamp | null {
+  let text: string
+  try {
+    const handle = openSync(sessionFile(root, session), "r")
+    try {
+      const size = fstatSync(handle).size
+      const length = Math.min(size, STORE_TAIL_BYTES)
+      const buffer = Buffer.alloc(length)
+      readSync(handle, buffer, 0, length, 0)
+      text = buffer.toString("utf8")
+    } finally {
+      closeSync(handle)
+    }
+  } catch {
+    return null
+  }
+  let earliest: Record<string, unknown> | null = null
+  for (const line of text.split("\n")) {
+    let record: unknown
+    try {
+      record = JSON.parse(line)
+    } catch {
+      continue
+    }
+    if (!isRecord(record) || !("plan" in record || "directives" in record)) continue
+    if (earliest === null || String(record.at) < String(earliest.at)) earliest = record
+  }
+  if (earliest === null) return null
+  return {
+    plan: typeof earliest.plan === "string" ? earliest.plan : null,
+    directives: typeof earliest.directives === "string" ? earliest.directives : null,
+  }
+}
+
+// writeManifest is the Python's `write_manifest`: the digest's manifest, holding its per-file digests,
+// where none for the digest stands.
+function writeManifest(root: string, stamp: Stamp, pairs: [string, string][]): void {
+  if (stamp.directives === null) return
+  const directory = join(root, ".devpro-temp", ".profiler-directives")
+  const file = join(directory, `${stamp.directives}.json`)
+  if (existsSync(file)) return
+  mkdirSync(directory, { recursive: true })
+  writeFileSync(file, compact(Object.fromEntries(pairs)) + "\n", "utf8")
+}
+
+// sessionStamp is the stamp a record for `session` carries: the session's own where this process stamped
+// it, else the store's, else the state at `root` now — taken once per session, as the Python capture takes
+// it on the session's first record.
+function sessionStamp(root: string, session: string): Stamp {
+  const held = stampOf.get(session)
+  if (held !== undefined) return held
+  const stored = storeStamp(root, session)
+  if (stored !== null) {
+    stampOf.set(session, stored)
+    return stored
+  }
+  const [fresh, pairs] = readStamp(root)
+  writeManifest(root, fresh, pairs)
+  stampOf.set(session, fresh)
+  return fresh
 }
 
 // ---------- the capture ----------
@@ -484,7 +681,7 @@ export default Plugin.define({
         // end alone rather than left out.
         const start = started.get(key) ?? end
         started.delete(key)
-        append(root, call.sessionID, callRecord(call, start, end))
+        append(root, call.sessionID, callRecord(call, start, end, sessionStamp(root, String(call.sessionID))))
       })
     })
     // The model a request goes to, as the ref's `providerID/id`, and the agent it runs as: the last
@@ -526,11 +723,17 @@ export default Plugin.define({
           idle.sessionID,
           // A listing the idle carries is reported by its count; one it does not, as `null` — the
           // field is on the record either way, and the join reads a count's zero and a `null` alike.
-          eventRecord(idle.sessionID, "experimental.idle", Date.now(), {
-            background: Array.isArray(idle.background) ? background.length : null,
-            agent_type: reported?.agent ?? null,
-            model: reported?.model ?? null,
-          }),
+          eventRecord(
+            idle.sessionID,
+            "experimental.idle",
+            Date.now(),
+            {
+              background: Array.isArray(idle.background) ? background.length : null,
+              agent_type: reported?.agent ?? null,
+              model: reported?.model ?? null,
+            },
+            sessionStamp(root, String(idle.sessionID)),
+          ),
         )
       })
     })

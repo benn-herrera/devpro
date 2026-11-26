@@ -15,7 +15,7 @@ from typing import Any, cast
 Json = dict[str, Any]
 """A record as the capture writes it: a JSON object, its fields' values whatever the writer put there."""
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 # The store naming's prefix every name now carries; `stores` holds the naming before the rename, and the
 # two stores it renames.
 NEW_STORE_PREFIX = ".profiler-"

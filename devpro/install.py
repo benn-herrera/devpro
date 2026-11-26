@@ -49,7 +49,14 @@ from devpro.components import NAME
 from devpro.context import HarnessSettings, MapSupply, Render, harness_named
 from devpro.errors import InputError
 from devpro.harness import KBASE_OWNER, GuardrailHook, Harness, HarnessFile
-from devpro.install_base import KB_TOOLS_DIR, PACKAGE_ROOT, TOOLS_DIR, WRAPPER, report_left_alone
+from devpro.install_base import (
+    INSTALLED_BANNER,
+    KB_TOOLS_DIR,
+    PACKAGE_ROOT,
+    TOOLS_DIR,
+    WRAPPER,
+    report_left_alone,
+)
 from devpro.install_target import (
     require_existing_target,
     require_outside_package_source,
@@ -185,12 +192,9 @@ SURFACES = ("agents", "commands", "skills")
 _GENERATED = f"# {GENERATED_MARK}".encode("utf-8")
 _COMMENT_GENERATED = f"<!-- {GENERATED_MARK}".encode("utf-8")
 _PAYLOAD_PATH = f"{PACKAGE_ROOT.name}/".encode("utf-8")
-# The mark a copied file's banner opens with: the one `stamped` writes, and the one a harness resource
-# carries as its own text beside the repository's name on one of its first lines, in whatever comment
-# syntax its format takes, so no format's syntax is parsed.
-_INSTALLED_MARK = "!INSTALLED!"
 _INSTALLED_NOTICE = GENERATED_NOTICE
-_RESOURCE_BANNER = re.compile(re.escape(_INSTALLED_MARK).encode("utf-8") + rb" .* devpro")
+# The installed banner over bytes: a resource's header is read without decoding it.
+_RESOURCE_BANNER = re.compile(INSTALLED_BANNER.pattern.encode("utf-8"))
 _RESOURCE_BANNER_LINES = 10
 
 
@@ -315,7 +319,7 @@ def _harness_resource_pairs(source: Path, root: Path) -> list[tuple[Path, Path]]
 
 def stamped(data: bytes, *, origin: str) -> bytes:
     """`data` with the one-line installed banner on top, or below its shebang line."""
-    banner = f"# {_INSTALLED_MARK} from {origin} — {_INSTALLED_NOTICE}\n".encode("utf-8")
+    banner = f"# {install_base.INSTALLED_MARK} from {origin} — {_INSTALLED_NOTICE}\n".encode("utf-8")
     if not data.startswith(b"#!"):
         return banner + data
     shebang, _, rest = data.partition(b"\n")
@@ -348,7 +352,7 @@ def _is_our_resource(path: Path) -> bool:
             head = [handle.readline() for _ in range(_RESOURCE_BANNER_LINES)]
     except OSError:
         return False
-    return any(_RESOURCE_BANNER.search(line) for line in head)
+    return any(_RESOURCE_BANNER.search(line) is not None for line in head)
 
 
 def _is_our_harness_file(path: Path, *, marker: str) -> bool:

@@ -19,3 +19,4 @@ Contents:
 - [What does not exist](what-does-not-exist.md)
 - [The opencode capture](the-opencode-capture.md)
 - [The stores and their rename](the-stores-and-their-rename.md)
+- [The operational-context stamp](the-operational-context-stamp.md)
