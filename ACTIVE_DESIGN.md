@@ -1,60 +1,261 @@
-# ACTIVE DESIGN
+# Profiler dispatch timing, install re-entry, and the index page's defaults
 
-## Drafts
+For the operator reading the profiler, a subagent dispatch's record comes to carry the run the
+child made — its span, the agent that ran and the model it ran on — rather than the cost of firing
+the dispatch; and the sessions index opens with child rows off, every control's default stated in
+the page, so the first view is the dispatches. For the operator maintaining an installed project,
+an install run from the installation's own copy re-renders the set in place — a settings or option
+change takes effect without changing the installed devpro version — passing over only the copy it
+runs from. For every project the process ships, its durable records state no more specificity than
+their reader needs; that fourth change is process, not a contract delta, and the plan carries it.
 
-### Profiler child rows off by default
+The preceding is a summary of the detailed design below. Summaries are unavoidably lossy. The summary text is not to be consistency checked. The design is authoritative.
 
-Having them on by default is not helpful. The code is also crufty.
-It does not have tunable initial values for any of the controls. It has a hard default of
-'checked' for the initial value of all checkboxes and only appends parameter values when a checkbox
-value is false (again, hard value check)
+## SPEC delta
 
-### Detect a re-install from embedded devpro
+### [Shipped files](PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md)
 
-Right now ./<harness-dir>.../devpro.sh install . fails because it detects the self-overwrite.
-what it *should* do is reinstall everything but the embedded copy (just detect and skip with no
-output to stdout or stderr mentioning it - re-install in place is a normal operation).
-this allows for edits to ~/.config/devpro/devpro.toml to take effect without potentially changing
-devpro's installed version by using the system copy.
+**As it stands:**
 
-### A background dispatch's tool call times the spawn, not the child's run
+```
+The `devpro` command on `PATH` never hands off to an installation's copy, and only an
+install replaces the copy. An install run from an installation's own copy, into the installation
+holding that copy, is refused with nothing written, its refusal naming the `devpro` command on
+`PATH` as the one that installs.
+```
 
-Under opencode 2.4.1, a backgrounded subagent dispatch is recorded — by the capture's
-`execute.before`/`execute.after` pair and by the host's own `session_part` storage alike — as a
-tool call completed in single-digit milliseconds. The window is the cost of firing the dispatch,
-not the child's work: durations cluster at 17–21 ms regardless of how long the child then runs,
-and the completed part's own `metadata` carries `"status": "running"` for the child session it
-names. Measured 2026-11-25 over twelve background dispatches in one project: tool-call durations
-of 2–21 ms against child-session spans of 0.2–10.9 minutes. The hook pair is not wrong about what
-it measures — it brackets the tool's execution, and a background dispatch's execution is the
-firing. The capture is what presents that window as the dispatch's duration, and that is the
-defect.
+**Becomes:**
 
-The ticket is the capture watching the window itself: a background dispatch's call opens on the
-launch acknowledgment `execute.after` already receives — the dispatch's intent — and on the child's
-own opening events, `session.agent.selected` and `session.model.selected`, which carry the
-actualized run: the agent actually running and the model actually selected, where the dispatch side
-names only what was asked for. The records' `child_agent_type` reads null today for exactly this
-reason. The call closes on the terminal `session.execution.*` event — `succeeded`, `failed`, or
-`interrupted` — naming the child's session id. The parent's inbox delivery is not the marker: an
-agent that purposefully or erroneously sends no work back still terminates, and termination is the
-event's guarantee, delivery's is not. Foreground calls, which no child session carries, keep the
-hook pair. Under the claude harness the same dispatch's Task-tool duration already covers the
-subagent's run, so the fix is also what makes the two harnesses' records compare.
+```
+The `devpro` command on `PATH` never hands off to an installation's copy, and only an
+install replaces the copy. An install run from an installation's own copy, into the installation
+holding that copy, installs: it passes over two things only — the devpro package under
+`tools/devpro/` and the wrapper `tools/devpro.sh` that runs it — writing nothing at either and
+reporting nothing about the pass-over, and installs everything else, each write under the overwrite
+rules Write safety states.
+```
 
-Note: the same session.execution event is needed in index.ts for the agent completed
-      board-refresh reminder injection (the idle event currently used is probably wrong)
+*(The pair is paragraph-internal: the target's paragraph continues past the replaced run, and that
+text stands.)*
 
-### A minimum-specificity rule for the process's records
+## ARCHITECTURE delta
 
-The recurring failure: a record carries specificity beyond what its reader needs — a measured
-second, a line number, a version number of the moment — the fact it restates moves, the record
-rots out of agreement with the project, and every later reader pays to reconcile it, with the stale
-specificity distracting indefinitely after. The rule the process should carry: a record states the
-minimum specificity needed to convey the information that lets the work carry forward. A number,
-path or name belongs in a record only where its reader needs it to act and nothing more durable
-states it; where a measurement matters, the record names the probe that produced it and the
-measurement lives with the probe, dated; specificity whose only reader is the moment that wrote it
-does not get to keep living. Lands in the development skill's definition
-(`devpro/definitions/skills/development.py`), so every project's install carries it, and applies to
-the process's own artifacts: plans, designs, reviews, tickets, briefs.
+### [The index](PROJECT_DOCS/ARCHITECTURE/harness-profiler/serving.md#the-index)
+
+**As it stands:**
+
+```
+The
+index carries simple controls — child-record
+rows on and off, claude and opencode on and off separately, and column heads sorting on the
+dispatched-agent count, the record count, the time and the span — and a failed feed names itself in
+an in-page notice, distinct from the no-records state a zero-record store renders. The controls' state
+and the sort in force live in the index page's URL, which the reader can copy, so leaving the view
+and returning restores it.
+```
+
+**Becomes:**
+
+```
+The
+index carries simple controls — child-record
+rows on and off, claude and opencode on and off separately, and column heads sorting on the
+dispatched-agent count, the record count, the time and the span — and a failed feed names itself in
+an in-page notice, distinct from the no-records state a zero-record store renders. Child-record rows
+are off by default, and the URL carries each control's state as its deviation from that control's
+default — an untouched page's URL carries no query — so the controls' state and the sort in force
+live in the index page's URL, which the reader can copy, and leaving the view and returning restores
+it.
+```
+
+### [The capture and the hook surface](PROJECT_DOCS/ARCHITECTURE/harness-profiler/the-opencode-capture.md#the-capture-and-the-hook-surface)
+
+**As it stands:**
+
+```
+Under opencode the plugin itself records: `profiler.ts` beside the entry
+carries the capture, recreated in the plugin's TypeScript against the plugin's hook surface —
+`execute.before` and `execute.after` paired on the call's id time every tool call (the `tool`,
+`sessionID`, `status`, `input` and `result`/`error` the after-hook reports), and the idle hook appends
+a lifecycle record the tree does not draw — writing them to its own
+`.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which
+`devpro profiler tree` and the dashboard's profiler view render beside the claude sessions', each
+record read from its own `.profiler-*` store.
+```
+
+**Becomes:**
+
+```
+Under opencode the plugin itself records: `profiler.ts` beside the entry
+carries the capture, recreated in the plugin's TypeScript against the plugin's hook surface —
+`execute.before` and `execute.after` paired on the call's id time every tool call that runs no child
+(the `tool`, `sessionID`, `status`, `input` and `result`/`error` the after-hook reports), and the idle
+hook appends a lifecycle record the tree does not draw — writing them to its own
+`.devpro-temp/.profiler-opencode/<session-id>.jsonl` store, `harness` `"opencode"`, which
+`devpro profiler tree` and the dashboard's profiler view render beside the claude sessions', each
+record read from its own `.profiler-*` store. A call that dispatches a child — a `subagent` or
+`task` call, which from 2.3.0 returns at once — is timed by the child's own events (Dispatched
+children), not by the pair.
+```
+
+### [Dispatched children](PROJECT_DOCS/ARCHITECTURE/harness-profiler/the-opencode-capture.md#dispatched-children)
+
+**As it stands:**
+
+```
+A `subagent` or `task` call also records the child
+session it dispatched: the child's id is `result.sessionID` on 2.4.1, `output.sessionID` on 2.3.2 and
+`metadata.sessionID` on 2.3.0, read in that order each under the host's own string guard, and it
+fills the record's `child_agent_id` — where the index groups the child one level under its dispatcher,
+the tree on the session's page drawing the dispatch as a context — and the dispatch links to
+that child's page.
+```
+
+**Becomes:**
+
+```
+A `subagent` or `task` call also records the child
+session it dispatched: the child's id is `result.sessionID` on 2.4.1, `output.sessionID` on 2.3.2 and
+`metadata.sessionID` on 2.3.0, read in that order each under the host's own string guard, and it
+fills the record's `child_agent_id` — where the index groups the child one level under its dispatcher,
+the tree on the session's page drawing the dispatch as a context — and the dispatch links to
+that child's page. The dispatch record is written at the call's return, the launch acknowledgment:
+its `at` is the dispatch moment, and its duration the window the acknowledgment's `execute.after`
+observed — the cost of firing the dispatch. The child's own events then stand beside it, each
+appended as its own record the moment its event reports, the dispatch record never rewritten, and
+the render joins each to the dispatch at read, keyed by the session id both name — the join the
+claude records' stops already take. What each event's record carries, and what it fills in the
+dispatch record at the join:
+
+| the child's event | its record carries | it fills in the dispatch record |
+| --- | --- | --- |
+| `session.agent.selected` | `agent_type`, the agent the child actually ran | `child_agent_type` — `null` today wherever only the acknowledgment was reported |
+| `session.model.selected` | `model`, the model the child actually ran | `model` |
+| `session.execution.succeeded`, `session.execution.failed` or `session.execution.interrupted` — the event name itself carries which | `at`, the child's end | the duration: until this event the row reads the firing cost, and the render then replaces it with the span from the dispatch's `at` to the event's |
+
+Each event record is an event and no tool, its `session` the child's id, appended to the store that
+id names — the child's own `.devpro-temp/.profiler-opencode/<child-session-id>.jsonl`, which the
+render reads beside the dispatch's. Where the host reports none of the child's events, or a child's
+terminal event never comes, the record stays as the acknowledgment wrote it.
+```
+
+### [Tokens and the model](PROJECT_DOCS/ARCHITECTURE/harness-profiler/the-opencode-capture.md#tokens-and-the-model)
+
+**As it stands:**
+
+```
+An opencode record carries no token counts, so the tree's token columns are blank for
+its sessions; claude's counts and each claude call's `model` come from its own transcripts under
+`~/.claude/projects/`, which is claude's data, not a source the install configures — the model is
+that of the assistant message holding the call's tool use, the entry the capture reads the call's
+context tokens from, and is recorded at capture alone. An opencode record's `model` names the model
+call that issued the tool call, as `providerID/modelID`, the last one the session's `model.request`
+hook reported when the record is written, and is recorded at capture alone: `null` where none has run
+— a host whose plugin surface offers no such hook records none.
+```
+
+**Becomes:**
+
+```
+An opencode record carries no token counts, so the tree's token columns are blank for
+its sessions; claude's counts and each claude call's `model` come from its own transcripts under
+`~/.claude/projects/`, which is claude's data, not a source the install configures — the model is
+that of the assistant message holding the call's tool use, the entry the capture reads the call's
+context tokens from, and is recorded at capture alone. An opencode record's `model` names the model
+call that issued the tool call, as `providerID/modelID`, the last one the session's `model.request`
+hook reported when the record is written, and is recorded at capture alone: `null` where none has run
+— a host whose plugin surface offers no such hook records none. A dispatch record's `model` is the
+child's own instead, filled at the join from the child's `session.model.selected` event's record,
+where the child reported one.
+```
+
+### [Opencode entry](PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md)
+
+**As it stands:**
+
+```
+`devpro/harnesses/resources/opencode/index.ts` is opencode's plugin entry (SPEC.md, Deployed
+Surfaces, Shipped files). It is written for opencode (floor 2.3.0), and its setup registers `ctx.tool.hook("execute.after")` filtered to `subagent` and
+`ctx.session.hook("experimental.idle")` for a session whose `parentID` is set, injecting
+`ctx.session.synthetic` into the parent session at agent dispatch and agent completion, gated by
+the active plan (`ACTIVE_PLAN.md` or the diced `ACTIVE_PLAN/` tree; SPEC, Shipped files).
+```
+
+**Becomes:**
+
+```
+`devpro/harnesses/resources/opencode/index.ts` is opencode's plugin entry (SPEC.md, Deployed
+Surfaces, Shipped files). It is written for opencode (floor 2.3.0), and its setup registers `ctx.tool.hook("execute.after")` filtered to `subagent` and
+`ctx.session.hook` for the terminal `session.execution.succeeded`, `session.execution.failed` and
+`session.execution.interrupted` events, each naming the child session whose run ended, injecting
+`ctx.session.synthetic` into the parent session at agent dispatch and agent completion, gated by
+the active plan (`ACTIVE_PLAN.md` or the diced `ACTIVE_PLAN/` tree; SPEC, Shipped files).
+```
+
+*(The pair is paragraph-internal: the target's paragraph continues past the replaced run, and that
+text stands.)*
+
+**As it stands:**
+
+```
+The floor is a behavioral one, not an API one: every API the entry uses exists at 2.2.6, but there
+the `subagent` tool defaults to the foreground, so `execute.after` fires at the child's completion,
+behind the idle hook — a parent gets two completion nudges and none at the dispatch. From 2.3.0 the
+call returns at once and the child runs in the background, which makes the call's return the
+dispatch moment.
+```
+
+**Becomes:**
+
+```
+The floor is a behavioral one, not an API one: every API the entry uses exists at 2.2.6, but there
+the `subagent` tool defaults to the foreground, so `execute.after` fires at the child's completion.
+From 2.3.0 the call returns at once and the child runs in the background, which makes the call's
+return the dispatch moment. The terminal `session.execution.*` events the completion reminder reads
+are observed shipped behavior of the 2.4 line, as the capture's child events are: a host whose
+surface offers none fails that registration, and the completion reminder is what it loses.
+```
+
+**As it stands:**
+
+```
+- The reminder's surface is `ctx.location.project.directory`, the checkout root — the opened
+  directory, `ctx.location.directory`, need not be it — read for the gate; `ctx.tool.hook` and
+  `ctx.session.hook` for its two events, `ctx.session.get` for a session's `parentID`, and
+  `ctx.session.synthetic` for the injection.
+```
+
+**Becomes:**
+
+```
+- The reminder's surface is `ctx.location.project.directory`, the checkout root — the opened
+  directory, `ctx.location.directory`, need not be it — read for the gate; `ctx.tool.hook` and
+  `ctx.session.hook` for its two events, `ctx.session.get` for the parent of the session a
+  terminal event names, and `ctx.session.synthetic` for the injection.
+```
+
+**As it stands:**
+
+```
+- *Reminder.* Two hooks, registered on every install and gated when they fire, so a project holding
+  no gate path pays nothing: a `subagent` call that completed is the dispatch moment, and a session
+  going idle with an empty `background` list is a subagent's completion, whose parent — the
+  `parentID` `ctx.session.get` reports — is the one injected into. An idle session that still holds
+  running work reports nothing: the wake that follows that work fires the hook again, and that idle
+  is the completion. Each injection is one `ctx.session.synthetic` message delivered `steer`, so it
+  belongs to the execution that just ran, and its text is the sentence claude's reminder script
+  emits, byte for byte: `Reminder: keep the ACTIVE_PLAN state table up to date.`
+```
+
+**Becomes:**
+
+```
+- *Reminder.* Two hooks, registered on every install and gated when they fire, so a project holding
+  no gate path pays nothing: a `subagent` call that completed is the dispatch moment, and a child
+  session's terminal `session.execution.*` event is its completion — the child the event names, and
+  the parent `ctx.session.get` reports for it, the one injected into; a child's run ends once, so
+  its completion reminder is one. The `experimental.idle` registration the terminal events replace
+  is removed. Each injection is one `ctx.session.synthetic` message delivered `steer`, so it
+  belongs to the execution that just ran, and its text is the sentence claude's reminder script
+  emits, byte for byte: `Reminder: keep the ACTIVE_PLAN state table up to date.`
+```

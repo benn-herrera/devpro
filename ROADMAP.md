@@ -202,6 +202,21 @@ beside `@opencode/plugin`, would hold it.
 currently vetoed because bun gets updated and if we break under a new bun that is a finding.
 mind may change about this later.
 
+### A strict type-check gate for the Python
+
+`just lint` checks the shipped TypeScript against the host's published declarations, but the
+Python rides on convention: nothing machine-checks a name, a signature or a record field across
+`devpro/` and `devtools/`, so every reference check is model attention, spent fresh each time it
+is needed. The change: mypy or pyright in strict mode over the Python, pinned like the venv's
+other tools so a checker release cannot change what the gate reports with no change here, wired
+into `just lint` as a gate — the point is that the generate → vet → revise cycle carries a
+mechanical vet the work can rely on being there every time, not a standard maintained by voluntary
+care. The tests are the open surface: fixture and conftest indirection is where a checker helps
+least, so the gate lands over the package and devtools first and takes `tests/` only where the
+signal proves worth the quieting it demands. What it does not buy: type checking catches reference
+and type drift, not the conceptual load — the documents' interlock with the code stays attention
+work regardless.
+
 ## Testing
 
 ### The opencode capture's host-shape reads are verified by live dispatch alone
