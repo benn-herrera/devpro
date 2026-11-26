@@ -181,16 +181,15 @@ _SERVE_URL = re.compile(r"^http://127\.0\.0\.1:\d+/$", re.MULTILINE)
 
 
 @contextmanager
-def _serve(launcher: Path, *, cwd: Path, env: dict[str, str] | None = None) -> Iterator[str]:
-    """The dashboard, run as the wrapper `launcher` names would run it, as a context manager yielding
-    the URL its profiler view is at.
+def _serve(*, cwd: Path, env: dict[str, str] | None = None) -> Iterator[str]:
+    """The dashboard, run through this checkout's `devpro` shim, as a context manager yielding the
+    URL its profiler view is at.
 
     `_run` blocks, and the dashboard never exits, so the process is started as a `Popen` and its
     stdout read by a watcher thread until the URL it prints arrives, the waiting side bounded by a
     timeout: nothing connects to a port before the server says it is listening. The process is
     killed and reaped on the way out, and a URL that never arrives leaves the process's stderr in
-    the failure. The dashboard is the profiler's sibling verb, run through this checkout's `devpro`,
-    as a session would run it."""
+    the failure."""
     process = subprocess.Popen(
         [str(_devpro_shim(cwd)), "dashboard"],
         stdin=subprocess.DEVNULL,
@@ -940,7 +939,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     )
     _write_store(project, ".profiler-opencode", "s-child", "2026-01-01T00:00:07.000Z", harness="opencode", records=2)
 
-    with _serve(_launcher, cwd=project) as url:
+    with _serve(cwd=project) as url:
         index = _fetch(f"{url}profiler/")
         feed = json.loads(_fetch(f"{url}api/traces"))
         page = _fetch(f"{url}page/s-claude")
@@ -1028,7 +1027,7 @@ def test_a_session_naming_itself_as_a_child_is_drawn_once_in_its_own_place(tmp_p
         extra={"tool": "Agent", "name": "devpro-coder", "child_agent_id": "s-self"},
     )
 
-    with _serve(_launcher, cwd=project) as url:
+    with _serve(cwd=project) as url:
         feed = json.loads(_fetch(f"{url}api/traces"))
 
     assert [entry["id"] for entry in feed] == ["s-self"]
@@ -1055,7 +1054,7 @@ def test_a_claude_child_agent_id_groups_no_session(tmp_path: Path, _launcher: Pa
     )
     _write_store(project, ".profiler-claude", "s-named", "2026-01-01T00:00:05.000Z", harness="claude")
 
-    with _serve(_launcher, cwd=project) as url:
+    with _serve(cwd=project) as url:
         feed = json.loads(_fetch(f"{url}api/traces"))
         page = _fetch(f"{url}page/s-claude")
 
@@ -1077,7 +1076,7 @@ def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_
     foreign.mkdir()
     _write_store(foreign, ".profiler-claude", "s-elsewhere", "2026-01-01T00:00:00.000Z", harness="claude")
 
-    with _serve(_launcher, cwd=project, env={"CLAUDE_PROJECT_DIR": str(foreign)}) as url:
+    with _serve(cwd=project, env={"CLAUDE_PROJECT_DIR": str(foreign)}) as url:
         feed = json.loads(_fetch(f"{url}api/traces"))
 
     assert [entry["id"] for entry in feed] == ["s-here"]
@@ -1090,7 +1089,7 @@ def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path, _launc
     project = tmp_path / "project"
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
-    with _serve(_launcher, cwd=project) as url:
+    with _serve(cwd=project) as url:
         served = _fetch(f"{url}page/s-claude")
 
     printed = _run(_launcher, "tree", "s-claude", "--format", "html", cwd=project)
@@ -1197,7 +1196,7 @@ def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path, _laun
     (project / ".devpro-temp").mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
 
-    with _serve(_launcher, cwd=project) as url:
+    with _serve(cwd=project) as url:
         index = _fetch(f"{url}profiler/")
         [linked] = re.findall(r'<link rel="stylesheet" href="([^"]+)">', index)
 
@@ -1387,7 +1386,7 @@ def test_an_unrecorded_session_id_is_a_404_and_no_traceback(tmp_path: Path, _lau
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
 
-    with _serve(_launcher, cwd=project) as url:
+    with _serve(cwd=project) as url:
         assert _fetch(f"{url}page/s-claude")
         with pytest.raises(urllib.error.HTTPError) as missing:
             _fetch(f"{url}page/s-unrecorded")
@@ -1680,7 +1679,7 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     assert printed.returncode == 0, printed.stderr
     for mark in (LAYER_MARK, DECO_MARK, DATA_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
         assert mark not in printed.stdout, f"{mark} left standing in the rendered page"
-    with _serve(launcher, cwd=project) as url:
+    with _serve(cwd=project) as url:
         page = _fetch(f"{url}page/s-claude")
         index = _fetch(f"{url}profiler/")
     for mark in (LAYER_MARK, DECO_MARK, DATA_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
