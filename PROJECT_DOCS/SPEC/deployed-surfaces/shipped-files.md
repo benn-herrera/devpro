@@ -51,8 +51,8 @@ scripts package included.
 The devpro tools package is a shipped package installed at its own stated destination: `tools/`,
 directly under the install directory, inside no skill's directory. It holds:
 
-- `tools/devpro/`, a copy of the devpro package that ran the install — the wheel content it staged
-  from (Install destination) — byte-verbatim;
+- `tools/devpro/`, in the install directory, a copy of the devpro package that ran the install —
+  the wheel content it staged from (Install destination) — byte-verbatim;
 - `tools/devpro.sh`, the wrapper, carrying the installed banner below its shebang, which runs that
   copy as `python3 -m devpro` does, its arguments passed through: under the base interpreter that
   ran the install — that Python's own executable, never a virtual environment's — where that path

@@ -43,8 +43,9 @@ opencode itself: the tests run the entry under a stub of this surface
   before registering anything or starting the watcher, so a failed guardrail leaves no watcher
   running. A user-level install has no `guardrail.ts`, and none runs.
 - *The capture.* Where `profiler.ts` stands beside it, `setup` awaits that module's `setup` the same
-  way, which registers the activity capture's three hooks (Harness profiler). A user-level
-  install ships none, and nothing records.
+  way, which registers the activity capture's four hooks (Harness profiler), its `experimental.idle`
+  recording every session's idle, a child's included, where the reminder's is parent-scoped. A
+  user-level install ships none, and nothing records.
 - *Registry read.* It parses `registry.json` as the shape the opencode harness renders and validates
   nothing; the renderer is the only writer (Rendering, Harnesses and families). It reads each agent
   and skill body with async `readFile` and strips the leading comment lines, and the blank line

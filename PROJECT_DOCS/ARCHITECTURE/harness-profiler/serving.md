@@ -5,9 +5,10 @@
 The dashboard renders in memory behind a local HTTP server: the
 `devpro dashboard [<project-dir>] [--port <number>]` verb binds `127.0.0.1` on a free port —
 `--port` pins one, 0 (its default) asking the system for a free one — and prints the served URL on
-stdout for cmd-clicking. The bind is the rule, not a detail: the server listens on loopback only and
-loads nothing from the network, so the records it renders never leave the machine. The board is the
-dashboard's landing surface: its URL's root answers a `302` to `/board/`'s absolute URL — the one it
+stdout for cmd-clicking. The bind is the rule, not a detail: the server listens on loopback only —
+and loads nothing from the network — so the records it renders never leave the machine. The board
+is the dashboard's landing surface: its URL's root answers a `302` to `/board/`'s absolute URL —
+the one it
 prints, `http://127.0.0.1:<port>/board/` — so opening it shows the kanban board, the project's actual
 current state.
 
@@ -38,10 +39,10 @@ reader knows the set's provenance already. A feed that reads every store it name
 session in them is one `stores` entry naming how many stores the exact names read. A store an exact
 name finds but cannot read fails the feed: the handler answers a `500` whose error body names the
 raised exception's text — the dashboard is a `127.0.0.1` surface, so the text is the operator's. The
-index carries simple controls — child-record
+index carries simple controls — child
 rows on and off, claude and opencode on and off separately, and column heads sorting on the
 dispatched-agent count, the record count, the time and the span — and a failed feed names itself in
-an in-page notice, distinct from the no-records state a zero-record store renders. Child-record rows
+an in-page notice, distinct from the no-records state a zero-record store renders. Child rows
 are off by default, and the URL carries each control's state as its deviation from that control's
 default — an untouched page's URL carries no query — so the controls' state and the sort in force
 live in the index page's URL, which the reader can copy, and leaving the view and returning restores

@@ -23,16 +23,17 @@ the tree on the session's page drawing the dispatch as a context — and the dis
 that child's page. The dispatch record is written at the call's return, the launch acknowledgment:
 its `at` is the dispatch moment, and its `duration_ms` the window the acknowledgment's `execute.after`
 observed — the cost of firing the dispatch. The child's own signals then stand beside it, recorded
-by the capture's declared session hooks as they report, the dispatch record never rewritten, and the
+by the capture's declared session hooks, the child's `model.request` and `experimental.idle`, the
+dispatch record never rewritten, and the
 render joins them to the dispatch at read, keyed by the session id both name — a join across two
 stores, the dispatch record's and the child's, the pattern of the claude records' stop join and the
-reason its degrade exists: `with_stop` marks a background call that never stopped as still running,
-and the opencode join's degrade must not repeat that. The signals are the two the declared hook
+reason its degrade exists: `with_stop` marks a background call that never stopped as still running.
+The signals are the two the declared hook
 surface delivers for every session, the child's included:
 
 | the child's signal | where it lands | it fills in the dispatch record at the join |
 | --- | --- | --- |
-| the child's `model.request` — the payload names the `agent` and the `model` the child's run carries | the capture's per-session maps, stamped onto the child's idle record | `child_agent_type` and `model`, replacing the acknowledgment's input-derived guess |
+| the child's `model.request`, `primary` only — the host's `SessionRequestKind` is `primary`, `compaction`, `title` or `generate`, and only `primary` stamps — the payload names the `agent` and the `model` the child's run carries | the capture's per-session maps, stamped onto the child's idle record | `child_agent_type` and `model`, replacing the acknowledgment's input-derived guess |
 | the child's `experimental.idle` whose `background` array is empty — the agent loop finished and nothing is queued | the idle event record, `at` its moment | `duration_ms`: the render replaces the firing cost with the span from the dispatch's `at` to the idle's |
 
 A child may idle more than once — a wake that follows its own background work, or its parent's
@@ -42,7 +43,7 @@ idle seen with background work listed ends nothing, so a child that opened backg
 ends at the idle after that work reported; the span the join reads therefore includes the wait for it,
 and is not the child's working time alone. The
 idle record is an event and no tool, its `session` the child's id, appended to the store that id
-names — the child's own `.devpro-temp/.profiler-opencode/<child-session-id>.jsonl`, which the render
+names — the child's own `.devpro-temp/.profiler-opencode/<session-id>.jsonl`, which the render
 reads beside the dispatch's. A child whose end signal never comes — killed, or still running — leaves
 the record as the acknowledgment wrote it, never marked running.
 
@@ -74,8 +75,8 @@ An opencode record carries no token counts, so the tree's token columns are blan
 its sessions; claude's counts and each claude call's `model` come from its own transcripts under
 `~/.claude/projects/`, which is claude's data, not a source the install configures — the model is
 that of the assistant message holding the call's tool use, the entry the capture reads the call's
-context tokens from, and is recorded at capture alone. An opencode record's `model` names the model
-call that issued the tool call, as `providerID/modelID`, the last one the session's `model.request`
+context tokens from, and is recorded at capture alone. A non-dispatch record's `model` names the
+model call that issued the tool call, as `providerID/modelID`, the last one the session's `model.request`
 hook reported when the record is written, and is recorded at capture alone: `null` where none has run
 — a host whose plugin surface offers no such hook records none. A dispatch record's `model` is the
 child's own instead, stamped from the child's last `model.request` and filled at the join from the
