@@ -3,6 +3,7 @@
 from collections import Counter
 from collections.abc import Sequence
 from itertools import combinations
+from typing import TextIO
 
 from .clustering import Cluster
 from .constants import Constant
@@ -26,7 +27,7 @@ def file_pairs(found: Sequence[Cluster]) -> list[tuple[int, str, str]]:
     )
 
 
-def render_pairs(found: Sequence[Cluster], *, out) -> None:
+def render_pairs(found: Sequence[Cluster], *, out: TextIO) -> None:
     pairs = file_pairs(found)
     if not pairs:
         return
@@ -35,7 +36,7 @@ def render_pairs(found: Sequence[Cluster], *, out) -> None:
         print(f"    {shared:>4}  {left}  <->  {'itself' if left == right else right}", file=out)
 
 
-def render_clusters(title: str, found: Sequence[Cluster], *, out) -> None:
+def render_clusters(title: str, found: Sequence[Cluster], *, out: TextIO) -> None:
     print(f"\n## {title} — {len(found)} candidate{'' if len(found) == 1 else 's'}", file=out)
     render_pairs(found, out=out)
     for number, cluster in enumerate(found, start=1):
@@ -51,7 +52,7 @@ def render_clusters(title: str, found: Sequence[Cluster], *, out) -> None:
             print(f"    {score:>4.0%}  {unit.site}", file=out)
 
 
-def render_constants(found: Sequence[tuple[str, list[Constant]]], *, out) -> None:
+def render_constants(found: Sequence[tuple[str, list[Constant]]], *, out: TextIO) -> None:
     print(f"\n## one constant, two definitions — {len(found)} candidate{'' if len(found) == 1 else 's'}", file=out)
     for number, (why, sites) in enumerate(found, start=1):
         print(f"\n[{number}] {ellipsis(why)}", file=out)
@@ -59,7 +60,7 @@ def render_constants(found: Sequence[tuple[str, list[Constant]]], *, out) -> Non
             print(f"    {site.path}:{site.line} {site.name} = {ellipsis(site.value, 60)}", file=out)
 
 
-def render_header(pass_name: str, rev: str | None, scope: str, compared: str, out) -> None:
+def render_header(pass_name: str, rev: str | None, scope: str, compared: str, out: TextIO) -> None:
     print(f"# {pass_name} sweep — {scope}", file=out)
     print(f"# tree: {rev or 'working tree'} — {compared} compared", file=out)
     print("# candidates, not verdicts: every one below is a question for a reader.", file=out)

@@ -16,6 +16,7 @@ from devpro.context import DEFAULT_FAMILY, Render, map_spec
 from devpro.definition import Definition, SkillFile
 from devpro.definitions import discover
 from devpro.errors import InputError
+from devpro.family import Family
 from devpro.harness import AgentFields, FrontmatterForm, Harness, HarnessFile, ShippedDefinition, quoted
 from devpro.loading import load
 from devpro.vocabulary import (
@@ -27,6 +28,7 @@ from devpro.vocabulary import (
     Kind,
     OptionalHarnessText,
     PluginText,
+    Tools,
     TuningText,
     hole,
     optional_reference,
@@ -68,12 +70,14 @@ def agent_fields(defn: Definition, ctx: Render) -> AgentFields:
     ctx.model(defn.category); tools to spellings (None for ALL); governed as the de-duplicated image of
     ctx.harness.tools in table order."""
     table = ctx.harness.tools
+    # An agent's `tools` and `category` are non-None by `Definition.__post_init__`'s refusal.
+    tools = cast(Tools, defn.tools)
     return AgentFields(
         name=defn.name,
         description=filled_description(defn, ctx),
-        model=ctx.model(defn.category),
+        model=ctx.model(cast(Category, defn.category)),
         color=defn.color,
-        tools=None if defn.tools is ALL else tuple(spelling for tool in defn.tools for spelling in table[tool]),
+        tools=None if tools is ALL else tuple(spelling for tool in tools for spelling in table[tool]),
         governed=tuple(dict.fromkeys(spelling for spellings in table.values() for spelling in spellings)),
     )
 
@@ -286,7 +290,7 @@ def render_agents_file(harness: Harness, plugin: Components, *, scope: str) -> s
     default family's own categories, whatever the invocation's tuning and with no harness model-shape
     check, then one final newline."""
     [defn] = [defn for _, entries in discover() for defn in entries if defn.kind is Kind.AGENTS_FILE]
-    family = load("devpro.families", "FAMILY")[DEFAULT_FAMILY]
+    family = cast(dict[str, Family], load("devpro.families", "FAMILY"))[DEFAULT_FAMILY]
     ctx = Render(harness=harness, plugin=plugin, family=family, category_map=dict(family.categories), scope=scope)
     return filled_body(defn, ctx) + "\n"
 

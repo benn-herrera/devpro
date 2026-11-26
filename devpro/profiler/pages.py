@@ -16,7 +16,7 @@ import math
 import re
 from importlib.resources import files
 from pathlib import Path
-from typing import NamedTuple
+from typing import Any, NamedTuple, TypedDict
 from urllib.parse import quote
 
 from .capture import fill_context_tokens, spent_tokens, transcript_files
@@ -33,6 +33,7 @@ from .values import (
     TRACE_DIR,
     TRACE_STORES,
     TREE_WIDTH,
+    Json,
     _epoch_ms,
     _json,
     _local,
@@ -130,7 +131,7 @@ def strict_fill(text: str, fills: dict[str, str]) -> str:
     return re.sub(pattern, lambda match: fills[match.group()], text)
 
 
-def read_trace(file: Path) -> list[dict]:
+def read_trace(file: Path) -> list[Json]:
     """The records a trace holds: a torn line is skipped."""
     records = []
     for line in (read_text(file) or "").split("\n"):
@@ -143,7 +144,7 @@ def read_trace(file: Path) -> list[dict]:
     return records
 
 
-def start_of(record: dict) -> int | float:
+def start_of(record: Json) -> int | float:
     """When the call started: its recorded end less its duration."""
     return (_epoch_ms(record.get("at")) or 0) - (record.get("duration_ms") or 0)
 
@@ -170,12 +171,12 @@ def clock(ms: int | float) -> str:
     return _local(ms).strftime("%H:%M:%S")
 
 
-def subagent_stops(records: list[dict]) -> dict[str, dict]:
+def subagent_stops(records: list[Json]) -> dict[str, Json]:
     """agent id -> its last SubagentStop.
 
     A background subagent stops each time it has nothing to do and is woken when a child of its own
     reports, so the last stop is the one that ends it."""
-    stops: dict[str, dict] = {}
+    stops: dict[str, Json] = {}
     for record in records:
         if record.get("event") == "SubagentStop" and record.get("agent_id"):
             stops[record["agent_id"]] = {**stops.get(record["agent_id"], {}), **record}
@@ -185,7 +186,7 @@ def subagent_stops(records: list[dict]) -> dict[str, dict]:
 IDLE = "experimental.idle"
 
 
-def child_episodes(sessions: list[dict]) -> dict[tuple[str | None, str], dict]:
+def child_episodes(sessions: list[Json]) -> dict[tuple[str | None, str], Json]:
     """A child session id -> its latest idle with no background work running: where that session's run
     ended, keyed on the store's harness with the id so a join across stores rides on neither alone.
 
@@ -197,7 +198,7 @@ def child_episodes(sessions: list[dict]) -> dict[tuple[str | None, str], dict]:
     dispatch to it — including, where the child opened background work of its own, the wait for it.
     The `background` field is the capture's own: claude stamps a bool and opencode a count, and both
     read as none held where falsy — `0`, `False` and a record naming neither alike."""
-    episodes: dict[tuple[str | None, str], dict] = {}
+    episodes: dict[tuple[str | None, str], Json] = {}
     for session in sessions:
         for record in session["records"]:
             if record.get("event") == IDLE and record.get("session") and not record.get("background"):
@@ -205,7 +206,7 @@ def child_episodes(sessions: list[dict]) -> dict[tuple[str | None, str], dict]:
     return episodes
 
 
-def joined_session(session: dict, sessions: list[dict]) -> dict:
+def joined_session(session: Json, sessions: list[Json]) -> Json:
     """A session with each opencode dispatch row joined to its child's end: the child's agent, model
     and end read from the child's own store rather than the dispatch's acknowledgment, the fill
     `with_stop` once performed for the episode. `child_episodes` is built here, once, over every store
@@ -233,7 +234,7 @@ def joined_session(session: dict, sessions: list[dict]) -> dict:
 LAUNCH_NOTICE = re.compile(r"^Running in the background as @")
 
 
-def with_stop(record: dict, stop: dict | None, handback: str | None) -> dict:
+def with_stop(record: Json, stop: Json | None, handback: str | None) -> Json:
     """A background subagent's call, ended by its stop where one is recorded.
 
     Its call returns at once and it ends at its SubagentStop; its result is what it handed back. Until
@@ -259,7 +260,7 @@ def with_stop(record: dict, stop: dict | None, handback: str | None) -> dict:
     }
 
 
-def unique_calls(records: list[dict]) -> list[dict]:
+def unique_calls(records: list[Json]) -> list[Json]:
     """The calls a trace holds once each: a plugin and a committed hook on one machine record everything
     twice.
 
@@ -280,14 +281,14 @@ def unique_calls(records: list[dict]) -> list[dict]:
             if record["tool_use_id"] in seen:
                 continue
             seen.add(record["tool_use_id"])
-        child = record.get("child_agent_id")
+        child = str(record.get("child_agent_id") or "")
         calls.append(with_stop(record, stops.get(child), handbacks.get(child)))
     return calls
 
 
-def unique_events(records: list[dict]) -> list[dict]:
+def unique_events(records: list[Json]) -> list[Json]:
     """The markers once each: the same event captured twice within a few seconds is one event."""
-    kept: list[dict] = []
+    kept: list[Json] = []
     for record in records:
         if record.get("tool") or not record.get("event"):
             continue
@@ -333,12 +334,12 @@ def rendered_name(name: str | None, tool: str | None) -> str | None:
 
 def call_label(tool: str | None, name: str | None) -> str:
     """The name leads and the kind follows: `review (skill)`, `counter (agent)`, `wc -l a (Bash)`."""
-    word = TOOL_WORDS.get(tool, tool)
+    word = TOOL_WORDS.get(tool or "", tool or "")
     rendered = rendered_name(name, tool)
     return f"{rendered} ({word})" if rendered else word
 
 
-def context_of(record: dict) -> str:
+def context_of(record: Json) -> str:
     """The context a call belongs to: the subagent's id, or main's."""
     return record.get("agent_id") or MAIN
 
@@ -348,12 +349,18 @@ def short_id(identifier: str) -> str:
     return MAIN if identifier == MAIN else identifier[:CONTEXT_WIDTH]
 
 
+def moment(record: Json) -> int | float:
+    """A record's `at` as the number it was written as."""
+    at = record.get("at")
+    return float(at) if isinstance(at, (int, float)) else 0.0
+
+
 def contexts_of(
-    records: list[dict],
+    records: list[Json],
     *,
     root_label: str = MAIN,
     root_hue: int = 0,
-) -> tuple[list[dict], list[dict]]:
+) -> tuple[list[Json], list[Json]]:
     """The trace's contexts and markers.
 
     A context is one conversation history: main, or a subagent started by a forked Skill or an Agent
@@ -363,7 +370,7 @@ def contexts_of(
     in the color that call's own context wears on its dispatcher's page. An opencode dispatch's child
     end is already joined into its record at the read boundary."""
     calls = unique_calls(records)
-    contexts: list[dict] = [{"id": MAIN, "parent": None, "kind": "root", "label": root_label}]
+    contexts: list[Json] = [{"id": MAIN, "parent": None, "kind": "root", "label": root_label}]
     known = {MAIN}
     for record in calls:
         child = record.get("child_agent_id")
@@ -424,7 +431,7 @@ def contexts_of(
         for record in calls
         if record.get("tool") == "Skill" and not record.get("child_agent_id")
     ]
-    open_compact: dict | None = None
+    open_compact: Json | None = None
     for event in unique_events(records):
         at = _epoch_ms(event.get("at")) or 0
         if event.get("event") == "PreCompact":
@@ -434,21 +441,25 @@ def contexts_of(
             if not open_compact:
                 markers.append({"kind": "compact", "ctx": context_of(event), "at": at, "trigger": event.get("trigger")})
             open_compact = None
-    markers.sort(key=lambda marker: marker["at"])
+    markers.sort(key=moment)
     return contexts, markers
 
 
-def build_forest(records: list[dict], markers: list[dict] | None = None):
+def build_forest(records: list[Json], markers: list[Json] | None = None) -> list[Json]:
     """The tree's roots: each call under the call that started its context, in start order."""
-    nodes = [
+    nodes: list[Json] = [
         {"record": record, "index": index, "start": start_of(record), "children": []}
         for index, record in enumerate(unique_calls(records))
     ]
-    by_child = {node["record"]["child_agent_id"]: node for node in nodes if node["record"].get("child_agent_id")}
-    placeholders: dict[str, dict] = {}
-    roots: list[dict] = []
+    by_child: dict[Any, Json] = {
+        node["record"]["child_agent_id"]: node for node in nodes if node["record"].get("child_agent_id")
+    }
+    placeholders: dict[str, Json] = {}
+    roots: list[Json] = []
 
-    def container(agent: str | None, start: int | float, index: int | float, agent_type: str | None = None) -> list:
+    def container(
+        agent: str | None, start: int | float, index: int | float, agent_type: str | None = None
+    ) -> list[Json]:
         """The list a node goes in: its parent's children, or the roots where nothing started it."""
         if not agent:
             return roots
@@ -466,8 +477,9 @@ def build_forest(records: list[dict], markers: list[dict] | None = None):
                 }
                 placeholders[agent] = parent
                 roots.append(parent)
-            parent["start"] = min(parent["start"], start)
-        return parent["children"]
+            parent["start"] = min(float(parent["start"]), start)
+        children: list[Json] = parent["children"]
+        return children
 
     for node in nodes:
         container(
@@ -481,14 +493,14 @@ def build_forest(records: list[dict], markers: list[dict] | None = None):
     return roots
 
 
-def sort_tree(nodes: list[dict]) -> None:
+def sort_tree(nodes: list[Json]) -> None:
     """Order the tree by start, a call that started at the same moment keeping its record order."""
     nodes.sort(key=lambda node: (node["start"], node["index"]))
     for node in nodes:
         sort_tree(node["children"])
 
 
-def visible(node: dict, *, verbose: bool) -> bool:
+def visible(node: Json, *, verbose: bool) -> bool:
     """Whether a node is drawn: everything under `--verbose`, and otherwise the calls that lead to
     other calls, the markers and the placeholders."""
     if verbose or node.get("placeholder") or node.get("marker"):
@@ -496,7 +508,7 @@ def visible(node: dict, *, verbose: bool) -> bool:
     return (node.get("record") or {}).get("tool") in PARENT_TOOLS
 
 
-def context_words(record: dict, kinds: dict[str, str]) -> str:
+def context_words(record: Json, kinds: dict[str, str]) -> str:
     """How the call relates to contexts: `inline` for a skill that ran in its caller's context, `new
     context <id>` for one that started a subagent, plus `copy of <parent>` where that subagent began
     with the caller's history."""
@@ -511,7 +523,7 @@ def context_words(record: dict, kinds: dict[str, str]) -> str:
     return "inline" if record.get("tool") == "Skill" else ""
 
 
-def detail(record: dict, budget: int | None) -> str:
+def detail(record: Json, budget: int | None) -> str:
     """The `(args) -> result` tail of a tree line, clipped to `budget` characters."""
     args = record.get("args") if record.get("args") and record.get("args") != record.get("name") else None
     result = record.get("result") if record.get("tool") in PARENT_TOOLS or record.get("ok") is False else None
@@ -525,7 +537,7 @@ def detail(record: dict, budget: int | None) -> str:
 
 def paint(text: str, ctx: str | None, colors: dict[str, int] | None) -> str:
     """`text` in its context's color, where the terminal takes one."""
-    code = colors.get(ctx) if colors else None
+    code = colors.get(ctx, None) if colors and ctx is not None else None
     return f"\x1b[{code}m{text}\x1b[0m" if code else text
 
 
@@ -551,7 +563,7 @@ def cell(text: str, column: tuple[str, int, str]) -> str:
     return text.rjust(width) if align == "right" else text.ljust(width)
 
 
-def columns(values: list) -> str:
+def columns(values: list[str]) -> str:
     """The fixed columns a tree line opens with, a missing value left blank."""
     cells = [cell(values[index] if index < len(values) else "", column) for index, column in enumerate(COLUMNS)]
     return " ".join(cells) + COLUMN_GAP
@@ -571,14 +583,24 @@ def tree_header() -> str:
     return columns([name for name, _, _ in COLUMNS]) + "call"
 
 
+class TreeOptions(TypedDict):
+    """`format_line`'s keyword parameters, as `render_tree` builds them once per tree."""
+
+    verbose: bool
+    kinds: dict[str, str]
+    colors: dict[str, int] | None
+    spend: dict[str, Json]
+    longest: int | float
+
+
 def format_line(
-    node: dict,
+    node: Json,
     depth: int,
     *,
     verbose: bool,
     kinds: dict[str, str],
     colors: dict[str, int] | None,
-    spend: dict[str, dict],
+    spend: dict[str, Json],
     longest: int | float,
 ) -> str:
     """One tree line: its columns, its call with the words that place it, and its tail."""
@@ -622,7 +644,7 @@ def format_line(
     return prefix + " ".join(part for part in (paint(head, context_of(record), colors), shown_words, tail) if part)
 
 
-def ansi_colors(contexts: list[dict]) -> dict[str, int]:
+def ansi_colors(contexts: list[Json]) -> dict[str, int]:
     """Each context's terminal color. Main keeps the terminal's own, and so does a copy of main."""
     return {
         context["id"]: ANSI_COLORS[(context["hue"] - 1) % len(ANSI_COLORS)]
@@ -642,10 +664,10 @@ class Dispatcher(NamedTuple):
     hue: int
 
 
-def _context_spend(records: list[dict]) -> dict:
+def _context_spend(records: list[Json]) -> dict[str, Json]:
     """context id -> {new, cached, out, calls}: from the transcripts while they exist, otherwise what
     capture recorded for each subagent."""
-    spend: dict[str, dict] = {}
+    spend: dict[str, Json] = {}
     for record in unique_calls(records):
         if record.get("child_agent_id") and record.get("child_spend"):
             spend[record["child_agent_id"]] = record["child_spend"]
@@ -660,20 +682,20 @@ def _context_spend(records: list[dict]) -> dict:
     return spend
 
 
-def render_tree(records: list[dict], *, verbose: bool = False, color: bool = False) -> str:
+def render_tree(records: list[Json], *, verbose: bool = False, color: bool = False) -> str:
     """The trace as the text tree. An opencode dispatch's join to its child's end is already in its
     record by the time it reaches here, drawn where the session has one."""
     contexts, markers = contexts_of(records)
-    options = {
+    options: TreeOptions = {
         "verbose": verbose,
         "kinds": {context["id"]: context["kind"] for context in contexts},
         "colors": ansi_colors(contexts) if color else None,
         "spend": _context_spend(records),
         "longest": 0,
     }
-    shown: list[tuple[dict, int]] = []
+    shown: list[tuple[Json, int]] = []
 
-    def walk(nodes: list[dict], depth: int) -> None:
+    def walk(nodes: list[Json], depth: int) -> None:
         for node in nodes:
             if not visible(node, verbose=verbose):
                 continue
@@ -685,7 +707,7 @@ def render_tree(records: list[dict], *, verbose: bool = False, color: bool = Fal
     return "\n".join([tree_header()] + [format_line(node, depth, **options) for node, depth in shown])
 
 
-def session_data(session: dict, *, dispatcher: Dispatcher | None = None) -> dict:
+def session_data(session: Json, *, dispatcher: Dispatcher | None = None) -> Json:
     """The page data `view.html` inlines at its data mark: the session's calls as the file flow
     draws them, one source for the standalone render and the served page alike.
 
@@ -704,7 +726,7 @@ def session_data(session: dict, *, dispatcher: Dispatcher | None = None) -> dict
         root_hue=dispatcher.hue if dispatcher else 0,
     )
     spend = _context_spend(session["records"])
-    by_context: dict[str, list[dict]] = {}
+    by_context: dict[str, list[Json]] = {}
     for record in calls:
         by_context.setdefault(context_of(record), []).append(record)
     return {
@@ -744,7 +766,7 @@ def session_data(session: dict, *, dispatcher: Dispatcher | None = None) -> dict
     }
 
 
-def _inlined_session_data(session: dict, *, dispatcher: Dispatcher | None) -> str:
+def _inlined_session_data(session: Json, *, dispatcher: Dispatcher | None) -> str:
     """`session_data` as the JSON a page's script inlines: `<` escaped so tool output cannot close the
     script tag, and `/` escaped so it cannot spell a fill's mark — `/*DATA*/null` among them, which
     the strict fill refuses in a value."""
@@ -752,7 +774,7 @@ def _inlined_session_data(session: dict, *, dispatcher: Dispatcher | None) -> st
     return _json(data).replace("<", "\\u003c").replace("/", "\\/")
 
 
-def _rendering(session: dict, *, dispatcher: Dispatcher | None, return_to: str | None) -> str:
+def _rendering(session: Json, *, dispatcher: Dispatcher | None, return_to: str | None) -> str:
     """The page's one rendering: the template's own text with the session's data, the band's facts and
     the prefix line filled, the layer's and the deco's marks left standing for their carriers' fills —
     `render_html` inlines both texts, a file being unable to load a server's file, and the serve path
@@ -768,7 +790,7 @@ def _rendering(session: dict, *, dispatcher: Dispatcher | None, return_to: str |
     )
 
 
-def render_html(session: dict, *, dispatcher: Dispatcher | None) -> str:
+def render_html(session: Json, *, dispatcher: Dispatcher | None) -> str:
     """One self-contained page: the package's template with the presentation layer, the deco, the
     how-to-read legend and the trace inlined, and the frame band's per-page facts the session's stores
     name — the way back to the list, and the dispatcher where one dispatched it — the same facts the
@@ -782,7 +804,7 @@ def render_html(session: dict, *, dispatcher: Dispatcher | None) -> str:
     )
 
 
-def session_of(path: Path) -> dict:
+def session_of(path: Path) -> Json:
     """One trace as `list_sessions` shapes it: its records and its first and last moments."""
     records = read_trace(path)
     starts: list[int] = []
@@ -802,7 +824,7 @@ def session_of(path: Path) -> dict:
     }
 
 
-def list_sessions(directory: Path | str) -> list[dict]:
+def list_sessions(directory: Path | str) -> list[Json]:
     """Every session trace under `directory`, with its records and its first and last moments.
 
     Every store under `.devpro-temp/` is read — the directories named exactly for a harness the
@@ -819,9 +841,9 @@ FORMATS = ("text", "html")
 VALUE_FLAGS = ("--branch", "--format")
 
 
-def parse_tree_args(argv: list[str]) -> dict:
+def parse_tree_args(argv: list[str]) -> Json:
     """`tree`'s options: its session prefix and its flags."""
-    options: dict = {"verbose": False, "format": "text"}
+    options: Json = {"verbose": False, "format": "text"}
     index = 0
     while index < len(argv):
         argument = argv[index]
@@ -894,24 +916,24 @@ def store_directories(directory: Path | str) -> list[Path]:
     return sorted(stores / name for name in TRACE_STORES if (stores / name).is_dir())
 
 
-def read_sessions(directory: Path | str) -> list[dict]:
+def read_sessions(directory: Path | str) -> list[Json]:
     """`list_sessions`'s sessions, the index's and the pages' one read: each store the exact names
     find, walked a session at a time so a store's own listing is the one read that fails where it
     does. A store that cannot be read raises out of it."""
-    sessions: list[dict] = []
+    sessions: list[Json] = []
     for store in store_directories(directory):
         traces = [path for path in store.iterdir() if path.name.endswith(".jsonl")]
         sessions.extend(session_of(path) for path in traces)
     return [session for session in sessions if session["records"]]
 
 
-def session_harness(session: dict) -> str:
+def session_harness(session: Json) -> str:
     """The harness's name, as the session's own records carry it, masked and clipped like any field."""
     harness = next((record.get("harness") for record in session["records"] if record.get("harness")), "")
     return clip(mask(str(harness)), NAME_LIMIT)
 
 
-def models_in(records: list[dict]) -> list[str]:
+def models_in(records: list[Json]) -> list[str]:
     """The distinct models calls name, in the order they first appear, and none where no call names one.
     An event record is no call, so a marker naming a model states none."""
     models: list[str] = []
@@ -922,7 +944,7 @@ def models_in(records: list[dict]) -> list[str]:
     return models
 
 
-def dispatches(sessions: list[dict]) -> dict[str, tuple[str, str, str | None]]:
+def dispatches(sessions: list[Json]) -> dict[str, tuple[str, str, str | None]]:
     """child session id -> the session that dispatched it, that call's name and the tool it ran as.
 
     Only an opencode record names a session: its `child_agent_id` is a session id. A claude record's
@@ -940,7 +962,7 @@ def dispatches(sessions: list[dict]) -> dict[str, tuple[str, str, str | None]]:
     return found
 
 
-def dispatcher_of(session: str, sessions: list[dict]) -> Dispatcher | None:
+def dispatcher_of(session: str, sessions: list[Json]) -> Dispatcher | None:
     """The session that dispatched `session`, the call that did, the tool it ran as and the hue that
     call opened its context in — named by the stores' other sessions. The band's per-page fact and
     the page's root context both read it: the one lookup whoever fills either runs, so the dump's
@@ -967,7 +989,7 @@ def dispatcher_of(session: str, sessions: list[dict]) -> Dispatcher | None:
     return Dispatcher(parent, name, tool, next(context["hue"] for context in contexts if context["id"] == session))
 
 
-def traces_feed(directory: Path | str) -> list[dict]:
+def traces_feed(directory: Path | str) -> list[Json]:
     """The feed `/api/traces` answers, the index's rows' one source: one JSON entry per recorded
     session, in the order the index draws them.
 
@@ -983,7 +1005,7 @@ def traces_feed(directory: Path | str) -> list[dict]:
     schema's one definition: the index's own script renders the rows from exactly these keys."""
     sessions = read_sessions(directory)
     dispatched = dispatches(sessions)
-    children: dict[str, list[dict]] = {}
+    children: dict[str, list[Json]] = {}
     for session in sessions:
         if session["id"] in dispatched:
             children.setdefault(dispatched[session["id"]][0], []).append(session)
@@ -999,7 +1021,7 @@ def traces_feed(directory: Path | str) -> list[dict]:
     return entries
 
 
-def _feed_entry(session: dict, dispatcher: tuple[str, str, str | None] | None, agents: int = 0) -> dict:
+def _feed_entry(session: Json, dispatcher: tuple[str, str, str | None] | None, agents: int = 0) -> Json:
     """One session's entry in the feed, `agents` the count of the sessions `dispatcher` and its
     siblings name as children, and `dispatcher` itself left out where none dispatched the session."""
     entry = {
@@ -1013,8 +1035,8 @@ def _feed_entry(session: dict, dispatcher: tuple[str, str, str | None] | None, a
         "span": _round_half_up((session["last"] - session["first"]) / 1000),
     }
     if dispatcher:
-        session, name, tool = dispatcher
-        entry["dispatcher"] = {"session": session, "name": name, "tool": tool}
+        dispatcher_session, name, tool = dispatcher
+        entry["dispatcher"] = {"session": dispatcher_session, "name": name, "tool": tool}
     return entry
 
 
@@ -1476,7 +1498,7 @@ fetch(FEED, { cache: 'no-store' })
 """
 
 
-def session_for(path: str, directory: Path | str) -> dict | None:
+def session_for(path: str, directory: Path | str) -> Json | None:
     """The session recorded at `/page/<session-id>`'s id, or nothing where the path names no page or
     no session: the page's own read, the records the render and the band's facts both draw from."""
     if not path.startswith(PAGE_PREFIX):
@@ -1486,7 +1508,7 @@ def session_for(path: str, directory: Path | str) -> dict | None:
 
 
 def page_for(
-    session: dict,
+    session: Json,
     *,
     return_to: str | None,
     dispatcher: Dispatcher | None,

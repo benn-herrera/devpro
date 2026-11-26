@@ -15,7 +15,7 @@ from `install_base`, which imports nothing of the renderer's.
 """
 
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from devpro.install_base import PACKAGE_ROOT
 
@@ -24,6 +24,7 @@ from .stores import rename_stores
 from .values import (
     CAPTURED_EVENTS,
     PROFILER_SKILL,
+    Json,
     git_root,
 )
 
@@ -70,7 +71,7 @@ _OUR_COMMAND_SPELLINGS = (
 )
 
 
-def hook_entry() -> dict:
+def hook_entry() -> Json:
     """One committed hook entry: the capture, run out of band and bounded."""
     return {
         "matcher": "*",
@@ -83,12 +84,12 @@ def is_our_command(command: str | None) -> bool:
     return command in (HOOK_COMMAND, *OLD_HOOK_COMMANDS)
 
 
-def is_ours(entry: dict) -> bool:
+def is_ours(entry: Json) -> bool:
     """Whether a hook entry is one this tool wrote."""
     return any(is_our_command(hook.get("command")) for hook in entry.get("hooks") or [])
 
 
-def merge_hooks(settings: dict) -> dict:
+def merge_hooks(settings: Json) -> Json:
     """`settings` with this tool's entry on every captured event.
 
     An entry an older `init` wrote is replaced in place, so a re-run picks up new hook options."""
@@ -110,7 +111,7 @@ def profiler_skill_text() -> str:
     from devpro.render import render_all
 
     ctx = build_render(harness="claude", components="", family="claude", supply=None)
-    return dict(render_all(ctx))[PROFILER_SKILL / "SKILL.md"]
+    return dict(render_all(ctx))[PurePosixPath((PROFILER_SKILL / "SKILL.md").as_posix())]
 
 
 def init(argv: list[str], cwd: Path | str) -> str:

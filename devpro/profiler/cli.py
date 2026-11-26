@@ -7,7 +7,9 @@ imports only this module.
 import argparse
 import os
 import sys
+from io import TextIOWrapper
 from pathlib import Path
+from typing import cast
 
 # The hook payload a capture reads at most: a hook's stdin is bounded by what the host writes there, and
 # a read with no bound waits out a host that never closes the pipe. Every read of it is bounded, the
@@ -57,7 +59,8 @@ def run(args: argparse.Namespace) -> int:
     from .pages import UsageError, tree
     from .values import project_dir
 
-    sys.stdout.reconfigure(encoding="utf-8")
+    stdout = cast(TextIOWrapper, sys.stdout)
+    stdout.reconfigure(encoding="utf-8")
     arguments = args.arguments
     command = arguments[0] if arguments else None
     rest = arguments[1:]

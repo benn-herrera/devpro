@@ -10,6 +10,10 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
+from typing import Any, cast
+
+Json = dict[str, Any]
+"""A record as the capture writes it: a JSON object, its fields' values whatever the writer put there."""
 
 SCHEMA_VERSION = 3
 # The store naming's prefix every name now carries; `stores` holds the naming before the rename, and the
@@ -67,7 +71,7 @@ def _is_number(value: object) -> bool:
 
 def _number(value: object) -> float | int:
     """`value` where it is a number, and zero otherwise: what an absent token count costs."""
-    return value if _is_number(value) else 0
+    return cast(float | int, value) if _is_number(value) else 0
 
 
 def _json(value: object) -> str:

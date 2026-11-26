@@ -176,7 +176,7 @@ EXCLUDED_SUFFIX = ".bak"
 # or by name for an extensionless script. Every other file — a `.gitignore` among them — is copied
 # byte-verbatim.
 STAMPED_SUFFIXES = frozenset({".py", ".sh", ".mk", ".just"})
-STAMPED_NAMES = frozenset()
+STAMPED_NAMES: frozenset[str] = frozenset()
 SURFACES = ("agents", "commands", "skills")
 # The generated-banner prefixes, built from the mark `render` writes above the payload, and the prefix
 # of the module path a payload names: `devpro/`, which every module path below `devpro/definitions/`
@@ -238,7 +238,7 @@ def base_interpreter() -> str:
     `sys._base_executable` is CPython's own answer to this: for a venv, the base interpreter it was
     made from (`--copies` alike); outside one, the interpreter itself. The leading underscore marks it
     documented but not guaranteed stable across releases, so it is read here and nowhere else."""
-    return str(Path(sys._base_executable))
+    return str(Path(sys._base_executable))  # type: ignore[attr-defined]  # CPython's own, documented above
 
 
 def wrapper_text(interpreter: str) -> str:
@@ -372,7 +372,7 @@ def _refuse_foreign_targets(
     wrapper among them — by its installed header, a harness-rendered file — `(path, marker)` — by the
     marker that file states about itself. Every failing path is named in the one refusal, so the operator
     clears them in one pass."""
-    claims = [
+    claims: list[tuple[Path, Callable[[Path], bool]]] = [
         *((target, _is_ours) for target in render_targets),
         *((target, _is_our_resource) for target in resource_targets),
         *((target, partial(_is_our_harness_file, marker=marker)) for target, marker in harness_targets),

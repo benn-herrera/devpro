@@ -31,7 +31,7 @@ from collections.abc import Callable
 from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler
 from importlib.resources import files
-from typing import Any, TextIO
+from typing import Any, ClassVar, TextIO
 from urllib.parse import parse_qs, unquote, urlsplit
 
 from .. import __version__
@@ -106,7 +106,7 @@ class KanbanServer:
         _Handler._local_host = type(after).handler._local_host
         _Handler._send = type(after).handler._send
 
-    def panel_handler(self, request: Any, client_address: Any) -> BaseHTTPRequestHandler:
+    def panel_handler(self, request: Any, client_address: Any) -> "_Handler":
         """A handler over a request the dashboard has read, the board's own `do_` answering it."""
         return _Handler(request, client_address, self, read_request=False)
 
@@ -238,12 +238,13 @@ def _document(root: str, url_path: str) -> tuple[bytes, str] | None:
 
 
 class _Handler(BaseHTTPRequestHandler):
-    server: KanbanServer
+    server: KanbanServer  # type: ignore[assignment]  # stdlib's `BaseServer`; this handler answers only its own
     # The dashboard's guard and reply write one answer per request, its own ask answering every route
     # of either panel before either panel's handler runs; the dashboard imports this module, so it
-    # binds these here once it is loaded (`KanbanServer`'s `__init__`).
-    _local_host: Callable[[Any], bool]
-    _send: Callable[..., None]
+    # binds these here once it is loaded (`KanbanServer`'s `__init__`). Each is a method bound to
+    # this class, so `self` is its first argument.
+    _local_host: ClassVar[Callable[[Any], bool]]
+    _send: ClassVar[Callable[..., None]]
 
     def __init__(self, *args: Any, read_request: bool = True, **kwargs: Any) -> None:
         """A handler over a request the dashboard has already read when read_request is false: its

@@ -15,7 +15,7 @@ import posixpath
 import re
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass, replace
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 from urllib.parse import quote
 
 from ..dicing.heads import CONTENTS, ENTRY_POINT, HEADS, INDEX, contents_cut, contents_line, section_head, volume_head
@@ -226,13 +226,14 @@ def move_to_design(root: str, card: dict[str, Any], *, read: dict[str, str | Non
     parked = next((p for p in now.parked if asdict(p) == card), None)
     if at is None and parked is None:
         raise MoveRefused(_GONE)
-    title = now.roadmap_parts[at].title if at is not None else parked.title
+    title = now.roadmap_parts[at].title if at is not None else cast(ParkedCard, parked).title
 
     def ticket(path: str) -> list[str]:
         """The ticket's lines for the file at path."""
         here = _directory(root, path)
         if at is None:
-            return _link_ticket(parked.title, parked.paths, here)
+            remaining = cast(ParkedCard, parked)
+            return _link_ticket(remaining.title, remaining.paths, here)
         part = now.roadmap_parts[at]
         return _rebased(now.roadmap[part.first : part.last + 1], "", here)
 
@@ -246,7 +247,7 @@ def move_to_design(root: str, card: dict[str, Any], *, read: dict[str, str | Non
         path = now.design_parts[head].path
         changes = [(path, _added(now.lines[path], _category(now.design_parts, head), ticket(path)))]
     elif now.diced:
-        changes = _new_leaf(root, now, head, title, ticket)
+        changes = _new_leaf(root, now, now.design, head, title, ticket)
     else:
         changes = [(now.design, _appended(now.lines[now.design], drafts, ticket(now.design)))]
     if at is not None:
@@ -442,16 +443,17 @@ def _opens_an_index(now: _Read, head: int) -> bool:
     return os.path.basename(part.path) == INDEX and all(is_blank(line) for line in now.lines[part.path][: part.first])
 
 
-def _new_leaf(root: str, now: _Read, head: int | None, title: str, ticket: Callable[[str], list[str]]) -> list[_Change]:
+def _new_leaf(
+    root: str, now: _Read, entry: str, head: int | None, title: str, ticket: Callable[[str], list[str]]
+) -> list[_Change]:
     """The writes adding a ticket titled title to a diced design as a new leaf: beside the `index.md`
     that the `## Drafts` part now.design_parts[head] opens, else, head being None, in a `drafts`
-    directory beside the entry point, with its `index.md`. ticket gives its lines for a file's path.
-    Its Contents lines' text is the link text dicing gives a section titled title. Raises MoveRefused
-    where title has no §3.2 name or a file to create exists."""
+    directory beside the entry point `entry`, with its `index.md`. ticket gives its lines for a
+    file's path. Its Contents lines' text is the link text dicing gives a section titled title.
+    Raises MoveRefused where title has no §3.2 name or a file to create exists."""
     name = section_name(title)
     if not name:
         raise MoveRefused(f"the title {title!r} names no file: give the ticket a title with a letter or digit")
-    entry = now.design
     top = os.path.dirname(entry)
     text = contents_text(*split_number(title))
     item = contents_line("", text=text, path=f"{name}.md")
@@ -506,7 +508,7 @@ def _ticket_removed(root: str, now: _Read, part: Part) -> list[_Change]:
         )
     changes: list[_Change] = [(head, _without(head_lines, line))]
     entry = now.design
-    if head != entry:
+    if entry is not None and head != entry:
         entry_lines = now.lines[entry]
         first, end = _listing(entry_lines)
         from_top = root_relative(os.path.dirname(entry), part.path)

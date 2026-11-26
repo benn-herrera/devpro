@@ -8,7 +8,8 @@ first split heading — as it stands, and lists every section of the document be
 
 import os
 import posixpath
-from typing import TextIO
+import re
+from typing import TextIO, cast
 
 from .heads import CONTENTS, contents_line
 from .linkrewrite import Linker, Tree, parent_dir, rel
@@ -36,7 +37,9 @@ def _rebased_level(line: str, *, delta: int, top: int | None = None) -> int:
     """The level a heading line writes at once its section's ladder has moved by `delta`: the level
     moves by the delta, so the heading's distance below the section's top is what the move keeps.
     A section's top heading, given `top`, lands at that level whatever it held."""
-    return top if top is not None else _HEADING.match(line).end() - 1 + delta
+    if top is not None:
+        return top
+    return cast(re.Match[str], _HEADING.match(line)).end() - 1 + delta
 
 
 def _placed(line: str, *, s: Section, top: int | None = None) -> int:
@@ -48,7 +51,7 @@ def _placed(line: str, *, s: Section, top: int | None = None) -> int:
 
 def _shifted(line: str, level: int) -> str:
     """A heading line rewritten to open at `level` hashes: its heading text and number unchanged."""
-    return "#" * level + line[_HEADING.match(line).end() - 1 :]
+    return "#" * level + line[cast(re.Match[str], _HEADING.match(line)).end() - 1 :]
 
 
 def _rebased(line: str, *, delta: int, top: int | None = None) -> str:

@@ -103,7 +103,8 @@ class _NamedLine(NamedTuple):
     path it spells."""
 
     name: str
-    index: int
+    # `index` shadows `tuple.index`; the field is the position, and tests read it by that name.
+    index: int  # type: ignore[assignment]
     start: int
     end: int
 
@@ -166,16 +167,16 @@ def _remove_retired_line(
     any other set are untouched."""
     removed: list[int] = []
     messages: list[str] = []
-    for match in _named_harnesses(text, retired_set, runner=runner):
-        line = text.splitlines(keepends=True)[match.index]
-        if line[match.start : match.end].split("/", 1)[0] != harness_relpath.split("/", 1)[0]:
+    for named_line in _named_harnesses(text, retired_set, runner=runner):
+        line = text.splitlines(keepends=True)[named_line.index]
+        if line[named_line.start : named_line.end].split("/", 1)[0] != harness_relpath.split("/", 1)[0]:
             report_left_alone(
-                f"no {retired_set.label} include line removed: {path} line {match.index + 1} names the "
-                f"retired {retired_set.label} snippets for harness '{match.name}'"
+                f"no {retired_set.label} include line removed: {path} line {named_line.index + 1} names the "
+                f"retired {retired_set.label} snippets for harness '{named_line.name}'"
             )
             continue
-        removed.append(match.index)
-        messages.append(f"removed the retired {retired_set.label} include line from {path} line {match.index + 1}")
+        removed.append(named_line.index)
+        messages.append(f"removed the retired {retired_set.label} include line from {path} line {named_line.index + 1}")
     return _without_lines(text, removed), messages, bool(removed)
 
 
@@ -187,7 +188,7 @@ def _with_include_line(
     label = snippet_set.label
     named = _named_harnesses(text, snippet_set, runner=runner)
     if len(named) > 1:
-        indexes = ", ".join(str(match.index + 1) for match in named)
+        indexes = ", ".join(str(named_line.index + 1) for named_line in named)
         report_left_alone(
             f"no include line written: {path} names the {label} snippets on lines {indexes}; merge them into one"
         )
@@ -195,27 +196,27 @@ def _with_include_line(
     if not named:
         line = include_line(snippet_set, runner=runner, harness_relpath=harness_relpath)
         return appended_paragraph(text, line), f"installed: appended the {label} include line to {path}"
-    match = named[0]
+    named_line = named[0]
     lines = text.splitlines(keepends=True)
-    prior = lines[match.index]
+    prior = lines[named_line.index]
     # The line is this install's when it spells the same first segment — the harness directory — as
     # ROOT's path does; the whole path token, ROOT's own path below that segment included, is then
     # this install's to replace.
-    if prior[match.start : match.end].split("/", 1)[0] != harness_relpath.split("/", 1)[0]:
+    if prior[named_line.start : named_line.end].split("/", 1)[0] != harness_relpath.split("/", 1)[0]:
         report_left_alone(
-            f"no include line written: {path} line {match.index + 1} already includes the {label} "
-            f"snippets for harness '{match.name}'"
+            f"no include line written: {path} line {named_line.index + 1} already includes the {label} "
+            f"snippets for harness '{named_line.name}'"
         )
         return text, None
     canonical = _snippets_path(snippet_set, runner=runner, harness_relpath=harness_relpath)
-    rewritten = f"{prior[: match.start]}{canonical}{prior[match.end :]}"
+    rewritten = f"{prior[: named_line.start]}{canonical}{prior[named_line.end :]}"
     if rewritten == prior:
         report_left_alone(
-            f"no include line written: {path} line {match.index + 1} already names the installed "
-            f"{label} snippets for harness '{match.name}'"
+            f"no include line written: {path} line {named_line.index + 1} already names the installed "
+            f"{label} snippets for harness '{named_line.name}'"
         )
         return text, None
-    lines[match.index] = rewritten
+    lines[named_line.index] = rewritten
     return "".join(lines), f"rewrote the {label} include line in {path}"
 
 

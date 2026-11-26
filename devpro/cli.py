@@ -72,7 +72,7 @@ def _add_components(verb: argparse.ArgumentParser) -> None:
     )
 
 
-def _add_maintainer_verbs(verbs: argparse._SubParsersAction) -> None:
+def _add_maintainer_verbs(verbs: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
     """`dev-render --out DIR` with the tuning flags, `render-agents-file HARNESS OUT` and
     `harness NAME KEY`: the repository's own scripts' verbs."""
     render = verbs.add_parser("dev-render", help="render the definitions into DIR", allow_abbrev=False)
@@ -176,7 +176,7 @@ def _run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> None:
         from devpro.install import components_value, install_selected, preflighted_install, uncommitted_sources
         from devpro.install_target import resolve_install_target
 
-        settings, path = read_settings(args.config_file)
+        settings, settings_path = read_settings(args.config_file)
         # One iteration of `install_selected`'s loop, minus the harness prefix: the two paths install the
         # same way, so a change to either belongs in both.
         if args.harness is not None or settings is None:
@@ -198,7 +198,7 @@ def _run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> None:
             install_selected(
                 args.target,
                 settings,
-                path=path,
+                path=settings_path,
                 tuned=lambda harness, supply, components: _tuned(
                     args, harness=harness, supply=supply, components=components
                 ),

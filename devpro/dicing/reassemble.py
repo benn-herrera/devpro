@@ -23,7 +23,10 @@ def top_is_rebased(leaf: list[str]) -> bool:
     """Whether a section's file opens at the re-based write form, its top heading at level 1. The
     pre-change form never does: no planned section is level 1 (`outline.plan_sections`). The entry
     point is not a section and its title is written as the monolith has it."""
-    return bool(leaf and _HEADING.match(leaf[0]) and _HEADING.match(leaf[0]).end() == 2)
+    if not leaf:
+        return False
+    match = _HEADING.match(leaf[0])
+    return match is not None and match.end() == 2
 
 
 def check_reassembly(

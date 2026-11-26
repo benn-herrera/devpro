@@ -72,7 +72,13 @@ behavior and the gap is the opencode doc's. The compiler rides unpinned — `bun
 run time. The check's mandate is what ships: the test runners' TypeScript is dev-time only and
 outside it. One more pass, `bunx tsc -p devtools/tsconfig.json --noEmit`, type-checks the
 repository's own `devtools/screenshot.ts` under `devtools/tsconfig.json`: a dev tool, checked though
-it does not ship.
+it does not ship. One more still type-checks the Python: mypy in its strict mode over `devpro/` and
+`devtools/`, run through the venv's own interpreter, nothing bespoke built around it — the checker a
+`dev`-group dependency like the venv's other tools, its configuration `pyproject.toml`'s, a line
+with the compatible-release specifier the group's lines already take. The gate's paths are the
+package and the dev tool; `tests/` stays outside them until a test tree's signal proves worth the
+quieting its fixture indirection asks. A checker release changes what the gate reports only with a
+change to the group line: the pin is the record, as the other tools' are.
 
 `just screenshot <page> [--base <url>] [--viewport <W>x<H>] [--color-scheme light|dark]
 [--wait-for <selector>] [--timeout <ms>] [--out <png>]` runs

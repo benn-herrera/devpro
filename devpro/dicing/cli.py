@@ -8,7 +8,8 @@ implementation is imported where that verb is dispatched, so registering the ver
 import argparse
 import os
 import sys
-from typing import TextIO
+from io import TextIOWrapper
+from typing import TextIO, cast
 
 
 def _refuse_unreadable(roots: list[str], *, err: TextIO) -> bool:
@@ -73,7 +74,7 @@ def run(args: argparse.Namespace, *, parser: argparse.ArgumentParser) -> int:
     """Run the dicing verb `args.verb` names and return its exit status. parser reports a refusal as
     a usage error, exiting 2. The stdout and stderr this writes are reconfigured to utf-8 with
     surrogateescape, as the dicing reads and writes whatever bytes the documents hold."""
-    for stream in (sys.stdout, sys.stderr):
+    for stream in (cast(TextIOWrapper, sys.stdout), cast(TextIOWrapper, sys.stderr)):
         stream.reconfigure(encoding="utf-8", errors="surrogateescape")
     out, err = sys.stdout, sys.stderr
     run_dir = os.getcwd()  # the one read of the working directory: every pass below is given it

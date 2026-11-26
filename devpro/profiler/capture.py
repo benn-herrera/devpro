@@ -28,6 +28,7 @@ from .values import (
     TOOL_EVENTS,
     TRACE_DIR,
     TRANSCRIPT_TAIL_BYTES,
+    Json,
     _is_number,
     _iso,
     _json,
@@ -48,7 +49,7 @@ def tool_of(name: str) -> str:
     return "mcp" if name.startswith("mcp__") else name
 
 
-def name_of(payload: dict) -> str | None:
+def name_of(payload: Json) -> str | None:
     """What the call is called in a tree line: a skill's name, a subagent's kind, a command's head."""
     tool_input = payload.get("tool_input") or {}
     tool_name = payload.get("tool_name") or ""
@@ -61,7 +62,7 @@ def name_of(payload: dict) -> str | None:
     return tool_name.split("__")[-1] if tool_name.startswith("mcp__") else None
 
 
-def args_of(payload: dict) -> object:
+def args_of(payload: Json) -> object:
     """What the call was given: a skill's arguments, a subagent's brief, a command, or the input's JSON."""
     tool_input = payload.get("tool_input") or {}
     tool_name = payload.get("tool_name")
@@ -85,14 +86,15 @@ def response_text(response: object) -> str:
         return response
     if not isinstance(response, dict):
         return ""
-    if isinstance(response.get("result"), str):
-        return response["result"]
-    if isinstance(response.get("content"), list):
-        return "\n".join(
-            part.get("text") if isinstance(part, dict) and isinstance(part.get("text"), str) else ""
-            for part in response["content"]
-        )
-    return "\n".join(value for value in (response.get("stdout"), response.get("stderr")) if isinstance(value, str))
+    body: Json = response
+    result = body.get("result")
+    if isinstance(result, str):
+        return result
+    content = body.get("content")
+    if isinstance(content, list):
+        text = (part.get("text") if isinstance(part, dict) else None for part in content)
+        return "\n".join(part if isinstance(part, str) else "" for part in text)
+    return "\n".join(value for value in (body.get("stdout"), body.get("stderr")) if isinstance(value, str))
 
 
 # Claude Code may open a subagent's reply with the tools it used:
@@ -108,7 +110,7 @@ def is_background(response: object) -> bool:
     return response.get("status") == LAUNCHED or response.get("background") is True
 
 
-def result_of(payload: dict) -> str | None:
+def result_of(payload: Json) -> str | None:
     """What the call returned, absent where it is still running or returned nothing.
 
     A background subagent reports to its caller with a SubagentHandback call, whose message is the
@@ -124,7 +126,7 @@ def result_of(payload: dict) -> str | None:
     return text or None
 
 
-def usage_by_tool_use(message: dict) -> dict[str, int | float]:
+def usage_by_tool_use(message: Json) -> dict[str, int | float]:
     """tool_use id -> context tokens, for one assistant message."""
     found: dict[str, int | float] = {}
     usage = message.get("usage")
@@ -146,7 +148,7 @@ def subagent_transcript(main: Path | str, agent_id: str) -> Path:
     return _without_jsonl(main) / "subagents" / f"agent-{agent_id}.jsonl"
 
 
-def tool_use_facts(payload: dict) -> dict:
+def tool_use_facts(payload: Json) -> Json:
     """What the assistant message holding this call's tool_use states: its `context_tokens` — how full
     the calling context was when the model asked for the call — and its `model`, each present only
     where that line states it.
@@ -181,7 +183,7 @@ def tool_use_facts(payload: dict) -> dict:
     return {}
 
 
-def _assistant_message(line: str) -> dict | None:
+def _assistant_message(line: str) -> Json | None:
     """The `message` an assistant transcript line carries, or `None` where the line parses to none."""
     try:
         entry = json.loads(line)
@@ -191,14 +193,14 @@ def _assistant_message(line: str) -> dict | None:
     return message if isinstance(message, dict) else None
 
 
-def _model_of(message: dict) -> dict:
+def _model_of(message: Json) -> Json:
     """The model an assistant message names, masked and clipped as a record's name is, or no key where
     the message names none."""
     model = message.get("model")
     return {"model": clip(mask(model), NAME_LIMIT)} if isinstance(model, str) and model else {}
 
 
-def transcript_files(records: list[dict]) -> list[dict]:
+def transcript_files(records: list[Json]) -> list[Json]:
     """Every transcript a trace names: main's, recorded on SessionStart, and each subagent's beside it."""
     files = []
     named: list[str] = []
@@ -220,7 +222,7 @@ def transcript_files(records: list[dict]) -> list[dict]:
     return files
 
 
-def fill_context_tokens(records: list[dict]) -> list[dict]:
+def fill_context_tokens(records: list[Json]) -> list[Json]:
     """Calls recorded without `context_tokens` get them from the transcripts at render time, if those
     files still exist: an async hook can run before Claude Code flushes the transcript."""
     missing = [
@@ -251,14 +253,14 @@ def fill_context_tokens(records: list[dict]) -> list[dict]:
     ]
 
 
-def spent_tokens(text: str) -> dict | None:
+def spent_tokens(text: str) -> Json | None:
     """What a context spent, summed over its model calls.
 
     Each call sends the whole history again: what the prompt cache already held is `cached`, the rest
     (plain input and cache writes) is `new`, and the reply is `out`. They cost different amounts, so
     they stay apart. One response can span several transcript lines with the same message id."""
     seen: set[str] = set()
-    spend = {"new": 0, "cached": 0, "out": 0, "calls": 0}
+    spend: Json = {"new": 0, "cached": 0, "out": 0, "calls": 0}
     for line in text.split("\n"):
         if '"usage"' not in line:
             continue
@@ -283,7 +285,7 @@ def spent_tokens(text: str) -> dict | None:
     return spend if spend["calls"] else None
 
 
-def spent_by_child(payload: dict, child_id: str | None) -> dict | None:
+def spent_by_child(payload: Json, child_id: str | None) -> Json | None:
     """What a subagent had spent when its parent's call came back, from the subagent's transcript."""
     if not payload.get("transcript_path") or not child_id:
         return None
@@ -297,16 +299,19 @@ def _args_text(args: object) -> str:
     return clip(mask(one_line(text)), ARGS_LIMIT)
 
 
-def _child_agent_type(payload: dict, response: dict, child_id: str | None) -> str | None:
+def _child_agent_type(payload: Json, response: Json, child_id: str | None) -> str | None:
     """The kind of subagent a parent call started: the response's, or an `Agent` call's own input."""
     if not child_id:
         return None
-    if response.get("agentType"):
-        return response["agentType"]
-    return (payload.get("tool_input") or {}).get("subagent_type") if payload.get("tool_name") == "Agent" else None
+    kind = response.get("agentType")
+    if isinstance(kind, str):
+        return kind
+    tool_input = payload.get("tool_input") or {}
+    subagent_type = tool_input.get("subagent_type") if isinstance(tool_input, dict) else None
+    return subagent_type if payload.get("tool_name") == "Agent" and isinstance(subagent_type, str) else None
 
 
-def build_record(payload: dict, harness: str) -> dict:
+def build_record(payload: Json, harness: str) -> Json:
     """One tool call's record, in schema order; absent values are left out."""
     response = payload.get("tool_response") or {}
     if not isinstance(response, dict):
@@ -344,7 +349,7 @@ def build_record(payload: dict, harness: str) -> dict:
     return {key: value for key, value in record.items() if value is not None}
 
 
-def serialize(record: dict) -> str:
+def serialize(record: Json) -> str:
     """The record's JSON line, `result` and then `args` giving way until the line fits.
 
     The line is what `_json` makes it — ASCII alone — so its length is the byte count `serialize` bounds
@@ -362,7 +367,7 @@ def serialize(record: dict) -> str:
     return line
 
 
-def build_event_record(payload: dict, harness: str) -> dict:
+def build_event_record(payload: Json, harness: str) -> Json:
     """A compaction or session start's record: a marker, not a call, so it carries no `tool`."""
     record = {
         "v": SCHEMA_VERSION,

@@ -7,7 +7,7 @@ import os
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TextIO
+from typing import Protocol, TextIO, TypeVar
 
 from ..dicing.textfile import read_text
 from .planform import (
@@ -96,6 +96,16 @@ def _breach_line(breach: Breach, *, empty: str) -> str:
     )
 
 
+class _Breached(Protocol):
+    """A checked document: what `_report` reads of a plan or a layout alike."""
+
+    @property
+    def breaches(self) -> list[Breach]: ...
+
+
+_Document = TypeVar("_Document", bound=_Breached)
+
+
 @dataclass
 class _Report:
     """What a check's reader gives the driver: the breaches to print, in document order; the summary
@@ -159,9 +169,9 @@ def _check(
     return report.status
 
 
-def _report(path: str, *, reader: Callable[[str], Plan | Layout], summary: Callable[[Plan, str], str]) -> _Report:
-    """The report the plan at path gives: the document's breaches, the summary line summary makes of it
-    and path, and its status, 1 on any breach and 0 otherwise."""
+def _report(path: str, *, reader: Callable[[str], _Document], summary: Callable[[_Document, str], str]) -> _Report:
+    """The report the document at path gives: the document's breaches, the summary line summary makes
+    of it and path, and its status, 1 on any breach and 0 otherwise."""
     document = reader(path)
     return _Report(document.breaches, summary(document, path), 1 if document.breaches else 0)
 

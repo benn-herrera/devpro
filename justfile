@@ -218,13 +218,15 @@ format-python *paths: _venv
 
 # shellcheck over every tracked `*.sh` file, then the same three tools over the same paths as
 # `format-python`, checking and writing nothing, then the shipped TypeScript resources against the
-# host's published declarations, the version `package.json` pins, `@opencode/plugin`. A reviewer runs
-# this one, and `format-python` is what fixes what it reports.
-[doc("[dev] check the shell, the python and the shipped TypeScript are clean, writing nothing")]
+# host's published declarations, the version `package.json` pins, `@opencode/plugin`, then mypy in
+# its strict mode over the package and the dev tool. A reviewer runs this one, and `format-python` is
+# what fixes what it reports.
+[doc("[dev] check the shell, the python, the types and the shipped TypeScript are clean, writing nothing")]
 lint: _venv _lint-shell _lint-typescript
     @{{VENV_PYTHON}} -m black --check --line-length=120 tests devpro devtools
     @{{VENV_PYTHON}} -m isort --profile black --check-only --line-length 120 tests devpro devtools
     @{{VENV_PYTHON}} -m flake8 --ignore="{{FLAKE8_IGNORE}}" devpro devtools tests
+    @{{VENV_PYTHON}} -m mypy devpro devtools
 
 # A missing shellcheck fails the lint, never skips the step.
 _lint-shell:

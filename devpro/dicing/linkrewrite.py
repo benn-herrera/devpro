@@ -51,15 +51,16 @@ def _anchor_homes(outline: Outline, lines: list[str]) -> dict[str, tuple[str, st
     and its anchor there: "" where the heading opens that file (a link to the file needs none),
     else its anchor within the file, whose repeat suffixes count that file's headings alone."""
     owner = {}  # monolith line -> section holding it
-    for s in outline.sections:
-        for no in range(s.first, s.last + 1):
-            owner[no] = s
+    for section in outline.sections:
+        for no in range(section.first, section.last + 1):
+            owner[no] = section
     homes: dict[str, tuple[str, str]] = {}
     per_file: dict[int, list[str]] = {}
     for no, anchor in heading_anchor_list(lines):
-        s = owner.get(no)
-        if s is None:
+        held = owner.get(no)
+        if held is None:
             continue
+        s = held
         local = per_file.setdefault(s.id, [])
         local.append(anchor.base)
         n = local.count(anchor.base) - 1

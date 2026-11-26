@@ -40,7 +40,10 @@ def definition_text_units(files: dict[str, str]) -> list[Unit]:
             continue
         for literal in _literals(tree):
             label = f"string literal at {literal.lineno}"
-            for line, sentence in block_sentences(enumerate(literal.value.splitlines(), start=literal.lineno)):
+            if not isinstance(literal.value, str):
+                continue
+            lines = enumerate(literal.value.splitlines(), start=literal.lineno)
+            for line, sentence in block_sentences(list(lines)):
                 units.append(Unit(path, line, label, sentence, prose_tokens(sentence)))
     return units
 

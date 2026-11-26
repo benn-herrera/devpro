@@ -12,6 +12,7 @@ import os
 import re
 from dataclasses import dataclass, field, replace
 from enum import Enum
+from typing import cast
 
 from ..dicing.anchors import heading_anchor_list
 from ..dicing.heads import ENTRY_POINT, HEADS
@@ -406,7 +407,7 @@ def _unpaired_post_plan(packages: list[WorkPackage]) -> list[Breach]:
 
 
 def _after_separator(text: str) -> str:
-    return text[_SEPARATOR.match(text).end() :]
+    return text[cast(re.Match[str], _SEPARATOR.match(text)).end() :]
 
 
 def _opening_word(words: re.Pattern[str], cell: str) -> tuple[str | None, str]:
@@ -529,21 +530,21 @@ def read_layout(files: list[PlanFile], *, cut: bool = False) -> Layout:
         headings = [h for h in file_headings(f) if h.line <= end]
         at = {h.line: k for k, h in enumerate(headings)}
         for no in range(1, end + 1):
-            line, k = f.lines[no - 1], at.get(no)
-            h = headings[k] if k is not None else None
+            line, found = f.lines[no - 1], at.get(no)
+            h = headings[found] if found is not None else None
             if ticket is not None and ticket.path != f.path and not is_blank(line) and (h is None or h.level > 3):
                 ticket.runs_on = True
-            if h is not None and h.level <= 2:
+            if h is not None and h.level <= 2 and found is not None:
                 in_category, ticket, awaiting = h.level == 2, None, None
                 if in_category:
-                    awaiting = _part(CATEGORY, h, headings[k + 1 :], f, end)
+                    awaiting = _part(CATEGORY, h, headings[found + 1 :], f, end)
                     layout.parts.append(awaiting)
             elif h is not None and h.level == 3 and not in_category:
                 accepted = "`### <title>` only below a `## <category>` heading: move it under a category"
                 layout.breaches.append(Breach(BreachKind.TICKET_OUTSIDE, f.path, no, line, accepted))
-            elif h is not None and h.level == 3:
+            elif h is not None and h.level == 3 and found is not None:
                 awaiting = None
-                ticket = _part(TICKET, h, headings[k + 1 :], f, end)
+                ticket = _part(TICKET, h, headings[found + 1 :], f, end)
                 if not ticket.title.strip():
                     accepted = "`### <title>`, its text not empty once links are reduced to their text"
                     layout.breaches.append(Breach(BreachKind.TICKET_EMPTY, f.path, no, line, accepted))

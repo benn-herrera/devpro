@@ -24,7 +24,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Protocol
+from typing import Protocol, cast
 
 from devpro import __version__, clauses
 from devpro.errors import InputError
@@ -295,7 +295,7 @@ class Harness:
 
     def text(self, part: HarnessText | OptionalHarnessText) -> str:
         """The value of the string field `part` names; "" where an optional one is supplied nowhere."""
-        return getattr(self, part.value)
+        return cast(str, getattr(self, part.value))
 
 
 def quoted(value: str) -> str:

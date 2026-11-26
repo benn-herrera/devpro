@@ -128,7 +128,8 @@ class Render:
         `stem-mechanical=<text>, comm-mechanical=<text>`. A side whose member renders as the harness's
         inherit text is omitted, and the value is empty where every side is."""
         if self.category is not None:
-            text = self.model(f"{self.category.rsplit('-', 1)[0]}-mechanical")
+            # A discipline's mechanical member: the prefix of this category's own, one of the six.
+            text = self.model(cast(Category, f"{self.category.rsplit('-', 1)[0]}-mechanical"))
             return "" if text == self.harness.inherit_text else text
         sides = []
         for name in ("stem-mechanical", "comm-mechanical"):

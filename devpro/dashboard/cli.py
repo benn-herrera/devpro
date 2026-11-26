@@ -7,6 +7,8 @@ verb dispatches to is imported by it; `run` asks its server's module for `serve`
 import argparse
 import os
 import sys
+from io import TextIOWrapper
+from typing import cast
 
 PORT_RANGE = range(0, 65536)
 
@@ -54,6 +56,6 @@ def run(args: argparse.Namespace) -> int:
     """Serve the dashboard until interrupted, the URL printed once on stdout, and return its exit status."""
     from devpro.dashboard.server import serve
 
-    sys.stdout.reconfigure(encoding="utf-8")
+    cast(TextIOWrapper, sys.stdout).reconfigure(encoding="utf-8")
     serve(args.project_dir, args.port)
     return 0

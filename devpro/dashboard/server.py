@@ -45,7 +45,7 @@ from urllib.parse import unquote, urlsplit
 from devpro import __version__
 from devpro.profiler import pages
 from devpro.profiler.pages import PAGE_PREFIX, PROFILER_PATH, Dispatcher, dispatcher_of, read_sessions
-from devpro.profiler.values import git_root
+from devpro.profiler.values import Json, git_root
 
 from ..errors import InputError
 from ..kanban.server import HOST, KanbanServer
@@ -72,7 +72,7 @@ _NO_SUCH_PAGE = "No such page"
 
 
 def profiler_page(
-    session: dict,
+    session: Json,
     *,
     return_to: str | None,
     dispatcher: Dispatcher | None,
@@ -126,8 +126,8 @@ class DashboardServer(ThreadingHTTPServer):
 
     # The one guard and the one reply write each answer a request gets, the board panel's answers
     # included: its `_Handler` takes both from here, once this module is loaded (`KanbanServer`'s
-    # `__init__`).
-    handler = None
+    # `__init__`). It names a handler class, bound below.
+    handler: type[BaseHTTPRequestHandler] | None = None
 
     @property
     def url(self) -> str:

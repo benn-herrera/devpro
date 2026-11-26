@@ -49,12 +49,14 @@ def unit(text: str, *, path: str = "a.md", line: int = 1) -> clustering.Unit:
         ("a sentence about parsing markdown links", "an unrelated remark concerning venv layout", 0.0, 0.4),
     ],
 )
-def test_containment_scores_a_restatement_high_and_a_stranger_low(left, right, floor, ceiling):
+def test_containment_scores_a_restatement_high_and_a_stranger_low(
+    left: str, right: str, floor: float, ceiling: float
+) -> None:
     score = clustering.containment(normalization.prose_tokens(left), normalization.prose_tokens(right))
     assert floor <= score <= ceiling
 
 
-def test_containment_is_symmetric():
+def test_containment_is_symmetric() -> None:
     long_side = normalization.prose_tokens("the rule holds at every seat and in every definition without exception")
     short_side = normalization.prose_tokens("the rule holds at every seat")
     assert clustering.containment(long_side, short_side) == clustering.containment(short_side, long_side)
@@ -63,14 +65,14 @@ def test_containment_is_symmetric():
 # ── sentence-unit clustering (docstrings and comments) ───────────────────────
 
 
-def test_seven_copies_report_as_one_candidate_with_seven_sites():
+def test_seven_copies_report_as_one_candidate_with_seven_sites() -> None:
     copies = [unit(KNOWN_ANSWER_SENTENCE, path=f"t{index}.md") for index in range(7)]
     found = clustering.clusters(copies, **passes.DOC_DEFAULTS)
     assert len(found) == 1
     assert len(found[0].members) == 7
 
 
-def test_the_representative_is_the_shortest_statement_of_the_shared_idea():
+def test_the_representative_is_the_shortest_statement_of_the_shared_idea() -> None:
     short = unit("Declare the files you will modify before you start, and stay inside that set.", path="a.md")
     long = unit(
         "Declare the files you will modify before you start, and stay inside that set, because another"
@@ -82,7 +84,7 @@ def test_the_representative_is_the_shortest_statement_of_the_shared_idea():
     assert found[0].representative.path == "a.md"
 
 
-def test_a_short_span_inside_a_long_one_does_not_chain_them():
+def test_a_short_span_inside_a_long_one_does_not_chain_them() -> None:
     """`length_ratio`'s job. Containment alone links a fragment to everything that
     quotes it, and the cluster becomes a rope rather than a finding."""
     fragment = unit("never invoke the compiler directly when a target covers it", path="a.md")
@@ -96,12 +98,12 @@ def test_a_short_span_inside_a_long_one_does_not_chain_them():
     assert clustering.clusters([fragment, quoting], **passes.DOC_DEFAULTS) == []
 
 
-def test_a_span_shorter_than_min_tokens_is_not_compared():
+def test_a_span_shorter_than_min_tokens_is_not_compared() -> None:
     pair = [unit("Stdlib-first, always.", path=f"t{index}.md") for index in range(2)]
     assert clustering.clusters(pair, **passes.DOC_DEFAULTS) == []
 
 
-def test_the_same_units_in_any_order_render_the_same_report():
+def test_the_same_units_in_any_order_render_the_same_report() -> None:
     units = [unit(KNOWN_ANSWER_SENTENCE, path=f"t{index}.md") for index in range(4)] + [
         unit(
             "A dependency is a permanent maintenance obligation, so justify it before you add one.", path=f"d{index}.md"
@@ -109,7 +111,7 @@ def test_the_same_units_in_any_order_render_the_same_report():
         for index in range(3)
     ]
 
-    def rendered(ordered):
+    def rendered(ordered: list[clustering.Unit]) -> str:
         out = io.StringIO()
         report.render_clusters("t", clustering.clusters(ordered, **passes.DOC_DEFAULTS), out=out)
         return out.getvalue()
@@ -117,7 +119,7 @@ def test_the_same_units_in_any_order_render_the_same_report():
     assert rendered(units) == rendered(list(reversed(units)))
 
 
-def test_the_file_pair_tally_counts_a_pair_once_per_candidate():
+def test_the_file_pair_tally_counts_a_pair_once_per_candidate() -> None:
     units = [
         unit(KNOWN_ANSWER_SENTENCE, path="a.md"),
         unit(KNOWN_ANSWER_SENTENCE, path="b.md"),
@@ -128,7 +130,7 @@ def test_the_file_pair_tally_counts_a_pair_once_per_candidate():
     assert report.file_pairs(found) == [(2, "a.md", "b.md")]
 
 
-def test_hard_wrapped_prose_is_rejoined_before_it_is_split():
+def test_hard_wrapped_prose_is_rejoined_before_it_is_split() -> None:
     numbered = [(10, "A rule that spans"), (11, "two physical lines."), (12, ""), (13, "A separate block.")]
     assert list(doc_sentences.block_sentences(numbered)) == [
         (10, "A rule that spans two physical lines."),
@@ -139,7 +141,7 @@ def test_hard_wrapped_prose_is_rejoined_before_it_is_split():
 # ── prose tokens ─────────────────────────────────────────────────────────────
 
 
-def test_a_chunk_marker_is_not_prose_and_a_code_span_is():
+def test_a_chunk_marker_is_not_prose_and_a_code_span_is() -> None:
     assert normalization.prose_tokens('@!parallel-execution variant="platform"!@ Use `NSFileCoordinator` here.') == (
         "use",
         "nsfilecoordinator",
@@ -173,22 +175,26 @@ TWO_SPELLINGS_OF_ONE_LOOP = {
 }
 
 
-def test_two_spellings_of_one_loop_are_one_candidate():
-    found = clustering.clusters(
-        shapes.shape_units(TWO_SPELLINGS_OF_ONE_LOOP), **{**passes.CODE_DEFAULTS, "min_tokens": 10}
-    )
+def test_two_spellings_of_one_loop_are_one_candidate() -> None:
+    settings = passes.ClusteringSettings(**{**passes.CODE_DEFAULTS, "min_tokens": 10})
+    found = clustering.clusters(shapes.shape_units(TWO_SPELLINGS_OF_ONE_LOOP), **settings)
     assert [member.site for member, _ in found[0].members] == ["one.py:1 totals()", "two.py:1 tally()"]
 
 
-def test_unlike_functions_are_not_a_candidate():
+def test_unlike_functions_are_not_a_candidate() -> None:
     files = {
         "one.py": TWO_SPELLINGS_OF_ONE_LOOP["one.py"],
         "two.py": "def shout(text):\n    return text.upper()\n",
     }
-    assert clustering.clusters(shapes.shape_units(files), **{**passes.CODE_DEFAULTS, "min_tokens": 10}) == []
+    assert (
+        clustering.clusters(
+            shapes.shape_units(files), **passes.ClusteringSettings(**{**passes.CODE_DEFAULTS, "min_tokens": 10})
+        )
+        == []
+    )
 
 
-def test_a_method_is_a_unit_and_a_nested_function_is_not():
+def test_a_method_is_a_unit_and_a_nested_function_is_not() -> None:
     files = {
         "one.py": (
             "class Store:\n"
@@ -201,7 +207,7 @@ def test_a_method_is_a_unit_and_a_nested_function_is_not():
     assert [unit.label for unit in shapes.shape_units(files)] == ["Store.put()"]
 
 
-def test_a_docstring_and_a_comment_both_state_rules():
+def test_a_docstring_and_a_comment_both_state_rules() -> None:
     files = {"one.py": '"""A module rule.\n\nA second sentence.\n"""\n\n# A commented rule.\nx = 1\n'}
     units = doc_sentences.doc_units(files)
     assert [(unit.label, unit.text) for unit in units] == [
@@ -211,7 +217,7 @@ def test_a_docstring_and_a_comment_both_state_rules():
     ]
 
 
-def test_a_module_that_does_not_parse_is_reported_and_skipped(caplog):
+def test_a_module_that_does_not_parse_is_reported_and_skipped(caplog: pytest.LogCaptureFixture) -> None:
     assert shapes.shape_units({"broken.py": "def (:\n"}) == []
     assert "does not parse" in caplog.text
 
@@ -219,7 +225,9 @@ def test_a_module_that_does_not_parse_is_reported_and_skipped(caplog):
 # ── definition-module string literals as sentence units ──────────────────────
 
 
-def test_a_sentence_two_definition_modules_carry_as_a_literal_reaches_the_report(monkeypatch):
+def test_a_sentence_two_definition_modules_carry_as_a_literal_reaches_the_report(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Defect, before the change: `doc_units` reads docstrings and comments, `constants` reads
     module-level bindings as values, so two literals stating one rule were no candidate and the
     shared prose could drift between them unseen. Mounted through the pass, because a unit source
@@ -237,13 +245,13 @@ def test_a_sentence_two_definition_modules_carry_as_a_literal_reaches_the_report
     ]
 
 
-def test_a_literal_is_rejoined_across_its_hard_wrap_and_split_like_a_docstring():
+def test_a_literal_is_rejoined_across_its_hard_wrap_and_split_like_a_docstring() -> None:
     files = {"devpro/clauses.py": 'RULE = """A rule that spans\\ntwo physical lines. A second sentence."""\n'}
     units = definition_text.definition_text_units(files)
     assert [unit.text for unit in units] == ["A rule that spans two physical lines.", "A second sentence."]
 
 
-def test_a_literals_later_blocks_report_at_their_own_lines_not_the_literals():
+def test_a_literals_later_blocks_report_at_their_own_lines_not_the_literals() -> None:
     """Defect, before numbering: `block_sentences` was handed the literal as a single numbered
     line, so the whole literal — every block in it — reported at its opening line."""
     files = {"devpro/clauses.py": 'RULE = """A rule.\n\nA second block two lines down."""\n'}
@@ -263,7 +271,7 @@ def test_a_literals_later_blocks_report_at_their_own_lines_not_the_literals():
         'x = 1\n# not a docstring\ny = "a literal"\n',
     ],
 )
-def test_the_literals_read_as_docstrings_and_the_literals_skipped_as_them_are_one_set(source):
+def test_the_literals_read_as_docstrings_and_the_literals_skipped_as_them_are_one_set(source: str) -> None:
     """Defect, before the one helper: `docstring_nodes` walked for docstrings a second time, so a
     shape one walk recognized and the other did not reported a docstring against itself."""
     tree = ast.parse(source)
@@ -282,21 +290,21 @@ def test_the_literals_read_as_docstrings_and_the_literals_skipped_as_them_are_on
         "devtools/notes.py",  # outside the definition modules
     ],
 )
-def test_only_the_definition_modules_contribute_literals(path):
+def test_only_the_definition_modules_contribute_literals(path: str) -> None:
     files = {path: 'BODY = """A sentence held as a literal."""\n'}
     assert [unit.text for unit in definition_text.definition_text_units(files)] == (
         ["A sentence held as a literal."] if path != "devtools/notes.py" else []
     )
 
 
-def test_a_docstring_is_not_also_read_as_a_literal():
+def test_a_docstring_is_not_also_read_as_a_literal() -> None:
     """Defect, before skipping docstrings: they are `ast.Constant`s, so each reported against
     itself as one candidate in every module carrying a docstring."""
     files = {"devpro/clauses.py": '"""A module rule stated once."""\n\n# A comment.\nX = 1\n'}
     assert [unit.text for unit in definition_text.definition_text_units(files)] == []
 
 
-def test_a_literal_with_no_whitespace_is_not_prose():
+def test_a_literal_with_no_whitespace_is_not_prose() -> None:
     files = {"devpro/clauses.py": 'PLACEHOLDER = "@!hrn-recipe-rule!@"\nDIR = "kb-tools"\nBODY = "One word."\n'}
     assert [unit.text for unit in definition_text.definition_text_units(files)] == ["One word."]
 
@@ -312,12 +320,12 @@ def test_a_literal_with_no_whitespace_is_not_prose():
         ("def f():\n    INNER = 4096\n", []),  # not module level
     ],
 )
-def test_module_level_literals_are_collected_and_trivia_is_not(source, expected):
+def test_module_level_literals_are_collected_and_trivia_is_not(source: str, expected: list[tuple[str, str]]) -> None:
     found = constants.constants({"one.py": source})
     assert [(constant.name, constant.value) for constant in found] == expected
 
 
-def test_one_name_in_two_modules_is_a_candidate():
+def test_one_name_in_two_modules_is_a_candidate() -> None:
     found = constants.constants({"one.py": "EXCERPT_MAX_CHARS = 240\n", "two.py": "EXCERPT_MAX_CHARS = 240\n"})
     (why, sites), *rest = constants.constant_candidates(found)
     assert why == "one name bound in 2 modules: EXCERPT_MAX_CHARS"
@@ -325,12 +333,12 @@ def test_one_name_in_two_modules_is_a_candidate():
     assert rest == [], "the same sites must not be reported again as a repeated value"
 
 
-def test_two_unrelated_uses_of_a_small_number_are_not_a_candidate():
+def test_two_unrelated_uses_of_a_small_number_are_not_a_candidate() -> None:
     found = constants.constants({"one.py": "EXIT_USAGE = 2\n", "two.py": "EDGE_STROKE_WIDTH = 2\n"})
     assert constants.constant_candidates(found) == []
 
 
-def test_one_distinctive_value_under_similar_names_is_a_candidate():
+def test_one_distinctive_value_under_similar_names_is_a_candidate() -> None:
     found = constants.constants(
         {"one.py": "DEFAULT_SILENCE_SECONDS = 600\n", "two.py": "DEFAULT_SILENCE_SECONDS_LIMIT = 600\n"}
     )
@@ -342,7 +350,7 @@ def test_one_distinctive_value_under_similar_names_is_a_candidate():
 # ── the command line ─────────────────────────────────────────────────────────
 
 
-def test_a_pass_that_finds_candidates_still_exits_zero(monkeypatch):
+def test_a_pass_that_finds_candidates_still_exits_zero(monkeypatch: pytest.MonkeyPatch) -> None:
     """`clauses.TEST_PRECONDITION`: candidates are not verdicts, so a pass that found one still
     exits 0 — a nonzero exit would be the judgment the sweep refuses to make, and would stand in
     the way of every checkpoint it runs at. The run that fails under it is this one with
@@ -362,7 +370,7 @@ def test_a_pass_that_finds_candidates_still_exits_zero(monkeypatch):
     assert "candidates, not verdicts" in out.getvalue()
 
 
-def test_an_unreadable_revision_exits_two_rather_than_reporting_a_clean_tree(monkeypatch):
+def test_an_unreadable_revision_exits_two_rather_than_reporting_a_clean_tree(monkeypatch: pytest.MonkeyPatch) -> None:
     """`clauses.TEST_PRECONDITION`: a revision git cannot resolve is a sweep that did not run, and
     one reporting it as a tree holding no candidate tells the checkpoint it runs at that the tree
     is clean. The run that fails under it is this one with `cli.main` returning 0 where `python_pass`
@@ -375,7 +383,7 @@ def test_an_unreadable_revision_exits_two_rather_than_reporting_a_clean_tree(mon
     """
     asked: list[str | None] = []
 
-    def refuse(*, rev):
+    def refuse(*, rev: str | None) -> dict[str, str]:
         asked.append(rev)
         raise SweepError("git ls-tree failed: unknown revision")
 
@@ -386,7 +394,7 @@ def test_an_unreadable_revision_exits_two_rather_than_reporting_a_clean_tree(mon
     assert out.getvalue() == ""
 
 
-def test_an_unreadable_revision_raises_sweeperror_in_the_corpus_conversion():
+def test_an_unreadable_revision_raises_sweeperror_in_the_corpus_conversion() -> None:
     """`clauses.TEST_PRECONDITION`: `_git` turns a git `CalledProcessError` — a revision git cannot
     resolve — into `SweepError`, and that conversion is what keeps an unreadable revision from reading
     as a tree holding no candidate. A regression that let the raw error through, or returned an empty
@@ -403,6 +411,6 @@ def test_an_unreadable_revision_raises_sweeperror_in_the_corpus_conversion():
         python_corpus.code_corpus(rev="no-such-revision")
 
 
-def test_an_unknown_pass_is_refused():
+def test_an_unknown_pass_is_refused() -> None:
     with pytest.raises(SystemExit):
         cli.main(["structure"])

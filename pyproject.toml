@@ -27,6 +27,7 @@ dev = [
     "isort~=9.0",
     "black~=26.10",
     "flake8~=7.5",
+    "mypy~=2.4.1",
     "setuptools~=84.2",
     "build~=1.6",
 ]
@@ -47,6 +48,13 @@ devpro = [
 
 [tool.setuptools.dynamic]
 version = { attr = "devpro.__version__" }
+
+# Strict mypy over what ships and the repository's own dev tool, the paths `just lint` passes.
+# `tests/` stays outside them: a test tree's signal has not proved worth the quieting its fixture
+# indirection asks. See `PROJECT_DOCS/ARCHITECTURE/recipes.md`.
+[tool.mypy]
+strict = true
+python_version = "3.11"
 
 [tool.pytest.ini_options]
 # Keep pytest's cache out of the project root: it writes under the scratch directory instead, so a
