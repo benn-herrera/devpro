@@ -274,7 +274,10 @@ Done-line: `just dev-check-links`, run once `ACTIVE_PLAN_REVIEW.md` is written.
 
 The items below are drafted from [ACTIVE_PLAN_REVIEW.md](ACTIVE_PLAN_REVIEW.md) — they cite its
 defect IDs, grouped by root cause; the review document is the finding of record. The gates have
-run on the review's HEAD except `just lint` (R2, red).
+run on the review's HEAD except `just lint` (R2, red). Run order: `B2` first — it closes the red
+lint — then `B1`, `B3`, and the rest in any order; items sharing `tests/` files run serially. Every
+item's done-line ends `just lint`: the checkpoint gate names no lint, which is how R2's red landed,
+and the item that edits the shell script runs it for its shellcheck leg as the same rule.
 
 ### P6 — Post-plan burndown drafting
 
@@ -306,7 +309,8 @@ docdicer-walk clause (Code delta). Done-line: `just test devpro`, then `just tes
 
 mechanical. Scope: `devpro/profiler/stores.py` (`_json` off the import at :9, `_atomic_text` and
 its `import os` deleted), `devpro/profiler/hooks.py` (`hook_sources`, `stale_hook`,
-`devpro_command` deleted), `tests/test_devpro_profiler.py` (the `OLD_HOOK_COMMANDS` and
+`devpro_command` deleted, and the imports they orphan — `_json`, `read_json`, `read_text` — with
+them), `tests/test_devpro_profiler.py` (the `OLD_HOOK_COMMANDS` and
 `TRACE_STORES` imports off, the `stale_hook` docstring mention at :661 with them),
 `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-stand-in-models-the-api-s-real-semantics.md`
 (the doctor example re-anchored to a live stand-in — the harnesses' literal wrapper paths, per the
@@ -317,12 +321,14 @@ removed verbs. Done-line: `just lint`, then `just test devpro`, run once at this
 
 expert. Scope: `devpro/context.py` — `_settings_values` refuses a non-string `install`/`components`
 naming the table, the key and the value's type (the refusal's wording drops the model-map mention
-from "a harness's settings", N2); a bare top-level key folds into the unknown-table refusal so
+from "a harness's settings", coder N2); a bare top-level key folds into the unknown-table refusal so
 `_table_names`' docstring turns true; validation and reading base on the one top-level key space
 (`_harness_of`'s dotted handling folds into the parent's legal-key check); the `NEWLINE` constant
-folds into its one call site as the separator argument (N1). Tests, in scope: non-string
+folds into its one call site as the separator argument (coder N1). Tests, in scope, in
+`tests/test_devpro.py` beside `test_a_settings_sections_components_key_is_read_and_its_unknown_keys_name_both_keys`
+(:264 — note its neighbors' "section" names are B8's to rename): non-string
 `components = ["kbase"]` and `install = true`, the quoted `["claude.model-map"]` top-level key, the
-bare top-level key, and the comma-in-glob case `"*" = "a,b"` rendering `a,b` (N5). Done-line:
+bare top-level key, and the comma-in-glob case `"*" = "a,b"` rendering `a,b` (coder N5). Done-line:
 `just test devpro`, then `just lint`, run once at this package's end.
 
 ### B4 — One account of what filters an install (R4)
@@ -344,51 +350,73 @@ then `just test wheel`, then `just dev-check-links`, run once at this package's 
 
 ### B5 — The upgrade walks name the settings rename (R5)
 
-mechanical. Scope: `README.md`'s *Updating* — one sentence beside the store-rename paragraph: the
-settings file is now `~/.config/devpro/devpro.toml`, a 0.17.x `devpro.cfg` is not read, and
-carrying it over is a move-and-convert; `devpro/definitions/skills/guide.py`'s *Updating* and the
-settings bullet — the same sentence; `devpro/context.py` — where the default `devpro.toml` is
-absent and a default `devpro.cfg` stands, one `report_left_alone`-shape line naming the old file
-as not read; `ROADMAP.md:258` — `devpro.cfg` becomes `devpro.toml`. Test, in scope: the
-not-read line, pinned to the named defect (an upgrader's config silently stops applying).
-Done-line: `just test devpro`, then `just dev-check-links`, run once at this package's end.
+mechanical. Scope: `README.md`'s *Updating* — one sentence beside the store-rename paragraph, the
+tech-writer's draft carried verbatim (`review-tech-writer-b5.md`): the settings file is now
+`~/.config/devpro/devpro.toml`, a 0.17.x `devpro.cfg` is not read, and carrying it over is a
+move-and-convert; `devpro/definitions/skills/guide.py`'s *Updating* paragraph and the settings
+bullet — the page's own voice, the bullet's clause stating the current state (an old default file
+still standing is not read), not a second migration note; `devpro/context.py` — where the default
+`devpro.toml` is absent and a default `devpro.cfg` stands, one `report_left_alone` line
+(`devpro/install_base.py:54`, imported) naming the old file as not read; `ROADMAP.md:258` —
+`devpro.cfg` becomes `devpro.toml`. Test, in scope: `tests/test_devpro.py`, the `_home` shape of
+`test_a_missing_default_settings_file_is_no_config` (:219) asserting the stderr line names
+`devpro.cfg` where only it exists — pinned to the named defect (an upgrader's config silently
+stops applying). Done-line: `just test devpro`, then `just dev-check-links`, then `just lint`,
+run once at this package's end.
 
 ### B6 — The agents sentence holds at both install levels (R6)
 
 expert. Scope: `devpro/harnesses/claude.py` — the sentence reworded to hold under a project
 install and a user-level one alike ("The plugin's agents files sit in its `agents/` directory,
 `../../agents/` from this file."), the comment's import-path reasoning kept only where it holds;
-`devpro/definitions/skills/development.py` with it; `tests/test_devpro.py:1119-1130` — the
-literal dropped, the assertion read from `CLAUDE.agents_path`, and the user-level render pinned
-the way the project render is; `PROJECT_DOCS/ARCHITECTURE/rendering/harnesses-and-families.md:17-18`
-and `placeholders.md`'s member enumeration — the same wording and the seventh member named (W4's
-count rides here). The named defect: the sentence points a session at a directory that need not
+`devpro/definitions/skills/development.py` unchanged — it carries the placeholder, the wording
+lives in the claude constant; `tests/test_devpro.py:1119-1130` — the literal dropped, the
+assertion read from `CLAUDE.agents_path` (whose constant now carries `../../agents/`); the
+render-level pin stays the one pin, the sentence's relative form holding at both install levels by
+construction; `PROJECT_DOCS/ARCHITECTURE/rendering/harnesses-and-families.md:17-18`
+and `placeholders.md`'s member enumeration — the same wording and the seventh member named (coder
+W4's count rides here) — retexted **in the same change as the design's matching pair amendment**,
+whose Becomes carries today's sentence: without the amendment the landing gate's
+`--deltas-applied` reads the pair drifted. The named defect: the sentence points a session at a
+directory that need not
 exist, and its test pins the sentence to itself. The derived-value design (a `PluginText` member
 filled as `PROJECT_WRAPPER` is) is its own future design, not this item. Done-line: `just test
-devpro`, then `just dev-check-links`, run once at this package's end.
+devpro`, then `just dev-check-links`, then `just dev-check-design-deltas-applied`, then `just
+lint`, run once at this package's end.
 
 ### B7 — The profiler skill's No-traces branch states cause, remedy and effect (R7)
 
-mechanical. Scope: `devpro/definitions/skills/profiler.py` — the branch retexted to the
-prompt-engineer's wording, split cause from remedy, with opencode's install remedy named and
-`init`'s whole effect (hook registration, the store rename, the git-visible writes) stated where
-the sentence names it; "so an opencode session needs it not" becomes "so an opencode session does
-not need it" (N7). Done-line: `just test devpro`, run once at this package's end.
+mechanical. The final wording, quoted — the executor applies it, composing nothing:
+`devpro/definitions/skills/profiler.py`'s branch becomes: "Where `tree` instead exits 1 with
+`No traces in …` on stderr, no store `tree` reads holds a record. Under claude, run
+`bash PROFILER init claude`: it registers the hook in the repository, which a session loading no
+plugin's hooks picks up, renames a store an older name left behind, and writes the committed
+settings and the skill copy the repository carries — the git-visible writes `init` reports. Under
+opencode the hook is the plugin's and already runs, so a store under the older name is what stands
+in the way, and the next install renames it." — cause split from remedy, opencode's install remedy
+named, and `init`'s whole effect (the hook registration, the store rename, the git-visible writes)
+stated where the sentence names it; "so an opencode session needs it not" becomes "so an opencode
+session does not need it" (coder N7). Done-line: `just test devpro`, then the profiler skill
+rendered under claude and opencode and the branch read against this wording, then `just lint`,
+run once at this package's end.
 
 ### B8 — The section→table sweep finishes (R8)
 
 mechanical. Scope: `PROJECT_DOCS/SPEC/deployed-surfaces/install-destination.md` — "table" at the
-four sites, the `:107` report re-quoted as the code prints it;
+three sites (:88, :104, :107; :86 and :99 are document sections and stay), the `:107` report
+re-quoted as the code prints it ("either table of it", `devpro/install.py:960`);
 `PROJECT_DOCS/SPEC/deployed-surfaces/plugins.md:14`; `tests/test_devpro.py` — the three test
 names and the `section` parametrize variable (:248, :257, :270) renamed to the behavior's term;
 `PROJECT_DOCS/ARCHITECTURE/install/installing-this-repository.md:9` — the unwrapped paragraph
 split before "opencode and mage" and re-wrapped to the file's measure. Done-line: `just
-dev-check-links`, then `just test devpro`, run once at this package's end.
+dev-check-links`, then `just test devpro`, then `just lint`, run once at this package's end.
 
 ### B9 — The guide page's settings literals are pinned (R9)
 
 mechanical. Scope: `tests/test_devpro.py` — a test beside
 `test_the_installing_reference_names_every_install_setting` asserting, for every harness, that the
-rendered installation reference names `~/{context.SETTINGS_FILE}` and
-`[<harness>.{context.MODEL_MAP_TABLE}]`. Done-line: `just test devpro`, run once at this
-package's end.
+rendered installation reference carries the page's own literals —
+`~/.config/devpro/devpro.toml` and `[<harness>.model-map]` — held to
+`context.SETTINGS_FILE` and `context.MODEL_MAP_TABLE` by composing the assertion from the
+constants, so a later rename of either fails the test and not the operator's map. Done-line:
+`just test devpro`, then `just lint`, run once at this package's end.
