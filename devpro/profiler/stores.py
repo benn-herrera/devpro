@@ -3,10 +3,9 @@ naming before the rename. Imports the store facts alone, so the install, which r
 no other module of the package.
 """
 
-import os
 from pathlib import Path
 
-from .values import NEW_STORE_PREFIX, TRACE_DIR, _json
+from .values import NEW_STORE_PREFIX, TRACE_DIR
 
 OLD_STORE_SUFFIX = "-profiler"
 # The old-pattern store names an install and an `init` rename, each to its `.profiler-*` name: the
@@ -47,12 +46,3 @@ def rename_stores(directory: Path | str) -> list[str]:
         old.rename(stores / new)
         lines.append(f"renamed {old} → {stores / new}")
     return lines
-
-
-def _atomic_text(file: Path, text: str) -> None:
-    """Write `file`'s text through a sibling temp file and one rename, so a reader meets the whole text
-    or the previous one, never a half-written line, and an interrupted repair leaves the store as it
-    was."""
-    temp = file.with_name(f".{file.name}.repair")
-    temp.write_text(text, encoding="utf-8")
-    os.replace(temp, file)

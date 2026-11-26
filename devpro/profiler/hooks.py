@@ -15,7 +15,6 @@ from `install_base`, which imports nothing of the renderer's.
 """
 
 import json
-import sys
 from pathlib import Path
 
 from devpro.install_base import PACKAGE_ROOT
@@ -25,10 +24,7 @@ from .stores import rename_stores
 from .values import (
     CAPTURED_EVENTS,
     PROFILER_SKILL,
-    _json,
     git_root,
-    read_json,
-    read_text,
 )
 
 HOOK_TIMEOUT_S = 5
@@ -50,16 +46,6 @@ USAGE = """Usage:
   devpro profiler tree [session-id-prefix] [--branch <name>] [--verbose] [--format text|html]
   devpro profiler init claude
   devpro profiler capture <harness>  (run by the hook, not by hand)"""
-
-
-def devpro_command() -> str:
-    """The `devpro` command doctor's `devpro:` line names: the tree that ran it, as
-    `<python> -m devpro --from <its root>`, or the `devpro` command on PATH where the tree is not one
-    this project's own sources answer for — a wheel in site-packages, which no line of this
-    repository's names."""
-    if PACKAGE_ROOT.parent.name in ("tools", "devpro"):
-        return f"{sys.executable} -m devpro --from {PACKAGE_ROOT.parent}"
-    return "devpro (on PATH)"
 
 
 def _hook_command(wrapper: str) -> str:
@@ -178,51 +164,3 @@ def init(argv: list[str], cwd: Path | str) -> str:
             "  git add " + " ".join(path.as_posix() for path in staged),
         ]
     )
-
-
-def hook_sources(repo: Path, home: Path) -> list[str]:
-    """Where a capture hook is registered for this repository: the plugin's own records, and the three
-    settings files that can carry one."""
-    sources = []
-    installed = read_json(home / ".claude" / "plugins" / "installed_plugins.json")
-    if installed is not None:
-        plugins = installed.get("plugins") if isinstance(installed, dict) else None
-        if "harness-profiler" in _json(plugins if plugins else installed):
-            sources.append("plugin")
-    for label, file in (
-        ("committed hooks", repo / ".claude" / "settings.json"),
-        ("local settings hooks", repo / ".claude" / "settings.local.json"),
-        ("user settings hooks", home / ".claude" / "settings.json"),
-    ):
-        text = read_text(file)
-        if text and any(command in text for command in _OUR_COMMAND_SPELLINGS):
-            sources.append(label)
-    return sources
-
-
-def stale_hook(repo: Path) -> str | None:
-    """What a hook committed by an older `init` lacks: events added since, `async`, and the wrapper's
-    command as this devpro's wiring states it."""
-    settings = read_json(repo / ".claude" / "settings.json")
-    hooks = (settings.get("hooks") if isinstance(settings, dict) else None) or {}
-
-    def ours(event: str) -> list[dict]:
-        return [
-            hook
-            for entry in hooks.get(event) or []
-            if is_ours(entry)
-            for hook in entry.get("hooks") or []
-            if is_our_command(hook.get("command"))
-        ]
-
-    if not any(ours(event) for event in CAPTURED_EVENTS):
-        return None
-    missing = [event for event in CAPTURED_EVENTS if not ours(event)]
-    blocking = any(any(hook.get("async") is not True for hook in ours(event)) for event in CAPTURED_EVENTS)
-    replaced = any(hook.get("command") != HOOK_COMMAND for event in CAPTURED_EVENTS for hook in ours(event))
-    gaps = [
-        f"misses {', '.join(missing)}" if missing else "",
-        "is not async" if blocking else "",
-        f"runs another command than {HOOK_COMMAND}" if replaced else "",
-    ]
-    return " and ".join(gap for gap in gaps if gap) or None

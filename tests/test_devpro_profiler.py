@@ -45,7 +45,7 @@ import pytest
 from devpro.components import NAME
 from devpro.dashboard.server import BOARD_PATH
 from devpro.profiler.capture import mask
-from devpro.profiler.hooks import OLD_HOOK_COMMANDS, RETIRED_HOOK_FILES, RETIRED_LAUNCHERS
+from devpro.profiler.hooks import RETIRED_HOOK_FILES, RETIRED_LAUNCHERS
 from devpro.profiler.pages import (
     AGENT_PREFIX,
     AGENT_PREFIX_LINE,
@@ -67,7 +67,7 @@ from devpro.profiler.pages import (
     stamp,
     store_directories,
 )
-from devpro.profiler.values import CAPTURED_EVENTS, TRACE_STORES, _epoch_ms
+from devpro.profiler.values import CAPTURED_EVENTS, _epoch_ms
 from tests.conftest import page_data
 from tests.fixtures import fixture_file
 from tests.test_devpro_install import _claude_plugin, _definition_install
@@ -658,7 +658,7 @@ def test_init_clears_an_older_runs_launcher_and_files(tmp_path: Path, _wrapper: 
     this release retired included — beside `hp.py` and `view.html`: a re-run removes every one of
     them, writes the skill, registers the project's wrapper's command, and leaves no hook directory
     where nothing else stands in it. A committed hook running devpro beside a stale `hp.py` is the
-    half-absorbed install, and `stale_hook` would chase files no install ships."""
+    half-absorbed install."""
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
