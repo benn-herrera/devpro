@@ -28,7 +28,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import asdict
 from email.message import Message
 from importlib.resources import files
@@ -104,6 +104,42 @@ class _Client:
             return e.code, json.loads(e.read())
 
 
+_SERVED_PROJECT = {
+    "ACTIVE_PLAN.md": _PLAN,
+    "ROADMAP.md": _ROADMAP,
+    "ACTIVE_DESIGN.md": _DESIGN,
+    "ROADMAP_DESIGNS/README.md": "",
+}
+"""The project a test that only reads the panel is served: every file the board reads, standing."""
+
+
+@pytest.fixture(scope="session")
+def served_project(tmp_path_factory: pytest.TempPathFactory) -> str:
+    """`_SERVED_PROJECT` written once for the whole session. A test that writes under it would
+    leak into the run after it, so the ones that change their files are served their own."""
+    return _project(tmp_path_factory.mktemp("board-panel") / "proj", _SERVED_PROJECT)
+
+
+@pytest.fixture(scope="session")
+def panel(served_project: str) -> Iterator[tuple[_Client, io.StringIO]]:
+    """The dashboard serving `served_project`, and the stderr it writes, for every test that only
+    reads the panel. Such a test pins the panel's rendering or its route, not the server, and a
+    boot is a measured 52.9 ms of the run, so the read-only tests share one. A test that writes
+    the board, follows a change to its files, stops the server, or expects a quiet stderr starts
+    its own."""
+    err = io.StringIO()
+    server = DashboardServer(served_project, stderr=err)
+    server.start()
+    thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})
+    thread.start()
+    try:
+        yield _Client(server.url), err
+    finally:
+        server.shutdown()
+        thread.join()
+        server.server_close()
+
+
 @pytest.fixture
 def serve():
     """Start a dashboard, its board panel over a project's root; every one started is stopped."""
@@ -133,10 +169,10 @@ def _json_round_trip(value):
     return json.loads(json.dumps(value))
 
 
-def test_the_board_page_is_drawn_under_the_board_path(tmp_path, serve):
+def test_the_board_page_is_drawn_under_the_board_path(panel):
     """The board's `index.html` is served at `/board/`, the URL its link line opens: the page is the
     panel's, not a rendering of the dashboard's, and its own path reaches it."""
-    client = serve(_project(tmp_path / "proj", {}))
+    client, _ = panel
 
     status, _, body = client.get("board/")
 
@@ -466,25 +502,30 @@ _JSON = "application/json"
         pytest.param("api/to-design", _JSON, b"", "-1", 400, id="length-negative"),
     ],
 )
-def test_a_bad_request_is_refused(tmp_path, serve, path, content_type, body, length, status):
-    client = serve(_project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP}))
+def test_a_bad_request_is_refused(panel, served_project, path, content_type, body, length, status):
+    """The panel's own routes refuse a request they cannot act on, and no refusal writes a file.
+    Pinned over the shared served project, whose ROADMAP.md is read back after the request: a
+    refusal that wrote there would show here, and would leak into every other test served it."""
+    client, _ = panel
     url = urlsplit(client.url)
     headers = {"Host": url.netloc, "Content-Type": content_type, "Content-Length": length or str(len(body))}
 
     assert client.raw("POST", path, body=body, headers=headers)[0] == status
-    assert (tmp_path / "proj" / "ROADMAP.md").read_text(encoding="utf-8") == _ROADMAP
+    assert (Path(served_project) / "ROADMAP.md").read_text(encoding="utf-8") == _ROADMAP
 
 
-def test_a_stop_request_that_is_not_json_is_refused_and_the_board_still_answers(tmp_path, serve):
-    client = serve(_project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP}))
+def test_a_stop_request_that_is_not_json_is_refused_and_the_board_still_answers(panel):
+    """A stop the panel cannot read is refused, and the board goes on answering: the version it
+    answers is the one its first read gave, the served project standing as the run found it."""
+    client, _ = panel
     headers = {"Host": urlsplit(client.url).netloc, "Content-Type": "text/plain", "Content-Length": "2"}
 
     assert client.raw("POST", "api/stop", body=b"{}", headers=headers)[0] == 415
     assert client.board()["version"] == 1
 
 
-def test_a_cross_origin_preflight_is_not_granted(tmp_path, serve):
-    client = serve(_project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP}))
+def test_a_cross_origin_preflight_is_not_granted(panel):
+    client, _ = panel
     headers = {
         "Host": urlsplit(client.url).netloc,
         "Origin": "http://attacker.example",

@@ -21,6 +21,7 @@ from devtools.dupe_sweep import (
     report,
     shapes,
 )
+from devtools.dupe_sweep.corpus import SweepError
 
 KNOWN_ANSWER_SENTENCE = (
     "If you cannot complete the task as scoped, report immediately rather than proceeding with assumptions."
@@ -340,17 +341,47 @@ def test_one_distinctive_value_under_similar_names_is_a_candidate():
 # ── the command line ─────────────────────────────────────────────────────────
 
 
-def test_a_pass_that_finds_candidates_still_exits_zero():
-    """Candidates are not verdicts: a nonzero exit would be the judgment the sweep
-    refuses to make, and would put it in the way of every checkpoint it runs at."""
+def test_a_pass_that_finds_candidates_still_exits_zero(monkeypatch):
+    """`clauses.TEST_PRECONDITION`: candidates are not verdicts, so a pass that found one still
+    exits 0 — a nonzero exit would be the judgment the sweep refuses to make, and would stand in
+    the way of every checkpoint it runs at. The run that fails under it is this one with
+    `cli.main` exiting on the report's emptiness instead of the pass's completion: a sweep whose
+    mounted corpus holds no candidate exits 1 there, and a pass that found its candidate exits 0.
+
+    The corpus is mounted: the sweep reads its own from git — the working tree, so the uncommitted
+    edits it is run at are swept — and judging the exit contract of a pass that reads this tree is
+    plumbing that carries no fact about the tree. What a candidate renders as is the report tests'
+    subject above.
+    """
+    sentence = "A dispatch that outlives its task is a leak the operator cannot see until the queue drains."
+    files = {f"devpro/definitions/agents/{name}.py": f'BODY = """{sentence}"""\n' for name in ("one", "two")}
+    monkeypatch.setattr(passes, "code_corpus", lambda *, rev: files)
     out = io.StringIO()
     assert cli.main(["python"], out=out) == 0
     assert "candidates, not verdicts" in out.getvalue()
 
 
-def test_an_unreadable_revision_exits_two_rather_than_reporting_a_clean_tree():
+def test_an_unreadable_revision_exits_two_rather_than_reporting_a_clean_tree(monkeypatch):
+    """`clauses.TEST_PRECONDITION`: a revision git cannot resolve is a sweep that did not run, and
+    one reporting it as a tree holding no candidate tells the checkpoint it runs at that the tree
+    is clean. The run that fails under it is this one with `cli.main` returning 0 where `python_pass`
+    raised `SweepError` — the refusal falling through to the pass's exit status instead of the
+    error's.
+
+    The refusal is mounted at the corpus read, the one seam `SweepError` crosses: this test names
+    the revision and asks the sweep to refuse it, and reading the sweep's own tree at a real
+    revision is the sibling test's single run, not a second one here.
+    """
+    asked: list[str | None] = []
+
+    def refuse(*, rev):
+        asked.append(rev)
+        raise SweepError("git ls-tree failed: unknown revision")
+
+    monkeypatch.setattr(passes, "code_corpus", refuse)
     out = io.StringIO()
     assert cli.main(["python", "--rev", "no-such-revision"], out=out) == 2
+    assert asked == ["no-such-revision"]
     assert out.getvalue() == ""
 
 
