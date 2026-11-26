@@ -260,11 +260,14 @@ def test_the_board_page_and_the_files_it_names_resolve_under_the_board_path(
     each is served at `/board/<name>`: the board is where its page can load, which is the URL the
     dashboard's link line opens."""
     root = project(tmp_path / "proj", {"ROADMAP.md": "## Next\n\n### Two\n\nMore.\n"})
+    client = serve(root)
 
-    status, _, body = serve(root).get(path)
+    status, _, body = client.get(path)
+    refused = client.get("board/nothing.js")[0]
 
     assert status == 200
     assert body == (ASSETS / name).read_text(encoding="utf-8").encode("utf-8")
+    assert refused == 404
 
 
 def test_the_board_payload_is_the_model(tmp_path: Path, serve) -> None:

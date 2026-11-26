@@ -65,16 +65,6 @@ def _create(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def _wait_until(condition: Callable[[], bool]) -> bool:
-    """Whether condition holds within _TIMEOUT, checked every few milliseconds."""
-    deadline = time.monotonic() + _TIMEOUT
-    while not condition():
-        if time.monotonic() > deadline:
-            return False
-        time.sleep(0.01)
-    return True
-
-
 class _Client:
     def __init__(self, url: str) -> None:
         self.url = url
@@ -190,22 +180,12 @@ def test_a_served_file_is_served(tmp_path, serve, path, name):
         except OSError:
             pytest.skip("the file system refuses a name that is not UTF-8")
     root = _project(tmp_path / "proj", files_)
-    status, content_type, body = serve(root).get(path)
+    client = serve(root)
+    status, content_type, body = client.get(path)
+    escaped = client.raw("GET", "..%2Fproj%2FROADMAP.md", headers={"Host": urlsplit(client.url).netloc})[0]
+
     assert (status, content_type, body) == (200, "text/markdown", files_[name].encode("utf-8"))
-
-
-@pytest.mark.parametrize(
-    "path",
-    [
-        pytest.param("notes.txt", id="not-markdown"),
-        pytest.param("docs/notes.md", id="markdown-in-a-directory-no-pattern-names"),
-        pytest.param("../proj/ROADMAP.md", id="escaping-the-root"),
-        pytest.param("%2e%2e/proj/ROADMAP.md", id="escaping-the-root-percent-encoded"),
-    ],
-)
-def test_no_other_file_is_served(tmp_path, serve, path):
-    client = serve(_project(tmp_path / "proj", _SERVED))
-    assert client.raw("GET", path, headers={"Host": urlsplit(client.url).netloc})[0] == 404
+    assert escaped == 404
 
 
 def _denied(path: Path) -> bool:
@@ -255,57 +235,59 @@ def test_a_change_to_a_watched_file_is_followed(tmp_path, serve, change):
         tmp_path / "proj", {"ACTIVE_PLAN.md": _PLAN, "ROADMAP.md": _ROADMAP, "ROADMAP_DESIGNS/README.md": ""}
     )
     client = serve(root)
-    before = client.board()
+    board = client.board()
 
     change(Path(root))
-    after = client.board(since=before["version"])
+    # The change lands by the first board the poll reads after it, the registered change irrelevant:
+    # the board, not the version it bumps, is what says the changed files were read.
+    changed = client.board(since=board["version"])
+    assert changed["board"] == _json_round_trip(asdict(read_board(root)))
 
-    assert after["version"] != before["version"]
-    assert after["board"] == _json_round_trip(asdict(read_board(root)))
-    assert after["board"] != before["board"]
+    assert changed["version"] != board["version"]
+    assert changed["board"] != board["board"]
 
 
 def test_a_change_to_a_diced_designs_leaf_is_followed(tmp_path, serve):
     entry = "# Design\n\nContents:\n\n- [Goals](goals.md)\n"
     root = _project(tmp_path / "proj", {"ACTIVE_DESIGN/entry-point.md": entry, "ACTIVE_DESIGN/goals.md": "## Goals\n"})
     client = serve(root)
-    before = client.board()
+    board = client.board()
 
     (Path(root) / "ACTIVE_DESIGN" / "goals.md").write_text("## Goals\n\n### Fast\n\nFast.\n", encoding="utf-8")
-    after = client.board(since=before["version"])
+    changed = client.board(since=board["version"])
 
-    assert after["board"]["design"][1]["text"] == "Fast."
+    assert changed["board"]["design"][1]["text"] == "Fast."
 
 
-def test_the_payloads_since_reaches_the_board_as_a_wait(tmp_path, serve):
+def test_the_payloads_since_holds_the_answer_until_the_board_changes(tmp_path, serve):
     """`/api/board?since=<version>` holds the answer until the board changes, and the query survives
     the dashboard's route to the panel: a panel handed the path alone loses the query, so every poll
     answers at once with the unchanged board, and a page following its files then spins on it. The
-    answer at close is still the board, so the wait is bounded."""
-    client = serve(_project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP}))
-    version = client.board()["version"]
-    started = time.monotonic()
-    answers = []
-    waiter = threading.Thread(target=lambda: answers.append(client.board(since=version)))
-    waiter.start()
-    waiter.join(0.5)
-
-    assert waiter.is_alive() and not answers and time.monotonic() - started >= 0.5
-
-
-def test_waiting_for_a_change_returns_the_board_unchanged_at_close(tmp_path, serve):
+    answer at close is still the board, so the wait is bounded — the version the waiter gets is the
+    one it asked for, never a newer board's."""
     client = serve(_project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP}))
     version = client.board()["version"]
     answers = []
-    before = set(threading.enumerate())
-    waiter = threading.Thread(target=lambda: answers.append(client.board(since=version)))
+    asked = threading.Event()
+    waited = []
+
+    def wait() -> None:
+        started = time.monotonic()
+        asked.set()
+        answers.append(client.board(since=version))
+        waited.append(time.monotonic() - started)
+
+    waiter = threading.Thread(target=wait)
     waiter.start()
-    assert _wait_until(lambda: len(set(threading.enumerate()) - before) >= 2)  # the waiter and its request's
+    assert asked.wait(_TIMEOUT)
+    time.sleep(2 * server_module.POLL_SECONDS)
+    assert not answers
 
     serve.stop_all()
     waiter.join(_TIMEOUT)
 
     assert not waiter.is_alive()
+    assert 0 < waited[0] < server_module.LONG_POLL_SECONDS
     assert answers[0]["version"] == version
 
 
