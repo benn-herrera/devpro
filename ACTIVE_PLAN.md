@@ -66,11 +66,11 @@ its own status-table row.
 |---|---|---|---|---|
 | P1 | landed | mechanical | shipped | PROJECT_DOCS/ARCHITECTURE deltas |
 | P2 | landed | mechanical | shipped | the interrupt rule's CONVENTIONS leaf |
-| P3 | landed: full-surface gates re-run owed once P7 lands | mechanical | shipped | the `slow` marker and the screenshot tests |
-| P4 | landed: lint re-run owed once P7 lands | expert | shipped | the opencode pin's single home |
+| P3 | landed | mechanical | shipped | the `slow` marker and the screenshot tests |
+| P4 | landed | expert | shipped | the opencode pin's single home |
 | P5 | landed | mechanical | shipped | retire the checksums |
-| P6 | landed: scoped gate 52 passed; full-surface re-run owed once P7 lands | expert | shipped | the profiler's shared wrapper fixture |
-| P7 | in progress | expert | shipped | the server-boot tier earns its keep |
+| P6 | landed | expert | shipped | the profiler's shared wrapper fixture |
+| P7 | landed | expert | shipped | the server-boot tier earns its keep |
 | P8 | landed: judged, no edit | expert | shipped | the dicer suite earns its keep |
 | P9 | dispatchable | expert | shipped | the long tail over 100ms |
 | P10 | dispatchable | expert | shipped | post-plan review |
