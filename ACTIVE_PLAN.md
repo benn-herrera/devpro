@@ -71,7 +71,7 @@ its own status-table row.
 | P5 | landed | mechanical | shipped | retire the checksums |
 | P6 | in progress | expert | shipped | the profiler's shared wrapper fixture |
 | P7 | in progress | expert | shipped | the server-boot tier earns its keep |
-| P8 | in progress | expert | shipped | the dicer suite earns its keep |
+| P8 | landed: judged, no edit | expert | shipped | the dicer suite earns its keep |
 | P9 | dispatchable | expert | shipped | the long tail over 100ms |
 | P10 | dispatchable | expert | shipped | post-plan review |
 | P11 | dispatchable | expert | shipped | post-plan burndown |
