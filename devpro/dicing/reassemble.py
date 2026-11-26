@@ -1,5 +1,6 @@
-"""The reassembly check: the leaves, read in order with their Contents blocks dropped and section
-links reverted, reproduce the monolith line for line (outside links compared in rebased form)."""
+"""The reassembly check: the leaves, read in order with their Contents blocks dropped and their
+links brought back to the form link targets writes from the document, reproduce the monolith line
+for line."""
 
 import os
 from typing import TextIO
@@ -59,7 +60,7 @@ def check_reassembly(
         rebased = s.id > 0 and top_is_rebased(leaf)
         for index, line in enumerate(leaf):
             inside = fence.inside(line)
-            got = line if inside else linker.revert(line, leaf_dir)
+            got = line if inside else linker.canonical(line, leaf_dir)
             if rebased and not inside and _HEADING.match(got):
                 # the writer moved the ladder up by 1 - s.level; the compare moves it back down
                 got = _rebased(got, delta=s.level - 1, top=s.level if index == 0 else None)

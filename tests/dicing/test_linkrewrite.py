@@ -140,3 +140,22 @@ def test_rel(from_dir: str, to: str, expected: str) -> None:
 )
 def test_restore(tmp_path: Path, line: str, leaf_dir: str, expected: str) -> None:
     assert _linker(tmp_path).restore(line, leaf_dir) == expected
+
+
+@pytest.mark.parametrize(
+    "line, leaf_dir, expected",
+    [
+        pytest.param("[§1](1-alpha.md) x", "", "§1 x", id="section-link"),
+        pytest.param("[§1](../1-alpha.md)", "2-beta", "§1", id="section-link-from-subdir"),
+        pytest.param("[t](../../out/entry-point.md)", "2-beta", "[t](../entry-point.md)", id="placed-tree-spelling"),
+        pytest.param("[t](../docs/x.md)", "", "[t](../docs/x.md)", id="canonical-spelling-stays"),
+        pytest.param("[t](1-alpha.md#notes-1)", "", "[t](1-alpha.md#notes-1)", id="anchor-link-stays"),
+        pytest.param("[t](#frag)", "", "[t](#frag)", id="bare-fragment"),
+        pytest.param("[t](https://e.com)", "", "[t](https://e.com)", id="url"),
+        pytest.param("`[t](x.md)`", "", "`[t](x.md)`", id="code-span"),
+    ],
+)
+def test_canonical(tmp_path: Path, line: str, leaf_dir: str, expected: str) -> None:
+    """A leaf's links come back as link targets writes them from the document: a link the tree
+    spells for a place it no longer stands compares by the file it names, not by its spelling."""
+    assert _linker(tmp_path).canonical(line, leaf_dir) == expected

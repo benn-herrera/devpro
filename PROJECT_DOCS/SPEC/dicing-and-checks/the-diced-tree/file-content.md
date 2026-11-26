@@ -40,3 +40,5 @@ Contents:
 - `<link text>` is `§<n> <title>`, where `<n>` is the number of the section itself if numbered,
   else of its nearest numbered ancestor; with no numbered section at or above, it is the title
   alone.
+- A head's own text ends at its Contents block: the dicer writes nothing below the block, and
+  [undice](../undice.md#undice) refuses a head that carries text below it.

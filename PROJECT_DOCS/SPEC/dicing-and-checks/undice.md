@@ -17,12 +17,17 @@ written: it is generator output, and the volumes are the documents the tree hold
 | `<tree-dir>` holds neither `entry-point.md` nor `index.md` | `not a tree: <tree-dir>` | 2 |
 | `<out-dir>` exists and is not a directory | `not a directory: <out-dir>` | 2 |
 | `<out-dir>` exists and is not empty | `out-dir not empty: <out-dir>` | 2 |
+| a head file of the tree carries text below its Contents block | `<file>: text below the Contents block at line <N>: remove it or rehome it above the Contents: line` | 2 |
+
+One line per offending head file, `<N>` the number of the file's first line below the block.
 
 **Content.** A volume's head lines, then each file its Contents links reach, depth first in link
 order and each once; a linked file that cannot be read prints
 `undice: cannot read <tree-dir>/<target>` to stderr, is left out, and fails the verb (exit 1). From
-each head file read that is named `entry-point.md` or `index.md`, the Contents block and every line
-after it are dropped ([reassembly](reassembly.md)'s cut). Each other file's heading ladder is
+each head file read that is named `entry-point.md` or `index.md`, the Contents block is dropped
+([reassembly](reassembly.md)'s cut); the head carries no text below it
+([file content](the-diced-tree/file-content.md#file-content)), and text below the block is refused
+before anything is written. Each other file's heading ladder is
 restored before it is written: a file whose top heading reads level 1 is in the rebased form
 ([file content](the-diced-tree/file-content.md#file-content)) and is put back at the shallowest level its place in the
 tree permits — a section file sits one level below its parent's head, so a section at the

@@ -41,6 +41,28 @@ def contents_cut(lines: list[str]) -> int:
     return cut
 
 
+def block_end(lines: list[str], start: int) -> int:
+    """One past the last list item a Contents block holds, the block opening at start: the block
+    runs to its last list item, and lines after it are not the block's."""
+    end = len(lines)
+    while end > start and not lines[end - 1].lstrip().startswith("- "):
+        end -= 1
+    return end
+
+
+def below_block(lines: list[str]) -> int:
+    """The 1-based number of a head file's first non-blank line below its Contents block's list,
+    -1 where the file holds no block or carries none. A head's own text ends at its Contents
+    block: the dicer writes nothing below it, so a line below it is not the document's."""
+    cut = contents_cut(lines)
+    if cut < 0:
+        return -1
+    for no in range(max(block_end(lines, cut), cut + 1), len(lines)):
+        if lines[no].strip():
+            return no + 1
+    return -1
+
+
 def heads_of(head: str) -> set[str]:
     """The directories a root head's Contents block declares volume roots: the directory of every
     `entry-point.md` the block's lines link, as the link names it. A link in the head's own prose
@@ -53,9 +75,7 @@ def heads_of(head: str) -> set[str]:
     start = contents_cut(lines)
     if start < 0:
         return set()
-    block = lines[start:]
-    while block and not block[-1].lstrip().startswith("- "):
-        block.pop()  # the block runs to its last list item; text after it is the head's own
+    block = lines[start : block_end(lines, start)]
     directories = set()
     for line in block:
         for target in link_targets(line):

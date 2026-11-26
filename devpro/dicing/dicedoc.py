@@ -18,7 +18,17 @@ import posixpath
 from dataclasses import dataclass
 from typing import TextIO
 
-from .heads import CONTENTS, ENTRY_POINT, HEADS, INDEX, contents_line, heads_of, section_head, volume_head
+from .heads import (
+    CONTENTS,
+    ENTRY_POINT,
+    HEADS,
+    INDEX,
+    below_block,
+    contents_line,
+    heads_of,
+    section_head,
+    volume_head,
+)
 from .linkcheck import check_links, markdown_files
 from .linkrewrite import Linker, Tree, parent_dir
 from .linkscan import link_targets, plain_text
@@ -225,6 +235,28 @@ def _own(out: str, tree_path: str) -> tuple[list[str], list[str]]:
     return lines[:end], lines[end:]
 
 
+def _head_refusals(tree_dir: str, *, err: TextIO) -> bool:
+    """Report each head file of the tree that carries text below its Contents block, and whether
+    one does. A head's own text ends at its Contents block: the dicer writes nothing below it, so
+    text below it is not the document's and undice refuses the tree rather than drop it."""
+    refused = False
+    for f in markdown_files([tree_dir]):
+        if os.path.basename(f) not in HEADS:
+            continue
+        try:
+            lines = read_lines(f)
+        except OSError:
+            continue  # a head the walk cannot read is reported there
+        no = below_block(lines)
+        if no >= 0:
+            print(
+                f"{f}: text below the Contents block at line {no}:" " remove it or rehome it above the Contents: line",
+                file=err,
+            )
+            refused = True
+    return refused
+
+
 def _volume_documents(out: str) -> list[Volume]:
     """The documents a tree holds: one for each volume root `heads_of` reads below the root's head,
     and the root's own head as the one document where it reads none. The root's head is never
@@ -380,11 +412,13 @@ def undice(tree_dir: str, out: str, *, stdout: TextIO, stderr: TextIO, deepest: 
     one document per volume, named for its head's directory, and a tree holding one document named
     for the tree's own directory. Then check each document against its volume. root is the directory
     every document is written in, which its links come out relative to. 0 ok, 1 a failed check, 2 a
-    bad argument."""
+    refusal."""
     if not any(os.path.isfile(os.path.join(tree_dir, head)) for head in HEADS):
         print(f"not a tree: {tree_dir}", file=stderr)
         return 2
     if not _out_ready(out, err=stderr):
+        return 2
+    if _head_refusals(tree_dir, err=stderr):
         return 2
     os.makedirs(out, exist_ok=True)
     tree_base = os.path.basename(os.path.normpath(tree_dir))

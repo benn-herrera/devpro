@@ -95,13 +95,19 @@ class Linker:
         positions in the tree whatever directory the verb ran in or the documents were read from."""
         return self.rebase_only(line, leaf_dir, next_line)
 
-    def revert(self, line: str, leaf_dir: str) -> str:
-        """Undo the section links `forward` made; every other link stays."""
+    def canonical(self, line: str, leaf_dir: str) -> str:
+        """A leaf's line as link targets writes it from the document the tree restores to: a
+        section link becomes its text, and every other link is restored against the run directory
+        and written again from there, so the line compares by the file each link names rather than
+        by the spelling the leaf's place in the tree gives it - a spelling that changes when the
+        tree is placed somewhere it did not stand when it was diced."""
 
-        def unlink(raw: str, text: str, target: str, after: str) -> str:
-            return text if self._made_by_forward(text, target, leaf_dir) else raw
+        def canon(raw: str, text: str, target: str, after: str) -> str:
+            if self._made_by_forward(text, target, leaf_dir):
+                return text
+            return f"[{text}]({self._rebase(self._unrebase(target, leaf_dir), leaf_dir, after, '')})"
 
-        return scan(line, unlink)
+        return scan(line, canon)
 
     def restore(self, line: str, leaf_dir: str) -> str:
         """Undo `forward` for a line read from under leaf_dir, as far as the tree allows: section
