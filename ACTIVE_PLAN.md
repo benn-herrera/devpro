@@ -18,7 +18,7 @@ doc-only: each done-line names document checks only.
 | Package | State | Rating |
 |---|---|---|
 | G1 | landed: 246325b5 | mechanical |
-| G2 | in progress | mechanical |
+| G2 | landed: 849558f5 | mechanical |
 | G3 | landed: 8e9c5e83 | expert |
 | G4 | drafted | expert |
 | G5 | drafted | mechanical |
