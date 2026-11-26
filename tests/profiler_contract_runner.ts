@@ -6,7 +6,8 @@
 // Stdout: JSON {records} — the records the shipped `profiler.ts` wrote through a stub plugin context:
 // a completed call, a failed one, a skill call, a subagent dispatch in each of opencode 2.3.0's,
 // 2.3.2's and 2.4.1's result shapes, one whose top-level id is not a string, and the session's idle —
-// then a second session's completed call, made with no `model.request` fired for it.
+// then a second session's completed call, made with no `model.request` fired for it — then a
+// dispatched child's own idle records, its request's agent and model stamped on each.
 //
 // The host shapes below are inputs, and the test claims nothing about what the host reports: the
 // events are shaped as the three releases' results are said to ride, and each shape's own home is
@@ -125,8 +126,24 @@ await fire("execute.after", {
   result: { output: "Darwin\n" },
 })
 
+// A dispatched child's own signals, recorded into the child's store as the capture's declared session
+// hooks deliver them: the child's `model.request` — the agent and the model its run carries — and then
+// its idle with no background work listed, which is the episode's end the render joins the dispatch to.
+// The child idles twice: once with a shell still running, which is no episode's end, and once after.
+await fire("model.request", {
+  sessionID: "ses_child",
+  agent: "devpro-go-coder",
+  kind: "call",
+  model: { id: "Qwen3.8-Flash-Next", providerID: "reaper" },
+})
+await fire("experimental.idle", {
+  sessionID: "ses_child",
+  background: [{ kind: "shell", sessionID: "ses_child", shellID: "sh_1", command: "make test" }],
+})
+await fire("experimental.idle", { sessionID: "ses_child", background: [] })
+
 const records: Record<string, unknown>[] = []
-for (const id of [session, modelless]) {
+for (const id of [session, modelless, "ses_child"]) {
   const file = `${input.directory}/.devpro-temp/.profiler-opencode/${id}.jsonl`
   const text = await Bun.file(file).text()
   records.push(...text.trim().split("\n").map((line: string) => JSON.parse(line)))

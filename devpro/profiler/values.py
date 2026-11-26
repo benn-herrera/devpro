@@ -11,7 +11,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 # The store naming's prefix every name now carries; `stores` holds the naming before the rename, and the
 # two stores it renames.
 NEW_STORE_PREFIX = ".profiler-"

@@ -1,5 +1,5 @@
 """The activity profiler's contract, driven through the wrapper the install writes: one capture
-writes a schema-2 record, `tree --format html`'s page data carries the keys `view.html` parses, and the
+writes a schema-3 record, `tree --format html`'s page data carries the keys `view.html` parses, and the
 installed wrapper is the wrapper the install wrote. It fails on the port defect that renames or drops a
 record field the page data carries — the rename or drop ships green and renders an empty page.
 
@@ -242,7 +242,7 @@ def index_row_colspan(index: str) -> int:
 
 
 def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path, _wrapper: Path) -> None:
-    """One well-formed hook payload appends one line to the project's trace, carrying schema 2 and
+    """One well-formed hook payload appends one line to the project's trace, carrying schema 3 and
     the field names the unchanged page and tree read; the html page's data carries the keys
     `view.html` parses."""
     project = tmp_path / "project"
@@ -253,7 +253,7 @@ def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path, _wra
     assert capture.stdout == "" and capture.stderr == ""
     trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
     [record] = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
-    assert record["v"] == 2
+    assert record["v"] == 3
     assert _RECORD_FIELDS <= set(record), sorted(record)
     assert record["session"] == "s-profiler"
     assert record["tool"] == "Bash"
@@ -451,7 +451,7 @@ def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Pa
             json.dumps(record)
             for record in (
                 {
-                    "v": 2,
+                    "v": 3,
                     "harness": "opencode",
                     "at": "2026-01-01T00:00:00.000Z",
                     "session": "s-opencode",
@@ -462,7 +462,7 @@ def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Pa
                     "transcript": None,
                 },
                 {
-                    "v": 2,
+                    "v": 3,
                     "harness": "opencode",
                     "at": "2026-01-01T00:00:01.000Z",
                     "session": "s-opencode",
@@ -484,7 +484,7 @@ def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Pa
                     "result": "ok",
                 },
                 {
-                    "v": 2,
+                    "v": 3,
                     "harness": "opencode",
                     "at": "2026-01-01T00:00:02.000Z",
                     "session": "s-opencode",
@@ -558,7 +558,8 @@ def test_the_capture_builds_its_record_over_host_shape_inputs(tmp_path: Path) ->
     session is the one its result names — in the output 2.3.2 reports, in the metadata 2.3.0
     reports, and at the result's top level 2.4.1 reports, each of which the floor covers — with a
     top-level id that is not a string refused, the read falling through to the output's id. The
-    session's idle appends its lifecycle record.
+    session's idle appends its lifecycle record; a dispatch's return carries `background: true`,
+    every other call `false`.
 
     `clauses.TEST_PRECONDITION`. The defect: an opencode record that names no model where its
     session's request named one, or one that names a model no request reported. Each `ses_capture`
@@ -594,13 +595,147 @@ def test_the_capture_builds_its_record_over_host_shape_inputs(tmp_path: Path) ->
     assert (calls[5]["child_agent_id"], calls[5]["child_agent_type"]) == ("ses_top", "devpro-rust-coder")
     # The top-level id is not a string: the guard refuses it and the read falls through to the output.
     assert (calls[6]["child_agent_id"], calls[6]["child_agent_type"]) == ("ses_guard", "devpro-typescript-coder")
-    assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"]
+    # A dispatch returns at once and its child runs in the background; any other call runs in its own
+    # session's foreground. The dispatch rows carry no joined field: the join is the render's, at read.
+    assert [record["background"] for record in calls] == [False, False, False, True, True, True, True]
+    assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"] * 3
     # The model: the one request `ses_capture` fired, `providerID/id`, on every call the session made
     # after it; `null` on a call in a session that fired none.
     fired = "wafer.ai/GLM-5.3-Flash"
     assert [record["model"] for record in calls] == [fired] * 7
     [modelless] = [record for record in records if record.get("session") == "ses_modelless"]
     assert modelless["model"] is None
+    # The child's own idles: the agent and the model its request named are stamped on each, and each
+    # states the background work it was seen with — the first one's shell, the end signal's none.
+    [first, end] = [record for record in records if record.get("session") == "ses_child"]
+    stamp = {"agent_type": "devpro-go-coder", "model": "reaper/Qwen3.8-Flash-Next"}
+    assert ({key: first[key] for key in stamp}, first["background"]) == (stamp, 1)
+    assert ({key: end[key] for key in stamp}, end["background"]) == (stamp, 0)
+
+
+def _dispatch_store(root: Path, session: str, at: str, child: str, *, duration_ms: int = 500) -> Path:
+    """An opencode store under `root` holding one dispatch record for `session`: the launch
+    acknowledgment the capture writes when a `subagent` call returns, its `at` the dispatch moment,
+    its `duration_ms` the firing cost, its `background` true, and the child's session id."""
+    return _write_store(
+        root,
+        ".profiler-opencode",
+        session,
+        at,
+        harness="opencode",
+        extra={
+            "tool": "Agent",
+            "name": "devpro-python-coder",
+            "duration_ms": duration_ms,
+            "child_agent_id": child,
+            "child_agent_type": "devpro-python-coder",
+            "background": True,
+            "model": "wafer.ai/parent-model",
+        },
+    )
+
+
+def _idle_store(root: Path, session: str, idles: list[tuple[str, int]]) -> Path:
+    """The child's own opencode store, one idle record per `(at, background)` the child idled with: the
+    event record the capture stamps, carrying the agent and model the child's last request named."""
+    directory = root / ".devpro-temp" / ".profiler-opencode"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / f"{session}.jsonl").write_text(
+        "".join(
+            json.dumps(
+                {
+                    "v": 3,
+                    "harness": "opencode",
+                    "at": at,
+                    "session": session,
+                    "event": "experimental.idle",
+                    "trigger": None,
+                    "source": None,
+                    "context_tokens": None,
+                    "transcript": None,
+                    "background": background,
+                    "agent_type": "devpro-go-coder",
+                    "model": "reaper/Qwen3.8-Flash-Next",
+                }
+            )
+            + "\n"
+            for at, background in idles
+        ),
+        encoding="utf-8",
+    )
+    return directory
+
+
+def test_a_dispatch_row_reads_the_childs_own_end_and_run(tmp_path: Path, _wrapper: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: a dispatch row reads the firing cost as the child's
+    span, or names a model the child never ran, or names an agent the child did not run.
+
+    A parent's dispatch record and its child's store, whose empty-background idle comes 50 s after the
+    dispatch: the page's call row takes the child's span, the agent its request named and the child's
+    own model, in place of the acknowledgment's 500 ms, its input-derived kind and the parent's model.
+    The dispatch record the store holds is unchanged — every fill is the read's."""
+    project = tmp_path / "project"
+    project.mkdir()
+    _dispatch_store(project, "ses_parent", "2026-01-01T00:00:00.000Z", "ses_child")
+    _idle_store(project, "ses_child", [("2026-01-01T00:00:50.000Z", 0)])
+    dispatch = project / ".devpro-temp" / ".profiler-opencode" / "ses_parent.jsonl"
+    before = dispatch.read_text(encoding="utf-8")
+
+    page = _run(_wrapper, "tree", "ses_parent", "--format", "html", cwd=project)
+
+    assert page.returncode == 0, page.stderr
+    [call] = page_data(page.stdout)["calls"]
+    assert (call["dur"], call["model"], call["running"]) == (50_000, "reaper/Qwen3.8-Flash-Next", None)
+    assert dispatch.read_text(encoding="utf-8") == before
+
+
+def test_an_intermediate_idle_fills_nothing(tmp_path: Path, _wrapper: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: an intermediate idle truncates the child's span.
+
+    A child that idles with a shell still running and idles again 20 s later with none: the join reads
+    the latest empty-background idle, so the row's span is the 40 s to that last idle and not the first
+    idle's 20 s or the background-laden idle's 30 s, and an idle with background work standing alone
+    fills nothing — a parent's row whose child's store holds only such an idle keeps the firing cost."""
+    project = tmp_path / "project"
+    project.mkdir()
+    _dispatch_store(project, "ses_parent", "2026-01-01T00:00:00.000Z", "ses_child")
+    _dispatch_store(project, "ses_other", "2026-01-01T00:00:00.000Z", "ses_busy")
+    _idle_store(
+        project,
+        "ses_child",
+        [("2026-01-01T00:00:20.000Z", 0), ("2026-01-01T00:00:30.000Z", 1), ("2026-01-01T00:00:40.000Z", 0)],
+    )
+    _idle_store(project, "ses_busy", [("2026-01-01T00:00:30.000Z", 1)])
+
+    for session, span in (("ses_parent", 40_000), ("ses_other", 500)):
+        page = _run(_wrapper, "tree", session, "--format", "html", cwd=project)
+        assert page.returncode == 0, page.stderr
+        [call] = page_data(page.stdout)["calls"]
+        assert (session, call["dur"]) == (session, span)
+
+
+def test_a_dispatch_whose_child_never_ended_is_not_running(tmp_path: Path, _wrapper: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: a child whose idle never came renders as nothing,
+    raises, or is marked running.
+
+    A dispatch record carrying the capture's `background: true` and a child store holding no idle — the
+    child killed, or a host delivering none: the page renders the row as the acknowledgment wrote it,
+    not `running` — the mark claude's stop join gives a background call that never stopped — and the
+    tree's duration column states the firing cost rather than the mark."""
+    project = tmp_path / "project"
+    project.mkdir()
+    _dispatch_store(project, "ses_parent", "2026-01-01T00:00:00.000Z", "ses_killed")
+    _idle_store(project, "ses_killed", [])
+
+    page = _run(_wrapper, "tree", "ses_parent", "--format", "html", cwd=project)
+    tree = _run(_wrapper, "tree", "--verbose", "ses_parent", cwd=project)
+
+    assert page.returncode == 0, page.stderr
+    [call] = page_data(page.stdout)["calls"]
+    assert (call["dur"], call["running"], call["model"]) == (500, None, "wafer.ai/parent-model")
+    assert tree.returncode == 0, tree.stderr
+    assert "running" not in tree.stdout
+    assert "500 ms" in tree.stdout
 
 
 def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path) -> None:
@@ -821,7 +956,7 @@ def _write_store(
         "".join(
             json.dumps(
                 {
-                    "v": 2,
+                    "v": 3,
                     "harness": harness,
                     "at": (start + timedelta(seconds=second)).strftime("%Y-%m-%dT%H:%M:%S.") + "000Z",
                     "session": session,

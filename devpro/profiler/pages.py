@@ -182,20 +182,50 @@ def subagent_stops(records: list[dict]) -> dict[str, dict]:
     return stops
 
 
+IDLE = "experimental.idle"
+
+
+def child_episodes(records: list[dict]) -> dict[str, dict]:
+    """session id -> its latest idle with no background work running: where that session's run ended.
+
+    An opencode session idles each time an episode closes — the agent loop finished and nothing is
+    queued — and a wake that follows its own background work, or a dispatcher's follow-up, opens
+    another episode whose idle is later. An idle seen with background work listed is no episode's end,
+    so it is not kept; the latest kept one is the end the join reads."""
+    episodes: dict[str, dict] = {}
+    for record in records:
+        if record.get("event") == IDLE and record.get("session") and not record.get("background"):
+            episodes[str(record["session"])] = record
+    return episodes
+
+
 # Traces captured before a background skill was told apart from a finished one hold Claude Code's
 # launch notice as the call's result.
 LAUNCH_NOTICE = re.compile(r"^Running in the background as @")
 
 
-def with_stop(record: dict, stop: dict | None, handback: str | None) -> dict:
+def with_stop(record: dict, stop: dict | None, handback: str | None, episode: dict | None = None) -> dict:
     """A background subagent's call, ended by its stop where one is recorded.
 
     Its call returns at once and it ends at its SubagentStop; its result is what it handed back. Until
-    its first stop it is `running`: the duration recorded so far is the launch, not the work."""
+    its first stop it is `running`: the duration recorded so far is the launch, not the work.
+
+    An opencode dispatch records no stop, its child ending at the child's own empty-background idle
+    (`episode`, read from the child's store): the record's agent and model become the child's, where
+    the idle carries them, and its duration the span from the dispatch to that idle. A dispatch whose
+    episode never came is the acknowledgment as it was written — never `running`, since the capture
+    writes the launch, not the work, and its end is the child's to report."""
     launched = {key: value for key, value in record.items() if key != "result"}
     call = {**launched, "background": True} if LAUNCH_NOTICE.match(record.get("result") or "") else record
     if not stop:
-        return {**call, "running": True} if call.get("background") else call
+        if episode:
+            return {
+                **call,
+                "child_agent_type": episode.get("agent_type") or call.get("child_agent_type"),
+                "model": episode.get("model") or call.get("model"),
+                "duration_ms": max(0, (_epoch_ms(episode.get("at")) or 0) - (_epoch_ms(call.get("at")) or 0)),
+            }
+        return {**call, "running": True} if LAUNCH_NOTICE.match(call.get("result") or "") else call
     merged = {**call, "child_agent_type": call.get("child_agent_type") or stop.get("agent_type")}
     if not call.get("background"):
         return merged
@@ -207,9 +237,13 @@ def with_stop(record: dict, stop: dict | None, handback: str | None) -> dict:
     }
 
 
-def unique_calls(records: list[dict]) -> list[dict]:
+def unique_calls(records: list[dict], episodes: dict[str, dict] | None = None) -> list[dict]:
     """The calls a trace holds once each: a plugin and a committed hook on one machine record everything
-    twice."""
+    twice.
+
+    `episodes` is `child_episodes` over every store read, where a reader joins an opencode dispatch to
+    its child's end: the child's store is not `records`, so its idle is handed in, keyed by the session
+    id the dispatch's `child_agent_id` names."""
     stops = subagent_stops(records)
     handbacks = {
         record["agent_id"]: record["result"]
@@ -225,9 +259,8 @@ def unique_calls(records: list[dict]) -> list[dict]:
             if record["tool_use_id"] in seen:
                 continue
             seen.add(record["tool_use_id"])
-        calls.append(
-            with_stop(record, stops.get(record.get("child_agent_id")), handbacks.get(record.get("child_agent_id")))
-        )
+        child = record.get("child_agent_id")
+        calls.append(with_stop(record, stops.get(child), handbacks.get(child), (episodes or {}).get(str(child))))
     return calls
 
 
@@ -294,15 +327,22 @@ def short_id(identifier: str) -> str:
     return MAIN if identifier == MAIN else identifier[:CONTEXT_WIDTH]
 
 
-def contexts_of(records: list[dict], *, root_label: str = MAIN, root_hue: int = 0) -> tuple[list[dict], list[dict]]:
+def contexts_of(
+    records: list[dict],
+    *,
+    root_label: str = MAIN,
+    root_hue: int = 0,
+    episodes: dict[str, dict] | None = None,
+) -> tuple[list[dict], list[dict]]:
     """The trace's contexts and markers.
 
     A context is one conversation history: main, or a subagent started by a forked Skill or an Agent
     call. Inline skills and compactions are markers in one. A `fork` subagent starts with a copy of its
     parent's history; every other subagent starts with its prompt only. The root keeps the id `main`,
     and takes the label and hue a child's page names it by — the call that dispatched the session,
-    in the color that call's own context wears on its dispatcher's page."""
-    calls = unique_calls(records)
+    in the color that call's own context wears on its dispatcher's page. `episodes` is
+    `unique_calls`'s: the calls joined to their children's ends."""
+    calls = unique_calls(records, episodes)
     contexts: list[dict] = [{"id": MAIN, "parent": None, "kind": "root", "label": root_label}]
     known = {MAIN}
     for record in calls:
@@ -378,11 +418,11 @@ def contexts_of(records: list[dict], *, root_label: str = MAIN, root_hue: int = 
     return contexts, markers
 
 
-def build_forest(records: list[dict], markers: list[dict] | None = None) -> list[dict]:
+def build_forest(records: list[dict], markers: list[dict] | None = None, episodes: dict[str, dict] | None = None):
     """The tree's roots: each call under the call that started its context, in start order."""
     nodes = [
         {"record": record, "index": index, "start": start_of(record), "children": []}
-        for index, record in enumerate(unique_calls(records))
+        for index, record in enumerate(unique_calls(records, episodes))
     ]
     by_child = {node["record"]["child_agent_id"]: node for node in nodes if node["record"].get("child_agent_id")}
     placeholders: dict[str, dict] = {}
@@ -600,9 +640,12 @@ def _context_spend(records: list[dict]) -> dict:
     return spend
 
 
-def render_tree(records: list[dict], *, verbose: bool = False, color: bool = False) -> str:
-    """The trace as the text tree."""
-    contexts, markers = contexts_of(records)
+def render_tree(
+    records: list[dict], *, verbose: bool = False, color: bool = False, episodes: dict[str, dict] | None = None
+) -> str:
+    """The trace as the text tree. `episodes` is `session_data`'s: the joins an opencode dispatch takes
+    to its child's end, which the one tree draws where the session has one."""
+    contexts, markers = contexts_of(records, episodes=episodes)
     options = {
         "verbose": verbose,
         "kinds": {context["id"]: context["kind"] for context in contexts},
@@ -619,12 +662,14 @@ def render_tree(records: list[dict], *, verbose: bool = False, color: bool = Fal
             shown.append((node, depth))
             walk(node["children"], depth + 1)
 
-    walk(build_forest(records, [marker for marker in markers if marker["kind"] == "compact"]), 0)
+    walk(build_forest(records, [marker for marker in markers if marker["kind"] == "compact"], episodes), 0)
     options["longest"] = max([0] + [(node.get("record") or {}).get("duration_ms") or 0 for node, _ in shown])
     return "\n".join([tree_header()] + [format_line(node, depth, **options) for node, depth in shown])
 
 
-def session_data(session: dict, *, dispatcher: Dispatcher | None = None) -> dict:
+def session_data(
+    session: dict, *, dispatcher: Dispatcher | None = None, episodes: dict[str, dict] | None = None
+) -> dict:
     """The page data `view.html` inlines at its data mark: the session's calls as the file flow
     draws them, one source for the standalone render and the served page alike.
 
@@ -632,12 +677,16 @@ def session_data(session: dict, *, dispatcher: Dispatcher | None = None) -> dict
     `dispatcher` names, in the hue that call's own context wears on its dispatcher's page. The models
     are the calls' own: the session's, and each context's of the calls it holds, in the order they
     first appear. The calls are the merged list the page draws, which carries the tokens
-    `fill_context_tokens` fills at render where the capture left them out."""
-    calls = unique_calls(fill_context_tokens(session["records"]))
+    `fill_context_tokens` fills at render where the capture left them out.
+
+    `episodes` is `child_episodes` over every store the reader holds: an opencode dispatch's child ends
+    in the child's own store, so the join reads it from there rather than from `session`."""
+    calls = unique_calls(fill_context_tokens(session["records"]), episodes)
     contexts, markers = contexts_of(
         session["records"],
         root_label=(rendered_name(dispatcher.name, dispatcher.tool) or MAIN) if dispatcher else MAIN,
         root_hue=dispatcher.hue if dispatcher else 0,
+        episodes=episodes,
     )
     spend = _context_spend(session["records"])
     by_context: dict[str, list[dict]] = {}
@@ -680,14 +729,17 @@ def session_data(session: dict, *, dispatcher: Dispatcher | None = None) -> dict
     }
 
 
-def _inlined_session_data(session: dict, *, dispatcher: Dispatcher | None) -> str:
+def _inlined_session_data(session: dict, *, dispatcher: Dispatcher | None, episodes: dict[str, dict] | None) -> str:
     """`session_data` as the JSON a page's script inlines: `<` escaped so tool output cannot close the
     script tag, and `/` escaped so it cannot spell a fill's mark — `/*DATA*/null` among them, which
     the strict fill refuses in a value."""
-    return _json(session_data(session, dispatcher=dispatcher)).replace("<", "\\u003c").replace("/", "\\/")
+    data = session_data(session, dispatcher=dispatcher, episodes=episodes)
+    return _json(data).replace("<", "\\u003c").replace("/", "\\/")
 
 
-def _rendering(session: dict, *, dispatcher: Dispatcher | None, return_to: str | None) -> str:
+def _rendering(
+    session: dict, *, dispatcher: Dispatcher | None, return_to: str | None, episodes: dict[str, dict] | None
+) -> str:
     """The page's one rendering: the template's own text with the session's data, the band's facts and
     the prefix line filled, the layer's and the deco's marks left standing for their carriers' fills —
     `render_html` inlines both texts, a file being unable to load a server's file, and the serve path
@@ -696,21 +748,22 @@ def _rendering(session: dict, *, dispatcher: Dispatcher | None, return_to: str |
     return strict_fill(
         template,
         {
-            DATA_MARK: _inlined_session_data(session, dispatcher=dispatcher),
+            DATA_MARK: _inlined_session_data(session, dispatcher=dispatcher, episodes=episodes),
             AGENT_PREFIX_MARK: AGENT_PREFIX_LINE,
             **band_fills(dispatcher=dispatcher, return_to=return_to, legend=True),
         },
     )
 
 
-def render_html(session: dict, *, dispatcher: Dispatcher | None) -> str:
+def render_html(session: dict, *, dispatcher: Dispatcher | None, episodes: dict[str, dict] | None = None) -> str:
     """One self-contained page: the package's template with the presentation layer, the deco, the
     how-to-read legend and the trace inlined, and the frame band's per-page facts the session's stores
     name — the way back to the list, and the dispatcher where one dispatched it — the same facts the
     served page fills, the layer's and the deco's carriage the differences between the carriers: a file
-    links neither, so it carries both texts and the page's script finds the one notation they hold."""
+    links neither, so it carries both texts and the page's script finds the one notation they hold.
+    `episodes` is `session_data`'s: the child-end joins the page's calls take."""
     return strict_fill(
-        _rendering(session, dispatcher=dispatcher, return_to=PROFILER_PATH),
+        _rendering(session, dispatcher=dispatcher, return_to=PROFILER_PATH, episodes=episodes),
         {LAYER_MARK: LAYER_INLINE, DECO_MARK: DECO_INLINE},
     )
 
@@ -803,16 +856,17 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
             )
     else:
         chosen = [max(sessions, key=lambda session: session["last"])]
+    episodes = child_episodes([record for session in sessions for record in session["records"]])
     if options["format"] == "html":
         if len(chosen) > 1:
             listing = "\n".join(f"  {session['id'][:SESSION_WIDTH]}  {stamp(session['first'])}" for session in chosen)
             raise UsageError(f"The html page shows one session. Pick one by id prefix:\n{listing}")
-        return render_html(chosen[0], dispatcher=dispatcher_of(chosen[0]["id"], sessions))
+        return render_html(chosen[0], dispatcher=dispatcher_of(chosen[0]["id"], sessions), episodes=episodes)
     if not branch:
-        return render_tree(chosen[0]["records"], verbose=options["verbose"], color=color)
+        return render_tree(chosen[0]["records"], verbose=options["verbose"], color=color, episodes=episodes)
     blocks = []
     for session in chosen:
-        rendered = render_tree(session["records"], verbose=options["verbose"], color=color)
+        rendered = render_tree(session["records"], verbose=options["verbose"], color=color, episodes=episodes)
         blocks.append(f"# session {session['id']} ({stamp(session['first'])})\n{rendered}")
     return "\n\n".join(blocks)
 
@@ -1418,10 +1472,16 @@ def session_for(path: str, directory: Path | str) -> dict | None:
     return next((session for session in sessions if session["id"] == path[len(PAGE_PREFIX) :]), None)
 
 
-def page_for(session: dict, *, return_to: str | None, dispatcher: Dispatcher | None) -> str:
+def page_for(
+    session: dict,
+    *,
+    return_to: str | None,
+    dispatcher: Dispatcher | None,
+    episodes: dict[str, dict] | None = None,
+) -> str:
     """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
     frame band with its legend, the decoration's script, the presentation layer linked — the band's
     per-page facts the dashboard's own lookup names, one legend on the page and the script once. The
     layer's carriage is the serve path's own fill (`served_page`), where the render inlined the
-    layer's text."""
-    return served_page(_rendering(session, dispatcher=dispatcher, return_to=return_to))
+    layer's text. `episodes` is `session_data`'s: the child-end joins the page's calls take."""
+    return served_page(_rendering(session, dispatcher=dispatcher, return_to=return_to, episodes=episodes))

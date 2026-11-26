@@ -71,11 +71,18 @@ _REFUSED_HOST = '{"error": "requests must name the host the dashboard is served 
 _NO_SUCH_PAGE = "No such page"
 
 
-def profiler_page(session: dict, *, return_to: str | None, dispatcher: Dispatcher | None) -> str:
+def profiler_page(
+    session: dict,
+    *,
+    return_to: str | None,
+    dispatcher: Dispatcher | None,
+    episodes: dict[str, dict] | None = None,
+) -> str:
     """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
     frame band, the decoration's script, the shared layer linked — assembled by `page_for`, this
-    module adding the band's per-page facts, the way back and the dispatcher its lookup names."""
-    return pages.page_for(session, return_to=return_to, dispatcher=dispatcher)
+    module adding the band's per-page facts, the way back and the dispatcher its lookup names.
+    `episodes` is the one read of every store's child ends, which a page's dispatch rows join to."""
+    return pages.page_for(session, return_to=return_to, dispatcher=dispatcher, episodes=episodes)
 
 
 def loopback(url: str) -> bool:
@@ -157,7 +164,12 @@ class DashboardServer(ThreadingHTTPServer):
         if session_record is None:
             return None
         sessions = read_sessions(self.root)
-        return profiler_page(session_record, return_to=PROFILER_PATH, dispatcher=dispatcher_of(session, sessions))
+        return profiler_page(
+            session_record,
+            return_to=PROFILER_PATH,
+            dispatcher=dispatcher_of(session, sessions),
+            episodes=pages.child_episodes([record for held in sessions for record in held["records"]]),
+        )
 
     def start(self) -> None:
         """Begin polling the board's files. Called once the server is serving, inside the try whose

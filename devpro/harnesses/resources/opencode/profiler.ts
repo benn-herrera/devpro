@@ -58,7 +58,7 @@ function pluginId(): string {
 }
 
 // `devpro/profiler/capture.py`'s limits and spellings, so a record from either harness renders the same way.
-const SCHEMA_VERSION = 2
+const SCHEMA_VERSION = 3
 const TRACE_DIR = join(".devpro-temp", ".profiler-opencode")
 const NAME_LIMIT = 80
 const ARGS_LIMIT = 200
@@ -256,12 +256,14 @@ function childAgentTypeOf(tool: string, input: Record<string, unknown>, result: 
   return undefined
 }
 
-// The model each session's last reported `model.request` named, as `providerID/id`. The agent loop is
-// sequential per session — a request fires before its assistant message is built, that message's tool
-// calls run, then the next request — so the last one a session reported is the model that issued the
-// call `execute.after` records. A session's entry goes at its idle, below: a new turn's request
-// precedes any call that turn makes, and the map holds a live session's entry alone.
-const models = new Map<string, string>()
+// What each session's last reported `model.request` named: the model, as `providerID/id`, and the agent
+// the request ran as. The agent loop is sequential per session — a request fires before its assistant
+// message is built, that message's tool calls run, then the next request — so the last one a session
+// reported is the model and the agent that issued the call `execute.after` records. A session's entry
+// goes at its idle, below: a new turn's request precedes any call that turn makes, and the map holds a
+// live session's entry alone. A child's entry is the one the dispatch record has no other source for:
+// the child's own `model.request` names the model and the agent it actually ran.
+const models = new Map<string, { model: string; agent: string }>()
 
 // The record's fields are `devpro/profiler/capture.py`'s `build_record` / `build_event_record` in their schema order, every
 // one present so a reader never meets a missing key. A field a hook supplies no value for takes the
@@ -316,14 +318,17 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
     // result's output, or in 2.3.0's metadata: the id goes in the slot the render groups children by.
     child_agent_id: subagent ? (childSessionOf(result) ?? null) : null,
     child_agent_type: subagent ? (childAgentTypeOf(raw, input, result) ?? DEFAULT_AGENT) : null,
-    background: false,
+    // A subagent call starts its child and returns at once — so from the floor it is a background run,
+    // and the render's join reads that field against the child's own signals. Any other call is its
+    // own run, in the foreground.
+    background: subagent,
     child_spend: null,
     tokens: null,
     context_tokens: null,
     // The model the session's last reported request named: `providerID/id`, as the devpro profiler's
     // claude record takes its own model from the transcript. `null` where the session has run none the
     // hook reported — a host whose plugin surface offers no such hook records none.
-    model: models.get(call.sessionID) ?? null,
+    model: models.get(call.sessionID)?.model ?? null,
     // A branch is the checkout's, which the devpro profiler reads beside the capture it runs; the capture here runs
     // in the host's process, and opencode's hooks report no branch.
     branch: null,
@@ -334,8 +339,15 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
 
 // eventRecord marks the session's lifecycle, as the devpro profiler's record for a SessionStart does: an event and
 // no tool, so the tree draws it as a marker. `transcript` names claude's transcript file, which opencode
-// has none of.
-function eventRecord(session: string, event: string, at: number): Record<string, unknown> {
+// has none of. `signal` carries what only an idle names: the agent and the model the session's last
+// `model.request` reported, which a dispatch record's child is read through at the join, and the
+// `background` work the host listed as still running — an idle with any is no episode's end.
+function eventRecord(
+  session: string,
+  event: string,
+  at: number,
+  signal: { background?: readonly unknown[]; agent_type?: string; model?: string } = {},
+): Record<string, unknown> {
   return {
     v: SCHEMA_VERSION,
     harness: "opencode",
@@ -346,6 +358,9 @@ function eventRecord(session: string, event: string, at: number): Record<string,
     source: null,
     context_tokens: null,
     transcript: null,
+    ...(signal.background === undefined ? {} : { background: signal.background.length }),
+    ...(signal.agent_type === undefined ? {} : { agent_type: signal.agent_type }),
+    ...(signal.model === undefined ? {} : { model: signal.model }),
   }
 }
 
@@ -466,10 +481,10 @@ export default Plugin.define({
         append(root, call.sessionID, callRecord(call, start, end))
       })
     })
-    // The model a request goes to, as the ref's `providerID/id`: the last one a session reports before
-    // the calls that turn makes. The hook is not on any surface opencode 2.3.0's floor guarantees, so a
-    // host offering none fails this registration, and `silently` keeps it from raising out of `setup`:
-    // there the map stays empty and every record names no model.
+    // The model a request goes to, as the ref's `providerID/id`, and the agent it runs as: the last
+    // one a session reports before the calls that turn makes. The hook is not on any surface opencode
+    // 2.3.0's floor guarantees, so a host offering none fails this registration, and `silently` keeps
+    // it from raising out of `setup`: there the map stays empty and every record names no model.
     silently(() => {
       void ctx.session.hook("model.request", (request) => {
         silently(() => {
@@ -479,18 +494,31 @@ export default Plugin.define({
           // holds as many as a start may.
           const oldest = models.keys().next().value
           if (oldest !== undefined && models.size >= MAX_STARTED && !models.has(request.sessionID)) models.delete(oldest)
-          models.set(request.sessionID, model)
+          models.set(request.sessionID, { model, agent: clip(mask(String(request.agent)), NAME_LIMIT) })
         })
       })
     })
+    // The idle record is the join's end signal for a dispatch's child: stamped with what the child's
+    // last request named and with how much work the host still held. An idle that still holds any is
+    // no episode's end: it keeps the session's entry, since only the idle with none means the turn's
+    // model has stopped issuing requests.
     await ctx.session.hook("experimental.idle", (idle) => {
       silently(() => {
         const prefix = `${String(idle.sessionID)}.`
         for (const key of started.keys()) {
           if (key.startsWith(prefix)) started.delete(key)
         }
-        models.delete(String(idle.sessionID))
-        append(root, idle.sessionID, eventRecord(idle.sessionID, "experimental.idle", Date.now()))
+        const reported = models.get(String(idle.sessionID))
+        const background = idle.background ?? []
+        if (background.length === 0) models.delete(String(idle.sessionID))
+        append(
+          root,
+          idle.sessionID,
+          eventRecord(idle.sessionID, "experimental.idle", Date.now(), {
+            background,
+            ...(reported === undefined ? {} : { agent_type: reported.agent, model: reported.model }),
+          }),
+        )
       })
     })
   },
