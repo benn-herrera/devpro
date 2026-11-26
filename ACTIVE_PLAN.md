@@ -20,8 +20,8 @@ file as `P1` leaves it. `P3` shares no file with the others. The landing commit 
 | P4 | landed: c9a54f38 | mechanical |
 | P5 | landed: 263f3101 | expert |
 | P6 | in progress | mechanical |
-| B1 | dispatchable | mechanical |
-| B2 | dispatchable | mechanical |
+| B2 | landed: 9f8e1bfa | mechanical |
+| B1 | in progress | mechanical |
 | B3 | dispatchable | expert |
 | B4 | dispatchable | expert |
 | B5 | dispatchable | mechanical |
@@ -309,8 +309,8 @@ docdicer-walk clause (Code delta). Done-line: `just test devpro`, then `just tes
 
 mechanical. Scope: `devpro/profiler/stores.py` (`_json` off the import at :9, `_atomic_text` and
 its `import os` deleted), `devpro/profiler/hooks.py` (`hook_sources`, `stale_hook`,
-`devpro_command` deleted, and the imports they orphan — `_json`, `read_json`, `read_text` — with
-them), `tests/test_devpro_profiler.py` (the `OLD_HOOK_COMMANDS` and
+`devpro_command` deleted, and the imports they orphan — `_json`, `read_json`, `read_text`, and
+`sys` (used only by `devpro_command`) — with them), `tests/test_devpro_profiler.py` (the `OLD_HOOK_COMMANDS` and
 `TRACE_STORES` imports off, the `stale_hook` docstring mention at :661 with them),
 `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-stand-in-models-the-api-s-real-semantics.md`
 (the doctor example re-anchored to a live stand-in — the harnesses' literal wrapper paths, per the
