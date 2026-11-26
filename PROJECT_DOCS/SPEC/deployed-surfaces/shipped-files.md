@@ -69,8 +69,10 @@ devpro, runs it through the wrapper, never the `devpro` command from `PATH` — 
 installing again, and report the version that would install, and so name the `devpro` command on
 `PATH`. The `devpro` command on `PATH` never hands off to an installation's copy, and only an
 install replaces the copy. An install run from an installation's own copy, into the installation
-holding that copy, is refused with nothing written, its refusal naming the `devpro` command on
-`PATH` as the one that installs. The snippets define the recipes `devpro-help`, `devpro-check-plan`,
+holding that copy, installs: it passes over two things only — the devpro package under
+`tools/devpro/` and the wrapper `tools/devpro.sh` that runs it — writing nothing at either and
+reporting nothing about the pass-over, and installs everything else, each write under the overwrite
+rules Write safety states. The snippets define the recipes `devpro-help`, `devpro-check-plan`,
 `devpro-check-design`, `devpro-check-design-deltas-applied` and `devpro-check-roadmap`:
 `devpro-help` showing the commands and their doc strings, then the command's help. The four gates take no
 argument, each checking the active file under the project root — the active plan, the active design,

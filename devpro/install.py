@@ -532,15 +532,12 @@ def _clear_package_destination(destination: Path) -> None:
         destination.unlink(missing_ok=True)
 
 
-def _require_not_the_running_copy(root: Path) -> None:
-    """Refuse an install into the installation whose own copy of devpro is the one running: the copy's
-    destination is cleared before its files are read, so the install would empty the package it runs."""
-    copy = root / DEVPRO_COPY
-    if copy.resolve() == PACKAGE_ROOT:
-        raise InputError(
-            f"install would replace {copy}, the copy of devpro running it — run the `devpro` command on PATH "
-            "to install here; nothing written"
-        )
+def is_the_running_copy(root: Path) -> bool:
+    """Whether `root`'s devpro copy is the package this install runs from: its resolved destination is the
+    running package's source. An install from an installation's own copy into the installation holding that
+    copy — a re-entry run — passes over that copy and the wrapper that runs it, so neither is cleared or
+    written and the copy the run executes from stays whole."""
+    return (root / DEVPRO_COPY).resolve() == PACKAGE_ROOT
 
 
 def _write_created(target: Path, data: bytes, *, mode: int) -> None:
@@ -613,13 +610,18 @@ def install(
     # and resource target the install would overwrite, the runner file where a shipped package carries
     # runner snippets, and the agents file's. ROOT itself is created only after all of them.
     real_root = (harness_dir if real_harness_dir is None else real_harness_dir) / ctx.bound_harness.plugin_dir
-    _require_not_the_running_copy(real_root)
+    re_entry = is_the_running_copy(real_root)
     renders = render_all(ctx)
     packages = [
         package
         for package in SHIPPED_PACKAGES
         if package.owner is None or (not user_level and ctx.plugin.ships(package.owner))
     ]
+    if re_entry:
+        # A re-entry run passes over the copy it runs from: dropping its row keeps its destination from
+        # being cleared and its files from being rewritten. That destination is under `tools/`, outside
+        # `prune`'s surfaces, and its files carry no generated banner, so it is not at risk there either.
+        packages = [package for package in packages if package.destination != DEVPRO_COPY]
     package_files = [
         (package, source, target) for package in packages for source, target in package_copies(root, package)
     ]
@@ -661,8 +663,14 @@ def install(
         ],
     )
     # Everything this install copies, the wrapper with it, in one list: `keep` and the report below count
-    # a harness's own files with the packages', so neither reads as a stale render.
-    copied = [*(target for _, _, target in package_files), wrapper, *(target for _, target in resource_files)]
+    # a harness's own files with the packages', so neither reads as a stale render. A re-entry run writes
+    # neither the copy (dropped from `packages` above) nor the wrapper, so both leave this list and the
+    # count it feeds; each is under `tools/`, outside `prune`'s surfaces, so neither is at risk there.
+    copied = [
+        *(target for _, _, target in package_files),
+        *(() if re_entry else (wrapper,)),
+        *(target for _, target in resource_files),
+    ]
     if nested_project_install:
         check_runner(project)
     agents_file: AgentsFileWrite | None = None
@@ -688,8 +696,11 @@ def install(
         if package.stamps and (source.suffix in STAMPED_SUFFIXES or source.name in STAMPED_NAMES):
             data = stamped(data, origin=source.relative_to(PACKAGE_ROOT.parent).as_posix())
         _write_created(target, data, mode=_package_copy_mode(source))
-    wrapper_data = wrapper_text(base_interpreter()).encode("utf-8")
-    _write_created(wrapper, stamped(wrapper_data, origin=f"{PACKAGE_ROOT.name}/install.py"), mode=0o777)
+    if not re_entry:
+        # A re-entry run passes over the wrapper that runs its own copy, leaving the installed one in
+        # place rather than rewriting it.
+        wrapper_data = wrapper_text(base_interpreter()).encode("utf-8")
+        _write_created(wrapper, stamped(wrapper_data, origin=f"{PACKAGE_ROOT.name}/install.py"), mode=0o777)
     retired_package = root / RETIRED_PACKAGE_DIR
     retired_package_found = retired_package.is_dir()
     if retired_package_found:
@@ -713,10 +724,13 @@ def install(
     pruned = prune(root, keep={*written, *copied})
     print(f"installed: {len(written)} rendered files, {len(copied)} copied files → {root}")
     copy_dir = root / DEVPRO_COPY
-    if replaced_version is None:
-        print(f"devpro {__version__} installed → {copy_dir}")
-    else:
-        print(f"devpro {replaced_version} replaced by devpro {__version__} → {copy_dir}")
+    if not re_entry:
+        # A re-entry run passes over the copy, so neither sentence about it prints: each names the copy's
+        # destination, one of the two passed-over paths.
+        if replaced_version is None:
+            print(f"devpro {__version__} installed → {copy_dir}")
+        else:
+            print(f"devpro {replaced_version} replaced by devpro {__version__} → {copy_dir}")
     if retired_package_found:
         print(f"removed {retired_package}")
     for path in retired_resources:
