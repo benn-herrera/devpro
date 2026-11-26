@@ -18,8 +18,17 @@ file as `P1` leaves it. `P3` shares no file with the others. The landing commit 
 | P1 | landed: 2cae7fe4 | expert |
 | P3 | landed: f772d99d | mechanical |
 | P4 | landed: c9a54f38 | mechanical |
-| P5 | in progress | expert |
-| P6 | dispatchable | mechanical |
+| P5 | landed: 263f3101 | expert |
+| P6 | in progress | mechanical |
+| B1 | drafted | mechanical |
+| B2 | drafted | mechanical |
+| B3 | drafted | expert |
+| B4 | drafted | expert |
+| B5 | drafted | mechanical |
+| B6 | drafted | expert |
+| B7 | drafted | mechanical |
+| B8 | drafted | mechanical |
+| B9 | drafted | mechanical |
 
 ## P2 — The devpro settings file is TOML
 
@@ -263,8 +272,116 @@ Done-line: `just dev-check-links`, run once `ACTIVE_PLAN_REVIEW.md` is written.
 
 ## Post-plan burndown
 
+The items below are drafted from [ACTIVE_PLAN_REVIEW.md](ACTIVE_PLAN_REVIEW.md) — they cite its
+defect IDs, grouped by root cause; the review document is the finding of record. The gates have
+run on the review's HEAD except `just lint` (R2, red).
+
 ### P6 — Post-plan burndown drafting
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands: every finding enters as an
-item carrying its severity, the files and functions it names, and the guidance that closes it. This
-section holds nothing until then.
+Drafted from [ACTIVE_PLAN_REVIEW.md](ACTIVE_PLAN_REVIEW.md): the nine items below, each carrying
+its defect IDs, scope, tests, and one-commit close; one `devpro-prompt-engineer` usability review
+over the drafted items together, its revision applied, then each item's row set by its state.
+
+### B1 — Prune's venv guard guards the destination (R1)
+
+mechanical. Scope: `devpro/install.py` — `_is_stale_candidate` guards a file whose path runs
+through `<package destination>/.venv` for a known package destination, judged as
+`_clear_package_destination` judges its `VENV_DIR` entry (destination-relative, not
+surface-relative); `prune`'s and `_is_stale_candidate`'s docstrings stay true of the guard. Tests,
+in scope: `test_the_stale_list_keeps_a_venv_below_a_package_destination_and_a_safety_copy`
+(`tests/test_devpro_install.py:2176`) rewritten to assert the planted
+`skills/kbase/kb-tools/.venv/lib/ours.md` survives and the plain `ours.md` is the pruned contrast —
+the assertion that fails on the old index. The named defect: prune deletes a file the documents
+say never enters the stale list, and the test pins the deletion while claiming the preservation.
+Done-line: `just test devpro`, then `just lint`, run once at this package's end.
+
+### B2 — The profiler removal's residue goes (R2)
+
+mechanical. Scope: `devpro/profiler/stores.py` (`_json` off the import at :9, `_atomic_text` and
+its `import os` deleted), `devpro/profiler/hooks.py` (`hook_sources`, `stale_hook`,
+`devpro_command` deleted), `tests/test_devpro_profiler.py` (the `OLD_HOOK_COMMANDS` and
+`TRACE_STORES` imports off, the `stale_hook` docstring mention at :661 with them),
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-stand-in-models-the-api-s-real-semantics.md`
+(the doctor example re-anchored to a live stand-in — the harnesses' literal wrapper paths, per the
+architect's guidance). The named defect: `just lint` is red at HEAD and dead code speaks of
+removed verbs. Done-line: `just lint`, then `just test devpro`, run once at this package's end.
+
+### B3 — The TOML reader refuses what it silently ignores (R3)
+
+expert. Scope: `devpro/context.py` — `_settings_values` refuses a non-string `install`/`components`
+naming the table, the key and the value's type (the refusal's wording drops the model-map mention
+from "a harness's settings", N2); a bare top-level key folds into the unknown-table refusal so
+`_table_names`' docstring turns true; validation and reading base on the one top-level key space
+(`_harness_of`'s dotted handling folds into the parent's legal-key check); the `NEWLINE` constant
+folds into its one call site as the separator argument (N1). Tests, in scope: non-string
+`components = ["kbase"]` and `install = true`, the quoted `["claude.model-map"]` top-level key, the
+bare top-level key, and the comma-in-glob case `"*" = "a,b"` rendering `a,b` (N5). Done-line:
+`just test devpro`, then `just lint`, run once at this package's end.
+
+### B4 — One account of what filters an install (R4)
+
+expert. The design rules the choice R4 left open — the accepted design's own statements
+(`renders-and-copies`: "the package data `pyproject.toml` declares is the only thing a copy can
+find"; the CONVENTIONS leaf: "the built package is the one filter") name the wheel as the filter,
+so the SPEC's enumerated exclusion sentence retires for what the design already states and the
+code does. Scope: `PROJECT_DOCS/SPEC/deployed-surfaces/install-destination.md:73-77` — the
+exclusion sentence replaced by the design's statement, with the checkout path's account carried
+(where the design's `surfaces-and-layout` pair leaves it); `renders-and-copies.md:29-33` and the
+CONVENTIONS leaf retexted so all three name the one filter and the checkout path's staging;
+`package_copies`' docstring with them; `tests/test_devpro_install.py:581` and `:604` retexted —
+their genuine subject, `__pycache__` never staging, stays pinned by
+`test_neither_staging_path_copies_bytecode`; `devtools/scripts/check-wheel.sh` — the
+`from-checkout` side renamed to what it stages from (N2), and one check over the wheel's listing
+for the project-document file names the build must not carry (N1). Done-line: `just test devpro`,
+then `just test wheel`, then `just dev-check-links`, run once at this package's end.
+
+### B5 — The upgrade walks name the settings rename (R5)
+
+mechanical. Scope: `README.md`'s *Updating* — one sentence beside the store-rename paragraph: the
+settings file is now `~/.config/devpro/devpro.toml`, a 0.17.x `devpro.cfg` is not read, and
+carrying it over is a move-and-convert; `devpro/definitions/skills/guide.py`'s *Updating* and the
+settings bullet — the same sentence; `devpro/context.py` — where the default `devpro.toml` is
+absent and a default `devpro.cfg` stands, one `report_left_alone`-shape line naming the old file
+as not read; `ROADMAP.md:258` — `devpro.cfg` becomes `devpro.toml`. Test, in scope: the
+not-read line, pinned to the named defect (an upgrader's config silently stops applying).
+Done-line: `just test devpro`, then `just dev-check-links`, run once at this package's end.
+
+### B6 — The agents sentence holds at both install levels (R6)
+
+expert. Scope: `devpro/harnesses/claude.py` — the sentence reworded to hold under a project
+install and a user-level one alike ("The plugin's agents files sit in its `agents/` directory,
+`../../agents/` from this file."), the comment's import-path reasoning kept only where it holds;
+`devpro/definitions/skills/development.py` with it; `tests/test_devpro.py:1119-1130` — the
+literal dropped, the assertion read from `CLAUDE.agents_path`, and the user-level render pinned
+the way the project render is; `PROJECT_DOCS/ARCHITECTURE/rendering/harnesses-and-families.md:17-18`
+and `placeholders.md`'s member enumeration — the same wording and the seventh member named (W4's
+count rides here). The named defect: the sentence points a session at a directory that need not
+exist, and its test pins the sentence to itself. The derived-value design (a `PluginText` member
+filled as `PROJECT_WRAPPER` is) is its own future design, not this item. Done-line: `just test
+devpro`, then `just dev-check-links`, run once at this package's end.
+
+### B7 — The profiler skill's No-traces branch states cause, remedy and effect (R7)
+
+mechanical. Scope: `devpro/definitions/skills/profiler.py` — the branch retexted to the
+prompt-engineer's wording, split cause from remedy, with opencode's install remedy named and
+`init`'s whole effect (hook registration, the store rename, the git-visible writes) stated where
+the sentence names it; "so an opencode session needs it not" becomes "so an opencode session does
+not need it" (N7). Done-line: `just test devpro`, run once at this package's end.
+
+### B8 — The section→table sweep finishes (R8)
+
+mechanical. Scope: `PROJECT_DOCS/SPEC/deployed-surfaces/install-destination.md` — "table" at the
+four sites, the `:107` report re-quoted as the code prints it;
+`PROJECT_DOCS/SPEC/deployed-surfaces/plugins.md:14`; `tests/test_devpro.py` — the three test
+names and the `section` parametrize variable (:248, :257, :270) renamed to the behavior's term;
+`PROJECT_DOCS/ARCHITECTURE/install/installing-this-repository.md:9` — the unwrapped paragraph
+split before "opencode and mage" and re-wrapped to the file's measure. Done-line: `just
+dev-check-links`, then `just test devpro`, run once at this package's end.
+
+### B9 — The guide page's settings literals are pinned (R9)
+
+mechanical. Scope: `tests/test_devpro.py` — a test beside
+`test_the_installing_reference_names_every_install_setting` asserting, for every harness, that the
+rendered installation reference names `~/{context.SETTINGS_FILE}` and
+`[<harness>.{context.MODEL_MAP_TABLE}]`. Done-line: `just test devpro`, run once at this
+package's end.
