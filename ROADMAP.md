@@ -30,6 +30,27 @@ event's guarantee, delivery's is not. Foreground calls, which no child session c
 hook pair. Under the claude harness the same dispatch's Task-tool duration already covers the
 subagent's run, so the fix is also what makes the two harnesses' records compare.
 
+### undice demands a split level the input tree already determines
+
+undice takes `--split-level <level>`, and the level feeds exactly one thing: the depth of the
+self-check's re-plan — the re-dice of the restored monolith the check compares the tree against.
+Everything else undice does — the walk, the Contents cut, the ladder restore — is driven by the
+tree's own geometry, and the restored monolith is identical whatever level is passed. The level is
+a fact about the input tree, and the self-check is the empirical test for it; asking the caller to
+state it is a UX defect that fails a valid tree. Measured: `devpro undice PROJECT_DOCS/ARCHITECTURE
+<out>` at the default level 4 exits 1 — `serving.md would be re-diced as serving/index.md` for the
+three harness-profiler leaves whose `####` sub-sections stand inline — while the same run with
+`--split-level 3` exits 0 (`reassemble ok: 1754 lines`, `links checked: 68, dead: 0`):
+ARCHITECTURE is a clean level-3 product, and the parameter was the only fault.
+
+The fix: undice infers the level — plan the restored monolith at each candidate level (4, 3, 2) and
+pass when one reproduces the tree, reporting faults only where none does. No false-pass surface is
+added: a tree maimed after dicing passes today too when the caller happens to pass the maimed
+geometry's level, and detecting content loss is not the self-check's power in any form. The option
+leaves undice's surface; `dice` keeps it, where the level is an authoring choice. The SPEC rows move
+with it: `undice.md`'s `<level>` references and the shared-behaviors option line, which names both
+verbs today.
+
 ## Features
 
 ### add installed agents directory to claude development skill
