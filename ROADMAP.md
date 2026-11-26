@@ -30,28 +30,21 @@ event's guarantee, delivery's is not. Foreground calls, which no child session c
 hook pair. Under the claude harness the same dispatch's Task-tool duration already covers the
 subagent's run, so the fix is also what makes the two harnesses' records compare.
 
-### undice demands a split level the input tree already determines
-
-undice takes `--split-level <level>`, and the level feeds exactly one thing: the depth of the
-self-check's re-plan — the re-dice of the restored monolith the check compares the tree against.
-Everything else undice does — the walk, the Contents cut, the ladder restore — is driven by the
-tree's own geometry, and the restored monolith is identical whatever level is passed. The level is
-a fact about the input tree, and the self-check is the empirical test for it; asking the caller to
-state it is a UX defect that fails a valid tree. Measured: `devpro undice PROJECT_DOCS/ARCHITECTURE
-<out>` at the default level 4 exits 1 — `serving.md would be re-diced as serving/index.md` for the
-three harness-profiler leaves whose `####` sub-sections stand inline — while the same run with
-`--split-level 3` exits 0 (`reassemble ok: 1754 lines`, `links checked: 68, dead: 0`):
-ARCHITECTURE is a clean level-3 product, and the parameter was the only fault.
-
-The fix: undice infers the level — plan the restored monolith at each candidate level (4, 3, 2) and
-pass when one reproduces the tree, reporting faults only where none does. No false-pass surface is
-added: a tree maimed after dicing passes today too when the caller happens to pass the maimed
-geometry's level, and detecting content loss is not the self-check's power in any form. The option
-leaves undice's surface; `dice` keeps it, where the level is an authoring choice. The SPEC rows move
-with it: `undice.md`'s `<level>` references and the shared-behaviors option line, which names both
-verbs today.
-
 ## Features
+
+### A minimum-specificity rule for the process's records
+
+The recurring failure: a record carries specificity beyond what its reader needs — a measured
+second, a line number, a version number of the moment — the fact it restates moves, the record
+rots out of agreement with the project, and every later reader pays to reconcile it, with the stale
+specificity distracting indefinitely after. The rule the process should carry: a record states the
+minimum specificity needed to convey the information that lets the work carry forward. A number,
+path or name belongs in a record only where its reader needs it to act and nothing more durable
+states it; where a measurement matters, the record names the probe that produced it and the
+measurement lives with the probe, dated; specificity whose only reader is the moment that wrote it
+does not get to keep living. Lands in the development skill's definition
+(`devpro/definitions/skills/development.py`), so every project's install carries it, and applies to
+the process's own artifacts: plans, designs, reviews, tickets, briefs.
 
 ### add installed agents directory to claude development skill
 
@@ -258,6 +251,12 @@ value is false (again, hard value check)
 
 These were one-off tools used while getting the profiler working and was never intended to persist
 as user-facing code we drag behind us and test forever.
+
+The footprint when taken up: the verbs and their dispatch from the profiler CLI, `doctor`'s
+diagnostic and `repair_child_ids` from the code, the usage text that names them, the seven tests
+that pin them, every harness-profiler leaf and section that records them, the verb list in the
+repository's layout, and the shipped `references/installing.md` that tells an operator to run
+`profiler doctor` through the wrapper. The test pass invests nothing in those tests meanwhile.
 
 ### Git Flow light: publish the rework history
 

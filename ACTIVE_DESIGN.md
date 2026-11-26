@@ -1,69 +1,125 @@
-# ACTIVE DESIGN
+# The test suite earns its keep
 
-## Drafts
+The repository's test run carries only weight that earns its place, and its records state no more
+than carries forward. The default run targets 30 seconds. The screenshot suite — six end-to-end
+tests of the shipped screenshot tool, two-thirds of the current run's wall time — keeps its
+existence and leaves the default run under a `slow` marker, for a test that earns its cost but not
+its place in the default run. Every test whose setup, call and teardown exceed 100ms earns its
+place or is rewritten, merged, retired or marked `slow`. A test that is a checksum — it fails on a
+change outside its subject, asserting text rather than behavior — is removed. A test is commissioned
+only with the defect it dies on, and a test that fails on behavior the work does not state it
+changes enters the active plan as an interrupt, its verdicts — *axe*, *isolate*, *acquit* — defined
+in a CONVENTIONS leaf this design's plan writes; a project convention, not the shipped process's
+law. The opencode pin has one home: the resources' headers drop the version `package.json` already
+holds, and the test that guarded that duplication retires with it. The pass does not edit the
+install suite's tests: installation is the project's most fraught operation. The profiler's
+`doctor` and `repair` tests get no pass work: their operations' retirement is coming work, ticketed
+on the roadmap as *Eliminate profiler `repair` and `doctor`* — this design invests nothing there.
+For whom: the operator whose gate this run is, and the consumers who read what ships.
 
-### Every test over 100ms justifies its existence
+The preceding is a summary of the detailed design below. Summaries are unavoidably lossy. The summary text is not to be consistency checked. The design is authoritative.
 
-The suite's full run is ~57-60s for ~1,700 tests, and the weight has accumulated unexamined. A
-pass where every test whose setup+call+teardown exceeds 100ms justifies its existence, one of four
-verdicts: *earns* (pins a real defect no cheaper test pins, or exercises a real integration no
-fixture can stand in for), *cheapens* (rewritten to a fixture so it drops under threshold),
-*merges* (duplicate coverage with a sibling), or *goes*. Open for the design: whether a `slow`
-marker (the `cold_read` pattern) is a third way for tests that earn their cost but not their place
-in the default run; any target for total full-run wall time. First probe, already in
-`.devpro-temp/weight-durations.txt`: pytest `--durations=100` over the full default run.
+## ARCHITECTURE delta
 
-### Tests exist only with a defect they die on
+### [repo-layout](PROJECT_DOCS/ARCHITECTURE/repo-layout.md)
 
-A test protects only where a defect exists that it dies on while the source reads correct to its
-author. It must assert behavior, not text.
+**As it stands:**
 
-The pin test — a source literal restated in the test and compared back to the source, an exact
-log output check, a polyglot 'is this doing all the things' check against an multi-property 
-artifact — is a coverage-mandate fossil: built to satisfy a 100%-coverage metric, not to find a
-defect. It is shaped like a test while doing the metric's job. Human projects mass-produced it, the 
-training data carries it, and agents reproduce it however often a rule forbids it; prohibition alone
-has had modest effect against a prior fed by ten thousand coverage-gaming suites. The same holds for
-a change-detector that knows it is one, a hash against a literal. Where detecting change is
-load-bearing — generated files, frozen contracts — the mechanism is the regeneration check or an
-integration test over the behavior. Coverage that unit tests cannot reasonably reach belongs to the
-integration test, never to a pin.
+```
+  tests/                the devtools test suite — dupe_sweep (`test_dupe_sweep` and its import-structure test), clause_join_sites, render_diff and screenshot — run as the `dupe_sweep` test surface (`just test dupe_sweep`)
+tests/                  the root test suite, the `devpro` package's tests and the repository-wide checks, run as the `devpro` test surface (`just test devpro`) with the `cold_read` marker excluded by default — the cold-read suite's subprocess cases run as the `cold-read` surface (`just test cold-read`) — never installed; the double-delivery check among the repository-wide checks compares sentences
+```
 
-The reason this category of test is an antipattern and anathema - it produces pure friction for
-no benefit. It is a suit of armor with fixed joints that requires a plasma cutter and welder
-for every change of pose.
+**Becomes:**
 
-Found instances. Two pin the claude family's model assignments, both in `tests/test_devpro.py`:
-`test_each_family_pins_the_member_of_every_category` asserts the category map equals a hand-copied
-dict of itself; `test_claude_frontmatter_holds_the_field_order_and_spelling`, whose subject is
-field order and spelling, carries `model: opus` in its expected tuple. Both photograph owner
-tuning: `829f7e7` changed one model entry and the gate ran red until the pins followed. The third
-pins presentation text: `tests/test_devpro_profiler.py`'s index test asserts the whole
-`table { … }` declaration, so a layout change the presentation layer invites — P3's column
-widths — cannot land without either shaping the CSS around the pin or editing it.
+```
+  tests/                the devtools test suite — dupe_sweep (`test_dupe_sweep` and its import-structure test), clause_join_sites, render_diff and screenshot — run as the `dupe_sweep` test surface (`just test dupe_sweep`), its screenshot cases marked `slow`, run as the `slow` surface (`just test slow`)
+tests/                  the root test suite, the `devpro` package's tests and the repository-wide checks, run as the `devpro` test surface (`just test devpro`) with the `cold_read` and `slow` markers excluded by default — the cold-read suite's subprocess cases run as the `cold-read` surface (`just test cold-read`) — never installed; the double-delivery check among the repository-wide checks compares sentences
+```
 
-Three parts:
+**As it stands:**
 
-1. **Prune the instances.** Keep the form asserts that are contract — order, spelling, quoting,
-   required fields. Assert the `model:` line is present, not its value. Rework or retire the
-   members mirror.
-2. **Commission tests.** Wherever a test can be born, not only in plan packages, it exists only
-   with its defect named and the run that fails under that defect shown — the
-   `clauses.TEST_PRECONDITION` shape.
-3. **Triage a test that fails on unstated behavior, at once.** The work does not state it changes
-   this behavior, yet the test fails on it: the test enters the active plan immediately as an
-   interrupt — its own row, closed by one commit — and the package that tripped it does not
-   proceed until the row closes. Three verdicts: *axe* (the test checks nothing); *isolate* (it
-   checks something, too sensitively — refactor it to depend only on its own subject); *acquit*
-   (it checks something real and the work broke it — the work is the suspect *or* it was an unavoidable
-   side-effect of the required change and the test needs legitimate rework). A report to the owner
-   is not the mechanism; the updated plan is.
+```
+The package's modules depend one way: `kanban/` imports `doccheck/` and `dicing/`,
+`doccheck/` imports `dicing/`, `profiler/` reads `kanban/`'s stylesheet as package data,
+`dashboard/` imports the panels it serves, and none of them depends on a module that depends on it.
+```
 
-### Change devpro config format
+**Becomes:**
 
-It's currently .cfg but .toml allows for nesting (which we are faking with <harness>-model-map group)
-The upgrade to python 3.11 makes toml available without a dependency.
+```
+The suite earns its keep: a test exists only where a defect exists that it dies on while the source
+reads correct to its author, and it asserts behavior, not text — a source literal restated in the
+test and compared back, a module's own contents mirrored against a hand copy, and a hash or exact
+output compared against a literal is a checksum: it fails on a change outside its subject, not on a
+defect; where detecting change is load-bearing, the mechanism is the regeneration check or the
+integration test over the behavior. A test is commissioned only with the run that fails under its
+defect, shown. A test whose setup, call and teardown exceed 100ms justifies its existence — it pins
+a real defect no cheaper test pins, or exercises a real integration no fixture can stand in for —
+or loses the weight: rewritten to a fixture, merged into a sibling, retired, or marked `slow`, the
+marker for a test that earns its cost but not its place in the default run; every default run
+excludes it, and `just test slow` runs the marked tests. The default run targets 30 seconds.
 
-Ruled: hard changeover, no conversion path — no legacy conversion and no migration code. The
-config file's only current user is the owner and it is not yet public, so nothing depends on the
-old form.
+The package's modules depend one way: `kanban/` imports `doccheck/` and `dicing/`,
+`doccheck/` imports `dicing/`, `profiler/` reads `kanban/`'s stylesheet as package data,
+`dashboard/` imports the panels it serves, and none of them depends on a module that depends on it.
+```
+
+### [recipes](PROJECT_DOCS/ARCHITECTURE/recipes.md)
+
+**As it stands:**
+
+```
+against the host's published declarations — `@opencode/plugin`'s own types are the authority, no
+devpro-owned stand-in for a published package shadows them. The declarations reach the check as a
+dev-time dependency installed before `tsc` runs — a root `package.json` holds it — and the check
+```
+
+**Becomes:**
+
+```
+against the host's published declarations — `@opencode/plugin`'s own types are the authority, no
+devpro-owned stand-in for a published package shadows them. The declarations reach the check as a
+dev-time dependency installed before `tsc` runs — a root `package.json` holds it, and the pin's
+version has no second home: a resource's header names the floor its header already names, never the
+pin of the moment — and the check
+```
+
+## Code delta
+
+### [repo-layout](PROJECT_DOCS/ARCHITECTURE/repo-layout.md)
+
+Fixes, the code against the leaf as amended; the law the ARCHITECTURE delta adds stands in the
+paragraph ahead of the leaf's module-dependency paragraph.
+
+- The members mirror (`test_each_family_pins_the_member_of_every_category`) compares the families'
+  category maps against hand copies of themselves — checksums over owner tuning, failing on a
+  change outside their subject — against the leaf's law. The test is retired; the structural claim
+  under it stays as an assertion over the map's keys: every category slot filled, no other.
+- The two frontmatter tests (`test_claude_frontmatter_holds_the_field_order_and_spelling`,
+  `test_an_unrestricted_agent_frontmatter_matches_the_pre_1_0_render`) keep the contract they
+  assert — field order, spelling, presence — and drop the tuned values they carry beside it
+  (`model:`'s value, the color hexes), which fail on owner tuning outside their subject.
+- The stylesheet-literal assertion in
+  `tests/test_devpro_profiler.py::test_the_served_index_links_the_shared_layers_own_text` is
+  removed: the neighboring assertions already carry the structural invariant it gestures at, so it
+  is redundant as well as a checksum.
+- The headers-versus-lockfile version test,
+  `tests/test_devpro_install.py::test_the_opencode_resources_name_the_host_version_the_check_is_pinned_to`,
+  is retired: with the headers no longer restating the pin, the seam it guarded no longer exists.
+- The six screenshot tests in `devtools/tests/test_screenshot.py` take the `slow` marker,
+  registered in `pyproject.toml` beside `cold_read`; `devtools/scripts/test.sh` excludes the marker
+  from the `devpro` and `dupe_sweep` surfaces and the no-surface run, and its `slow` surface runs
+  the marked tests. No other test takes the marker in this design's work.
+
+The 100ms threshold and the 30-second target are planning-time measurements, taken from the test
+runner's durations report — not a check the pass runs.
+
+### [recipes](PROJECT_DOCS/ARCHITECTURE/recipes.md)
+
+Fix, the code against the leaf as amended: the three opencode resources' headers drop the version
+`package.json` pins from their header comments, keeping the floor its header already names and the
+prose — the version numbers inside the prose are behavior observations and stay. The records that
+name the header-named version move with the change: the lint recipe's comment stating the lockfile
+is pinned to the version the resources name, and the CONVENTIONS leaf stating the check is pinned
+to the version the headers name.
