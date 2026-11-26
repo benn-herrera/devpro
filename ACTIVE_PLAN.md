@@ -75,7 +75,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | B1 | landed | expert | `devpro:prompt-engineer` | restore the dicing-and-checks index preamble and the `--split-level` contract |
 | B2 | landed | expert | `devpro:prompt-engineer` | the anchor retarget class: every link lands on the leaf whose text it names |
 | B3 | landed | expert | `devpro:python-coder` | the tool: one classifier, honest faults, no dead code |
-| B4 | dispatchable | expert | `devpro:architect` | single-home the model rules, and the corpus's missing shapes — first act: R2's decision |
+| B4 | in progress: R2's decision under way with the architect | expert | `devpro:architect` → writes re-homed to `devpro:prompt-engineer` on the decision's return | single-home the model rules, and the corpus's missing shapes — first act: R2's decision |
 | B5 | dispatchable | expert | `devpro:prompt-engineer` | the contract gaps the run named |
 
 ## P1 — the dicer writes every section's heading ladder re-based to an H1 top
