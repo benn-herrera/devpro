@@ -1170,8 +1170,9 @@ def test_a_paragraph_holding_an_optional_harness_text_the_harness_supplies_nothi
 def test_the_claude_development_skill_names_the_plugins_agents_directory(discovered: Discovered) -> None:
     """The claude session seat reading the development skill has no other statement of where the plugin's
     agent files live, so a dispatch from the skill could name the directory only by guessing; the skill's
-    body carries the sentence naming it, and claude supplies it alone. Opencode and mage give the field
-    nothing, so the paragraph drops whole there, leaving no empty one behind."""
+    body carries the sentence naming it, under a project install and for the user alike, and claude
+    supplies it alone. Opencode and mage give the field nothing, so the paragraph drops whole there,
+    leaving no empty one behind."""
     [development] = [defn for _, defn in discovered if defn.name == "development"]
     sentence = CLAUDE.agents_path
     under_claude = filled_body(
@@ -1181,7 +1182,8 @@ def test_the_claude_development_skill_names_the_plugins_agents_directory(discove
         development, Render(harness=OPENCODE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
     )
     assert OPENCODE.agents_path == ""
-    assert ".claude/skills/devpro/agents/" in under_claude
+    assert "`.claude/skills/devpro/agents/`" in sentence
+    assert "`~/.claude/skills/devpro/agents/`" in sentence
     assert f"\n\n{sentence}\n\n" in under_claude
     assert sentence not in under_opencode
     assert "\n\n\n" not in under_opencode

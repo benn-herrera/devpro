@@ -173,14 +173,17 @@ as it stands; the repository's own installs stage from the built package the bui
 
 **As it stands:**
 ```
-the six
+the seven
 harness-specific paragraphs, typed `OptionalHarnessText` — `recipe_rule`, `kbase_project_rule`
 (supplied under mage alone, whose server is started `--project-dir-required`), `reload_rule`
 (supplied under claude alone: the sentence a claude install prints and the `guide` skill's
 installation reference carries), `tools_reload_rule` (supplied under claude alone: the sentence the
 `kbase` skill entry file and installation reference carry),
 `side_by_side_rule` (supplied under opencode alone, in its own
-paragraph of that reference) and `cold_read_rule` (supplied under every harness: claude and opencode share
+paragraph of that reference), `agents_path` (supplied under claude alone: the sentence the
+`development` skill's body carries naming the plugin's agents directory, `.claude/skills/devpro/agents/`)
+and
+`cold_read_rule` (supplied under every harness: claude and opencode share
 `harness.COLD_READ_SCRIPT_RULE`, which runs `cold-read.sh`, opencode adding that the script is not yet
 reliable there, and mage, whose copy of the script refuses to run, says to start the reader by
 hand);
@@ -195,8 +198,8 @@ installation reference carries), `tools_reload_rule` (supplied under claude alon
 `kbase` skill entry file and installation reference carry),
 `side_by_side_rule` (supplied under opencode alone, in its own
 paragraph of that reference), `agents_path` (supplied under claude alone: the sentence the
-`development` skill's body carries naming the plugin's agents directory,
-`.claude/skills/devpro/agents/`) and
+`development` skill's body carries naming the plugin's agents directory, `.claude/skills/devpro/agents/`
+under a project install and `~/.claude/skills/devpro/agents/` for a user-level one) and
 `cold_read_rule` (supplied under every harness: claude and opencode share
 `harness.COLD_READ_SCRIPT_RULE`, which runs `cold-read.sh`, opencode adding that the script is not yet
 reliable there, and mage, whose copy of the script refuses to run, says to start the reader by

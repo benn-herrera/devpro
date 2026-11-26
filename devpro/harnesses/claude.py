@@ -34,8 +34,12 @@ _TOOLS_RELOAD_RULE = (
 # The development skill's dispatches read the plugin's agent files from this directory, and the claude
 # session seat has no other statement of where they live, so the skill's body names it there. A literal:
 # the profiler's modules stay off the install's import path, so this path is not read from
-# `devpro/profiler/hooks.py`, as `INSTALL_WRAPPER` below is not.
-_AGENTS_PATH_RULE = "The plugin's agents files sit in `.claude/skills/devpro/agents/`."
+# `devpro/profiler/hooks.py`, as `INSTALL_WRAPPER` below is not. A user-level install is named by its
+# absolute path, not one relative to a location the session is never told.
+_AGENTS_PATH_RULE = (
+    "The plugin's agents files sit in `.claude/skills/devpro/agents/` in a project install, or "
+    "`~/.claude/skills/devpro/agents/` when the set is installed for the user."
+)
 
 
 def _mcp_entry(*, command: str) -> dict[str, str | list[str]]:
