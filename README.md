@@ -227,8 +227,7 @@ A project that recorded sessions before this release keeps them: the profiler's 
 `claude-profiler/` and `opencode-profiler/` under `.devpro-temp/`, and the install renames each to
 its `.profiler-claude/` or `.profiler-opencode/` in place, printing `renamed <old> → <new>`. An old
 store stands only where the new name already holds a store too, and the install names it instead of
-moving it: the two are never merged, and merging or deleting the old one is yours. `devpro profiler
-doctor` names such a store with the move to make.
+moving it: the two are never merged, and merging or deleting the old one is yours.
 
 Under Mage, an install from before the kbase component wrote a second plugin directory,
 `~/Mage/Skills/kbase/`, holding its own duplicate skills, agents file and `.mcp.json`. No install

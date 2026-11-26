@@ -106,10 +106,6 @@ Where a project's `.devpro-temp/` holds a profiler store from before the `.profi
 `renamed <old> → <new>`; where the new name already stands it leaves the old store alone and says so,
 never merging the two, and merging or deleting it is the operator's.
 
-{clauses.WRAPPER}
-
-`DP profiler doctor` names a store the rename left behind, with the move to make.
-
 ## Inspecting
 
 `devpro --version` prints the version of the devpro that installs. `devpro install … --dry-run`, with

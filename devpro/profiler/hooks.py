@@ -1,18 +1,17 @@
-"""The committed hook's wiring: the command string, `init`, and `doctor`.
+"""The committed hook's wiring: the command string and `init`.
 
 `init` writes the profiler skill into a repository's `.claude/` and registers the capture on every
-event it records, for a session that loads no plugin's hooks. `doctor` says whether capture works in
-a repository, and why not. Both apply the stores' rename: an install and an `init` move the
-`claude-profiler` and `opencode-profiler` stores under the project's `.devpro-temp/` to their
-`.profiler-*` names.
+event it records, for a session that loads no plugin's hooks. An install and an `init` both apply the
+stores' rename: they move the `claude-profiler` and `opencode-profiler` stores under the project's
+`.devpro-temp/` to their `.profiler-*` names.
 
 Every command here names a wrapper its writer knows — the committed hook the project's, the plugin's
 the installation's — and none resolves one.
 
 The renderer is imported where it is used, in `profiler_skill_text`: the hook-run capture reaches this
-module for `doctor` and `init`, and the install for `rename_stores` — from `stores`, which imports the
-store facts alone — and none of those reads a rendered definition. The package's root is imported at
-module scope from `install_base`, which imports nothing of the renderer's.
+module for `init`, and the install for `rename_stores` — from `stores`, which imports the store facts
+alone — and none of those reads a rendered definition. The package's root is imported at module scope
+from `install_base`, which imports nothing of the renderer's.
 """
 
 import json
@@ -21,16 +20,13 @@ from pathlib import Path
 
 from devpro.install_base import PACKAGE_ROOT
 
-from .pages import UsageError, list_sessions, stamp
-from .stores import OLD_STORE_SUFFIX, old_store_name, rename_stores
+from .pages import UsageError
+from .stores import rename_stores
 from .values import (
     CAPTURED_EVENTS,
     PROFILER_SKILL,
-    TRACE_DIR,
-    TRACE_STORES,
     _json,
     git_root,
-    project_dir,
     read_json,
     read_text,
 )
@@ -53,8 +49,6 @@ INSTALL_WRAPPER = ".claude/skills/devpro/tools/devpro.sh"
 USAGE = """Usage:
   devpro profiler tree [session-id-prefix] [--branch <name>] [--verbose] [--format text|html]
   devpro profiler init claude
-  devpro profiler doctor
-  devpro profiler repair  (once, after the capture reads the host's current result shape)
   devpro profiler capture <harness>  (run by the hook, not by hand)"""
 
 
@@ -232,47 +226,3 @@ def stale_hook(repo: Path) -> str | None:
         f"runs another command than {HOOK_COMMAND}" if replaced else "",
     ]
     return " and ".join(gap for gap in gaps if gap) or None
-
-
-def doctor(cwd: Path | str) -> str:
-    """Whether capture works here, and why not: the `devpro` command that runs it, the store and the
-    stores `tree` reads, the hook's registration, any store from before the rename, a stale committed
-    hook, and the newest claude session."""
-    directory = project_dir(cwd)
-    # doctor is claude-facing: every other line reads claude's hook and this directory's claude sessions,
-    # so `newest` is claude's store alone, named among the stores the `traces` line lists.
-    claude_store = Path(directory) / TRACE_DIR
-    claude_sessions = [session for session in list_sessions(directory) if session["path"].parent == claude_store]
-    newest = max((session["last"] for session in claude_sessions), default=None)
-    stores = Path(directory) / TRACE_DIR.parent
-    reads = ", ".join(str(stores / name) for name in TRACE_STORES)
-    repo = git_root(cwd) or Path(cwd)
-    sources = hook_sources(repo, Path.home())
-    stale = stale_hook(repo)
-    installed = (
-        ", ".join(sources) if sources else "not installed (install the plugin, or run devpro profiler init claude)"
-    )
-    lines = [
-        f"devpro:  {devpro_command()}",
-        f"traces:  tree reads {reads}",
-        f"hook:    {installed}",
-    ]
-    # A store from before the rename is one `tree` cannot see, and no devpro command merges two stores:
-    # where its new name stands the operator merges or deletes it, and elsewhere the `mv` or the `init`
-    # renames it. The `mv` is the remedy wherever an install cannot run — this repository's own install
-    # refuses its root, the package's source, so the straggler here stands until it is moved by hand.
-    for store in sorted((Path(directory) / TRACE_DIR.parent).glob(f"*{OLD_STORE_SUFFIX}")):
-        if store.is_dir() and (new := old_store_name(store.name)) is not None:
-            target = Path(directory) / TRACE_DIR.parent / new
-            remedy = (
-                f"{target} already exists, and devpro never merges two stores: merge or delete the old one "
-                f"yourself, by moving its files into {target} and removing this directory"
-                if target.exists()
-                else f"move it there yourself, mv {store} {target}, or run devpro profiler init claude, which renames it"
-            )
-            lines.append(f"old:     {store} is not a store tree reads; {remedy}")
-    lines += [
-        f"update:  the committed hook {stale}; run devpro profiler init claude again and commit" if stale else None,
-        f"newest:  {stamp(newest) if newest is not None else 'no calls recorded yet'}",
-    ]
-    return "\n".join(line for line in lines if line)

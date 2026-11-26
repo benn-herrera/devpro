@@ -25,18 +25,12 @@ that child's page.
 The stores stay flat — the child's id reaches no capture as a parent key, the hierarchy
 being what the parent's records state — and a dispatch that fails before creating a child, or whose
 result reports no child session, records none. A capture written before it read 2.4.1's shape carries
-the child's id only in its stored result text; *The repair* below fills it.
+the child's id only in its stored result text, and the pages group none of those dispatches.
 
 ## What is not recorded, and what a failure does
 
 The model's own `todowrite` notes are not recorded: they are not activity, so the store holds one
 record per tool call that did something. A capture that fails raises nothing out of the hook.
-
-## Init and doctor stay claude-facing
-
-`init` and `doctor` stay claude-facing: opencode has no committed-hook concept. Opencode's install
-copies the plugin's `profiler.ts` alone, no launcher and no hook entry beside it, and the store the
-plugin writes is read by `devpro profiler tree` — the wrapper's own subcommand.
 
 ## The line's limits and the torn line
 

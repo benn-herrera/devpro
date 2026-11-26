@@ -34,8 +34,8 @@ installed here: say so and stop.
 
 Under claude, where the hook is not installed and the session cannot install it, `bash PROFILER init claude`
 writes it into this repository's `.claude/` and prints the `git add` line to commit; run it only when
-the user asks for profiling there. `init` and `doctor` are claude's alone: opencode's plugin records
-every call itself, so an opencode session needs neither.
+the user asks for profiling there. `init` is claude's alone: opencode's plugin records
+every call itself, so an opencode session needs it not.
 
 {clauses.WRAPPER_PROFILER}
 
@@ -62,11 +62,9 @@ tool is in `PARENT_TOOLS` — the skills, agents and compactions — so a sessio
 prints the column header alone on the plain tree. An opencode session records no token counts,
 so say so where those columns are blank. Then the URL the dashboard printed. Do not paste the tree.
 
-Where the plain tree prints the column header alone, nothing was recorded: say so, and, under
-claude, run `bash PROFILER doctor`, report what it printed about the traces and the newest session, and that
-its plugin-record check cannot see the payload copy, and stop. Where `tree` instead exits 1 saying
-`No traces in …` on stderr, run `bash PROFILER doctor` before answering, under claude and under opencode
-alike, and report every `old:` line it prints — a store under the name from before the rename,
-which `tree` cannot read — where it prints none, say the repository holds no recording at all.""",
+Where the plain tree prints the column header alone, nothing was recorded: say so and stop. Where
+`tree` instead exits 1 with `No traces in …` on stderr, the repository holds no readable recording at
+all; under claude a store an older name left behind is the cause, and `bash PROFILER init claude`
+states the rename that remedy needs.""",
     ),
 )

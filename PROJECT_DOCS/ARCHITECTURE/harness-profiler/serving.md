@@ -66,8 +66,7 @@ machine form stands in the `<time>` elements' `datetime` attributes alone, and n
 moment's UTC; a
 page carries no moments where its script does not run, and the deco formats the moments the pages
 present and reads none of them. `tree`'s text reads
-its time column and its session stamps in the machine's local zone, through `values._local`, which
-doctor's `newest:` line reads too. The span is its own
+its time column and its session stamps in the machine's local zone, through `values._local`. The span is its own
 column, drawn from the feed's seconds in the same form the call tree's duration column takes, both
 from the one formatter (`devproFormat.dur`): a duration from zero up reads `0s` at zero, `217ms`
 below the second, `4.2s` with one decimal below ten seconds, `48s` below the minute, `18m 49s`

@@ -153,8 +153,8 @@ it into the page it renders, the template carrying no second copy — and the da
 reads the same source, so the served session page's legend comes from the frame and the served
 index carries none. The pages and the records
 stay local: reachable only from the
-machine that runs the server. Every presentation of a recorded moment — the pages, the index, the
-text tree and `profiler doctor`'s lines — reads in the reader's local time, and none shows UTC, a
+machine that runs the server. Every presentation of a recorded moment — the pages, the index and the
+text tree — reads in the reader's local time, and none shows UTC, a
 hover title included. UTC stays in what the records store and in markup no reader is shown, such
 as a `<time>` element's `datetime`. Six hook entries, one per
 event (`PostToolUse`, `PostToolUseFailure`, `PreCompact`, `PostCompact`, `SessionStart`,

@@ -81,8 +81,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
   under every harness. Its board section routes the board to the `docdicer` skill and names no
-  command and no recipe; `references/installing.md` runs `profiler doctor` through the wrapper
-  `clauses.WRAPPER` names; its install, update and
+  command and no recipe; its install, update and
   version commands name the `devpro` command on `PATH` (SPEC.md, Deployed Surfaces, Shipped files). The description names the uses SPEC.md, Guide and README lists, and
   says it is not for a change to the consuming project's own code. `SKILL.md` is a route, as the
   `development` skill's *Route* table is: one row per starting place SPEC.md, Guide and README

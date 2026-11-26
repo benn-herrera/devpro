@@ -15,7 +15,7 @@ launchers and files older inits left in the hook directory.
 
 The stores' rename is the last group's: an install and an `init` move each `*-profiler` store under
 `.devpro-temp/` to its `.profiler-*` name and name the move, and neither ever merges one store into
-another; `doctor` names an old-pattern store the reader cannot see.
+another.
 
 The package is imported from the repository root, which `just test` puts on PYTHONPATH. The tests run
 the wrapper the install writes — `tools/devpro.sh` beside this package's copy in the installed tree —
@@ -67,7 +67,6 @@ from devpro.profiler.pages import (
     stamp,
     store_directories,
 )
-from devpro.profiler.stores import repair_child_ids
 from devpro.profiler.values import CAPTURED_EVENTS, TRACE_STORES, _epoch_ms
 from tests.conftest import page_data
 from tests.fixtures import fixture_file
@@ -681,8 +680,7 @@ def test_init_clears_an_older_runs_launcher_and_files(tmp_path: Path, _wrapper: 
 def test_init_renames_a_committed_hook_written_under_a_launcher_name(tmp_path: Path, _wrapper: Path) -> None:
     """A repository whose committed hook spells a launcher name — the file `hp.sh` and the registered
     command running it: `init` removes the file and re-registers the command on the project's committed
-    wrapper, and `doctor` no longer reports the hook as stale. The consuming-project migration is the
-    `init`'s, run before the install refreshes."""
+    wrapper. The consuming-project migration is the `init`'s, run before the install refreshes."""
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
@@ -711,16 +709,12 @@ def test_init_renames_a_committed_hook_written_under_a_launcher_name(tmp_path: P
     settings_file.write_text(json.dumps(old_entry, indent=2) + "\n", encoding="utf-8")
 
     done = _profiler_init(_wrapper, project)
-    doctor = _run(_wrapper, "doctor", cwd=project)
 
     assert done.returncode == 0, done.stderr
     assert not hook_dir.exists()
     settings = settings_file.read_text(encoding="utf-8")
     assert ".claude/skills/devpro/tools/devpro.sh" in settings
     assert "harness-profiler" not in settings
-    assert doctor.returncode == 0, doctor.stderr
-    assert "update:" not in doctor.stdout
-    assert "committed hooks" in doctor.stdout
 
 
 @pytest.mark.parametrize("beside", [[], ["notes.md"]], ids=["alone", "beside-a-file"])
@@ -813,57 +807,6 @@ def test_init_renames_the_repositorys_old_pattern_stores(tmp_path: Path, _wrappe
     assert f"renamed {claude} → {stores / '.profiler-claude'}" in done.stdout
     assert f"renamed {opencode} → {stores / '.profiler-opencode'}" in done.stdout
     assert sorted(path.name for path in (stores / ".profiler-opencode").iterdir()) == ["s-opencode.jsonl"]
-
-
-def test_doctor_reports_a_committed_hook_that_differs_from_the_registered_one(tmp_path: Path) -> None:
-    """A committed hook this devpro's `init` wrote, its command then hand-edited to an older launcher's
-    — the shape a repository migrated from the retired launcher carries: `doctor` says the hook runs
-    another command than the wiring this devpro registers, which an `init` re-run replaces. A compare
-    reading nothing reports nothing, and the `update` line loses its one job."""
-    project = tmp_path / "project"
-    project.mkdir()
-    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    launcher = _installed_wrapper(tmp_path / "harness")
-    assert _profiler_init(launcher, project).returncode == 0
-    current = _run(launcher, "doctor", cwd=project)
-    assert current.returncode == 0, current.stderr
-    assert "update:" not in current.stdout
-
-    settings_file = project / ".claude" / "settings.json"
-    settings = json.loads(settings_file.read_text(encoding="utf-8"))
-    old = OLD_HOOK_COMMANDS[0]
-    for entries in settings["hooks"].values():
-        for entry in entries:
-            for hook in entry["hooks"]:
-                hook["command"] = old
-    settings_file.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
-
-    edited = _run(launcher, "doctor", cwd=project)
-
-    assert edited.returncode == 0, edited.stderr
-    assert "update:  the committed hook runs another command than " in edited.stdout
-
-
-def test_doctor_names_the_wrapper_this_tree_runs(tmp_path: Path) -> None:
-    """`clauses.TEST_PRECONDITION`. Doctor's `devpro:` line names one command — the tree that ran it,
-    `<python> -m devpro --from <its root>` — never a `devpro` waiting on PATH from another directory,
-    and the line is one. The defect the stand-in's rule guards: a line naming a devpro the tree does not
-    run, or a second line per launcher the repository held."""
-    project = tmp_path / "project"
-    project.mkdir()
-    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    on_path = tmp_path / "on-path"
-    on_path.mkdir()
-    foreign = on_path / "devpro"
-    foreign.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-    foreign.chmod(0o755)
-
-    reported = _run(_installed_wrapper(tmp_path / "harness"), "doctor", cwd=project, path=f"{on_path}:/usr/bin:/bin")
-
-    assert reported.returncode == 0, reported.stderr
-    [line] = [line for line in reported.stdout.splitlines() if line.startswith("devpro:")]
-    assert " -m devpro --from " in line, line
-    assert str(foreign) not in reported.stdout
 
 
 def _write_store(
@@ -1445,22 +1388,6 @@ def test_the_text_tree_draws_a_moment_in_the_machines_zone(kolkata: None) -> Non
     assert stamp(midnight) == "2026-01-01 05:30:00"
 
 
-def test_the_doctor_names_the_stores_the_readers_read(tmp_path: Path) -> None:
-    """Doctor's `traces:` line names each store the readers read — every name in `TRACE_STORES`, the
-    claude store's own among them, and no pattern a directory of another shape answers to. A line
-    naming a pattern the readers do not match sends the operator looking for a store under a copy's
-    name, which nothing reads."""
-    project = tmp_path / "project"
-    project.mkdir()
-    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-
-    reported = _run(_installed_wrapper(tmp_path / "harness"), "doctor", cwd=project)
-
-    assert reported.returncode == 0, reported.stderr
-    [line] = [line for line in reported.stdout.splitlines() if line.startswith("traces:")]
-    assert all(str(project / ".devpro-temp" / store) in line for store in TRACE_STORES), line
-
-
 def test_an_install_renames_an_old_pattern_store_and_a_second_install_touches_nothing(tmp_path: Path) -> None:
     """A project holding `.devpro-temp/claude-profiler/`: the install moves it to `.profiler-claude/`,
     contents and all, naming the rename in its report, and a second install reports the target up to
@@ -1508,137 +1435,6 @@ def test_an_install_skips_an_old_pattern_store_whose_new_name_already_stands(tmp
     assert f"left {old} in place" in installed.stdout
     assert sorted(path.name for path in old.iterdir()) == ["s-old.jsonl"]
     assert sorted(path.name for path in live.iterdir()) == ["s-new.jsonl"]
-
-
-def test_a_doctor_names_an_old_pattern_store_and_its_remedy(tmp_path: Path) -> None:
-    """A project whose only store is `.devpro-temp/claude-profiler/`: `doctor` names it as one `tree`
-    does not read, with the `mv` that moves it — the remedy where an install cannot run, this
-    repository's own among them — and `init`, which renames it where the repository takes a committed
-    hook. A store the reader cannot see reads as "no calls recorded yet", and the operator has no line
-    telling them why; a remedy naming only `install` names a command that will not run here."""
-    project = tmp_path / "project"
-    project.mkdir()
-    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    store = _write_store(project, "claude-profiler", "s-old", "2026-01-01T00:00:00.000Z", harness="claude")
-
-    reported = _run(_installed_wrapper(tmp_path / "harness"), "doctor", cwd=project)
-
-    assert reported.returncode == 0, reported.stderr
-    target = project / ".devpro-temp" / ".profiler-claude"
-    assert f"old:     {store} is not a store tree reads; move it there yourself, mv {store} {target}," in (
-        reported.stdout
-    )
-    assert "or run devpro profiler init claude, which renames it" in reported.stdout
-    assert "devpro install" not in reported.stdout
-    assert "no calls recorded yet" in reported.stdout
-
-
-def test_a_doctor_names_a_collided_store_as_the_operators_own_merge(tmp_path: Path) -> None:
-    """An old store standing where its `.profiler-*` name already exists: `doctor` names both and says
-    devpro never merges two stores, so the merge or deletion is the operator's. Sending them to a
-    command that refuses on the same collision is a remedy that cannot do what it says."""
-    project = tmp_path / "project"
-    project.mkdir()
-    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    old = _write_store(project, "claude-profiler", "s-old", "2026-01-01T00:00:00.000Z", harness="claude")
-    live = _write_store(project, ".profiler-claude", "s-new", "2026-01-02T00:00:00.000Z", harness="claude")
-
-    reported = _run(_installed_wrapper(tmp_path / "harness"), "doctor", cwd=project)
-
-    assert reported.returncode == 0, reported.stderr
-    assert f"old:     {old} is not a store tree reads; {live} already exists" in reported.stdout
-    assert "devpro never merges two stores: merge or delete the old one yourself" in reported.stdout
-    assert "profiler init claude and" not in reported.stdout
-
-
-def test_repair_fills_the_child_ids_a_capture_that_missed_2_4_1_left_null(tmp_path: Path) -> None:
-    """`devpro profiler repair`, through the launcher's `devpro`, over a store holding what a capture that
-    read the host's result for `output.sessionID` alone wrote: a dispatch whose result names the child
-    in 2.4.1's background notice, a failed dispatch that created no child, and a dispatch already tied
-    to its child. The repair fills the first and leaves the other two, reports the edge filled and the
-    record still null, and a second run fills nothing — the record it already filled, and the one that
-    names no child, stay as they stand."""
-    project = tmp_path / "project"
-    project.mkdir()
-    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    store = project / ".devpro-temp" / ".profiler-opencode"
-    store.mkdir(parents=True)
-    notice = "The subagent is working in the background (sessionID: ses_notice). You will receive a <background-result"
-    records = [
-        {"tool": "Agent", "name": "devpro-python-coder", "ok": True, "child_agent_id": None, "result": notice},
-        {"tool": "Agent", "name": "devpro-c-coder", "ok": False, "child_agent_id": None, "result": "Invalid arguments"},
-        {"tool": "Agent", "name": "devpro-rust-coder", "ok": True, "child_agent_id": "ses_right", "result": notice},
-        {"tool": "read", "name": "read", "ok": True},
-    ]
-    (store / "ses_parent.jsonl").write_text(
-        "".join(
-            json.dumps({"v": 2, "harness": "opencode", "session": "ses_parent", **record}) + "\n" for record in records
-        ),
-        encoding="utf-8",
-    )
-    launcher = _installed_wrapper(tmp_path / "harness")
-
-    repaired = _run(launcher, "repair", cwd=project)
-
-    assert repaired.returncode == 0, repaired.stderr
-    assert repaired.stdout.strip() == "repaired: 1 edges; null: 1 records (no child id)"
-    written = [json.loads(line) for line in (store / "ses_parent.jsonl").read_text(encoding="utf-8").splitlines()]
-    assert [record.get("child_agent_id") for record in written] == [
-        "ses_notice",
-        None,
-        "ses_right",
-        None,
-    ]
-
-    again = _run(launcher, "repair", cwd=project)
-
-    assert again.stdout.strip() == "repaired: 0 edges; null: 1 records (no child id)"
-
-
-def test_the_repair_counts_only_the_edges_it_writes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """`clauses.TEST_PRECONDITION`: a test a package adds is written for a named defect and the run
-    that fails under it before the change. The defect is the repair's count incremented before its
-    live-file guard: a store file a capture appends to while the repair reads it is left as it stands,
-    yet its would-be fill is reported as an edge repaired, against the verb's own docstring. The run
-    fails before the count moves, reading `repaired` 1 for a file nothing wrote.
-
-    The append is made by the read itself, between the read and the guard's second stat — the write a
-    live session makes, made deterministically. The file is then named as left, its one subagent
-    record still counts null, and no edge is counted repaired; the file holds the record plus the
-    append, the record's `child_agent_id` still absent."""
-    project = tmp_path / "project"
-    store = project / ".devpro-temp" / ".profiler-opencode"
-    store.mkdir(parents=True)
-    file = store / "ses_parent.jsonl"
-    notice = "The subagent is working in the background (sessionID: ses_notice). You will receive a <background-result"
-    record = {
-        "v": 2,
-        "harness": "opencode",
-        "session": "ses_parent",
-        "tool": "Agent",
-        "name": "devpro-python-coder",
-        "ok": True,
-        "child_agent_id": None,
-        "result": notice,
-    }
-    appended = {"v": 2, "harness": "opencode", "session": "ses_parent", "tool": "read", "name": "read", "ok": True}
-    original = json.dumps(record) + "\n"
-    file.write_text(original, encoding="utf-8")
-    real_read_text = Path.read_text
-
-    def read_while_the_capture_appends(self: Path, encoding: str | None = None, errors: str | None = None) -> str:
-        text = real_read_text(self, encoding=encoding, errors=errors)
-        if self == file:
-            with file.open("a", encoding="utf-8") as stream:
-                stream.write(json.dumps(appended) + "\n")
-        return text
-
-    monkeypatch.setattr(Path, "read_text", read_while_the_capture_appends)
-
-    repaired, null, left = repair_child_ids(project)
-
-    assert (repaired, null, left) == (0, 1, [file])
-    assert real_read_text(file, encoding="utf-8") == original + json.dumps(appended) + "\n"
 
 
 def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_standing(
