@@ -11,7 +11,7 @@ refused where no directory `kbase` exists: "install target 'kbase' is not an exi
 and a second positional is refused before anything is written. Every harness carries every
 definition of the plugin's set, the named components included.
 
-The devpro settings file's `[<harness>]` section carries `components` beside `install`: the CSV of
+The devpro settings file's `[<harness>]` table carries `components` beside `install`: the CSV of
 optional components that harness's install turns on. `--components` given is a hard override — it
 replaces the file's value, never adds to it — and `dev-render` takes components from its
 `--components` alone.

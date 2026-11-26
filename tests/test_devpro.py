@@ -241,20 +241,20 @@ def test_a_named_settings_file_that_does_not_exist_is_refused_naming_the_path(
 
 
 @pytest.mark.parametrize(
-    "section",
+    "table",
     ["[claude-code]", "[nonesuch.model-map]", '[DEFAULT]\ninstall = "always"'],
     ids=["settings", "map", "default"],
 )
-def test_a_settings_file_section_no_harness_names_is_refused(tmp_path: Path, section: str) -> None:
-    path = settings_file(tmp_path, f"{section}\n")
+def test_a_settings_file_table_no_harness_names_is_refused(tmp_path: Path, table: str) -> None:
+    path = settings_file(tmp_path, f"{table}\n")
     with pytest.raises(InputError) as caught:
         read_settings(str(path))
     message = str(caught.value)
-    assert section.removeprefix("[").split(".")[0].split("]")[0] in message
+    assert table.removeprefix("[").split(".")[0].split("]")[0] in message
     assert "claude, mage, opencode" in message
 
 
-def test_a_settings_sections_components_key_is_read_and_its_unknown_keys_name_both_keys(tmp_path: Path) -> None:
+def test_a_settings_tables_components_key_is_read_and_its_unknown_keys_name_both_keys(tmp_path: Path) -> None:
     """`components` is a harness's second setting, read beside `install`; before it existed the key was
     refused as unknown. A key that is no setting still names both keys it could be."""
     path = settings_file(tmp_path, '[claude]\ninstall = "always"\ncomponents = "kbase"\n')
@@ -267,7 +267,7 @@ def test_a_settings_sections_components_key_is_read_and_its_unknown_keys_name_bo
     assert "'bogus'" in message and "install, components" in message and "'[claude.model-map]'" in message
 
 
-def test_a_settings_section_key_that_is_no_setting_is_refused_naming_the_map_section(tmp_path: Path) -> None:
+def test_a_settings_table_key_that_is_no_setting_is_refused_naming_the_map_table(tmp_path: Path) -> None:
     path = settings_file(tmp_path, '[claude]\n"*" = "haiku"\n')
     with pytest.raises(InputError) as caught:
         read_settings(str(path))

@@ -86,7 +86,7 @@ field in the spelling that harness reads, and absent where that harness has no u
 unsupported name is refused before anything is written. `dev-render` defaults it to `claude`; install
 has no default, and resolves its harness as this section's first paragraph states. The devpro
 settings file's `install` setting replaces that resolution where the file names the harness. The
-file names a harness when either of its sections exists; each named harness installs per its
+file names a harness when either of its tables exists; each named harness installs per its
 `install` setting.
 
 Per harness, the setting is one of `always`, `detect` and `never`: `always` installs for that
@@ -102,10 +102,10 @@ harness it does not name is not installed. The loop stops at the first refusal, 
 harness that refused, and earlier harnesses' installs stand. A target that is not an existing
 directory, and a `--subdir` outside it, are refused before the harnesses the file names are
 judged. `--harness` given installs for that harness only, whatever the file's `install` setting
-says, its section's model map still applying. Without the file, or with `--harness` given, the
+says, its table's model map still applying. Without the file, or with `--harness` given, the
 resolution is the one above. A file naming no harness installs nothing, and says so: the report
 names the settings file and the ways an install happens — pass `--harness=NAME`; or add the
-harness to the file, either section of it: `install = always` in `[<harness>]` installs whatever
+harness to the file, either table of it: `install = always` in `[<harness>]` installs whatever
 the target holds, and the `detect` default installs where the target holds the harness's own
 directory (create that directory where absent). The report is made on a dry run and on an
 up-to-date run as on a changing one. The refusal of a target that is not an existing directory,
