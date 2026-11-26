@@ -64,7 +64,7 @@ its own status-table row.
 
 | Package | State | Rating | Lifetime | Scope |
 |---|---|---|---|---|
-| P1 | in progress | mechanical | shipped | PROJECT_DOCS/ARCHITECTURE deltas |
+| P1 | landed | mechanical | shipped | PROJECT_DOCS/ARCHITECTURE deltas |
 | P2 | landed | mechanical | shipped | the interrupt rule's CONVENTIONS leaf |
 | P3 | in progress | mechanical | shipped | the `slow` marker and the screenshot tests |
 | P4 | dispatchable | expert | shipped | the opencode pin's single home |
