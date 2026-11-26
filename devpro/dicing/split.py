@@ -12,7 +12,7 @@ from typing import TextIO
 
 from .heads import CONTENTS, contents_line
 from .linkrewrite import Linker, Tree, parent_dir, rel
-from .outline import _HEADING, Outline, Section
+from .outline import _HEADING, LAST_LEVEL, Outline, Section
 from .textfile import fence_flags, write_lines
 
 
@@ -58,23 +58,35 @@ def _rebased(line: str, *, delta: int, top: int | None = None) -> str:
 
 def _overflow(lines: list[str], s: Section, fenced: list[bool]) -> list[int]:
     """The 1-based monolith lines of the section's own text whose heading the re-base would carry
-    above level 1 or below level 6, in line order: the heading that cannot be written rather than the
-    section's own top, so the report names every line that has no level to land at. A volume head's
-    own text is the document's title and what sits above its first split heading, and no shift
-    touches it, so none of its lines overflows."""
+    below level 6, in line order. Each is reported and fails the run, the section holding one
+    written at its source levels. The section's own top is never one: it lands at level 1 whatever
+    it held."""
     levels = []
     for k in range(s.first - 1, s.last):
         if not fenced[k] and _HEADING.match(lines[k]):
             levels.append((k + 1, _placed(lines[k], s=s, top=1 if k == s.first - 1 else None)))
-    return [no for no, level in levels if not 1 <= level <= 6]
+    return [no for no, level in levels if level > LAST_LEVEL]
+
+
+def _above_level_one(lines: list[str], s: Section, fenced: list[bool]) -> bool:
+    """Whether the re-base would carry one of the section's own headings above level 1: a heading
+    shallower than the section's top, which the section keeps as text and planning has reported.
+    The ladder then has no re-based form, and the section is written at its source levels — no
+    failure, the kept heading reported where planning found it."""
+    return any(
+        _placed(lines[k], s=s, top=1 if k == s.first - 1 else None) < 1
+        for k in range(s.first - 1, s.last)
+        if not fenced[k] and _HEADING.match(lines[k])
+    )
 
 
 def write_tree(sections: list[Section], lines: list[str], tree: Tree, *, err: TextIO, base: str = "") -> list[int]:
     """Write each section's own text to its file under base, the directory its paths are relative to
-    (the tree's root where it is empty); returns the ids of the sections the re-base could not write,
-    which are written at their monolith levels and left for the caller to fail on. Each file written
-    is reported on err as `=== <kind> <path>`: `<kind>` the section's, a volume head's or a
-    section's."""
+    (the tree's root where it is empty); returns the ids of the sections holding a heading the
+    re-base would carry below level 6, which are reported and left for the caller to fail on. A
+    section whose re-based ladder would instead carry a heading above level 1 has no re-based form
+    and is written at its source levels, which is no failure. Each file written is reported on err
+    as `=== <kind> <path>`: `<kind>` the section's, a volume head's or a section's."""
     outline = Outline(sections)
     linker = Linker(outline, tree, lines)
     # the tree carries the volume being written, so a leaf's links are made from the volume's place
@@ -89,11 +101,12 @@ def write_tree(sections: list[Section], lines: list[str], tree: Tree, *, err: Te
             print(f"heading too deep to re-base at line {no}: written at its monolith level", file=err)
         if overflowing:
             unrebased.append(s.id)
+        rebases = not overflowing and not _above_level_one(lines, s, fenced)
         body = []
         for k in range(s.first - 1, s.last):
             next_line = lines[k + 1] if k + 1 < len(lines) else ""
             line = lines[k] if fenced[k] else linker.forward(lines[k], leaf_dir, next_line)
-            if s.id not in unrebased and not fenced[k] and _HEADING.match(line):
+            if rebases and not fenced[k] and _HEADING.match(line):
                 line = _rebased(line, delta=_shift(s), top=1 if k == s.first - 1 else None)
             body.append(line)
         if s.kind != "L":
