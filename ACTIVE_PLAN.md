@@ -68,7 +68,7 @@ its own status-table row.
 | P2 | in progress | mechanical | shipped | the interrupt rule's CONVENTIONS leaf |
 | P3 | in progress | mechanical | shipped | the `slow` marker and the screenshot tests |
 | P4 | dispatchable | expert | shipped | the opencode pin's single home |
-| P5 | dispatchable | mechanical | shipped | retire the checksums |
+| P5 | in progress | mechanical | shipped | retire the checksums |
 | P6 | dispatchable | expert | shipped | the profiler's shared wrapper fixture |
 | P7 | dispatchable | expert | shipped | the server-boot tier earns its keep |
 | P8 | dispatchable | expert | shipped | the dicer suite earns its keep |
