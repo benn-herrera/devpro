@@ -63,3 +63,7 @@ Three parts:
 
 It's currently .cfg but .toml allows for nesting (which we are faking with <harness>-model-map group)
 The upgrade to python 3.11 makes toml available without a dependency.
+
+Ruled: hard changeover, no conversion path — no legacy conversion and no migration code. The
+config file's only current user is the owner and it is not yet public, so nothing depends on the
+old form.
