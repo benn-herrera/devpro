@@ -64,6 +64,7 @@ from devpro.profiler.pages import (
     index_html,
     list_sessions,
     read_sessions,
+    store_directories,
     stamp,
 )
 from devpro.profiler.stores import repair_child_ids
@@ -1476,7 +1477,8 @@ def test_an_install_renames_an_old_pattern_store_and_a_second_install_touches_no
     assert f"renamed {store} → {renamed}" in installed.stdout
     assert not store.exists()
     assert sorted(path.name for path in renamed.iterdir()) == ["s-old.jsonl"]
-    assert (_run(_launcher(tmp_path / "harness"), "tree", "s-old", cwd=project)).returncode == 0
+    assert renamed in store_directories(project)
+    assert [session["id"] for session in read_sessions(project)] == ["s-old"]
 
     again = _install_project(project)
 

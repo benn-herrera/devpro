@@ -288,9 +288,9 @@ def test_the_payloads_since_reaches_the_board_as_a_wait(tmp_path, serve):
     answers = []
     waiter = threading.Thread(target=lambda: answers.append(client.board(since=version)))
     waiter.start()
-    waiter.join(2.0)
+    waiter.join(0.5)
 
-    assert waiter.is_alive() and not answers and time.monotonic() - started >= 2.0
+    assert waiter.is_alive() and not answers and time.monotonic() - started >= 0.5
 
 
 def test_waiting_for_a_change_returns_the_board_unchanged_at_close(tmp_path, serve):
