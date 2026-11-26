@@ -72,9 +72,8 @@ rendered by that same invocation, together with the shipped packages those defin
 each at its package destination, and the harness resources, copied into that same directory as they
 stand (Shipped files). What is not part of the install product does not travel: test suites and their
 fixtures, caches, `.DS_Store`, backup (`.bak`) copies, a `.venv` directory, and this repository's
-own project documentation. That project documentation exclusion is a list of file names (`SPEC.md`,
-`ARCHITECTURE.md`, `CONVENTIONS.md`, `THESIS.md`, `ROADMAP.md`, `AGENTS.md`, `CLAUDE.md`): none is
-installed at any depth under a package destination. No installed file refers its reader to one of
+own project documentation — none of it installed at any depth under a package destination. No installed
+file refers its reader to one of
 this repository's own project documents. `README.md` is not in that exclusion: a shipped package's
 `README.md` is installed. The optional tuning arguments — `--family`, and the entries in the
 devpro settings file `--config-file=<file>` names — render the definitions under them (SPEC.md,

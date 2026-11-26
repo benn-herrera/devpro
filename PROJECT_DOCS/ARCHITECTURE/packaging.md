@@ -53,7 +53,7 @@ devpro project root is the whole build configuration.
   venv, that the console script and `python -m devpro` print the same `--help` and the checkout's
   version, that the wheel's METADATA carries no `Requires-Dist` entry — the package declares no
   runtime dependency — that an install with the kbase component on into a scratch project equals
-  the checkout's byte for byte, and that a mage install writes `devpro/CLAUDE.md`. It is the `wheel`
+  the wheel's own files byte for byte, and that a mage install writes `devpro/CLAUDE.md`. It is the `wheel`
   test surface: `just test wheel`, and the last step of an unscoped `just test`. A change to
   `pyproject.toml` or under `devpro/` selects it in `just test-changed`.
 

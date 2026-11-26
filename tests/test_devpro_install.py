@@ -46,9 +46,9 @@ from devpro.install import (
     SHIPPED_PACKAGES,
     ShippedPackage,
     _is_our_resource,
-    _shipped,
     harness_resource_copies,
     install,
+    package_copies,
     preflighted_install,
     uncommitted_sources,
 )
@@ -131,6 +131,30 @@ def _block(harness: Harness) -> list[str]:
 def _files(root: Path) -> dict[str, bytes]:
     """Every file under `root` with its bytes."""
     return {path.relative_to(root).as_posix(): path.read_bytes() for path in sorted(root.rglob("*")) if path.is_file()}
+
+
+def _plant_file(path: Path, text: str = "planted\n") -> Path:
+    """`path` written holding `text`, its parents created."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+@pytest.fixture
+def _staged(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Callable[[Path, tuple[tuple[str, str], ...]], Path]:
+    """A source tree a run stages from, in place of this checkout: `devpro.install`'s and
+    `devpro.install_target`'s `PACKAGE_ROOT` each bound it, both modules having imported the name from
+    `devpro.install_base`, so a tree given to one alone leaves the other reading this checkout."""
+
+    def stage(relative: Path, files: tuple[tuple[str, str], ...]) -> Path:
+        root = relative.resolve()
+        for path, text in files:
+            _plant_file(root / path, text)
+        for module in ("devpro.install", "devpro.install_target"):
+            monkeypatch.setattr(f"{module}.PACKAGE_ROOT", root)
+        return root
+
+    return stage
 
 
 # The agents-file render.
@@ -554,20 +578,76 @@ def test_a_second_install_leaves_the_copied_plugin_standing_and_prunes_only_the_
     assert f"pruned {copied}" not in out
 
 
-def test_a_resource_copy_skips_the_unshipped_vocabulary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """The resource walk is filtered by the same vocabulary the packages are: a `.DS_Store`, a
-    `__pycache__` and a `.bak` copy never land beside the harness's own files."""
-    harness = tmp_path / "repo" / HARNESS_RESOURCES_SOURCE / "probe"
-    (harness / "plugins").mkdir(parents=True)
-    (harness / "plugins/keep.ts").write_text("export const keep = 1\n", encoding="utf-8")
-    (harness / "plugins/.DS_Store").write_bytes(b"\x00")
-    (harness / "plugins/keep.ts.bak").write_text("old\n", encoding="utf-8")
-    (harness / "__pycache__").mkdir()
-    (harness / "__pycache__/probe.pyc").write_bytes(b"\x00")
-    monkeypatch.setattr("devpro.install.PACKAGE_ROOT", tmp_path / "repo")
+def test_the_package_copy_stages_every_file_the_running_package_holds(tmp_path: Path, _staged) -> None:
+    """The package copy takes its tree whole — the built package is the one filter — less the
+    `__pycache__` directories no wheel carries. Defect: a denylist here dropped a file the wheel
+    carried, so an installed copy was not the package it ran."""
+    _staged(
+        tmp_path / "devpro",
+        (
+            ("tool.py", "probe\n"),
+            ("tests/test_tool.py", "probe\n"),
+            ("SPEC.md", "probe\n"),
+            (".DS_Store", "probe\n"),
+            ("a/x.py.bak", "probe\n"),
+            ("README.md", "probe\n"),
+            ("__pycache__/tool.cpython-311.pyc", "probe\n"),
+        ),
+    )
+    copies = package_copies(tmp_path / "root", ShippedPackage(".", "tools/devpro", None, stamps=False))
+    assert [target.relative_to(tmp_path / "root").as_posix() for _, target in copies] == sorted(
+        f"tools/devpro/{relative}"
+        for relative in (".DS_Store", "README.md", "SPEC.md", "a/x.py.bak", "tests/test_tool.py", "tool.py")
+    )
+
+
+def test_a_resource_copy_stages_every_file_the_tree_holds(tmp_path: Path, _staged) -> None:
+    """The harness resource copy reads its tree as the wheel carries it, filtering nothing the wheel
+    carries: a `.DS_Store` or a `.bak` beside a harness's own file is the wheel's, and no walk drops
+    what the build declared."""
+    _staged(
+        tmp_path,
+        (
+            (f"{HARNESS_RESOURCES_SOURCE}/probe/plugins/keep.ts", "probe\n"),
+            (f"{HARNESS_RESOURCES_SOURCE}/probe/plugins/.DS_Store", "probe\n"),
+            (f"{HARNESS_RESOURCES_SOURCE}/probe/plugins/keep.ts.bak", "probe\n"),
+        ),
+    )
     root = tmp_path / ".probe"
     copies = harness_resource_copies(root, harness="probe")
-    assert [target.relative_to(root).as_posix() for _, target in copies] == ["plugins/keep.ts"]
+    assert [target.relative_to(root).as_posix() for _, target in copies] == sorted(
+        ["plugins/.DS_Store", "plugins/keep.ts", "plugins/keep.ts.bak"]
+    )
+
+
+def test_neither_staging_path_copies_bytecode(tmp_path: Path, _staged) -> None:
+    """Bytecode is no wheel content: a `__pycache__` directory in a source tree — what a pip-compiled
+    install of the wheel holds and the wheel itself does not — reaches neither the package copy nor
+    the harness resource copy, at any depth. Defect: both walks took every file, so an install staged
+    from a pip-installed wheel shipped a `.pyc` beside every module it copied."""
+    _staged(
+        tmp_path,
+        (
+            ("tool.py", "probe\n"),
+            ("__pycache__/tool.cpython-311.pyc", "probe\n"),
+            ("sub/__pycache__/deeper.cpython-311.pyc", "probe\n"),
+            (f"{HARNESS_RESOURCES_SOURCE}/probe/plugins/keep.ts", "probe\n"),
+            (f"{HARNESS_RESOURCES_SOURCE}/probe/__pycache__/probe.cpython-311.pyc", "probe\n"),
+        ),
+    )
+    root = tmp_path / ".probe"
+    staged = [
+        *(
+            target.relative_to(root).as_posix()
+            for _, target in package_copies(root, ShippedPackage(".", "tools/devpro", None))
+        ),
+        *(target.relative_to(root).as_posix() for _, target in harness_resource_copies(root, harness="probe")),
+    ]
+    assert sorted(staged) == [
+        "plugins/keep.ts",
+        "tools/devpro/harnesses/resources/probe/plugins/keep.ts",
+        "tools/devpro/tool.py",
+    ]
 
 
 def test_the_resources_tree_is_not_read_as_a_harness_module() -> None:
@@ -1731,18 +1811,20 @@ def test_an_installed_runner_snippet_runs_the_check_through_the_wrapper_without_
     assert recorded.read_text(encoding="utf-8").splitlines() == ["check-plan"]
 
 
-def test_a_shipped_package_leaves_its_tests_and_documents_behind(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_a_package_destination_is_replaced_whole_from_the_staged_tree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, _staged
 ) -> None:
-    """A package's tests and project documents do not ship; the shipped rows' own sources hold neither
-    shape to show it, so a row over a temporary source stands in for the table."""
-    repo = tmp_path / "repo"
-    package = repo / "devpro" / "probe_pkg"
-    (package / "tests").mkdir(parents=True)
-    (package / "tool.py").write_text("print('probe')\n", encoding="utf-8")
-    (package / "tests/test_tool.py").write_text("pass\n", encoding="utf-8")
-    (package / "SPEC.md").write_text("# probe\n", encoding="utf-8")
-    monkeypatch.setattr("devpro.install.PACKAGE_ROOT", repo / "devpro")
+    """The package copy stages its tree whole, so every file the wheel carries lands — a test suite and
+    a project document among them, the wheel being the one filter. The shipped rows' own sources hold
+    neither shape to show it, so a row over a temporary source stands in for the table."""
+    package = _staged(
+        tmp_path / "devpro",
+        (
+            ("probe_pkg/tool.py", "print('probe')\n"),
+            ("probe_pkg/tests/test_tool.py", "pass\n"),
+            ("probe_pkg/SPEC.md", "# probe\n"),
+        ),
+    )
     monkeypatch.setattr(
         "devpro.install.SHIPPED_PACKAGES", (ShippedPackage("probe_pkg", "adj-tools/probe_pkg", "python-coder"),)
     )
@@ -1750,9 +1832,9 @@ def test_a_shipped_package_leaves_its_tests_and_documents_behind(
     root = project / ".claude"
     install(root, _CLAUDE_RENDER, verbose=False, project_root=project, uncommitted=_committed)
     plugin = _claude_plugin(root)
-    assert (plugin / "adj-tools/probe_pkg/tool.py").is_file()
-    assert not (plugin / "adj-tools/probe_pkg/tests").exists()
-    assert not (plugin / "adj-tools/probe_pkg/SPEC.md").exists()
+    staged = [relative.removeprefix("probe_pkg/") for relative in _files(package) if relative.startswith("probe_pkg/")]
+    assert sorted(_files(plugin / "adj-tools/probe_pkg")) == sorted(staged)
+    assert {"SPEC.md", "tests/test_tool.py", "tool.py"} <= set(staged)
 
 
 def test_a_direct_install_into_the_user_directory_is_user_level(_home: Path) -> None:
@@ -1775,22 +1857,22 @@ def test_a_user_level_claude_install_renders_the_profile_skill_and_copies_no_res
     assert not (plugin / _REGISTRATION).exists()
 
 
-def test_a_user_level_opencode_install_copies_the_entry_and_no_guardrail(
-    _home: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_a_user_level_opencode_install_copies_the_entry_and_no_guardrail(_home: Path, tmp_path: Path, _staged) -> None:
     """A user-level install delivers no guardrail, but the plugin registers only through its entry, so
     the entry is the one harness resource it copies, and it reaches across no other harness's
     resources at all: the carve-out admits a project install's copy list, not this one."""
-    resources = tmp_path / "repo" / HARNESS_RESOURCES_SOURCE / "opencode"
-    resources.mkdir(parents=True)
-    for name in ("index.ts", _TS_GUARDRAIL):
-        (resources / name).write_text(f"{_RESOURCE_HEADER}export const probe = 1\n", encoding="utf-8")
-    monkeypatch.setattr("devpro.install.PACKAGE_ROOT", tmp_path / "repo")
+    resources = {
+        name: f"{_RESOURCE_HEADER}export const {name.replace('.ts', '')} = 1\n" for name in ("index.ts", _TS_GUARDRAIL)
+    }
+    _staged(
+        tmp_path / "repo",
+        tuple((f"{HARNESS_RESOURCES_SOURCE}/opencode/{name}", text) for name, text in resources.items()),
+    )
     root = _home / ".config/opencode"
     root.mkdir(parents=True)
     install(root, _OPENCODE_RENDER, verbose=False, project_root=_home, uncommitted=_committed)
     plugin = _opencode_plugin(root)
-    assert (plugin / "index.ts").read_bytes() == (resources / "index.ts").read_bytes()
+    assert (plugin / "index.ts").read_text(encoding="utf-8") == resources["index.ts"]
     assert not (plugin / _TS_GUARDRAIL).exists()
     assert not (plugin / _PROFILER).exists()
 
@@ -1832,7 +1914,7 @@ def _plant(path: Path, text: str = "planted\n") -> Path:
 
 
 def test_a_package_copy_lands_at_the_umasks_mode_and_a_resource_at_the_shipped_one(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, _umask_002: None
+    tmp_path: Path, _umask_002: None, _staged
 ) -> None:
     """Under umask 002 a copied package file lands group-writable — 664 from a 644 source, 775 from a
     755 one, the source's execute bits carried through the umask — where a harness resource keeps
@@ -1848,7 +1930,7 @@ def test_a_package_copy_lands_at_the_umasks_mode_and_a_resource_at_the_shipped_o
     gitignore.chmod(0o644)
     resource = package / HARNESS_RESOURCES_SOURCE / "claude" / _GUARDRAIL
     resource.chmod(0o755)
-    monkeypatch.setattr("devpro.install.PACKAGE_ROOT", package)
+    _staged(package, ())
     root = tmp_path / ".claude"
     root.mkdir()
     _definition_install(root, project_root=tmp_path)
@@ -1917,15 +1999,17 @@ def _run_wrapper(wrapper: Path, *, path: str, home: Path) -> subprocess.Complete
 
 
 def test_a_project_install_writes_the_devpro_copy_and_a_wrapper_that_runs_it(tmp_path: Path) -> None:
-    """The copy is the package less what no install ships, byte for byte, and the wrapper runs it with no
-    devpro on PATH, under an interpreter outside any virtual environment. Defect: before the devpro tools
-    package no copy was installed, so an installed tree could not run devpro once the system's was
+    """The copy is the package content the run stages from, byte for byte, and the wrapper runs it with
+    no devpro on PATH, under an interpreter outside any virtual environment. Defect: before the devpro
+    tools package no copy was installed, so an installed tree could not run devpro once the system's was
     removed."""
     project = tmp_path / "project"
     project.mkdir()
     main(["install", str(project), "--harness=claude"])
     tools = _claude_plugin(project / ".claude") / "tools"
-    expected = {relative: data for relative, data in _files(PACKAGE_ROOT).items() if _shipped(Path(relative))}
+    expected = {
+        relative: data for relative, data in _files(PACKAGE_ROOT).items() if "__pycache__" not in Path(relative).parts
+    }
     assert _files(tools / "devpro") == expected
     wrapper = tools / "devpro.sh"
     recorded = re.search(r"^recorded=(.*)$", wrapper.read_text(encoding="utf-8"), re.MULTILINE)
@@ -1949,16 +2033,14 @@ def test_a_wrapper_run_from_a_directory_holding_a_devpro_package_runs_the_copy(t
     assert (ran.returncode, ran.stdout) == (0, f"{__version__}\n"), ran.stderr
 
 
-def test_an_install_run_from_an_installations_copy_into_that_installation_is_refused(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
-) -> None:
+def test_an_install_run_from_an_installations_copy_into_that_installation_is_refused(tmp_path: Path, _staged) -> None:
     """Defect: the install cleared its package destinations before reading their sources, so run from the
     installation's own copy into that installation it emptied the copy it was running."""
     project = tmp_path / "project"
     project.mkdir()
     main(["install", str(project), "--harness=claude"])
     copy = _claude_plugin(project / ".claude") / "tools/devpro"
-    monkeypatch.setattr("devpro.install.PACKAGE_ROOT", copy)
+    _staged(copy, ())
     before = _files(project)
     with pytest.raises(SystemExit) as exited:
         main(["install", str(project), "--harness=claude", "--components=kbase"])
@@ -2089,6 +2171,37 @@ def test_install_writes_every_render_and_stamps_the_packages_once(installed: Pat
     source_mk = (PACKAGE_ROOT / "kb-tools/runner-snippets/kb.mk").read_text(encoding="utf-8").split("\n")
     assert kb_mk[0].startswith("# !INSTALLED! from devpro/kb-tools/runner-snippets/kb.mk — ")
     assert kb_mk[1:] == source_mk
+
+
+def test_the_stale_list_keeps_a_venv_below_a_package_destination_and_a_safety_copy(tmp_path: Path, capsys) -> None:
+    """Prune's own guard, not a copy filter: a generated file below the `.venv` directory directly under
+    a package destination, and a safety copy in a rendered surface, never enter the stale list, while a
+    file beside them does. Defect: with the denylist gone, prune would remove a shipped tool's virtual
+    environment and a consumer's backup from the rendered surfaces. No re-install rewrites either, the
+    rendered files being unchanged, so nothing else can account for the safety copy's absence.
+    The `.venv` file's absence is doubly kept — prune's guard, and the preflight's scratch copy leaving
+    every `.venv` out, which the destination's own clearing then keeps — so this case holds the pair
+    together rather than pinning the guard alone; the `.bak` is the guard's own."""
+    project = tmp_path / "project"
+    root = project / ".claude"
+    root.mkdir(parents=True)
+    _definition_install(root, _KBASE_CLAUDE_RENDER, project_root=project)
+    plugin = _claude_plugin(root)
+    planted = {
+        # Beside the kb-tools destination, in the rendered skill's own directory: the `.venv`
+        # directory's file sits directly below the destination, and the safety copy beside a render.
+        "skills/kbase/kb-tools/.venv/lib/ours.md": _NEW_BANNER,
+        "skills/kbase/references/shipped.md.bak": _NEW_BANNER,
+        "skills/kbase/references/ours.md": _NEW_BANNER,
+    }
+    for relative, text in planted.items():
+        _plant(plugin / relative, text)
+    capsys.readouterr()
+    _definition_install(root, _KBASE_CLAUDE_RENDER, project_root=project)
+    out = capsys.readouterr().out
+    assert f"pruned {plugin / 'skills/kbase/references/ours.md'}" in out
+    left = {relative for relative in planted if (plugin / relative).exists()}
+    assert left == {"skills/kbase/references/shipped.md.bak"}
 
 
 def test_reinstall_prunes_only_our_stale_definitions(tmp_path: Path, capsys) -> None:

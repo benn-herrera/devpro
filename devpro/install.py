@@ -169,13 +169,8 @@ RETIRED_RESOURCE_DIRS = ("profiler",)
 # that run may take before it counts as failed.
 GUARDRAIL_INTERPRETER = "perl"
 GUARDRAIL_PROBE_SECONDS = 5.0
-# Never shipped, matched at any depth: test suites, caches and virtual environments, safety copies,
-# and this repository's own project documents. README.md is absent on purpose: a package that grows
-# one ships it.
-EXCLUDED_DIRS = frozenset({"tests", "__pycache__", ".pytest_cache", VENV_DIR})
-EXCLUDED_NAMES = frozenset(
-    {".DS_Store", "SPEC.md", "ARCHITECTURE.md", "CONVENTIONS.md", "THESIS.md", "ROADMAP.md", "AGENTS.md", "CLAUDE.md"}
-)
+# A safety copy, which a consumer's own backup is and no install writes: `prune` keeps it out of its
+# stale list.
 EXCLUDED_SUFFIX = ".bak"
 # Copied package files of a script or build-file type carry the one-line installed banner: by suffix,
 # or by name for an extensionless script. Every other file — a `.gitignore` among them — is copied
@@ -262,29 +257,35 @@ def _installed_version(init: Path) -> str | None:
     return match.group(1) if match else None
 
 
-def _shipped(relative: Path) -> bool:
-    """A file the shipped vocabulary covers, matched at any depth: not a test suite or cache, not a
-    safety copy, not one of this repository's own project documents."""
-    return not (
-        EXCLUDED_DIRS.intersection(relative.parts[:-1])
-        or relative.name in EXCLUDED_NAMES
-        or relative.suffix == EXCLUDED_SUFFIX
-    )
+def _is_stale_candidate(relative: Path) -> bool:
+    """Whether a file below a package destination may enter `prune`'s stale list: not a file below a
+    `VENV_DIR` directory directly under the destination, and not a safety copy. A virtual environment
+    a shipped tool builds beside its package is not install output, and a `.bak` is the consumer's."""
+    below_venv = len(relative.parts) > 2 and relative.parts[1] == VENV_DIR
+    return not (below_venv or relative.suffix == EXCLUDED_SUFFIX)
+
+
+def _wheel_files(root: Path) -> list[Path]:
+    """Every file below a staging source, `__pycache__` directories left out: bytecode is no wheel
+    content, and a pip-compiled install of the wheel holds some the wheel itself does not."""
+    return [
+        path for path in sorted(root.rglob("*")) if path.is_file() and "__pycache__" not in path.relative_to(root).parts
+    ]
 
 
 def package_copies(root: Path, package: ShippedPackage) -> list[tuple[Path, Path]]:
     """(source file, target under `root`) for every file `package` delivers, each landing under its
-    destination."""
+    destination. The source is the running package's own content, which once built is the wheel's:
+    `.dist-info/RECORD` is the one manifest of what ships."""
+    source_root = PACKAGE_ROOT / package.source
     return [
-        (source, root / package.destination / source.relative_to(PACKAGE_ROOT / package.source))
-        for source in sorted((PACKAGE_ROOT / package.source).rglob("*"))
-        if source.is_file() and _shipped(source.relative_to(PACKAGE_ROOT / package.source))
+        (source, root / package.destination / source.relative_to(source_root)) for source in _wheel_files(source_root)
     ]
 
 
 def harness_resource_copies(root: Path, *, harness: str) -> list[tuple[Path, Path]]:
-    """(source file, target under `root`) for every file `harness` ships: `resources/<harness>/` in this
-    package, delivered into ROOT, so `resources/claude/hooks/guardrail.pl` lands at
+    """(source file, target under `root`) for every file `harness` ships: `resources/<harness>/` as
+    the wheel carries it, delivered into ROOT, so `resources/claude/hooks/guardrail.pl` lands at
     `<ROOT>/hooks/guardrail.pl`.
 
     These files are the harness's own, not this repository's generated product: each is copied
@@ -305,15 +306,11 @@ def harness_resource_copies(root: Path, *, harness: str) -> list[tuple[Path, Pat
 
 
 def _harness_resource_pairs(source: Path, root: Path) -> list[tuple[Path, Path]]:
-    """(source file, target under `root`) for every shippable file below `source`, each landing at its
-    path relative to `source`. Nothing where `source` is absent, which is not an error."""
+    """(source file, target under `root`) for every file below `source`, each landing at its path
+    relative to `source`. Nothing where `source` is absent, which is not an error."""
     if not source.is_dir():
         return []
-    return [
-        (path, root / path.relative_to(source))
-        for path in sorted(source.rglob("*"))
-        if path.is_file() and _shipped(path.relative_to(source))
-    ]
+    return [(path, root / path.relative_to(source)) for path in _wheel_files(source)]
 
 
 def stamped(data: bytes, *, origin: str) -> bytes:
@@ -389,15 +386,17 @@ def _refuse_foreign_targets(
 
 
 def prune(root: Path, *, keep: set[Path]) -> list[Path]:
-    """Remove every regular file under ROOT's surfaces that is not in `keep`, would
-    ship, and is ours; then each directory that leaves empty, walking upward from the file to the first
+    """Remove every regular file under ROOT's surfaces that is not in `keep`, is not a file below a
+    `VENV_DIR` directory directly under a package destination, is no safety copy, and is ours; then
+    each directory that leaves empty, walking upward from the file to the first
     directory that still holds anything, the surface included and ROOT never.
 
     The skill-owned package destinations sit inside the skills surface — `skills/kbase/kb-tools/` and
     `skills/development/scripts/` — the devpro tools package outside every surface, and no destination is carved out by
     name. None needs to be: a copied package file carries the `!INSTALLED!` banner or none, never the
     generated one `_is_ours` reads, so it is untouched here rather than pruned, and a `.venv` below a
-    destination is outside the would-ship vocabulary, so its files never enter the stale list. Every file under a surface is thus either ours
+    destination never enters the stale list (`_is_stale_candidate`), the safety copy beside one
+    neither. Every file under a surface is thus either ours
     or untouched. A definition of ours this run did not write — one its plugin does not ship — is stale
     and removed, while one the run wrote is in `keep`. Nothing outside ROOT's surfaces is walked, so
     another plugin's ROOT beside this one is never read.
@@ -410,7 +409,7 @@ def prune(root: Path, *, keep: set[Path]) -> list[Path]:
         path
         for surface in SURFACES
         for path in _files_below(root / surface)
-        if path not in keep and path.is_file() and _shipped(path.relative_to(root)) and _is_ours(path)
+        if path not in keep and path.is_file() and _is_stale_candidate(path.relative_to(root)) and _is_ours(path)
     ]
     for path in stale:
         path.unlink()

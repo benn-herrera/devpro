@@ -26,7 +26,7 @@ Contents:
   - [Recognizer spells rendered banner](code-definitions-and-install/recognizer-spells-rendered-banner.md)
   - [Harness resources are copied verbatim](code-definitions-and-install/harness-resources-are-copied-verbatim.md)
   - [Guardrails change together](code-definitions-and-install/guardrails-change-together.md)
-  - [Install sources are filtered](code-definitions-and-install/install-sources-are-filtered.md)
+  - [Install stages from the wheel](code-definitions-and-install/install-stages-from-the-wheel.md)
   - [Install parameters ship with their flags](code-definitions-and-install/install-parameters-ship-with-their-flags.md)
   - [Agents file changes explicitly](code-definitions-and-install/agents-file-changes-explicitly.md)
   - [Version has one home](code-definitions-and-install/version-has-one-home.md)

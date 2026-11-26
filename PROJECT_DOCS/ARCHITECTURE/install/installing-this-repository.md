@@ -1,8 +1,12 @@
 # Installing this repository
 
-`just agents` installs this repository's own `.claude/` and `.opencode/` with the plain
-`install` verb, once per harness, as the devpro plugin, naming this repository as TARGET and the
-harness with `--harness`. opencode and mage need no category map: their `default_category_spec`
+`just agents` builds the wheel, unpacks it beside it into `dist/` and installs this repository's
+own `.claude/` and `.opencode/` with the plain `install` verb run from the unpacked package —
+`PYTHONPATH` pointed at it — once per harness, as the devpro plugin, naming this repository as
+TARGET and the harness with `--harness`. The unpacked copy stands in the build product's own
+directory, there to inspect, and its parent holds no `.git` entry, so by the checkout premise
+(Packaging) `PACKAGE_ROOT` resolves outside any checkout: the install stages from wheel content,
+as every install does (Renders and copies), and no `git` check answers for this repository. opencode and mage need no category map: their `default_category_spec`
 values leave every model unpinned. Each
 install also keeps the agents-file block current, in the global agents file where that holds
 a marker line and else in this repository's `AGENTS.md`. Under claude the install lands in the

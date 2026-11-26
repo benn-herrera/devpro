@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # `check-wheel`'s body. Proves the wheel `build` left in dist/: its package data is the tree's, and,
 # installed into a throwaway venv made from $1, it runs as the shipped package rather than as the
-# checkout. Every wheel-side command runs with PYTHONPATH unset and GIT_CEILING_DIRECTORIES at the
-# scratch directory, so neither the working tree nor the repository around it can answer for it.
+# checkout. Every wheel-side command runs with PYTHONPATH unset, no bytecode written and
+# GIT_CEILING_DIRECTORIES at the scratch directory, so neither the working tree nor the repository
+# around it can answer for it, and no import leaves a `__pycache__` in a tree either install stages
+# from.
 # From the scratch directory's creation on, HOME is a fresh, empty home inside it, removed on exit,
 # so no install here reads or writes the operator's real one.
 set -euo pipefail
@@ -83,30 +85,41 @@ mkdir -p "${scratch}/home"
 trap 'command rm -rf "${scratch}"' EXIT
 export HOME="${scratch}/home"
 "${python}" -m venv "${venv}"
-"${venv}/${PYBIN}/python${EXE}" -m pip install -q --disable-pip-version-check --no-index "${wheel}"
+"${venv}/${PYBIN}/python${EXE}" -m pip install -q --disable-pip-version-check --no-index --no-compile "${wheel}"
 
 function from_wheel() {
-  env -u PYTHONPATH GIT_CEILING_DIRECTORIES="${scratch}" "$@"
+  env -u PYTHONPATH GIT_CEILING_DIRECTORIES="${scratch}" PYTHONDONTWRITEBYTECODE=1 "$@"
 }
 
 cd "${scratch}"
-imported="$(from_wheel "${venv}/${PYBIN}/python${EXE}" -I -c 'import devpro; print(devpro.__file__)')"
+# `-I` isolates the interpreter from the environment, `PYTHONDONTWRITEBYTECODE` included, so the
+# interpreter's own `-B` carries the no-bytecode rule on the two `-I` commands: a `__pycache__` they
+# wrote in the venv's package would be wheel content to every install staged from it.
+imported="$(from_wheel "${venv}/${PYBIN}/python${EXE}" -I -B -c 'import devpro; print(devpro.__file__)')"
 [[ "${imported}" == "${venv}/"* ]] || fail "devpro imported from ${imported}, outside ${venv}"
 wheel_ver="$(from_wheel "${venv}/${PYBIN}/devpro${EXE}" --version)"
 [[ "${wheel_ver}" == "${ver}" ]] || fail "the wheel reports version ${wheel_ver}, the checkout ${ver}"
 script_help="$(from_wheel "${venv}/${PYBIN}/devpro${EXE}" --help)"
-module_help="$(from_wheel "${venv}/${PYBIN}/python${EXE}" -I -m devpro --help)"
+module_help="$(from_wheel "${venv}/${PYBIN}/python${EXE}" -I -B -m devpro --help)"
 [[ "${script_help}" == "${module_help}" ]] || fail "devpro --help differs from python -m devpro --help"
 
-# Each project is named `project`: its AGENTS.md is titled with the project directory's name. One
-# project on each side, each installed with the kbase component on, so the whole install is compared.
+# Two projects of the same name: the install's agents file is titled with the project directory's
+# name, so both sides must be named `project`. The wheel is unpacked beside the two projects, into no
+# tree the comparison reads, and each side installs from one of its own: the first under the venv's
+# interpreter, running the console script; the second under the same interpreter with the unpacked
+# tree on PYTHONPATH, the shape `just agents` runs from. Both installs stage their package copy from
+# the wheel's content, so the two differ only in the interpreter's spelling of the wrapper: pip
+# installs the wheel with --no-compile, and a copy carries whatever `__pycache__` its source tree holds.
+unpacked="${scratch}/unpacked"
+mkdir -p "${unpacked}"
+unzip -q -o "${wheel}" -d "${unpacked}"
 for side in from-wheel from-checkout; do
   mkdir -p "${side}/project/.claude"
   : > "${side}/project/justfile"
 done
 from_wheel "${venv}/${PYBIN}/devpro${EXE}" install "${scratch}/from-wheel/project" --components=kbase > /dev/null
-PYTHONPATH="${PROJECT_ROOT}" "${venv}/${PYBIN}/python${EXE}" -m "${GEN}" install "${scratch}/from-checkout/project" --components=kbase > /dev/null
-diff -r from-wheel from-checkout || fail "the wheel's install differs from the checkout's"
+from_wheel env PYTHONPATH="${unpacked}" "${venv}/${PYBIN}/python${EXE}" -m "${GEN}" install "${scratch}/from-checkout/project" --components=kbase > /dev/null
+diff -r from-wheel from-checkout || fail "the wheel's install differs from the same wheel's unpacked files"
 
 mkdir plugins
 from_wheel "${venv}/${PYBIN}/devpro${EXE}" install "${scratch}/plugins" --components=kbase --harness=mage > /dev/null
