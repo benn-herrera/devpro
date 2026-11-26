@@ -17,3 +17,4 @@ Contents:
 - [A narrowed format names the inputs it refuses](a-narrowed-format-names-the-inputs-it-refuses.md)
 - [A verification entry names what the run produced](a-verification-entry-names-what-the-run-produced.md)
 - [A failing test is an interrupt](a-failing-test-is-an-interrupt.md)
+- [A renamed leaf takes its contents entries](a-renamed-leaf-takes-its-contents-entries.md)

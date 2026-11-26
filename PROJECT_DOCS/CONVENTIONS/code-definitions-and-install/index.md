@@ -32,3 +32,4 @@ Contents:
 - [A host version is checked against the host's declarations](a-host-version-is-checked-against-the-host-s-declarations.md)
 - [A stand-in models the API's real semantics](a-stand-in-models-the-api-s-real-semantics.md)
 - [A formatted time test pins the locale](a-formatted-time-test-pins-the-locale.md)
+- [A top-level key is a bare harness name](a-top-level-key-is-a-bare-harness-name.md)
