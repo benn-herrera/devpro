@@ -14,10 +14,10 @@
 #
 # The `docs` surface is the markdown link check (`just check-links` with its default roots), and
 # the `wheel` surface is `just check-wheel`; neither is pytest, so neither takes pytest arguments.
-# The `cold-read` surface is pytest with the `cold_read` marker as its default `-m`; the other
-# pytest surfaces default to `-m "not cold_read"` when the caller passes no `-m`, because the
-# cold-read suite's subprocess cases cost about a fifth of the full run and are a rare, manual
-# surface. A caller's own `-m` wins over either default.
+# The `cold-read` surface is pytest with the `cold_read` marker as its default `-m`, the `slow`
+# surface its `slow` marker; the other pytest surfaces default to `-m "not cold_read and not slow"`
+# when the caller passes no `-m`, because the cold-read suite's subprocess cases cost about a fifth
+# of the full run and are a rare, manual surface. A caller's own `-m` wins over either default.
 # The full run (no surface) runs both after pytest, and fails when any of them fails. It shows
 # check-wheel's last line only, its full output on failure, so the pytest result stays near the end
 # of the log.
@@ -36,6 +36,7 @@ case "${surface}" in
     devpro) dirs=(tests) ;;
     dupe_sweep) dirs=(devtools/tests) ;;
     cold-read) dirs=(tests) ;;
+    slow) dirs=(devtools/tests) ;;
     docs)
         if [[ "$#" -gt 1 ]]; then
             printf '%s\n' "error: test surface 'docs' is the link check and takes no pytest arguments" >&2
@@ -51,7 +52,7 @@ case "${surface}" in
         exec "${JUST}" --justfile "${JUSTFILE}" check-wheel
         ;;
     *)
-        printf '%s\n' "error: unknown test surface '${surface}' — valid values: devpro, dupe_sweep, cold-read, docs, wheel; a leading flag binds here instead — pass it with an explicit empty surface: just test \"\" ${surface}" >&2
+        printf '%s\n' "error: unknown test surface '${surface}' — valid values: devpro, dupe_sweep, cold-read, slow, docs, wheel; a leading flag binds here instead — pass it with an explicit empty surface: just test \"\" ${surface}" >&2
         exit 1
         ;;
 esac
@@ -97,7 +98,8 @@ marker=()
 if [[ "${caller_m}" -eq 0 ]]; then
     case "${surface}" in
         cold-read) marker=(-m cold_read) ;;
-        *) marker=(-m "not cold_read") ;;
+        slow) marker=(-m slow) ;;
+        *) marker=(-m "not cold_read and not slow") ;;
     esac
 fi
 status=0

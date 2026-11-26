@@ -55,4 +55,5 @@ version = { attr = "devpro.__version__" }
 cache_dir = ".devpro-temp/.pytest_cache"
 markers = [
     "cold_read: the shipped cold-read.sh suite, one test per subprocess case — a rare manual surface (`just test cold-read`), excluded from the default run",
+    "slow: a test that earns its cost but not its place in the default run — the screenshot suite today (`just test slow`), excluded from the default run",
 ]

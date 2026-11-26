@@ -199,7 +199,7 @@ render-diff a="reference-claude" b="latest":
 # No argument runs the pytest surfaces (devpro and dupe_sweep, the cold_read marker excluded by
 # default — the shipped cold-read suite costs about a fifth of the run and no checkpoint work
 # touches it), then docs (just check-links with its defaults), then wheel (just check-wheel). A
-# surface argument (devpro, dupe_sweep, cold-read, docs, wheel) runs only that one — cold-read runs
+# surface argument (devpro, dupe_sweep, cold-read, slow, docs, wheel) runs only that one — cold-read runs
 # the marker's tests as its default -m, a caller's own -m wins everywhere. Further arguments, never
 # given to docs or wheel, forward to pytest: a
 # flag (-k, -x, -q, ...) keeps the surface directory, a file or file::test path narrows the run to

@@ -51,7 +51,7 @@ recipe creates `.venv`
 where its python is absent or older than the floor, from the first `python3` on `PATH`. It installs
 the `dev` dependency group `pyproject.toml` declares, with pip, so the first run needs the network.
 The suite needs `bun`, `perl` and `kbase` (at least `KBASE_MIN_VERSION`) on `PATH`, and `firefox`
-for the `dupe_sweep` surface, whose screenshot test drives it.
+for the `slow` surface, whose screenshot test drives it.
 `tests/test_guardrail.py`, `tests/test_opencode_entry.py`, `tests/test_kbase_surface.py` and
 `devtools/tests/test_screenshot.py` fail rather than skip without the one they need, because a skip
 would hide drift. `just lint` needs `shellcheck` on

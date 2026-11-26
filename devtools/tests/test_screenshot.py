@@ -16,6 +16,8 @@ from contextlib import contextmanager
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+import pytest
+
 TOOL = Path(__file__).resolve().parent.parent / "screenshot.ts"
 PAGE = """<!doctype html>
 <html><head><meta charset="utf-8"><title>shot</title></head>
@@ -96,6 +98,7 @@ def _served(root: Path) -> Iterator[int]:
         thread.join()
 
 
+@pytest.mark.slow
 def test_a_settled_page_is_shot_whole_at_the_viewport(tmp_path: Path) -> None:
     """The defect is a shot taken before the page settled, or one that ignores the viewport.
 
@@ -116,6 +119,7 @@ def test_a_settled_page_is_shot_whole_at_the_viewport(tmp_path: Path) -> None:
     assert height >= 1200
 
 
+@pytest.mark.slow
 def test_a_selector_that_never_appears_fails_naming_it_and_the_timeout(tmp_path: Path) -> None:
     """The defect is a run that reports success for a page it never saw settle, or leaves a file behind."""
     _tools()
@@ -131,6 +135,7 @@ def test_a_selector_that_never_appears_fails_naming_it_and_the_timeout(tmp_path:
     assert not shot.exists()
 
 
+@pytest.mark.slow
 def test_a_route_is_resolved_against_base_before_the_filesystem(tmp_path: Path) -> None:
     """The defect is a route that names an existing path on disk read as a `file://` page.
 
@@ -150,6 +155,7 @@ def test_a_route_is_resolved_against_base_before_the_filesystem(tmp_path: Path) 
     assert shot.exists()
 
 
+@pytest.mark.slow
 def test_a_polling_page_with_a_selector_is_shot(tmp_path: Path) -> None:
     """The defect is a settle whose idle wait is mandatory: a polling page never quiets, so the run
     fails and the tool cannot shoot the pages it exists for.
@@ -180,6 +186,7 @@ def test_a_polling_page_with_a_selector_is_shot(tmp_path: Path) -> None:
     assert shot.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
 
 
+@pytest.mark.slow
 def test_a_polling_page_without_a_selector_still_shoots(tmp_path: Path) -> None:
     """The defect is a mandatory idle wait: with no `--wait-for`, the polling page's idle wait must
     be bounded and advisory, never a failure.
@@ -207,6 +214,7 @@ def test_a_polling_page_without_a_selector_still_shoots(tmp_path: Path) -> None:
     assert shot.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
 
 
+@pytest.mark.slow
 def test_a_page_shown_in_the_wrong_scheme_fails_and_writes_no_png(tmp_path: Path) -> None:
     """The defect is a failed color-scheme check that leaves its PNG behind, having already written it.
 
