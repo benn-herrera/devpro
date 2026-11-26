@@ -11,3 +11,11 @@ check-design --deltas-applied`, exiting non-zero naming each miss. `check-design
 so it reads a design before its application and never after; the applied state is
 `--deltas-applied`'s to report. It reads fences as CommonMark does — a closer is the opener's
 character, at least as long — so an applied passage may quote a fenced block.
+
+A pair whose target leaf a later change retouches is amended in that change: the Becomes is
+re-pointed to the leaf's final wording, the As moved to what stood when the pair was written. The
+amended pair must then read `landed` against the leaf's new text, never `pending` or `drifted`: the
+check does not read the pair's two passages as separate documents but matches each of them,
+normalized, against the whole leaf, so a pair re-pointed alone matches nothing there. The probe that
+shows it: re-pointing only the Becomes of an applied pair leaves the check reading that pair
+`drifted`, not `landed`, until the As moves.
