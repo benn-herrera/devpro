@@ -65,6 +65,6 @@ so say so where those columns are blank. Then the URL the dashboard printed. Do 
 Where the plain tree prints the column header alone, nothing was recorded: say so and stop. Where
 `tree` instead exits 1 with `No traces in …` on stderr, the repository holds no readable recording at
 all; under claude a store an older name left behind is the cause, and `bash PROFILER init claude`
-states the rename that remedy needs.""",
+renames it.""",
     ),
 )
