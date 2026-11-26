@@ -222,8 +222,8 @@ harness with `--harness`.
 ```
 `just agents` builds the wheel, unpacks it beside it into `dist/` and installs this repository's
 own `.claude/` and `.opencode/` with the plain `install` verb run from the unpacked package —
-`PYTHONPATH` pointed at it — once per harness, as the devpro plugin, naming this repository as
-TARGET and the harness with `--harness`. The unpacked copy stands in the build product's own
+`PYTHONPATH` pointed at it — as the devpro plugin, naming this repository as TARGET, the
+harnesses left to the install's own resolution. The unpacked copy stands in the build product's own
 directory, there to inspect, and its parent holds no `.git` entry, so by the checkout premise
 (Packaging) `PACKAGE_ROOT` resolves outside any checkout: the install stages from wheel content,
 as every install does (Renders and copies), and no `git` check answers for this repository.
@@ -239,8 +239,9 @@ as every install does (Renders and copies), and no `git` check answers for this 
 **Becomes:**
 ```
 `agents` builds the wheel and installs this repository's own set from the built package beside it
-(Install, Installing this repository), one line — the target alone, no
-`--components` and no `--harness` flag, the harness left to the install's own inference;
+(Install, Installing this repository), the target alone and any `install` flags it passes through —
+an alternate `--config-file` among them — with no
+`--components` and no `--harness` flag by default, the harness left to the install's own inference;
 ```
 
 ### [Renders and copies](PROJECT_DOCS/ARCHITECTURE/install/renders-and-copies.md#renders-and-copies)
@@ -354,19 +355,19 @@ runs. Its subcommands are `capture`, `tree` and `init`; the records are served b
 the `dashboard` verb, below.
 ```
 
-### [The repair](PROJECT_DOCS/ARCHITECTURE/harness-profiler/the-repair.md#the-repair)
+### The repair — the PROJECT_DOCS/ARCHITECTURE/harness-profiler/the-repair.md leaf, removed
 
 The leaf is removed.
 
-### [Doctor lines](PROJECT_DOCS/ARCHITECTURE/harness-profiler/doctor-lines.md#doctor-lines)
+### Doctor lines — the PROJECT_DOCS/ARCHITECTURE/harness-profiler/doctor-lines.md leaf, removed
 
 The leaf is removed.
 
-### [Committed hook freshness](PROJECT_DOCS/ARCHITECTURE/harness-profiler/committed-hook-freshness.md#committed-hook-freshness)
+### Committed hook freshness — the PROJECT_DOCS/ARCHITECTURE/harness-profiler/committed-hook-freshness.md leaf, removed
 
 The leaf is removed.
 
-### [Limits, stated](PROJECT_DOCS/ARCHITECTURE/harness-profiler/limits-stated.md#limits-stated)
+### Limits, stated — the PROJECT_DOCS/ARCHITECTURE/harness-profiler/limits-stated.md leaf, removed
 
 The leaf is removed.
 
@@ -434,7 +435,6 @@ its time column and its session stamps in the machine's local zone, through `val
 ```
 **Becomes:**
 ```
-- [Limits, stated](limits-stated.md)
 - [What `init` writes](what-init-writes.md)
 - [What removes the retired path](what-removes-the-retired-path.md)
 - [What does not exist](what-does-not-exist.md)
