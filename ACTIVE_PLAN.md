@@ -118,7 +118,7 @@ quote both; `--deltas-applied` is the witness of the application.
 ## P2 — The interrupt rule's CONVENTIONS leaf
 
 **Scope.** A new leaf
-`PROJECT_DOCS/CONVENTIONS/planning-and-execution/a-test-failing-on-unstated-behavior-is-an-interrupt.md`,
+`PROJECT_DOCS/CONVENTIONS/planning-and-execution/a-failing-test-is-an-interrupt.md`,
 plus one contents line in `PROJECT_DOCS/CONVENTIONS/planning-and-execution/index.md` and one in
 `PROJECT_DOCS/CONVENTIONS/entry-point.md` (the check-tree requires every document listed by its
 parent). Nothing else.
@@ -588,7 +588,7 @@ verified by reading — no gate reads them — and the report states the reading
 ## B3 — The interrupt leaf's first-use revision
 
 **Scope.**
-`PROJECT_DOCS/CONVENTIONS/planning-and-execution/a-test-failing-on-unstated-behavior-is-an-interrupt.md`
+`PROJECT_DOCS/CONVENTIONS/planning-and-execution/a-failing-test-is-an-interrupt.md`
 — its text, its heading, the file's rename, and the two contents rows that name it:
 `PROJECT_DOCS/CONVENTIONS/planning-and-execution/index.md:19` and
 `PROJECT_DOCS/CONVENTIONS/entry-point.md:58`. Nothing else.
