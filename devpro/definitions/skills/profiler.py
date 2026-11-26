@@ -35,7 +35,7 @@ installed here: say so and stop.
 Under claude, where the hook is not installed and the session cannot install it, `bash PROFILER init claude`
 writes it into this repository's `.claude/` and prints the `git add` line to commit; run it only when
 the user asks for profiling there. `init` is claude's alone: opencode's plugin records
-every call itself, so an opencode session needs it not.
+every call itself, so an opencode session does not need it.
 
 {clauses.WRAPPER_PROFILER}
 
@@ -63,8 +63,11 @@ prints the column header alone on the plain tree. An opencode session records no
 so say so where those columns are blank. Then the URL the dashboard printed. Do not paste the tree.
 
 Where the plain tree prints the column header alone, nothing was recorded: say so and stop. Where
-`tree` instead exits 1 with `No traces in …` on stderr, the repository holds no readable recording at
-all; under claude a store an older name left behind is the cause, and `bash PROFILER init claude`
-renames it.""",
+`tree` instead exits 1 with `No traces in …` on stderr, no store `tree` reads holds a record. Under
+claude, run `bash PROFILER init claude`: it registers the hook in the repository, which a session
+loading no plugin's hooks picks up, renames a store an older name left behind, and writes the
+committed settings and the skill copy the repository carries — the git-visible writes `init`
+reports. Under opencode the hook is the plugin's and already runs, so a store under the older name
+is what stands in the way, and the next install renames it.""",
     ),
 )
