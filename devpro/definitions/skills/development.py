@@ -634,6 +634,12 @@ interpolate from, so it invents.
   code that implements the ruling; errors the platform raises are handled like any other error.
 - A check earns its place by enforcing something the contract documents state; a check for a
   condition they do not name is a rule nobody asked for, and goes.
+- Specificity past the reader's need: a project document states each subject at the exactness its
+  reader needs to act on it or check it, and no finer. Where the code states a fact in its own text —
+  a signature, a field list, a value's spelling — the document names the fact and leaves the exact
+  form to the code it names, never transcribes it: a transcription is a second home for a statement
+  only the code's changes move. The rule holds the durable documents; a plan or a design is
+  short-lived and states whatever its work needs.
 - A guard that standard tools in the same role lack is a departure: it tells every reader the
   project is different, and they reach for unusual designs elsewhere. It goes unless ARCHITECTURE.md
   states a reason for it that holds.
