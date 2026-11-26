@@ -55,7 +55,7 @@ defect, shown. A test whose setup, call and teardown exceed 100ms justifies its 
 a real defect no cheaper test pins, or exercises a real integration no fixture can stand in for —
 or loses the weight: rewritten to a fixture, merged into a sibling, retired, or marked `slow`, the
 marker for a test that earns its cost but not its place in the default run; every default run
-excludes it, and `just test slow` runs the marked tests. The default run targets 30 seconds.
+excludes it, and `just test slow` runs the marked tests.
 
 The package's modules depend one way: `kanban/` imports `doccheck/` and `dicing/`,
 `doccheck/` imports `dicing/`, `profiler/` reads `kanban/`'s stylesheet as package data,
