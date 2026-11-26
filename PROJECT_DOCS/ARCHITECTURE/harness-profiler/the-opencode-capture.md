@@ -1,4 +1,4 @@
-# The opencode capture.
+# The opencode capture
 
 ## The capture and the hook surface
 

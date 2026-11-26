@@ -1,4 +1,4 @@
-# Wiring.
+# Wiring
 
 `harnesses/claude.py`'s `_registration_hooks` carries the profiler's six hook entries
 beside the guardrail's and the reminder's: `PostToolUse`, `PostToolUseFailure`, `PreCompact`,
@@ -14,4 +14,3 @@ wrapper's `capture` subcommand
 owns the never-block contract: `cli.run` reads the hook payload bounded to `PAYLOAD_LIMIT` bytes,
 points stdout at the null device for the capture's duration so no child line reaches the hook's
 stdout, and returns 0 on every path.
-

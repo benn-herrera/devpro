@@ -1,4 +1,4 @@
-# The code is devpro's.
+# The code belongs to devpro
 
 The port is a devpro package, `devpro/profiler/`, standard library only,
 no dependency: `values.py` the schema, limits, masks and store facts every other module reads,
@@ -8,4 +8,3 @@ rename and their one repair, and `cli.py` the `profiler` verb's dispatch. The ve
 lazily: registering it imports none of these modules, and `cli.py` imports the one whose subcommand
 runs. Its subcommands are `capture`, `tree`, `init`, `doctor` and `repair`; the records are served by
 the `dashboard` verb, below.
-

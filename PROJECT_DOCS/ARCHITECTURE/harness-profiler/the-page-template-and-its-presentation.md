@@ -1,4 +1,4 @@
-# The page template and its presentation layer.
+# The page template and its presentation
 
 ## The template and its marks
 
@@ -75,4 +75,3 @@ from that one scope.
 
 The board page carries the same nav grammar, written in its own `index.html`,
 with the same server block in the nav; it carries no legend.
-

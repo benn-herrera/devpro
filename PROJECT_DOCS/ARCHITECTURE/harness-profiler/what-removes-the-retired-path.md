@@ -1,4 +1,4 @@
-# What removes the retired path.
+# What removes the retired path
 
 `init` unlinks, in the repository, the retired launcher
 `profiler.sh` and the names it carried before it — `hp.sh`, `hp` — with `hp.py` and `view.html` beside
@@ -12,4 +12,3 @@ repository's installed header, then removes `profiler/` where that leaves it emp
 deletes by name, under `.claude/` in the repository it targets. The preflight predicts both from the
 same lists. A hook command spelling a retired launcher stays this tool's: `hooks.is_our_command`
 recognizes it, and an `init` re-run replaces it.
-

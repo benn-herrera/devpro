@@ -1,4 +1,4 @@
-# The stores and their rename.
+# The stores and their rename
 
 Each harness's capture owns one store under the project's
 `.devpro-temp/`: both readers — `tree`'s render, and the dashboard's profiler view, whose index and
@@ -14,4 +14,3 @@ never merged, and merging or deleting the old store is the operator's call. A se
 nothing. A capture writes `.profiler-*` while an old-pattern store still holds its traces, so `tree`
 cannot read that store until the migration runs; a store the rename leaves standing stays unread until
 the operator merges or deletes it.
-

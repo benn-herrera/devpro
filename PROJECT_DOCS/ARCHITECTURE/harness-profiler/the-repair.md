@@ -1,4 +1,4 @@
-# The repair.
+# The repair
 
 `devpro profiler repair`, run once from the project's root, reads each standing
 opencode subagent record's result text and fills its `child_agent_id` where the host reported it — a
@@ -8,4 +8,3 @@ records (no child id)` — the edges it filled and the subagent records left nam
 a dispatch that failed before creating one, a result clipped before the id survived, and each record
 of a file left as it stands — and a file a capture appends to while the repair reads it is named on
 stderr and left as it stands, never rewritten under a session's own write.
-

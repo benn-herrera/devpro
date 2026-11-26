@@ -1,4 +1,4 @@
-# The skill.
+# The skill
 
 `profiler` ships as a rendered skill definition under `devpro/definitions/`, so it
 carries the generated banner and the harness's namespace (`devpro:profiler` under claude) and renders
@@ -8,4 +8,3 @@ install rendered it — and where that file does not stand the skill says the to
 user-level install renders the skill and copies no resource, so there it is the committed wrapper or
 the absence. `init` renders the same skill into the repository's `.claude/skills/profiler/SKILL.md`
 from the definition.
-

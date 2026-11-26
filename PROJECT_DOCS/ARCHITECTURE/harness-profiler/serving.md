@@ -1,4 +1,4 @@
-# Serving.
+# Serving
 
 ## The verb and the bind
 
@@ -124,4 +124,3 @@ stop button ends the server as an interrupt does. Its payload carries `devpro_ve
 the board's connection indicator names, beside its `version`, `board`, `plan_columns` and `project`
 keys. A board file that cannot be read, and a port that cannot be bound, refuse the verb before it
 prints the URL: exit 2, and `error: ` before the message on stderr.
-

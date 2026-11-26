@@ -1,4 +1,4 @@
-# Doctor's lines.
+# Doctor lines
 
 `devpro profiler doctor` runs as the wrapper's own subcommand, and its `devpro:`
 line names the wrapper's own path — `INSTALLED_WRAPPER`'s where the install stands, the invoking
