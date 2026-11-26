@@ -74,7 +74,13 @@ its own status-table row.
 | P8 | landed: judged, no edit | expert | shipped | the dicer suite earns its keep |
 | P9 | landed | expert | shipped | the long tail over 100ms |
 | P10 | landed | expert | shipped | post-plan review |
-| P11 | dispatchable | expert | shipped | post-plan burndown |
+| P11 | in progress | expert | shipped | post-plan burndown |
+| B1 | drafted | expert | shipped | the pin removal's missed records |
+| B2 | drafted | mechanical | shipped | the marker machinery's comments |
+| B3 | drafted | expert | shipped | the interrupt leaf's first-use revision |
+| B4 | dispatchable | mechanical | shipped | the 30-second target sentence retires |
+| B5 | drafted | expert | shipped | the shared-fixture tier's residue |
+| B6 | drafted | mechanical | shipped | the corpus conversion's test and the wrapper's name |
 
 ## P1 — Apply the ARCHITECTURE deltas
 
@@ -491,6 +497,134 @@ table that is done reads `landed`.
 
 ## Post-plan burndown
 
+Drafted from [ACTIVE_PLAN_REVIEW.md](ACTIVE_PLAN_REVIEW.md) (`85ce85b`): the review's findings
+grouped by root cause, six items. Findings are cited by their IDs there.
+
 ### P11 Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Drafted the six items below from `ACTIVE_PLAN_REVIEW.md` at `85ce85b`.
+
+## B1 — The pin removal's missed records
+
+**Scope.** `devpro/harnesses/resources/opencode/index.ts`, `guardrail.ts`, `profiler.ts`; the
+`justfile`'s `_lint-typescript` note; `PROJECT_DOCS/ARCHITECTURE/why-there-is-no-verification-verb.md`;
+`PROJECT_DOCS/ARCHITECTURE/recipes.md`; `PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md`;
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-harness-resource-s-version-claims-testing.md`.
+Nothing else.
+
+**Work.** Applies the review's F-02, F-03, F-04 and F-07 as their entries state: the dangling "the
+version this file names" (`index.ts:126-127`) names the declarations the check reads — the host's,
+installed at `package.json`'s pin; the two unearned floor numerals (`guardrail.ts:3`,
+`profiler.ts:3`) drop, or `profiler.ts:3` ties its floor to the observation its own line records
+(`profiler.ts:10-13`); the version-claims leaf moves onto the prose observations it still
+describes, or folds into its sibling leaf and retires; the two stale "host version their headers
+name" records (`justfile:220`, `why-there-is-no-verification-verb.md:47`) state the version
+`package.json` pins; the recipes clause takes the architect's wording ("keeps the floor it already
+names and names no version of the moment"). The one judgment: where the "used with most" claim
+lives now — the guidance points at `install/opencode-entry.md`, the document holding the entry's
+behavior.
+
+**Done.** `just lint` (tsc runs over the edited headers), `just dev-check-links`, `just test devpro`
+(the install suite's resource tests still pass).
+
+**Commit.** One commit: `git commit -- devpro/harnesses/resources/opencode/ justfile
+PROJECT_DOCS/ARCHITECTURE/why-there-is-no-verification-verb.md PROJECT_DOCS/ARCHITECTURE/recipes.md
+PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md
+PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-harness-resource-s-version-claims-testing.md`.
+
+**Lifetime.** Shipped.
+
+## B2 — The marker machinery's comments state the run they describe
+
+**Scope.** `justfile`'s `test` recipe note (`:199-206`), `devtools/scripts/test.sh:17-20`. Nothing
+else.
+
+**Work.** Applies the review's F-01 and F-08: the note names both markers once each ("the cold_read
+and slow markers excluded by default"; "cold-read and slow each run their own marker as default
+-m") as description, not as a second enumeration of the surface list; the script header states the
+`slow` surface's directory bound ("runs the `devtools/tests` cases marked `slow`") and the reason
+the default refuses the marker's tests (the screenshot cases' wall time), which today explains
+`cold_read` only.
+
+**Done.** `just lint` (shellcheck over the edited script; the justfile comment's lint leg).
+
+**Commit.** One commit: `git commit -- justfile devtools/scripts/test.sh`.
+
+**Lifetime.** Shipped.
+
+## B3 — The interrupt leaf's first-use revision
+
+**Scope.**
+`PROJECT_DOCS/CONVENTIONS/planning-and-execution/a-test-failing-on-unstated-behavior-is-an-interrupt.md`
+— its text, its heading, and the two contents rows that name it. Nothing else.
+
+**Work.** Applies the review's F-05 as its entry states — the five wording fixes (the
+scope-finding sentence's relation to the process's "finding"; `isolate`'s marker form and its
+witness; `axe`'s contract exception; `acquit`'s unverifiable clause deleted or made observable;
+the act the dispatched seat performs), and the shorter title that keeps the subject, the file
+renamed with its two contents rows. The plan-form home question settles first — whether the
+interrupt reaches a package's `State` note or needs a new form element — and that settlement
+decides the record sentence's wording. The changed text takes a prompt-engineer review of the
+change before it lands.
+
+**Done.** `just dev-check-links`.
+
+**Commit.** One commit: `git commit -- PROJECT_DOCS/CONVENTIONS/planning-and-execution/` (the
+leaf, its renamed path, and the two contents rows).
+
+**Lifetime.** Shipped.
+
+## B4 — The 30-second target sentence retires
+
+**Scope.** `PROJECT_DOCS/ARCHITECTURE/repo-layout.md`'s target sentence. Nothing else.
+
+**Work.** The owner ruled ("agree. get rid of it. it was useful for this pass"): the 30-second
+figure leaves the leaf — it was this pass's planning-time figure, and no reachable run meets it
+(the protected install suite alone measures 17.5-19.3s of the ~52s default `devpro` surface, so
+the editable remainder cannot close the gap the review's F-06 arithmetic states). The leaf's law
+stands without it: every default run's marker exclusions, the 100ms earn-or-lose rule, the surface
+structure. Nothing moves to ROADMAP.
+
+**Done.** `just dev-check-links`.
+
+**Commit.** One commit: `git commit -- PROJECT_DOCS/ARCHITECTURE/repo-layout.md`.
+
+**Lifetime.** Shipped.
+
+## B5 — The shared-fixture tier's residue
+
+**Scope.** `tests/dashboard/test_board_panel.py`, `tests/conftest.py`. Nothing else.
+
+**Work.** Applies the review's F-09, F-10 and F-11. The long-poll test's bound becomes the one its
+wait terminates by — `assert 0 < waited[0] < _TIMEOUT` — and the never-answering poll is planted
+in the run that proves the assertion fires: `clauses.TEST_PRECONDITION`, the defect being a poll
+whose `since` never reaches the server, which under the current `LONG_POLL_SECONDS` bound passes
+in silence. `tests/conftest.py` gains the record beside `_home` stating how a session- or
+module-scoped fixture gets its scratch `HOME` (or, if the install path reads no home, the
+CONVENTIONS leaf's sentence is the one that says so — the check is the install path's read). The
+module docstring's parenthetical gains the root-escape arm the merge moved; the `panel` fixture
+yields the client alone, `err` local to the fixture.
+
+**Done.** `just test devpro`, `just lint`.
+
+**Commit.** One commit: `git commit -- tests/dashboard/test_board_panel.py tests/conftest.py`.
+
+**Lifetime.** Shipped.
+
+## B6 — The corpus conversion's test and the wrapper's name
+
+**Scope.** `devtools/tests/test_dupe_sweep.py`, `tests/test_devpro_profiler.py`. Nothing else.
+
+**Work.** Applies the review's F-12 and F-13. One test calls
+`python_corpus.code_corpus(rev="no-such-revision")` and asserts `SweepError` — the
+`CalledProcessError` → `SweepError` conversion (`devtools/dupe_sweep/corpus.py:31-32`) no test
+exercises; its docstring names the defect (`clauses.TEST_PRECONDITION`): a conversion regression
+ships a wrong verdict green — a single `git ls-tree` call, no sweep. The profiler fixture
+`_launcher` renames to `_wrapper` and `_run`'s `launcher:` parameter to `wrapper`, one edit.
+
+**Done.** `just test devpro`, `just test dupe_sweep`, `just lint`.
+
+**Commit.** One commit: `git commit -- devtools/tests/test_dupe_sweep.py
+tests/test_devpro_profiler.py`.
+
+**Lifetime.** Shipped.
