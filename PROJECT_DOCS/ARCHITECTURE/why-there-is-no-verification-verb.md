@@ -39,7 +39,9 @@ two guardrails are held to one behavior by `tests/test_guardrail.py`, which runs
 `bun`, but a case whose `harness` field (`claude` or `opencode`) names one implementation runs
 under that one alone (`tests/guardrail_ts_runner.ts` loads the opencode guardrail outside
 `bun test`, with its package import stubbed), and asserts each implementation's reason equals the
-table's. A runner that runs a page's scripts runs them all in one shared scope, the way the
+table's. The shipped TypeScript resources are type-checked against the host's published declarations,
+the version `package.json` pins. A runner that runs a page's scripts runs them all in one shared
+scope, the way the
 browser executes a page — classic scripts share one global scope — so a redeclaration the browser
 throws on, the run throws on too. A case may name a
 working directory: `guardrail.pl` receives it as the input `cwd` beside `CLAUDE_PROJECT_DIR` set to

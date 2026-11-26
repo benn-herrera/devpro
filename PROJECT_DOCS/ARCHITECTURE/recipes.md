@@ -61,8 +61,8 @@ would hide drift. `just lint` needs `shellcheck` on
 against the host's published declarations — `@opencode/plugin`'s own types are the authority, no
 devpro-owned stand-in for a published package shadows them. The declarations reach the check as a
 dev-time dependency installed before `tsc` runs — a root `package.json` holds it, and the pin's
-version has no second home: a resource's header names the floor its header already names, never the
-pin of the moment — and the check
+version has no second home: a resource's header keeps the floor it already names and names no
+version of the moment — and the check
 reads what ships: the host's transitive declarations are not this check's mandate, `skipLibCheck`
 keeping the program over the resources. The check settles the declared surface only: where the
 host's runtime reports something its declarations do not publish, the reads are observed, shipped

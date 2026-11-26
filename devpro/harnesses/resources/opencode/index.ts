@@ -123,9 +123,10 @@ async function readPlugin(): Promise<Held> {
   }
 }
 
-// The plugin context is the host's own, so every use below is checked against the declarations of
-// the version this file names. The opened directory is not the project root: the plan stands at the
-// checkout root, which is `project.directory`. A command's body is read when the command runs, so
+// The plugin context is the host's own, so every use below is checked against the host's published
+// declarations, installed at `package.json`'s pin. The opened directory is not the project root: the
+// plan stands at the checkout root, which is `project.directory`. A command's body is read when the
+// command runs, so
 // its invocations and prompts are the host's too.
 type Context = Parameters<Parameters<typeof Plugin.define>[0]["setup"]>[0]
 

@@ -217,8 +217,8 @@ format-python *paths: _venv
 
 # shellcheck over every tracked `*.sh` file, then the same three tools over the same paths as
 # `format-python`, checking and writing nothing, then the shipped TypeScript resources against the
-# declarations of the host version their headers name, `@opencode/plugin`. A reviewer runs this one,
-# and `format-python` is what fixes what it reports.
+# host's published declarations, the version `package.json` pins, `@opencode/plugin`. A reviewer runs
+# this one, and `format-python` is what fixes what it reports.
 [doc("[dev] check the shell, the python and the shipped TypeScript are clean, writing nothing")]
 lint: _venv _lint-shell _lint-typescript
     @{{VENV_PYTHON}} -m black --check --line-length=120 tests devpro devtools
