@@ -13,6 +13,7 @@ _NUMBER = re.compile(r"([0-9]+(?:\.[0-9]+)*)\.? ")
 _NOT_SLUG = re.compile(r"[^a-z0-9]+")
 _ASCII_LOWER = str.maketrans("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")
 DEEPEST_SPLIT_LEVEL = 4
+LAST_LEVEL = 6
 
 
 @dataclass

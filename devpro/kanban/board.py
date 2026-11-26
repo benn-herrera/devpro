@@ -18,12 +18,11 @@ from dataclasses import asdict, dataclass, replace
 from typing import Any, TypeVar
 from urllib.parse import quote
 
-from ..dicing.heads import CONTENTS, ENTRY_POINT, HEADS, INDEX, contents_line, section_head, volume_head
+from ..dicing.heads import CONTENTS, ENTRY_POINT, HEADS, INDEX, contents_cut, contents_line, section_head, volume_head
 from ..dicing.linkcheck import markdown_files, prose_links
 from ..dicing.linkrewrite import never_rebased, rel
 from ..dicing.linkscan import link_targets, scan
 from ..dicing.outline import contents_text, section_name, split_number
-from ..dicing.reassemble import contents_cut
 from ..dicing.textfile import fence_flags, is_blank, read_text, replace_lines
 from ..doccheck.planform import (
     ACTIVE_DESIGN,

@@ -27,9 +27,11 @@ after it are dropped ([reassembly](reassembly.md)'s cut). Each other file's head
 restored before it is written: a file whose top heading reads level 1 is in the re-based form
 ([file content](the-diced-tree/file-content.md#file-content)) and is put back at the shallowest level its place in the
 tree permits — a section file sits one level below its parent's head, so a section at the
-document's first level is level 2 — raised where a heading below its top would otherwise land at a
-split level and split it into two sections, and a file whose top reads any other level is the
-pre-change form and is written as it stands. A volume's head is its document's title and opening
+document's first level is level 2 — and a file whose top reads any other level is the pre-change
+form and is written as it stands. A place deeper than the last heading level has no document to be
+restored into: the file is reported as
+`undice: <document path> sits deeper than a document's last heading level`, nothing is written for
+that volume, and the verb exits 1. A volume's head is its document's title and opening
 text, and it writes as it stands, its title at level 1. The tree does not record the level a
 re-based section came from, and no two documents with the same tree can be told apart, so the
 document written is the one the tree holds: it need not be the document the tree was diced from, and

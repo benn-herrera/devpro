@@ -14,9 +14,9 @@ document's title and opening text as the source has them, the title at level 1. 
 code is a heading and none is re-based ([which headings split](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/which-headings-split.md#which-headings-split)).
 
 A section whose text holds a heading that this shift would carry above level 1 or below level 6 has
-no ladder the tree can hold: it is reported as
-`heading too deep to re-base at line <N> (<level>): written at its monolith level`, written at its
-source levels, and the verb exits 1.
+no ladder the tree can hold: each such heading is reported as
+`heading too deep to re-base at line <N>: written at its monolith level`, `<N>` the heading's own
+source line, the section is written at its source levels, and the verb exits 1.
 
 The head and every index end with a **Contents block** appended directly after the section's
 own lines (no separator line is added):

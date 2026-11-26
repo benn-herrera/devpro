@@ -1,7 +1,8 @@
 import pytest
 
 from devpro.dicing.dicedoc import _placed_level
-from devpro.dicing.reassemble import _top_is_rebased, contents_cut, own_end
+from devpro.dicing.heads import contents_cut
+from devpro.dicing.reassemble import own_end, top_is_rebased
 from devpro.dicing.split import _rebased
 
 
@@ -65,7 +66,7 @@ def test_a_rebased_level_moves_the_ladder_by_its_delta(level, delta, top, writte
 def test_only_a_level_1_top_is_the_written_form(leaf, rebased):
     """The two forms are told apart by the top heading alone: `plan_sections` plans no level-1
     section, so a pre-change leaf's top is never level 1, and a written leaf's top always is."""
-    assert _top_is_rebased(leaf) is rebased
+    assert top_is_rebased(leaf) is rebased
 
 
 @pytest.mark.parametrize(
@@ -75,13 +76,14 @@ def test_only_a_level_1_top_is_the_written_form(leaf, rebased):
         pytest.param("1-one/index.md", 2, id="root-index"),
         pytest.param("1-one/1.1-sub.md", 3, id="child-of-an-index"),
         pytest.param("sec/sub.md", 3, id="child-carrying-a-deeper-heading-sits-beside-its-siblings"),
-        pytest.param("a/b/c/d/e/f.md", 7, id="a-placement-no-legal-heading-reaches-is-reported"),
+        pytest.param("a/b/c/d/e/f.md", None, id="a-placement-no-legal-heading-reaches-is-refused"),
+        pytest.param("a/b/c/d/e/f/index.md", None, id="an-index-no-legal-heading-reaches-is-refused"),
     ],
 )
 def test_a_part_is_restored_to_the_level_its_place_in_the_tree_fixes(path, level):
     """The tree does not carry the level a re-based section came from, so a restored heading sits at
     its place's level: a directory holding a section index counts as that index's level, so a section
     index's children and a childless section at the same depth sit beside each other. A part's own
-    ladder never moves it, and no clamp to level 6 stands: a tree too deep for the document it holds
-    is reported by the self-check, not guessed around."""
+    ladder never moves it. A place deeper than the last heading level has no document to be restored
+    into, and none is: the part is refused, never written at a level markdown cannot hold."""
     assert _placed_level(path) == level

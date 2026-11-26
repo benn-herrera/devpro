@@ -1,49 +1,43 @@
+"""Unit tests for the write pass's re-base: which lines of a section have no level to write at."""
+
 import io
 
-from devpro.dicing.outline import Outline, plan_sections
-from devpro.dicing.split import contents_block
+import pytest
+
+from devpro.dicing.outline import plan_sections
+from devpro.dicing.split import _overflow
+from devpro.dicing.textfile import fence_flags
 
 
-def _outline(lines):
-    sections, ok = plan_sections(lines, err=io.StringIO())
+def _overflows(lines: list[str], *, deepest: int = 4) -> list[int]:
+    """The offending lines of every section the document plans, in line order."""
+    sections, ok = plan_sections(lines, err=io.StringIO(), deepest=deepest)
     assert ok
-    return Outline(sections)
+    fenced = fence_flags(lines)
+    return [no for s in sections for no in _overflow(lines, s, fenced)]
 
 
-_DOC = [
-    "# Doc",
-    "## 1. Intro",
-    "### 1.1 Scope",
-    "#### Detail",
-    "### 1.2 Terms",
-    "## Notes",
-]
-
-
-def test_entry_point_lists_every_section_indented_by_depth():
-    outline = _outline(_DOC)
-    assert contents_block(outline, outline.sections[0]) == [
-        "Contents:",
-        "",
-        "- [§1 Intro](1-intro/index.md)",
-        "  - [§1.1 Scope](1-intro/1.1-scope/index.md)",
-        "    - [§1.1 Detail](1-intro/1.1-scope/detail.md)",
-        "  - [§1.2 Terms](1-intro/1.2-terms.md)",
-        "- [Notes](notes.md)",
-    ]
-
-
-def test_index_lists_direct_children_relative_to_its_directory():
-    outline = _outline(_DOC)
-    assert contents_block(outline, outline.sections[1]) == [
-        "Contents:",
-        "",
-        "- [§1.1 Scope](1.1-scope/index.md)",
-        "- [§1.2 Terms](1.2-terms.md)",
-    ]
-    assert contents_block(outline, outline.sections[2]) == ["Contents:", "", "- [§1.1 Detail](detail.md)"]
-
-
-def test_entry_point_with_nothing_to_list():
-    outline = _outline(["# Doc", "text"])
-    assert contents_block(outline, outline.sections[0]) == ["Contents:", ""]
+@pytest.mark.parametrize(
+    "lines, deepest, offending",
+    [
+        pytest.param(["# Doc", "## A", "######## Too deep"], 4, [3], id="one-level-past-the-last"),
+        pytest.param(["# Doc", "## A", "###### Fine", "####### Also fine"], 4, [], id="the-last-level-is-writable"),
+        pytest.param(
+            ["# Doc", "## A", "######## One", "text", "######## Two"], 4, [3, 5], id="every-offender-in-a-section"
+        ),
+        pytest.param(
+            ["# Doc", "## A", "######## One", "## B", "######## Two"],
+            4,
+            [3, 5],
+            id="each-section-names-its-own",
+        ),
+        pytest.param(["# Doc", "## A", "```", "######## Fenced", "```"], 4, [], id="a-fenced-line-is-not-a-heading"),
+        pytest.param(["# Doc", "## A", "######## Too deep"], 2, [3], id="split-level-2-still-refuses"),
+    ],
+)
+def test_every_heading_with_no_level_to_write_at_is_named(lines, deepest, offending):
+    """A section whose shift carries a heading past the last level has no ladder the tree can hold,
+    and each such heading is named by its own monolith line. The defect: the report named the
+    section's first line rather than the heading that overflows, and one id per section meant a
+    second defective heading in the same section was never named."""
+    assert _overflows(lines, deepest=deepest) == offending

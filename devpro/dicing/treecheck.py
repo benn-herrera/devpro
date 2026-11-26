@@ -13,7 +13,7 @@ import os
 from collections import deque
 from typing import TextIO
 
-from .heads import ENTRY_POINT, HEADS, INDEX
+from .heads import ENTRY_POINT, HEADS, INDEX, heads_of
 from .linkcheck import markdown_files, prose_links
 from .linkrewrite import URL_SCHEME
 from .textfile import read_lines
@@ -32,12 +32,7 @@ def _misplaced_head(root: str) -> set[str]:
     a tree whose root's head links an `entry-point.md` below it is the omnibus form, and every
     top-level directory under it is a volume's. A tree whose root links none is one document's, and
     its top-level directories are sections. Neither is misplacement; both are valid trees."""
-    entry = os.path.join(root, ENTRY_POINT)
-    volumes = {
-        os.path.dirname(target.partition("#")[0])
-        for _, target in prose_links(read_lines(entry))
-        if target.partition("#")[0].endswith(f"/{ENTRY_POINT}")
-    }
+    volumes = heads_of(os.path.join(root, ENTRY_POINT))
     if not volumes:
         return set()
     misplaced = set()

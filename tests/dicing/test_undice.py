@@ -1,5 +1,5 @@
-"""Unit tests for undice's stray-file check: which `.md` files under a volume are reported, and as
-what.
+"""Unit tests for undice's stray-file check and its walk: which `.md` files under a volume are
+reported, and as what.
 
 Each report is identified by the tree paths it carries: a file read as another section names it and
 the path it would be re-diced as, a file that opens no section names it alone, an unread file names
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from devpro.dicing.dicedoc import Volume, _reproduced
+from devpro.dicing.dicedoc import Volume, _reproduced, _walk
 from devpro.dicing.outline import DEEPEST_SPLIT_LEVEL, plan_sections
 
 # Planned as entry-point.md (line 1), alpha.md (lines 2-3), beta.md (line 4).
@@ -61,3 +61,28 @@ def test_reproduced(
     assert passed == (not reports)
     reported = [re.findall(r"\S+\.md\b", line) for line in err.getvalue().splitlines()]
     assert sorted(reported) == sorted([f"{out}/{path}" for path in report] for report in reports)
+
+
+def test_a_volume_is_walked_depth_first_in_link_order_once_each(tmp_path: Path) -> None:
+    """The walk reads a volume's head, then the files its Contents links reach, depth first, a file
+    once however many Contents blocks link it, and gives each part's document path with the line it
+    starts at. The defect: the walk's body stood twice, in `visit` and beside it in `_walk`, so a
+    change to what a part is — its lines, or the line it starts at — landed in one path and not the
+    other, and a head read by both was numbered by whichever ran."""
+    tree = tmp_path / "tree"
+    files = {
+        "entry-point.md": "# Doc\n\nContents:\n\n- [One](one/index.md)\n- [Two](two.md)\n",
+        "one/index.md": "# One\n\nContents:\n\n- [Child](child.md)\n- [Two](../two.md)\n",
+        "one/child.md": "# Child\n\ntext\n",
+        "two.md": "# Two\n\ntext\n",
+    }
+    for name, text in files.items():
+        (tree / name).parent.mkdir(parents=True, exist_ok=True)
+        (tree / name).write_text(text, encoding="utf-8")
+    err = io.StringIO()
+
+    parts, reads, all_read = _walk(str(tree), "entry-point.md", err=err)
+
+    assert all_read and err.getvalue() == ""
+    assert [path for path, _ in parts] == ["entry-point.md", "one/index.md", "one/child.md", "two.md"]
+    assert reads == [("entry-point.md", 1), ("one/index.md", 3), ("one/child.md", 5), ("two.md", 8)]

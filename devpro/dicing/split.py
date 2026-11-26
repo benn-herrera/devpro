@@ -39,6 +39,13 @@ def _rebased_level(line: str, *, delta: int, top: int | None = None) -> int:
     return top if top is not None else _HEADING.match(line).end() - 1 + delta
 
 
+def _placed(line: str, *, s: Section, top: int | None = None) -> int:
+    """The level a heading line of section s writes at: `top` where the caller names it, else the
+    heading's own level moved by the section's shift. One home for the arithmetic, so the test that
+    a section fits and the write of it cannot disagree."""
+    return _rebased_level(line, delta=_shift(s), top=top)
+
+
 def _shifted(line: str, level: int) -> str:
     """A heading line rewritten to open at `level` hashes: its heading text and number unchanged."""
     return "#" * level + line[_HEADING.match(line).end() - 1 :]
@@ -49,18 +56,17 @@ def _rebased(line: str, *, delta: int, top: int | None = None) -> str:
     return _shifted(line, _rebased_level(line, delta=delta, top=top))
 
 
-def _fits(lines: list[str], s: Section, fenced: list[bool]) -> bool:
-    """Whether every heading of the section's own text lands at a level 1 to 6 once re-based: one
-    deeper than level 6 shifted down, or one at level 1 shifted up, has no level to write at, and
-    its section is then written as the monolith has it and reported. A volume head's own text is the
-    document's title and what sits above its first split heading, and no shift touches it."""
+def _overflow(lines: list[str], s: Section, fenced: list[bool]) -> list[int]:
+    """The 1-based monolith lines of the section's own text whose heading the re-base would carry
+    above level 1 or below level 6, in line order: the heading that cannot be written rather than the
+    section's own top, so the report names every line that has no level to land at. A volume head's
+    own text is the document's title and what sits above its first split heading, and no shift
+    touches it, so none of its lines overflows."""
+    levels = []
     for k in range(s.first - 1, s.last):
-        if fenced[k] or not _HEADING.match(lines[k]):
-            continue
-        top = 1 if k == s.first - 1 else None
-        if not 1 <= _rebased_level(lines[k], delta=_shift(s), top=top) <= 6:
-            return False
-    return True
+        if not fenced[k] and _HEADING.match(lines[k]):
+            levels.append((k + 1, _placed(lines[k], s=s, top=1 if k == s.first - 1 else None)))
+    return [no for no, level in levels if not 1 <= level <= 6]
 
 
 def write_tree(sections: list[Section], lines: list[str], tree: Tree, *, err: TextIO, base: str = "") -> list[int]:
@@ -78,8 +84,10 @@ def write_tree(sections: list[Section], lines: list[str], tree: Tree, *, err: Te
     unrebased = []
     for s in sections:
         leaf_dir = parent_dir(s.path)
-        if not _fits(lines, s, fenced):
-            print(f"heading too deep to re-base at line {s.first} ({s.level}): written at its monolith level", file=err)
+        overflowing = _overflow(lines, s, fenced)
+        for no in overflowing:
+            print(f"heading too deep to re-base at line {no}: written at its monolith level", file=err)
+        if overflowing:
             unrebased.append(s.id)
         body = []
         for k in range(s.first - 1, s.last):

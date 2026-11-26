@@ -4,19 +4,11 @@ links reverted, reproduce the monolith line for line (outside links compared in 
 import os
 from typing import TextIO
 
-from .heads import CONTENTS, HEADS
+from .heads import HEADS, contents_cut
 from .linkrewrite import Linker, Tree, parent_dir
 from .outline import _HEADING, Outline, Section
 from .split import _rebased
 from .textfile import FenceTracker, fence_flags, read_lines
-
-
-def contents_cut(lines: list[str]) -> int:
-    """Index of a head's Contents block: its last line that is exactly `Contents:`; -1 if none."""
-    cut = len(lines) - 1
-    while cut >= 0 and lines[cut] != CONTENTS:
-        cut -= 1
-    return cut
 
 
 def own_end(path: str, lines: list[str]) -> int:
@@ -26,7 +18,7 @@ def own_end(path: str, lines: list[str]) -> int:
     return cut if cut >= 0 else len(lines)
 
 
-def _top_is_rebased(leaf: list[str]) -> bool:
+def top_is_rebased(leaf: list[str]) -> bool:
     """Whether a section's file opens at the re-based write form, its top heading at level 1. The
     pre-change form never does: no planned section is level 1 (`outline.plan_sections`). The entry
     point is not a section and its title is written as the monolith has it."""
@@ -64,7 +56,7 @@ def check_reassembly(
         fence = FenceTracker()
         # a leaf in the re-based form has its ladder shifted back for the compare; one in the
         # pre-change form is already at the monolith's levels and compares as it stands
-        rebased = s.id > 0 and _top_is_rebased(leaf)
+        rebased = s.id > 0 and top_is_rebased(leaf)
         for index, line in enumerate(leaf):
             inside = fence.inside(line)
             got = line if inside else linker.revert(line, leaf_dir)
