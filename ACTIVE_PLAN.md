@@ -75,9 +75,9 @@ its own status-table row.
 | P9 | landed | expert | shipped | the long tail over 100ms |
 | P10 | landed | expert | shipped | post-plan review |
 | P11 | landed | expert | shipped | post-plan burndown |
-| B1 | in progress | expert | shipped | the pin removal's missed records |
+| B1 | landed | expert | shipped | the pin removal's missed records |
 | B2 | dispatchable | mechanical | shipped | the marker machinery's comments |
-| B3 | in progress | expert | shipped | the interrupt leaf's first-use revision |
+| B3 | landed | expert | shipped | the interrupt leaf's first-use revision |
 | B4 | landed | mechanical | shipped | the 30-second target sentence retires |
 | B5 | in progress | expert | shipped | the shared-fixture tier's residue |
 | B6 | in progress | mechanical | shipped | the corpus conversion's test and the wrapper's name |
