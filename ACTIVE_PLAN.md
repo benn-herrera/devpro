@@ -75,8 +75,9 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | B1 | landed | expert | `devpro:prompt-engineer` | restore the dicing-and-checks index preamble and the `--split-level` contract |
 | B2 | landed | expert | `devpro:prompt-engineer` | the anchor retarget class: every link lands on the leaf whose text it names |
 | B3 | landed | expert | `devpro:python-coder` | the tool: one classifier, honest faults, no dead code |
-| B4 | in progress: R2 decided; the writes under way with the prompt-engineer | expert | `devpro:prompt-engineer` | single-home the model rules, and the corpus's missing shapes |
+| B4 | dispatchable: halted, its edits uncommitted in the tree; its case table asserts B6's case, so it runs after B6 lands | expert | `devpro:prompt-engineer` | single-home the model rules, and the corpus's missing shapes |
 | B5 | dispatchable | expert | `devpro:prompt-engineer` | the contract gaps the run named |
+| B6 | dispatchable | expert | `devpro:python-coder` | a kept level-1 heading no longer refuses the section it falls in — found by B4's run |
 
 ## P1 — the dicer writes every section's heading ladder re-based to an H1 top
 
@@ -768,11 +769,13 @@ decision, recorded here in Guidance.
 
 **Scope.** `PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/the-model.md`;
 `PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/file-content.md`;
+`PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/which-headings-split.md` (R15's depth rule);
 `PROJECT_DOCS/SPEC/dicing-and-checks/check-tree.md`;
 `PROJECT_DOCS/SPEC/dicing-and-checks/link-rewriting/link-targets.md`;
 `PROJECT_DOCS/SPEC/dicing-and-checks/undice.md` (R9's restore half, R14's tree statement);
-`tests/dicing/` (the corpus cases R13, R14, R15 — fixtures and case dirs, not the citation-targets
-test, which is B2's).
+`tests/dicing/` (the corpus cases R14, R15 — fixtures and case dirs, not the citation-targets test,
+which is B2's; not `test_dicer.py`'s case table, which asserts B6's case and is B6's while that case
+is red; not R13's case, which is B6's).
 
 **Guidance.** R2 is decided: `the-model.md` is the contract, and the tree decides keyed on the
 root head's Contents block — the root head links the `entry-point.md`s that name the tree's
@@ -786,8 +789,11 @@ leaves already passes `check-tree`; its remaining work is the model sentence onl
 case pinning the shape's acceptance. `undice.md` cites the model rather than restating the
 classifier, edited after the model's sentence so its citation points at settled text.
 `link-rewriting.md` states the cross-document link rule (R9) and `link-targets.md`'s rule 3 is
-amended. Corpus cases: R13 — a level-1 heading inside a section; R15 — a heading past the last
-level, under `_overflow`'s rule as B3 landed it; R14 — the acceptance pin.
+amended. Corpus cases: R15 — a heading past the last level, under `_overflow`'s rule as B3 landed
+it; R14 — the acceptance pin. R13's case found a code defect on its red run (a level-1 heading
+inside a section is not re-based): the fix is B6's, which owns the case and its assertion in
+`test_dicer.py`, and lands first. This item lands after B6, and its `just test-changed` is green
+only once B6 has.
 
 **Done-line.** `just test-changed`, then `just lint`, then `just dev-check-links`.
 
@@ -817,3 +823,59 @@ equal its heading's slug — lands in the `devpro-docdicer` skill's tree convent
 worked instance.
 
 **Done-line.** `just dev-check-links`.
+
+### B6 — a kept level-1 heading no longer refuses the section it falls in
+
+Found by B4's run: R13's corpus case went red on a code defect no landed package owns — the
+writer produces the expected tree, then refuses it with a false fault line. Agent
+`devpro:python-coder`.
+
+**Scope.** `devpro/dicing/split.py` (`write_tree`, `_overflow`, `_shift`);
+`devpro/dicing/outline.py` (`plan_sections`'s level-1 line, where the fix needs it — the two
+modules are the fault's whole home; `dicedoc.py` reads no case field); the corpus case
+`tests/dicing/data/dice-level-1-inside-a-section/` (`input/`, `args`, `expected/tree/`,
+`expected/exit`, `expected/names` — B4's run created it uncommitted, and this item owns it through
+landing); and `tests/dicing/test_dicer.py` only where the case file format needs a field it does
+not read today (`:160`'s comparison).
+
+**Facts.**
+- The case is red, and its shape is `expected/`: `tree/` holds the three files the writer must
+  produce — `out/entry-point.md`, `out/section/index.md`, `out/section/1.1.1-deeper.md` — and the
+  run writes exactly these, byte for byte; `exit` holds `1`, and `names` holds the run's whole
+  output, never narrowed to the lines the case pins. Check: `.devpro-temp/b6-probe/` holds the
+  case's `input/`; `PYTHONPATH=. .venv/bin/python -m devpro dice doc.md --out out` there prints
+  `extra level-1 heading at line 9 kept as text`, then `heading too deep to re-base at line 9:
+  written at its monolith level`, and exits 1.
+- The fault's home: `plan_sections` (`outline.py:79-89`) prints the `extra level-1 heading` line
+  and plans no section for the line. The line therefore falls inside `## Section`, whose top is
+  the section's first line — `split.write_tree`'s `k == s.first - 1` — so `_shift(s) = 1 - 2 = -1`
+  leaves `## Section` at `##`, `_overflow` (`split.py:66-69`) reads that line's level as 0, and
+  `write_tree` writes the section at its monolith levels and returns its id. Check:
+  `git grep -n 's.first - 1' devpro/dicing/split.py` → two sites, `:68` and `:97`.
+- B4's run's edits to `which-headings-split.md`, `the-model.md`, `undice.md`, `check-tree.md` and
+  `link-targets.md` are uncommitted in this tree (`git status --short`); read them, not `HEAD`. The
+  two rules the case turns on are `which-headings-split.md`'s: a level-1 heading inside a section
+  is kept as text and reported, and a section whose ladder would need a level outside 1 to 6 at
+  the top has none and is written at its source levels.
+- B4's probe of the same derivation found no defect where the section's own top heading *does* sit
+  in a section: B3's corpus cases pass. Not this item's finding.
+
+**Guidance.** First act: run the case red (`just test-changed`, which selects `devpro` for both
+`devpro/` and `tests/`) and read the three parts of its expectation: `expected/tree/` (the files),
+`expected/exit` (the status) and `expected/names` (the lines the case pins). A red `.md` case
+normally pins only `tree`, whose files must appear; this one pins all three, and its `names` never
+includes the fault line — a green run can move `exit` and pipe `names` as B4's run produced it,
+because the case's defect is the exit status and the files already match. Where the written files
+differ from `expected/tree/`, the difference is the defect's output and the fix is whatever makes
+the fields come out equal. The `expected/tree/` files are the requirement candidate: verify them
+against `the-model.md`'s rule and `which-headings-split.md`'s depth rule as B4's run restates them.
+Where the files and the model's rule disagree, report the disagreement rather than bending either —
+the model leaf is the contract R2 decided, and a wording change there is B4's, not yours. Then fix
+the code so the files match and `exit` is `0`. No document edits; report any wording the fix makes
+false.
+
+**Done-line.** `just test-changed`, then `just lint`. The checkpoint gate runs once before the
+commit, as P1 states. Stage and commit only this scope's paths:
+`git commit -- devpro/dicing/split.py devpro/dicing/outline.py
+tests/dicing/data/dice-level-1-inside-a-section tests/dicing/test_dicer.py` (drop a path the fix
+did not touch).
