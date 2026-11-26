@@ -31,7 +31,7 @@ review and `devpro-architect` revision (*Dispatchability*), which run after this
 
 | Package | State | Rating |
 | --- | --- | --- |
-| P1 | dispatchable | expert |
+| P1 | in progress | expert |
 | P2 | dispatchable | expert |
 | P3 | dispatchable | expert |
 | P4 | dispatchable | expert |
