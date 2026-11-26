@@ -216,6 +216,10 @@ bindable term that has no default and is unbound, ask the user for it then, thro
   *Purpose:* the user approves once and is not called back mid-run for a question planning could
   have asked.
 
+- Offering a plan for approval sets, in that same turn, every package that meets *Dispatchability*
+  to `dispatchable`; no `go` is needed for it. *Purpose:* a plan offered with rows still `drafted`
+  overstates what is unready.
+
 - Each section of a plan or design gets one `{clauses.ref(name="prompt-engineer")}` review and one
   revision; a revision applying that review's findings is not re-reviewed. A later change — a
   package added, a decision reversed, a section rewritten — gets a review of the changed text only,
@@ -243,8 +247,7 @@ plan the same way.
   settled the package's text looks. Run order neither makes a package dispatchable nor withholds the
   state, and a waiting package carries no note for the wait — the wait is a fact of run order, not a
   condition that makes the row what it is. `in progress`: dispatched and not landed. `landed`: accepted and
-  committed. The user's `go` is not needed to promote from `drafted` to `dispatchable` once the
-  conditions have been met.
+  committed.
 - Each package's `Rating` cell opens with `mechanical` or `expert`, rated as *Dispatch* rates its
   dispatch; anything after the word is a note, and names no model (*Dispatch*). *Purpose:* whoever reads the table sees which work runs on the
   {STEP_DOWN_MODEL_TERM}.
