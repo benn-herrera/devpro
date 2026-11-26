@@ -77,7 +77,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | B3 | landed | expert | `devpro:python-coder` | the tool: one classifier, honest faults, no dead code |
 | B4 | dispatchable: halted, its edits uncommitted in the tree; its case table asserts B6's case, so it runs after B6 lands | expert | `devpro:prompt-engineer` | single-home the model rules, and the corpus's missing shapes |
 | B5 | dispatchable | expert | `devpro:prompt-engineer` | the contract gaps the run named |
-| B6 | in progress | expert | `devpro:python-coder` | a kept level-1 heading no longer refuses the section it falls in — found by B4's run |
+| B6 | dispatchable | expert | `devpro:python-coder` | a kept level-1 heading no longer refuses the section it falls in — found by B4's run |
 
 ## P1 — the dicer writes every section's heading ladder re-based to an H1 top
 
