@@ -347,7 +347,7 @@ UNPACKED := DIST + "/" + GEN + "-unpacked"
 # The repository's own set, installed from the built wheel beside it: this repository is TARGET, and
 # the install's harness inference, its settings file and its components default are its own.
 [doc("install this checkout's devpro here, from the built wheel")]
-agents: build
+agents *args: build
     #!/usr/bin/env bash
     set -euo pipefail
     unpacked="{{PROJECT_ROOT}}/{{UNPACKED}}"
@@ -355,7 +355,7 @@ agents: build
     command rm -rf "${unpacked}"
     mkdir -p "${unpacked}"
     unzip -q -o "{{PROJECT_ROOT}}/{{DIST}}/{{GEN}}-${ver}-py3-none-any.whl" -d "${unpacked}"
-    PYTHONPATH="${unpacked}" python3 -m "{{GEN}}" install "{{PROJECT_ROOT}}"
+    PYTHONPATH="${unpacked}" python3 -m "{{GEN}}" install "{{PROJECT_ROOT}}" ${@+"${@}"}
 
 # The tap clone's one source: its origin URL, which the clone and the remote
 # set-up both take, and the location its .gitignore entry names.
