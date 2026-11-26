@@ -75,7 +75,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | B1 | landed | expert | `devpro:prompt-engineer` | restore the dicing-and-checks index preamble and the `--split-level` contract |
 | B2 | landed | expert | `devpro:prompt-engineer` | the anchor retarget class: every link lands on the leaf whose text it names |
 | B3 | landed | expert | `devpro:python-coder` | the tool: one classifier, honest faults, no dead code |
-| B4 | dispatchable: halted, its edits uncommitted in the tree; its case table asserts B6's case, so it runs after B6 lands | expert | `devpro:prompt-engineer` | single-home the model rules, and the corpus's missing shapes |
+| B4 | in progress: resumed on B6's landed base | expert | `devpro:prompt-engineer` | single-home the model rules, and the corpus's missing shapes |
 | B5 | dispatchable | expert | `devpro:prompt-engineer` | the contract gaps the run named |
 | B6 | landed | expert | `devpro:python-coder` | a kept level-1 heading no longer refuses the section it falls in — found by B4's run |
 
