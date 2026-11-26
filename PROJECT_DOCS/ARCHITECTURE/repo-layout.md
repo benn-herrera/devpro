@@ -41,9 +41,21 @@ devtools/               repository-maintenance tooling — never installed; impo
     report.py           headers, candidate lists, the file-pair tally
     passes.py           the `python` pass and its defaults
     cli.py              argparse surface and dispatch
-  tests/                the devtools test suite — dupe_sweep (`test_dupe_sweep` and its import-structure test), clause_join_sites, render_diff and screenshot — run as the `dupe_sweep` test surface (`just test dupe_sweep`)
-tests/                  the root test suite, the `devpro` package's tests and the repository-wide checks, run as the `devpro` test surface (`just test devpro`) with the `cold_read` marker excluded by default — the cold-read suite's subprocess cases run as the `cold-read` surface (`just test cold-read`) — never installed; the double-delivery check among the repository-wide checks compares sentences
+  tests/                the devtools test suite — dupe_sweep (`test_dupe_sweep` and its import-structure test), clause_join_sites, render_diff and screenshot — run as the `dupe_sweep` test surface (`just test dupe_sweep`), its screenshot cases marked `slow`, run as the `slow` surface (`just test slow`)
+tests/                  the root test suite, the `devpro` package's tests and the repository-wide checks, run as the `devpro` test surface (`just test devpro`) with the `cold_read` and `slow` markers excluded by default — the cold-read suite's subprocess cases run as the `cold-read` surface (`just test cold-read`) — never installed; the double-delivery check among the repository-wide checks compares sentences
 ```
+
+The suite earns its keep: a test exists only where a defect exists that it dies on while the source
+reads correct to its author, and it asserts behavior, not text — a source literal restated in the
+test and compared back, a module's own contents mirrored against a hand copy, and a hash or exact
+output compared against a literal is a checksum: it fails on a change outside its subject, not on a
+defect; where detecting change is load-bearing, the mechanism is the regeneration check or the
+integration test over the behavior. A test is commissioned only with the run that fails under its
+defect, shown. A test whose setup, call and teardown exceed 100ms justifies its existence — it pins
+a real defect no cheaper test pins, or exercises a real integration no fixture can stand in for —
+or loses the weight: rewritten to a fixture, merged into a sibling, retired, or marked `slow`, the
+marker for a test that earns its cost but not its place in the default run; every default run
+excludes it, and `just test slow` runs the marked tests. The default run targets 30 seconds.
 
 The package's modules depend one way: `kanban/` imports `doccheck/` and `dicing/`,
 `doccheck/` imports `dicing/`, `profiler/` reads `kanban/`'s stylesheet as package data,
