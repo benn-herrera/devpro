@@ -413,4 +413,7 @@ test-undice-spec:
   @command rm -rf .devpro-temp/undice-mono-spec
   @just dev-devpro undice PROJECT_DOCS/SPEC .devpro-temp/undice-mono-spec
 
+# optional place for local developer to put personalized recipes outside of tracking
+import? '.devpro-temp/.local-recipes/local-recipes.just'
+
 import? '.claude/skills/devpro/tools/runner-snippets/devpro.just'
