@@ -20,15 +20,15 @@ file as `P1` leaves it. `P3` shares no file with the others. The landing commit 
 | P4 | landed: c9a54f38 | mechanical |
 | P5 | landed: 263f3101 | expert |
 | P6 | in progress | mechanical |
-| B1 | drafted | mechanical |
-| B2 | drafted | mechanical |
-| B3 | drafted | expert |
-| B4 | drafted | expert |
-| B5 | drafted | mechanical |
-| B6 | drafted | expert |
-| B7 | drafted | mechanical |
-| B8 | drafted | mechanical |
-| B9 | drafted | mechanical |
+| B1 | dispatchable | mechanical |
+| B2 | dispatchable | mechanical |
+| B3 | dispatchable | expert |
+| B4 | dispatchable | expert |
+| B5 | dispatchable | mechanical |
+| B6 | dispatchable | expert |
+| B7 | dispatchable | mechanical |
+| B8 | dispatchable | mechanical |
+| B9 | dispatchable | mechanical |
 
 ## P2 — The devpro settings file is TOML
 
@@ -333,20 +333,37 @@ bare top-level key, and the comma-in-glob case `"*" = "a,b"` rendering `a,b` (co
 
 ### B4 — One account of what filters an install (R4)
 
-expert. The design rules the choice R4 left open — the accepted design's own statements
-(`renders-and-copies`: "the package data `pyproject.toml` declares is the only thing a copy can
-find"; the CONVENTIONS leaf: "the built package is the one filter") name the wheel as the filter,
-so the SPEC's enumerated exclusion sentence retires for what the design already states and the
-code does. Scope: `PROJECT_DOCS/SPEC/deployed-surfaces/install-destination.md:73-77` — the
-exclusion sentence replaced by the design's statement, with the checkout path's account carried
-(where the design's `surfaces-and-layout` pair leaves it); `renders-and-copies.md:29-33` and the
-CONVENTIONS leaf retexted so all three name the one filter and the checkout path's staging;
-`package_copies`' docstring with them; `tests/test_devpro_install.py:581` and `:604` retexted —
-their genuine subject, `__pycache__` never staging, stays pinned by
+expert. The architect's ruling, recorded: **option (a)** — retire the SPEC's enumerated exclusion
+sentence for the wheel-staged account. Its authority: the operator's standing rulings this plan
+carries — no venv is ever delivered, the built package is what travels, and the dev loop is `just
+agents`, which builds first — own the choice. "The built package is what travels" states the
+outcome directly: what an install produces is the built package's file set, and the one filter
+over it is the build; restoring a denylist in `_wheel_files` would change nothing a consumer
+receives (the wheel holds none of the excluded names, and the check-wheel grep below holds that
+where the wheel==tree comparison passes a committed stray), so its only live effect is the
+checkout path — where the operator stages their own tree, a path this repository's workflow never
+takes. Option (b) breaks the one-filter statement on its own terms: a file RECORD declares would
+be dropped at install, so RECORD stops being the one manifest of what ships. The design's own
+SPEC delta already applied this reasoning to one member of the list — the `.venv` sentence it
+removed — and the enumerated sentence is the same statement left uncarried. Scope:
+`PROJECT_DOCS/SPEC/deployed-surfaces/install-destination.md:73-77` — the exclusion sentence
+retired for the wheel-staged account, a checkout install stated as staging the clone's tree as it
+stands; the design's two delta entries amended in the same change, whose applied text the change
+touches — ARCHITECTURE *Renders and copies*' staging paragraph ("the only thing a copy can find,
+on either path" is false of a checkout) and SPEC *Surfaces and layout*'s checkout sentence —
+without which `--deltas-applied` reads the pairs drifted;
+`PROJECT_DOCS/ARCHITECTURE/install/renders-and-copies.md:29-33` and the CONVENTIONS leaf
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/install-stages-from-the-wheel.md` retexted
+so all three name the one filter and the checkout path's staging; `package_copies`' docstring with
+them; `tests/test_devpro_install.py:581-601` and `:604-620` kept — docstrings restated to the
+checkout path's staging, their planted `.DS_Store`/`.bak`/`SPEC.md` cases standing as pins of
+faithfulness to the staging source, and the `__pycache__` exclusion staying pinned by
 `test_neither_staging_path_copies_bytecode`; `devtools/scripts/check-wheel.sh` — the
-`from-checkout` side renamed to what it stages from (N2), and one check over the wheel's listing
-for the project-document file names the build must not carry (N1). Done-line: `just test devpro`,
-then `just test wheel`, then `just dev-check-links`, run once at this package's end.
+`from-checkout` side renamed to what it stages from (architect N2), and one check over the
+wheel's listing for the project-document file names the build must not carry (architect N1).
+Done-line: `just test devpro`, then `just test wheel`, then
+`just dev-check-design-deltas-applied`, then `just dev-check-links`, then `just lint`, run once at
+this package's end.
 
 ### B5 — The upgrade walks name the settings rename (R5)
 
