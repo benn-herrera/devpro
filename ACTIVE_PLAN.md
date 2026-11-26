@@ -76,7 +76,7 @@ its own status-table row.
 | P10 | landed | expert | shipped | post-plan review |
 | P11 | landed | expert | shipped | post-plan burndown |
 | B1 | landed | expert | shipped | the pin removal's missed records |
-| B2 | dispatchable | mechanical | shipped | the marker machinery's comments |
+| B2 | in progress | mechanical | shipped | the marker machinery's comments |
 | B3 | landed | expert | shipped | the interrupt leaf's first-use revision |
 | B4 | landed | mechanical | shipped | the 30-second target sentence retires |
 | B5 | in progress | expert | shipped | the shared-fixture tier's residue |
