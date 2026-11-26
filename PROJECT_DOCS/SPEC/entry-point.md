@@ -28,6 +28,8 @@ Contents:
 - [Plan Status Form](plan-status-form.md)
 - [Guide and README](guide-and-readme.md)
 - [Dicing and Checks](dicing-and-checks/index.md)
+  - [Shared behaviors](dicing-and-checks/shared-behaviors.md)
+  - [Split level](dicing-and-checks/split-level.md)
   - [kanban](dicing-and-checks/kanban/index.md)
     - [The project's files](dicing-and-checks/kanban/the-project-s-files.md)
     - [Columns and cards](dicing-and-checks/kanban/columns-and-cards.md)

@@ -19,10 +19,10 @@ form `dice` writes for one document: a project document tree such as `SPEC/` is 
 A one-document tree's sections sit below the root head, and the top-level ones among them may be
 leaf documents beside it: a section with no child sections is a leaf file named for its heading,
 and one with child sections a directory holding its `index.md`. Such a tree passes
-[check-tree](../check-tree.md#check-tree) as any other does.
+[check-tree](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-tree.md#check-tree) as any other does.
 
 A top-level directory of a volume tree is a volume's, so one opening at `index.md` stands in a
-volume's place: [check-tree](../check-tree.md#check-tree) reports it.
+volume's place: [check-tree](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-tree.md#check-tree) reports it.
 
 `undice` reads any directory with a head file, so a broken-out section round-trips as text without
 becoming a document: its `index.md` and its children fold back into the document of the volume above

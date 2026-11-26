@@ -1,7 +1,7 @@
 # File content
 
 Each file holds, in order, exactly the source lines of its section, heading line included, with the
-section's heading ladder rebased and links rewritten ([link rewriting](../link-rewriting/index.md#link-rewriting)).
+section's heading ladder rebased and links rewritten ([link rewriting](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/link-rewriting/index.md#link-rewriting)).
 
 **The heading ladder.** A section's own text opens with its top heading, and every file of the tree
 but a document's own head holds it at level 1, whatever level that heading had in the source: a
@@ -41,4 +41,4 @@ Contents:
   else of its nearest numbered ancestor; with no numbered section at or above, it is the title
   alone.
 - A head's own text ends at its Contents block: the dicer writes nothing below the block, and
-  [undice](../undice.md#undice) refuses a head that carries text below it.
+  [undice](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/undice.md#undice) refuses a head that carries text below it.

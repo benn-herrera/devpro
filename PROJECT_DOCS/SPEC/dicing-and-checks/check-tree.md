@@ -16,7 +16,7 @@ each `.md` file under the root other than the root's `entry-point.md`:
 | not reachable by following links from the root's `entry-point.md` | `<file>: not reachable from <entry-point>` |
 | a volume directory of a volume tree opens at `index.md` | `<file>: a volume directory of this tree opens at entry-point.md, not index.md: a volume's sections sit below it` |
 
-The last problem reports a top-level directory [the model](the-diced-tree/the-model.md#the-model)
+The last problem reports a top-level directory [the model](../../../PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/the-model.md#the-model)
 places a volume at: check-tree holds no classification of its own, and reports each one the model
 leaves standing in a volume's place.
 

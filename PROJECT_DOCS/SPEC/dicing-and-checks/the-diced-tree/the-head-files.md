@@ -3,12 +3,12 @@
 A tree's head files are fixed by convention and never configurable: a reader moving between projects
 relies on finding them, and the standing project trees carry the same rule. The constant names are
 `entry-point.md` for a volume's head and `index.md` for a broken-out section's
-([shared behaviors](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#shared-behaviors)).
+([shared behaviors](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/shared-behaviors.md#shared-behaviors)).
 
 - A head's Contents block opens at its last line that is exactly `Contents:`; its lines are each
   `- [<link text>](<path>)`, indented by spaces as [file content](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/file-content.md#file-content) gives them.
 - `check-tree` reads a directory's head as its `entry-point.md` where it has one, else its
   `index.md`; a tree's root must open at `entry-point.md`
-  ([check-tree](../check-tree.md#check-tree)).
+  ([check-tree](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-tree.md#check-tree)).
 - `undice` reads a tree's root at whichever of the two it holds, so a broken-out section undices as
-  its own document ([undice](../undice.md#undice)).
+  its own document ([undice](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/undice.md#undice)).

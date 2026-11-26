@@ -4,9 +4,9 @@ Under the project root the files are at fixed paths; nothing relocates them.
 
 | Document | Path |
 |---|---|
-| roadmap tickets ([check-roadmap](../check-roadmap.md#check-roadmap)) | `ROADMAP.md` |
+| roadmap tickets ([check-roadmap](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-roadmap.md#check-roadmap)) | `ROADMAP.md` |
 | **active design** | `ACTIVE_DESIGN.md`, else `ACTIVE_DESIGN/entry-point.md` |
-| active plan ([check-plan](../check-plan.md#check-plan)) | `ACTIVE_PLAN.md`, else `ACTIVE_PLAN/entry-point.md` |
+| active plan ([check-plan](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-plan.md#check-plan)) | `ACTIVE_PLAN.md`, else `ACTIVE_PLAN/entry-point.md` |
 | **parked-designs directory** | `ROADMAP_DESIGNS/` |
 | **project-documents directory** (where present) | `PROJECT_DOCS/` |
 

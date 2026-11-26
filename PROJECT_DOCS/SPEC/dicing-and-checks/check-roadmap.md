@@ -1,7 +1,7 @@
 # check-roadmap
 
 `devpro check-roadmap [<roadmap>]` checks that `ROADMAP.md` is written in the ticket layout below,
-so that the board shows every ticket it holds ([the board](kanban/index.md#kanban)).
+so that the board shows every ticket it holds ([the board](../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/index.md#kanban)).
 [check-design](../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-design.md#check-design) and the board read the active design in the same layout.
 
 **Terms.** [check-plan](../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-plan.md#check-plan)'s terms are used as defined there, with these additions:
@@ -10,8 +10,8 @@ so that the board shows every ticket it holds ([the board](kanban/index.md#kanba
   or the end of the document.
 - **ticket**: a level-3 heading inside a category, and the lines below it up to the next heading
   of level 1, 2 or 3, or the end of the document; a heading of level 4 or more inside it is part of
-  its text. A ticket's **title** is the plain text ([what is a link](link-rewriting/what-is-a-link.md#what-is-a-link)) of
-  its heading's text ([file names and layout](the-diced-tree/file-names-and-layout.md#file-names-and-layout)). The lines of a
+  its text. A ticket's **title** is the plain text ([what is a link](../../../PROJECT_DOCS/SPEC/dicing-and-checks/link-rewriting/what-is-a-link.md#what-is-a-link)) of
+  its heading's text ([file names and layout](../../../PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/file-names-and-layout.md#file-names-and-layout)). The lines of a
   category before its first ticket are not a ticket.
 - **old-form item**: a line opening at column 0 with a list marker (`-`, `*`, `+`, or digits
   followed by `.` or `)`), a space and `**`.

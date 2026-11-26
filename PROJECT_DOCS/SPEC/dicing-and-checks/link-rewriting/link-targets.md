@@ -12,5 +12,5 @@ Each link's target is classified in this order:
 3. **Any other relative path** that names a second document given to the same `dice` run becomes a
    link to that document's head: the tree path of that head, fragment dropped, wherever the file the
    link sits in stands in the tree. Any other relative path is rebased
-   ([shared behaviors](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#shared-behaviors)) to reach the same file from the directory of the file it now sits in,
+   ([shared behaviors](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/shared-behaviors.md#shared-behaviors)) to reach the same file from the directory of the file it now sits in,
    fragment kept.
