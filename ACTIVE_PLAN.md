@@ -39,7 +39,7 @@ potential remedies with the session before anything is drafted from them.
 | Package | State | Rating |
 | --- | --- | --- |
 | P1 | landed | expert |
-| P2 | in progress | expert |
+| P2 | landed | expert |
 | P3 | dispatchable | expert |
 | P4 | dispatchable | expert |
 | PR | drafted | expert |
