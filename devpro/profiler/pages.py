@@ -718,7 +718,9 @@ def session_data(session: Json, *, dispatcher: Dispatcher | None = None) -> Json
     `fill_context_tokens` fills at render where the capture left them out.
 
     An opencode dispatch's child ends in the child's own store, and the join to it is already in the
-    session's records by the time they reach here (`joined_session`, at the read boundary)."""
+    session's records by the time they reach here (`joined_session`, at the read boundary). The stamp
+    is the session's, read off the same records (`session_stamp`), `None` for a session that carries
+    none."""
     calls = unique_calls(fill_context_tokens(session["records"]))
     contexts, markers = contexts_of(
         session["records"],
@@ -726,6 +728,7 @@ def session_data(session: Json, *, dispatcher: Dispatcher | None = None) -> Json
         root_hue=dispatcher.hue if dispatcher else 0,
     )
     spend = _context_spend(session["records"])
+    stamp = session_stamp(session["records"])
     by_context: dict[str, list[Json]] = {}
     for record in calls:
         by_context.setdefault(context_of(record), []).append(record)
@@ -733,6 +736,8 @@ def session_data(session: Json, *, dispatcher: Dispatcher | None = None) -> Json
         "session": session["id"],
         "branch": next((record.get("branch") for record in calls if record.get("branch")), None),
         "models": models_in(calls),
+        "plan": stamp.get("plan"),
+        "directives": stamp.get("directives"),
         "contexts": [
             {**context, "spent": spend.get(context["id"]), "models": models_in(by_context.get(context["id"], []))}
             for context in contexts
@@ -933,6 +938,18 @@ def session_harness(session: Json) -> str:
     return clip(mask(str(harness)), NAME_LIMIT)
 
 
+def session_stamp(records: list[Json]) -> Json:
+    """The session's operational-context stamp, read off its records the way the capture set it: the
+    earliest-`at` record carrying either `plan` or `directives`, its two fields and nothing where a
+    field is absent. A record carrying neither is a store written before the stamp, so a session of
+    them is unstamped and the read infers nothing — `{}`."""
+    stamped = [record for record in records if record.get("at") is not None and ({"plan", "directives"} & set(record))]
+    if not stamped:
+        return {}
+    earliest = min(stamped, key=lambda record: str(record["at"]))
+    return {key: earliest[key] for key in ("plan", "directives") if key in earliest}
+
+
 def models_in(records: list[Json]) -> list[str]:
     """The distinct models calls name, in the order they first appear, and none where no call names one.
     An event record is no call, so a marker naming a model states none."""
@@ -1022,8 +1039,10 @@ def traces_feed(directory: Path | str) -> list[Json]:
 
 
 def _feed_entry(session: Json, dispatcher: tuple[str, str, str | None] | None, agents: int = 0) -> Json:
-    """One session's entry in the feed, `agents` the count of the sessions `dispatcher` and its
-    siblings name as children, and `dispatcher` itself left out where none dispatched the session."""
+    """One session's entry in the feed: `agents` the count of the sessions `dispatcher` and its
+    siblings name as children, `dispatcher` itself left out where none dispatched the session, and
+    the stamp's `plan` and `directives`, `null` where the session's records carry none."""
+    stamp = session_stamp(session["records"])
     entry = {
         "harness": session_harness(session),
         "id": session["id"],
@@ -1033,6 +1052,8 @@ def _feed_entry(session: Json, dispatcher: tuple[str, str, str | None] | None, a
         "first": int(session["first"]),
         "last": int(session["last"]),
         "span": _round_half_up((session["last"] - session["first"]) / 1000),
+        "plan": stamp.get("plan"),
+        "directives": stamp.get("directives"),
     }
     if dispatcher:
         dispatcher_session, name, tool = dispatcher
@@ -1147,7 +1168,8 @@ tr td:first-child.child + td { padding-left: 2.4rem; }
    gives each column its width and measures no cell's content, so header and body stand in the same
    columns; a viewport narrower than the floor overruns it and `main` scrolls the table. */
 table { --w-harness: 7.5rem; --w-session: 32ch; --w-model: 12rem; --w-records: 8rem; --w-agents: 8rem; --w-one: 15rem; --w-span: 7rem;
-  min-width: calc(var(--w-harness) + var(--w-session) + var(--w-model) + var(--w-records) + var(--w-agents) + var(--w-one) + var(--w-span)); }
+  --w-plan: 16rem; --w-directives: 11rem;
+  min-width: calc(var(--w-harness) + var(--w-session) + var(--w-model) + var(--w-records) + var(--w-agents) + var(--w-one) + var(--w-span) + var(--w-plan) + var(--w-directives)); }
 .col-harness { width: var(--w-harness); }
 .col-session { width: var(--w-session); }
 .col-model { width: var(--w-model); }
@@ -1155,6 +1177,12 @@ table { --w-harness: 7.5rem; --w-session: 32ch; --w-model: 12rem; --w-records: 8
 .col-agents { width: var(--w-agents); }
 .col-one { width: var(--w-one); }
 .col-span { width: var(--w-span); }
+.col-plan { width: var(--w-plan); }
+.col-directives { width: var(--w-directives); }
+/* The plan cell's title is cut to its column, its ellipsis the cell's own; the whole stands in its
+   `title`, as does the digest's. The digest is one machine token, so it does not wrap. */
+.col-plan { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.col-directives { white-space: nowrap; font-family: var(--mono); }
 /* A session's id and the agent that dispatched it stand on one line, the child's indent inside the
    column; the model cell's list may wrap. */
 .col-session, .col-session a, .col-session small { white-space: nowrap; }
@@ -1188,7 +1216,7 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 </div>
 <p id="notice" class="notice" role="alert" hidden></p>
 <table>
-<thead><tr><th class="col-harness">harness</th><th class="col-session">session</th><th class="col-model">model</th><th class="col-records" aria-sort="none"><button type="button" class="sort" data-sort="records">records</button></th><th class="col-agents" aria-sort="none"><button type="button" class="sort" data-sort="agents">dispatched agents</button></th><th class="col-one" aria-sort="none"><button type="button" class="sort" data-sort="first">first to last</button></th><th class="col-span" aria-sort="none"><button type="button" class="sort" data-sort="span">span</button></th></tr></thead>
+<thead><tr><th class="col-harness">harness</th><th class="col-session">session</th><th class="col-model">model</th><th class="col-records" aria-sort="none"><button type="button" class="sort" data-sort="records">records</button></th><th class="col-agents" aria-sort="none"><button type="button" class="sort" data-sort="agents">dispatched agents</button></th><th class="col-one" aria-sort="none"><button type="button" class="sort" data-sort="first">first to last</button></th><th class="col-span" aria-sort="none"><button type="button" class="sort" data-sort="span">span</button></th><th class="col-plan">plan</th><th class="col-directives">directives</th></tr></thead>
 <tbody id="rows"></tbody>
 </table>
 </main>
@@ -1200,7 +1228,7 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 // children beneath it. The moments are epoch
 // milliseconds and become the row's `<time>` elements, drawn local at birth — the reader's clock,
 // 24-hour. Reads the entry's own keys and nothing else: `harness`, `id`, `models`,
-// `records`, `agents`, `first`, `last`, `span`, `dispatcher`, and
+// `records`, `agents`, `first`, `last`, `span`, `plan`, `directives`, `dispatcher`, and
 // `stores` on a feed that drew nothing, naming how many stores the exact names read. The page's body is
 // wrapped: the controls' state and the sort in force live in the page's URL, and the helpers for
 // them are the page's own.
@@ -1255,6 +1283,16 @@ const moments = (session) => {
   return cell;
 };
 
+// A stamp field's cell, where the session is stamped: `plan` cut to PLAN_CHARS with its ellipsis,
+// `directives` the digest's first DIGEST_CHARS characters — the whole in either cell's `title`, and
+// nothing where the feed carries `null`, a session the records stamp nothing onto.
+const PLAN_CHARS = 40, DIGEST_CHARS = 12;
+const stampCell = (value, chars, className) => {
+  const cell = el('td', value ? (chars ? clip(value, chars) : value) : '', className);
+  if (value) cell.title = value;
+  return cell;
+};
+
 // One row: a dispatcher's carries the count of the children the feed holds in the agents column; a
 // child's carries the class `child` on its first cell — the harness cell, where the rule at the row's
 // left edge and the session cell's indent are drawn from — and names after its id the call that
@@ -1288,6 +1326,8 @@ const row = ({ session, dispatched, children = 0 }) => {
     el('td', session.agents ? count : '', 'col-agents'),
     window,
     el('td', dur(session.span * 1000), 'col-span'),
+    stampCell(session.plan, PLAN_CHARS, 'col-plan'),
+    stampCell(session.directives, DIGEST_CHARS, 'col-directives'),
   );
   return tr;
 };
@@ -1296,7 +1336,7 @@ const row = ({ session, dispatched, children = 0 }) => {
 // it draws no session.
 const wideRow = (text) => {
   const cell = el('td', text);
-  cell.colSpan = 7;
+  cell.colSpan = 9;
   const tr = el('tr');
   tr.append(cell);
   return tr;

@@ -18,20 +18,26 @@ The profiler view is the second view, at `/profiler/` (trailing slash, the board
 the index of record files, every store the readers read,
 one row per session — harness,
 session id, the models its calls recorded, record count, the count of the dispatched agents it
-holds, first and last moments, and the span between them —
+holds, first and last moments, the span between them, the plan's title and the directives digest —
+two columns more, `plan` and `directives`, after the span, and neither column head sorts —
 each linking to `/page/<session-id>`, which serves that session's page in
 memory, the render's page carrying the same page data `tree --format html` produces. The header row
 and the body's rows take their column widths from one source, so every header sits over the column it
 names at every width the data produces, and the first-to-last column is wide enough that its line
 never wraps. The index's page file is static — no row is in its text — and
 its script renders the feed the server answers at `/api/traces`: one JSON entry per session carrying
-`harness`, `id`, `models`, `records`, `agents`, `first`, `last`, `span`, and `dispatcher` where a
+`harness`, `id`, `models`, `records`, `agents`, `first`, `last`, `span`, `plan`, `directives`, and
+`dispatcher` where a
 session was dispatched — `models` the distinct models the session's records name, in the order
-they first appear, empty where none does. The script puts `harness` and `records` under their own
+they first appear, empty where none does, `plan` and `directives` the stamp's two fields, `null`
+where the session is unstamped. The script puts `harness` and `records` under their own
 names, `id` in the session column, `models` in the model column, joined by `, `,
 `agents` in the dispatched-agents count,
 `first` and `last` in the first-to-last line, `span` in the
-span column, and draws `dispatcher` in no column at all, as the child row under its dispatcher's row.
+span column, `plan` in the plan column — the title cut with its ellipsis where long, the whole in
+the cell's `title` — and `directives` in the directives column, the digest's first twelve
+characters, the whole in the cell's `title`, and draws `dispatcher` in no column at all, as the
+child row under its dispatcher's row.
 The agents cell reads the count with the postscript `agents` — `1 agent`, `3 agents`. The index's row
 links and the session page's return link carry the query, so the controls' state and the sort in
 force survive the page's own navigation. An agent name a page renders drops the `devpro-` prefix: the
@@ -108,7 +114,10 @@ panel's `/api/stop`. No file is written for the traces.
 The page names the models its calls recorded: the session's in
 its header line, each context's in its lifeline's header where that header holds it alone, and each
 call's in its detail — a context or a call showing none where it recorded none, and a count where a
-context recorded several — and shows a session's calls: a session of
+context recorded several —
+and the header line names beside the session's models the plan's title and the directives digest,
+where the records carry them and nothing where they do not.
+and shows a session's calls: a session of
 nothing but tool calls renders those calls as its calls content, never an empty tree under a calls
 header. The server runs until interrupted (Ctrl-C) or stopped from the page; either exits 0.
 

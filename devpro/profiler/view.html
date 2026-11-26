@@ -135,9 +135,10 @@ if (Number.isFinite(first)) {
   moment.textContent = `${localDay(at)} ${clock(at)}`;
   head.append(moment);
 }
-// One separator before the joined items, none inside them: a branch, the counts, and the model phrase
-// led by the model's own word — never an empty tail from a session that recorded none.
-const facts = [D.branch && `branch ${D.branch}`, `${D.calls.length} calls`, `${D.contexts.length} contexts`, modelPhrase(D.models) && `model ${modelPhrase(D.models)}`].filter(Boolean);
+// One separator before the joined items, none inside them: a branch, the counts, the model phrase
+// led by the model's own word, and — where the records carry the operational-context stamp — the
+// plan's title and the directives digest — never an empty tail from a session that recorded none.
+const facts = [D.branch && `branch ${D.branch}`, `${D.calls.length} calls`, `${D.contexts.length} contexts`, modelPhrase(D.models) && `model ${modelPhrase(D.models)}`, D.plan && `plan ${D.plan}`, D.directives && `directives ${D.directives.slice(0, 12)}`].filter(Boolean);
 if (Number.isFinite(first)) head.append(item(' · '));
 facts.forEach((text, i) => head.append(item(`${i ? ' · ' : ''}${text}`)));
 

@@ -100,8 +100,9 @@ _PAYLOAD = json.dumps(
 # any of them changes the record's shape.
 _RECORD_FIELDS = {"v", "harness", "at", "session", "tool", "name", "ok", "args", "branch", "plan", "directives"}
 
-# The keys `view.html` reads from the page's data and from one call row.
-_PAGE_KEYS = {"session", "branch", "models", "contexts", "markers", "calls"}
+# The keys `view.html` reads from the page's data and from one call row. The stamp's two are read off
+# the records alike, `null` for a session that carries none.
+_PAGE_KEYS = {"session", "branch", "models", "plan", "directives", "contexts", "markers", "calls"}
 _CALL_KEYS = {
     "ctx",
     "tool",
@@ -1264,6 +1265,8 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "first": _epoch_ms("2026-01-01T00:00:00.000Z"),
             "last": _epoch_ms("2026-01-01T00:00:01.000Z"),
             "span": 1,
+            "plan": None,
+            "directives": None,
         },
         {
             "harness": "opencode",
@@ -1274,6 +1277,8 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "first": _epoch_ms("2026-01-01T00:00:05.000Z"),
             "last": _epoch_ms("2026-01-01T00:00:05.000Z"),
             "span": 0,
+            "plan": None,
+            "directives": None,
         },
         {
             "harness": "opencode",
@@ -1284,6 +1289,8 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "first": _epoch_ms("2026-01-01T00:00:06.000Z"),
             "last": _epoch_ms("2026-01-01T00:00:06.000Z"),
             "span": 0,
+            "plan": None,
+            "directives": None,
         },
         {
             "harness": "opencode",
@@ -1294,6 +1301,8 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "first": _epoch_ms("2026-01-01T00:00:07.000Z"),
             "last": _epoch_ms("2026-01-01T00:00:08.000Z"),
             "span": 1,
+            "plan": None,
+            "directives": None,
             "dispatcher": {"session": "s-dispatcher", "name": "devpro-coder", "tool": "Agent"},
         },
     ]

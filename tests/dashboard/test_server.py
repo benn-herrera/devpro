@@ -104,7 +104,7 @@ def test_the_profiler_view_serves_its_list_and_its_pages(tmp_path: Path, serve) 
     assert (data["session"], [call["name"] for call in data["calls"]]) == ("s-one", ["ls"])
 
 
-SESSION_KEYS = {"harness", "id", "models", "records", "agents", "first", "last", "span"}
+SESSION_KEYS = {"harness", "id", "models", "records", "agents", "first", "last", "span", "plan", "directives"}
 DISPATCHED_KEYS = SESSION_KEYS | {"dispatcher"}
 
 
@@ -150,6 +150,8 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
             "first": 1767225605000,
             "last": 1767225605000,
             "span": 0,
+            "plan": None,
+            "directives": None,
         },
         {
             "harness": "opencode",
@@ -160,6 +162,8 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
             "first": 1767225607000,
             "last": 1767225607000,
             "span": 0,
+            "plan": None,
+            "directives": None,
             "dispatcher": {"session": "s-parent", "name": "devpro-coder", "tool": "Agent"},
         },
         {
@@ -171,9 +175,52 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
             "first": 1767225609000,
             "last": 1767225609000,
             "span": 0,
+            "plan": None,
+            "directives": None,
         },
     ]
     assert [set(entry) for entry in entries] == [SESSION_KEYS, DISPATCHED_KEYS, SESSION_KEYS]
+
+
+def test_the_feed_and_the_page_carry_each_sessions_stamp(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a read that carries the stamp of whichever session or
+    record it happened to see — a later-`at` record's, or a neighbouring session's — where every
+    session's entry and its page carry the stamp its own records wrote once.
+
+    A session's stamp is its earliest-`at` stamped record's, copied onto every record after it, so
+    `s-new`'s records stand newest first and each field of the answer names the earliest one's: the
+    plan `at-start plan`, the digest of `b`s. Each other record here is wrong in exactly one field —
+    the later record in `plan`, `s-old` in `directives` — and every session's entry and page agree,
+    the stamp read off the one render that reads everything else."""
+    root = project(tmp_path / "proj", {})
+    store(
+        root,
+        "s-old",
+        [_tool_call("s-old", "2026-01-01T00:00:03.000Z", "ls") | {"plan": "stale plan", "directives": "c" * 64}],
+        directory=".profiler-opencode",
+    )
+    store(
+        root,
+        "s-new",
+        [
+            _tool_call("s-new", "2026-01-01T00:00:05.000Z", "ls") | {"plan": "at-start plan", "directives": "b" * 64},
+            _tool_call("s-new", "2026-01-01T00:00:09.000Z", "ls") | {"plan": "moved plan", "directives": "b" * 64},
+        ],
+        directory=".profiler-opencode",
+    )
+    served = serve(root)
+
+    feed = {entry["id"]: entry for entry in json.loads(served.get("api/traces")[2])}
+    pages = [page_data(served.get(f"page/{session}")[2].decode("utf-8")) for session in ("s-old", "s-new")]
+
+    assert {session: (feed[session]["plan"], feed[session]["directives"]) for session in feed} == {
+        "s-old": ("stale plan", "c" * 64),
+        "s-new": ("at-start plan", "b" * 64),
+    }
+    assert [(data["session"], data["plan"], data["directives"]) for data in pages] == [
+        ("s-old", "stale plan", "c" * 64),
+        ("s-new", "at-start plan", "b" * 64),
+    ]
 
 
 def test_a_store_the_feed_cannot_read_fails_the_feed(tmp_path: Path, serve) -> None:
