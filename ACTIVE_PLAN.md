@@ -64,17 +64,17 @@ its own status-table row.
 
 | Package | State | Rating | Lifetime | Scope |
 |---|---|---|---|---|
-| P1 | drafted | mechanical | shipped | PROJECT_DOCS/ARCHITECTURE deltas |
-| P2 | drafted | mechanical | shipped | the interrupt rule's CONVENTIONS leaf |
-| P3 | drafted | mechanical | shipped | the `slow` marker and the screenshot tests |
-| P4 | drafted | expert | shipped | the opencode pin's single home |
-| P5 | drafted | mechanical | shipped | retire the checksums |
-| P6 | drafted | expert | shipped | the profiler's shared wrapper fixture |
-| P7 | drafted | expert | shipped | the server-boot tier earns its keep |
-| P8 | drafted | expert | shipped | the dicer suite earns its keep |
-| P9 | drafted | expert | shipped | the long tail over 100ms |
-| P10 | drafted | expert | shipped | post-plan review |
-| P11 | drafted | expert | shipped | post-plan burndown |
+| P1 | dispatchable | mechanical | shipped | PROJECT_DOCS/ARCHITECTURE deltas |
+| P2 | dispatchable | mechanical | shipped | the interrupt rule's CONVENTIONS leaf |
+| P3 | dispatchable | mechanical | shipped | the `slow` marker and the screenshot tests |
+| P4 | dispatchable | expert | shipped | the opencode pin's single home |
+| P5 | dispatchable | mechanical | shipped | retire the checksums |
+| P6 | dispatchable | expert | shipped | the profiler's shared wrapper fixture |
+| P7 | dispatchable | expert | shipped | the server-boot tier earns its keep |
+| P8 | dispatchable | expert | shipped | the dicer suite earns its keep |
+| P9 | dispatchable | expert | shipped | the long tail over 100ms |
+| P10 | dispatchable | expert | shipped | post-plan review |
+| P11 | dispatchable | expert | shipped | post-plan burndown |
 
 ## P1 — Apply the ARCHITECTURE deltas
 
