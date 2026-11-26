@@ -118,8 +118,9 @@ build: _venv
 # Proves the wheel's package data equals the non-.py files under devpro/ that git tracks or would
 # track, and that, installed into a throwaway venv made from <python> (default python3),
 # it imports from that venv, runs as the devpro console script, and — installed with the kbase
-# component on into a project — produces the install the checkout produces, compared byte for byte
-# by check-wheel.sh, and writes the mage install's agents file outside a checkout.
+# component on into a project — produces the install the built wheel produces, compared byte for
+# byte by check-wheel.sh against the same wheel's unpacked files, and writes the mage install's
+# agents file outside a checkout.
 [doc("[dev] build, then prove the wheel")]
 check-wheel python="python3": build
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" PYBIN="{{PYBIN}}" EXE="{{EXE}}" ./devtools/scripts/check-wheel.sh "$@"

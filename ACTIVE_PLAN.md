@@ -23,8 +23,8 @@ file as `P1` leaves it. `P3` shares no file with the others. The landing commit 
 | B2 | landed: 9f8e1bfa | mechanical |
 | B1 | landed: 2d7e07d6 | mechanical |
 | B3 | landed: 8d189beb | expert |
-| B4 | in progress | expert |
-| B6 | dispatchable | expert |
+| B4 | landed: 3ce78a01 | expert |
+| B6 | in progress | expert |
 | B7 | dispatchable | mechanical |
 | B8 | dispatchable | mechanical |
 | B9 | dispatchable | mechanical |
