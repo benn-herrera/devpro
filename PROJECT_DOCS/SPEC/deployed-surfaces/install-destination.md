@@ -97,7 +97,7 @@ one the target holds, judged per harness; `never` installs nothing for it.
 
 With the file naming any harness, one invocation installs for every harness it names, in name
 order, each as its own install — the render built per harness from that harness's
-`[<harness>-model-map]` section, where the file has one — with this section's guarantees; a
+`[<harness>.model-map]` table, where the file has one — with this section's guarantees; a
 harness it does not name is not installed. The loop stops at the first refusal, naming the
 harness that refused, and earlier harnesses' installs stand. A target that is not an existing
 directory, and a `--subdir` outside it, are refused before the harnesses the file names are

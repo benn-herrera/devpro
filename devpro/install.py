@@ -958,7 +958,7 @@ def install_selected(
     if not settings:
         report_left_alone(
             f"nothing installed: '{path}' names no harness — pass --harness=NAME; or add the harness to the "
-            f"file, either section of it: install = always in [<harness>] installs whatever the target holds, "
+            f"file, either table of it: install = always in [<harness>] installs whatever the target holds, "
             f"and the detect default installs where the target holds the harness's own directory (create that "
             f"directory where absent)"
         )
@@ -967,7 +967,7 @@ def install_selected(
     for name, setting in settings_by_harness.items():
         if setting not in INSTALL_SETTINGS:
             raise InputError(
-                f"devpro settings file '{path}', section '[{name}]': install '{setting}' is not one of "
+                f"devpro settings file '{path}', table '[{name}]': install '{setting}' is not one of "
                 f"{', '.join(INSTALL_SETTINGS)}; nothing written"
             )
     store_migrations: dict[Path, Callable[[Path], list[str]]] = {}

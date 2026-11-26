@@ -32,7 +32,7 @@ def _home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def settings_file(tmp_path: Path, text: str) -> Path:
     """A devpro settings file holding `text`, for the CLI to read with `--config-file`."""
-    path = tmp_path / "devpro.cfg"
+    path = tmp_path / "devpro.toml"
     path.write_text(text, encoding="utf-8")
     return path
 

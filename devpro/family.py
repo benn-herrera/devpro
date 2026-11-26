@@ -22,7 +22,7 @@ when the `Render` is built, rather than kept as an override that quietly never
 fires.
 
 The category map is the model source. The devpro settings file's
-`[<harness>-model-map]` section supplies it whole where the file has one;
+`[<harness>.model-map]` table supplies it whole where the file has one;
 otherwise the harness's `default_category_spec` stands in for one where it
 declares one, and otherwise it is `Family.categories`. It decides
 which member's overrides a definition is tuned against, and the `model:` text it

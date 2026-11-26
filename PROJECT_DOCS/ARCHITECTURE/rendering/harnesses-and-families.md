@@ -95,9 +95,9 @@ and the invocation's category map, and resolves a category to its rendered model
 to its tuning text: a category whose text is `inherit` or a synonym becomes `inherit_text`. The
 map's suppliers, in the order `build_render` applies them:
 
-1. the devpro settings file's `[<harness>-model-map]` section for the harness — its keys, one
-   entry per line under the grammar, joined for the parser; read and validated by
-   `devpro/context.py`.
+1. the devpro settings file's `[<harness>.model-map]` table for the harness — its keys, one
+   `"<glob>" = "<model>"` entry each under the grammar; read and validated by
+   `devpro/context.py` with `tomllib`.
 2. the harness's `default_category_spec` — the bare reading's remaining home (a non-empty value
    holding neither `=` nor `,` is the whole map where the harness reads it so), where the harness
    declares one.

@@ -102,8 +102,8 @@ from tests.conftest import PLAIN, WITH_KBASE, settings_file
 _ALL_INHERIT = dict.fromkeys(CATEGORIES, "inherit")
 _SELECTIONS = (PLAIN, WITH_KBASE)
 _PACKAGE = Path(devpro.__file__).parent
-_SUPPLIER = "--config-file /home/me/.config/devpro/devpro.cfg, section '[claude-model-map]'"
-"""A settings-file supply's provenance, as its section names it."""
+_SUPPLIER = "--config-file /home/me/.config/devpro/devpro.toml, table '[claude.model-map]'"
+"""A settings-file supply's provenance, as its table names it."""
 
 
 @pytest.mark.parametrize(
@@ -176,9 +176,12 @@ def test_parse_category_map_refusals(spec: str, message: str) -> None:
 
 
 def test_the_settings_file_names_its_harnesses_in_name_order_with_their_install_and_map(tmp_path: Path) -> None:
-    """A section names its harness, either section; `install` arrives as written or absent; a map
-    section's entries join in file order, so a later entry overwrites an earlier one."""
-    path = settings_file(tmp_path, "[opencode]\ninstall = always\n\n[claude-model-map]\n*=haiku\nstem-expert=opus\n")
+    """A table names its harness, either table; `install` arrives as written or absent; a map
+    table's entries join in file order, so a later entry overwrites an earlier one."""
+    path = settings_file(
+        tmp_path,
+        '[opencode]\ninstall = "always"\n\n[claude.model-map]\n"*" = "haiku"\n"stem-expert" = "opus"\n',
+    )
     settings, _ = read_settings(str(path))
     assert list(settings) == ["claude", "opencode"]
     assert settings["opencode"].install == "always"
@@ -186,7 +189,7 @@ def test_the_settings_file_names_its_harnesses_in_name_order_with_their_install_
     assert settings["claude"].install is None
     assert settings["claude"].supply == MapSupply(
         category_map={**dict.fromkeys(CATEGORIES, "haiku"), "stem-expert": "opus"},
-        supplier=f"--config-file {path}, section '[claude-model-map]'",
+        supplier=f"--config-file {path}, table '[claude.model-map]'",
     )
 
 
@@ -202,7 +205,7 @@ def test_a_render_takes_its_components_from_the_flag_alone(tmp_path: Path, monke
     """`components` is the install's selection: a flagless render that read the file's value turned the
     component on and made the flag's "default none" help false wherever a settings file existed."""
     monkeypatch.setenv("DEVPRO_DEV", "1")
-    settings = settings_file(tmp_path, "[claude]\ncomponents = kbase\n")
+    settings = settings_file(tmp_path, '[claude]\ncomponents = "kbase"\n')
     from_file = tmp_path / "from-file"
     from_file.mkdir()
     main(["dev-render", "--out", str(from_file), "--harness=claude", f"--config-file={settings}"])
@@ -220,14 +223,14 @@ def test_a_missing_default_settings_file_is_no_config(_home: Path) -> None:
 
 def test_the_default_settings_file_is_read_from_the_home_directory(_home: Path) -> None:
     """The default path is consulted with no flag given, under the home directory the environment names."""
-    path = _home / ".config/devpro/devpro.cfg"
+    path = _home / ".config/devpro/devpro.toml"
     path.parent.mkdir(parents=True)
-    path.write_text("[claude]\ninstall = never\n", encoding="utf-8")
+    path.write_text('[claude]\ninstall = "never"\n', encoding="utf-8")
     settings, _ = read_settings(None)
     assert settings["claude"].install == "never"
 
 
-@pytest.mark.parametrize("config_file", ["~/devpro.cfg", "devpro-absent.cfg"], ids=["tilde", "relative"])
+@pytest.mark.parametrize("config_file", ["~/devpro.toml", "devpro-absent.toml"], ids=["tilde", "relative"])
 def test_a_named_settings_file_that_does_not_exist_is_refused_naming_the_path(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, config_file: str
 ) -> None:
@@ -239,7 +242,7 @@ def test_a_named_settings_file_that_does_not_exist_is_refused_naming_the_path(
 
 @pytest.mark.parametrize(
     "section",
-    ["[claude-code]", "[nonesuch-model-map]", "[DEFAULT]\ninstall = always"],
+    ["[claude-code]", "[nonesuch.model-map]", '[DEFAULT]\ninstall = "always"'],
     ids=["settings", "map", "default"],
 )
 def test_a_settings_file_section_no_harness_names_is_refused(tmp_path: Path, section: str) -> None:
@@ -247,34 +250,34 @@ def test_a_settings_file_section_no_harness_names_is_refused(tmp_path: Path, sec
     with pytest.raises(InputError) as caught:
         read_settings(str(path))
     message = str(caught.value)
-    assert section.split()[0] in message
+    assert section.removeprefix("[").split(".")[0].split("]")[0] in message
     assert "claude, mage, opencode" in message
 
 
 def test_a_settings_sections_components_key_is_read_and_its_unknown_keys_name_both_keys(tmp_path: Path) -> None:
     """`components` is a harness's second setting, read beside `install`; before it existed the key was
     refused as unknown. A key that is no setting still names both keys it could be."""
-    path = settings_file(tmp_path, "[claude]\ninstall = always\ncomponents = kbase\n")
+    path = settings_file(tmp_path, '[claude]\ninstall = "always"\ncomponents = "kbase"\n')
     settings, _ = read_settings(str(path))
     assert settings["claude"].components == "kbase"
-    path = settings_file(tmp_path, "[claude]\ncomponents = kbase\nbogus = 1\n")
+    path = settings_file(tmp_path, '[claude]\ncomponents = "kbase"\nbogus = 1\n')
     with pytest.raises(InputError) as caught:
         read_settings(str(path))
     message = str(caught.value)
-    assert "'bogus'" in message and "install, components" in message and "'[claude-model-map]'" in message
+    assert "'bogus'" in message and "install, components" in message and "'[claude.model-map]'" in message
 
 
 def test_a_settings_section_key_that_is_no_setting_is_refused_naming_the_map_section(tmp_path: Path) -> None:
-    path = settings_file(tmp_path, "[claude]\n*=haiku\n")
+    path = settings_file(tmp_path, '[claude]\n"*" = "haiku"\n')
     with pytest.raises(InputError) as caught:
         read_settings(str(path))
     message = str(caught.value)
-    assert "'*'" in message and "'[claude-model-map]'" in message
+    assert "'*'" in message and "'[claude.model-map]'" in message
 
 
 @pytest.mark.parametrize(
     "text",
-    ["[claude]\nthis is not an entry\n", "[claude]\ninstall = always\ninstall = never\n"],
+    ["[claude]\nthis is not an entry\n", '[claude.model-map]\n"*" = "haiku"\n"*" = "opus"\n'],
     ids=["unparseable", "duplicate-key"],
 )
 def test_a_settings_file_that_does_not_parse_is_refused_naming_the_file_and_the_line(tmp_path: Path, text: str) -> None:

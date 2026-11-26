@@ -1,8 +1,8 @@
 """`Render`, the one parameter a render receives, the selection and the devpro settings file that
 build it, and the settings file's reader, its validation and the map's parse. Composes no text."""
 
-import configparser
 import functools
+import tomllib
 from collections.abc import Mapping
 from dataclasses import dataclass
 from fnmatch import fnmatchcase
@@ -20,27 +20,30 @@ CategoryMap = Mapping[Category, str]
 INHERIT_MODEL = "inherit"
 DEFAULT_HARNESS = "claude"
 DEFAULT_FAMILY = "claude"
-SETTINGS_FILE = Path(".config/devpro/devpro.cfg")
+SETTINGS_FILE = Path(".config/devpro/devpro.toml")
 """The devpro settings file, below the home directory, where `--config-file` names none."""
-MODEL_MAP_SECTION_SUFFIX = "-model-map"
-"""A harness's map section is named for it: `[<harness>-model-map]`."""
+NEWLINE = "\n"
+"""How a settings file's map entries join into a spec: a character no glob or model holds."""
+MODEL_MAP_TABLE = "model-map"
+"""A harness's map is its dotted subtable: `[<harness>.model-map]`."""
 INSTALL_KEY = "install"
 COMPONENTS_KEY = "components"
-"""The two keys a harness's `[<harness>]` section carries."""
+"""The two keys a harness's `[<harness>]` table carries."""
 
 
-def parse_category_map(spec: str, *, supplier: str) -> dict[Category, str]:
-    """`spec`, the text form of a category map, as a total map in CATEGORIES order: comma-separated
+def parse_category_map(spec: str, *, supplier: str, separator: str = ",") -> dict[Category, str]:
+    """`spec`, the text form of a category map, as a total map in CATEGORIES order: `separator`-separated
     `<glob>=<model>` entries, each glob matched against the six category names and its model assigned to
     every category it matches, later entries silently overwriting earlier ones. `supplier` leads every
-    refusal: the provenance of the spec.
+    refusal: the provenance of the spec. The settings file reads its entries joined by `NEWLINE`, a
+    separator no glob or model holds.
 
     There is no per-category fallback to the family or to anything else. An entry matching no category is
     refused, and a spec leaving a category unnamed at its end is refused. Values are not validated here:
     the harness's shape check runs on the rendered text (`build_render`).
     """
     named: dict[str, str] = {}
-    for raw in spec.split(","):
+    for raw in spec.split(separator):
         entry = raw.strip()
         glob, sep, value = entry.partition("=")
         glob, value = glob.strip(), value.strip()
@@ -181,7 +184,7 @@ class MapSupply:
 @dataclass(frozen=True)
 class HarnessSettings:
     """One harness the devpro settings file names: its `install` and `components` values as written, each
-    None where the file sets none, and its map, where it has a map section."""
+    None where the file sets none, and its map, where it has a model-map table."""
 
     install: str | None
     supply: MapSupply | None
@@ -196,37 +199,37 @@ def read_settings(config_file: str | None) -> tuple[dict[str, HarnessSettings] |
     names, taken as given, or the default under the home directory where no file is named: a missing
     default file is no config, an explicitly named file that does not exist is refused, naming the path.
 
-    The file's shape is validated here, so both render and install refuse on it: a section that is no
-    supported harness's settings or map section is refused, naming the section and the harnesses, and so
-    is a key in a settings section that is no setting of it, naming the map section it belongs in. A map
-    section's entries join, one per line in file order, into the category spec `parse_category_map`
-    parses, its refusals leading with the section they came from. Neither setting value is judged here;
+    The file's shape is validated here, so both render and install refuse on it: a table that is no
+    supported harness's settings or map table is refused, naming the table and the harnesses, and so
+    is a key in a settings table that is no setting of it, naming the model-map table it belongs in. A map
+    table's entries join, in file order, into the category spec `parse_category_map` parses, its
+    refusals leading with the table they came from. Neither setting value is judged here;
     `devpro.install` judges `install` where it consumes it, and `build_render` the component list.
     """
     path = _settings_file(config_file)
     if path is None:
         return None, None
     known = harnesses()
-    parser = _settings_parser(path)
-    unknown = [section for section in _section_names(parser) if _harness_of(section, known) is None]
+    document = _settings_parser(path)
+    unknown = [table for table in _table_names(document) if _harness_of(table, known) is None]
     if unknown:
         raise InputError(
-            f"devpro settings file '{path}', section '[{unknown[0]}]': no harness names it — a section is "
-            f"'[<harness>]' or '[<harness>-model-map]' for {', '.join(known)}"
+            f"devpro settings file '{path}', table '[{unknown[0]}]': no harness names it — a table is "
+            f"'[<harness>]' or '[<harness>.model-map]' for {', '.join(known)}"
         )
     settings: dict[str, HarnessSettings] = {}
     for name in known:
-        map_section = f"{name}{MODEL_MAP_SECTION_SUFFIX}"
-        settings_section = parser.has_section(name)
-        named_map = parser.has_section(map_section)
-        if not (settings_section or named_map):
+        table = document.get(name)
+        if not isinstance(table, dict):
             continue
         supply = None
-        if named_map:
-            supplier = f"--config-file {path}, section '[{map_section}]'"
-            spec = ",".join(f"{entry}={value}" for entry, value in parser.items(map_section))
-            supply = MapSupply(category_map=parse_category_map(spec, supplier=supplier), supplier=supplier)
-        install, components = _settings_values(parser, path=path, name=name) if settings_section else (None, None)
+        if (map_table := table.get(MODEL_MAP_TABLE)) is not None:
+            supplier = f"--config-file {path}, table '[{name}.{MODEL_MAP_TABLE}]'"
+            entries = _settings_entries(map_table, path=path, table=f"{name}.{MODEL_MAP_TABLE}")
+            supply = MapSupply(
+                category_map=parse_category_map(entries, supplier=supplier, separator=NEWLINE), supplier=supplier
+            )
+        install, components = _settings_values(table, path=path, name=name)
         settings[name] = HarnessSettings(install=install, supply=supply, components=components)
     return settings, path
 
@@ -239,54 +242,77 @@ def _settings_file(config_file: str | None) -> Path | None:
         if not named.is_file():
             raise InputError(
                 f"--config-file '{config_file}' names no file — name a settings file that exists, or omit the "
-                f"flag for ~/.config/devpro/devpro.cfg"
+                f"flag for ~/.config/devpro/devpro.toml"
             )
         return named
     default = Path.home() / SETTINGS_FILE
     return default if default.is_file() else None
 
 
-def _settings_parser(path: Path) -> configparser.ConfigParser:
-    """`path` loaded, every key kept as written. A file that cannot be decoded, or that does not parse —
-    a duplicate key among the parse errors — is refused, naming the file and the line."""
-    parser = configparser.ConfigParser(interpolation=None)
-    parser.optionxform = str
+def _settings_parser(path: Path) -> dict[str, object]:
+    """`path` parsed as TOML. A file that does not parse — a repeated glob key among the parse errors,
+    `tomllib` names its position — is refused, naming the file and the line."""
     try:
-        with path.open(encoding="utf-8") as stream:
-            parser.read_file(stream, source=str(path))
+        return tomllib.loads(path.read_text(encoding="utf-8"))
     except UnicodeError as exc:
         raise InputError(f"devpro settings file '{path}' is not UTF-8 text: {exc}") from exc
-    except configparser.Error as exc:
+    except tomllib.TOMLDecodeError as exc:
         raise InputError(f"devpro settings file '{path}' does not parse: {exc}") from exc
-    return parser
 
 
-def _section_names(parser: configparser.ConfigParser) -> list[str]:
-    """Every section name the file holds, `[DEFAULT]` among them where it holds anything: configparser
-    keeps that one outside `sections()` and surfaces its keys in every other section's `items()`."""
-    return [*(["DEFAULT"] if parser.defaults() else []), *parser.sections()]
+def _table_names(document: Mapping[str, object]) -> list[str]:
+    """Every table the file holds, dotted by its path: `claude`, and `claude.model-map` for a subtable —
+    `tomllib` nests a dotted table under its parent — plus a bare key's own name where the file sets one
+    at the top level."""
+    names = []
+    for key, value in document.items():
+        if not isinstance(value, dict):
+            continue
+        names.append(key)
+        names.extend(f"{key}.{inner}" for inner, nested in value.items() if isinstance(nested, dict))
+    return names
 
 
-def _harness_of(section: str, known: Mapping[str, Harness]) -> str | None:
-    """The harness a section name belongs to, `[<harness>]` and `[<harness>-model-map]` alike; None where
-    it names none."""
-    name = section.removesuffix(MODEL_MAP_SECTION_SUFFIX)
-    return name if name in known else None
+def _harness_of(table: str, known: Mapping[str, Harness]) -> str | None:
+    """The harness a table belongs to, `[<harness>]` and `[<harness>.model-map]` alike; None where it
+    names none."""
+    name, _, rest = table.partition(".")
+    return name if name in known and rest in ("", MODEL_MAP_TABLE) else None
 
 
-def _settings_values(parser: configparser.ConfigParser, *, path: Path, name: str) -> tuple[str | None, str | None]:
-    """`[<name>]`'s `install` and `components` values as written, each None where it sets none; a key that
-    is no setting of the harness is refused, naming the keys a harness's section takes and the map section
-    the other keys belong in."""
-    legal = (INSTALL_KEY, COMPONENTS_KEY)
-    for option in parser.options(name):
-        if option not in legal:
+def _settings_values(table: Mapping[str, object], *, path: Path, name: str) -> tuple[str | None, str | None]:
+    """`[<name>]`'s `install` and `components` values as written (None where the key is absent or holds
+    no string); a key that is no setting of the harness is refused, naming the keys a harness's table
+    takes and the model-map table the other keys belong in."""
+    legal = (INSTALL_KEY, COMPONENTS_KEY, MODEL_MAP_TABLE)
+    for key in table:
+        if key not in legal:
             raise InputError(
-                f"devpro settings file '{path}', section '[{name}]': '{option}' is no setting of it — a "
+                f"devpro settings file '{path}', table '[{name}]': '{key}' is no setting of it — a "
                 f"harness's settings are {', '.join(legal)}, and map entries belong in "
-                f"'[{name}{MODEL_MAP_SECTION_SUFFIX}]'"
+                f"'[{name}.{MODEL_MAP_TABLE}]'"
             )
-    return parser.get(name, INSTALL_KEY, fallback=None), parser.get(name, COMPONENTS_KEY, fallback=None)
+    install, components = table.get(INSTALL_KEY), table.get(COMPONENTS_KEY)
+    return (
+        install if isinstance(install, str) else None,
+        components if isinstance(components, str) else None,
+    )
+
+
+def _settings_entries(entries: object, *, path: Path, table: str) -> str:
+    """A model-map table's entries as `parse_category_map`'s spec, in file order. A value that is no
+    string — a number, a nested table — is refused, naming where it sits."""
+    if not isinstance(entries, dict):
+        raise InputError(f"devpro settings file '{path}', table '[{table}]': it is no table of entries")
+    spec = []
+    for glob, model in entries.items():
+        if not isinstance(model, str):
+            raise InputError(
+                f"devpro settings file '{path}', table '[{table}]': '{glob}' names a value that is no model — "
+                f"a model is a string"
+            )
+        spec.append(f"{glob}={model}")
+    return NEWLINE.join(spec)
 
 
 def build_render(*, harness: str, components: str, family: str, supply: MapSupply | None = None) -> Render:

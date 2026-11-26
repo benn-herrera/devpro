@@ -9,6 +9,6 @@ set -euo pipefail
 slot="${PROJECT_ROOT}/devtools/scripts/_render-slot.sh"
 maps="${PROJECT_ROOT}/devtools/reference-maps"
 "${slot}" reference-claude
-"${slot}" reference-opencode --harness=opencode --config-file="${maps}/opencode.cfg"
-"${slot}" reference-gemma --family=gemma-4 --config-file="${maps}/claude.cfg"
+"${slot}" reference-opencode --harness=opencode --config-file="${maps}/opencode.toml"
+"${slot}" reference-gemma --family=gemma-4 --config-file="${maps}/claude.toml"
 "${slot}" reference-mage --harness=mage

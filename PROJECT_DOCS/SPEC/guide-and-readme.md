@@ -46,9 +46,9 @@ The skill carries two reference pages, which the session reads when its starting
   - what a rendering pins by default: a claude install pins its family's members; an opencode or
     mage install pins none — under opencode the definitions carry no model, under mage they carry
     `model: inherit` — unless the devpro settings file carries entries for the harness;
-  - the devpro settings file: its location (`~/.config/devpro/devpro.cfg`, `--config-file` to
+  - the devpro settings file: its location (`~/.config/devpro/devpro.toml`, `--config-file` to
     name another), the `install` setting's three values in `[<harness>]`, and the entries in each
-    harness's `[<harness>-model-map]` section;
+    harness's `[<harness>.model-map]` table;
   - under claude, agents not offered after an install: run `/reload-plugins`. If a restart or
     `/reload-plugins` does not bring them, the plugin has not loaded. That happens when the session
     started away from the project root or before the trust dialog, when managed settings block it,

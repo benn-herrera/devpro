@@ -57,8 +57,8 @@ def _add_tuning_flags(verb: argparse.ArgumentParser, *, harness_default: str | N
         metavar="FILE",
         default=None,
         help=(
-            "[<harness>] settings, install among them, and [<harness>-model-map] entries; read in place of "
-            "~/.config/devpro/devpro.cfg"
+            "[<harness>] settings, install among them, and [<harness>.model-map] entries; read in place of "
+            "~/.config/devpro/devpro.toml"
         ),
     )
 

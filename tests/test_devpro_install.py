@@ -405,7 +405,7 @@ _OPENCODE_RENDER = build_render(
     family="claude",
     supply=MapSupply(
         category_map=dict.fromkeys(CATEGORIES, "inherit"),
-        supplier="--config-file devtools/reference-maps/opencode.cfg, section '[opencode-model-map]'",
+        supplier="--config-file devtools/reference-maps/opencode.toml, table '[opencode.model-map]'",
     ),
 )
 _KBASE_OPENCODE_RENDER = dataclasses.replace(_OPENCODE_RENDER, plugin=WITH_KBASE)
@@ -838,7 +838,7 @@ def test_a_settings_files_components_value_drives_its_harness_install_and_the_fl
 ) -> None:
     """`[<harness>]`'s `components` is that harness's install selection, and `--components` given replaces
     it."""
-    settings = settings_file(tmp_path, "[claude]\ncomponents = kbase\n")
+    settings = settings_file(tmp_path, '[claude]\ncomponents = "kbase"\n')
     for name, flag, ships_kbase in (("from-settings", [], True), ("overridden", ["--components="], False)):
         project = tmp_path / name
         (project / ".claude").mkdir(parents=True)
@@ -868,7 +868,7 @@ def test_the_settings_file_reaches_the_render(tmp_path: Path, monkeypatch) -> No
     monkeypatch.setenv("DEVPRO_DEV", "1")
     out = tmp_path / "out"
     out.mkdir()
-    settings = settings_file(tmp_path, "[claude-model-map]\n*=inherit\n")
+    settings = settings_file(tmp_path, '[claude.model-map]\n"*" = "inherit"\n')
     main(["dev-render", "--out", str(out), "--harness=claude", f"--config-file={settings}"])
     assert "\nmodel: inherit\n" in (out / "agents/python-coder.md").read_text(encoding="utf-8")
 
@@ -877,12 +877,12 @@ def test_the_settings_file_refuses_a_glob_naming_no_category(tmp_path: Path, cap
     monkeypatch.setenv("DEVPRO_DEV", "1")
     out = tmp_path / "out"
     out.mkdir()
-    settings = settings_file(tmp_path, "[claude-model-map]\nnope=x\n")
+    settings = settings_file(tmp_path, '[claude.model-map]\n"nope" = "x"\n')
     with pytest.raises(SystemExit) as exited:
         main(["dev-render", "--out", str(out), "--harness=claude", f"--config-file={settings}"])
     assert exited.value.code == 2
     assert (
-        f"--config-file {settings}, section '[claude-model-map]': 'nope=x' names no category" in capsys.readouterr().err
+        f"--config-file {settings}, table '[claude.model-map]': 'nope=x' names no category" in capsys.readouterr().err
     )
     assert not any(out.iterdir())
 
@@ -891,7 +891,7 @@ def test_a_settings_file_installing_always_for_two_harnesses_installs_both(tmp_p
     """One invocation, one install per harness the file names, whatever the target holds."""
     project = tmp_path / "project"
     project.mkdir()
-    settings = settings_file(tmp_path, "[claude]\ninstall = always\n\n[opencode]\ninstall = always\n")
+    settings = settings_file(tmp_path, '[claude]\ninstall = "always"\n\n[opencode]\ninstall = "always"\n')
     main(["install", str(project), f"--config-file={settings}"])
     assert (_claude_plugin(project / ".claude") / "agents/python-coder.md").is_file()
     assert (_opencode_plugin(project / ".opencode") / "agents/python-coder.md").is_file()
@@ -908,10 +908,10 @@ def test_a_detect_harness_whose_directory_the_target_lacks_is_skipped(tmp_path: 
 
 
 def test_a_map_section_alone_names_its_harness_and_detect_installs_it(tmp_path: Path) -> None:
-    """Either section names a harness; a map section's entries reach the render it is installed with."""
+    """Either table names a harness; a map table's entries reach the render it is installed with."""
     project = tmp_path / "project"
     (project / ".claude").mkdir(parents=True)
-    settings = settings_file(tmp_path, "[claude-model-map]\n*=inherit\n")
+    settings = settings_file(tmp_path, '[claude.model-map]\n"*" = "inherit"\n')
     main(["install", str(project), f"--config-file={settings}"])
     agent = (_claude_plugin(project / ".claude") / "agents/python-coder.md").read_text(encoding="utf-8")
     assert "\nmodel: inherit\n" in agent
@@ -920,17 +920,17 @@ def test_a_map_section_alone_names_its_harness_and_detect_installs_it(tmp_path: 
 def test_a_never_harness_installs_nothing(tmp_path: Path) -> None:
     project = tmp_path / "project"
     (project / ".claude").mkdir(parents=True)
-    settings = settings_file(tmp_path, "[claude]\ninstall = never\n")
+    settings = settings_file(tmp_path, '[claude]\ninstall = "never"\n')
     main(["install", str(project), f"--config-file={settings}"])
     assert _files(project) == {}
 
 
 def test_the_harness_flag_overrides_the_selection_and_still_applies_its_map(tmp_path: Path) -> None:
     """`--harness` installs for that harness alone and the file's `install` setting is neither consulted
-    nor judged — opencode's is no setting at all — while claude's own section's map still applies."""
+    nor judged — opencode's is no setting at all — while claude's own table's map still applies."""
     project = tmp_path / "project"
     project.mkdir()
-    settings = settings_file(tmp_path, "[claude-model-map]\n*=inherit\n\n[opencode]\ninstall = sometimes\n")
+    settings = settings_file(tmp_path, '[claude.model-map]\n"*" = "inherit"\n\n[opencode]\ninstall = "sometimes"\n')
     main(["install", str(project), "--harness=claude", f"--config-file={settings}"])
     agent = (_claude_plugin(project / ".claude") / "agents/python-coder.md").read_text(encoding="utf-8")
     assert "\nmodel: inherit\n" in agent
@@ -962,7 +962,7 @@ def test_an_escaping_subdir_is_refused_under_a_settings_file_as_without_one(tmp_
     """The `--subdir` refusal is made before the harnesses are judged, whatever the settings say."""
     project = tmp_path / "project"
     project.mkdir()
-    settings = settings_file(tmp_path, "[claude]\ninstall = never\n")
+    settings = settings_file(tmp_path, '[claude]\ninstall = "never"\n')
     with pytest.raises(SystemExit) as exited:
         main(["install", str(project), f"--config-file={settings}", "--subdir=../escape"])
     assert exited.value.code == 2
@@ -975,7 +975,7 @@ def test_a_harness_the_settings_file_does_not_name_is_not_installed(tmp_path: Pa
     holds its harness directory."""
     project = tmp_path / "project"
     (project / ".claude").mkdir(parents=True)
-    settings = settings_file(tmp_path, "[opencode]\ninstall = always\n")
+    settings = settings_file(tmp_path, '[opencode]\ninstall = "always"\n')
     main(["install", str(project), f"--config-file={settings}"])
     assert (_opencode_plugin(project / ".opencode") / "agents").is_dir()
     assert _files(project / ".claude") == {}
@@ -989,7 +989,7 @@ def test_a_refusal_mid_loop_names_its_harness_and_earlier_installs_stand(tmp_pat
     mine = _opencode_plugin(project / ".opencode") / "agents/python-coder.md"
     mine.parent.mkdir(parents=True)
     mine.write_text("---\nname: python-coder\n---\n\nmy own agent\n", encoding="utf-8")
-    settings = settings_file(tmp_path, "[claude]\ninstall = always\n\n[opencode]\ninstall = always\n")
+    settings = settings_file(tmp_path, '[claude]\ninstall = "always"\n\n[opencode]\ninstall = "always"\n')
     with pytest.raises(SystemExit) as exited:
         main(["install", str(project), f"--config-file={settings}"])
     assert exited.value.code == 2
@@ -1003,7 +1003,7 @@ def test_a_map_section_naming_no_category_leaves_every_harness_uninstalled(tmp_p
     harness's install too."""
     project = tmp_path / "project"
     project.mkdir()
-    settings = settings_file(tmp_path, "[claude]\ninstall = always\n\n[opencode-model-map]\nstem-expert=opus\n")
+    settings = settings_file(tmp_path, '[claude]\ninstall = "always"\n\n[opencode.model-map]\n"stem-expert" = "opus"\n')
     with pytest.raises(SystemExit) as exited:
         main(["install", str(project), f"--config-file={settings}"])
     assert exited.value.code == 2
@@ -1014,13 +1014,13 @@ def test_a_map_section_naming_no_category_leaves_every_harness_uninstalled(tmp_p
 def test_an_install_setting_outside_the_three_is_refused_before_anything_is_written(tmp_path: Path, capsys) -> None:
     project = tmp_path / "project"
     project.mkdir()
-    settings = settings_file(tmp_path, "[claude]\ninstall = always\n\n[opencode]\ninstall = sometimes\n")
+    settings = settings_file(tmp_path, '[claude]\ninstall = "always"\n\n[opencode]\ninstall = "sometimes"\n')
     with pytest.raises(SystemExit) as exited:
         main(["install", str(project), f"--config-file={settings}"])
     assert exited.value.code == 2
     err = capsys.readouterr().err
     assert "install 'sometimes'" in err and "always, detect, never" in err
-    assert str(settings) in err and "section '[opencode]'" in err
+    assert str(settings) in err and "table '[opencode]'" in err
     assert _files(project) == {}
 
 

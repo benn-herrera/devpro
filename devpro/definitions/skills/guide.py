@@ -162,15 +162,15 @@ rendered files, so that install proceeds where the set was otherwise up to date.
 - What a rendering pins by default: a claude install pins its family's members; an opencode or mage
   install pins none — under opencode the definitions carry no model, under mage they carry
   `model: inherit` — unless the devpro settings file carries entries for the harness.
-- The devpro settings file: `~/.config/devpro/devpro.cfg`, or the file `--config-file` names. Each
-  harness has a section named after it. `[<harness>]` holds that harness's settings: its `install`
-  value — `always`, `detect` or `never` — settles whether an install into a target installs for it:
-  `always` whatever the target holds, `detect` (the default) where the target holds that harness's
-  own harness directory, `never` not at all. Either of a harness's sections existing names it, and one
-  install then installs for every harness the file names; `--harness` installs for that one harness
-  alone. `[<harness>-model-map]` holds the harness's model map, one `<glob>=<model>` entry per line:
-  the `<model>` is assigned to every category the glob matches, later entries overwriting earlier
-  ones.
+- The devpro settings file: `~/.config/devpro/devpro.toml`, or the file `--config-file` names. It is
+  TOML, with each harness given a table named after it. `[<harness>]` holds that harness's settings:
+  its `install` value — `always`, `detect` or `never` — settles whether an install into a target
+  installs for it: `always` whatever the target holds, `detect` (the default) where the target holds
+  that harness's own harness directory, `never` not at all. Either of a harness's tables existing
+  names it, and one install then installs for every harness the file names; `--harness` installs for
+  that one harness alone. `[<harness>.model-map]` holds the harness's model map, one
+  `"<glob>" = "<model>"` entry each: the `<model>` is assigned to every category the glob matches,
+  later entries overwriting earlier ones.
 
 ## Cold reads
 
