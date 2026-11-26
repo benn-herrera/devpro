@@ -942,9 +942,11 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     # Each column's share of the table comes from the page's own stylesheet, beside the header's class,
     # and the table's layout is the fixed one that gives that share to header and body alike.
     assert re.search(r"table \{ border-collapse: collapse; table-layout: fixed; \}", index)
-    # The controls: a box for the child rows and one per harness, each checked so the page opens on
-    # every row, and the notice a failed feed names itself in, standing empty and hidden.
-    for control in ('id="child-rows"', 'id="harness-claude"', 'id="harness-opencode"'):
+    # The controls: a box for the child rows and one per harness — child rows off by default, so the
+    # child-rows box ships without `checked` while the two harness boxes stay checked, the page
+    # opening on the dispatches — and the notice a failed feed names itself in, standing empty and hidden.
+    assert re.search(r'<input type="checkbox" id="child-rows" name="child-rows" value="on">', index)
+    for control in ('id="harness-claude"', 'id="harness-opencode"'):
         assert re.search(rf'<input type="checkbox" {control} [^>]*checked>', index), control
     assert re.search(r'<p id="notice" class="notice" role="alert" hidden></p>', index)
     assert re.search(r"tr:nth-child\(odd\) td \{ background: var\(--zebra\); \}", index)

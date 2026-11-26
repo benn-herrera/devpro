@@ -41,9 +41,11 @@ raised exception's text — the dashboard is a `127.0.0.1` surface, so the text 
 index carries simple controls — child-record
 rows on and off, claude and opencode on and off separately, and column heads sorting on the
 dispatched-agent count, the record count, the time and the span — and a failed feed names itself in
-an in-page notice, distinct from the no-records state a zero-record store renders. The controls' state
-and the sort in force live in the index page's URL, which the reader can copy, so leaving the view
-and returning restores it. The session page's embedded payload is unchanged: it is, and stays, the
+an in-page notice, distinct from the no-records state a zero-record store renders. Child-record rows
+are off by default, and the URL carries each control's state as its deviation from that control's
+default — an untouched page's URL carries no query — so the controls' state and the sort in force
+live in the index page's URL, which the reader can copy, and leaving the view and returning restores
+it. The session page's embedded payload is unchanged: it is, and stays, the
 feed the page's script reads.
 
 ## Dispatched children

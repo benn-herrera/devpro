@@ -1093,7 +1093,7 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 <main>
 <h1>Sessions</h1>
 <div class="controls">
-<label><input type="checkbox" id="child-rows" name="child-rows" value="on" checked> child rows</label>
+<label><input type="checkbox" id="child-rows" name="child-rows" value="on"> child rows</label>
 <label><input type="checkbox" id="harness-claude" name="harness" value="claude" checked> claude</label>
 <label><input type="checkbox" id="harness-opencode" name="harness" value="opencode" checked> opencode</label>
 </div>
@@ -1301,15 +1301,16 @@ const show = (feed) => {
   draw();
 };
 
-// The page's state, in the page's URL: each control the reader turned off and the head the table
-// sorts on with the order it stands in. A page showing every control's rows and sorted on nothing is
-// the page it opened on, so its link carries no query at all — the short URL for an untouched page,
-// and the reader's own choices for one they changed. The URL the page shows is the link they copy:
+// The page's state, in the page's URL: each control whose state deviates from its own default — the
+// child-rows box off, each harness box on — and the head the table sorts on with the order it stands
+// in. A page standing at every control's default and sorted on nothing is the page it opened on, so
+// its link carries no query at all — the short URL for an untouched page, and the reader's own
+// choices for one they changed. The URL the page shows is the link they copy:
 // opened again it reads the same state back (`restore`).
 const sync = () => {
   const params = new URLSearchParams();
   for (const control of document.querySelectorAll('.controls input')) {
-    if (control.name && !control.checked) params.append(control.name, control.value);
+    if (control.name && control.checked !== control.defaultChecked) params.append(control.name, control.value);
   }
   for (const head of document.querySelectorAll('.sort')) {
     const cell = head.closest('th');
@@ -1323,14 +1324,14 @@ const sync = () => {
 };
 
 // The state the page's URL carries, read back into the page before its feed arrives: a control the
-// link names as off, and a head in the order the link names, the heads a link names none of left as
-// the page carries them. The link names one head — the page stands sorted on one — so a URL carrying
-// more takes the first and drops the rest, and no two heads are ever marked sorted by a link
-// `sync()` did not write.
+// link names reads the opposite of its own default, and a head in the order the link names, the heads
+// a link names none of left as the page carries them. The link names one head — the page stands
+// sorted on one — so a URL carrying more takes the first and drops the rest, and no two heads are
+// ever marked sorted by a link `sync()` did not write.
 const restore = () => {
   const params = new URLSearchParams(location.search);
   for (const control of document.querySelectorAll('.controls input')) {
-    if (control.name) control.checked = !params.getAll(control.name).includes(control.value);
+    if (control.name) control.checked = params.getAll(control.name).includes(control.value) ? !control.defaultChecked : control.defaultChecked;
   }
   const sort = params.get('sort');
   for (const head of document.querySelectorAll('.sort')) {
