@@ -3,22 +3,6 @@
 These hold for every verb of the dicing surface ([its outcome and verbs](../../../PROJECT_DOCS/SPEC/entry-point.md));
 each leaf states its verbs' contract beside them.
 
-Contents:
-
-- [kanban](kanban/index.md)
-- [Link rewriting](link-rewriting/index.md)
-- [The diced tree](the-diced-tree/index.md)
-- [check-design](check-design.md)
-- [check-links](check-links.md)
-- [check-plan](check-plan.md)
-- [check-roadmap](check-roadmap.md)
-- [check-tree](check-tree.md)
-- [dice](dice.md)
-- [Limits](limits.md)
-- [Link check](link-check.md)
-- [Reassembly](reassembly.md)
-- [undice](undice.md)
-
 ## Shared behaviors
 
 A leaf of this document is a file named for its heading; a section holding sections below it is a
@@ -43,3 +27,19 @@ written is terminated by `\n`, so a file whose last line was unterminated gains 
 `dice` and `undice` take the option `--split-level <level>`, which sets the
 deepest split level ([which headings split](the-diced-tree/which-headings-split.md#which-headings-split)): `2`, `3` or `4`,
 default `4`; any other value is a usage error.
+
+Contents:
+
+- [kanban](kanban/index.md)
+- [Link rewriting](link-rewriting/index.md)
+- [The diced tree](the-diced-tree/index.md)
+- [check-design](check-design.md)
+- [check-links](check-links.md)
+- [check-plan](check-plan.md)
+- [check-roadmap](check-roadmap.md)
+- [check-tree](check-tree.md)
+- [dice](dice.md)
+- [Limits](limits.md)
+- [Link check](link-check.md)
+- [Reassembly](reassembly.md)
+- [undice](undice.md)
