@@ -24,8 +24,13 @@ P1–P3's runs exit 1 on the pairs later packages land — that is the passing s
 — and each done-line below states the literal stdout its run must give. The whole design's delta
 application is complete when P4's run exits 0.
 
-No row below is `dispatchable` yet: each package still owes its `devpro-prompt-engineer` usability
-review and `devpro-architect` revision (*Dispatchability*), which run after this draft returns.
+P1 through P4 are `dispatchable`: the plan's packages have had their `devpro-prompt-engineer`
+usability review and `devpro-architect` revision (*Dispatchability*). PR and PB stay `drafted`
+until their subjects exist.
+
+The user's standing direction: when this plan lands, the periodic review starts immediately — the
+interval's count is met and this plan's landing is the coherent feature boundary, so the next plan
+is the full review, straight to a plan with no design before it.
 
 ## Status
 
