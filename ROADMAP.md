@@ -49,14 +49,6 @@ does not get to keep living. Lands in the development skill's definition
 (`devpro/definitions/skills/development.py`), so every project's install carries it, and applies to
 the process's own artifacts: plans, designs, reviews, tickets, briefs.
 
-### add installed agents directory to claude development skill
-
-The claude session seat does not get path information. Render the relative path
-`.claude/skills/devpro/agents/` into SKILL.md, identifying it as the path to the agents files.
-This is necessary because some instructions require that the main session read the agent definition
-before dispatching. The model usually finds it, but it is an awkward step and we should just
-provide the information. This will be a harness-specific overlay.
-
 ### Group traces with plans — the operational-context stamp
 
 Sessions recorded by the profiler carry their operational context, so the dashboard can answer
@@ -221,28 +213,6 @@ instrument. Byte-level instruments exist today — `just render-diff` between tw
 the render-property assertions in `tests/test_devpro.py` (ARCHITECTURE.md, Why There Is No
 Verification Verb); behavioral ones do not yet.
 
-### Install stages through a built wheel
-
-`devpro install` has two staging paths with opposite polarities that must match but nothing makes
-them: the checkout path copies the package tree through a denylist (`EXCLUDED_DIRS`,
-`EXCLUDED_NAMES`, `EXCLUDED_SUFFIX`, `_shipped()` in `devpro/install.py`), the deployed path copies
-wheel content whose allowlist is `pyproject.toml`'s `[tool.setuptools.package-data]`. A built wheel
-and `package_copies`' enumeration agreed exactly — 109 files each, both cross-diffs empty — but
-that equality is maintained by care, not enforced by anything, and a new file outside the six
-globs ships from a checkout and silently misses the wheel consumers install. The denylist's work
-is dev-only: in the deployed case every exclusion is a no-op.
-
-The rework: `just agents` builds the wheel and runs the install from the built package — unpacked
-to scratch with `PYTHONPATH` pointed at it (zero runtime dependencies make that free),
-`PACKAGE_ROOT` resolving into the unpacked copy — and consumers install from site-packages as
-today, so both paths stage from wheel content and `.dist-info/RECORD` is the one manifest for
-both. The build doubles as a gate: a tree that does not build cannot install (partial — it catches
-a malformed package: the version attr's import, missing declared files, pyproject/readme/license
-faults; it does not compile modules or validate the entry point, which the test suite owns).
-Retires the denylist wholesale — `_shipped`'s third call site (`install.py:413`, the keep/removal
-path) needs its own stated rule rather than inheriting the retirement — and the install tests
-(`tests/test_devpro_install.py`) reshape around wheel-staged installs.
-
 ### Profiler child rows off by default
 
 Having them on by default is not helpful. The code is also crufty.
@@ -325,3 +295,8 @@ whether the floor's range still needs all three, is what the dispatch answers.
 harnesses' text go unchecked. The sentence check the previous ticket adds raises the stakes:
 overlay text and other harnesses escape at sentence granularity, where a shared sentence is small
 enough to hide inside a paragraph that differs.
+
+### Consider changing devpro config format
+
+It's currently .cfg but .toml allows for nesting (which we are faking with <harness>-model-map group)
+The upgrade to python 3.11 makes toml available without a dependency.
