@@ -188,10 +188,14 @@ IDLE = "experimental.idle"
 def child_episodes(records: list[dict]) -> dict[str, dict]:
     """session id -> its latest idle with no background work running: where that session's run ended.
 
-    An opencode session idles each time an episode closes — the agent loop finished and nothing is
+    The episode-end contract, as `the-opencode-capture` leaf states it and the join reads it. An
+    opencode session idles each time an episode closes — the agent loop finished and nothing is
     queued — and a wake that follows its own background work, or a dispatcher's follow-up, opens
     another episode whose idle is later. An idle seen with background work listed is no episode's end,
-    so it is not kept; the latest kept one is the end the join reads."""
+    so it is not kept; the latest kept one ends the child, and the span the join reads runs from the
+    dispatch to it — including, where the child opened background work of its own, the wait for it.
+    The `background` field is the capture's own: claude stamps a bool and opencode a count, and both
+    read as none held where falsy — `0`, `False` and a record naming neither alike."""
     episodes: dict[str, dict] = {}
     for record in records:
         if record.get("event") == IDLE and record.get("session") and not record.get("background"):
@@ -212,10 +216,11 @@ def with_stop(record: dict, stop: dict | None, handback: str | None, episode: di
 
     An opencode dispatch records no stop, its child ending at the child's own empty-background idle
     (`episode`, read from the child's store): the record's agent and model become the child's, where
-    the idle carries them, and its duration the span from the dispatch to that idle. A dispatch whose
-    episode never came is the acknowledgment as it was written — never `running`, since the capture
-    writes the launch, not the work, and its end is the child's to report. The `running` mark is
-    claude's alone: it is the launch the capture wrote to run on, with no stop yet to end it."""
+    the idle carries them, and its duration the span from the dispatch to that idle — including the
+    wait for background work the child itself opened. A dispatch whose episode never came is the
+    acknowledgment as it was written — never `running`, since the capture writes the launch, not the
+    work, and its end is the child's to report. The `running` mark is claude's alone: it is the launch
+    the capture wrote to run on, with no stop yet to end it."""
     call = {**record, "background": True} if LAUNCH_NOTICE.match(record.get("result") or "") else record
     if not stop:
         if episode:
@@ -225,6 +230,8 @@ def with_stop(record: dict, stop: dict | None, handback: str | None, episode: di
                 "model": episode.get("model") or call.get("model"),
                 "duration_ms": max(0, (_epoch_ms(episode.get("at")) or 0) - (_epoch_ms(call.get("at")) or 0)),
             }
+        # The mark is claude's, and its read is the same falsy one `child_episodes` gives the field: a
+        # claude launch with `background` and no stop runs; no opencode dispatch is ever marked so.
         return {**call, "running": True} if call.get("harness") == "claude" and call.get("background") else call
     merged = {**call, "child_agent_type": call.get("child_agent_type") or stop.get("agent_type")}
     if not call.get("background"):

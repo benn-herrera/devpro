@@ -256,14 +256,19 @@ function childAgentTypeOf(tool: string, input: Record<string, unknown>, result: 
   return undefined
 }
 
-// What each session's last reported `model.request` named: the model, as `providerID/id`, and the agent
-// the request ran as. The agent loop is sequential per session — a request fires before its assistant
-// message is built, that message's tool calls run, then the next request — so the last one a session
-// reported is the model and the agent that issued the call `execute.after` records. A session's entry
-// goes at its idle, below: a new turn's request precedes any call that turn makes, and the map holds a
-// live session's entry alone. A child's entry is the one the dispatch record has no other source for:
-// the child's own `model.request` names the model and the agent it actually ran.
-const models = new Map<string, { model: string; agent: string }>()
+// What each session's last reported primary `model.request` named: the model, as `providerID/id`, and the
+// agent the request ran as. The agent loop is sequential per session — a request fires before its
+// assistant message is built, that message's tool calls run, then the next request — so the last one a
+// session reported is the model and the agent that issued the call `execute.after` records. A session's
+// entry goes at its idle, below: a new turn's request precedes any call that turn makes, and the map
+// holds a live session's entry alone. A child's entry is the one the dispatch record has no other
+// source for: the child's own `model.request` names the model and the agent it actually ran.
+// Only a `kind` of `"primary"` is kept: the host fires a request of its own for a title, a compaction
+// or a generate call, and naming the child's run from one would name an agent it never worked as. A
+// field the payload does not carry — a stub's, or a host reporting none — is `null`, never the text
+// `"undefined"`.
+type Reported = { model: string | null; agent: string | null }
+const models = new Map<string, Reported>()
 
 // The record's fields are `devpro/profiler/capture.py`'s `build_record` / `build_event_record` in their schema order, every
 // one present so a reader never meets a missing key. A field a hook supplies no value for takes the
@@ -337,17 +342,18 @@ function callRecord(call: Finished, start: number, end: number): CallRecord {
   }
 }
 
+// The idle record's signal: the agent and the model the session's last primary `model.request` reported,
+// which a dispatch record's child is read through at the join, and the `background` work the host
+// listed as still running — an idle with any is no episode's end. Every field is `null` where the host
+// reported none: `background` `null` where the idle named no listing at all, which no host has been
+// observed omitting — the count it reported stands where it did.
+type Signal = { background: number | null; agent_type: string | null; model: string | null }
+
 // eventRecord marks the session's lifecycle, as the devpro profiler's record for a SessionStart does: an event and
 // no tool, so the tree draws it as a marker. `transcript` names claude's transcript file, which opencode
-// has none of. `signal` carries what only an idle names: the agent and the model the session's last
-// `model.request` reported, which a dispatch record's child is read through at the join, and the
-// `background` work the host listed as still running — an idle with any is no episode's end.
-function eventRecord(
-  session: string,
-  event: string,
-  at: number,
-  signal: { background?: readonly unknown[]; agent_type?: string; model?: string } = {},
-): Record<string, unknown> {
+// has none of. The record carries the signal's fields on every record, absent ones as `null` — the
+// capture's own invariant, one shape for every record a reader meets — and no other does.
+function eventRecord(session: string, event: string, at: number, signal: Signal): Record<string, unknown> {
   return {
     v: SCHEMA_VERSION,
     harness: "opencode",
@@ -358,9 +364,9 @@ function eventRecord(
     source: null,
     context_tokens: null,
     transcript: null,
-    ...(signal.background === undefined ? {} : { background: signal.background.length }),
-    ...(signal.agent_type === undefined ? {} : { agent_type: signal.agent_type }),
-    ...(signal.model === undefined ? {} : { model: signal.model }),
+    background: signal.background,
+    agent_type: signal.agent_type,
+    model: signal.model,
   }
 }
 
@@ -488,19 +494,23 @@ export default Plugin.define({
     silently(() => {
       void ctx.session.hook("model.request", (request) => {
         silently(() => {
+          // A title's, a compaction's or a generate call is the host's own: it names no turn's model
+          // or agent. The turn's model request — the one the calls after it run on — is `primary`.
+          if (request.kind !== "primary") return
           const model = request.model ? clip(`${request.model.providerID}/${request.model.id}`, NAME_LIMIT) : null
           if (model === null) return
           // Bounded as `started` is: a live session's entry is replaced, and the oldest goes once the map
           // holds as many as a start may.
           const oldest = models.keys().next().value
           if (oldest !== undefined && models.size >= MAX_STARTED && !models.has(request.sessionID)) models.delete(oldest)
-          models.set(request.sessionID, { model, agent: clip(mask(String(request.agent)), NAME_LIMIT) })
+          const agent = textFrom(request.agent)
+          models.set(request.sessionID, { model, agent: agent ? clip(mask(agent), NAME_LIMIT) : null })
         })
       })
     })
     // The idle record is the join's end signal for a dispatch's child: stamped with what the child's
-    // last request named and with how much work the host still held. An idle that still holds any is
-    // no episode's end: it keeps the session's entry, since only the idle with none means the turn's
+    // last primary request named and with how much work the host still held. An idle that still holds any
+    // is no episode's end: it keeps the session's entry, since only the idle with none means the turn's
     // model has stopped issuing requests.
     await ctx.session.hook("experimental.idle", (idle) => {
       silently(() => {
@@ -514,9 +524,12 @@ export default Plugin.define({
         append(
           root,
           idle.sessionID,
+          // A listing the idle carries is reported by its count; one it does not, as `null` — the
+          // field is on the record either way, and the join reads a count's zero and a `null` alike.
           eventRecord(idle.sessionID, "experimental.idle", Date.now(), {
-            background,
-            ...(reported === undefined ? {} : { agent_type: reported.agent, model: reported.model }),
+            background: Array.isArray(idle.background) ? background.length : null,
+            agent_type: reported?.agent ?? null,
+            model: reported?.model ?? null,
           }),
         )
       })

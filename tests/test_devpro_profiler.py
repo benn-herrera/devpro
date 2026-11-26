@@ -558,14 +558,14 @@ def test_the_capture_builds_its_record_over_host_shape_inputs(tmp_path: Path) ->
     `Tool.Error`'s message, the skill and subagent carry the host's own names, and a dispatch's child
     session is the one its result names — in the output 2.3.2 reports, in the metadata 2.3.0
     reports, and at the result's top level 2.4.1 reports, each of which the floor covers — with a
-    top-level id that is not a string refused, the read falling through to the output's id. The
-    session's idle appends its lifecycle record; a dispatch's return carries `background: true`,
-    every other call `false`.
+    top-level id that is not a string refused, the read falling through to the output's id. Each
+    session's idle appends its lifecycle record, the signal's keys on it whether or not the host named
+    them; a dispatch's return carries `background: true`, every other call `false`.
 
     `clauses.TEST_PRECONDITION`. The defect: an opencode record that names no model where its
     session's request named one, or one that names a model no request reported. Each `ses_capture`
     call carries the model the one fired `model.request` named, and a call in a session that fired
-    none carries `null`.
+    none carries `null`. The idle stamp's own defects are the same paragraph's second half above.
 
     The host shapes and the plugin context are inputs, both shaped here: nothing the test asserts is a
     claim about what the host reports, only about what the capture builds from them."""
@@ -599,19 +599,40 @@ def test_the_capture_builds_its_record_over_host_shape_inputs(tmp_path: Path) ->
     # A dispatch returns at once and its child runs in the background; any other call runs in its own
     # session's foreground. The dispatch rows carry no joined field: the join is the render's, at read.
     assert [record["background"] for record in calls] == [False, False, False, True, True, True, True]
-    assert [record["event"] for record in records if record.get("event")] == ["experimental.idle"] * 3
+    assert {record["event"] for record in records if record.get("event")} == {"experimental.idle"}
     # The model: the one request `ses_capture` fired, `providerID/id`, on every call the session made
     # after it; `null` on a call in a session that fired none.
     fired = "wafer.ai/GLM-5.3-Flash"
     assert [record["model"] for record in calls] == [fired] * 7
     [modelless] = [record for record in records if record.get("session") == "ses_modelless"]
     assert modelless["model"] is None
-    # The child's own idles: the agent and the model its request named are stamped on each, and each
-    # states the background work it was seen with — the first one's shell, the end signal's none.
+    # The child's own idles: the agent and the model its call request named are stamped on each, and
+    # each states the background work it was seen with — the first one's shell, the end signal's none.
     [first, end] = [record for record in records if record.get("session") == "ses_child"]
     stamp = {"agent_type": "devpro-go-coder", "model": "reaper/Qwen3.8-Flash-Next"}
     assert ({key: first[key] for key in stamp}, first["background"]) == (stamp, 1)
     assert ({key: end[key] for key in stamp}, end["background"]) == (stamp, 0)
+
+    # `clauses.TEST_PRECONDITION`. The defect (R4): the idle record's stamp grew `background`,
+    # `agent_type` and `model` only where a signal carried them, so a record could arrive missing keys;
+    # a payload naming no agent persisted the text `"undefined"`; and a title request's agent and model
+    # were stamped as the run's. Every event record carries the signal's three keys, `null` where the
+    # host reported none, and only a `call` request's fields are the session's.
+    events = [record for record in records if record.get("event") is not None]
+    idle_keys = {"v", "harness", "at", "session", "event", "trigger", "source", "context_tokens", "transcript"}
+    assert [{key for key in record if key not in idle_keys} for record in events] == [
+        {"background", "agent_type", "model"}
+    ] * len(events)
+    # The session whose only request was the host's own title request: it names no model or agent, and
+    # the call the session made after it names neither, as a claude record with no transcript does.
+    worker = [record for record in records if record.get("session") == "ses_worker"]
+    [titled] = [record for record in worker if record.get("event") is not None]
+    [untitled] = [record for record in worker if record.get("event") is None]
+    assert (titled["agent_type"], titled["model"]) == (None, None)
+    assert untitled["model"] is None
+    # A call request naming no agent: the model stands, the agent is `null` and never `"undefined"`.
+    [anonymous] = [record for record in events if record["session"] == "ses_anonymous"]
+    assert (anonymous["agent_type"], anonymous["model"]) == (None, "reaper/Qwen3.8-Flash-Next")
 
 
 def _dispatch_store(root: Path, session: str, at: str, child: str, *, duration_ms: int = 500) -> Path:
@@ -638,7 +659,7 @@ def _dispatch_store(root: Path, session: str, at: str, child: str, *, duration_m
 
 def _idle_store(root: Path, session: str, idles: list[tuple[str, int]]) -> Path:
     """The child's own opencode store, one idle record per `(at, background)` the child idled with: the
-    event record the capture stamps, carrying the agent and model the child's last request named."""
+    event record the capture stamps, carrying the agent and model the child's last call request named."""
     directory = root / ".devpro-temp" / ".profiler-opencode"
     directory.mkdir(parents=True, exist_ok=True)
     (directory / f"{session}.jsonl").write_text(

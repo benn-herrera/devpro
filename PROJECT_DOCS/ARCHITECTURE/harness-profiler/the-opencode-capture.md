@@ -37,7 +37,10 @@ surface delivers for every session, the child's included:
 
 A child may idle more than once — a wake that follows its own background work, or its parent's
 follow-up, opens a new episode whose end is a later idle — so the join reads the latest
-empty-background idle in the child's store, which converges to the true end as episodes close. The
+empty-background idle in the child's store, which converges to the true end as episodes close. An
+idle seen with background work listed ends nothing, so a child that opened background work of its own
+ends at the idle after that work reported; the span the join reads therefore includes the wait for it,
+and is not the child's working time alone. The
 idle record is an event and no tool, its `session` the child's id, appended to the store that id
 names — the child's own `.devpro-temp/.profiler-opencode/<child-session-id>.jsonl`, which the render
 reads beside the dispatch's. A child whose end signal never comes — killed, or still running — leaves
