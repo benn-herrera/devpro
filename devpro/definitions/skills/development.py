@@ -142,11 +142,6 @@ bindable term that has no default and is unbound, ask the user for it then, thro
   `entry-point.md` where it is diced; the `{clauses.optional_ref(name="docdicer")}` skill) and fix
   what it reports until it reports nothing. *Purpose:* what the user accepts is complete, so no plan
   is written from a design still deciding.
-- The plan is the architect's to draft: the session dispatches `devpro-architect` to write the plan
-  from the accepted design, then reviews what returns and offers it for approval — it does not
-  draft the plan itself. *Purpose:* the session's context stays with the decisions and the
-  acceptance that are the session's to hold, and the drafting is done by the seat whose definition
-  carries it.
 - The plan written from a design cites each entry by a link to it — its leaf in a diced design,
   else its heading's `#anchor` — instead of carrying it, and the package that implements an entry
   under `{SPEC_DELTA_TERM}` or `{ARCHITECTURE_DELTA_TERM}` applies it to its target verbatim except
@@ -171,6 +166,11 @@ bindable term that has no default and is unbound, ask the user for it then, thro
 
 ## Plans
 
+- The plan's first draft is the {clauses.ref(name="architect")} definition's to write: the session
+  dispatches it — from the accepted design where one precedes the plan, from the findings where
+  none does — and writes no draft of its own. *Purpose:* the plan is written by the seat that also
+  reviews and revises it, so one discipline owns the artifact, and what the session approves is
+  that discipline's output.
 - Plans and designs are tracked files; notes not yet shaped into either are scratch, in the
   {SCRATCH_TERM}. *Purpose:* a plan or design survives in version control, and unshaped
   notes are not mistaken for either.
