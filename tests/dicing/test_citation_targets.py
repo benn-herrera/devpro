@@ -16,9 +16,9 @@ ROOT = Path(__file__).resolve().parents[2]
 TREE = ROOT / "PROJECT_DOCS" / "SPEC" / "dicing-and-checks"
 
 # The standing sites B2's Facts enumerate: citations whose referent is the volume head itself, not a
-# leaf, so no leaf's text names them. Keyed by (file, line) because a line can carry two sites.
+# leaf, so no leaf's text names them. B4's `check-tree.md` restatement (R17) retired the first; each
+# is keyed by (file, line) because a line can carry two sites.
 STANDING = {
-    ("check-tree.md", 19): "misplaced section",
     ("limits.md", 18): "board's",
 }
 

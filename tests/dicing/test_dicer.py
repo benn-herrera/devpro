@@ -208,6 +208,8 @@ def _unplaced(files: dict[str, bytes]) -> list[str]:
             continue
         if directory and any(f"{directory}/{head}" in names for head in ("entry-point.md", "index.md")):
             continue
+        if not directory and "entry-point.md" in names:
+            continue  # a one-document tree's section beside its root head
         unplaced.append(path)
     return sorted(unplaced)
 

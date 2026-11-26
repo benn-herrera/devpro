@@ -1,6 +1,9 @@
 # Which headings split
 
-A heading is a line of 1 to 6 `#` at column 0 followed by a space, outside fenced code. A fenced
+A heading is a line of one or more `#` at column 0 followed by a space, outside fenced code. Levels
+1 to 6 are the levels a document can place; a run of seven or more is a heading still, with no
+level of its own, and it is written at the level its distance below its section's top gives it
+([file content](file-content.md#file-content)). A fenced
 block opens at a line of at least three backticks or tildes (indentation by spaces allowed; a
 backtick fence's info string holds no backtick) and closes at a line of the same character, at
 least as many, followed only by spaces; an unclosed fence runs to the end of the document. No line

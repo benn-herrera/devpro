@@ -6,12 +6,11 @@ level the tree was diced at; links are restored at that level. `<out-dir>` must 
 
 **Which documents it writes.** One per volume ([the model](the-diced-tree/the-model.md#the-model)): for each head the
 root's Contents block links below it, the document that volume holds, named for the volume's
-directory — `T/A/entry-point.md` writes `<out-dir>/A.md`. A tree whose root links no head below it
-holds one document, named for the tree's own directory — `SPEC/entry-point.md` writes
-`<out-dir>/SPEC.md` — and a broken-out section (`<tree-dir>/index.md` at the root) writes
-`<out-dir>/<tree-dir base name>.md`. An `index.md`-headed directory is never a document of its own: its
-sections fold into the document of the volume above it. The omnibus root's own head is not written: it
-is generator output, and the volumes are the documents the tree holds.
+directory — `T/A/entry-point.md` writes `<out-dir>/A.md`. A one-document tree holds one document,
+named for the tree's own directory — `SPEC/entry-point.md` writes `<out-dir>/SPEC.md` — and a
+broken-out section (`<tree-dir>/index.md` at the root) writes `<out-dir>/<tree-dir base name>.md`.
+An `index.md`-headed directory is never a document of its own. The omnibus root's own head is not
+written: it is generator output, and the volumes are the documents the tree holds.
 
 | Condition | stderr | Exit |
 |---|---|---|
@@ -31,7 +30,8 @@ document's first level is level 2 — and a file whose top reads any other level
 form and is written as it stands. A place deeper than the last heading level has no document to be
 restored into: the file is reported as
 `undice: <document path> sits deeper than a document's last heading level`, nothing is written for
-that volume, and the verb exits 1. A volume's head is its document's title and opening
+that volume, and the verb exits 1; a deeper place holds no document because level 6 is the last
+heading a document has ([which headings split](the-diced-tree/which-headings-split.md#which-headings-split)). A volume's head is its document's title and opening
 text, and it writes as it stands, its title at level 1. The tree does not record the level a
 re-based section came from, and no two documents with the same tree can be told apart, so the
 document written is the one the tree holds: it need not be the document the tree was diced from, and
@@ -43,7 +43,9 @@ code and code spans, relative to `<out-dir>`:
 - A link to a heading's place in the tree, as [link targets](link-rewriting/link-targets.md#link-targets) step 1 writes
   it, becomes `#<anchor>`, the heading's anchor in the document
   ([anchors](link-rewriting/anchors.md#anchors)).
-- Every other relative link is rebased from its file's directory to `<out-dir>`, fragment kept.
+- Every other relative link is restored as [link targets](link-rewriting/link-targets.md#link-targets) step 3
+  wrote it: a link to a second document becomes that document's path relative to `<out-dir>`, and
+  any other path is rebased from its file's directory to `<out-dir>`, fragment kept.
   Links left unchanged by [link targets](link-rewriting/link-targets.md#link-targets) step 2 stay unchanged.
 
 **Round trip.** For a tree as `dice` wrote it at `<level>`: move `<tree-dir>` aside, `undice` it to
