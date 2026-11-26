@@ -1,6 +1,6 @@
 """What the install modules share: where this package and its checkout sit, the kbase skill's directory
 and the kb-tools package's destination inside it, the devpro tools package's directory and its wrapper,
-the virtual-environment directory an install leaves be, UTF-8 text reading that keeps each line's ending, and
+UTF-8 text reading that keeps each line's ending, and
 the stderr report of what an install left alone."""
 
 import sys
@@ -30,10 +30,6 @@ KB_TOOLS_DIR = f"{KBASE_SKILL_DIR}/kb-tools"
 # — and the wrapper that runs that copy, which every installed hook and skill names by its own knowledge.
 TOOLS_DIR = "tools"
 WRAPPER = f"{TOOLS_DIR}/devpro.sh"
-# A virtual environment a shipped tool builds beside its package: not install output, so it is neither
-# shipped nor copied into the preflight's scratch copy, never compared, so its presence alone never makes
-# an install proceed, and kept when the install clears the package's destination.
-VENV_DIR = ".venv"
 
 
 def untranslated_text(path: Path) -> str:

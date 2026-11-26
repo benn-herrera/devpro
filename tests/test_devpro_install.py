@@ -2173,24 +2173,19 @@ def test_install_writes_every_render_and_stamps_the_packages_once(installed: Pat
     assert kb_mk[1:] == source_mk
 
 
-def test_the_stale_list_keeps_a_venv_below_a_package_destination_and_a_safety_copy(tmp_path: Path, capsys) -> None:
-    """Prune's own guard, not a copy filter: a generated file below the `.venv` directory directly under
-    a package destination, and a safety copy in a rendered surface, never enter the stale list, while a
-    file beside them does. Defect: with the denylist gone, prune would remove a shipped tool's virtual
-    environment and a consumer's backup from the rendered surfaces. No re-install rewrites either, the
-    rendered files being unchanged, so nothing else can account for the safety copy's absence.
-    The `.venv` file's absence is doubly kept — prune's guard, and the preflight's scratch copy leaving
-    every `.venv` out, which the destination's own clearing then keeps — so this case holds the pair
-    together rather than pinning the guard alone; the `.bak` is the guard's own."""
+def test_the_stale_list_keeps_a_safety_copy(tmp_path: Path, capsys) -> None:
+    """Prune's own guard, not a copy filter: a safety copy (a `.bak` suffix) never enters the stale
+    list, while a generated file beside it does. Defect: with the denylist gone, prune would remove a
+    consumer's backup from the rendered surfaces. No re-install rewrites it, the rendered files being
+    unchanged, so nothing else can account for the safety copy's survival."""
     project = tmp_path / "project"
     root = project / ".claude"
     root.mkdir(parents=True)
     _definition_install(root, _KBASE_CLAUDE_RENDER, project_root=project)
     plugin = _claude_plugin(root)
     planted = {
-        # Beside the kb-tools destination, in the rendered skill's own directory: the `.venv`
-        # directory's file sits directly below the destination, and the safety copy beside a render.
-        "skills/kbase/kb-tools/.venv/lib/ours.md": _NEW_BANNER,
+        # A safety copy beside a render, in the rendered skill's own directory: the `.bak` is the
+        # consumer's.
         "skills/kbase/references/shipped.md.bak": _NEW_BANNER,
         "skills/kbase/references/ours.md": _NEW_BANNER,
     }

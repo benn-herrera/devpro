@@ -19,7 +19,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from devpro.errors import InputError
-from devpro.install_base import VENV_DIR
 
 
 @dataclass(frozen=True)
@@ -69,7 +68,7 @@ def _scratch_bases(bases: Sequence[Path], *, scratch: Path) -> tuple[list[Path],
 
 def _copy_managed(managed: Sequence[tuple[Path, Sequence[str]]], *, scratch_bases: Sequence[Path]) -> None:
     """Copy each managed path that exists to the same position below its base's counterpart: a directory
-    as its tree, every `.venv` left out, and a file as its bytes. A directory a managed path sits in is
+    as its tree, and a file as its bytes. A directory a managed path sits in is
     created where the real one exists, since an install's checks read whether it does; where a regular
     file stands in its place instead, or in a base's, the outermost such file is copied, so the install
     meets the same obstacle. A relative naming a wildcard stands for every path it matches, as the
@@ -91,7 +90,6 @@ def _copy_managed(managed: Sequence[tuple[Path, Sequence[str]]], *, scratch_base
                         shutil.copytree(
                             match,
                             scratch_base / at,
-                            ignore=shutil.ignore_patterns(VENV_DIR),
                             symlinks=True,
                             dirs_exist_ok=True,
                         )
@@ -114,19 +112,18 @@ def _copy_managed(managed: Sequence[tuple[Path, Sequence[str]]], *, scratch_base
                     (scratch_base / obstacle).parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(base / obstacle, scratch_base / obstacle)
             if real.is_dir():
-                shutil.copytree(real, copy, ignore=shutil.ignore_patterns(VENV_DIR), symlinks=True, dirs_exist_ok=True)
+                shutil.copytree(real, copy, symlinks=True, dirs_exist_ok=True)
             elif real.is_file():
                 shutil.copy2(real, copy)
 
 
 def _tree(base: Path) -> tuple[set[Path], set[Path]]:
-    """Every file and every directory below `base`, relative to it, outside any `.venv`. `base` is read
+    """Every file and every directory below `base`, relative to it. `base` is read
     as it resolves, so a spelling that reaches the tree through a symlink reads the same one."""
     files: set[Path] = set()
     directories: set[Path] = set()
     root = base.resolve()
     for directory, subdirs, names in os.walk(root):
-        subdirs[:] = [name for name in subdirs if name != VENV_DIR]
         files.update(Path(directory, name).relative_to(root) for name in names)
         directories.update(Path(directory, name).relative_to(root) for name in subdirs)
     return files, directories

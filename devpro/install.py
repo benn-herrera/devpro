@@ -49,7 +49,7 @@ from devpro.components import NAME
 from devpro.context import HarnessSettings, MapSupply, Render, harness_named
 from devpro.errors import InputError
 from devpro.harness import KBASE_OWNER, GuardrailHook, Harness, HarnessFile
-from devpro.install_base import KB_TOOLS_DIR, PACKAGE_ROOT, TOOLS_DIR, VENV_DIR, WRAPPER, report_left_alone
+from devpro.install_base import KB_TOOLS_DIR, PACKAGE_ROOT, TOOLS_DIR, WRAPPER, report_left_alone
 from devpro.install_target import (
     require_existing_target,
     require_outside_package_source,
@@ -258,11 +258,9 @@ def _installed_version(init: Path) -> str | None:
 
 
 def _is_stale_candidate(relative: Path) -> bool:
-    """Whether a file below a package destination may enter `prune`'s stale list: not a file below a
-    `VENV_DIR` directory directly under the destination, and not a safety copy. A virtual environment
-    a shipped tool builds beside its package is not install output, and a `.bak` is the consumer's."""
-    below_venv = len(relative.parts) > 2 and relative.parts[1] == VENV_DIR
-    return not (below_venv or relative.suffix == EXCLUDED_SUFFIX)
+    """Whether a file below a package destination may enter `prune`'s stale list: not a safety copy. A
+    `.bak` is the consumer's."""
+    return relative.suffix != EXCLUDED_SUFFIX
 
 
 def _wheel_files(root: Path) -> list[Path]:
@@ -386,18 +384,16 @@ def _refuse_foreign_targets(
 
 
 def prune(root: Path, *, keep: set[Path]) -> list[Path]:
-    """Remove every regular file under ROOT's surfaces that is not in `keep`, is not a file below a
-    `VENV_DIR` directory directly under a package destination, is no safety copy, and is ours; then
-    each directory that leaves empty, walking upward from the file to the first
+    """Remove every regular file under ROOT's surfaces that is not in `keep`, is no safety copy, and is
+    ours; then each directory that leaves empty, walking upward from the file to the first
     directory that still holds anything, the surface included and ROOT never.
 
     The skill-owned package destinations sit inside the skills surface — `skills/kbase/kb-tools/` and
     `skills/development/scripts/` — the devpro tools package outside every surface, and no destination is carved out by
     name. None needs to be: a copied package file carries the `!INSTALLED!` banner or none, never the
-    generated one `_is_ours` reads, so it is untouched here rather than pruned, and a `.venv` below a
-    destination never enters the stale list (`_is_stale_candidate`), the safety copy beside one
-    neither. Every file under a surface is thus either ours
-    or untouched. A definition of ours this run did not write — one its plugin does not ship — is stale
+    generated one `_is_ours` reads, so it is untouched here rather than pruned, and a safety copy never
+    enters the stale list (`_is_stale_candidate`). Every file under a surface is thus either ours or
+    untouched. A definition of ours this run did not write — one its plugin does not ship — is stale
     and removed, while one the run wrote is in `keep`. Nothing outside ROOT's surfaces is walked, so
     another plugin's ROOT beside this one is never read.
 
@@ -521,13 +517,11 @@ def _retired_resource_dirs(root: Path) -> list[Path]:
 
 
 def _clear_package_destination(destination: Path) -> None:
-    """Leave a directory at `destination` holding at most its `VENV_DIR` entry, or nothing, for the
-    package copy: a directory is emptied and stays, except an entry named `VENV_DIR` directly under it,
-    which is kept whatever its type; anything else there is unlinked."""
+    """Empty the directory at `destination` for the package copy: every entry there is removed per its
+    shape — a directory tree removed, any other entry unlinked — leaving the destination holding
+    nothing; the destination absent, nothing done."""
     if destination.is_dir():
         for entry in destination.iterdir():
-            if entry.name == VENV_DIR:
-                continue
             if entry.is_dir():
                 shutil.rmtree(entry)
             else:

@@ -19,9 +19,10 @@ kb-tools package sit inside the install directory's `skills/` — `skills/develo
 `skills/kbase/kb-tools/`, each in its skill's own directory — where every file they hold is stamped
 installed or left unstamped, never generated, and the devpro tools package sits at `tools/`,
 outside the three surfaces the walk visits, so every file under those trees is still either ours or
-untouched. The staleness rule is prune's own, stated here rather than inherited: a file below a `.venv`
-directory (`VENV_DIR`) directly under a package destination, and a safety copy (a `.bak` suffix),
-never enters the stale list. A definition of ours that this run did not write, such as one its plugin
+untouched. The staleness rule is prune's own, stated here rather than inherited: a safety copy (a
+`.bak` suffix) never enters the stale list. No venv is ever delivered and none is created under an
+install directory, so the stale list has no venv case: no file a venv holds is ours by its own
+carrier. A definition of ours that this run did not write, such as one its plugin
 does not ship, is stale and goes — every one of its files, a skill's included. Every definition is
 rendered before the first write. A file at a rendered-definition destination that has lost the
 generated banner, or is a directory, refuses the install.
@@ -92,8 +93,7 @@ opencode's `index.ts`): the plugin cannot register without it, and the entry imp
 only where `guardrail.ts` stands beside it. Before the
 first write, `_RESOURCE_BANNER` (`!INSTALLED! .* devpro`) is matched against the first ten lines
 of an existing destination. Package destinations are exempt from the banner and marker checks.
-`_clear_package_destination` empties the directory a destination is, all but a `.venv`
-(`VENV_DIR`) directly under it, and unlinks any other file
+`_clear_package_destination` empties the directory a destination is, and unlinks any other file
 there. No error is swallowed: an `OSError` from the clear propagates. The harness resources join the same `copies` list as the packages', so the prune's
 `keep` holds them and the install report counts them: a harness resource never reads as a stale
 rendered definition. The copy is one-way, not a mirror — `prune` owns the install directory's
@@ -130,7 +130,7 @@ part.
   where missing and the comparison does not read what the project holds inside it. The project's
   own settings files are not named: no install writes one.
 - **The scratch copy** (`preflight.preflight`) lives in a `tempfile.TemporaryDirectory`, each
-  managed path at its position below its base. Every `.venv` (`VENV_DIR`) is omitted. A base nested in another keeps its position below the outer
+  managed path at its position below its base. A base nested in another keeps its position below the outer
   one.
 - **The run** calls `install` on the scratch copy with `real_harness_dir` and `real_project` naming
   the real paths, because two decisions compare a written path with a fixed location and a
@@ -148,7 +148,7 @@ part.
   holding nothing is created — the project's scratch directory is one — while a directory made to hold
   a file the run wrote is that file's, named by the file alone. One in the scratch copy before the run
   and gone after it is removed, and a store the install renamed reads as one path removed and the
-  directory and file created in its place. `.venv` directories (`VENV_DIR`) are outside it. The scratch
+  directory and file created in its place. The scratch
   copy never creates a directory the real tree does not hold: the run makes it, and that is what the
   comparison reads.
 - **The outcome** (`run_preflighted`): with no difference it returns before the real install, and

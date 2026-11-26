@@ -10,8 +10,6 @@ inside the `development` skill's own directory (below), and the **devpro tools p
 the kb-tools package (below). A user-level install delivers the devpro tools package alone (SPEC.md,
 Deployed Surfaces, Install destination).
 
-A `.venv` directly under a package destination is not install output.
-
 The development scripts package holds one file, `cold-read.sh`, a `bash` script, executable,
 carrying the installed banner below its shebang. A **cold read** is one agent reading one brief
 with no tools and none of the project's instruction files in context. The script is run as

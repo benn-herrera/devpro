@@ -218,8 +218,7 @@ in the file.
 
 What survives both runs is the launcher's `.venv` under `skills/docdicer/tools/`, with everything in
 it, and the directory `skills/docdicer/tools/` holding it. Nothing uses what is there: no
-definition, no include line, and no install writes into it, the prune keeping a `VENV_DIR` entry by
-rule. Delete `skills/docdicer/tools/` once, and the upgrade is complete. That is the old directory
+definition, no include line, and no install writes into it. Delete `skills/docdicer/tools/` once, and the upgrade is complete. That is the old directory
 under `skills/docdicer/`; the install directory's own `tools/`, holding the project's copy of devpro
 and its wrapper, is current and stays.
 
