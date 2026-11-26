@@ -16,9 +16,9 @@ file as `P1` leaves it. `P3` shares no file with the others. The landing commit 
 |---|---|---|
 | P2 | landed: 75bb1ddd | expert |
 | P1 | landed: 2cae7fe4 | expert |
-| P3 | in progress | mechanical |
-| P4 | dispatchable | mechanical |
-| P5 | dispatchable | expert |
+| P3 | landed: f772d99d | mechanical |
+| P4 | landed: c9a54f38 | mechanical |
+| P5 | in progress | expert |
 | P6 | dispatchable | mechanical |
 
 ## P2 — The devpro settings file is TOML
