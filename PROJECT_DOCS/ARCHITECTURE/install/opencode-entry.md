@@ -1,7 +1,7 @@
 # Opencode entry
 
 `devpro/harnesses/resources/opencode/index.ts` is opencode's plugin entry (SPEC.md, Deployed
-Surfaces, Shipped files). It is written for opencode 2.4.1 (floor 2.3.0), and its setup registers `ctx.tool.hook("execute.after")` filtered to `subagent` and
+Surfaces, Shipped files). It is written for opencode (floor 2.3.0), and its setup registers `ctx.tool.hook("execute.after")` filtered to `subagent` and
 `ctx.session.hook("experimental.idle")` for a session whose `parentID` is set, injecting
 `ctx.session.synthetic` into the parent session at agent dispatch and agent completion, gated by
 the active plan (`ACTIVE_PLAN.md` or the diced `ACTIVE_PLAN/` tree; SPEC, Shipped files). The

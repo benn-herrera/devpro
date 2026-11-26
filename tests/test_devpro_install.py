@@ -2248,23 +2248,6 @@ def test_every_shipped_resource_carries_the_header_its_reinstall_needs(tmp_path:
         assert "local needs belong in your CONVENTIONS.md" in banner, source
 
 
-def test_the_opencode_resources_name_the_host_version_the_check_is_pinned_to() -> None:
-    """`clauses.TEST_PRECONDITION`: the dev-time pin and the version each resource's header names are
-    two statements of one fact, and nothing held them together — the pin read 2.4.1 while all three
-    headers named 2.3.2, so the check read one host version's declarations for resources claiming
-    another's.
-
-    A header's headline is the first `opencode <version>` its first ten lines carry; the floor beside
-    it is the behavior's, not the headline's."""
-    pin = json.loads((PACKAGE_ROOT.parent / "package.json").read_text(encoding="utf-8"))
-    version = pin["devDependencies"]["@opencode/plugin"]
-    for name in ("index.ts", "guardrail.ts", "profiler.ts"):
-        head = (PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / "opencode" / name).read_text(encoding="utf-8")
-        headline = re.search(r"\bopencode (\d+\.\d+\.\d+)", "\n".join(head.splitlines()[:_RESOURCE_BANNER_LINES]))
-        assert headline, f"{name}'s header names no opencode version"
-        assert headline.group(1) == version, f"{name} names {headline.group(1)}; the pin is {version}"
-
-
 # The claude guardrail hook: shipped and registered in the plugin's own `hooks/hooks.json` when one run
 # of the script on this machine succeeds.
 

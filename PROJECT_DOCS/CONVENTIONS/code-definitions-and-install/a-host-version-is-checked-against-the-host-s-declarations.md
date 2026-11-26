@@ -11,5 +11,6 @@ The id the capture reads at the result's top level is the host's runtime shape, 
 source and not in the shipped declarations; the check sees the shapes around it.
 
 The declarations reach the check as a dev-time dependency the lint recipe installs before the checker
-runs, pinned to the version the resource's header names (ARCHITECTURE.md, Recipes). `just lint` runs
-the check, and a missing tool fails it, naming what is missing, rather than skipping the step.
+runs, at the version `package.json` pins — the pin's one home, which a resource's header never
+restates (ARCHITECTURE.md, Recipes). `just lint` runs the check, and a missing tool fails it, naming
+what is missing, rather than skipping the step.

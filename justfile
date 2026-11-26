@@ -232,7 +232,7 @@ _lint-shell:
 
 # A missing bun, or an install that cannot reach the registry, fails the recipe that needs it,
 # through `_js-deps`, never as a skip. The declarations the resources import arrive through
-# `package.json`'s lockfile, `bun.lock`, which is pinned to the host version the resources name.
+# `package.json`'s lockfile, `bun.lock`, which is pinned to the version `package.json` names.
 # `tsconfig.json` scopes the program to what ships, the test runners' TypeScript being dev-time only,
 # and `devtools/tsconfig.json` is the repository's own TypeScript, a dev tool rather than a shipped
 # resource.

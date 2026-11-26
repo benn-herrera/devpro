@@ -199,7 +199,7 @@ into the parent session at agent dispatch and agent completion, gated by `ACTIVE
 or, where the plan was diced, the `ACTIVE_PLAN/` tree — existing at the project root. A change to
 the install directory is picked up without restarting opencode, except a change to `guardrail.ts` or
 `profiler.ts`, either of which the plugin entry imports when it loads, so a changed one takes effect
-at the next opencode start. The plugin entry is written for opencode 2.4.1 (floor 2.3.0) and is the
+at the next opencode start. The plugin entry is written for opencode (floor 2.3.0) and is the
 same file for both plugins; ARCHITECTURE.md, Install, Opencode entry holds how it works. A resource
 may be conditional
 on the probe: claude's guardrail is
