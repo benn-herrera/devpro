@@ -1181,12 +1181,11 @@ def test_every_page_script_wraps_its_body_in_an_iife() -> None:
 
 
 def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path) -> None:
-    """`/profiler/` names the board's stylesheet at the path the board panel serves it, and the bytes
-    that path answers are the layer's own text: the index carries no copy of the layer itself, its
-    one link names one file, and the file it names serves `SHARED_CSS`'s bytes. A profiler page
-    carrying a palette of its own is the second reskin the design forbids, the board and the
-    profiler showing two identities for one site; a link to a path nothing serves, or to a path
-    serving other text, is a page styled by nothing."""
+    """`/profiler/` names the board's stylesheet at the path the board panel serves it: the index
+    carries no copy of the layer itself, and its one stylesheet link is the board panel's link line.
+    A profiler page carrying a palette of its own is the second reskin the design forbids, the board
+    and the profiler showing two identities for one site; a link to a path nothing serves is a page
+    styled by nothing."""
     project = tmp_path / "project"
     project.mkdir()
     (project / ".devpro-temp").mkdir()
