@@ -27,7 +27,7 @@ discipline no target verifies — the residue stated, not hidden.
 residue the check cannot see" — inverted: an old-path listing is the dead link `just
 dev-check-links` **does** catch (`missing file`, exit 1, probed); the invisible residue is the
 **stale title or the listing dropped** (exit 0). The prompt-engineer adds that the rule is already
-carried at `CONVENTIONS/planning-and-execution/project-documents.md:9-13` — duplicated at lower
+carried at `PROJECT_DOCS/CONVENTIONS/project-documents.md:9-13` — duplicated at lower
 altitude — and that the leaf cites `just dev-check-links` where the volume's own leaf cites `just
 check-links`. Answer: either restate the leaf to the true reach (the caught link, the invisible
 stale-title residue) after resolving the duplication against the existing leaf, or delete the leaf

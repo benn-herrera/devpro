@@ -22,8 +22,8 @@ doc-only: each done-line names document checks only.
 | G3 | landed: 8e9c5e83 | expert |
 | G4 | landed: 53ee57f4 | expert |
 | G5 | in progress | mechanical |
-| H1 | drafted | expert |
-| H2 | drafted | expert |
+| H1 | dispatchable | expert |
+| H2 | dispatchable | expert |
 
 ## G1 — The checkpoint gate runs the linter
 
@@ -136,22 +136,26 @@ drifted↔landed hinge (the check matches each passage, normalized, against the 
 unamended As reads `landed` and nothing catches it, the As move is the application discipline no
 target verifies — the residue stated, not hidden — and the probe account corrected to the
 architect's probe (a re-pointed-only Becomes is not read drifted once the leaf is retouched; the
-drifted reading belongs to the pre-retouch state). The named defect: the paragraph asserts the
-checker polices the As move, the one edit no check verifies. Done-line: `just dev-check-links`,
-run once at this package's end.
+drifted reading belongs to the pre-retouch state); the leaf's own "matches each of them,
+normalized" clause is what produces the false `landed` and is reworded with the paragraph. The
+named defect: the paragraph asserts the checker polices the As move, the one edit no check
+verifies. Done-line: `just dev-check-links`, run once at this package's end — and stated there:
+no target reads the leaf's content; the item's state is set by the reviewer against the quoted
+mechanism and probe fixtures in this section.
 
 ### H2 — The new leaves state what the checkers and the altitude give (R2, R3, R4)
 
 expert. Scope, three leaves:
 - `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-top-level-key-is-a-bare-harness-name.md`
   stripped to the one trap SPEC lacks — a quoted dotted key parses and reads plausibly, the reader
-  meets it and re-litigates, the refusal is SPEC Rendering's — its behavior statement removed (R3).
+  meets it and re-litigates — with every behavior clause removed; the trap stands alone (R3).
 - `PROJECT_DOCS/CONVENTIONS/planning-and-execution/a-renamed-leaf-takes-its-contents-entries.md`
-  resolved against `CONVENTIONS/planning-and-execution/project-documents.md:9-13` — where the rule
-  is already carried, the leaf and its two listing entries are deleted; where restating serves, the
+  resolved against `PROJECT_DOCS/CONVENTIONS/project-documents.md:9-13` — where the rule is
+  already carried, the leaf and its two listing entries are deleted; where restating serves, the
   leaf states the true reach: the old-path listing is the dead link the check catches, the stale
   title or dropped listing is the invisible residue (R2).
-- `PROJECT_DOCS/CONVENTIONS/planning-and-execution/the-gates.md` — the landing rule's placement
-  and wording per R4: inside the binding fence as a stated gate line, or worded so the observation
-  it names (the gate log at the landing commit) is readable at the site (R4).
-Done-line: `just dev-check-links`, run once at this package's end.
+- `PROJECT_DOCS/CONVENTIONS/planning-and-execution/the-gates.md` — the landing rule per R4:
+  the sentence stays outside the fence and names the observation a reader can open — the gate log
+  at the landing commit, whose path the sentence spells — never re-offered as a binding-fence line.
+Done-line: `just dev-check-links`, run once at this package's end — and stated there, as H1
+states: no target reads the leaves' content; the reviewer is the observation.
