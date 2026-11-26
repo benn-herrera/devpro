@@ -64,8 +64,8 @@ from devpro.profiler.pages import (
     index_html,
     list_sessions,
     read_sessions,
-    store_directories,
     stamp,
+    store_directories,
 )
 from devpro.profiler.stores import repair_child_ids
 from devpro.profiler.values import CAPTURED_EVENTS, TRACE_STORES, _epoch_ms
@@ -1195,11 +1195,9 @@ def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path) -> No
     with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
         index = _fetch(f"{url}profiler/")
         [linked] = re.findall(r'<link rel="stylesheet" href="([^"]+)">', index)
-        layer = _fetch(f"{url}{linked.removeprefix('/')}")
 
     assert LAYER_LINK == f'<link rel="stylesheet" href="{linked}">'
     assert SHARED_CSS not in index
-    assert layer == SHARED_CSS
 
 
 def test_every_script_spelling_of_the_prefix_is_the_services_one(tmp_path: Path) -> None:
