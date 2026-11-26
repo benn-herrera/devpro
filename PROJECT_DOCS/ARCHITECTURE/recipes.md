@@ -4,8 +4,9 @@
 `just dev-dashboard` reach `python3 -m devpro`; no recipe stands in front of `install` or
 `install-agents-file`, which are reached as verbs of the command alone (Install, Install entry).
 `agents` builds the wheel and installs this repository's own set from the built package beside it
-(Install, Installing this repository), one line — the target alone, no
-`--components` and no `--harness` flag, the harness left to the install's own inference;
+(Install, Installing this repository), the target alone and any `install` flags it passes through —
+an alternate `--config-file` among them — with no
+`--components` and no `--harness` flag by default, the harness left to the install's own inference;
 `render` and `retake-reference` go through the private `_render-slot.sh`, which calls
 `python3 -m devpro install <slot>/devpro --components=kbase` with `--subdir=` once,
 into `<slot>/devpro/`, where a nested plugin's install also writes the project's `AGENTS.md` and,
