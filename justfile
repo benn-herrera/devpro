@@ -399,8 +399,4 @@ test-undice-spec:
   @command rm -rf .devpro-temp/undice-mono-spec
   @just dev-devpro undice PROJECT_DOCS/SPEC .devpro-temp/undice-mono-spec
 
-test-undice-project-docs:
-  @command rm -rf .devpro-temp/undice-mono-prjd
-  @just dev-devpro undice PROJECT_DOCS .devpro-temp/undice-mono-prjd
-
 import? '.claude/skills/devpro/tools/runner-snippets/devpro.just'
