@@ -22,7 +22,7 @@ doc-only: each done-line names document checks only.
 | G3 | landed: 8e9c5e83 | expert |
 | G4 | landed: 53ee57f4 | expert |
 | G5 | in progress | mechanical |
-| H1 | in progress | expert |
+| H1 | landed: 504125f5 | expert |
 | H2 | in progress | expert |
 
 ## G1 — The checkpoint gate runs the linter
