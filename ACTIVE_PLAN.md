@@ -30,7 +30,9 @@ until their subjects exist.
 
 The user's standing direction: when this plan lands, the periodic review starts immediately — the
 interval's count is met and this plan's landing is the coherent feature boundary, so the next plan
-is the full review, straight to a plan with no design before it.
+is the full review, straight to a plan with no design before it. When the panel's findings are
+written to the review document, the run holds there: the user goes over the findings and the
+potential remedies with the session before anything is drafted from them.
 
 ## Status
 
