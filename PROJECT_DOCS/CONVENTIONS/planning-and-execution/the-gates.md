@@ -1,10 +1,13 @@
 # The gates
 
 ```
-checkpoint gate: `just test`, then `just sweep-python` (A checkpoint includes the sweep)
+checkpoint gate: `just test`, then `just lint`, then `just sweep-python` (A checkpoint includes the sweep)
 step-down application: the dispatch's `model` parameter
 periodic review interval: 8
 ```
+
+The landing rule: a plan is landed only when the gates have been run over its last landing commit,
+not over each package's own.
 
 The periodic review runs at a coherent feature boundary, the user's direction: a full project
 review makes sense only when the project holds a coherent set of functionality — no incomplete
