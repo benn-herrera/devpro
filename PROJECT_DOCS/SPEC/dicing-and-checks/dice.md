@@ -26,7 +26,7 @@ Order of effects and failures:
 | `<out-dir>` exists and is not empty | `out-dir not empty: <out-dir>` | 2 |
 | a document opens no level-1 heading, so its volume has no title | `volume <name>: no opening level-1 heading` | 2 |
 | Planning fails ([file names and layout](the-diced-tree/file-names-and-layout.md#file-names-and-layout)) | that section's message | 1 |
-| A section's heading ladder cannot be re-based ([file content](the-diced-tree/file-content.md#file-content)) | `heading too deep to re-base at line <N>: written at its monolith level`, once per offending heading | 1 |
+| A section's heading ladder cannot be rebased ([file content](the-diced-tree/file-content.md#file-content)) | `heading too deep to rebase at line <N>: written at its monolith level`, once per offending heading | 1 |
 | two documents named share a base name | `volume <name>: two documents of one name` | 2 |
 
 A refusal writes nothing: every document is planned before anything is written, and a refusal found

@@ -23,7 +23,7 @@ order and each once; a linked file that cannot be read prints
 `undice: cannot read <tree-dir>/<target>` to stderr, is left out, and fails the verb (exit 1). From
 each head file read that is named `entry-point.md` or `index.md`, the Contents block and every line
 after it are dropped ([reassembly](reassembly.md)'s cut). Each other file's heading ladder is
-restored before it is written: a file whose top heading reads level 1 is in the re-based form
+restored before it is written: a file whose top heading reads level 1 is in the rebased form
 ([file content](the-diced-tree/file-content.md#file-content)) and is put back at the shallowest level its place in the
 tree permits — a section file sits one level below its parent's head, so a section at the
 document's first level is level 2 — and a file whose top reads any other level is the pre-change
@@ -33,7 +33,7 @@ restored into: the file is reported as
 that volume, and the verb exits 1; a deeper place holds no document because level 6 is the last
 heading a document has ([which headings split](the-diced-tree/which-headings-split.md#which-headings-split)). A volume's head is its document's title and opening
 text, and it writes as it stands, its title at level 1. The tree does not record the level a
-re-based section came from, and no two documents with the same tree can be told apart, so the
+rebased section came from, and no two documents with the same tree can be told apart, so the
 document written is the one the tree holds: it need not be the document the tree was diced from, and
 it dices back to the same tree ([undice](../../../PROJECT_DOCS/SPEC/dicing-and-checks/undice.md#undice)'s round trip). Links are restored outside fenced
 code and code spans, relative to `<out-dir>`:

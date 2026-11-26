@@ -263,7 +263,7 @@ _EVIDENCE_WHERE = "Where the project defines an evidence location, put it there 
 
 def verification_evidence(*, forms: str = _EVIDENCE_FORMS, where: str = _EVIDENCE_WHERE) -> str:
     """Both arguments exist for a seat with no Bash, which can reach neither default."""
-    return f"""**Verification evidence**: any verification a reported conclusion rests on must be repeatable and inspectable — {forms}; never an ad-hoc sequence whose results live only in the conversation. Results that cannot be re-examined are not results. {where} Exploratory checks along the way are exempt: this binds the verifications you cite, not every look around."""
+    return f"""**Verification evidence**: any verification a reported conclusion rests on must be repeatable and inspectable — {forms}; never an ad-hoc sequence whose results live only in the conversation. Results that cannot be re-examined are not results. {where} Exploratory checks along the way are exempt: this binds the verifications you cite, not every look around. A probe that imports this repository's package first and runs it later — a `python -c`, a one-off script — runs under this repository's own venv interpreter with `PYTHONPATH=.`, or in a fresh process, because an edit made after the first import leaves stale bytecode masking it."""
 
 
 # ─── House rules ─────────────────────────────────────────────────────────────
@@ -412,7 +412,12 @@ def pe_declare_bullet(*, act: str = "modify") -> str:
 
 PE_STOP_BULLET = """- **Stop on conflict**: if mid-task you discover you need to modify a file another agent may be editing, stop and report rather than proceeding."""
 
-PE_EXPANSION_BULLET = """- **Scope expansion**: if you discover the task is significantly larger than described — requires touching additional systems, reveals a fundamental design gap, or would affect other agents' work — stop immediately and report to the coordinator. Do not make unilateral expansion decisions."""
+# Sits in PE_LEAD after PE_READ_BULLET, because it is the one bullet about how the work is split
+# rather than about what the work may touch. Worked instance, for provenance: the P4b/P4c merge
+# (`313f95d`, `c9b4cd0`). The clause names no coordinator: this seat is user-invoked directly.
+PE_SHARED_GRAPH_BULLET = """- **Halves that share a call graph merge**: where two commits' halves share a call graph such that either alone leaves the gate red, the split is a Blocker naming the shared definitions, and the halves land as one."""
+
+PE_EXPANSION_BULLET = """- **Scope expansion**: if you discover the task is significantly larger than described — requires touching additional systems, reveals a fundamental design gap, or would affect other agents' work — stop immediately and report. Do not make unilateral expansion decisions."""
 
 
 def pe_scope_creep_bullet(*, examples: str = "improve adjacent code, add comments to unchanged files") -> str:
@@ -435,7 +440,8 @@ PE_LEAD = f"""## Parallel Execution
 
 {PE_PREAMBLE}
 
-{PE_READ_BULLET}"""
+{PE_READ_BULLET}
+{PE_SHARED_GRAPH_BULLET}"""
 
 PE_SHARED_BULLETS = f"""{PE_STOP_BULLET}
 {PE_SHARED_INFRA_BULLET}

@@ -5,8 +5,8 @@ Input outside this specification is refused with a message naming what to fix, n
 Known limits:
 
 - A source's links must be written relative to the current directory
-  ([shared behaviors](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#shared-behaviors)); a document run from elsewhere gets mis-rebased
-  links, which the [link check](../../../PROJECT_DOCS/SPEC/dicing-and-checks/link-check.md#link-check) reports only if the result no longer resolves.
+  ([shared behaviors](../../../PROJECT_DOCS/SPEC/dicing-and-checks/index.md#shared-behaviors)); run from elsewhere, a document's
+  links are rebased against the wrong base, which the [link check](../../../PROJECT_DOCS/SPEC/dicing-and-checks/link-check.md#link-check) reports only if the result no longer resolves.
 - A section's Contents link text ([file content](the-diced-tree/file-content.md#file-content)) is not escaped: a title
   containing `]` or unbalanced brackets yields a malformed Contents link that no verb repairs.
   [check-tree](../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-tree.md#check-tree) reports it, and [undice](undice.md) reports that section's file

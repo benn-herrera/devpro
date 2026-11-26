@@ -14,3 +14,5 @@ Contents:
 - [A delta application ends by searching the doc set](a-delta-application-ends-by-searching-the-doc-set.md)
 - [Source line width is not enforced](source-line-width-is-not-enforced.md)
 - [Evidence commands run before they ship](evidence-commands-run-before-they-ship.md)
+- [A narrowed format names the inputs it refuses](a-narrowed-format-names-the-inputs-it-refuses.md)
+- [A verification entry names what the run produced](a-verification-entry-names-what-the-run-produced.md)

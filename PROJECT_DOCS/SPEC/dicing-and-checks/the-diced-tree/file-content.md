@@ -1,7 +1,7 @@
 # File content
 
 Each file holds, in order, exactly the source lines of its section, heading line included, with the
-section's heading ladder re-based and links rewritten ([link rewriting](../link-rewriting/index.md#link-rewriting)).
+section's heading ladder rebased and links rewritten ([link rewriting](../link-rewriting/index.md#link-rewriting)).
 
 **The heading ladder.** A section's own text opens with its top heading, and every file of the tree
 but a document's own head holds it at level 1, whatever level that heading had in the source: a
@@ -11,14 +11,14 @@ unchanged — a `####` heading under a `##` top writes at `###`. The heading's t
 not touched, so a section's file name ([file names and layout](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/file-names-and-layout.md#file-names-and-layout)) does not move
 with the ladder. A document's own head (`entry-point.md`, or a section's `index.md`) holds its
 document's title and opening text as the source has them, the title at level 1. No line inside fenced
-code is a heading and none is re-based ([which headings split](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/which-headings-split.md#which-headings-split)).
+code is a heading and none is rebased ([which headings split](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/which-headings-split.md#which-headings-split)).
 
 A section whose text holds a heading that this shift would carry below level 6 has no ladder the
 tree can hold: each such heading is reported as
-`heading too deep to re-base at line <N>: written at its monolith level`, `<N>` the heading's own
+`heading too deep to rebase at line <N>: written at its monolith level`, `<N>` the heading's own
 source line, the section is written at its source levels, and the verb exits 1. A heading the shift
 would carry above level 1 — a kept level-1 heading, which planning has already reported
-([which headings split](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/which-headings-split.md#which-headings-split)) — leaves the section without a re-based form too: the
+([which headings split](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/which-headings-split.md#which-headings-split)) — leaves the section without a rebased form too: the
 section is written at its source levels, and nothing is reported and nothing fails for it.
 
 The head and every index end with a **Contents block** appended directly after the section's

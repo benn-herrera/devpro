@@ -4,7 +4,7 @@ Passes when the files [file names and layout](the-diced-tree/file-names-and-layo
 section order with each entry point's and index's Contents block dropped (from its last line that
 is exactly `Contents:`) and [section references](link-rewriting/section-references.md#section-references) step 3 links undone,
 equal the source lines with their other links as rewritten by
-[link targets](link-rewriting/link-targets.md#link-targets). A file whose top heading reads level 1 is in the re-based
+[link targets](link-rewriting/link-targets.md#link-targets). A file whose top heading reads level 1 is in the rebased
 form ([file content](the-diced-tree/file-content.md#file-content)) and has its heading ladder shifted back before the
 compare: its top compares at its section's source level, and every other heading gains its
 section's level minus 1, fenced lines compared as they stand. A file whose top reads any other
