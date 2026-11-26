@@ -13,9 +13,11 @@ so it reads a design before its application and never after; the applied state i
 character, at least as long — so an applied passage may quote a fenced block.
 
 A pair whose target leaf a later change retouches is amended in that change: the Becomes is
-re-pointed to the leaf's final wording, the As moved to what stood when the pair was written. The
-amended pair must then read `landed` against the leaf's new text, never `pending` or `drifted`: the
-check does not read the pair's two passages as separate documents but matches each of them,
-normalized, against the whole leaf, so a pair re-pointed alone matches nothing there. The probe that
-shows it: re-pointing only the Becomes of an applied pair leaves the check reading that pair
-`drifted`, not `landed`, until the As moves.
+re-pointed to the leaf's final wording, the As moved to what stood when the pair was written. Of
+the two edits, only the Becomes moves the pair's state: an applied pair is `landed` because its
+Becomes is in the leaf, and the check reads the As to classify the pair only where the Becomes has
+not landed. The As left where it was is therefore not caught: against the retouched leaf its text
+is gone, but the Becomes alone still reads the pair `landed`, with the design telling the reader
+the leaf holds a sentence it dropped. No target reads the As's content; the As move is the
+application discipline, and the residue the check cannot see is a design that reads `landed`
+against a leaf it no longer describes.
