@@ -51,6 +51,7 @@ from devpro.profiler.pages import (
     AGENT_PREFIX_LINE,
     AGENT_PREFIX_MARK,
     BAND_LEGEND,
+    COLUMNS,
     DATA_MARK,
     DECO_INLINE,
     DECO_MARK,
@@ -736,6 +737,139 @@ def test_a_dispatch_whose_child_never_ended_is_not_running(tmp_path: Path, _wrap
     assert tree.returncode == 0, tree.stderr
     assert "running" not in tree.stdout
     assert "500 ms" in tree.stdout
+
+
+def _claude_store(root: Path, session: str, at: str, *, extra: dict | None = None) -> Path:
+    """A claude store under `root` holding one call record for `session` at `at`, carrying the fields
+    in `extra` — the launch the capture wrote, the stop an event record beside it."""
+    return _write_store(root, ".profiler-claude", session, at, harness="claude", extra=extra)
+
+
+def _stop_at(root: Path, session: str, at: str, agent_id: str) -> None:
+    """Appends a background subagent's SubagentStop at `at` to `session`'s claude store, as the capture
+    writes it: an event record for `agent_id`, its `duration_ms` the stop hook's own cost. The call it
+    ends wrote no `tool_use_id`, so the two are not read as one record twice."""
+    path = root / ".devpro-temp" / ".profiler-claude" / f"{session}.jsonl"
+    text = path.read_text(encoding="utf-8")
+    with path.open("a", encoding="utf-8") as trace:
+        trace.write(
+            ("\n" if not text.endswith("\n") else "")
+            + json.dumps(
+                {
+                    "v": 3,
+                    "harness": "claude",
+                    "at": at,
+                    "session": session,
+                    "agent_id": agent_id,
+                    "event": "SubagentStop",
+                    "ok": True,
+                    "duration_ms": 5,
+                }
+            )
+            + "\n"
+        )
+
+
+def _call_row(tree: str) -> tuple[str, str]:
+    """A tree's call row as its time and duration columns: `"15:59:59", "500 ms"`.
+
+    A dispatch's call is drawn after its context's placeholder, and neither is indented, so the call is
+    the last row opening with a clock. Its columns are `pages.COLUMNS`', the time and duration the
+    first two."""
+    line = [line for line in tree.splitlines() if re.match(r"\d\d:\d\d:\d\d ", line)][-1]
+    time_width, duration_width = (width for _, width, _ in COLUMNS[:2])
+    return line[:time_width].strip(), line[time_width + 1 : time_width + 1 + duration_width].strip()
+
+
+def test_a_claude_background_launch_still_running_renders_running(tmp_path: Path, _wrapper: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect (R1): `with_stop`'s `running` branch re-tests the launch
+    notice against the result-stripped `call`, which never carries it, and the `async_launched` JSON
+    the capture records never matched the notice string either — so a claude background dispatch still
+    at work renders as finished, with the launch cost as its duration.
+
+    A launch record as the capture writes it — an `Agent` dispatch begun at its `at`, `background`
+    true, its duration the launch cost, `result` the `async_launched` reply, no stop recorded —
+    renders `running` in the page's call row and in the tree's duration column, and the launch cost
+    never stands as its duration. The test fails on the page's `running` before the fix."""
+    project = tmp_path / "project"
+    project.mkdir()
+    _claude_store(
+        project,
+        "s-claude",
+        "2026-01-01T00:00:00.000Z",
+        extra={
+            "tool": "Agent",
+            "background": True,
+            "duration_ms": 1000,
+            "result": '{"status":"async_launched","agentId":"a1"}',
+        },
+    )
+
+    page = _run(_wrapper, "tree", "s-claude", "--format", "html", cwd=project)
+    tree = _run(_wrapper, "tree", "s-claude", cwd=project)
+
+    assert page.returncode == 0, page.stderr
+    [call] = page_data(page.stdout)["calls"]
+    assert (call["background"], call["running"], call["dur"]) == (True, True, 1000)
+    assert tree.returncode == 0, tree.stderr
+    time, duration = _call_row(tree.stdout)
+    assert (len(time.split(":")), duration) == (3, "running")
+
+
+def test_a_stopped_claude_background_launch_ends_its_running_state(tmp_path: Path, _wrapper: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect (R2): the stop merge keeps the launch record's
+    `background` and never ends the running state the launch began, so once a launch renders `running`
+    a stopped subagent keeps the mark.
+
+    The same dispatch, its SubagentStop recorded 2.5 s on with `background` still true and no handback:
+    the row is not `running`, its `background` stays true as the launch wrote it, and its duration is
+    the span from the call's start to the stop, 3 s — not the launch cost and not the stop hook's own
+    5 ms. The running mark is the one R1's fix begins putting on an unstopped launch, so this test
+    holds the stop path to ending it: with the fix in place, a stop that did not end the mark fails it."""
+    project = tmp_path / "project"
+    project.mkdir()
+    _claude_store(
+        project,
+        "s-claude",
+        "2026-01-01T00:00:00.000Z",
+        extra={
+            "agent_id": "main",
+            "tool": "Agent",
+            "child_agent_id": "a1",
+            "background": True,
+            "duration_ms": 500,
+            "result": '{"status":"async_launched","agentId":"a1"}',
+            "tool_use_id": "tu-launch",
+        },
+    )
+    _stop_at(project, "s-claude", "2026-01-01T00:00:02.500Z", "a1")
+
+    page = _run(_wrapper, "tree", "s-claude", "--format", "html", cwd=project)
+    tree = _run(_wrapper, "tree", "s-claude", cwd=project)
+
+    assert page.returncode == 0, page.stderr
+    [call] = page_data(page.stdout)["calls"]
+    assert (call["child"], call["background"], call["running"], call["dur"]) == ("a1", True, None, 3000)
+    assert tree.returncode == 0, tree.stderr
+    time, duration = _call_row(tree.stdout)
+    assert (len(time.split(":")), duration) == (3, "3.0 s")
+
+
+def test_an_opencode_dispatch_is_never_running(tmp_path: Path, _wrapper: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect (R1): an opencode dispatch — its acknowledgment carrying
+    `background` true and no stop — reaches the running mark claude's launches get.
+
+    An unjoined opencode dispatch renders the acknowledgement it was written as: `background` true,
+    no running mark, its duration the firing cost."""
+    project = tmp_path / "project"
+    project.mkdir()
+    _dispatch_store(project, "ses_parent", "2026-01-01T00:00:00.000Z", "ses_child")
+
+    page = _run(_wrapper, "tree", "ses_parent", "--format", "html", cwd=project)
+
+    assert page.returncode == 0, page.stderr
+    [call] = page_data(page.stdout)["calls"]
+    assert (call["background"], call["running"], call["dur"]) == (True, None, 500)
 
 
 def test_a_line_over_the_bound_is_fitted_at_its_root(tmp_path: Path) -> None:

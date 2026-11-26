@@ -214,9 +214,9 @@ def with_stop(record: dict, stop: dict | None, handback: str | None, episode: di
     (`episode`, read from the child's store): the record's agent and model become the child's, where
     the idle carries them, and its duration the span from the dispatch to that idle. A dispatch whose
     episode never came is the acknowledgment as it was written — never `running`, since the capture
-    writes the launch, not the work, and its end is the child's to report."""
-    launched = {key: value for key, value in record.items() if key != "result"}
-    call = {**launched, "background": True} if LAUNCH_NOTICE.match(record.get("result") or "") else record
+    writes the launch, not the work, and its end is the child's to report. The `running` mark is
+    claude's alone: it is the launch the capture wrote to run on, with no stop yet to end it."""
+    call = {**record, "background": True} if LAUNCH_NOTICE.match(record.get("result") or "") else record
     if not stop:
         if episode:
             return {
@@ -225,7 +225,7 @@ def with_stop(record: dict, stop: dict | None, handback: str | None, episode: di
                 "model": episode.get("model") or call.get("model"),
                 "duration_ms": max(0, (_epoch_ms(episode.get("at")) or 0) - (_epoch_ms(call.get("at")) or 0)),
             }
-        return {**call, "running": True} if LAUNCH_NOTICE.match(call.get("result") or "") else call
+        return {**call, "running": True} if call.get("harness") == "claude" and call.get("background") else call
     merged = {**call, "child_agent_type": call.get("child_agent_type") or stop.get("agent_type")}
     if not call.get("background"):
         return merged
