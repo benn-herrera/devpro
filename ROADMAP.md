@@ -121,18 +121,6 @@ after changing the config file. Reading the config file to dynamically override 
 entirely new category of behavior with zero language specifying or implying it — out of the
 scheme's scope however it expands.
 
-### Detect a re-install from embedded devpro
-
-Right now ./<harness-dir>.../devpro.sh install . fails because it detects the self-overwrite.
-what it *should* do is reinstall everything but the embedded copy (just detect and skip).
-this allows for edits to ~/.config/devpro/devpro.cfg to take effect without potentially changing
-devpro's installed version by using the system copy.
-
-### Consider changing devpro config format
-
-It's currently .cfg but .toml allows for nesting (which we are faking with <harness>-model-map group)
-The upgrade to python 3.11 makes toml available without a dependency.
-
 ### Dashboard doc state indicator
 
 When roadmap, design, or plan are not kanban compliant an indication should show on the kanban
@@ -208,14 +196,35 @@ grouping and child pages this extends.
 
 ## Maintenance
 
-### A Facts entry's evidence survives its item's commit
+### (STICKY) Periodic load-bearing-ness pruning pass
 
-B7's Facts cite `.devpro-temp/b4/` as the finding's evidence directory; when B7 landed, the
-directory had been cleaned, and the measurement lived only in the plan's own text — a measurement
-with no artifact behind it is a claim. Scratch is scratch by design, so the fix is not "keep the
-directory": a Facts entry whose evidence is a probe either records the probe's essential output
-inline (the command, the runs, the exits) or the rule states where durable evidence goes. Proposed
-home: CONVENTIONS, beside the dispatchability rules a Facts entry serves.
+A pass over definition clauses, across model generations: apply strip-first-observe-patch
+(`devpro/family.py`, its module docstring) on a cadence, using behavioral probe sets as the
+instrument. Byte-level instruments exist today — `just render-diff` between two render slots, and
+the render-property assertions in `tests/test_devpro.py` (ARCHITECTURE.md, Why There Is No
+Verification Verb); behavioral ones do not yet.
+
+### Install stages through a built wheel
+
+`devpro install` has two staging paths with opposite polarities that must match but nothing makes
+them: the checkout path copies the package tree through a denylist (`EXCLUDED_DIRS`,
+`EXCLUDED_NAMES`, `EXCLUDED_SUFFIX`, `_shipped()` in `devpro/install.py`), the deployed path copies
+wheel content whose allowlist is `pyproject.toml`'s `[tool.setuptools.package-data]`. A built wheel
+and `package_copies`' enumeration agreed exactly — 109 files each, both cross-diffs empty — but
+that equality is maintained by care, not enforced by anything, and a new file outside the six
+globs ships from a checkout and silently misses the wheel consumers install. The denylist's work
+is dev-only: in the deployed case every exclusion is a no-op.
+
+The rework: `just agents` builds the wheel and runs the install from the built package — unpacked
+to scratch with `PYTHONPATH` pointed at it (zero runtime dependencies make that free),
+`PACKAGE_ROOT` resolving into the unpacked copy — and consumers install from site-packages as
+today, so both paths stage from wheel content and `.dist-info/RECORD` is the one manifest for
+both. The build doubles as a gate: a tree that does not build cannot install (partial — it catches
+a malformed package: the version attr's import, missing declared files, pyproject/readme/license
+faults; it does not compile modules or validate the entry point, which the test suite owns).
+Retires the denylist wholesale — `_shipped`'s third call site (`install.py:413`, the keep/removal
+path) needs its own stated rule rather than inheriting the retirement — and the install tests
+(`tests/test_devpro_install.py`) reshape around wheel-staged installs.
 
 ### Profiler child rows off by default
 
@@ -243,14 +252,6 @@ its purpose survives (a package's row names the commit that carries its work; a 
 be that commit), its form changes, and the rule lives in the process skill and the agent
 definitions, so the change is a definitions-and-CONVENTIONS amendment, not a habit.
 
-### (STICKY) Periodic load-bearing-ness pruning pass
-
-A pass over definition clauses, across model generations: apply strip-first-observe-patch
-(`devpro/family.py`, its module docstring) on a cadence, using behavioral probe sets as the
-instrument. Byte-level instruments exist today — `just render-diff` between two render slots, and
-the render-property assertions in `tests/test_devpro.py` (ARCHITECTURE.md, Why There Is No
-Verification Verb); behavioral ones do not yet.
-
 ### The cold-read script is unreliable under opencode
 
 `devpro/development-tools/cold-read.sh` runs each read in a fresh directory, and in a directory
@@ -268,27 +269,12 @@ beside `@opencode/plugin`, would hold it.
 currently vetoed because bun gets updated and if we break under a new bun that is a finding.
 mind may change about this later.
 
-### Install stages through a built wheel
+### Detect a re-install from embedded devpro
 
-`devpro install` has two staging paths with opposite polarities that must match but nothing makes
-them: the checkout path copies the package tree through a denylist (`EXCLUDED_DIRS`,
-`EXCLUDED_NAMES`, `EXCLUDED_SUFFIX`, `_shipped()` in `devpro/install.py`), the deployed path copies
-wheel content whose allowlist is `pyproject.toml`'s `[tool.setuptools.package-data]`. A built wheel
-and `package_copies`' enumeration agreed exactly — 109 files each, both cross-diffs empty — but
-that equality is maintained by care, not enforced by anything, and a new file outside the six
-globs ships from a checkout and silently misses the wheel consumers install. The denylist's work
-is dev-only: in the deployed case every exclusion is a no-op.
-
-The rework: `just agents` builds the wheel and runs the install from the built package — unpacked
-to scratch with `PYTHONPATH` pointed at it (zero runtime dependencies make that free),
-`PACKAGE_ROOT` resolving into the unpacked copy — and consumers install from site-packages as
-today, so both paths stage from wheel content and `.dist-info/RECORD` is the one manifest for
-both. The build doubles as a gate: a tree that does not build cannot install (partial — it catches
-a malformed package: the version attr's import, missing declared files, pyproject/readme/license
-faults; it does not compile modules or validate the entry point, which the test suite owns).
-Retires the denylist wholesale — `_shipped`'s third call site (`install.py:413`, the keep/removal
-path) needs its own stated rule rather than inheriting the retirement — and the install tests
-(`tests/test_devpro_install.py`) reshape around wheel-staged installs.
+Right now ./<harness-dir>.../devpro.sh install . fails because it detects the self-overwrite.
+what it *should* do is reinstall everything but the embedded copy (just detect and skip).
+this allows for edits to ~/.config/devpro/devpro.cfg to take effect without potentially changing
+devpro's installed version by using the system copy.
 
 ## Testing
 
@@ -316,60 +302,3 @@ whether the floor's range still needs all three, is what the dispatch answers.
 harnesses' text go unchecked. The sentence check the previous ticket adds raises the stakes:
 overlay text and other harnesses escape at sentence granularity, where a shared sentence is small
 enough to hide inside a paragraph that differs.
-
-### Every test over 100ms justifies its existence
-
-The suite's full run is ~57-60s for ~1,700 tests, and the weight has accumulated unexamined. A
-pass where every test whose setup+call+teardown exceeds 100ms justifies its existence, one of four
-verdicts: *earns* (pins a real defect no cheaper test pins, or exercises a real integration no
-fixture can stand in for), *cheapens* (rewritten to a fixture so it drops under threshold),
-*merges* (duplicate coverage with a sibling), or *goes*. Open for the design: whether a `slow`
-marker (the `cold_read` pattern) is a third way for tests that earn their cost but not their place
-in the default run; any target for total full-run wall time. First probe, already in
-`.devpro-temp/weight-durations.txt`: pytest `--durations=100` over the full default run.
-
-### Tests exist only with a defect they die on
-
-A test protects only where a defect exists that it dies on while the source reads correct to its
-author. It must assert behavior, not text.
-
-The pin test — a source literal restated in the test and compared back to the source, an exact
-log output check, a polyglot 'is this doing all the things' check against an multi-property 
-artifact — is a coverage-mandate fossil: built to satisfy a 100%-coverage metric, not to find a
-defect. It is shaped like a test while doing the metric's job. Human projects mass-produced it, the 
-training data carries it, and agents reproduce it however often a rule forbids it; prohibition alone
-has had modest effect against a prior fed by ten thousand coverage-gaming suites. The same holds for
-a change-detector that knows it is one, a hash against a literal. Where detecting change is
-load-bearing — generated files, frozen contracts — the mechanism is the regeneration check or an
-integration test over the behavior. Coverage that unit tests cannot reasonably reach belongs to the
-integration test, never to a pin.
-
-The reason this category of test is an antipattern and anathema - it produces pure friction for
-no benefit. It is a suit of armor with fixed joints that requires a plasma cutter and welder
-for every change of pose.
-
-Found instances. Two pin the claude family's model assignments, both in `tests/test_devpro.py`:
-`test_each_family_pins_the_member_of_every_category` asserts the category map equals a hand-copied
-dict of itself; `test_claude_frontmatter_holds_the_field_order_and_spelling`, whose subject is
-field order and spelling, carries `model: opus` in its expected tuple. Both photograph owner
-tuning: `829f7e7` changed one model entry and the gate ran red until the pins followed. The third
-pins presentation text: `tests/test_devpro_profiler.py`'s index test asserts the whole
-`table { … }` declaration, so a layout change the presentation layer invites — P3's column
-widths — cannot land without either shaping the CSS around the pin or editing it.
-
-Three parts:
-
-1. **Prune the instances.** Keep the form asserts that are contract — order, spelling, quoting,
-   required fields. Assert the `model:` line is present, not its value. Rework or retire the
-   members mirror.
-2. **Commission tests.** Wherever a test can be born, not only in plan packages, it exists only
-   with its defect named and the run that fails under that defect shown — the
-   `clauses.TEST_PRECONDITION` shape.
-3. **Triage a test that fails on unstated behavior, at once.** The work does not state it changes
-   this behavior, yet the test fails on it: the test enters the active plan immediately as an
-   interrupt — its own row, closed by one commit — and the package that tripped it does not
-   proceed until the row closes. Three verdicts: *axe* (the test checks nothing); *isolate* (it
-   checks something, too sensitively — refactor it to depend only on its own subject); *acquit*
-   (it checks something real and the work broke it — the work is the suspect *or* it was an unavoidable
-   side-effect of the required change and the test needs legitimate rework). A report to the owner
-   is not the mechanism; the updated plan is.
