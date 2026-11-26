@@ -98,7 +98,7 @@ def write_tree(sections: list[Section], lines: list[str], tree: Tree, *, err: Te
         leaf_dir = parent_dir(s.path)
         overflowing = _overflow(lines, s, fenced)
         for no in overflowing:
-            print(f"heading too deep to re-base at line {no}: written at its monolith level", file=err)
+            print(f"heading too deep to rebase at line {no}: written at its monolith level", file=err)
         if overflowing:
             unrebased.append(s.id)
         rebases = not overflowing and not _above_level_one(lines, s, fenced)
