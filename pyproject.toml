@@ -53,6 +53,9 @@ version = { attr = "devpro.__version__" }
 # test run leaves no `.pytest_cache` beside the source. See `PROJECT_DOCS/CONVENTIONS/` — "Scratch
 # for tests and recipes".
 cache_dir = ".devpro-temp/.pytest_cache"
+# `-ra` lists every skip, xfail and xpass in the run's short summary with its reason — the witness
+# the interrupt rule's `isolate` verdict names: a quarantine that reports, not one that vanishes.
+addopts = ["-ra"]
 markers = [
     "cold_read: the shipped cold-read.sh suite, one test per subprocess case — a rare manual surface (`just test cold-read`), excluded from the default run",
     "slow: a test that earns its cost but not its place in the default run — the screenshot suite today (`just test slow`), excluded from the default run",
