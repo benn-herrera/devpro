@@ -30,6 +30,9 @@ event's guarantee, delivery's is not. Foreground calls, which no child session c
 hook pair. Under the claude harness the same dispatch's Task-tool duration already covers the
 subagent's run, so the fix is also what makes the two harnesses' records compare.
 
+Note: the same session.execution event is needed in index.ts for the agent completed
+      board-refresh reminder injection (the idle event currently used is probably wrong)
+
 ## Features
 
 ### A minimum-specificity rule for the process's records
