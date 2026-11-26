@@ -33,7 +33,7 @@ surface delivers for every session, the child's included:
 | the child's signal | where it lands | it fills in the dispatch record at the join |
 | --- | --- | --- |
 | the child's `model.request` — the payload names the `agent` and the `model` the child's run carries | the capture's per-session maps, stamped onto the child's idle record | `child_agent_type` and `model`, replacing the acknowledgment's input-derived guess |
-| the child's `experimental.idle` whose `background` array is empty — the agent loop finished and nothing is queued | the idle event record, `at` its moment | `duration_ms`: the render replaces the firing cost with the span from the dispatch's `at` to the idle's, and the index row's span follows it |
+| the child's `experimental.idle` whose `background` array is empty — the agent loop finished and nothing is queued | the idle event record, `at` its moment | `duration_ms`: the render replaces the firing cost with the span from the dispatch's `at` to the idle's |
 
 A child may idle more than once — a wake that follows its own background work, or its parent's
 follow-up, opens a new episode whose end is a later idle — so the join reads the latest
