@@ -147,6 +147,10 @@ machine that runs the server. Every presentation of a recorded moment — the pa
 text tree — reads in the reader's local time, and none shows UTC, a
 ```
 
+The sentence `A `.venv` directly under a package destination is not install output.` is removed —
+no venv is ever delivered and none is created under an install directory, so the statement names a
+case that does not arise.
+
 ### [Surfaces and layout](PROJECT_DOCS/SPEC/deployed-surfaces/surfaces-and-layout.md#surfaces-and-layout)
 
 **As it stands:**
@@ -323,6 +327,50 @@ each file into the install
 directory with `copyfile` and `copymode`, so it lands as the harness ships it —
 ```
 
+**As it stands:**
+```
+The staleness rule is prune's own, stated here rather than inherited: a file below a `.venv`
+directory (`VENV_DIR`) directly under a package destination, and a safety copy (a `.bak` suffix),
+never enters the stale list.
+```
+**Becomes:**
+```
+The staleness rule is prune's own, stated here rather than inherited: a safety copy (a `.bak`
+suffix) never enters the stale list. No venv is ever delivered and none is created under an
+install directory, so the stale list has no venv case: no file a venv holds is ours by its own
+carrier.
+```
+
+**As it stands:**
+```
+`_clear_package_destination` empties the directory a destination is, all but a `.venv`
+(`VENV_DIR`) directly under it, and unlinks any other file
+there.
+```
+**Becomes:**
+```
+`_clear_package_destination` empties the directory a destination is, and unlinks any other file
+there.
+```
+
+**As it stands:**
+```
+  managed path at its position below its base. Every `.venv` (`VENV_DIR`) is omitted.
+```
+**Becomes:**
+```
+  managed path at its position below its base.
+```
+
+**As it stands:**
+```
+  directory and file created in its place. `.venv` directories (`VENV_DIR`) are outside it.
+```
+**Becomes:**
+```
+  directory and file created in its place.
+```
+
 ### [Packaging](PROJECT_DOCS/ARCHITECTURE/packaging.md#packaging)
 
 **As it stands:**
@@ -493,3 +541,8 @@ Refactor: the repository's `README.md` drops the sentence "`devpro profiler doct
 store with the move to make." from its store-rename paragraph, and nothing replaces it — the
 install's own report, which prints `renamed <old> → <new>` or that it left the old store alone, is
 the signal — and the leaf's statements about what the README holds stay true.
+
+Refactor: the README's docdicer-walk paragraph drops its trailing clause "the prune keeping a
+`VENV_DIR` entry by rule." — what survives both runs survives because none of it is ours by its
+own carrier, not by a keep rule: no venv is ever delivered and none is created under an install
+directory. The paragraph's surviving statements stand.

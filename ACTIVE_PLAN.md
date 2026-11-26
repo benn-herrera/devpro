@@ -282,18 +282,25 @@ Drafted from [ACTIVE_PLAN_REVIEW.md](ACTIVE_PLAN_REVIEW.md): the nine items belo
 its defect IDs, scope, tests, and one-commit close; one `devpro-prompt-engineer` usability review
 over the drafted items together, its revision applied, then each item's row set by its state.
 
-### B1 — Prune's venv guard guards the destination (R1)
+### B1 — The venv guard retires; prune keeps only its safety-copy rule (R1)
 
-mechanical. Scope: `devpro/install.py` — `_is_stale_candidate` guards a file whose path runs
-through `<package destination>/.venv` for a known package destination, judged as
-`_clear_package_destination` judges its `VENV_DIR` entry (destination-relative, not
-surface-relative); `prune`'s and `_is_stale_candidate`'s docstrings stay true of the guard. Tests,
-in scope: `test_the_stale_list_keeps_a_venv_below_a_package_destination_and_a_safety_copy`
-(`tests/test_devpro_install.py:2176`) rewritten to assert the planted
-`skills/kbase/kb-tools/.venv/lib/ours.md` survives and the plain `ours.md` is the pruned contrast —
-the assertion that fails on the old index. The named defect: prune deletes a file the documents
-say never enters the stale list, and the test pins the deletion while claiming the preservation.
-Done-line: `just test devpro`, then `just lint`, run once at this package's end.
+mechanical. The operator's ruling, recorded in the design: no venv is ever delivered and none is
+created under an install directory, so the guard has no live case — prune's stale list only ever
+holds files ours by their own carrier, and no venv content is. The item closes R1 by retiring the
+rule, not fixing the index. Scope: `devpro/install.py` — `_is_stale_candidate` drops its venv half
+(the `.bak` safety-copy guard stands; the predicate and both docstrings — its own and `prune`'s —
+read as the safety-copy rule alone), `_clear_package_destination` drops its `VENV_DIR` keep
+(destination emptied whole, the "at most its `VENV_DIR` entry" contract gone),
+`devpro/preflight.py` drops its `ignore_patterns(VENV_DIR)` omission and its comparison's venv
+exclusion, and the `VENV_DIR` constant goes from `devpro/install_base.py` with its last user.
+Tests, in scope: `test_the_stale_list_keeps_a_venv_below_a_package_destination_and_a_safety_copy`
+(`tests/test_devpro_install.py:2176`) — the venv half deleted with its subject (the assertion that
+pinned the deletion while claiming preservation goes with it), the safety-copy pin kept; any test
+pinning `_clear`'s keep or the preflight's omission goes with its subject. Design entries applied
+verbatim: the four `renders-and-copies` pairs (staleness rule, `_clear`, the preflight's scratch
+omission and its comparison exclusion), the `shipped-files.md` sentence removal, and the README
+docdicer-walk clause (Code delta). Done-line: `just test devpro`, then `just test wheel`, then
+`just lint`, run once at this package's end.
 
 ### B2 — The profiler removal's residue goes (R2)
 
