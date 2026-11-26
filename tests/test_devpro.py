@@ -34,7 +34,16 @@ import devpro.clauses
 from devpro.agents_file import is_marker_line
 from devpro.cli import main
 from devpro.components import Components
-from devpro.context import MapSupply, Render, build_render, harnesses, parse_category_map, read_settings
+from devpro.context import (
+    MODEL_MAP_TABLE,
+    SETTINGS_FILE,
+    MapSupply,
+    Render,
+    build_render,
+    harnesses,
+    parse_category_map,
+    read_settings,
+)
 from devpro.definition import Definition, SkillFile
 from devpro.definitions import definitions_of, discover
 from devpro.errors import InputError
@@ -823,6 +832,18 @@ def test_the_installing_reference_names_every_install_setting(harness: str) -> N
     ctx = build_render(components="", harness=harness, family="claude")
     [text] = [text for path, text in render_all(ctx) if str(path).endswith("guide/references/installing.md")]
     assert [setting for setting in INSTALL_SETTINGS if setting not in text] == []
+
+
+@pytest.mark.parametrize("harness", harnesses())
+def test_the_installing_reference_names_the_settings_file_and_its_map_table(harness: str) -> None:
+    """The page names the settings file's path and the map subtable to its reader, and the settings reader
+    parses them by `SETTINGS_FILE` and `MODEL_MAP_TABLE`; the assertion is composed from those constants, so a
+    rename of either that leaves the page naming a file or table the parser no longer reads fails here, not
+    silently."""
+    ctx = build_render(components="", harness=harness, family="claude")
+    [text] = [text for path, text in render_all(ctx) if str(path).endswith("guide/references/installing.md")]
+    assert f"~/{SETTINGS_FILE}" in text
+    assert f"[<harness>.{MODEL_MAP_TABLE}]" in text
 
 
 @pytest.mark.parametrize("harness", harnesses(), ids=lambda name: name)
