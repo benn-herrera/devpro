@@ -273,9 +273,10 @@ never enter the stale list.
 ```
 **Becomes:**
 ```
-The staleness rule is prune's own, stated here rather than inherited: a file below a `.venv`
-directory (`VENV_DIR`) directly under a package destination, and a safety copy (a `.bak` suffix),
-never enters the stale list.
+The staleness rule is prune's own, stated here rather than inherited: a safety copy (a `.bak`
+suffix) never enters the stale list. No venv is ever delivered and none is created under an
+install directory, so the stale list has no venv case: no file a venv holds is ours by its own
+carrier.
 ```
 
 **As it stands:**
@@ -351,6 +352,16 @@ there.
 ```
 `_clear_package_destination` empties the directory a destination is, and unlinks any other file
 there.
+```
+
+**As it stands:**
+```
+replaces the destination of each `SHIPPED_PACKAGES` row whose owner ships whole with a copy — a `.venv` directly
+below it kept — copies each
+```
+**Becomes:**
+```
+replaces the destination of each `SHIPPED_PACKAGES` row whose owner ships whole with a copy — copies each
 ```
 
 **As it stands:**

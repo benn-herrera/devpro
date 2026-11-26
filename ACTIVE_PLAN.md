@@ -368,16 +368,18 @@ Done-line: `just test devpro`, then `just test wheel`, then
 `just dev-check-design-deltas-applied`, then `just dev-check-links`, then `just lint`, run once at
 this package's end.
 
-### B6 — The agents sentence holds at both install levels (R6)
+### B6 — The agents sentence names the concrete path for each install (R6)
 
-expert. Scope: `devpro/harnesses/claude.py` — the sentence reworded to hold under a project
-install and a user-level one alike ("The plugin's agents files sit in its `agents/` directory,
-`../../agents/` from this file."), the comment's import-path reasoning kept only where it holds;
+expert. Scope: `devpro/harnesses/claude.py` — the sentence states the concrete path per
+installation kind: "The plugin's agents files sit in `.claude/skills/devpro/agents/` in a project
+install, or `~/.claude/skills/devpro/agents/` when the set is installed for the user." — the
+user-level path absolute, as the operator rules it must be: a relative directory resolved from a
+path the session has no statement of is the opposite of the help the sentence exists to give;
+the comment's import-path reasoning kept only where it holds;
 `devpro/definitions/skills/development.py` unchanged — it carries the placeholder, the wording
 lives in the claude constant; `tests/test_devpro.py:1119-1130` — the literal dropped, the
-assertion read from `CLAUDE.agents_path` (whose constant now carries `../../agents/`); the
-render-level pin stays the one pin, the sentence's relative form holding at both install levels by
-construction; `PROJECT_DOCS/ARCHITECTURE/rendering/harnesses-and-families.md:17-18`
+assertion read from `CLAUDE.agents_path`, and the pin reads the constant for both spellings: the
+project path and the user-level absolute; `PROJECT_DOCS/ARCHITECTURE/rendering/harnesses-and-families.md:17-18`
 and `placeholders.md`'s member enumeration — the same wording and the seventh member named (coder
 W4's count rides here) — retexted **in the same change as the design's matching pair amendment**,
 whose Becomes carries today's sentence: without the amendment the landing gate's
