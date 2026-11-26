@@ -118,7 +118,7 @@ _CALL_KEYS = {
 }
 
 
-def _launcher(directory: Path) -> Path:
+def _installed_wrapper(directory: Path) -> Path:
     """The installed wrapper, from a claude install into `directory`: `tools/devpro.sh` beside the
     package copy the install writes.
 
@@ -127,6 +127,17 @@ def _launcher(directory: Path) -> Path:
     directory.mkdir(exist_ok=True)
     _definition_install(directory, project_root=directory)
     return _claude_plugin(directory) / "tools" / "devpro.sh"
+
+
+@pytest.fixture(scope="session")
+def _launcher(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """The installed wrapper one install serves every test that only reads and runs it: the tree under
+    the session's own directory, none of a test's `tmp_path`.
+
+    Its stores go where a test writes them — under the `project` it runs the wrapper in, never under this
+    tree — so no test changes what another reads. A test that writes into the tree it runs takes
+    `_installed_wrapper` and a directory of its own."""
+    return _installed_wrapper(tmp_path_factory.mktemp("harness"))
 
 
 def _devpro_shim(project: Path) -> Path:
@@ -232,15 +243,14 @@ def index_row_colspan(index: str) -> int:
     return int(re.search(r"cell\.colSpan = (\d+);", script).group(1))
 
 
-def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> None:
+def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path, _launcher: Path) -> None:
     """One well-formed hook payload appends one line to the project's trace, carrying schema 2 and
     the field names the unchanged page and tree read; the html page's data carries the keys
     `view.html` parses."""
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    launcher = _launcher(tmp_path / "harness")
-    capture = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD)
+    capture = _run(_launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD)
     assert capture.returncode == 0, capture.stderr
     assert capture.stdout == "" and capture.stderr == ""
     trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
@@ -251,7 +261,7 @@ def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> N
     assert record["tool"] == "Bash"
     assert record["ok"] is True
     assert record["args"] == "ls"
-    page = _run(launcher, "tree", "--format", "html", cwd=project)
+    page = _run(_launcher, "tree", "--format", "html", cwd=project)
     assert page.returncode == 0, page.stderr
     data = page_data(page.stdout)
     assert _PAGE_KEYS <= set(data), sorted(data)
@@ -260,7 +270,7 @@ def test_a_capture_writes_the_record_the_page_and_tree_read(tmp_path: Path) -> N
     assert data["calls"][0]["tool"] == "Bash"
 
 
-def test_a_capture_records_the_model_its_transcript_names(tmp_path: Path) -> None:
+def test_a_capture_records_the_model_its_transcript_names(tmp_path: Path, _launcher: Path) -> None:
     """`clauses.TEST_PRECONDITION`. The defect is a capture that leaves out the model its transcript
     names: before the change the record has `context_tokens` 10 and no `model`, so a claude session's
     calls show which model spent the tokens and never which model itself.
@@ -287,13 +297,12 @@ def test_a_capture_records_the_model_its_transcript_names(tmp_path: Path) -> Non
         encoding="utf-8",
     )
     payload = {**json.loads(_PAYLOAD), "transcript_path": str(transcript), "tool_use_id": "toolu_1"}
-    launcher = _launcher(tmp_path / "harness")
-    capture = _run(launcher, "capture", "claude", cwd=project, stdin=json.dumps(payload))
+    capture = _run(_launcher, "capture", "claude", cwd=project, stdin=json.dumps(payload))
     assert capture.returncode == 0, capture.stderr
 
     trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
     [record] = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
-    page = _run(launcher, "tree", "--format", "html", cwd=project)
+    page = _run(_launcher, "tree", "--format", "html", cwd=project)
 
     assert (record["model"], record["context_tokens"]) == ("claude-opus-4-5", 10)
     assert page.returncode == 0, page.stderr
@@ -305,7 +314,7 @@ def test_a_capture_records_the_model_its_transcript_names(tmp_path: Path) -> Non
     )
 
 
-def test_a_session_whose_trace_holds_the_data_mark_renders(tmp_path: Path) -> None:
+def test_a_session_whose_trace_holds_the_data_mark_renders(tmp_path: Path, _launcher: Path) -> None:
     """`clauses.TEST_PRECONDITION`. The defect: the page's data was inlined with `/` unescaped, so a
     trace carrying the data mark's own text, `/*DATA*/null`, made the strict fill refuse a value holding
     its mark and `tree --format html` failed for that session."""
@@ -317,13 +326,13 @@ def test_a_session_whose_trace_holds_the_data_mark_renders(tmp_path: Path) -> No
         project, ".profiler-claude", "s-mark", "2026-01-01T00:00:00.000Z", harness="claude", extra={"args": args}
     )
 
-    page = _run(_launcher(tmp_path / "harness"), "tree", "--format", "html", cwd=project)
+    page = _run(_launcher, "tree", "--format", "html", cwd=project)
 
     assert page.returncode == 0, page.stderr
     assert page_data(page.stdout)["calls"][0]["args"] == args
 
 
-def test_a_capture_writes_its_line_in_the_bytes_it_measured(tmp_path: Path) -> None:
+def test_a_capture_writes_its_line_in_the_bytes_it_measured(tmp_path: Path, _launcher: Path) -> None:
     """A lone surrogate in a tool argument, and a non-ASCII one, measure as the bytes the store holds:
     the line is ASCII, so the length `serialize` bounds and the file's bytes are one count, and
     `read_text` reads the same JSON back on a host whose default encoding is not utf-8."""
@@ -331,23 +340,21 @@ def test_a_capture_writes_its_line_in_the_bytes_it_measured(tmp_path: Path) -> N
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
     payload = dict(json.loads(_PAYLOAD), tool_input={"command": "echo h\u00e9 \ud800"})
-    launcher = _launcher(tmp_path / "harness")
-    capture = _run(launcher, "capture", "claude", cwd=project, stdin=json.dumps(payload))
+    capture = _run(_launcher, "capture", "claude", cwd=project, stdin=json.dumps(payload))
     assert capture.returncode == 0, capture.stderr
     trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
     line = trace.read_bytes().decode("ascii")
     assert json.loads(line)["args"] == "echo h\u00e9 \ud800"
 
 
-def test_the_capture_keeps_its_childs_output_off_the_hooks_stdout(tmp_path: Path) -> None:
+def test_the_capture_keeps_its_childs_output_off_the_hooks_stdout(tmp_path: Path, _launcher: Path) -> None:
     """A hook's stdout is the host's protocol alone, so the capture's own output never reaches it. The
     defect: the capture printed the record's path through `sys.stdout`, so a line it wrote there
     reached Claude Code as its hook result."""
     project = tmp_path / "project"
     project.mkdir()
-    launcher = _launcher(tmp_path / "harness")
 
-    done = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD)
+    done = _run(_launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD)
 
     assert (done.returncode, done.stdout) == (0, ""), done.stderr
     assert (project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl").is_file()
@@ -359,7 +366,7 @@ def test_a_wrapper_whose_run_fails_reports_its_failure(tmp_path: Path, command: 
     record — exits nonzero with the failure named on stderr, stdout silent, for every subcommand.
     Defect: the retired launcher answered the capture's failure with exit 0 and a drained stdin, so a
     wrapper that could not run at all reported a capture it never made as a success."""
-    launcher = _launcher(tmp_path / "harness")
+    launcher = _installed_wrapper(tmp_path / "harness")
     payload = json.dumps({"hook_event_name": "PostToolUse", "session_id": "s-none", "tool_name": "Bash"})
     project = tmp_path / "project"
     project.mkdir()
@@ -409,22 +416,21 @@ def test_the_capture_with_no_wrapper_and_no_payload_exits_0_writing_nothing(tmp_
     assert not (project / ".devpro-temp").exists()
 
 
-def test_the_wrapper_the_install_writes_captures_with_no_devpro_on_path(tmp_path: Path) -> None:
+def test_the_wrapper_the_install_writes_captures_with_no_devpro_on_path(tmp_path: Path, _launcher: Path) -> None:
     """The wrapper the install writes is the one the hook runs: a capture through it writes the record,
     with no `devpro` on PATH at all — the wrapper names its own copy of devpro, so a bare PATH is where
     that is put to the proof."""
-    launcher = _launcher(tmp_path / "harness")
-    assert (launcher.parent / "devpro").is_dir(), "the install writes its copy of devpro in tools/"
+    assert (_launcher.parent / "devpro").is_dir(), "the install writes its copy of devpro in tools/"
     project = tmp_path / "project"
     project.mkdir()
-    done = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD, path="/usr/bin:/bin")
+    done = _run(_launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD, path="/usr/bin:/bin")
     assert done.returncode == 0, done.stderr
     trace = project / ".devpro-temp" / ".profiler-claude" / "s-profiler.jsonl"
     [record] = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
     assert record["tool"] == "Bash" and record["args"] == "ls"
 
 
-def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Path) -> None:
+def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Path, _launcher: Path) -> None:
     """A session in each harness's store under one project, and one `tree <id>` per store renders it:
     the read that walks both harnesses' stores, whose revert to claude's alone loses the opencode
     session silently.
@@ -436,8 +442,7 @@ def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Pa
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    launcher = _launcher(tmp_path / "harness")
-    capture = _run(launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD)
+    capture = _run(_launcher, "capture", "claude", cwd=project, stdin=_PAYLOAD)
     assert capture.returncode == 0, capture.stderr
     # A record the opencode capture writes, holding what `tree`'s render reads: an event at start and
     # the call, which only --verbose draws.
@@ -508,13 +513,13 @@ def test_a_tree_renders_an_opencode_store_beside_the_claude_capture(tmp_path: Pa
         encoding="utf-8",
     )
 
-    opencode_tree = _run(launcher, "tree", "--verbose", "s-opencode", cwd=project)
+    opencode_tree = _run(_launcher, "tree", "--verbose", "s-opencode", cwd=project)
     assert opencode_tree.returncode == 0, opencode_tree.stderr
     assert "make test" in opencode_tree.stdout
     # The dispatch draws the context words the same fields draw under claude: the host's `fork` kind
     # makes the child a copy of its caller's history.
     assert "new context ses_fo, copy of main" in opencode_tree.stdout
-    claude_tree = _run(launcher, "tree", "--verbose", "s-profiler", cwd=project)
+    claude_tree = _run(_launcher, "tree", "--verbose", "s-profiler", cwd=project)
     assert claude_tree.returncode == 0, claude_tree.stderr
     assert "ls" in claude_tree.stdout
 
@@ -643,13 +648,14 @@ def test_the_two_masks_redact_alike(tmp_path: Path) -> None:
     assert ported == [mask(sample) for sample in samples]
 
 
-def _profiler_init(project: Path) -> subprocess.CompletedProcess[str]:
-    """`profiler init claude` in `project`, through the installed wrapper and the test's devpro."""
-    return _run(_launcher(project.parent / "harness"), "init", "claude", cwd=project)
+def _profiler_init(wrapper: Path, project: Path) -> subprocess.CompletedProcess[str]:
+    """`profiler init claude` in `project`, through the installed wrapper `wrapper` and the test's
+    devpro."""
+    return _run(wrapper, "init", "claude", cwd=project)
 
 
 @pytest.mark.parametrize("launcher", RETIRED_LAUNCHERS)
-def test_init_clears_an_older_runs_launcher_and_files(tmp_path: Path, launcher: str) -> None:
+def test_init_clears_an_older_runs_launcher_and_files(tmp_path: Path, _launcher: Path, launcher: str) -> None:
     """A committed hook directory holding an older `init`'s launcher — under any name it wrote, the one
     this release retired included — beside `hp.py` and `view.html`: a re-run removes every one of
     them, writes the skill, registers the project's wrapper's command, and leaves no hook directory
@@ -663,7 +669,7 @@ def test_init_clears_an_older_runs_launcher_and_files(tmp_path: Path, launcher: 
     for name in (launcher, *RETIRED_HOOK_FILES):
         (hook_dir / name).write_text("an older init's copy\n", encoding="utf-8")
 
-    done = _profiler_init(project)
+    done = _profiler_init(_launcher, project)
 
     assert done.returncode == 0, done.stderr
     assert not hook_dir.exists()
@@ -673,7 +679,7 @@ def test_init_clears_an_older_runs_launcher_and_files(tmp_path: Path, launcher: 
     assert "harness-profiler" not in settings
 
 
-def test_init_renames_a_committed_hook_written_under_a_launcher_name(tmp_path: Path) -> None:
+def test_init_renames_a_committed_hook_written_under_a_launcher_name(tmp_path: Path, _launcher: Path) -> None:
     """A repository whose committed hook spells a launcher name — the file `hp.sh` and the registered
     command running it: `init` removes the file and re-registers the command on the project's committed
     wrapper, and `doctor` no longer reports the hook as stale. The consuming-project migration is the
@@ -705,8 +711,8 @@ def test_init_renames_a_committed_hook_written_under_a_launcher_name(tmp_path: P
     }
     settings_file.write_text(json.dumps(old_entry, indent=2) + "\n", encoding="utf-8")
 
-    done = _profiler_init(project)
-    doctor = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
+    done = _profiler_init(_launcher, project)
+    doctor = _run(_launcher, "doctor", cwd=project)
 
     assert done.returncode == 0, done.stderr
     assert not hook_dir.exists()
@@ -719,7 +725,9 @@ def test_init_renames_a_committed_hook_written_under_a_launcher_name(tmp_path: P
 
 
 @pytest.mark.parametrize("beside", [[], ["notes.md"]], ids=["alone", "beside-a-file"])
-def test_init_removes_the_skill_an_older_init_rendered_under_its_former_name(tmp_path: Path, beside: list[str]) -> None:
+def test_init_removes_the_skill_an_older_init_rendered_under_its_former_name(
+    tmp_path: Path, _launcher: Path, beside: list[str]
+) -> None:
     """A repository holding a committed `.claude/skills/show-profile/SKILL.md`, the skill under its name
     before `profiler`: a re-run removes it, and its directory where nothing else is left in it, and the
     `git add` line it prints stages that removal. Without the unlink the older skill stands beside the
@@ -736,7 +744,7 @@ def test_init_removes_the_skill_an_older_init_rendered_under_its_former_name(tmp
     subprocess.run([*git, "add", "."], cwd=project, check=True)
     subprocess.run([*git, "commit", "-q", "-m", "an older init"], cwd=project, check=True)
 
-    done = _profiler_init(project)
+    done = _profiler_init(_launcher, project)
 
     assert done.returncode == 0, done.stderr
     assert not (retired / "SKILL.md").exists()
@@ -788,7 +796,7 @@ def test_a_plain_install_renames_the_stores_once_with_no_wrapper(tmp_path: Path)
     assert "renamed " not in second.stdout + second.stderr
 
 
-def test_init_renames_the_repositorys_old_pattern_stores(tmp_path: Path) -> None:
+def test_init_renames_the_repositorys_old_pattern_stores(tmp_path: Path, _launcher: Path) -> None:
     """A repository holding `.devpro-temp/claude-profiler/` and `.devpro-temp/opencode-profiler/`:
     `init` moves each to its `.profiler-*` name and names it, the same migration an install runs. A
     committed-hook repository that migrates nowhere goes dark the moment its hook records on."""
@@ -798,7 +806,7 @@ def test_init_renames_the_repositorys_old_pattern_stores(tmp_path: Path) -> None
     claude = _write_store(project, "claude-profiler", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
     opencode = _write_store(project, "opencode-profiler", "s-opencode", "2026-01-01T00:00:00.000Z", harness="opencode")
 
-    done = _profiler_init(project)
+    done = _profiler_init(_launcher, project)
 
     assert done.returncode == 0, done.stderr
     stores = project / ".devpro-temp"
@@ -816,8 +824,9 @@ def test_doctor_reports_a_committed_hook_that_differs_from_the_registered_one(tm
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    assert _profiler_init(project).returncode == 0
-    current = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
+    launcher = _installed_wrapper(tmp_path / "harness")
+    assert _profiler_init(launcher, project).returncode == 0
+    current = _run(launcher, "doctor", cwd=project)
     assert current.returncode == 0, current.stderr
     assert "update:" not in current.stdout
 
@@ -830,7 +839,7 @@ def test_doctor_reports_a_committed_hook_that_differs_from_the_registered_one(tm
                 hook["command"] = old
     settings_file.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
 
-    edited = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
+    edited = _run(launcher, "doctor", cwd=project)
 
     assert edited.returncode == 0, edited.stderr
     assert "update:  the committed hook runs another command than " in edited.stdout
@@ -850,7 +859,7 @@ def test_doctor_names_the_wrapper_this_tree_runs(tmp_path: Path) -> None:
     foreign.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     foreign.chmod(0o755)
 
-    reported = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project, path=f"{on_path}:/usr/bin:/bin")
+    reported = _run(_installed_wrapper(tmp_path / "harness"), "doctor", cwd=project, path=f"{on_path}:/usr/bin:/bin")
 
     assert reported.returncode == 0, reported.stderr
     [line] = [line for line in reported.stdout.splitlines() if line.startswith("devpro:")]
@@ -931,7 +940,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     )
     _write_store(project, ".profiler-opencode", "s-child", "2026-01-01T00:00:07.000Z", harness="opencode", records=2)
 
-    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
+    with _serve(_launcher, cwd=project) as url:
         index = _fetch(f"{url}profiler/")
         feed = json.loads(_fetch(f"{url}api/traces"))
         page = _fetch(f"{url}page/s-claude")
@@ -1001,7 +1010,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     assert page_data(page)["session"] == "s-claude"
 
 
-def test_a_session_naming_itself_as_a_child_is_drawn_once_in_its_own_place(tmp_path: Path) -> None:
+def test_a_session_naming_itself_as_a_child_is_drawn_once_in_its_own_place(tmp_path: Path, _launcher: Path) -> None:
     """A session whose own opencode record carries its own id as `child_agent_id`: the feed draws it
     once, top-level, its entry carrying no `dispatcher`. A grouping that reads the self-naming as a
     dispatch drops the session from the index's top level and draws it under itself, its count
@@ -1019,14 +1028,14 @@ def test_a_session_naming_itself_as_a_child_is_drawn_once_in_its_own_place(tmp_p
         extra={"tool": "Agent", "name": "devpro-coder", "child_agent_id": "s-self"},
     )
 
-    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
+    with _serve(_launcher, cwd=project) as url:
         feed = json.loads(_fetch(f"{url}api/traces"))
 
     assert [entry["id"] for entry in feed] == ["s-self"]
     assert "dispatcher" not in feed[0]
 
 
-def test_a_claude_child_agent_id_groups_no_session(tmp_path: Path) -> None:
+def test_a_claude_child_agent_id_groups_no_session(tmp_path: Path, _launcher: Path) -> None:
     """A claude store whose record's `child_agent_id` equals another session's id: the feed draws that
     session as a stranger, top-level, its entry carrying no `dispatcher`, and the claude page's call
     renders its name with no child-page link. Claude's `child_agent_id` is an agent id, and claude
@@ -1046,7 +1055,7 @@ def test_a_claude_child_agent_id_groups_no_session(tmp_path: Path) -> None:
     )
     _write_store(project, ".profiler-claude", "s-named", "2026-01-01T00:00:05.000Z", harness="claude")
 
-    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
+    with _serve(_launcher, cwd=project) as url:
         feed = json.loads(_fetch(f"{url}api/traces"))
         page = _fetch(f"{url}page/s-claude")
 
@@ -1056,7 +1065,7 @@ def test_a_claude_child_agent_id_groups_no_session(tmp_path: Path) -> None:
     assert page_data(page)["calls"][0]["childPage"] is None
 
 
-def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_path: Path) -> None:
+def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_path: Path, _launcher: Path) -> None:
     """`CLAUDE_PROJECT_DIR` at another project, as a claude shell sets it, while the dashboard runs in
     this one: the feed lists this project's sessions; a feed that follows the variable serves the
     other project's stores, which for a terminal-launched server is the wrong repository."""
@@ -1068,25 +1077,23 @@ def test_the_served_index_lists_its_own_project_under_a_foreign_project_dir(tmp_
     foreign.mkdir()
     _write_store(foreign, ".profiler-claude", "s-elsewhere", "2026-01-01T00:00:00.000Z", harness="claude")
 
-    with _serve(_launcher(tmp_path / "harness"), cwd=project, env={"CLAUDE_PROJECT_DIR": str(foreign)}) as url:
+    with _serve(_launcher, cwd=project, env={"CLAUDE_PROJECT_DIR": str(foreign)}) as url:
         feed = json.loads(_fetch(f"{url}api/traces"))
 
     assert [entry["id"] for entry in feed] == ["s-here"]
 
 
-def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> None:
+def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path, _launcher: Path) -> None:
     """One session's `/page/<id>` carries the file flow's page data: the JSON the page template
     inlines at its data slot is the payload `tree --format html` inlines, and the served page names
     the shared layer's one file where the render inlines its text — the two carriers' one difference."""
     project = tmp_path / "project"
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
-    launcher = _launcher(tmp_path / "harness")
-
-    with _serve(launcher, cwd=project) as url:
+    with _serve(_launcher, cwd=project) as url:
         served = _fetch(f"{url}page/s-claude")
 
-    printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
+    printed = _run(_launcher, "tree", "s-claude", "--format", "html", cwd=project)
     assert printed.returncode == 0, printed.stderr
     assert page_data(served) == page_data(printed.stdout)
     # The serve path names the layer's one file where the file flow inlines its text: one source, two
@@ -1094,7 +1101,7 @@ def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path) -> Non
     assert served.count(LAYER_LINK) == 1 and SHARED_CSS not in served
 
 
-def test_the_standalone_render_carries_the_shared_layer_and_the_legend_once(tmp_path: Path) -> None:
+def test_the_standalone_render_carries_the_shared_layer_and_the_legend_once(tmp_path: Path, _launcher: Path) -> None:
     """The page `tree --format html` prints carries the presentation layer's own text, inlined whole,
     and the frame band's legend exactly once — the deco the served page carries as its own text,
     here the render's: the standalone page names no view active to a live dashboard, so its band
@@ -1103,9 +1110,8 @@ def test_the_standalone_render_carries_the_shared_layer_and_the_legend_once(tmp_
     project = tmp_path / "project"
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
-    launcher = _launcher(tmp_path / "harness")
 
-    printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
+    printed = _run(_launcher, "tree", "s-claude", "--format", "html", cwd=project)
 
     assert printed.returncode == 0, printed.stderr
     assert SHARED_CSS in printed.stdout
@@ -1113,7 +1119,7 @@ def test_the_standalone_render_carries_the_shared_layer_and_the_legend_once(tmp_
     assert 'class="site-nav' in printed.stdout and 'class="frame-band' in printed.stdout
 
 
-def test_the_standalone_render_carries_the_decoration_its_pages_script_reads(tmp_path: Path) -> None:
+def test_the_standalone_render_carries_the_decoration_its_pages_script_reads(tmp_path: Path, _launcher: Path) -> None:
     """`clauses.TEST_PRECONDITION`: the defect is a `tree --format html` page whose own script calls
     the deco's notation, `globalThis.devproFormat`, while the page carries neither the deco's link
     nor its text — a file cannot link a server's origin, so the page's script throws before the
@@ -1125,7 +1131,7 @@ def test_the_standalone_render_carries_the_decoration_its_pages_script_reads(tmp
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
 
-    printed = _run(_launcher(tmp_path / "harness"), "tree", "s-claude", "--format", "html", cwd=project)
+    printed = _run(_launcher, "tree", "s-claude", "--format", "html", cwd=project)
 
     assert printed.returncode == 0, printed.stderr
     assert DECO_INLINE in printed.stdout
@@ -1180,7 +1186,7 @@ def test_every_page_script_wraps_its_body_in_an_iife() -> None:
     assert re.findall(r"^globalThis\.(\w+)", deco, re.M) == ["devproFormat"], "the deco publishes one name"
 
 
-def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path) -> None:
+def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path, _launcher: Path) -> None:
     """`/profiler/` names the board's stylesheet at the path the board panel serves it: the index
     carries no copy of the layer itself, and its one stylesheet link is the board panel's link line.
     A profiler page carrying a palette of its own is the second reskin the design forbids, the board
@@ -1191,7 +1197,7 @@ def test_the_served_index_links_the_shared_layers_own_text(tmp_path: Path) -> No
     (project / ".devpro-temp").mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
 
-    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
+    with _serve(_launcher, cwd=project) as url:
         index = _fetch(f"{url}profiler/")
         [linked] = re.findall(r'<link rel="stylesheet" href="([^"]+)">', index)
 
@@ -1370,7 +1376,7 @@ def test_the_readers_read_a_copy_of_a_store_as_no_store_at_all(tmp_path: Path) -
     assert [session["id"] for session in read_sessions(project)] == ["s-only"]
 
 
-def test_an_unrecorded_session_id_is_a_404_and_no_traceback(tmp_path: Path) -> None:
+def test_an_unrecorded_session_id_is_a_404_and_no_traceback(tmp_path: Path, _launcher: Path) -> None:
     """`clauses.TEST_PRECONDITION`: the defect is `/page/<id>` for an id no store records answering
     HTTP 500 from the handler's traceback instead of the 404 the view answers a page it does not
     serve — on a tree whose stores are readable, the read that finds no match returns `None`.
@@ -1381,7 +1387,7 @@ def test_an_unrecorded_session_id_is_a_404_and_no_traceback(tmp_path: Path) -> N
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude")
 
-    with _serve(_launcher(tmp_path / "harness"), cwd=project) as url:
+    with _serve(_launcher, cwd=project) as url:
         assert _fetch(f"{url}page/s-claude")
         with pytest.raises(urllib.error.HTTPError) as missing:
             _fetch(f"{url}page/s-unrecorded")
@@ -1449,7 +1455,7 @@ def test_the_doctor_names_the_stores_the_readers_read(tmp_path: Path) -> None:
     project.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
 
-    reported = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
+    reported = _run(_installed_wrapper(tmp_path / "harness"), "doctor", cwd=project)
 
     assert reported.returncode == 0, reported.stderr
     [line] = [line for line in reported.stdout.splitlines() if line.startswith("traces:")]
@@ -1516,7 +1522,7 @@ def test_a_doctor_names_an_old_pattern_store_and_its_remedy(tmp_path: Path) -> N
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
     store = _write_store(project, "claude-profiler", "s-old", "2026-01-01T00:00:00.000Z", harness="claude")
 
-    reported = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
+    reported = _run(_installed_wrapper(tmp_path / "harness"), "doctor", cwd=project)
 
     assert reported.returncode == 0, reported.stderr
     target = project / ".devpro-temp" / ".profiler-claude"
@@ -1538,7 +1544,7 @@ def test_a_doctor_names_a_collided_store_as_the_operators_own_merge(tmp_path: Pa
     old = _write_store(project, "claude-profiler", "s-old", "2026-01-01T00:00:00.000Z", harness="claude")
     live = _write_store(project, ".profiler-claude", "s-new", "2026-01-02T00:00:00.000Z", harness="claude")
 
-    reported = _run(_launcher(tmp_path / "harness"), "doctor", cwd=project)
+    reported = _run(_installed_wrapper(tmp_path / "harness"), "doctor", cwd=project)
 
     assert reported.returncode == 0, reported.stderr
     assert f"old:     {old} is not a store tree reads; {live} already exists" in reported.stdout
@@ -1571,7 +1577,7 @@ def test_repair_fills_the_child_ids_a_capture_that_missed_2_4_1_left_null(tmp_pa
         ),
         encoding="utf-8",
     )
-    launcher = _launcher(tmp_path / "harness")
+    launcher = _installed_wrapper(tmp_path / "harness")
 
     repaired = _run(launcher, "repair", cwd=project)
 
@@ -1669,7 +1675,7 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     project = tmp_path / "project"
     project.mkdir()
     _write_store(project, ".profiler-claude", "s-claude", "2026-01-01T00:00:00.000Z", harness="claude", records=2)
-    launcher = _launcher(tmp_path / "harness")
+    launcher = _installed_wrapper(tmp_path / "harness")
     printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
     assert printed.returncode == 0, printed.stderr
     for mark in (LAYER_MARK, DECO_MARK, DATA_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
