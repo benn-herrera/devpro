@@ -55,6 +55,7 @@ Contents:
   - [A narrowed format names the inputs it refuses](planning-and-execution/a-narrowed-format-names-the-inputs-it-refuses.md)
   - [A verification entry names what the run produced](planning-and-execution/a-verification-entry-names-what-the-run-produced.md)
   - [Source line width is not enforced](planning-and-execution/source-line-width-is-not-enforced.md)
+  - [A test failing on unstated behavior is an interrupt](planning-and-execution/a-test-failing-on-unstated-behavior-is-an-interrupt.md)
 - [Adding Definitions](adding-definitions/index.md)
   - [Where it goes](adding-definitions/where-it-goes.md)
   - [What it is called](adding-definitions/what-it-is-called.md)

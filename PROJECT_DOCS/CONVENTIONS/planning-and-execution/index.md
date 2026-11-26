@@ -16,3 +16,4 @@ Contents:
 - [Evidence commands run before they ship](evidence-commands-run-before-they-ship.md)
 - [A narrowed format names the inputs it refuses](a-narrowed-format-names-the-inputs-it-refuses.md)
 - [A verification entry names what the run produced](a-verification-entry-names-what-the-run-produced.md)
+- [A test failing on unstated behavior is an interrupt](a-test-failing-on-unstated-behavior-is-an-interrupt.md)
