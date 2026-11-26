@@ -387,4 +387,20 @@ dev-check-links:
   @just dev-devpro check-links PROJECT_DOCS *.md
   @just dev-devpro check-tree PROJECT_DOCS
 
+test-undice-architecture:
+  @command rm -rf .devpro-temp/undice-mono-arch
+  @just dev-devpro undice PROJECT_DOCS/ARCHITECTURE .devpro-temp/undice-mono-arch
+
+test-undice-conventions:
+  @command rm -rf .devpro-temp/undice-mono-conv
+  @just dev-devpro undice PROJECT_DOCS/CONVENTIONS .devpro-temp/undice-mono-conv
+
+test-undice-spec:
+  @command rm -rf .devpro-temp/undice-mono-spec
+  @just dev-devpro undice PROJECT_DOCS/SPEC .devpro-temp/undice-mono-spec
+
+test-undice-project-docs:
+  @command rm -rf .devpro-temp/undice-mono-prjd
+  @just dev-devpro undice PROJECT_DOCS .devpro-temp/undice-mono-prjd
+
 import? '.claude/skills/devpro/tools/runner-snippets/devpro.just'
