@@ -73,7 +73,7 @@ its own status-table row.
 | P7 | landed | expert | shipped | the server-boot tier earns its keep |
 | P8 | landed: judged, no edit | expert | shipped | the dicer suite earns its keep |
 | P9 | landed | expert | shipped | the long tail over 100ms |
-| P10 | in progress | expert | shipped | post-plan review |
+| P10 | landed | expert | shipped | post-plan review |
 | P11 | dispatchable | expert | shipped | post-plan burndown |
 
 ## P1 — Apply the ARCHITECTURE deltas
