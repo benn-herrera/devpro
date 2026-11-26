@@ -24,7 +24,6 @@ file as `P1` leaves it. `P3` shares no file with the others. The landing commit 
 | B1 | in progress | mechanical |
 | B3 | dispatchable | expert |
 | B4 | dispatchable | expert |
-| B5 | dispatchable | mechanical |
 | B6 | dispatchable | expert |
 | B7 | dispatchable | mechanical |
 | B8 | dispatchable | mechanical |
@@ -277,7 +276,11 @@ defect IDs, grouped by root cause; the review document is the finding of record.
 run on the review's HEAD except `just lint` (R2, red). Run order: `B2` first — it closes the red
 lint — then `B1`, `B3`, and the rest in any order; items sharing `tests/` files run serially. Every
 item's done-line ends `just lint`: the checkpoint gate names no lint, which is how R2's red landed,
-and the item that edits the shell script runs it for its shellcheck leg as the same rule.
+and the item that edits the shell script runs it for its shellcheck leg as the same rule. R5's item
+is withdrawn by the operator's ruling — there is to be no mention, consideration or other nod to
+the ever-existence of the `.cfg` config file: the upgrade walk names nothing, the not-read line is
+not written, and the standing `ROADMAP.md` mention went with the ruling. R5 stands in the review
+document as the record of what the seats found; its remedy is withdrawn.
 
 ### P6 — Post-plan burndown drafting
 
@@ -364,22 +367,6 @@ wheel's listing for the project-document file names the build must not carry (ar
 Done-line: `just test devpro`, then `just test wheel`, then
 `just dev-check-design-deltas-applied`, then `just dev-check-links`, then `just lint`, run once at
 this package's end.
-
-### B5 — The upgrade walks name the settings rename (R5)
-
-mechanical. Scope: `README.md`'s *Updating* — one sentence beside the store-rename paragraph, the
-tech-writer's draft carried verbatim (`review-tech-writer-b5.md`): the settings file is now
-`~/.config/devpro/devpro.toml`, a 0.17.x `devpro.cfg` is not read, and carrying it over is a
-move-and-convert; `devpro/definitions/skills/guide.py`'s *Updating* paragraph and the settings
-bullet — the page's own voice, the bullet's clause stating the current state (an old default file
-still standing is not read), not a second migration note; `devpro/context.py` — where the default
-`devpro.toml` is absent and a default `devpro.cfg` stands, one `report_left_alone` line
-(`devpro/install_base.py:54`, imported) naming the old file as not read; `ROADMAP.md:258` —
-`devpro.cfg` becomes `devpro.toml`. Test, in scope: `tests/test_devpro.py`, the `_home` shape of
-`test_a_missing_default_settings_file_is_no_config` (:219) asserting the stderr line names
-`devpro.cfg` where only it exists — pinned to the named defect (an upgrader's config silently
-stops applying). Done-line: `just test devpro`, then `just dev-check-links`, then `just lint`,
-run once at this package's end.
 
 ### B6 — The agents sentence holds at both install levels (R6)
 

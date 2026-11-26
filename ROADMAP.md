@@ -255,7 +255,7 @@ mind may change about this later.
 
 Right now ./<harness-dir>.../devpro.sh install . fails because it detects the self-overwrite.
 what it *should* do is reinstall everything but the embedded copy (just detect and skip).
-this allows for edits to ~/.config/devpro/devpro.cfg to take effect without potentially changing
+this allows for edits to ~/.config/devpro/devpro.toml to take effect without potentially changing
 devpro's installed version by using the system copy.
 
 ## Testing
