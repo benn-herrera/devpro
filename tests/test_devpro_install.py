@@ -2068,6 +2068,62 @@ def test_an_install_run_from_an_installations_copy_into_that_installation_reente
     assert not foreign.exists()
 
 
+def test_a_symlinked_copy_destination_is_refused(tmp_path: Path, capsys) -> None:
+    """`is_the_running_copy` and the copy's clear-and-write both read the copy destination resolved, so a
+    link planted there sends an install's clear (an `rmtree`) and its copy through the link into whatever
+    it names. The install refuses, naming the link, and leaves the link's target untouched. Defect
+    (TEST_PRECONDITION): such a run clears and writes through the link, or refuses without naming the path."""
+    project = tmp_path / "project"
+    project.mkdir()
+    main(["install", str(project), "--harness=claude"])
+    copy = _claude_plugin(project / ".claude") / "tools/devpro"
+    foreign = tmp_path / "foreign"
+    foreign.mkdir()
+    sensitive = foreign / "keep.txt"
+    sensitive.write_text("do not delete\n", encoding="utf-8")
+    shutil.rmtree(copy)
+    copy.symlink_to(foreign)
+    capsys.readouterr()
+    with pytest.raises(SystemExit) as exit_info:
+        main(["install", str(project), "--harness=claude"])
+    assert exit_info.value.code == 2
+    assert f"'{copy}'" in capsys.readouterr().err
+    assert sensitive.read_text(encoding="utf-8") == "do not delete\n"
+
+
+def test_a_user_level_reentry_reports_up_to_date_and_passes_over_its_wrapper(
+    _home: Path, tmp_path: Path, _staged, capsys
+) -> None:
+    """A re-entry run from a user-level installation's own copy into that installation passes over the
+    copy and the wrapper that runs it. Nothing else changes, so the preflight reports the user harness
+    directory up to date — the user-level report's own shape, its `is user-level` line on stderr with it
+    — and the wrapper a non-re-entry run would rewrite is left as it stands. Defect (TEST_PRECONDITION):
+    such a run refuses, reports the pass-over, or rewrites the copy or wrapper it runs from instead of
+    passing over them and reporting up to date."""
+    root = _home / ".claude"
+    root.mkdir(parents=True)
+    main(["install", str(root), "--harness=claude"])
+    plugin = _claude_plugin(root)
+    copy = plugin / "tools/devpro"
+    _staged(copy, ())
+    wrapper = plugin / "tools/devpro.sh"
+    # A non-shipped byte a non-re-entry run would overwrite by rewriting the wrapper; a re-entry run passes
+    # over it. The wrapper keeps its installed header, so the foreign-target check still reads it as ours.
+    wrapper.write_bytes(wrapper.read_bytes() + b"\n# re-entry left this\n")
+    wrapper_before = wrapper.read_bytes()
+    plugin_before = _files(plugin)
+    capsys.readouterr()
+    main(["install", str(root), "--harness=claude"])
+    captured = capsys.readouterr()
+    up_to_date = [line for line in captured.out.splitlines() if line.startswith(_UP_TO_DATE)]
+    assert up_to_date and str(root) in up_to_date[0]
+    assert "is user-level" in captured.err
+    assert "tools/devpro" not in captured.out
+    assert "tools/devpro" not in captured.err
+    assert _files(plugin) == plugin_before
+    assert wrapper.read_bytes() == wrapper_before
+
+
 def test_reinstalling_over_a_copy_of_another_version_reports_both_versions(tmp_path: Path, capsys) -> None:
     """Defect: before the devpro tools package nothing named a version change."""
     project = tmp_path / "project"

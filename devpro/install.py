@@ -540,6 +540,20 @@ def is_the_running_copy(root: Path) -> bool:
     return (root / DEVPRO_COPY).resolve() == PACKAGE_ROOT
 
 
+def _refuse_symlinked_copy(root: Path) -> None:
+    """Refuse an install whose devpro-copy destination is a symlink. `is_the_running_copy` reads that
+    destination resolved and the copy's clear-and-write read it as it resolves, so a link there lets the
+    pass-over's two paths be defeated — the copy cleared and rewritten through the link into whatever it
+    names. Refuse, naming the link, before either reads it."""
+    copy = root / DEVPRO_COPY
+    if copy.is_symlink():
+        raise InputError(
+            f"install refuses '{copy}': the copy destination is a symlink, not a real directory — an "
+            "install would clear and write through it into whatever it names; remove the link, then "
+            "re-install; nothing written"
+        )
+
+
 def _write_created(target: Path, data: bytes, *, mode: int) -> None:
     """Write `data` to `target`, its parents created, asking for `mode` at creation: a `chmod` after the
     write would ignore the umask."""
@@ -605,11 +619,13 @@ def install(
     project = _lexical(harness_dir if project_root is None else Path(project_root))
     user_level = ctx.harness.name in user_dir_harnesses(harness_dir if real_harness_dir is None else real_harness_dir)
     harness_relpath = _harness_relpath(root, project)
-    # Every check runs before the first write: the running copy's own installation, the render, the
-    # guardrail probe that decides whether its script is a resource target, each render, harness-file
-    # and resource target the install would overwrite, the runner file where a shipped package carries
-    # runner snippets, and the agents file's. ROOT itself is created only after all of them.
+    # Every check runs before the first write: a symlinked copy destination, the running copy's own
+    # installation, the render, the guardrail probe that decides whether its script is a resource target,
+    # each render, harness-file and resource target the install would overwrite, the runner file where a
+    # shipped package carries runner snippets, and the agents file's. ROOT itself is created only after
+    # all of them.
     real_root = (harness_dir if real_harness_dir is None else real_harness_dir) / ctx.bound_harness.plugin_dir
+    _refuse_symlinked_copy(real_root)
     re_entry = is_the_running_copy(real_root)
     renders = render_all(ctx)
     packages = [

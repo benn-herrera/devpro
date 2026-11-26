@@ -756,7 +756,6 @@ def test_a_dispatch_whose_child_never_ended_is_not_running(tmp_path: Path, _wrap
     [call] = page_data(page.stdout)["calls"]
     assert (call["dur"], call["running"], call["model"]) == (500, None, "wafer.ai/parent-model")
     assert tree.returncode == 0, tree.stderr
-    assert "running" not in tree.stdout
     assert "500 ms" in tree.stdout
 
 

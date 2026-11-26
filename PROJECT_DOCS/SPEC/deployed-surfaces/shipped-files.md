@@ -72,7 +72,9 @@ install replaces the copy. An install run from an installation's own copy, into 
 holding that copy, installs: it passes over two things only — the devpro package under
 `tools/devpro/` and the wrapper `tools/devpro.sh` that runs it — writing nothing at either and
 reporting nothing about the pass-over, and installs everything else, each write under the overwrite
-rules Write safety states. The snippets define the recipes `devpro-help`, `devpro-check-plan`,
+rules Write safety states. The wrapper records the interpreter the install ran under; a re-entry run
+replaces the copy, not the interpreter — the installed version stays the one the operator chose. The
+snippets define the recipes `devpro-help`, `devpro-check-plan`,
 `devpro-check-design`, `devpro-check-design-deltas-applied` and `devpro-check-roadmap`:
 `devpro-help` showing the commands and their doc strings, then the command's help. The four gates take no
 argument, each checking the active file under the project root — the active plan, the active design,
