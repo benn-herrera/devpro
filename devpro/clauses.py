@@ -36,6 +36,7 @@ KBASE_PROJECT_RULE = "@!hrn-kbase-project-rule!@"
 RELOAD_RULE = "@!hrn-reload-rule!@"
 TOOLS_RELOAD_RULE = "@!hrn-tools-reload-rule!@"
 SIDE_BY_SIDE_RULE = "@!hrn-side-by-side-rule!@"
+AGENTS_PATH = "@!hrn-agents-path!@"
 COLD_READ_RULE = "@!hrn-cold-read-rule!@"
 STEP_DOWN_MODEL = "@!tun-step-down-model!@"
 

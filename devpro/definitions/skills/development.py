@@ -325,6 +325,8 @@ approved can run as approved.
 
 ## Dispatch
 
+{clauses.AGENTS_PATH}
+
 - Rate each dispatch mechanical or expert by what it must decide, not how much it types: mechanical
   is every edit enumerated, no design choice, no debugging; anything else is expert. Mechanical
   runs on the {STEP_DOWN_MODEL_TERM}, through the {STEP_DOWN_APPLICATION_TERM} where a dispatch cannot choose

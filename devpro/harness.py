@@ -200,6 +200,7 @@ class Harness:
     reload_rule: str = ""  # what to do when an install's agents are not offered; printed after one, "" for none
     tools_reload_rule: str = ""  # what to do when an install's kbase tools are not offered; "" for none
     side_by_side_rule: str = ""  # what a session does where another harness's install also reaches it; "" for none
+    agents_path: str = ""  # the development skill's sentence naming the plugin's agents directory; "" for none
     cold_read_rule: str = ""  # the development skill's bullet on how a cold reader is run; "" for none
 
     def __post_init__(self) -> None:

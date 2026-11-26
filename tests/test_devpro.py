@@ -1110,6 +1110,26 @@ def test_a_paragraph_holding_an_optional_harness_text_the_harness_supplies_nothi
     assert under_mage == "before\n\nafter"
 
 
+def test_the_claude_development_skill_names_the_plugins_agents_directory(discovered: Discovered) -> None:
+    """The claude session seat reading the development skill has no other statement of where the plugin's
+    agent files live, so a dispatch from the skill could name the directory only by guessing; the skill's
+    body carries the sentence naming it, and claude supplies it alone. Opencode and mage give the field
+    nothing, so the paragraph drops whole there, leaving no empty one behind."""
+    [development] = [defn for _, defn in discovered if defn.name == "development"]
+    sentence = CLAUDE.agents_path
+    under_claude = filled_body(
+        development, Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+    )
+    under_opencode = filled_body(
+        development, Render(harness=OPENCODE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=_ALL_INHERIT)
+    )
+    assert OPENCODE.agents_path == ""
+    assert ".claude/skills/devpro/agents/" in under_claude
+    assert f"\n\n{sentence}\n\n" in under_claude
+    assert sentence not in under_opencode
+    assert "\n\n\n" not in under_opencode
+
+
 def _kbase_skill_render(harness: Harness) -> dict[PurePosixPath, str]:
     """Every file of `harness`'s render of the kbase skill, keyed by its output path."""
     ctx = Render(harness=harness, plugin=WITH_KBASE, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))

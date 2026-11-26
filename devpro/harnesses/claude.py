@@ -31,6 +31,12 @@ _TOOLS_RELOAD_RULE = (
     "If the kbase tools are not offered after an install, `/reload-plugins` rescans the plugin's servers."
 )
 
+# The development skill's dispatches read the plugin's agent files from this directory, and the claude
+# session seat has no other statement of where they live, so the skill's body names it there. A literal:
+# the profiler's modules stay off the install's import path, so this path is not read from
+# `devpro/profiler/hooks.py`, as `INSTALL_WRAPPER` below is not.
+_AGENTS_PATH_RULE = "The plugin's agents files sit in `.claude/skills/devpro/agents/`."
+
 
 def _mcp_entry(*, command: str) -> dict[str, str | list[str]]:
     """A `command`/`args` entry."""
@@ -158,6 +164,7 @@ HARNESS = Harness(
     user_plugin_shadows=True,
     reload_rule=_RELOAD_RULE,
     tools_reload_rule=_TOOLS_RELOAD_RULE,
+    agents_path=_AGENTS_PATH_RULE,
     cold_read_rule=COLD_READ_SCRIPT_RULE,
     recipe_rule=FOREGROUND_RECIPE_RULE,
     kbase_project_rule="",
