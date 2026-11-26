@@ -75,7 +75,7 @@ and none of P4's own tests reads a document, so P4 does not wait on P3's SPEC re
 | B1 | landed | expert | `devpro:prompt-engineer` | restore the dicing-and-checks index preamble and the `--split-level` contract |
 | B2 | landed | expert | `devpro:prompt-engineer` | the anchor retarget class: every link lands on the leaf whose text it names |
 | B3 | landed | expert | `devpro:python-coder` | the tool: one classifier, honest faults, no dead code |
-| B4 | in progress: R2's decision under way with the architect | expert | `devpro:architect` → writes re-homed to `devpro:prompt-engineer` on the decision's return | single-home the model rules, and the corpus's missing shapes — first act: R2's decision |
+| B4 | in progress: R2 decided; the writes under way with the prompt-engineer | expert | `devpro:prompt-engineer` | single-home the model rules, and the corpus's missing shapes |
 | B5 | dispatchable | expert | `devpro:prompt-engineer` | the contract gaps the run named |
 
 ## P1 — the dicer writes every section's heading ladder re-based to an H1 top
@@ -763,20 +763,31 @@ checkpoint gate runs once before the commit, as P1 states.
 
 ### B4 — single-home the model rules, and the corpus's missing shapes
 
-Fixes R2, R9, R13, R14, R15, R17. Agent `devpro:architect` — R2 is a decision, and this seat owns it.
+Fixes R2, R9, R13, R14, R15, R17. Agent `devpro:prompt-engineer`, executing the architect's R2
+decision, recorded here in Guidance.
 
 **Scope.** `PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/the-model.md`;
 `PROJECT_DOCS/SPEC/dicing-and-checks/the-diced-tree/file-content.md`;
 `PROJECT_DOCS/SPEC/dicing-and-checks/check-tree.md`;
 `PROJECT_DOCS/SPEC/dicing-and-checks/link-rewriting/link-targets.md`;
-`PROJECT_DOCS/SPEC/dicing-and-checks/undice.md` (R9's restore half, R14's tree statement).
+`PROJECT_DOCS/SPEC/dicing-and-checks/undice.md` (R9's restore half, R14's tree statement);
+`tests/dicing/` (the corpus cases R13, R14, R15 — fixtures and case dirs, not the citation-targets
+test, which is B2's).
 
-**Guidance.** R2's decision is taken before any other entry here, and is this seat's: which of
-`the-model.md`'s `SPEC/` clause and `check-tree.md`'s example list is the contract; this item's
-executor writes the model's sentence and reduces `check-tree.md` to a reference. R14's tree
-statement lands in `the-model.md`, beside R2's sentence. `link-rewriting.md` states the
-cross-document link rule (R9) and `link-targets.md`'s rule 3 is amended. The corpus cases (R13, R14,
-R15) wait on R2's decision; R18's `_top_is_rebased` rename is B3's.
+**Guidance.** R2 is decided: `the-model.md` is the contract, and the tree decides keyed on the
+root head's Contents block — the root head links the `entry-point.md`s that name the tree's
+volumes; a root head linking none (`index.md`'s root included) holds a one-document tree whose
+top-level directories are sections whichever head each opens at. The volume bullet's file-keyed
+"holds an `entry-point.md`" clause (`the-model.md:5-7`) is aligned so the leaf holds one rule —
+the sentence states what `heads.heads_of` implements. `check-tree.md:19-23` keeps its problem row
+(the message text is code-emitted, `treecheck.py:79`) and cites the model: no rule restatement, no
+`SPEC/` (R17 folds in). R14's premise is stale post-B3: the one-document tree with root-level
+leaves already passes `check-tree`; its remaining work is the model sentence only, plus a corpus
+case pinning the shape's acceptance. `undice.md` cites the model rather than restating the
+classifier, edited after the model's sentence so its citation points at settled text.
+`link-rewriting.md` states the cross-document link rule (R9) and `link-targets.md`'s rule 3 is
+amended. Corpus cases: R13 — a level-1 heading inside a section; R15 — a heading past the last
+level, under `_overflow`'s rule as B3 landed it; R14 — the acceptance pin.
 
 **Done-line.** `just test-changed`, then `just lint`, then `just dev-check-links`.
 
