@@ -18,6 +18,7 @@ from devtools.dupe_sweep import (
     doc_sentences,
     normalization,
     passes,
+    python_corpus,
     report,
     shapes,
 )
@@ -383,6 +384,23 @@ def test_an_unreadable_revision_exits_two_rather_than_reporting_a_clean_tree(mon
     assert cli.main(["python", "--rev", "no-such-revision"], out=out) == 2
     assert asked == ["no-such-revision"]
     assert out.getvalue() == ""
+
+
+def test_an_unreadable_revision_raises_sweeperror_in_the_corpus_conversion():
+    """`clauses.TEST_PRECONDITION`: `_git` turns a git `CalledProcessError` — a revision git cannot
+    resolve — into `SweepError`, and that conversion is what keeps an unreadable revision from reading
+    as a tree holding no candidate. A regression that let the raw error through, or returned an empty
+    corpus instead, ships a wrong verdict green: the checkpoint the sweep runs at is told the tree is
+    clean where it never ran. The run that fails under it is this one with `code_corpus` raising the
+    `CalledProcessError` unconverted, or returning `{}` — a bad revision raises `SweepError`.
+
+    This exercises `corpus._git`'s conversion directly, through the real `code_corpus`; the sibling
+    `test_an_unreadable_revision_exits_two_rather_than_reporting_a_clean_tree` mounts the refusal at the
+    corpus seam and asserts the CLI's mapping of that error to its exit status. The conversion's own
+    verdict, not the CLI's handling of it, is this test's subject.
+    """
+    with pytest.raises(SweepError):
+        python_corpus.code_corpus(rev="no-such-revision")
 
 
 def test_an_unknown_pass_is_refused():
