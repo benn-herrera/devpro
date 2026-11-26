@@ -23,6 +23,13 @@ def _home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return home
 
 
+# `_home` is function-scoped and autouse, so `HOME` is scratch only while a test runs. A session- or
+# module-scoped fixture is set up outside any test's home, and one that runs `devpro install` reaches
+# the operator's: the install's target resolution compares the target with `Path.home()`
+# (`devpro/install_target.py`), and its CLI reads the default settings file under `Path.home()`
+# (`devpro/context.py`). Such a fixture points `HOME` at a scratch directory of its own first.
+
+
 def settings_file(tmp_path: Path, text: str) -> Path:
     """A devpro settings file holding `text`, for the CLI to read with `--config-file`."""
     path = tmp_path / "devpro.cfg"

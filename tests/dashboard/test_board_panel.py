@@ -4,7 +4,9 @@ model, live following of the watched files, and the moves between Roadmap and De
 The panel is `KanbanServer` over a `DashboardServer`, served at `/board/` and the root paths its
 page calls; the tests drive the dashboard, since that is the one server the project serves. The
 tests the two panels share — the board's payload over the same file, a card's move there and back —
-are the dashboard suite's (`tests/dashboard/test_server.py`), and are not repeated here.
+are the dashboard suite's (`tests/dashboard/test_server.py`), and are not repeated here; the served
+file's tests carry a root escape no other suite does, a request for `..%2F` reaching the project
+root refused with a 404.
 
 `_serve_the_command` here and the one in the dashboard suite both start `python -m devpro
 dashboard`, and neither is the other's copy: this one ends the child by the interrupt and the stop
@@ -121,19 +123,19 @@ def served_project(tmp_path_factory: pytest.TempPathFactory) -> str:
 
 
 @pytest.fixture(scope="session")
-def panel(served_project: str) -> Iterator[tuple[_Client, io.StringIO]]:
-    """The dashboard serving `served_project`, and the stderr it writes, for every test that only
-    reads the panel. Such a test pins the panel's rendering or its route, not the server, and a
-    boot is a measured 52.9 ms of the run, so the read-only tests share one. A test that writes
-    the board, follows a change to its files, stops the server, or expects a quiet stderr starts
-    its own."""
+def panel(served_project: str) -> Iterator[_Client]:
+    """The dashboard serving `served_project`, for every test that only reads the panel. Such a test
+    pins the panel's rendering or its route, not the server, and a boot is a measured 52.9 ms of the
+    run, so the read-only tests share one. A test that writes the board, follows a change to its
+    files, stops the server, or expects a quiet stderr starts its own. The server's stderr is
+    captured here and dropped: the capture keeps its output off the run's log."""
     err = io.StringIO()
     server = DashboardServer(served_project, stderr=err)
     server.start()
     thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})
     thread.start()
     try:
-        yield _Client(server.url), err
+        yield _Client(server.url)
     finally:
         server.shutdown()
         thread.join()
@@ -172,7 +174,7 @@ def _json_round_trip(value):
 def test_the_board_page_is_drawn_under_the_board_path(panel):
     """The board's `index.html` is served at `/board/`, the URL its link line opens: the page is the
     panel's, not a rendering of the dashboard's, and its own path reaches it."""
-    client, _ = panel
+    client = panel
 
     status, _, body = client.get("board/")
 
@@ -300,7 +302,13 @@ def test_the_payloads_since_holds_the_answer_until_the_board_changes(tmp_path, s
     the dashboard's route to the panel: a panel handed the path alone loses the query, so every poll
     answers at once with the unchanged board, and a page following its files then spins on it. The
     answer at close is still the board, so the wait is bounded — the version the waiter gets is the
-    one it asked for, never a newer board's."""
+    one it asked for, never a newer board's.
+
+    `clauses.TEST_PRECONDITION`. The defect: the wait was bounded by `LONG_POLL_SECONDS`, which is
+    the server's own poll term, while the waiter's request gives up at `_TIMEOUT`; a poll whose
+    condition is never satisfied blocks until the shutdown wakes it, and a shutdown past `_TIMEOUT`
+    leaves the wait under the old bound and the assertion silent. The wait is held to `_TIMEOUT`, so
+    that poll fails here."""
     client = serve(_project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP}))
     version = client.board()["version"]
     answers = []
@@ -323,7 +331,7 @@ def test_the_payloads_since_holds_the_answer_until_the_board_changes(tmp_path, s
     waiter.join(_TIMEOUT)
 
     assert not waiter.is_alive()
-    assert 0 < waited[0] < server_module.LONG_POLL_SECONDS
+    assert 0 < waited[0] < _TIMEOUT
     assert answers[0]["version"] == version
 
 
@@ -506,7 +514,7 @@ def test_a_bad_request_is_refused(panel, served_project, path, content_type, bod
     """The panel's own routes refuse a request they cannot act on, and no refusal writes a file.
     Pinned over the shared served project, whose ROADMAP.md is read back after the request: a
     refusal that wrote there would show here, and would leak into every other test served it."""
-    client, _ = panel
+    client = panel
     url = urlsplit(client.url)
     headers = {"Host": url.netloc, "Content-Type": content_type, "Content-Length": length or str(len(body))}
 
@@ -517,7 +525,7 @@ def test_a_bad_request_is_refused(panel, served_project, path, content_type, bod
 def test_a_stop_request_that_is_not_json_is_refused_and_the_board_still_answers(panel):
     """A stop the panel cannot read is refused, and the board goes on answering: the version it
     answers is the one its first read gave, the served project standing as the run found it."""
-    client, _ = panel
+    client = panel
     headers = {"Host": urlsplit(client.url).netloc, "Content-Type": "text/plain", "Content-Length": "2"}
 
     assert client.raw("POST", "api/stop", body=b"{}", headers=headers)[0] == 415
@@ -525,7 +533,7 @@ def test_a_stop_request_that_is_not_json_is_refused_and_the_board_still_answers(
 
 
 def test_a_cross_origin_preflight_is_not_granted(panel):
-    client, _ = panel
+    client = panel
     headers = {
         "Host": urlsplit(client.url).netloc,
         "Origin": "http://attacker.example",
