@@ -17,9 +17,9 @@ doc-only: each done-line names document checks only.
 
 | Package | State | Rating |
 |---|---|---|
-| G1 | dispatchable | mechanical |
-| G2 | dispatchable | mechanical |
-| G3 | dispatchable | expert |
+| G1 | landed: 246325b5 | mechanical |
+| G2 | in progress | mechanical |
+| G3 | in progress | expert |
 | G4 | drafted | expert |
 | G5 | drafted | mechanical |
 
