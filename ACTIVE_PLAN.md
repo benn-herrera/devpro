@@ -17,7 +17,7 @@ remaining suite, feeding this plan's burndown — fixes, never the survey itself
 | --- | --- | --- |
 | P1 | landed | mechanical |
 | P2 | landed | expert |
-| P3 | dispatchable | expert |
+| P3 | in progress | expert |
 | P4 | dispatchable | expert |
 | P5 | drafted | expert |
 
