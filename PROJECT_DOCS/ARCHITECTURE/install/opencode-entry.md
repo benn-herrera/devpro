@@ -73,3 +73,32 @@ opencode itself: the tests run the entry under a stub of this surface
   newer one. A refresh re-reads the registry and calls the four `reload()`s; a failure is logged and the
   next change tries again. The watcher has an error listener that logs. The cleanup clears the
   pending refresh, closes the watcher and awaits a refresh in flight.
+
+**The replacement under the running session.** A refresh reads `registry.json` and each body, keeps
+what it could read, and then runs the four reloads on what it kept: a registry it cannot read
+registers nothing, so the four stores come back empty and a later event's refresh restores them from
+whatever stands then. An install's replacement is the delete pass over the whole install directory
+followed by the write pass, the two together about 64 ms of a run that takes about 218 ms on the
+host it was measured on, with no pause between them. What a running session holds across one was
+observed on a stub context over real installs — the drivers, the raw records and the extraction in
+`.devpro-temp/B25-watcher/` (gitignored; `record.py` there regenerates all of it) beside the
+checkout that landed this paragraph — and their summary follows:
+
+- The watcher's callback fires once the filesystem has been quiet for about 102 ms, then its refresh
+  reads and reloads. Against the real replacement that is one callback and one refresh, after the
+  run: the entry re-registers the finished tree — attributes for attributes the tree that replaced
+  them — and the session's stores keep the old ones until then, never the empty read.
+- Where the quiet period elapses between the passes the same watcher re-registers nothing: a
+  replacement with a pause of 150 ms between the delete and the write pass left the refresh that
+  fired in the pause with 0 agents, 0 skills and 0 MCP servers, and the write pass's end restored
+  28, 5 and 1 (the counts of the staged install). A cold load of the entry reads the same empty
+  tree then, and cannot load at all while the entry file is gone. The observed install's pass
+  timing keeps the quiet period from elapsing between the passes, so the empty state is one a
+  slower delete pass or a slower write pass can reach.
+
+The observation could not drive the host's own reload of the entry's file (opencode's module loader
+is not a testable surface), and `fs.watch` cannot be wrapped from outside the module that imports it
+in the runtime the entry runs on; the records are the entry's own timer, refresh chain, reads and
+reloads over the stub context, and a fresh module load standing in for the host's next load. What
+the host does with a `reload()` — whether a session in flight re-reads its registration then or at
+its next turn — is outside both. SPEC.md, Write Safety, states what a consumer may rely on.

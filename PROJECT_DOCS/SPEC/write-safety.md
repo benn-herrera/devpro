@@ -14,7 +14,15 @@ removal, no file is judged ours or foreign, no stale list is kept, and no remova
 file the consumer left inside the plugin's directory, hand-written or a safety copy it made, goes
 with the tree. The install directory itself is never removed, and an install keeps no backup of
 what it replaces: `--dry-run` lists what it would remove, and nothing else is kept of it. Banners are
-written as Installed tree states them; no install reads one back to decide what it may write.
+written as Installed tree states them; no install reads one back to decide what it may write. A run
+that replaces anything wipes the plugin's whole directory before it writes the new tree back, and a
+session running then is a session the install's own timing decides for: the entry's refresh reads
+the tree it finds when a 100 ms quiet period elapses, so a session's next re-registration reads
+either the finished tree or, where a gap longer than the quiet period opens in the write pass, an
+empty one. The session keeps whichever refresh lands last — the delete pass's events start one, the
+write pass's end another — so its registration across a replacement is not a guarantee, and an
+install that needs one restarts the session (ARCHITECTURE.md, Opencode entry, The replacement under
+the running session).
 
 Two pass-overs stand inside the replacement, and one refusal stands at its boundary. The
 **re-entry run** — an install from an installation's own copy into the installation holding that
