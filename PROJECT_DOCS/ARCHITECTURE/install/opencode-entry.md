@@ -23,7 +23,9 @@ none at the dispatch. From 2.3.0 the call returns at once and the child runs in 
 which makes the call's return the dispatch moment.
 
 **The opencode API it uses.** It imports `Plugin` from `@opencode/plugin` and exports
-`Plugin.define({ id, setup })`.
+`Plugin.define({ id, setup })`. That is the entry's only package import, and it stays that way: the
+host provides a local plugin no module but `@opencode/plugin`, so anything else the entry imported
+would fail to resolve at load time, wherever the plugin is installed.
 
 - `id` is the plugin's: the registry's `plugin`, read synchronously from `registry.json` because
   opencode takes the id before `setup` runs; an unreadable registry falls back to the install
