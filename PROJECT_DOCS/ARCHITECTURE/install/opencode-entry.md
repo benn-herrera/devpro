@@ -5,14 +5,13 @@ Surfaces, Shipped files). It is written for opencode, and its setup registers `c
 `ctx.session.hook("experimental.idle")` for a session whose `parentID` is set, injecting
 `ctx.session.synthetic` into the parent session at agent dispatch and agent completion, gated by
 the active plan (`ACTIVE_PLAN.md` or the diced `ACTIVE_PLAN/` tree; SPEC, Shipped files) — and
-carries the development skill's reload after a compaction: the hook the host gives a compaction
-records the session's marker, that its context held the `devpro-development` skill, and the
-session's next prompt — the `prompt` hook the host's declarations give — has the skill attached
-to its `skills`, the host's own attachment path, the skill's id resolved from the plugin's skill
-domain and never assumed, so the host activates the skill with that exchange. The hooks' names
-are the host's published declarations' to give, read
-there at execution and never assumed (CONVENTIONS, Code, Definitions and Install, A hook contract
-is read, not assumed). The
+registers the reload of the development skill a compaction drops (SPEC, Shipped files). The
+compaction hook records the session when its context held the `devpro-development` skill. The
+prompt hook then has the skill attached to the session's next prompt's `skills`, through the
+host's own attachment path, its id resolved from the plugin's skill domain; a lookup that finds
+no skill attaches nothing and logs. The hooks' names are the host's published declarations' to
+give, read there at execution and never assumed (CONVENTIONS, Code, Definitions and Install, A
+hook contract is read, not assumed). The
 install copies it, with `guardrail.ts` and, on a project install, the capture `profiler.ts` (Harness
 profiler), to the install directory as a harness resource (Renders
 and copies); a user-level install copies the entry and the guardrail resource beside it.
@@ -35,6 +34,8 @@ which makes the call's return the dispatch moment.
   agents, `add` for skills and commands, `set(name, config)` for MCP servers. Each also has
   `reload()`, which makes opencode run its transforms again. `ctx.session.prompt` delivers a
   command's text.
+- The reload's surface is the session hooks `compaction` and `prompt`, and `ctx.skill.list`, the
+  domain the attachment's id is resolved from.
 - The reminder's surface is `ctx.location.project.directory`, the checkout root — the opened
   directory, `ctx.location.directory`, need not be it — read for the gate; `ctx.tool.hook` and
   `ctx.session.hook` for its two events, `ctx.session.get` for a session's `parentID`, and

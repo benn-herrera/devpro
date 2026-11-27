@@ -14,13 +14,16 @@ and P4 is the run that reads and records them; P7 reads its hook's name from the
 (`session.d.ts:199`), after the live test it stands behind.
 
 The design's delta application is verified by `just dev-check-design-deltas-applied`; the check has
-no subset mode — it exits 1 whenever any pair has not landed. The design states six pairs and two
+no subset mode — it exits 1 whenever any pair has not landed. The design states ten pairs and two
 no-pair entries: ACTIVE_DESIGN.md :20, :41 — SPEC [Shipped
 files](ACTIVE_DESIGN.md#shipped-files), landed by P1; the entry's third pair, :60, revised and
-landed by P7; :91 — [Serving](ACTIVE_DESIGN.md#serving), landed by P1; :111 — [Opencode
-entry](ACTIVE_DESIGN.md#opencode-entry), landed by P1, revised and re-applied by P7; :141 — [The
-page template and its
-presentation](ACTIVE_DESIGN.md#the-page-template-and-its-presentation), landed by P1; [What removes
+landed by P7; the entry's fourth pair, added by B4 and revised by B5; :111 — [Serving](ACTIVE_DESIGN.md#serving), landed by P1, revised by B5;
+:132 — [Opencode
+entry](ACTIVE_DESIGN.md#opencode-entry), landed by P1, revised and re-applied by P7, revised by
+B5; :189 — [The page template and its
+presentation](ACTIVE_DESIGN.md#the-page-template-and-its-presentation), landed by P1, revised by
+B5; B5's two added pairs, in the same two leaves — the Opencode entry's Contexts bullet and the
+template leaf's board-page paragraph; [What removes
 the retired path](ACTIVE_DESIGN.md#what-removes-the-retired-path), a whole leaf with no pair,
 removed by P6; [Serving, The index](ACTIVE_DESIGN.md#serving-the-index), a code-delta entry with no
 pair, closed by P3. The two no-pair entries are witnessed by P3's and P6's done-lines, and the
@@ -50,8 +53,8 @@ progress.
 | B2 | landed | expert |
 | B3 | landed | mechanical |
 | B4 | landed | expert |
-| B5 | dispatchable | expert |
-| B6 | dispatchable | mechanical |
+| B5 | landed | expert |
+| B6 | in progress | mechanical |
 | B7 | dispatchable | mechanical |
 | B8 | dispatchable | mechanical |
 | B9 | dispatchable | expert |
@@ -740,29 +743,36 @@ Outcome: SPEC owns the outcomes; ARCHITECTURE cites them; each site states the f
 adds.
 
 Scope (facts from the review document's R17–R22; line numbers the usability review checked):
-- `PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md`: the reload paragraph keeps the entry's
+- `PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md:3–14`: the reload paragraph keeps the entry's
   placement (which hooks it registers; the id resolved from the plugin's skill domain; a failed
-  lookup attaches nothing and logs) and cites SPEC for the outcome (R17); "never assumed" is
-  dropped from the id clause — the CONVENTIONS citation one clause later is the only statement
-  of the rule (R18); the Contexts list gains a "*The skill's reload.*" bullet beside
-  "*Reminder.*" and the opening sentence is reduced to a clause naming the reload (R19).
-- `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:128`: the clause "where it cannot read
-  as the stop's label" is cut — position and separator are the requirement, the reason belongs
-  to the design record (R21).
-- `PROJECT_DOCS/ARCHITECTURE/harness-profiler/the-page-template-and-its-presentation.md:53`:
-  the clause "the name a fill the strict fill carries" uses `fill` twice for two things — the
+  lookup attaches nothing and logs) and cites SPEC for the outcome (R17); "domain and never
+  assumed" is dropped from the id clause — the CONVENTIONS citation one clause later is the only
+  statement of the rule (R18); the Contexts list gains a "*The reload's surface…*" bullet ahead of
+  the reminder's, which today carries the reload's two hooks unnamed, and the registration they
+  are moves there (R19).
+- `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:128`: the clause "where it cannot read as
+  the stop's label" is cut — position and separator are the requirement, the reason belongs to the
+  design record (R21). The same paragraph's name clause states what the name is — the served
+  project root directory's name — and the title sentence takes it from the nav, so no surface
+  reads its name from another's (R20's document half).
+- `PROJECT_DOCS/ARCHITECTURE/harness-profiler/the-page-template-and-its-presentation.md:53`: the
+  clause "the name a fill the strict fill carries" uses `fill` twice for two things — the
   fill mark and the filling act; name the machinery's operation once (R22's leaf half).
 - R20's document half: SPEC owns what the name is and the grammar every page's nav must hold,
-  including the board's; `PROJECT_DOCS/ARCHITECTURE/harness-profiler/serving.md` keeps the
-  nav's element order and drops the restatement of the name's source; the template leaf names
-  both carriers — the templates' pages take the name from the strict fill, the board page's
-  from the payload its script reads — citing SPEC for what it is.
+  including the board's; `PROJECT_DOCS/ARCHITECTURE/harness-profiler/serving.md:113–117` keeps the
+  nav's element order and drops the restatement of the name's grammar; the template leaf
+  (`:52–60`) says its slot is filled through the strict fill and drops what the name is, citing
+  SPEC; the board-page paragraph (`:81–83`) names the carrier the templates' leaf does not — the
+  payload its script fills from. The board's `<title>` clause is R20's code half's.
 - Each edited leaf's pair in `ACTIVE_DESIGN.md` is revised in the same change, per the section
-  opening.
+  opening. A pair whose target moved after the pair landed reads `drifted` — its As stands in no
+  leaf while its Becomes does — and re-points its As to the leaf's current text.
 
 In-scope tests: none — document edits; the delta check and the link check confirm. Done-line:
 `just dev-check-links`, `just dev-check-design-deltas-applied`, `just dev-check-plan`.
-Checkpoint gate once: `just test`, `just lint`, `just sweep-python`.
+Checkpoint gate once: `just test`, `just lint`, `just sweep-python`. The design's pairs after this
+change number ten — the six P1 landed, B4's SPEC-sentence pair, the Opencode-entry Contexts pair,
+and this item's three revised pairs — every one landed.
 
 ### B6 — the project name's binding test and docstrings (R20's code half, R22's docstring half)
 
@@ -845,7 +855,7 @@ Scope (facts from the review document's R27, R28):
 In-scope tests: none. Done-line: `just dev-check-roadmap`, `just dev-check-links`. Checkpoint
 gate once: `just test`, `just lint`, `just sweep-python`.
 
-### B9 — the CONVENTIONS leaves the review's gaps named (R29, R30, R31)
+### B9 — the CONVENTIONS leaves the review's gaps named (R29, R30, R31, R33)
 
 Intended lifetime: shipped. Rating: expert.
 
@@ -868,6 +878,12 @@ sources):
   lands where its reader looks for it: the prompt-engineer writing these leaves decides which
   leaf carries it (R30's, a stand-in's own, or the hook-contract leaf) and writes the smallest
   statement.
+- A third new leaf, beside R29's (R33 — added after the items' reviews took): a dispatched run
+  writes no package-manager lock, manifest or vendor file into the repository root — the tooling
+  change is the owner's decision, and a stray lockfile's provenance is not adoption. This
+  bullet's text is changed after the items' `devpro-prompt-engineer` usability review and
+  `devpro-architect` revision; the changed text takes its review of the change only before this
+  item dispatches (*Plans*).
 
 In-scope tests: none. Done-line: `just dev-check-links`, `just dev-check-plan`. Checkpoint gate
 once: `just test`, `just lint`, `just sweep-python`.

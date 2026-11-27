@@ -121,14 +121,15 @@ with timings and token costs — as text, as a self-contained HTML page, or serv
 dashboard, devpro's one loopback server for the web interface, renders the record files in memory
 as one panel of its site. The board is the landing surface: opening the dashboard's URL shows the
 kanban board — the project's actual current state — and the traces are the second view, reached
-from the nav. A simple top nav persists across every view: the served project's name — the project root's
-directory name, the name the board's title carries — opens the nav, bold, in the foreground color,
-on every page the dashboard serves; then the view names `kanban` and `profiler`, selection
+from the nav. A simple top nav persists across every view: the served project's name — the served
+project root directory's name — opens the nav, bold, in the foreground color, on every page the
+dashboard
+serves, the board's own page included; then the view names `kanban` and `profiler`, selection
 switching the view; the `devpro` brand stands at the nav's far edge, past the server block, behind
-a hairline separator, where it cannot read as the stop's label — intuitive, recognizable surfaces,
-no invented paradigms, the dynamic behavior spent only where it counts. The profiler pages' titles
+a hairline separator — intuitive, recognizable surfaces, no invented paradigms, the dynamic
+behavior spent only where it counts. The profiler pages' titles
 read `<project>: devpro profiler <page-name>` — `<page-name>` `sessions` on the index, `session`
-on a session's page — the project named as the board's title names it. The nav and the views carry
+on a session's page — `<project>` the name the nav opens with. The nav and the views carry
 the phosphor pairing, the brand's callback to amber and green screen terminals inverted from the
 nav's scanlines deliberate — and the accent is the phosphor, no second brand
 color. The dark mode carries the phosphor green: brand `#3cf077`, the active view `#31c260`, 80%

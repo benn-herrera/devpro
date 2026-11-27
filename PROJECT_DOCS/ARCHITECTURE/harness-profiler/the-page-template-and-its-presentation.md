@@ -50,12 +50,14 @@ assembly makes runs, and a test walks what that fill is handed — `view.html` a
 ## The index template and the nav
 
 The index's `INDEX` template carries the same `<!--LAYER-->` mark, and the deco is the templates' own
-text: the project name's slot opening the nav — the name a fill the strict fill carries, the serve
-path filling the served project's, the standalone render the project it renders for — then the two
-view names and, right-justified at the nav's flex edge on every view, the
-server block — the live/idle indicator and the stop — with the `devpro` brand at the nav's far edge past it, behind a
-separator, each view's active state known statically, the standalone render and the served page
-alike carrying what the template holds.
+text: the project name's slot opening the nav, filled on every page through the strict fill — the
+serve path with the served project's name, the standalone render with the project it renders for,
+whose name is the directory `tree` ran in — then the two view names and, right-justified at the
+nav's flex edge on every view, the server block — the live/idle indicator and the stop — with the
+`devpro` brand at the nav's far edge past it, behind a separator, each view's active state known
+statically, the standalone render and the served page alike carrying what the template holds. What
+the name is, and the grammar it and the rest of the nav hold, is SPEC's (SPEC.md, Deployed Surfaces,
+Shipped files).
 
 ## The template's own rules
 
@@ -76,5 +78,6 @@ from that one scope.
 
 ## The board page's nav
 
-The board page carries the same nav grammar, written in its own `index.html`,
-with the same server block in the nav; it carries no legend.
+The board page carries the same nav grammar, written in its own `index.html`, with the same server
+block in the nav; its script fills the name from the board's payload, where the templates' pages
+take it through the strict fill, and it carries no legend.
