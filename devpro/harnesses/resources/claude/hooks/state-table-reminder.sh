@@ -50,5 +50,5 @@ fi
 
 # The one sentence. Claude Code reads hook context as project information rather than as an
 # out-of-band instruction, so it states the table and no act.
-reminder='Reminder: keep the ACTIVE_PLAN state table up to date.'
+reminder='Automated reminder: keep the ACTIVE_PLAN state table up to date.'
 printf '{"hookSpecificOutput": {"hookEventName": "%s", "additionalContext": "%s"}}\n' "${event}" "${reminder}"

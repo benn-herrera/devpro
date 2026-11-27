@@ -69,7 +69,7 @@ function planStanding(root: string): boolean {
 // recorded injections in tests/test_opencode_entry.py. A synthetic message is context, as a hook's
 // additionalContext is, so it states the reminder as what it is.
 const reminder =
-  "Reminder: keep the ACTIVE_PLAN state table up to date."
+  "Automated reminder: keep the ACTIVE_PLAN state table up to date."
 
 async function readRegistry(): Promise<Registry | undefined> {
   try {
