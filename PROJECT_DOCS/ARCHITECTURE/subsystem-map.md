@@ -136,7 +136,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   states: a package that adds a test names the defect it fails on.
 - **Install machinery** — the one entry not rendered from a definition: `install.py` renders, copies
   and prunes; `install_base.py` holds what the install modules share (the package and checkout
-  paths, the kb-tools package paths, `VENV_DIR`, the path checks, UTF-8 text reading and the report of what an
+  paths, the kb-tools package paths, the path checks, UTF-8 text reading and the report of what an
   install left alone); `runner_file.py` writes the runner include lines, one per `SnippetSet` the
   install passes it, prepares the project's scratch directory and writes the `.gitignore` line for it;
   `preflight.py` runs that install into a scratch copy and compares (Install, Renders and copies);
