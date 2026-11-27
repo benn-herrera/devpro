@@ -225,123 +225,189 @@ exists, committed, its entries naming their seats.
 
 The items below are drafted from `ACTIVE_PLAN_REVIEW.md` — the four seats' findings — with the
 test-suite survey's judgments (`ACTIVE_TEST_SURVEY.md`) drafted alongside them, grouped by root
-cause. The strip's residue items (B19–B24) close the seams the strip opened; the survey's small
-fixes (B25) and the deferred structural judgments close the survey's. Each closes in one commit.
+cause: B19–B21 reconcile the text the strip left stale (SPEC and the rendered guide, ARCHITECTURE
+and CONVENTIONS, README), B22–B24 close the strip's behavioral and code seams, B25 runs the
+watcher observation the design recorded as unsettled, B26 carries the survey's small fixes. Each
+item states its outcome before its scope; each commits its own paths in one commit; its rating's
+seat dispatches it, and the session accepts the return against the plan's rules. The deferrals:
+J7 and J6 defer together (one ROADMAP decision owns the pin's home and the move), J9 defers with
+its invariant stated (items add tests to subject files, never to the conftest, while the deferral
+holds), J11 and J12 defer cleanly, and the survey's three contract-gap proposals defer by name:
+the test-precondition rule's scope over an existing suite, the real-tree rule's index-versus-
+filesystem trees, and the module-split rule's direction half with `pass`-stub `__init__.py` seams.
 
 ### B19 — the strip's SPEC and rendered-definition reconciliation
 
 Intended lifetime: shipped. Rating: expert. Fixes H1, H2, W3, W4, W5, W6 (the leaves' half), C3.
 
-Scope: `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md` (:170-171 the false user-level
-sentence; :100-106 the two-vs-three resource count; :108-110 the banner guarantee restated as the
-shipped-as-is fact), `plugins.md` (:50-51 the user-level "alone" completed; :69-71 the matrix-wide
-runner-line rule and the "inert" qualification; :84-91 the mage hazard — a file the operator keeps
-inside the harness directory outside `devpro/` is removed by the next install), `write-safety.md`
-(:20-31 the symlink-unlinked clause added to the consumer outcome; :8-11 the user-level product
-list cut to the wipe half citing Install destination; the stores-and-backup pointer clause),
-`devpro/definitions/skills/guide.py:116-117` — the false "no guardrail" sentence replaced with the
-guardrail-resource truth. Facts: the contradictions are quoted in `ACTIVE_PLAN_REVIEW.md` H1–H3,
-W3–W6; re-run `grep -n` on each span before editing. The mage `--subdir` dry-run case (N4) is
-probed during this item and its outcome recorded in the item's report.
+Outcome: a consumer reading SPEC's deployed-surfaces leaves and the installed guide reads one
+account of what an install replaces, copies and refuses.
 
-In-scope tests: the rendered-definition structural tests (`tests/render/`) over guide.py. Done-
-line: `just check-links`, `just test`, `just lint`.
+Scope and facts, each quoted in `ACTIVE_PLAN_REVIEW.md` and re-verifiable by reading the span:
+`PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md` — :170-171 ("A user-level install renders
+the skill and copies none of the resources.") replaced by the landed truth (:100-101, :272-273);
+:100-106's two-versus-three resource count unified; :108-110's banner guarantee restated as the
+shipped-as-is fact ("a harness resource ships with its banner as its source writes it, and an
+install adds nothing"). `plugins.md` — :69-71 restated as the matrix-wide rule ("no install edits
+a runner include line it did not write; a line from a release that shipped a set this one does not
+is the operator's to delete"), the "inert" claim qualified by the `just` refusal of a missing
+`import?`; :84-91 gains the mage hazard — under mage the install directory is `Mage/Skills` itself,
+so a file the operator keeps inside the harness directory outside `devpro/` is removed by the next
+install, and the operator's place for it is outside `Mage/Skills/`. `write-safety.md` — the
+symlink-unlinked clause added to the consumer outcome (:20-31's mechanism reason goes to the
+refusal message); the user-level product list (:8-11) cut to the wipe half citing Install
+destination; the stores-and-backup pointer clause added (The stores and their rename, Agents File);
+git stops being the record's stated mechanism ("an install keeps no backup of what it replaces;
+`--dry-run` lists what it would remove" — the gitignore decision is README's, W6). `devpro/
+definitions/skills/guide.py:116-117` — "no guardrail" replaced by the outcome `write-safety.md`
+and `install-destination.md:52-58` state: the guardrail resource is copied beside the plugin entry;
+no docdicer or cold-read script, no include line.
+
+In-scope tests: the rendered-definition structural tests over `guide.py`'s module. Done-line:
+`just test devpro`, `just lint`, `just check-links`.
 
 ### B20 — the strip's ARCHITECTURE and CONVENTIONS residue
 
-Intended lifetime: shipped. Rating: mechanical. Fixes W9, W10, W11, W12, W13, and the document
-halves of N1.
+Intended lifetime: shipped. Rating: expert. Fixes W9, W10, W11, W12, W13, and the document halves
+of N1.
 
-Scope, each fix enumerated in `ACTIVE_PLAN_REVIEW.md`: `ARCHITECTURE/install/renders-and-copies.md`
-(:104-108 the four negatives; :110-116 the stale line citations; :125-128 the managed-set
-enumeration; :126-127 the four-field `checked_agents_file` shape), `install/plugins.md:62-65`
-(the retired docdicer set's recognition membership), `install/guardrail-hook.md:18-19` (the
-foreign/refused reason for a deleted judgment), `install/guardrail-registration.md:8-9`
-(implementation detail and rationale cut), `install/index.md:3-5` (the fourth writer named) and
-`:11-14` (the rationale clause), `install-entry.md:42-44` ("the replacement runs after them"),
-`CONVENTIONS/code-definitions-and-install/recognizer-spells-rendered-banner.md` (cut to the digest
-duty, rename to "Digest pins the two captures' agreement", `entry-point.md` and `index.md`
-following), `untracked-output-is-not-source.md:6-7` (the whole-tree reason). In-scope tests: none
-— document only. Done-line: `just check-links`.
+Outcome: an implementer reading the install leaves and the CONVENTIONS rules reads only what
+exists at HEAD — no retired set, no deleted reader, no dead symbol.
+
+Scope, each fix quoted in `ACTIVE_PLAN_REVIEW.md`: `ARCHITECTURE/install/renders-and-copies.md` —
+:104-108's four retirement negatives replaced by "what stands is only what this release ships —
+nothing is retired by name and no destination is cleared apart from the replacement"; :110-116's
+stale line citations (the spans moved to `install.py:349-352` and `:700-708`) corrected or the
+line numbers dropped; :125-128's four-field `checked_agents_file` shape restated in `write.paths`
+terms; :126-127's managed-set enumeration restated as "every entry below it — the re-entry
+pass-over trees and, under mage, the agents file's path among them". `install/plugins.md:62-65` —
+the recognition story names the two live sets alone. `install/guardrail-hook.md:18-19` — the
+foreign/refused reason replaced by the marker's one remaining reader (`_report_shadowing`
+recognizing a user-level plugin). `install/guardrail-registration.md:8-9` — the exit-status
+implementation list and the banner rationale cut; the sentence stops at the fact SPEC states.
+`install/index.md:3-5` — the harness-rendered files named as the fourth writer; `:11-14` — the
+"less code" rationale clause cut. `install-entry.md:42-44` — "the replacement runs after them"
+added. `ARCHITECTURE/install/opencode-entry.md:10` and `:44` — the two retired sentences
+("copies the entry alone"; "a user-level install has no `guardrail.ts`, and none runs") replaced by
+the entry-and-guardrail truth four other leaves state. `CONVENTIONS/code-definitions-and-install/
+recognizer-spells-rendered-banner.md` — the first paragraph (naming the dead
+`directives.is_installed` and a deleted reader) cut; the digest paragraph is the leaf; the leaf
+retitled in the house lowercase heading form ("digest pins the two captures' agreement") with
+`CONVENTIONS/entry-point.md` and `code-definitions-and-install/index.md` following. `untracked-
+output-is-not-source.md:6-7` — the reason restated: the whole tree goes, whatever wrote it.
+
+In-scope tests: none — document only. Done-line: `just check-links`.
 
 ### B21 — README owns the record decision and the stale upgrade prose
 
-Intended lifetime: shipped. Rating: expert. Fixes W6 (README's half), and the tech-writer findings
-the review names.
+Intended lifetime: shipped. Rating: expert. Fixes W6's README half and the tech-writer findings
+the review names. Dispatched to `devpro-tech-writer`; `.devpro-temp/p4-pe.md` §11's recommended
+wording is the brief's starting point.
 
-Scope: `README.md` (:100-104 and :216-224 the piecewise docdicer-removal claims replaced with the
-wipe's outcome — the retired home and earlier files go with the tree, the include line stays until
-the operator deletes it; :229-234 the `.venv`-survival paragraph cut — the directory is gone under
-the wipe; :83-95 the gitignore instruction given its reason; the missing paragraph after :113 —
-the install replaces the directory whole, `--dry-run` lists what would go, a file you need lives
-outside). Recommended wording is in `.devpro-temp/p4-pe.md` §11. Done-line: `just check-links`.
+Outcome: the human reader learns in Quick Start that an install replaces the plugin directory
+whole, that `--dry-run` is the review surface, and that the 0.17.x upgrade walk is one run.
+
+Scope: `README.md` — :100-104 and :216-224 (the piecewise docdicer-removal claims) replaced by the
+wipe's outcome: the retired home and earlier files go with the tree, the include line stays until
+the operator deletes it; :229-234 (the `.venv`-survival paragraph) cut — the directory is gone
+under the wipe; :83-95's gitignore instruction given its reason and made the fact's one home (the
+leaves stop resting on git; B19 lands that half); the missing Quick Start paragraph after :113 —
+nothing in the directory is yours to keep, `--dry-run` lists what would go, a file you need lives
+outside. Done-line: `just check-links`.
 
 ### B22 — the preserved pairs' failing tests
 
 Intended lifetime: shipped. Rating: expert. Fixes C2, H4, W14, and the version-direction lost pin.
 
-Scope: `tests/install/`. Three tests the design named that cannot fail, plus one seam: (1) the
-mage agents-file pass-over — a changing second mage install over a `CLAUDE.md` holding operator
-text and an earlier block, asserting text and `backup.CLAUDE.md` survive and the path is absent
-from the dry run's removed group (must fail with `pass_over` minus the agents path); (2) the
-re-entry pass-over — the copy's row staged populated plus a stale `.pyc`, asserting the files
-survive and the `.pyc` does not (must fail on the empty-row staging it replaces); (3) the
-version-direction report — an older and a newer `__version__` written into `tools/devpro/__init__.py`,
-the report naming both directions. The `_differs` seam (a special-file pass-over path) is probed
-by (1): if the plain case passes, the seam is invisible and recorded as such. Each carries its
-defect in the house docstring form. Facts and spans are quoted in `ACTIVE_PLAN_REVIEW.md` C2, H4,
-W14 and the conformance seat's report. Done-line: `just test`, `just lint`.
+Outcome: each preserved behavior the design named has a test that fails when the behavior is
+broken, not one that passes either way.
+
+Scope: `tests/install/`. (1) The mage agents-file pass-over: a changing second mage install over a
+`CLAUDE.md` holding operator text and an earlier block, asserting text and `backup.CLAUDE.md`
+survive and the path is absent from the dry run's removed group — must fail with `pass_over` minus
+the agents path. (2) The re-entry pass-over: the copy's row staged populated plus a stale `.pyc`,
+asserting the row files survive and the `.pyc` does not — must fail on the empty-row staging
+(`conftest.py:1827-1856`, `_staged(copy, ())`) it replaces. (3) The version-direction report: an
+older and a newer `__version__` written into `tools/devpro/__init__.py`, the report naming both
+directions (the conformance seat's report, `.devpro-temp/p4-python-conformance.md` §2, quotes the
+lost subject). (4) W14's seam: probe (1)'s fixture for a special-file pass-over path; if the plain
+case passes, the seam is invisible and recorded in the report; if not, `preflight.py:143-149`
+(`_differs`) must read the copy's opinion without opening either side — that change is in scope.
+Each new or changed test states its defect in the house docstring form. Done-line: `just test`,
+`just lint`.
 
 ### B23 — the re-entry integrity guard
 
 Intended lifetime: shipped. Rating: expert. Fixes W1.
 
-Scope: `devpro/install.py` (`_re_entry_kept`'s caller, before the replacement). On a re-entry run,
-refuse — the same `InputError` shape the other refusals use — when the running copy lacks a
-relative path `_wheel_files` over `PACKAGE_ROOT` produces, naming the path: the replacement would
-remove what the pass-over cannot restore. Test: a copy with a planted-missing shipped path fails
-the install naming it. Done-line: `just test`, `just lint`.
+Outcome: a re-entry run whose copy is short a shipped file refuses, naming the file, instead of
+completing with the copy short.
+
+Scope: `devpro/install.py` (before the replacement, beside the re-entry judgment), and the two
+documents enumerating refusals — `ARCHITECTURE/install/install-entry.md:38-45` and SPEC's refusal
+sentences — gain the third refusal. Semantics: the check runs over the copy at its real path
+before the replacement; the expected set is `_wheel_files` over `PACKAGE_ROOT` with the same
+exclusions `_re_entry_kept` applies (`__pycache__`, `.pyc`); a shipped relative path the copy
+lacks refuses the install naming it. Test: a copy with a planted-missing shipped path fails the
+install naming it — `clauses.TEST_PRECONDITION`-house form. Done-line: `just test`, `just lint`.
 
 ### B24 — the dry-run both-groups defect
 
 Intended lifetime: shipped. Rating: expert. Fixes W2, and the architect's N4 trailing-slash note.
 
-Scope: `devpro/preflight.py` (the comparison — a directory the run also makes is not a removal, a
-file the run also wrote is not removed), `devpro/install.py:717-723` (`_every_entry_below`'s
-docstring stating a pruning the walk does not do — reworded or the walk pruned), `_shown`'s
-trailing-slash-from-disk note. Test: a `_assert_dry_run_predicts` case over a non-empty install
-directory — the existing case at `conftest.py:2036` runs the real install, not the dry run.
-Done-line: `just test`, `just lint`.
+Outcome: the dry run never lists one path in both the created and removed groups; a directory the
+run makes is not a removal, and a file the run writes is not removed.
+
+Scope: `devpro/preflight.py` — the comparison subtracts what the replacement writes before naming
+removals, two forms stated separately (directories the run makes; files the run writes); the
+observation surface is `_assert_dry_run_predicts` asserting `groups['created']` ∩
+`groups['removed']` is empty over a non-empty install directory. `devpro/install.py:717-723` —
+`_every_entry_below`'s docstring is reworded to the walk as it is (the pruning the docstring claims
+is not built; pruning the walk is not in scope). `_shown`'s trailing-slash-from-disk read is
+loosened to match its docstring's claim or the docstring loosened — the code is the surviving
+form. Test: the `_assert_dry_run_predicts` case over a non-empty install directory (the existing
+case at `conftest.py:2036` runs the real install, not the dry run). Done-line: `just test`, `just
+lint`.
 
 ### B25 — the watcher observation drive
 
 Intended lifetime: shipped. Rating: expert. Fixes C1.
 
-Scope: the behavioral observation the design's Drafts item records as unsettled — what a wipe does
-to a live opencode session whose entry watches the install directory (`index.ts:251`): run an
-install under a live session, record what the watcher does (the events, the refresh, the session's
-state after), and write the answer where it belongs — the measured fact into the survey's
-successor record and a SPEC caveat if the outcome is one an operator must know. The observation's
-method is recorded in `.devpro-temp/` before it runs. No code change is in scope; a code change
-the observation makes necessary is a finding for the next plan. Done-line: `just check-links`
-(the recorded outcome lands in a leaf).
+Outcome: the contract's watcher claim is measured — either the observation answers it or SPEC
+carries the unsettled state explicitly.
+
+Scope: the behavioral observation the design's Drafts item records — what a wipe does to a live
+opencode session whose entry watches the install directory (`index.ts:251`): run an install under
+a live session, record what the watcher does (the events, the refresh, the session's state after),
+method and raw output to `.devpro-temp/` before any conclusion. The product is one commit: the
+measured outcome stated in `SPEC/write-safety.md`'s replacement paragraph (a sentence the consumer
+can act on) or, if the outcome is unsettleable without more work, the unsettled state stated there
+and the observation's record cited. `just check-links` verifies the leaf; the observation itself
+has no runner target — the commit's body carries the raw outcome. Done-line: `just check-links`.
 
 ### B26 — the survey's small fixes and the deferred rest
 
-Intended lifetime: shipped. Rating: expert. Fixes J1, J2, J3, J6, J8, J10 of
-`ACTIVE_TEST_SURVEY.md`; J4, J5 are the CONVENTIONS clauses B20/B22 carry; J7, J9, J11, J12 and
-the three contract-gap proposals defer to `ROADMAP.md` (the Maintenance ticket this plan's
- ROADMAP ticket names), where `check-roadmap` holds their form.
+Intended lifetime: shipped. Rating: expert. Fixes J1, J2, J3, J8, J10 of `ACTIVE_TEST_SURVEY.md`;
+J6 defers with J7 (one decision owns the `REVIEW_SEAT` pin's home and the move), J9 defers with
+its invariant stated, J11 and J12 defer cleanly, and the three contract-gap proposals defer by
+name to `ROADMAP.md` (the Maintenance ticket this plan's ROADMAP ticket names), where
+`check-roadmap` holds their form.
 
-Scope: `tests/install/` — J1 the real-tree case for `check-wheel` (the CONVENTIONS rule's case:
-the test hands the check the repository the index names; the gitignored-stray gap the survey
-proved is the `__pycache__` shape `_wheel_files` closes — the test pins that); J6 `test_runners.py`
-re-homed to the seam it serves; J8 the uncollected duplicate test in `conftest.py:1361` removed;
-J10 the repeat-count case read against its tier; J2 the index-vs-filesystem statement placed in
-the leaf J1's rule names; J3 the banner-spelling pin following `profiler_digest_runner.ts`'s
-rewrite-the-source pattern where the survey locates it. Each fix's TEST_PRECONDITION-style defect
-statement rides the test it adds or changes. Done-line: `just test`, `just lint`, `just
-check-links`.
+Outcome: the survey's small, enumerated defects are fixed with the defects stated, and the
+strip's one regression witness (J1) is pinned rather than deferred.
+
+Scope: `tests/` — J1 the real-tree case for `check-wheel` as a unit over `package_copies`/
+`_wheel_files` with a staged gitignored stray (the survey's probe shape; no wheel build — the
+`wheel` surface's recipe builds `dist/`, which the test does not need): the test pins that a
+gitignored stray under `devpro/` is excluded and any other stray under `devpro/` is counted, the
+strip's regression witness for "the wheel's content is the tree's". J2 the index-versus-filesystem
+statement placed in the leaf J1's rule names. J3 the banner-spelling pin following
+`profiler_digest_runner.ts`'s rewrite-the-source pattern where the survey locates it. J8 the
+uncollected duplicate at `tests/install/conftest.py:307` (twin of `:35`) deleted — `:1361` is a
+live, non-duplicate test and is not touched. J10 the repeat-count case read against its tier, its
+judgment recorded in the item's report. Only tests whose assertions change carry a defect
+statement; deletions and read-only judgments state their subject. Done-line: `just test`, `just
+lint`, `just check-links`.
 
 ### P5 — Post-plan burndown
 
