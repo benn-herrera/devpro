@@ -79,6 +79,17 @@ a changed file to the preflight's comparison, as any other. The version change t
 names is read from the replaced copy's `tools/devpro/__init__.py` and the running package's
 `__version__`.
 
+**Re-entry.** An install whose devpro-copy destination resolves to the package it runs from
+(`is_the_running_copy`) is a re-entry run — an install from an installation's own copy into the
+installation holding it (`:539-544`) — and it passes over that copy and the wrapper that runs it. The
+copy's `SHIPPED_PACKAGES` row is dropped before the copies are built (`:640-644`), so its destination
+is never cleared and its files are never rewritten; the wrapper's write is skipped (`:719-723`); and
+the sentence naming the copy's destination in the report is skipped with it, so neither passed-over
+path is written or reported (`:747-753`). Everything else the install does, it does as any install
+does. A symlinked copy destination refuses the install before either read (`_refuse_symlinked_copy`,
+`:547-558`): the pass-over reads that destination resolved and the copy writes it as it resolves, so a
+link there would let the two passed-over paths be cleared and rewritten through it.
+
 The harness resource copy borrows nothing from the package path:
 `harness_resource_copies` reads `resources/<harness>/` — the wheel's own copy of it — and writes
 each file into the install
@@ -101,7 +112,12 @@ rendered definition. The copy is one-way, not a mirror — `prune` owns the inst
 `agents/`, `commands/` and `skills/` and nothing outside them — with one exception: a file
 `RETIRED_RESOURCE_FILES` names is removed where it carries this
 repository's header, on every install, and a directory `RETIRED_RESOURCE_DIRS` names is removed once
-that leaves it empty, a directory holding anything else being the consumer's. A harness-rendered file is checked a
+that leaves it empty, a directory holding anything else being the consumer's. One directory goes
+whole rather than only when it empties: `RETIRED_PACKAGE_DIR`
+(`skills/docdicer/dicing-snippets`, `install.py:154`), the dicing snippets package's home before it
+joined the devpro tools package, which `install` removes with everything under it where an earlier
+install left it (`:724`) and names in its report (`:754`) — `prune` leaves its files standing, since
+its files carry the installed banner. A harness-rendered file is checked a
 third way, by its `HarnessFile.marker`.
 
 **Preflight.** The CLI reaches `install` through `install.preflighted_install`,
@@ -124,11 +140,19 @@ part.
   prune walks, the destination of every `SHIPPED_PACKAGES` row whichever definitions the plugin
   ships, the harness's resource destinations (at user level, the entry alone), every
   harness-rendered file — the manifest, `.mcp.json`, `registry.json` — the retired resource names
-  (`RETIRED_RESOURCE_FILES`' and `RETIRED_RESOURCE_DIRS`', unlinked and removed on every install), and
+  (`RETIRED_RESOURCE_FILES`' and `RETIRED_RESOURCE_DIRS`', unlinked and removed on every install),
+  `RETIRED_PACKAGE_DIR` (read and removed, so the preflight predicts the removal), and
   the guardrail registration. Under the project root, on a project install: the justfile and Makefile names unless the harness
   is a harness-directory plugin, and the `.gitignore` the installation prepares
   (The scratch directory) — the scratch directory itself is not managed: the install creates it
-  where missing and the comparison does not read what the project holds inside it. The project's
+  where missing and the comparison does not read what the project holds inside it. Also under the
+  project root, on the same condition, where `_installs_agents_file` (`install.py:479-482`) decides
+  the install writes an agents file: every path of the `checked_followed_agents_file` decision that
+  falls inside the
+  project — the project's `AGENTS.md`, and under mage its `CLAUDE.md`, that harness's `agents_file`
+  — taken from that call made with `uncommitted` naming no change and returning its `paths`, so the
+  check writes nothing (`install.py:849-857`); a path of that decision falling outside the project
+  is managed under the user harness directory instead, as above. The project's
   own settings files are not named: no install writes one.
 - **The scratch copy** (`preflight.preflight`) lives in a `tempfile.TemporaryDirectory`, each
   managed path at its position below its base. A base nested in another keeps its position below the outer
