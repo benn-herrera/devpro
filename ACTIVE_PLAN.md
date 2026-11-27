@@ -67,12 +67,13 @@ the hold is reached and stated in the plan.
 
 ## Burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` — the nine seats' findings F1–F18, with per-seat detail in
+Drafted from `ACTIVE_PLAN_REVIEW.md` — the nine seats' findings F1–F19, with per-seat detail in
 `.devpro-temp/review-periodic-*.md`. One item per root-cause group; each cites the F-numbers it
-fixes and closes in one commit. Every row is `drafted`: the plan holds here for the user's
-discussion before any item is usability-reviewed, revised or dispatched. Behavioral-probe work the
-audit located (clause strip-and-observe, rendered-definition smoke, live-host entry) stays with the
-ROADMAP Maintenance ticket that charters it — no burndown item carries it.
+fixes and closes in one commit. The hold was reached and the user's rulings applied: B4, B5, B6
+and B16 are reshaped and, with the rest, `dispatchable` — the roll proceeds in the stated serial
+order. Behavioral-probe work the audit located (clause strip-and-observe, rendered-definition
+smoke, live-host entry) stays with the ROADMAP Maintenance ticket that charters it — no burndown
+item carries it.
 
 **Serial order where files are shared.** B8 before B14 — both cut the profiler surface, and the
 test layout maps onto the module seams B8 settles (`tests/test_devpro_profiler.py:53` imports the
