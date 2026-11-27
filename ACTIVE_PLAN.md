@@ -20,14 +20,14 @@ remaining suite, feeding this plan's burndown — fixes, never the survey itself
 | P3 | landed | expert |
 | P4 | landed | expert |
 | P5 | drafted | expert |
-| B19 | drafted | expert |
-| B20 | drafted | mechanical |
-| B21 | drafted | expert |
-| B22 | drafted | expert |
-| B23 | drafted | expert |
-| B24 | drafted | expert |
-| B25 | drafted | expert |
-| B26 | drafted | expert |
+| B19 | dispatchable | expert |
+| B20 | dispatchable | expert |
+| B21 | dispatchable | expert |
+| B22 | dispatchable | expert |
+| B23 | dispatchable | expert |
+| B24 | dispatchable | expert |
+| B25 | dispatchable | expert |
+| B26 | dispatchable | expert |
 
 ## Ticket 1 — the strip
 
