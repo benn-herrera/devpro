@@ -116,7 +116,16 @@ convention covering it (python W6, architect W6, python notes).
 ## F12 — Note: pin structure to consolidate · python
 
 The JS-source-line test pins added under `TEST_PRECONDITION` and the four-time-pinned feed schema
-are candidates for one pin each at the read boundary (python notes).
+are candidates for one pin each at the read boundary (python notes). Added during the fixes: the
+stamp test `test_a_capture_stamps_every_record_with_the_sessions_operational_context` passes
+without exercising its mid-session-edit assertion now that the stamp no longer recomputes on a
+second record — its docstring claim is under-tested (python, B1 report).
+
+## F13 — Low: the two captures' mask patterns disagree on escaping · python (B1 report)
+
+The TS capture's `SECRET_KEY`-style alternation (`profiler.ts:~159`) carries an unescaped
+`/api_?key/` pattern where `directives.py:61` escapes it — the two implementations of one mask
+rule diverge, the same root cause as F2's duplicated constants; folded into B2's scope.
 
 ## What held
 
