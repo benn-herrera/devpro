@@ -69,7 +69,7 @@ after changing the config file. Reading the config file to dynamically override 
 entirely new category of behavior with zero language specifying or implying it — out of the
 scheme's scope however it expands.
 
-note: my lean is to add a new section `[<provicer>.agent-pins]`
+note: my lean is to add a new section `[<provider>.agent-pins]`
 
 ### Dashboard doc state indicator
 
