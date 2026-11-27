@@ -7,6 +7,12 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Features
 
+### Project name should be centered in dashboard nav bar
+
+Right now the project name only appears on the browser tab. 
+Centered, bold in current light/dark mode opposite accent color?
+Correct treatment up for debate, but needs to be highly visible.
+
 ### A live agents panel on the dashboard
 
 A starting refinement, not a design: the placement, grouping and join below are the requester's
