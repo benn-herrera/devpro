@@ -1,20 +1,23 @@
 // Runs opencode's plugin entry, index.ts, under a stub plugin context, for tests/test_opencode_entry.py.
 //
 // Usage: bun tests/opencode_entry_runner.ts
-// Stdin: JSON {entry, directory, project, writes, command}: the installed entry; the directory the
+// Stdin: JSON {entry, directory, project, writes, command, compactions}: the installed entry; the directory the
 // session opened at and the project root above it, the reminder's gate reading the root rather than the opened
 // directory; files ({path, text}) written one at a time, each awaited until a reload its watcher triggers
-// changes what is registered; and a command ({name, path, text, user}) executed with the user's text before
-// and after its body file is replaced by text.
+// changes what is registered; a command ({name, path, text, user}) executed with the user's text before
+// and after its body file is replaced by text; and the text each of two compactions of the parent
+// session's context held.
 // Stdout: JSON {id, hooks, sessionHooks, states, prompts, synthetics}: the plugin id, the tool and
 // session hooks it registered, what it had registered after setup and after each write, the text each
 // execute prompted, and every synthetic message a hook injected, naming the event that fired the hook
-// and the session it went to. Every callback registered for an event fires, so a hook name the
-// entry registers twice reaches both registrations. A state holds the agents store opencode keeps
-// an agent in, the one its transform edits.
-// The runner fails where an execute's prompt drops the invocation's session id or delivery, or where a
-// reminder hook the entry must register is missing. It exits once the plugin's cleanup has run; a
-// watcher the cleanup left open keeps it running.
+// and the session it went to. The runner fires the compaction surface beside the reminder: a
+// compaction carrying a skill's body records the session, and the idle that follows it delivers the
+// skill's invocation, as the host's compacted context does at its next idle. Every callback
+// registered for an event fires, so a hook name the entry registers twice reaches both registrations.
+// A state holds the agents store opencode keeps
+// an agent in, the one its transform edits. The runner fails where an execute's prompt drops the
+// invocation's session id or delivery, or where a reminder hook the entry must register is missing.
+// It exits once the plugin's cleanup has run; a watcher the cleanup left open keeps it running.
 //
 // Run outside `bun test`: the "@opencode/plugin" stub must be registered before the entry loads.
 
@@ -27,15 +30,20 @@ type Input = {
   project: string
   writes: { path: string; text: string }[]
   command: { name: string; path: string; text: string; user: string }
+  compactions: { sessionID: string; text: string }[]
 }
 type Command = { name: string; description?: string; execute(input: unknown): Promise<void> }
-// The two sessions the reminder hooks see: a subagent's child, whose parent is the session that
-// dispatched it, and that parent, which has none.
+// The sessions the hooks see: a subagent's child, whose parent is the session that dispatched it,
+// that parent, and the primary session a compaction lands on when the test drives one there.
 const PARENT = "ses_parent"
 const CHILD = "ses_child"
+const PRIMARY = "ses_primary"
 type Call = { tool: string; sessionID: string; status: "completed" | "error" }
 // A session's idle event carries the work still running for it, one entry per running job.
 type Idle = { sessionID: string; background: unknown[] }
+// A compaction request: the session, and the messages the context it replaces holds. The skill's
+// activation is one message's text part, `content` the part list a skill message nests its body in.
+type Compact = { sessionID: string; messages: { role: string; content: { type: string; text: string }[] }[] }
 
 // A domain as opencode's State keeps one: every registered transform re-runs against a fresh
 // value on each reload.
@@ -128,12 +136,13 @@ const input: Input = JSON.parse(await Bun.stdin.text())
 const prompts: string[] = []
 const hooks: string[] = []
 const sessionHooks: string[] = []
-const synthetics: { on: string; sessionID: string; text: string }[] = []
+const synthetics: { on: string; sessionID: string; text: string; delivery: string }[] = []
 const invocation = { sessionID: "ses_1", delivery: "queue" }
 // Every callback registered for an event, in registration order: one plugin registers the entry's own
 // reminder and the capture's, and each is fired.
 const after: ((call: Call) => void | Promise<void>)[] = []
 const idles: ((event: Idle) => void | Promise<void>)[] = []
+const compactions: ((event: Compact) => void | Promise<void>)[] = []
 // The hook whose callback is running, named in the synthetic record it produces.
 let firing = ""
 
@@ -160,12 +169,14 @@ const cleanup = await plugin.setup({
     async hook(name: string, callback: (event: never) => void | Promise<void>) {
       sessionHooks.push(name)
       if (name === "experimental.idle") idles.push(callback as (event: Idle) => void | Promise<void>)
+      if (name === "compaction") compactions.push(callback as (event: Compact) => void | Promise<void>)
     },
     async get({ sessionID }: { sessionID: string }) {
+      // A session with no parent carries no `parentID` field at all, as the host's `Session` omits it.
       return sessionID === CHILD ? { parentID: PARENT } : {}
     },
-    async synthetic({ sessionID, text }: { sessionID: string; text: string }) {
-      synthetics.push({ on: firing, sessionID, text })
+    async synthetic({ sessionID, text, delivery }: { sessionID: string; text: string; delivery: string }) {
+      synthetics.push({ on: firing, sessionID, text, delivery })
     },
   },
 })
@@ -202,6 +213,22 @@ const fireIdle = async (event: Idle) => {
   firing = "experimental.idle"
   for (const callback of idles) await callback(event)
 }
+// The compaction is a request the host builds before the model summary, and the messages handed
+// here are the context it replaces: a message carrying the skill's body, then the user turn that
+// follows. Its end is the idle the runner fires next, as the host's compacted context goes idle
+// and its next idle runs the hook.
+const fireCompaction = async (event: Compact) => {
+  if (compactions.length === 0) throw new Error("the entry registered no compaction hook")
+  firing = "compaction"
+  for (const callback of compactions) await callback(event)
+}
+// A compaction's context holding a skill's activation: the skill message, its body's text nested in
+// `content`. The day the host nests a skill's body otherwise is the entry's read's to follow, and
+// this message with it.
+const skillMessage = (text: string) => ({
+  role: "user",
+  content: [{ type: "text", text }],
+})
 await fireTool({ tool: "subagent", sessionID: PARENT, status: "completed" })
 await fireTool({ tool: "shell", sessionID: PARENT, status: "completed" })
 await fireTool({ tool: "subagent", sessionID: PARENT, status: "error" })
@@ -211,6 +238,19 @@ await fireIdle({
   background: [{ kind: "shell", sessionID: CHILD, shellID: "sh_1", command: "sleep 60" }],
 })
 await fireIdle({ sessionID: PARENT, background: [] })
+
+// The compaction surface, driven from the input so a test states what each session's context held.
+// Each text is one compaction of the primary session's context — the host builds the request, then
+// the compacted session runs its next idle. In order: the first compaction's context holds the skill
+// and its idle delivers the invocation; the second, same or empty, delivers it again or nothing, the
+// marker having cleared with the first. The primary session is a compaction's likeliest target, and
+// the reminder, which reads only a session with a parent, is silent on it: the records above are the
+// reminder's own.
+const texts = [0, 1].map((i) => input.compactions[i]?.text ?? "")
+for (const text of texts) {
+  await fireCompaction({ sessionID: PRIMARY, messages: [skillMessage(text)] })
+  await fireIdle({ sessionID: PRIMARY, background: [] })
+}
 
 await cleanup()
 console.log(JSON.stringify({ id: plugin.id, hooks, sessionHooks, states, prompts, synthetics }))

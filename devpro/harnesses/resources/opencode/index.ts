@@ -3,9 +3,10 @@
 // Written for opencode (floor 2.3.0): the entry of one plugin the devpro project ships, the
 // directory holding this file. Registers the plugin's agents, commands, skills and MCP servers from
 // registry.json and the Markdown bodies it lists, re-reads them whenever anything in this directory
-// changes, runs the guardrail beside it where one is installed, and reminds a parent session to
-// update the active plan's status table when it dispatches a subagent and when that subagent's
-// session finishes.
+// changes, runs the guardrail beside it where one is installed, reminds a parent session to update
+// the active plan's status table when it dispatches a subagent and when that subagent's session
+// finishes, and re-delivers the development skill's invocation after the host compacts a session
+// whose context held it.
 //
 // The floor is a behavioral one, not an API one: every API used here exists at 2.2.6, but there the
 // `subagent` tool defaults to the foreground, so `execute.after` fires at the child's completion,
@@ -62,6 +63,40 @@ function planStanding(root: string): boolean {
   const file = join(root, "ACTIVE_PLAN.md")
   const tree = join(root, "ACTIVE_PLAN")
   return (existsSync(file) && statSync(file).isFile()) || (existsSync(tree) && statSync(tree).isDirectory())
+}
+
+// The development skill's reload: the host's compaction replaces the session's context with a
+// summary, which drops the skill's text, and no declared hook fires when the compacted context
+// resumes. The one the host declares for a compaction, `compaction`, runs before its request; the
+// event after it that can carry a delivery is the compacted session's next `experimental.idle`. So
+// the compaction's hook reads the marker off its pre-compaction context and records the session
+// there, and that idle re-delivers the invocation. The marker is a set of session ids, added at a
+// compaction and removed by the delivery that reads it, so a session compacted twice is reloaded
+// twice and one whose context never held the skill is never touched.
+const skillInvocation = "@devpro-development"
+
+// The marker's text, the invocation without its `@`: a skill message nests its body under a
+// `content` part, so a JSON-escaped copy of the request would not hold the invocation itself.
+const skillMark = skillInvocation.slice(1)
+
+// Whether a compaction request's context still holds a skill's activation. The host's skill message
+// carries the skill's id, name and body (SessionMessage.Skill), but the field a compaction's request
+// is built from is the provider message, and which of the three survives into it is the compaction
+// request's own business: the body does, because a skill's activation is a skill name and the body's
+// text.
+function holdsInvocation(text: string): boolean {
+  return text.includes(skillMark)
+}
+
+// The texts a compaction request's message holds: a text part's `text`, and the same under a
+// message's `content` part list, which is where the host nests a skill message's body.
+function textOf(message: unknown): string[] {
+  if (typeof message !== "object" || message === null) return []
+  const record = message as Record<string, unknown>
+  const texts: string[] = []
+  if (typeof record.text === "string") texts.push(record.text)
+  if (Array.isArray(record.content)) for (const part of record.content) texts.push(...textOf(part))
+  return texts
 }
 
 // The reminder's sentence, byte for byte what claude's state-table-reminder.sh emits, and the gate
@@ -174,6 +209,34 @@ export default Plugin.define({
       })
       if (session?.parentID === undefined) return
       await injectReminder(session.parentID)
+    })
+
+    // The development skill's reload. A compaction records the session where the context it is about
+    // to replace held the skill, and sets no `result`, so the host still authors the summary. The
+    // compacted context's next idle delivers the invocation once and clears the marker; a second
+    // compaction records the session again, so a session compacted twice is reloaded twice.
+    const reloaded = new Set<string>()
+    const deliverSkill = async (sessionID: string) => {
+      if (!reloaded.delete(sessionID)) return
+      try {
+        // Queued rather than steering: the summary is what the session resumes with, and the
+        // invocation follows it as the next message the model reads.
+        await ctx.session.synthetic({ sessionID, text: skillInvocation, delivery: "queue" })
+      } catch (err) {
+        log(`cannot re-deliver the development skill to the session ${sessionID}`, err)
+        // The marker stands for the next idle, where the delivery is tried again.
+        reloaded.add(sessionID)
+      }
+    }
+    await ctx.session.hook("compaction", (compaction) => {
+      if (!compaction.messages.some((message) => textOf(message).some(holdsInvocation))) return
+      reloaded.add(compaction.sessionID)
+    })
+    // Every session's idle, not the parent-scoped one the reminder reads: a compaction may land on
+    // the primary session, which has no parent, and on the session whose context held the skill.
+    await ctx.session.hook("experimental.idle", async (idle) => {
+      if (idle.background.length > 0) return
+      await deliverSkill(idle.sessionID)
     })
 
     // Every callback reads `held`, which only setup and the watcher replace: a callback that threw

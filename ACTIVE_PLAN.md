@@ -35,7 +35,7 @@ review and `devpro-architect` revision (*Dispatchability*), which run after this
 | P2 | landed | expert |
 | P3 | landed | expert |
 | P4 | landed | expert |
-| P5 | dispatchable | expert |
+| P5 | landed | expert |
 | P6 | dispatchable | mechanical |
 | PR | dispatchable | expert |
 | PB | dispatchable | expert |

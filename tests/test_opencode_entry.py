@@ -85,9 +85,11 @@ def _run_entry(
     project: Path,
     writes: list[dict],
     command: dict,
+    compactions: tuple[str, str] = ("", ""),
 ) -> dict:
     """The runner's output for the entry installed in `plugin`, for a session opened at `directory` in
-    the project rooted at `project`."""
+    the project rooted at `project`, and for the two compactions of the primary session's context the
+    runner fires at its end, each handed the text it held."""
     done = subprocess.run(
         ["bun", str(_RUNNER)],
         input=json.dumps(
@@ -97,6 +99,7 @@ def _run_entry(
                 "project": str(project),
                 "writes": writes,
                 "command": command,
+                "compactions": [{"sessionID": "ses_primary", "text": text} for text in compactions],
             }
         ),
         capture_output=True,
@@ -144,9 +147,16 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     assert out["id"] == NAME
     # Registration order follows the code: the guardrail's `execute.before`, the entry's reminder
     # `execute.after`, then the capture's pair. The capture's setup runs before the entry's own
-    # registrations, so its `model.request` and its idle hook precede the entry's idle.
+    # registrations, so its `model.request` and its idle hook precede the entry's idle and the
+    # compaction pair the skill's reload registers beside it.
     assert out["hooks"] == ["execute.before", "execute.before", "execute.after", "execute.after"]
-    assert out["sessionHooks"] == ["model.request", "experimental.idle", "experimental.idle"]
+    assert out["sessionHooks"] == [
+        "model.request",
+        "experimental.idle",
+        "experimental.idle",
+        "compaction",
+        "experimental.idle",
+    ]
     assert set(first["agents"]) == {a["id"] for a in registry["agents"]}
     assert set(first["skills"]) == {s["id"] for s in registry["skills"]}
     assert first["commands"] == {"kbase-probe": "A probe"}
@@ -168,7 +178,9 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     assert out["prompts"] == ["Old command.\n\ngo", "New command.\n\ngo"]
     # The gate holds, so the subagent's dispatch and its completion each inject once into the parent
     # session; the runner also fires a call that is not a subagent, a failed subagent call, a session
-    # with no parent and a session still holding running work, and none of them injects.
+    # with no parent and a session still holding running work, and none of them injects. No
+    # compaction's context held the skill, so the skill's reload injects nothing, and the primary
+    # session's compaction idles are not the reminder's: its two records are the gate's own.
     assert [(injected["on"], injected["sessionID"]) for injected in out["synthetics"]] == [
         ("execute.after", "ses_parent"),
         ("experimental.idle", "ses_parent"),
@@ -224,11 +236,11 @@ def test_a_user_level_opencode_entry_runs_the_guardrail_beside_it_and_injects_no
         command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
     )
 
-    # The guardrail's `execute.before` and the entry's own `execute.after` are registered; the capture,
-    # which a user-level install does not copy, registers none of its own, so the reminder's idle hook
-    # stands alone and no synthetic message is injected.
+    # The capture, which a user-level install does not copy, registers none of its own, so the
+    # reminder's idle hook stands alone and the skill's reload registers its compaction and idle; no
+    # compaction's context held the skill and no synthetic message is injected.
     assert out["hooks"] == ["execute.before", "execute.after"]
-    assert out["sessionHooks"] == ["experimental.idle"]
+    assert out["sessionHooks"] == ["experimental.idle", "compaction", "experimental.idle"]
     assert out["synthetics"] == []
     (registered,) = out["states"]
     assert set(registered["agents"]) == {a["id"] for a in registry["agents"]}
@@ -266,7 +278,6 @@ def test_the_gate_is_the_plan_file_or_tree_and_silent_for_a_design_or_nothing(tm
     (project / "ACTIVE_PLAN.md").write_text("# Active plan\n", encoding="utf-8")
     assert injected(run()) == gate
     (project / "ACTIVE_PLAN.md").unlink()
-
     (project / "ACTIVE_DESIGN.md").write_text("# Active design\n", encoding="utf-8")
     assert injected(run()) == []
     (project / "ACTIVE_DESIGN.md").unlink()
@@ -280,7 +291,9 @@ def test_the_gate_is_the_plan_file_or_tree_and_silent_for_a_design_or_nothing(tm
 
 def test_both_harnesses_inject_one_sentence(tmp_path: Path) -> None:
     """The entry's injection is byte for byte the sentence claude's reminder script emits: one table,
-    one rule at one strength, held to it here rather than by a reader comparing the two resources."""
+    one rule at one strength, held to it here rather than by a reader comparing the two resources. The
+    compactions the runner fires carried the skill, and their reload's sentence is the skill's
+    invocation — not the reminder's, which is what this test weighs against claude's."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)
@@ -292,9 +305,81 @@ def test_both_harnesses_inject_one_sentence(tmp_path: Path) -> None:
         project=project,
         writes=[],
         command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
+        compactions=("devpro-development", "devpro-development"),
     )
     claude = _run_reminder(json.dumps({"hook_event_name": "PostToolUse", "cwd": str(project)}), project_dir=project)
     assert claude.returncode == 0, claude.stderr
     sentence = json.loads(claude.stdout)["hookSpecificOutput"]["additionalContext"]
 
-    assert {injected["text"] for injected in out["synthetics"]} == {sentence}
+    assert {injected["text"] for injected in out["synthetics"] if injected["text"] != "@devpro-development"} == {
+        sentence
+    }
+
+
+def test_a_compacted_context_that_held_the_skill_gets_its_invocation_re_delivered(tmp_path: Path) -> None:
+    """A session whose context held the development skill's body states the marker at the compaction,
+    and the idle that follows the compaction delivers `@devpro-development` — once, queued behind
+    the summary the session resumes with — while no compaction's context holding nothing does.
+    It fails on a compaction that drops the skill's text and restores nothing: the session
+    continues without the development process, a surface no assertion on what is registered reaches."""
+    project = tmp_path / "project"
+    project.mkdir()
+    plugin, command_path, banner = _probe_entry(project)
+
+    out = _run_entry(
+        plugin,
+        directory=project,
+        project=project,
+        writes=[],
+        command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
+        compactions=("devpro-development", ""),
+    )
+
+    delivered = [
+        (injected["on"], injected["sessionID"], injected["text"], injected["delivery"])
+        for injected in out["synthetics"]
+        if injected["text"] == "@devpro-development"
+    ]
+    assert delivered == [("experimental.idle", "ses_primary", "@devpro-development", "queue")]
+
+
+def test_a_compacted_context_that_held_no_skill_injects_nothing(tmp_path: Path) -> None:
+    """A compaction of a context that held neither the skill's body nor its invocation delivers
+    nothing: the skill is never forced on a session that never carried it. It fails on an injection
+    keyed to every compaction."""
+    project = tmp_path / "project"
+    project.mkdir()
+    plugin, command_path, banner = _probe_entry(project)
+
+    out = _run_entry(
+        plugin,
+        directory=project,
+        project=project,
+        writes=[],
+        command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
+        compactions=("", ""),
+    )
+
+    assert out["synthetics"] == []
+
+
+def test_a_second_compaction_re_delivers_the_invocation_again(tmp_path: Path) -> None:
+    """The same session compacts twice, its context holding the skill both times, and the idle after
+    each compaction delivers `@devpro-development`: once per compaction, in order. It fails on a
+    marker that latches the first delivery and silences every later one — the session's second
+    compaction would leave it running without the development process though its context held the
+    skill at it, a surface no single-compaction test reaches."""
+    project = tmp_path / "project"
+    project.mkdir()
+    plugin, command_path, banner = _probe_entry(project)
+
+    out = _run_entry(
+        plugin,
+        directory=project,
+        project=project,
+        writes=[],
+        command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
+        compactions=("devpro-development", "devpro-development"),
+    )
+
+    assert [injected["text"] for injected in out["synthetics"]] == ["@devpro-development", "@devpro-development"]
