@@ -41,6 +41,12 @@ NAME_LIMIT = 80
 ARGS_LIMIT = 200
 RESULT_LIMIT = 300
 LINE_LIMIT = 4096
+# A store's stamp is read from its first records: a session's stamp is its first record's, and the
+# opencode capture's window is the same `STAMP_READ_RECORDS` records inside the bytes a record's maximum
+# length times that count allows, so one store's stamp is read within one window by both. A store whose
+# first records hold no stamp is a store written before it, and is never stamped fresh beside them. The
+# byte count is the opencode capture's own `STORE_HEAD_BYTES`.
+STAMP_READ_RECORDS = 64
 TREE_WIDTH = 160
 CONTEXT_WIDTH = 6
 SESSION_WIDTH = 8

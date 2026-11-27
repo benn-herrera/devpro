@@ -438,10 +438,12 @@ const GENERATED_BANNER_HEAD = 2
 // source, and the repository's name. `devpro/install_base.py` holds the same pattern as `INSTALLED_BANNER`.
 const INSTALLED_BANNER = /!INSTALLED! .* devpro/
 const INSTALLED_BANNER_LINES = 10
-// The bytes a store's stamp is read from. A session's stamp is its first record's, so its store's head
-// answers for every store this capture wrote; the bound is what a store written before the plugin started
-// is read within.
-const STORE_TAIL_BYTES = 4 * 1024 * 1024
+// The bytes a store's stamp is read from, and the record lines a window holds: a session's stamp is its
+// first record's, and a record is at most `LINE_LIMIT` bytes, so the store's first `STORE_HEAD_RECORDS`
+// records lie inside the `STORE_HEAD_BYTES` read, and one window decides both. The count is
+// `devpro/profiler/values.py`'s `STAMP_READ_RECORDS`, which the Python capture reads by.
+const STORE_HEAD_RECORDS = 64
+const STORE_HEAD_BYTES = STORE_HEAD_RECORDS * LINE_LIMIT
 // A directory deeper than this is not one an install writes below a harness directory, and is not walked.
 const WALK_DEPTH = 8
 
@@ -526,14 +528,17 @@ function readStamp(root: string): [Stamp, [string, string][]] {
 
 // storeStamp is the stamp a session's store already holds, read off the record the store's earliest `at`
 // names that carries one, as the Python capture reads it: what the process did not write, a session's
-// store written before it started, or by a capture this one does not see.
+// store written before it started, or by a capture this one does not see. The read starts at the store's
+// beginning, where its earliest records sit, and holds its first `STORE_HEAD_BYTES`: a window ended with
+// no stamped record in it answers `null`, a store written before the stamp and never one to stamp fresh
+// beside its records.
 function storeStamp(root: string, session: string): Stamp | null {
   let text: string
   try {
     const handle = openSync(sessionFile(root, session), "r")
     try {
       const size = fstatSync(handle).size
-      const length = Math.min(size, STORE_TAIL_BYTES)
+      const length = Math.min(size, STORE_HEAD_BYTES)
       const buffer = Buffer.alloc(length)
       readSync(handle, buffer, 0, length, 0)
       text = buffer.toString("utf8")
@@ -544,15 +549,16 @@ function storeStamp(root: string, session: string): Stamp | null {
     return null
   }
   let earliest: Record<string, unknown> | null = null
-  for (const line of text.split("\n")) {
+  for (const [read, line] of text.split("\n").entries()) {
+    if (read >= STORE_HEAD_RECORDS) break
     let record: unknown
     try {
       record = JSON.parse(line)
     } catch {
       continue
     }
-    if (!isRecord(record) || !("plan" in record || "directives" in record)) continue
-    if (earliest === null || String(record.at) < String(earliest.at)) earliest = record
+    if (!isRecord(record) || typeof record.at !== "string" || !("plan" in record || "directives" in record)) continue
+    if (earliest === null || record.at < String(earliest.at)) earliest = record
   }
   if (earliest === null) return null
   return {
@@ -562,32 +568,44 @@ function storeStamp(root: string, session: string): Stamp | null {
 }
 
 // writeManifest is the Python's `write_manifest`: the digest's manifest, holding its per-file digests,
-// where none for the digest stands.
+// recomputed from the files as they stand — a manifest written here may postdate the digest it is keyed
+// by and name files that have moved since. A digest copied off a store has no file list to recompute.
 function writeManifest(root: string, stamp: Stamp, pairs: [string, string][]): void {
-  if (stamp.directives === null) return
+  if (stamp.directives === null || pairs.length === 0) return
   const directory = join(root, ".devpro-temp", ".profiler-directives")
   const file = join(directory, `${stamp.directives}.json`)
-  if (existsSync(file)) return
   mkdirSync(directory, { recursive: true })
   writeFileSync(file, compact(Object.fromEntries(pairs)) + "\n", "utf8")
 }
 
 // sessionStamp is the stamp a record for `session` carries: the session's own where this process stamped
 // it, else the store's, else the state at `root` now — taken once per session, as the Python capture takes
-// it on the session's first record.
+// it on the session's first record. A store holding records and no stamp was written before the stamp:
+// its stamp is the absent rendering, never a fresh one written beside its records. The stamp's manifest is
+// written on every path, from the per-file digests recomputed from the files as they stand, so a digest
+// copied off a store whose manifest is gone gains one; that manifest may postdate the digest it is keyed
+// by. The copy leaves the store's fields as the store stated them; only when the store holds no record is
+// the fresh stamp the one taken.
 function sessionStamp(root: string, session: string): Stamp {
   const held = stampOf.get(session)
   if (held !== undefined) return held
   const stored = storeStamp(root, session)
-  if (stored !== null) {
-    stampOf.set(session, stored)
-    return stored
-  }
   const [fresh, pairs] = readStamp(root)
   writeManifest(root, fresh, pairs)
-  stampOf.set(session, fresh)
-  return fresh
+  let taken: Stamp
+  if (stored !== null) {
+    taken = stored
+  } else if (existsSync(sessionFile(root, session))) {
+    taken = UNSTAMPED
+  } else {
+    taken = fresh
+  }
+  stampOf.set(session, taken)
+  return taken
 }
+
+// The stamp of a session whose store holds records and no stamp: each field's absent rendering.
+const UNSTAMPED: Stamp = { plan: null, directives: null }
 
 // ---------- the capture ----------
 

@@ -93,13 +93,14 @@ def read_stamp(root: Path) -> tuple[Json, Json]:
 
 
 def write_manifest(root: Path, digested: Json) -> None:
-    """The digest's manifest, holding its per-file digests, where none for the digest stands: a digest's
-    file list is recoverable, and two digests' difference answerable. `.profiler-directives` is no store —
-    a prefix of `.profiler-` and none of the store names the readers read."""
+    """The digest's manifest, holding its per-file digests: a digest's file list is recoverable, and two
+    digests' difference answerable. The per-file digests are recomputed from the files as they stand, so
+    a manifest written here may postdate the digest it is keyed by and name files that have moved since.
+    What `digested` does not hold — a digest copied off a store, whose files it never recomputed — is
+    written nowhere: a manifest of nothing is no manifest. `.profiler-directives` is no store — a prefix
+    of `.profiler-` and none of the store names the readers read."""
     if not digested:
         return
     path = Path(root) / ".devpro-temp" / ".profiler-directives" / f"{digest_of(digested)}.json"
-    if path.exists():
-        return
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(_json(digested) + "\n", encoding="utf-8")

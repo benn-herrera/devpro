@@ -425,6 +425,134 @@ def test_a_capture_leaves_out_the_stamp_fields_a_project_gives_it_nothing_for(tm
     assert not (project / ".devpro-temp" / ".profiler-directives").exists()
 
 
+def test_a_capture_copies_the_whole_stamp_off_the_sessions_store(tmp_path: Path, _wrapper: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: the copy off the store carried only the stamp keys the
+    earliest record happened to hold, so a session that started with no plan gained a `plan` key the
+    moment one arrived — the taken-once contract broken on the second record.
+
+    A store already holding two records of the session, both stamped with one digest and no plan,
+    and a project whose plan and directive stand now: the record the capture appends next carries that
+    digest and still no `plan`, and the digest gains a manifest whose per-file digests are recomputed
+    from the files as they stand — the state the store's digest was taken from, as a manifest may
+    postdate the digest it is keyed by."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    digest = "0" * 64
+    directory = project / ".devpro-temp" / ".profiler-claude"
+    directory.mkdir(parents=True)
+    stored = [
+        {
+            "v": 4,
+            "harness": "claude",
+            "at": f"2026-01-01T00:00:0{k}.000Z",
+            "session": "s-profiler",
+            "directives": digest,
+        }
+        for k in range(2)
+    ]
+    (directory / "s-profiler.jsonl").write_text(
+        "".join(f"{json.dumps(record)}\n" for record in stored), encoding="utf-8"
+    )
+    _plan(project, "a plan that arrived late")
+    definition = project / ".opencode" / "plugins" / "devpro" / "agents" / "coder.md"
+    definition.parent.mkdir(parents=True)
+    definition.write_text("<!-- !GENERATED! from devpro/definitions/agents/coder.py -->\nbody\n", encoding="utf-8")
+
+    capture = _run(_wrapper, "capture", "claude", cwd=project, stdin=_PAYLOAD)
+
+    assert capture.returncode == 0, capture.stderr
+    records = [json.loads(line) for line in (directory / "s-profiler.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert [(record.get("plan"), record["directives"]) for record in records] == [(None, digest)] * 3
+    expected = hashlib.sha256(
+        json.dumps(
+            sorted(
+                {
+                    ".opencode/plugins/devpro/agents/coder.md": hashlib.sha256(definition.read_bytes()).hexdigest()
+                }.items()
+            ),
+            separators=(",", ":"),
+        ).encode("ascii")
+    ).hexdigest()
+    manifest = project / ".devpro-temp" / ".profiler-directives" / f"{expected}.json"
+    assert sorted(json.loads(manifest.read_text(encoding="utf-8"))) == [".opencode/plugins/devpro/agents/coder.md"]
+
+
+def test_a_capture_leaves_a_store_of_unstamped_records_unstamped(tmp_path: Path, _wrapper: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: a store holding records with neither stamp field was
+    stamped fresh on the next record, so one session's records disagreed on the context they ran
+    under while the leaf named a store holding no stamped record legacy and left unstamped.
+
+    A store already holding a record with neither field, and a project whose plan and directive stand
+    now: the record the capture appends next carries neither field — it writes no fresh stamp beside
+    records the store already holds — and the fresh digest's manifest stands beside them, as a
+    manifest may postdate the digest it is keyed by."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    _plan(project, "a plan")
+    definition = project / ".opencode" / "plugins" / "devpro" / "agents" / "coder.md"
+    definition.parent.mkdir(parents=True)
+    definition.write_text("<!-- !GENERATED! from devpro/definitions/agents/coder.py -->\nbody\n", encoding="utf-8")
+    directory = project / ".devpro-temp" / ".profiler-claude"
+    directory.mkdir(parents=True)
+    legacy = {"v": 1, "harness": "claude", "at": "2026-01-01T00:00:00.000Z", "session": "s-profiler", "tool": "Bash"}
+    (directory / "s-profiler.jsonl").write_text(f"{json.dumps(legacy)}\n", encoding="utf-8")
+
+    capture = _run(_wrapper, "capture", "claude", cwd=project, stdin=_PAYLOAD)
+
+    assert capture.returncode == 0, capture.stderr
+    records = [json.loads(line) for line in (directory / "s-profiler.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert [{"plan", "directives"} & set(record) for record in records] == [set(), set()]
+    [manifest] = (project / ".devpro-temp" / ".profiler-directives").iterdir()
+    assert sorted(json.loads(manifest.read_text(encoding="utf-8"))) == [".opencode/plugins/devpro/agents/coder.md"]
+
+
+def test_the_opencode_capture_reads_the_store_it_opens_after_an_unstamped_one(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: a store holding records with neither stamp field —
+    what opencode wrote before this capture stamped anything — was read as holding no stamp, and the
+    plugin minted a fresh one beside those records, so one process's records disagreed on the context
+    they ran under. This session's store follows the plugin's own in the directory, so a read that
+    starts at the first of the two cannot open the session's.
+
+    A project whose plan and installed definition stand now: the stamp the plugin's next record for
+    the session carries is unstamped — the window read no stamped record, so no fresh digest is taken
+    beside the records it holds — and the session's records keep the state they were written under,
+    the fresh digest's manifest written beside them as a manifest may postdate the digest it is keyed
+    by."""
+    project = tmp_path / "project"
+    project.mkdir()
+    _plan(project, "a plan")
+    definition = project / ".opencode" / "plugins" / "devpro" / "agents" / "coder.md"
+    definition.parent.mkdir(parents=True)
+    definition.write_text("<!-- !GENERATED! from devpro/definitions/agents/coder.py -->\nbody\n", encoding="utf-8")
+    legacy = {"v": 1, "harness": "opencode", "at": "2026-01-01T00:00:00.000Z", "session": "ses_stamp", "tool": "shell"}
+    store = project / ".devpro-temp" / ".profiler-opencode"
+    store.mkdir(parents=True)
+    (store / "ses_stamp.jsonl").write_text(f"{json.dumps(legacy)}\n", encoding="utf-8")
+    # The plugin's store holds a record of another session too: this session's store follows it, and a
+    # read that starts at the first of the two holds a record the session's is not.
+    (store / "ses_first.jsonl").write_text(
+        f"{json.dumps({'v': 1, 'harness': 'opencode', 'at': '2026-01-01T00:00:00.000Z', 'session': 'ses_first'})}\n",
+        encoding="utf-8",
+    )
+    for name in ("ses_first.jsonl", "ses_stamp.jsonl"):
+        os.utime(store / name, (0, 0))
+
+    out = json.loads(
+        _run_ts(
+            _HERE / "profiler_stamp_runner.ts",
+            directory=project,
+            stdin=json.dumps({"directory": str(project), "session": "ses_stamp"}),
+        ).stdout
+    )
+
+    assert out["stamp"] == {"plan": None, "directives": None}
+    assert out["stores"][".profiler-opencode"] == [None]
+    [manifest] = (project / ".devpro-temp" / ".profiler-directives").iterdir()
+    assert sorted(json.loads(manifest.read_text(encoding="utf-8"))) == [".opencode/plugins/devpro/agents/coder.md"]
+
+
 def test_the_capture_keeps_its_childs_output_off_the_hooks_stdout(tmp_path: Path, _wrapper: Path) -> None:
     """A hook's stdout is the host's protocol alone, so the capture's own output never reaches it. The
     defect: the capture printed the record's path through `sys.stdout`, so a line it wrote there

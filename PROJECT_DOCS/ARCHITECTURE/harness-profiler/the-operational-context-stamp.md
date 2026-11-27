@@ -14,13 +14,23 @@ gives the capture nothing for — no active plan, no file carrying a banner or m
 by the Python capture and `null` by the opencode's, the absent rendering each capture's records
 already take.
 
-The stamp is taken once: where the session's store already holds records, the stamp is theirs, read
-off the record whose `at` is earliest and copied onto the record being written; where the store
-holds none yet, the capture reads the plan and computes the digest fresh. A digest's per-file
-digests stand in `.devpro-temp/.profiler-directives/<digest>.json`, written where no manifest for
-the digest stands, so a digest's file list is recoverable and two digests' difference is answerable;
-the directory is not a store, and no reader of the stores reads it as one. The session's start binds
-no field of its own: the store's earliest `at` is the session's start, and the stamp gives it no
+The stamp is taken once, and copied wholesale: where the session's store already holds a stamped
+record, the stamp is that record's — the record whose `at` is earliest — taken whole, both fields as it
+states them, and copied onto the record being written, so a field the record lacks is never filled in
+later and a plan that arrives mid-session reaches no later record. A store holding records and no
+stamped record was written before the stamp, and is a legacy store: it stays unstamped, its later
+records carrying the absent rendering above and never a fresh stamp taken beside the records it
+already holds. Only a store holding no record yet takes the project's state fresh. A digest's per-file
+digests stand in `.devpro-temp/.profiler-directives/<digest>.json`, written on every path — on a fresh
+stamp from the files as they stand, and on a copied one from the files as they stand then, where no
+manifest for the store's digest stands — so a digest's file list is recoverable and two digests'
+difference is answerable, and such a manifest may postdate the digest it is keyed by, its per-file
+digests naming files that have moved since. The directory is not a store, and no reader of the stores
+reads it as one. A store's stamp is read within a bounded window at the store's beginning, where its
+earliest records sit: the first stamped record the window holds governs, and a window ended with no
+stamped record in it is a store written before the stamp, never one to stamp fresh beside its records —
+so the read costs no full parse of the store on any path that writes a record. The session's start
+binds no field of its own: the store's earliest `at` is the session's start, and the stamp gives it no
 second home.
 
 The records are schema 4: `SCHEMA_VERSION` in `devpro/profiler/values.py` and the opencode

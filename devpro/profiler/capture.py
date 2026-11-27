@@ -11,6 +11,7 @@ import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TypedDict
 
 from .directives import read_stamp, write_manifest
 from .values import (
@@ -26,6 +27,7 @@ from .values import (
     RESULT_LIMIT,
     SCHEMA_VERSION,
     SECRET_KEY,
+    STAMP_READ_RECORDS,
     TOOL_EVENTS,
     TRACE_DIR,
     TRANSCRIPT_TAIL_BYTES,
@@ -404,34 +406,68 @@ def session_file(directory: Path | str, session: object) -> Path:
     return Path(directory) / TRACE_DIR / f"{safe}.jsonl"
 
 
-def store_stamp(file: Path) -> Json | None:
-    """The stamp the session's store already holds, read off its earliest-`at` record that carries one,
-    and nothing where the store holds no record or none carries one: the session's stamp is its first
-    record's, and every record after it copies that."""
-    stamped: Json | None = None
-    for line in (read_text(file) or "").split("\n"):
+class CaptureStamp(TypedDict, total=False):
+    """A record's operational-context stamp: `plan` the plan it started under, `directives` the digest
+    of the directives in force, each left out where the project gave the capture nothing for it."""
+
+    plan: str
+    directives: str
+
+
+def stored_stamp(file: Path) -> CaptureStamp | None:
+    """The stamp the session's store already holds, read off its earliest-`at` record that carries one;
+    `None` where the store holds no stamped record.
+
+    The stamp is the whole of that record's two fields, `plan` and `directives` — a field it lacks is
+    absent from the copy, never filled in later — so the session's stamp is its first record's and
+    every later record copies it. A store holding records and no stamp is one written before the stamp,
+    and its records are read as unstamped, never freshly stamped beside them; a store whose first
+    `STAMP_READ_RECORDS` records hold no stamp is read that way too, so the window decides the answer
+    and never fresh-stamps beside a store it could not read whole."""
+    text = read_text(file) or ""
+    stamped: list[Json] = []
+    for read, line in enumerate(text.split("\n")):
+        if read >= STAMP_READ_RECORDS:
+            break
         try:
             record = json.loads(line) if line else None
         except ValueError:
             continue
-        if not isinstance(record, dict) or not ({"plan", "directives"} & set(record)):
-            continue
-        if stamped is None or str(record.get("at")) < str(stamped.get("at")):
-            stamped = record
-    return None if stamped is None else {key: stamped[key] for key in ("plan", "directives") if key in stamped}
+        if isinstance(record, dict) and record.get("at") is not None and ({"plan", "directives"} & set(record)):
+            stamped.append(record)
+    if not stamped:
+        return None
+    earliest = min(stamped, key=lambda record: str(record["at"]))
+    held: CaptureStamp = {}
+    if isinstance(earliest.get("plan"), str):
+        held["plan"] = earliest["plan"]
+    if isinstance(earliest.get("directives"), str):
+        held["directives"] = earliest["directives"]
+    return held
 
 
-def session_stamp(file: Path, directory: Path) -> Json:
+def session_stamp(file: Path, directory: Path) -> CaptureStamp:
     """The stamp a record being written to `file` carries: the store's own where it holds a stamped
-    record, and the project's state at `directory` where it does not — a session's first record, or a
-    store written before the stamp. Taken once per session, so a plan that moves or a directive edited
-    mid-session changes no later record."""
-    found = store_stamp(file) if file.exists() else None
-    if found is not None:
-        return found
+    record, nothing where it holds records and no stamp — a store written before the stamp — and the
+    project's state at `directory` where it holds none yet: the session's first record.
+
+    The stamp's manifest is written on every path, from the per-file digests recomputed from the files as
+    they stand, so a digest copied off a store whose manifest is gone gains one; that manifest may
+    postdate the digest it is keyed by (The operational-context stamp). The copy leaves the store's
+    fields as the store stated them: the digest fresh today never displaces one taken at the session's
+    start. Taken once per session, so a plan that moves or a directive edited mid-session changes no
+    later record."""
+    held = stored_stamp(file) if file.exists() else None
     fresh, digests = read_stamp(directory)
     write_manifest(directory, digests)
-    return fresh
+    if file.exists():
+        return held or {}
+    state: CaptureStamp = {}
+    if isinstance(fresh.get("plan"), str):
+        state["plan"] = fresh["plan"]
+    if isinstance(fresh.get("directives"), str):
+        state["directives"] = fresh["directives"]
+    return state
 
 
 def capture(harness: str, text: str) -> Path | None:
@@ -443,8 +479,9 @@ def capture(harness: str, text: str) -> Path | None:
     if is_tool and not payload.get("tool_name"):
         return None
     directory = project_dir(payload.get("cwd") or os.getcwd())
+    store = directory / TRACE_DIR
+    store.mkdir(parents=True, exist_ok=True)
     file = session_file(directory, payload["session_id"])
-    file.parent.mkdir(parents=True, exist_ok=True)
     stamp = session_stamp(file, directory)
     record = build_record(payload, harness) if is_tool else build_event_record(payload, harness)
     # One small append per record keeps concurrent hooks from interleaving.
