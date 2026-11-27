@@ -4,10 +4,14 @@ AI is a tremendous lever for engineering capability, but unsupervised agents wri
 and fails suddenly. devpro installs a collaborative AI development process into Claude Code, opencode, or
 Mage that lets you build to last: you work with the agents to design, plan, build, review, and deliver.
 
-![kanban screenshot](images/kanban.webp)
+![devpro main dashboard view](images/dashboard.webp)
+*Main dashboard*
 
-*The board panel `devpro dashboard` serves at `/board/` — the project's work packages, roadmap and
-design as cards — in an earlier release's frame, before the top nav the two views share.*
+![devpro harness profiler sessions list](images/profiler-sessions.webp)
+*Harness profiler sessions list*
+
+![devpro harness profiler session details](images/profiler-graph.webp)
+*Harness profiler session graph*
 
 ## What it asks of you
 

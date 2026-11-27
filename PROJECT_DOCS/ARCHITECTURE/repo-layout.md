@@ -3,7 +3,7 @@
 ```
 PROJECT_DOCS/           the contract trees — THESIS, SPEC, ARCHITECTURE, CONVENTIONS — as small leaf files, one `entry-point.md` per volume; the root `THESIS.md`, `SPEC.md`, `ARCHITECTURE.md` and `CONVENTIONS.md` are pointers to them, not sources; checked by `just check-links`
 agent-sandboxing/       setup for running a coding agent as an unprivileged local user — never installed
-images/                 the images README.md shows (`kanban.webp`, the board) — never installed and not package data; checked by `just check-links` through README's links
+images/                 the images README.md shows — never installed and not package data; checked by `just check-links` through README's links
 pyproject.toml          the package's build configuration — setuptools, the version read from `devpro.__version__`, the package-data globs, the `devpro` console script (Packaging)
 dist/                   gitignored build product — what `just build` writes: the wheel and sdist; created on demand
 rendered/               gitignored build product — this repo's own rendered tree, one slot per rendering, each holding one slot project (`rendered/<slug>/devpro/`), and the four `reference*` slots, one per harness plus gemma, `render-diff` compares against (justfile RENDERED_DIR); created on demand

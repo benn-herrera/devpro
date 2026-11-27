@@ -15,7 +15,6 @@
 
 import { Plugin } from "@opencode/plugin"
 import type { SessionRequestMessage } from "@opencode/plugin/promise/session"
-import { Skill } from "@opencode/schema/skill"
 import { existsSync, readFileSync, statSync, watch } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { basename, dirname, join } from "node:path"
@@ -225,12 +224,13 @@ export default Plugin.define({
         log(`no skill the plugin lists is named ${skillName}: nothing to activate`)
         return
       }
-      // The prompt's own list is kept. The id the attachment carries is made from the one the domain
-      // lists for the skill, the schema's maker putting the host's brand on it.
-      const id = Skill.ID.make(listed.id)
+      // The prompt's own list is kept. The brands the host puts on a skill's id are made from its
+      // strings, and no maker stands in the published declarations this file is checked against, so the
+      // id the attachment carries is the string the domain lists for the skill.
+      const id = String(listed.id)
       const attached = prompt.prompt.skills ?? []
-      if (attached.some((skill) => String(skill.id) === String(id))) return
-      prompt.prompt.skills = [...attached, { id }]
+      if (attached.some((skill) => String(skill.id) === id)) return
+      prompt.prompt.skills = [...attached, { id } as { id: NonNullable<typeof attached[number]>["id"] }]
     })
     await ctx.session.hook("compaction", (compaction) => {
       if (!compaction.messages.some((message) => textOf(message).some(holdsInvocation))) return
