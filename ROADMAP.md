@@ -129,6 +129,12 @@ workflow is already in place.
 The next periodic review (and each after, while the finding holds) staffs one more seat: a
 test-suite audit. Three lenses, in the user's framing:
 
+The seat is test-driven, not yet a fixture: this review's run was its first, and its full work —
+the inventory and the behavioral probes below — runs once more on this repository after the
+review's burndown lands and the repository is quiescent. The `development` skill's *Periodic
+review* section gains the seat as its default panel's ninth only if that drive earns it; until
+the drive is ruled on, the seat is chartered here and named nowhere in the definition.
+
 - **Shotgun versus deliberate.** Sort parametrized and generated tests by whether each case could
   fail differently — a property or oracle stated, counterexamples minimized — or whether the family
   iterates an input space proving one trivial fact. Collapse the shotgun kind to the envelope of
