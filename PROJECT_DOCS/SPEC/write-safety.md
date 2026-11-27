@@ -6,16 +6,15 @@ wrote them — and writes the fresh tree into the emptied directory: what the in
 rendered definitions, the shipped packages and the harness-rendered files the component selection
 admits, and the harness resources the installing harness ships, the guardrail script's only where
 its install-time probe succeeds (Shipped files). A user-level install
-replaces wholesale as a project install does: the destination directory it owns is wiped and the
-full product it ships is written into it — under opencode the plugin entry and the guardrail
-resource beside it are rewritten on every user-level run, never deleted — so the plugin a
-user-level install leaves behind loads. Nothing inside the install
-directory is refused, recognized or preserved: no banner is read to decide an overwrite or a
+replaces wholesale as a project install does: the destination directory it owns is wiped and what it
+ships is written into it (Install destination states that set) — so the plugin a user-level install
+leaves behind loads, and a file the consumer kept in it goes like any other. Nothing inside the
+install directory is refused, recognized or preserved: no banner is read to decide an overwrite or a
 removal, no file is judged ours or foreign, no stale list is kept, and no removal is exempt — a
 file the consumer left inside the plugin's directory, hand-written or a safety copy it made, goes
 with the tree. The install directory itself is never removed, and an install keeps no backup of
-what it replaces: the consumer's git is the record of what an install changed. Banners are written
-as Installed tree states them; no install reads one back to decide what it may write.
+what it replaces: `--dry-run` lists what it would remove, and nothing else is kept of it. Banners are
+written as Installed tree states them; no install reads one back to decide what it may write.
 
 Two pass-overs stand inside the replacement, and one refusal stands at its boundary. The
 **re-entry run** — an install from an installation's own copy into the installation holding that
@@ -25,17 +24,20 @@ else inside the copy's tree, a stale bytecode file included, and neither pass-ov
 (Shipped files). The
 **agents file**, where it sits inside the install directory — under mage, whose install directory
 is the harness directory itself — is passed over too: the agents file keeps its marked-block
-handling (Agents File), and the replacement never deletes the file that handling edits. An install
-whose devpro-copy destination is a symlink is refused before anything is written, as is one whose
-install directory itself is a symlink, each refusal naming the link: the replacement would clear
-and write through the link into whatever it names.
+handling (Agents File), and the replacement never deletes the file that handling edits. A symlink
+inside the install directory is unlinked as the link it is and never followed: the link goes, and
+whatever it named, inside the directory or outside, survives. An install whose devpro-copy
+destination is a symlink is refused before anything is written, as is one whose install directory
+itself is a symlink, each refusal naming the link.
 
 Everything the install touches outside the install directory keeps its handling: the agents file's
 block (Agents File), whose one rolling backup stays the only backup an install's writes keep; the
-runner include lines and the runner file (Plugins); the scratch directory and its `.gitignore`
-line; and the hook entries `profiler init` writes into a settings file — that verb's work, not the
-install's. A changing
-install's report ends with one line counting the rendered files and the copied files; harness
+profiler stores, an install renaming an old one in place and leaving the old store alone where the
+new name already stands, never merging or deleting either (ARCHITECTURE.md, Harness profiler, The
+stores and their rename); the runner include lines and the runner file (Plugins); the scratch
+directory and its `.gitignore` line; and the hook entries `profiler init` writes into a settings
+file — that verb's work, not the install's. A changing install's report ends with one line counting
+the rendered files and the copied files; harness
 resources are counted as copied. The changing install does not enumerate its removals: the dry run
 is the enumeration surface.
 

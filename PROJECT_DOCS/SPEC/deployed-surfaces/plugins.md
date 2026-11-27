@@ -38,17 +38,20 @@ A component naming a definition that does not exist refuses every render, `dev-r
 destination); a component changes what it holds, never where it is.
 
 A supporting artifact is delivered with the definition that uses it, and only where that definition
-ships. The development scripts package goes to its destination inside the `development` skill's,
-and ships with every install. The devpro tools package — the installation's own copy of devpro, its
-wrapper and the runner snippets — is the plugin's own, inside no definition's directory, and ships
-with every install (Shipped files). The dicing and check verbs — `check-plan` and plan dicing
+ships. The development scripts package goes to its destination inside the `development` skill's, and
+ships with every project install, a user-level install's alone excepted (Install destination). The
+devpro tools package — the installation's own copy of devpro, its wrapper and the runner snippets —
+is the plugin's own, inside no definition's directory, and ships with every install (Shipped files).
+The dicing and check verbs — `check-plan` and plan dicing
 included — are verbs of the `devpro` command (Package and Command, Dicing and Checks); the runner
 snippets carry only their runner shortcuts. The kbase component also delivers
 the kb-tools package (runner snippets: `justfile` and `Makefile` fragments a project includes,
 inside the `kbase` skill's own directory) and the harness's `kbase` MCP entry. The MCP entry is the
 `.mcp.json` in the install directory under claude and mage (Install destination), and a
 record in the registry `registry.json` under opencode (Write Safety states which settings files no
-install writes). A user-level install delivers the devpro tools package alone.
+install writes). A user-level install delivers the devpro tools package and, under opencode, the
+plugin entry and the guardrail resource beside it; beyond those it renders the definitions and the
+harness-rendered files and writes no other package (Install destination).
 
 Where the `kbase` skill ships, the `docdicer` skill states that `kb-root/` and everything under it
 belongs to kbase, and that docdicer does not dice, undice or link-check it unless the user directs
@@ -66,9 +69,11 @@ the snippets inside the installed tree (under claude,
 `.claude/skills/devpro/skills/kbase/kb-tools/runner-snippets/`; under opencode, the same below
 `.opencode/plugins/devpro/`). The line does nothing where the snippets are absent: `import? '<path>'`
 in a justfile, `-include <path>` in a Makefile. A project with neither runner file gets a `Makefile`
-created to hold every line the install writes. A line naming a set no install ships any more — the
-retired docdicer set's — is no set's line to judge: it is left as written, inert where the snippets
-it names are gone.
+created to hold every line the install writes. No install edits a runner include line it did not
+write: a line naming a set this release ships and this install writes is updated as below; a line
+naming a set no install ships any more is the operator's to delete — the retired docdicer set's is
+such a line — and left as written, its `import?` path missing under `just`, which refuses a missing
+`import?` path rather than passing it.
 
 Each set is judged on its own: one set's line never counts as another's. A runner file keeps at
 most one line per set. A line already naming a set's snippets under this install's top-level
@@ -77,18 +82,24 @@ line, and every line ending in the file, stay as written. A line whose first non
 `#` is not such a line. A line naming another top-level directory's snippets, or more than one line
 for the same set, is reported and left, and the other sets' lines are still written. A user-level
 install with the kbase component (SPEC.md, Deployed Surfaces, Install destination) writes its
-definitions and the `kbase` MCP entry, `.mcp.json` under claude and the registry's record under
-opencode. It writes no package, no runner include line and no runner file (Write Safety states
-which settings files no install writes).
+definitions, the devpro tools package and the `kbase` MCP entry, `.mcp.json` under claude and the
+registry's record under opencode. It writes no other package, no runner include line and no runner
+file (Write Safety states which settings files no install writes).
 
-No install reads, rewrites or removes a file outside its own managed set. Under mage that leaves a
-legacy plugin directory where one exists: an install from a release before the kbase component was
-one wrote `~/Mage/Skills/kbase/`, holding its own skills, `CLAUDE.md` and `.mcp.json`, and no
-install writes there or removes it. Mage loads the plugin directories below `~/Mage/Skills`, so it
-loads both until the operator removes `~/Mage/Skills/kbase/` once: two sets of skills and agents,
-and, where the install carries the kbase component, the `kbase` MCP server from both `.mcp.json`
-files, the current install's rendered only with that component on. Removing the legacy directory,
-before or after the install, stops the second load.
+No install reads, rewrites or removes a file outside its own managed set, and under mage the
+install directory is `Mage/Skills` itself: everything directly inside it, beside `devpro/`, is inside
+the install directory. A file the operator keeps there — a hand-made skill directory, a note, a
+script, an earlier release's plugin directory — is removed by the next install, whatever wrote it
+(Write Safety). The operator's place for such a file is outside `Mage/Skills/`. The pass-overs hold
+even there: the agents file, `Mage/Skills/CLAUDE.md`, keeps its marked-block handling, and a re-entry
+run's own copy under `Mage/Skills/devpro/` and its wrapper stand (Write Safety, Shipped files).
+
+An install from a release before the kbase component was one wrote a legacy plugin directory,
+`~/Mage/Skills/kbase/`, holding its own skills, `CLAUDE.md` and `.mcp.json`. No later install writes
+there: the next one removes it inside the replacement, and until then Mage loads it beside
+`~/Mage/Skills/devpro/`, so the operator sees two sets of skills and agents and, where the install
+carries the kbase component, the `kbase` MCP server from both `.mcp.json` files. Removing it before
+an install spares the second load's session; the install would have taken it anyway.
 
 No install writes, copies, verifies or locates a `kbase` executable. The operator installs kbase
 themselves, as the `kbase` skill's `references/installing.md` walks a session through, and every harness's `kbase` MCP entry names the

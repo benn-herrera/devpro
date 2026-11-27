@@ -113,8 +113,11 @@ to date, and writes nothing.
 
 A user-level install renders the set into a harness's user directory:
 `devpro install ~ --harness=claude` writes `~/.claude/skills/<plugin>/`, and `--harness=opencode`
-writes `~/.config/opencode/plugins/<plugin>/`. It installs the definitions and no tools: no
-guardrail, no docdicer or cold-read script, no include line. `devpro install-agents-file <dir>`
+writes `~/.config/opencode/plugins/<plugin>/`. It installs the definitions and the devpro tools
+package, with no development scripts package, no kb-tools package and no include line; under opencode
+it also copies the plugin entry and the guardrail resource beside it, so the entry runs the guardrail
+at user level as it does in a project, while under claude it copies no claude resource and registers
+no guardrail. `devpro install-agents-file <dir>`
 installs the agents file into `<dir>`: a user harness directory (`~/.claude`, `~/.config/opencode`),
 whose harness it infers, or a project root, given `--harness`. Both verbs take `--dry-run`.
 

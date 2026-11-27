@@ -4,10 +4,12 @@ A **shipped package** is plain code, never rendered and so never carrying a gene
 installed at its **package destination**, a fixed directory under the install directory. Its
 installed copy is stamped where Installed tree says: the installed banner, not the generated
 banner. A package ships with the definition it belongs to, and only where that definition ships
-(Plugins). Every install delivers the **development scripts package**, `skills/development/scripts/`,
-inside the `development` skill's own directory (below), and the **devpro tools package**, `tools/`
+(Plugins). Every project install delivers the **development scripts package**,
+`skills/development/scripts/`, inside the `development` skill's own directory (below), and every
+install delivers the **devpro tools package**, `tools/`
 (below), under mage as under claude and opencode. An install with the kbase component also delivers
-the kb-tools package (below). A user-level install delivers the devpro tools package alone (SPEC.md,
+the kb-tools package (below). A user-level install delivers the devpro tools package and, under
+opencode, the plugin entry and the guardrail resource beside it — no other package (SPEC.md,
 Deployed Surfaces, Install destination).
 
 The development scripts package holds one file, `cold-read.sh`, a `bash` script, executable,
@@ -98,16 +100,16 @@ replaced whole. `registry.json` is opencode's **registry**: the plugin's name an
 per agent, command and skill — id, body file, description, and for an agent its mode, model, color
 and permissions — and the `kbase` MCP server where `kbase` ships. An install copies the harness
 resources into the install directory — a user-level install's copies being opencode's entry and the
-guardrail resource beside it — and save a file conditional on the install-time probe (below), so a
-resource lands at the
-path it holds below the install directory: opencode's at `<install-dir>/index.ts`, the plugin entry,
-`<install-dir>/guardrail.ts` and `<install-dir>/profiler.ts`;
-claude's at `<install-dir>/hooks/guardrail.pl` and
-`<install-dir>/hooks/state-table-reminder.sh` (mage ships none):
-in the install directory, outside its three deployed surfaces. Each keeps its bytes and its mode:
-the install stamps nothing on them. Every such file carries an installed banner
-(`!INSTALLED! … devpro`) in its first ten lines — the guardrails' name this repository and forbid
-edits. A harness shipping none copies nothing, which is not an error.
+guardrail resource beside it — and saves a resource conditional on the install-time probe (below), so
+a resource lands at the path it holds below the install directory: opencode's at
+`<install-dir>/index.ts`, the plugin entry, `<install-dir>/guardrail.ts` and
+`<install-dir>/profiler.ts`; claude's at `<install-dir>/hooks/guardrail.pl` and
+`<install-dir>/hooks/state-table-reminder.sh` (mage ships none): in the install directory, outside
+its three deployed surfaces. Each keeps its bytes and its mode: the install stamps nothing on them.
+A harness resource ships with its banner as its source writes it, and an install adds nothing: every
+such file carries an installed banner (`!INSTALLED! … devpro`) in its first ten lines as shipped —
+the guardrails' name this repository and forbid edits. A harness shipping none copies nothing, which
+is not an error.
 
 A claude project install also ships the **activity profiler**: its code is devpro's own, and the
 hook files refer back to devpro wherever they ran the profiler's script, with the capture hook's
@@ -166,10 +168,12 @@ event (`PostToolUse`, `PostToolUseFailure`, `PreCompact`, `PostCompact`, `Sessio
 install directory's `tools/devpro.sh profiler capture claude`, appends one line to the project's
 `.devpro-temp/.profiler-claude/<session-id>.jsonl`, and a capture that fails exits 0 with nothing on
 the hook's stdout, the failure named on stderr. A claude session on the web loads no plugin's hooks
-and records nothing there; the skill
-names the tool's `init` for committing the hook where a session needs one. A user-level install
-renders the skill and copies none of the resources. A project opencode install ships
-the capture `profiler.ts` beside the plugin entry and no profiler launcher, and
+and records nothing there; the skill names the tool's `init` for committing the hook where a session
+needs one. A user-level install renders the profiler skill like any other definition; the activity
+capture is a project install's alone: it copies no claude resource, so no profiler hook and no
+`init` under claude, and under opencode it copies its entry and the guardrail resource beside it and
+no capture `profiler.ts`. A project opencode install ships the capture `profiler.ts` beside the
+plugin entry and no profiler launcher, and
 registers no hook entries; each recorded call appends one line to the project's
 `.devpro-temp/.profiler-opencode/<session-id>.jsonl`, a capture that fails raises nothing out of the
 hook, and a mage install ships none of them. A page attributes a child session to the session that
@@ -269,5 +273,5 @@ script only where it stands readable: where it is missing, a call reports `guard
 on stderr and proceeds, and is not blocked. A claude guardrail that fails while running, through a
 missing module or an error in the script, reports on stderr and does not block the call.
 Opencode's guardrail is run by the plugin entry, which imports `guardrail.ts` from the install
-directory: the install writes no settings entry for it. A user-level install copies the guardrail resource beside the entry, and the entry runs it there as
-it does in a project.
+directory: the install writes no settings entry for it. A user-level install copies the guardrail
+resource beside the entry, and the entry runs it there as it does in a project.
