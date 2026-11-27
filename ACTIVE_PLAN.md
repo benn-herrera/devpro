@@ -28,7 +28,7 @@ before anything is approved or dispatched.
 | B9 | landed | expert |
 | B10 | landed | expert |
 | B11 | landed | expert |
-| B12 | dispatchable | expert |
+| B12 | in progress | expert |
 | B13 | dispatchable | expert |
 | B14 | dispatchable | mechanical |
 | B15 | landed | expert |
