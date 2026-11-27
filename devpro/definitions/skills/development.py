@@ -348,9 +348,10 @@ approved can run as approved.
 - Before dispatching, state the agent count and model. More than one agent at once on the most
   capable model the installed agents name waits for a go that names the count. *Purpose:* a
   fan-out's cost shows only once it is spent.
-- Before the agents go, a dispatch of a plan package names the package and sets its `State` cell; the
-  value is the state *Plan status* defines for a dispatch. *Purpose:* the board is read mid-run for
-  what is under way, and a cell set at landing answers after the fact.
+- Before the agents go, a dispatch of a plan package names the package, sets its `State` cell — the
+  value the state *Plan status* defines for a dispatch — and writes its dispatch note into the row:
+  the dispatch's identifier as the capture records it, at the dispatch, never inferred. *Purpose:* the
+  board is read mid-run for what is under way, and a cell set at landing answers after the fact.
 - Read an agent's definition before briefing it, if you have not read it this session. *Purpose:*
   the brief adds to what the agent carries instead of contradicting or repeating it.
 - A brief adds the task's facts to the agent's definition; it never widens or replaces the question

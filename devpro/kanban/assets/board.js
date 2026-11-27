@@ -15,6 +15,7 @@ const log = (level, message, context = {}) => console[level]({ level, message, .
 const DRAG_TYPE = "application/x-docdicer-card";
 const ROADMAP = "roadmap";
 const DESIGN = "design";
+const AGENTS = "agents";
 
 const $ = (id) => document.getElementById(id);
 const boardEl = $("board");
@@ -55,6 +56,10 @@ function el(tag, className, text) {
 }
 
 const columnLabel = (column) => column[0].toUpperCase() + column.slice(1);
+
+// A dispatch's color: its hue names the layer's own palette (board.css's --c0…--c7), so a dot and a
+// dispatch card wear the site's color and nothing restyles the board to draw one.
+const hueColor = (hue) => `var(--c${hue - 1})`;
 
 // A code span, a markdown link whose text is shown in its place, strong (**x**) or emphasis (*x*);
 // the leftmost match wins, so nothing inside a code span is touched, and at one position strong is
@@ -147,15 +152,20 @@ function render(payload) {
 }
 
 function renderColumns(payload) {
-  const { board, plan_columns } = payload;
+  const { board, plan_columns, agents } = payload;
   const scrolled = new Map();
   for (const section of boardEl.querySelectorAll(".column")) {
     scrolled.set(section.dataset.column, section.querySelector(".cards").scrollTop);
   }
+  // The modes' fixed columns: the roadmap in both, the design in execution alone, the plan's words
+  // between them, and the agents column last in both.
   const keys = [ROADMAP, DESIGN, ...plan_columns];
+  if (payload.mode === "planning") keys.splice(keys.indexOf(DESIGN), 1);
+  keys.push(AGENTS);
+  const plan = new Set(plan_columns);
   const lists = new Map();
   const sections = keys.map((key) => {
-    const section = el("section", plan_columns.includes(key) ? "column plan" : "column");
+    const section = el("section", plan.has(key) ? "column plan" : "column");
     section.dataset.column = key;
     const head = el("div", "column-head");
     head.append(el("h2", "", columnLabel(key)));
@@ -185,6 +195,7 @@ function renderColumns(payload) {
   for (const card of showing(board.design, DESIGN)) lists.get(DESIGN).append(designCard(card, DESIGN));
   // A work package whose State cell opens with no state word names no column: the board draws no card.
   for (const pkg of board.packages) lists.get(pkg.state)?.append(packageCard(pkg));
+  for (const dispatch of agents) lists.get(AGENTS).append(dispatchCard(dispatch));
   boardEl.replaceChildren(...sections);
   for (const [key, list] of lists) list.scrollTop = scrolled.get(key) ?? 0;
 }
@@ -299,13 +310,42 @@ function designCard(card, column) {
   return card.kind === "ticket" ? draggable(e, info) : e;
 }
 
-// A work package's card; not draggable, its state changing only by an edit to the plan.
+// A work package's card; not draggable, its state changing only by an edit to the plan. A dot stands
+// for each running dispatch whose dispatch note its row carries, in that dispatch's color.
 function packageCard(pkg) {
   const e = el("div", "card");
   e.append(titleEl(`${pkg.id} ${pkg.title || "untitled"}`, pkg.href));
   const meta = [pkg.rating ?? "unrated"];
   if (pkg.lifetime) meta.push(`Lifetime: ${pkg.lifetime}`);
   e.append(el("div", "meta", meta.join(" · ")));
+  if (pkg.dispatch_colors.length) {
+    const dots = el("div", "dots");
+    dots.title = "running dispatches";
+    for (const hue of pkg.dispatch_colors) {
+      const dot = el("span", "dot");
+      dot.style.background = hueColor(hue);
+      dot.setAttribute("aria-hidden", "true");
+      dots.append(dot);
+    }
+    e.append(dots);
+  }
+  return e;
+}
+
+// A running dispatch's card: a dot in its color, the agent's name, the model it runs, and the session
+// that dispatched it; the name links the page the capture recorded a session id for.
+function dispatchCard(dispatch) {
+  const e = el("div", "card dispatch");
+  const dot = el("span", "dot");
+  dot.style.background = hueColor(dispatch.hue);
+  dot.setAttribute("aria-hidden", "true");
+  const a = linkEl(`/page/${dispatch.page}`);
+  a.append(dot, document.createTextNode(dispatch.name ?? "agent"));
+  const head = el("div", "title");
+  head.append(a);
+  e.append(head);
+  e.append(el("div", "meta", `session ${dispatch.session}`));
+  if (dispatch.model) e.append(el("div", "meta", dispatch.model));
   return e;
 }
 

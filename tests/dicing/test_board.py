@@ -9,6 +9,7 @@ import pytest
 
 from devpro.dicing.linkcheck import prose_links
 from devpro.dicing.textfile import split_lines
+from devpro.doccheck.planform import ACTIVE_PLAN, active_document, read_plan
 from devpro.kanban import board as board_module
 from devpro.kanban.board import (
     INSTRUCTION,
@@ -17,8 +18,10 @@ from devpro.kanban.board import (
     MoveWriteFailed,
     ParkedCard,
     RoadmapCard,
+    board_mode,
     move_to_design,
     move_to_roadmap,
+    plan_columns,
     read_board,
 )
 
@@ -98,6 +101,43 @@ def _to_roadmap(root: str, title: str, target: str | None = None) -> list[str]:
 def test_plan_columns(tmp_path, plan, packages):
     board = read_board(_project(tmp_path, {"ACTIVE_PLAN.md": plan}))
     assert [(p.id, p.state, p.lifetime, p.rating) for p in board.packages] == packages
+
+
+@pytest.mark.parametrize(
+    "files, mode, columns",
+    [
+        pytest.param({}, "planning", ["drafted", "dispatchable"], id="no-active-plan"),
+        pytest.param(
+            {"ACTIVE_PLAN.md": "# Plan\n\n## Status\n\n| Package | State |\n|---|---|\n| P1 | drafted |\n"},
+            "planning",
+            ["drafted", "dispatchable"],
+            id="no-row-under-way",
+        ),
+        pytest.param(
+            {"ACTIVE_PLAN.md": "# Plan\n\n## Status\n\n| Package | State |\n|---|---|\n| P1 | in progress |\n"},
+            "execution",
+            ["drafted", "dispatchable", "in progress", "landed"],
+            id="a-row-in-progress",
+        ),
+        pytest.param(
+            {"ACTIVE_PLAN.md": "# Plan\n\n## Status\n\n| Package | State |\n|---|---|\n| P1 | landed |\n"},
+            "execution",
+            ["drafted", "dispatchable", "in progress", "landed"],
+            id="a-row-landed",
+        ),
+    ],
+)
+def test_the_mode_settles_the_plan_columns(tmp_path, files, mode, columns):
+    """`clauses.TEST_PRECONDITION`: the defect is the board drawing one column set whatever its plan —
+    the four state words in a planning-mode board, or the two where a package is already under way —
+    so the mode's two words and its one home, `mode`, drift apart.
+
+    The status table settles the mode — no `in progress` and no `landed` row, and no plan at all,
+    being planning — and `board_mode` and `plan_columns` answer the pair the payload carries."""
+    root = _project(tmp_path, files)
+    plan_path = active_document(root, ACTIVE_PLAN)
+    plan = read_plan(plan_path) if plan_path else None
+    assert (board_mode(plan), list(plan_columns(board_mode(plan)))) == (mode, columns)
 
 
 @pytest.mark.parametrize(

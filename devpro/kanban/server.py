@@ -8,8 +8,9 @@ Endpoints, each answering JSON but the page's files and the served documents:
 - `GET /<path>.md`: a file `board.served_files` names — its docstring gives the set — as
   `text/markdown`, read-only; any other path is 404.
 - `GET /api/board?since=<version>`: the board payload — `version`, the board as `board`'s model reads
-  it, the `plan_columns` its page draws, the `project`'s name, and `devpro_version`, the version its
-  connection indicator names; where `since` is the version the server
+  it, the `plan_columns` its page draws, the `mode` the board is in, the running dispatches as
+  `agents`, each package card's `dispatch_colors`, the `project`'s name, and `devpro_version`, the
+  version its connection indicator names; where `since` is the version the server
   holds, the answer waits until the board changes or `LONG_POLL_SECONDS` pass.
 - `GET` or `POST /api/stop`: answers `{}`, then stops the server serving the panel. Any method or
   body asks it; the page's `POST` with `{}` is its own choice, not the endpoint's requirement.
@@ -25,11 +26,12 @@ Endpoints, each answering JSON but the page's files and the served documents:
   <file>"}` where a file the move reads cannot be read.
 """
 
+import hashlib
 import json
 import os
 import threading
 from collections.abc import Callable
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from http.server import BaseHTTPRequestHandler
 from importlib.resources import files
 from typing import Any, ClassVar, TextIO
@@ -37,12 +39,15 @@ from urllib.parse import parse_qs, unquote, urlsplit
 
 from .. import __version__
 from ..dicing.textfile import read_text
+from ..doccheck.planform import ACTIVE_PLAN, Plan, active_document, read_plan
+from ..profiler.read import Dispatch, dispatch_notes, running_dispatches
 from .board import (
-    PLAN_COLUMNS,
     MoveRefused,
     MoveWriteFailed,
+    board_mode,
     move_to_design,
     move_to_roadmap,
+    plan_columns,
     read_board,
     root_relative,
     served_files,
@@ -59,17 +64,38 @@ _UNREADABLE = "unreadable"
 
 def _snapshot(root: str) -> dict[str, str | None]:
     """Each watched file's content digest; None where it is not a file, `_UNREADABLE` where it is
-    one that cannot be read."""
+    one that cannot be read. A watched directory — an activity capture's store — is digested from its
+    entry listing's stat data alone, each `.jsonl` entry's name, modification time and size, never a
+    record's bytes: an append changes a size, a new session adds an entry, and the poll pays one
+    listing per store, whatever the sessions' count. None where the store is not a directory,
+    `_UNREADABLE` where it is one that cannot be listed."""
     snapshot: dict[str, str | None] = {}
     for path in watched_files(root):
-        if not os.path.isfile(path):
+        if os.path.isdir(path):
+            try:
+                snapshot[path] = _store_digest(path)
+            except OSError:
+                snapshot[path] = _UNREADABLE
+        elif not os.path.isfile(path):
             snapshot[path] = None
-            continue
-        try:
-            snapshot[path] = sha256(read_text(path))
-        except OSError:
-            snapshot[path] = _UNREADABLE
+        else:
+            try:
+                snapshot[path] = sha256(read_text(path))
+            except OSError:
+                snapshot[path] = _UNREADABLE
     return snapshot
+
+
+def _store_digest(store: str) -> str:
+    """A store directory's digest of its entries' stat data, its `.jsonl` files alone: each one's name,
+    modification time and size, joined and hashed. Raises OSError where the store cannot be listed."""
+    entries: list[str] = []
+    for entry in os.scandir(store):
+        if not entry.name.endswith(".jsonl") or not entry.is_file():
+            continue
+        stat = entry.stat()
+        entries.append(f"{entry.name}\0{stat.st_mtime_ns}\0{stat.st_size}")
+    return hashlib.sha256("\n".join(sorted(entries)).encode("utf-8", "surrogateescape")).hexdigest()
 
 
 class BadRequest(Exception):
@@ -99,10 +125,16 @@ class KanbanServer:
         self._lock = threading.Condition()
         self._stop = threading.Event()
         self._poller = threading.Thread(target=self._poll, name="kanban-poll", daemon=True)
-        self._snapshot = _snapshot(root)
-        self._board = read_board(root)
-        self._version = 1
         self._reported: str | None = None  # the unreadable file last named on stderr
+        self._snapshot = _snapshot(root)
+        self._version = 1
+        self._agents: list[Dispatch] = []
+        self._read_board()
+        with self._lock:
+            try:
+                self._read_stores()
+            except OSError as e:
+                self._report(_unreadable(e, self.root))
         self.dashboard = after
         _Handler._local_host = type(after).handler._local_host
         _Handler._send = type(after).handler._send
@@ -156,8 +188,9 @@ class KanbanServer:
 
     def _moved(self, move: Callable[[], list[str]]) -> dict[str, Any]:
         """Make move, then read the board again; the payload with the files written. A write that
-        fails still reads the board again, as the files written have changed. A read that fails
-        in either case is named on stderr and leaves the move's result as it is."""
+        fails still reads the board again, as the files written have changed. A board read that fails
+        in either case is named on stderr and leaves the move's result as it is; the stores' read
+        failing never fails the move."""
         try:
             written = move()
         except MoveWriteFailed:
@@ -167,10 +200,18 @@ class KanbanServer:
         return {**self._payload(), "written": written}
 
     def _payload(self) -> dict[str, Any]:
+        mode = board_mode(self._plan)
+        columns = plan_columns(mode)
+        packages = [
+            replace(pkg, dispatch_colors=dispatch_notes([pkg.note], self._agents) if pkg.state in columns else [])
+            for pkg in self._board.packages
+        ]
         return {
             "version": self._version,
-            "board": asdict(self._board),
-            "plan_columns": list(PLAN_COLUMNS),
+            "board": {**asdict(self._board), "packages": [asdict(package) for package in packages]},
+            "plan_columns": list(columns),
+            "mode": mode,
+            "agents": [asdict(dispatch) for dispatch in self._agents],
             "project": os.path.basename(self.root),
             "devpro_version": __version__,
         }
@@ -187,16 +228,36 @@ class KanbanServer:
             self._report(_unreadable(e, self.root))
 
     def _refresh(self) -> None:
-        """Read the board again where a watched file changed. Raises OSError where a file cannot
-        be read, keeping the last good board and the last snapshot, so the next refresh reads again."""
+        """Read the board and the stores again where a watched file changed. Raises OSError where a file
+        cannot be read, keeping the last good board and the last snapshot, so the next refresh reads
+        again. The store digest is a watched entry's: a record appended or a session file created
+        changes it, so the watch list is what notices a dispatch and the stores are read as often as
+        the files are."""
         snapshot = _snapshot(self.root)
         if snapshot == self._snapshot:
             return
-        self._board = read_board(self.root)
+        self._read_board()
+        try:
+            self._read_stores()
+        except OSError as e:
+            self._report(_unreadable(e, self.root))
         self._snapshot = snapshot
         self._reported = None
         self._version += 1
         self._lock.notify_all()
+
+    def _read_board(self) -> None:
+        """Read the board, then the plan its mode is read from — the plan the board itself read, read
+        once more, and None where the project has no active plan."""
+        self._board = read_board(self.root)
+        plan_path = active_document(self.root, ACTIVE_PLAN)
+        self._plan: Plan | None = read_plan(plan_path) if plan_path else None
+
+    def _read_stores(self) -> None:
+        """Read the activity capture's stores for the running dispatches. Raises OSError where a store
+        cannot be read, leaving the running set as it was, so the board keeps its last good state and
+        the next poll reads the stores again."""
+        self._agents = running_dispatches(self.root)
 
     def _report(self, path: str) -> None:
         if path != self._reported:

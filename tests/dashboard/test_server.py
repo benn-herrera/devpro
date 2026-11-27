@@ -332,7 +332,13 @@ def test_the_board_page_and_the_files_it_names_resolve_under_the_board_path(
 
 def test_the_board_payload_is_the_model(tmp_path: Path, serve) -> None:
     """`/api/board` answers the board `read_board` reads, with the plan columns, the project's name
-    and devpro's version: a panel serving a second model of the files is a second board."""
+    and devpro's version: a panel serving a second model of the files is a second board.
+
+    `clauses.TEST_PRECONDITION`: the defect is a payload drawn from a board of the panel's own making —
+    a second `read_board` counting the version, or a fixed column set over a board whose mode the
+    status table settles. The fixture's one row opens its State cell with no state word, so no row is
+    `in progress` or `landed`: the board is in planning mode and draws the two columns a package is
+    dispatched from."""
     root = project(
         tmp_path / "proj",
         {"ACTIVE_PLAN.md": PLAN, "ROADMAP.md": "## Next\n\n### Two\n\nMore.\n", "ACTIVE_DESIGN.md": "# Design\n"},
@@ -341,8 +347,45 @@ def test_the_board_payload_is_the_model(tmp_path: Path, serve) -> None:
     payload = json.loads(serve(root).get("api/board")[2])
 
     assert payload["board"] == json.loads(json.dumps(asdict(read_board(str(root)))))
-    assert payload["plan_columns"] == ["drafted", "dispatchable", "in progress", "landed"]
+    assert payload["plan_columns"] == ["drafted", "dispatchable"]
+    assert payload["mode"] == "planning"
+    assert payload["agents"] == []
     assert payload["project"] == "proj"
+
+
+def test_a_running_dispatch_colors_its_packages_dots(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a payload whose `agents` stands empty in execution
+    mode, or whose package cards carry no `dispatch_colors` — the agents column drawn with nothing in
+    it, and every dispatch unjoined, however the plan's notes name them.
+
+    An opencode dispatch the stores record no end for is running: the plan's `in progress` row puts the
+    board in execution mode, `agents` carries it with the palette's first hue and its child's page, and
+    the row whose State cell notes its child session id wears that hue. The row noting no id, and the
+    one noting the id inside a longer word, wear none."""
+    plan = (
+        "# Plan\n\nRelease: 9.9.9\n\n## Status\n\n| Package | Rating | State |\n|---|---|---|\n"
+        "| P1 | expert | in progress: ses_child |\n"
+        "| P2 | expert | in progress: under ses_child |\n"
+        "| P3 | expert | in progress: reuse-x-ses_child |\n"
+    )
+    root = project(tmp_path / "proj", {"ACTIVE_PLAN.md": plan})
+    store(
+        root,
+        "s-parent",
+        [
+            record("2026-01-01T00:00:05.000Z", tool="Agent", name="devpro-coder", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "ses_child", "background": True}
+        ],
+        directory=".profiler-opencode",
+    )
+
+    payload = json.loads(serve(root).get("api/board")[2])
+
+    assert payload["mode"] == "execution"
+    assert [(a["id"], a["hue"], a["name"], a["session"], a["page"]) for a in payload["agents"]] == [
+        ("ses_child", 1, "devpro-coder", "s-parent", "ses_child")
+    ]
+    assert [pkg["dispatch_colors"] for pkg in payload["board"]["packages"]] == [["1"], ["1"], []]
 
 
 def test_a_card_moves_to_the_design_and_back_at_the_paths_the_page_calls(tmp_path: Path, serve) -> None:

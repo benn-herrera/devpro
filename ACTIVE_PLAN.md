@@ -15,7 +15,7 @@ package adds code for it.
 |---|---|---|---|---|
 | P1 | landed | mechanical | shipped | |
 | P2 | landed | expert | shipped | |
-| P3 | dispatchable | expert | shipped | |
+| P3 | landed | expert | shipped | |
 | P4 | landed | mechanical | persistent | parallel with code packages |
 | P5 | dispatchable | mechanical | transient | no closing commit: untracked output |
 | P6 | drafted | expert | persistent | dispatched when P1–P5 are `landed` |

@@ -14,7 +14,7 @@ import os
 import posixpath
 import re
 from collections.abc import Callable, Sequence
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 from typing import Any, TypeVar, cast
 from urllib.parse import quote
 
@@ -38,6 +38,7 @@ from ..doccheck.planform import (
     Breach,
     ParkedWork,
     Part,
+    Plan,
     WorkPackage,
     active_document,
     design_files,
@@ -49,9 +50,16 @@ from ..doccheck.planform import (
     roadmap_file,
     roadmap_from_file,
 )
+from ..profiler.values import TRACE_DIR, TRACE_STORES
 
-# The plan columns, left to right; a work package's card is in the column its state names.
+# The plan columns, left to right; a work package's card is in the column its state names. The board
+# draws the mode's words: planning carries the two a package is dispatched from, execution all four.
 PLAN_COLUMNS = STATE_WORDS
+PLANNING_COLUMNS = ("drafted", "dispatchable")
+PLANNING = "planning"
+EXECUTION = "execution"
+# The state words whose presence a plan's status table puts the board in execution.
+UNDER_WAY = ("in progress", "landed")
 INSTRUCTION = "complete and update this design"
 CREATED_DESIGN_HEADING = "# ACTIVE DESIGN"
 CREATED_ROADMAP_HEADING = "# ROADMAP"
@@ -100,6 +108,7 @@ class PackageCard(WorkPackage):
     """A work package's fields, flat, and its card's link."""
 
     href: str  # as RoadmapCard's, to its heading; untitled, the URL path of the file holding its row
+    dispatch_colors: list[str] = field(default_factory=list)  # the running dispatches its note names
 
 
 _Card = TypeVar("_Card", RoadmapCard, DesignCard)
@@ -178,15 +187,30 @@ def read_board(root: str) -> Board:
 
 def watched_files(root: str) -> list[str]:
     """Every file the board reads, or would read were it there, so that its creation is seen too;
-    each path normalized. A diced tree's leaves are watched where the tree is its document's active
-    form: only while the document's monolith is absent."""
+    each path normalized, and the activity capture's store directories last. A diced tree's leaves are
+    watched where the tree is its document's active form: only while the document's monolith is
+    absent."""
     paths = [os.path.join(root, name) for name in (ROADMAP, ACTIVE_DESIGN, ACTIVE_PLAN)]
     for monolith in (ACTIVE_DESIGN, ACTIVE_PLAN):
         tree = os.path.join(root, os.path.splitext(monolith)[0])
         if os.path.isdir(tree) and not os.path.exists(os.path.join(root, monolith)):
             paths.extend(markdown_files([tree]))
     paths.extend(f for work in parked_work(root) for f in work.files)
+    paths.extend(os.path.join(root, TRACE_DIR.parent, name) for name in TRACE_STORES)
     return [os.path.normpath(p) for p in paths]
+
+
+def board_mode(plan: Plan | None) -> str:
+    """The board's mode: planning while no row of the plan's status table is under way, and with no plan
+    at all; execution otherwise."""
+    if plan is None or not any(package.state in UNDER_WAY for package in plan.packages):
+        return PLANNING
+    return EXECUTION
+
+
+def plan_columns(mode: str) -> tuple[str, ...]:
+    """The plan columns the board of mode draws: planning's two state words, execution's four."""
+    return PLANNING_COLUMNS if mode == PLANNING else PLAN_COLUMNS
 
 
 def served_files(root: str) -> list[str]:

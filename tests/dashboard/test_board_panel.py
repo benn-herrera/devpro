@@ -44,6 +44,8 @@ from devpro.kanban import board as board_module
 from devpro.kanban import server as server_module
 from devpro.kanban.board import read_board
 
+from .conftest import record
+
 _PLAN = (
     "# Plan\n\nRelease: 9.9.9\n\n## Status\n\n| Package | Rating | State |\n|---|---|---|\n"
     "| P1 | expert | |\n| P2 | expert | dispatchable |\n| P3 | mechanical | landed |\n"
@@ -362,6 +364,115 @@ def test_an_unreadable_file_keeps_the_last_good_board_and_is_named(tmp_path):
     named = err.getvalue().splitlines()
     assert len(named) == 1 and str(roadmap) in named[0]
     assert len(after["board"]["roadmap"]) == 3
+
+
+def test_a_change_to_the_stores_is_followed(tmp_path, serve):
+    """`clauses.TEST_PRECONDITION`: the defect is a watched set holding the board's files alone, so a
+    dispatch the capture records surfaces on no open page and the agents column stands still while work
+    goes on — the stores' files never followed, an append or a new session file alike.
+
+    The stores are watched as directories: a record appended to a session file and a newly written
+    session file each change a store's digest, and the next board answers the running dispatch the
+    records now hold."""
+    root = _project(tmp_path / "proj", {"ACTIVE_PLAN.md": _PLAN, "ROADMAP.md": _ROADMAP})
+    store = Path(root) / ".devpro-temp" / ".profiler-opencode"
+    _create(store / "s-parent.jsonl", "")
+    client = serve(root)
+    board = client.board()
+
+    _append(store / "s-parent.jsonl", _dispatch("2026-01-01T00:00:05.000Z", "s-child"))
+    appended = client.board(since=board["version"])
+    _append(store / "s-other.jsonl", _dispatch("2026-01-01T00:00:09.000Z", "s-other-child"))
+    created = client.board(since=appended["version"])
+
+    assert [a["id"] for a in appended["agents"]] == ["s-child"]
+    assert [(a["id"], a["hue"]) for a in created["agents"]] == [("s-child", 1), ("s-other-child", 2)]
+
+
+def test_a_running_dispatch_keeps_its_color_as_another_opens(tmp_path, serve):
+    """`clauses.TEST_PRECONDITION`: the defect is a color read off the running set's size at each
+    payload — every dispatch recolored as one opens or ends — where a color holds while its dispatch
+    runs and only the set's newest takes the palette's next hue.
+
+    Two dispatches open in `at` order, the palette's first and second; a third opens later and takes
+    the third, and every earlier dispatch keeps the hue it had."""
+    root = _project(tmp_path / "proj", {})
+    store = Path(root) / ".devpro-temp" / ".profiler-opencode"
+    opened = [
+        ("2026-01-01T00:00:09.000Z", "s-late"),
+        ("2026-01-01T00:00:05.000Z", "s-first"),
+        ("2026-01-01T00:00:07.000Z", "s-second"),
+    ]
+    _append(store / "s-parent.jsonl", "".join(_dispatch(at, child) for at, child in opened))
+    client = serve(root)
+    board = client.board()
+
+    _append(store / "s-parent.jsonl", _dispatch("2026-01-01T00:00:11.000Z", "s-third"))
+    after = client.board(since=board["version"])
+
+    assert [(a["id"], a["hue"]) for a in board["agents"]] == [("s-first", 1), ("s-second", 2), ("s-late", 3)]
+    assert [(a["id"], a["hue"]) for a in after["agents"]] == [
+        ("s-first", 1),
+        ("s-second", 2),
+        ("s-late", 3),
+        ("s-third", 4),
+    ]
+
+
+def test_an_unreadable_store_keeps_the_last_good_board_and_is_named(tmp_path):
+    """`clauses.TEST_PRECONDITION`: the defect is a store that cannot be read blanking the running set
+    and the agents column with it, and the store left unnamed on stderr — the operator reading a board
+    that says no agent works while the capture holds its records.
+
+    A store the poll cannot list is named on stderr as the live-following rule names an unreadable
+    watched file, and the board keeps the last running set and its version until the store reads
+    again."""
+    if os.geteuid() == 0:
+        pytest.skip("root reads any directory")
+    root = _project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP})
+    store = Path(root) / ".devpro-temp" / ".profiler-opencode"
+    _append(store / "s-parent.jsonl", _dispatch("2026-01-01T00:00:05.000Z", "s-child"))
+    err = io.StringIO()
+    server = DashboardServer(root, stderr=err)
+    try:
+        server.start()
+        before = server.board.payload(None)
+        store.chmod(0)
+        deadline = time.monotonic() + _TIMEOUT
+        while str(store) not in err.getvalue() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        assert server.board.payload(None)["agents"] == before["agents"]
+        store.chmod(0o755)
+        _append(store / "s-parent.jsonl", _dispatch("2026-01-01T00:00:07.000Z", "s-next"))
+        after = before
+        while len(after["agents"]) != 2 and time.monotonic() < deadline:
+            after = server.board.payload(str(after["version"]))
+    finally:
+        store.chmod(0o755)
+        server.server_close()
+
+    named = err.getvalue().splitlines()
+    assert len(named) == 1 and str(store) in named[0]
+    assert len(after["agents"]) == 2
+
+
+def _dispatch(at: str, child: str) -> str:
+    """One opencode dispatch record line: the acknowledgment `execute.after` writes, its `at` the
+    dispatch moment and its `child_agent_id` the child's session."""
+    row = record(at, tool="Agent", name="devpro-python-coder", session="s-parent") | {
+        "harness": "opencode",
+        "child_agent_id": child,
+        "child_agent_type": "devpro-python-coder",
+        "background": True,
+    }
+    return json.dumps(row) + "\n"
+
+
+def _append(path: Path, text: str) -> None:
+    """Append text to the file at path, creating its directory: a capture's own write."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as trace:
+        trace.write(text)
 
 
 def _texts(root: str) -> dict[str, str]:

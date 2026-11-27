@@ -8,7 +8,9 @@ reading the stores once per request.
 
 import json
 import math
+import re
 from collections.abc import Callable
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import NamedTuple
 from urllib.parse import quote
@@ -82,6 +84,116 @@ def joined_session(session: Json, sessions: list[Json]) -> Json:
             }
         records.append(record)
     return {**session, "records": records}
+
+
+# The hue a running dispatch is colored with, by its place in the palette. A hue names the site's own
+# color (`board.css`'s `--c0`…`--c7`, `view.html`'s `hueColor`), so nothing restyles the board to draw
+# one: the board and the profiler's sequence diagram wear the same palette.
+DISPATCH_HUES = 8
+
+
+@dataclass
+class Dispatch:
+    """A running dispatch, as the board's agents column draws it, and the identifier the active plan's
+    dispatch note names it by."""
+
+    id: str  # the dispatch's identifier: the child session's id under opencode, `child_agent_id`'s under claude
+    name: str | None  # the agent it runs, as the opening record names it
+    model: str | None  # the model it runs, as its records name it
+    session: str  # the session that dispatched it
+    page: str  # the page the card links: the child's under opencode, the dispatching session's under claude
+    at: str  # the opening record's `at`
+    hue: int  # its color: its place among the running dispatches, its hue the palette's next
+
+
+def running_dispatches(directory: Path | str) -> list[Dispatch]:
+    """The running dispatches the stores under directory hold, in the order they opened, each with its
+    color.
+
+    The derivation reads records alone — no subprocess, no clock, and a change in the stores reaches it
+    as `read_sessions` reads them again. Under opencode the dispatch is the acknowledgment `execute.after`
+    wrote, its `child_agent_id` the child's session; the child's idle with an empty `background`
+    (`child_episodes`' end contract) closes it. Under claude the `Agent` tool call whose `child_agent_id`
+    names the child opens the dispatch and the `SubagentStop` event record closes it, matched by the
+    parent session and the agent type in the order the records stand: two concurrent dispatches of one
+    agent type in one session close in the order they opened. A dispatch with no closing record is
+    running.
+
+    The color is assigned here, in the running set's order, and holds while the dispatch runs: it is the
+    dispatch's place among the running ones, its hue the palette's next. The running set is ordered by
+    the opening record's `at`, so a batch of records written in one moment is colored in that rather
+    than its store's order. A store that cannot be read raises out of this, as it does from
+    `read_sessions`."""
+    sessions = read_sessions(directory)
+    ended = _ended(sessions)
+    running = [dispatch for dispatch in _opened(sessions) if dispatch.id not in ended]
+    running.sort(key=lambda dispatch: (_epoch_ms(dispatch.at) or 0))
+    return [replace(dispatch, hue=place % DISPATCH_HUES + 1) for place, dispatch in enumerate(running)]
+
+
+def _opened(sessions: list[Json]) -> list[Dispatch]:
+    """Every dispatch the sessions' records open, in the order their opening records stand in the read."""
+    opened: list[Dispatch] = []
+    for session in sessions:
+        for record in session["records"]:
+            dispatch = _dispatched(record)
+            if dispatch is not None:
+                opened.append(dispatch)
+    return opened
+
+
+def _dispatched(record: Json) -> Dispatch | None:
+    """The dispatch a record opens, as it stands in the store, or nothing where it opens none."""
+    child = record.get("child_agent_id")
+    if not child or not isinstance(record.get("at"), str):
+        return None
+    if record.get("harness") == "opencode":
+        page = quote(str(child))
+    elif record.get("harness") == "claude" and record.get("tool") == "Agent":
+        page = quote(str(record.get("session")))
+    else:
+        return None
+    return Dispatch(
+        id=str(child),
+        name=record.get("name"),
+        model=record.get("model"),
+        session=str(record.get("session")),
+        page=page,
+        at=record["at"],
+        hue=0,
+    )
+
+
+def _ended(sessions: list[Json]) -> set[str]:
+    """The ids of the dispatches a closing record ends: opencode's child idled with an empty
+    `background`, and claude's `SubagentStop`, its session and agent type matched against each `Agent`
+    call of that session in file order."""
+    ended = {str(record["session"]) for record in child_episodes(sessions).values()}
+    calls: dict[tuple[str, str], int] = {}
+    for session in sessions:
+        for record in session["records"]:
+            if record.get("harness") != "claude":
+                continue
+            key = (str(record.get("session")), str(record.get("agent_type")))
+            if record.get("tool") == "Agent" and record.get("child_agent_id"):
+                calls[key] = calls.get(key, 0) + 1
+            elif record.get("event") == "SubagentStop" and calls.get(key, 0) > 0:
+                calls[key] -= 1
+                ended.add(str(record["session"]))
+    return ended
+
+
+def dispatch_notes(notes: list[str], running: list[Dispatch]) -> list[str]:
+    """The colors, in the running set's order, of the running dispatches one row's State-cell note names.
+
+    A note names the dispatches its row is under by the identifiers it carries, read as the plan's
+    reader reads them: the note split on whitespace, commas and semicolons into tokens, each compared
+    exactly to a dispatch's identifier, so an identifier inside a longer word names nothing."""
+    named = {token for note in notes for token in _NOTE_TOKENS.split(note) if token}
+    return [str(dispatch.hue) for dispatch in running if dispatch.id in named]
+
+
+_NOTE_TOKENS = re.compile(r"[\s,;]+")
 
 
 TOOL_WORDS = {"Skill": "skill", "Agent": "agent"}

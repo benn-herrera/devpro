@@ -332,3 +332,10 @@ code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; }
 .meta, .group, .parked { color: var(--muted); font-size: 0.85rem; }
 .group { text-transform: uppercase; letter-spacing: 0.03em; font-size: 0.75rem; }
 .parked { margin: 0.2rem 0 0; padding-left: 1rem; }
+
+/* A running dispatch's color: the dot a dispatch card and a package card carry, its fill the
+   dispatch's own (the page sets it from the payload's hue, the layer's palette). */
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.dots { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
+.card.dispatch .title { display: flex; align-items: center; gap: 0.4rem; }
+.card.dispatch .title a { display: flex; align-items: center; gap: 0.4rem; }
