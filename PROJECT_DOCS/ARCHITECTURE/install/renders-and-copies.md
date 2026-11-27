@@ -101,11 +101,9 @@ user-level install's resource copies are the harness's entry (`Harness.entry_res
 opencode's `index.ts`) and the guardrail resource beside it: the plugin cannot register without the
 entry, and the entry imports the guardrail only where `guardrail.ts` stands beside it — the
 guardrail running at user level through the entry, as it does in a project. The harness resources join the same `copies` list as the packages', and the install report counts
-them. The copy is not a mirror and keeps no retirement inventory: the wholesale replacement removes
-whatever stands and the fresh tree holds only what this release ships — no retired resource name,
-no retired package directory, no banner or marker check on any destination, no per-destination
-clearing. The changing install's report does not enumerate removals; the dry run is the
-enumeration surface.
+them. What stands is only what this release ships — nothing is retired by name and no destination
+is cleared apart from the replacement. The changing install's report does not enumerate removals;
+the dry run is the enumeration surface.
 
 **Preflight.** The CLI reaches `install` through `install.preflighted_install`,
 which runs the unchanged install into a scratch copy of the paths it manages and compares the
@@ -122,9 +120,9 @@ part.
   the user harness directory, on a claude or opencode project install: the paths of the
   `checked_followed_agents_file` decision that fall outside the project (Agents File, Placement).
   Under the harness directory: where
-  the run writes an agents file, the `path`, `destination`, `backup` and `native` of a non-writing
-  `checked_agents_file` call. Under the install directory: the install directory managed whole — the managed set is every entry
-  below it, the re-entry pass-over trees and, under mage, the agents file's path included, each
+  the run writes an agents file, the `paths` of the `checked_agents_file` call made to decide that,
+  writing nothing. Under the install directory: the install directory managed whole — the managed set is every entry
+  below it, the re-entry pass-over trees and, under mage, the agents file's path among them, each
   staged as it stands, a link staged as the link it is and never followed — so the scratch run's
   replacement meets what the real tree holds, passes over what it passes over, and the comparison
   reads the removals it makes against that whole staging. The bases outside the install directory
@@ -134,12 +132,12 @@ part.
   is a harness-directory plugin, and the `.gitignore` the installation prepares
   (The scratch directory) — the scratch directory itself is not managed: the install creates it
   where missing and the comparison does not read what the project holds inside it. Also under the
-  project root, on the same condition, where `_installs_agents_file` (`install.py:479-482`) decides
+  project root, on the same condition, where `_installs_agents_file` decides
   the install writes an agents file: every path of the `checked_followed_agents_file` decision that
   falls inside the
   project — the project's `AGENTS.md`, and under mage its `CLAUDE.md`, that harness's `agents_file`
   — taken from that call made with `uncommitted` naming no change and returning its `paths`, so the
-  check writes nothing (`install.py:849-857`); a path of that decision falling outside the project
+  check writes nothing; a path of that decision falling outside the project
   is managed under the user harness directory instead, as above. The project's
   own settings files are not named: no install writes one.
 - **The scratch copy** (`preflight.preflight`) lives in a `tempfile.TemporaryDirectory`, each

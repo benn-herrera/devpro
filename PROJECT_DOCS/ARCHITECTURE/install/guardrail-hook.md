@@ -15,8 +15,9 @@ directory; the `HarnessFile` for the plugin's `hooks/hooks.json` twice over — 
 by `_guardrail_registration` (`devpro/harnesses/claude.py`), and `registration_without_hook`, built
 by `_reminder_registration`, the same file without the guardrail's entry; and a `marker`, the phrase
 both hook commands' missing-script reports share (Shipped files). The marker is a phrase of ordinary
-English, which is what narrowing it to the part both reports share costs: a foreign file carrying it
-at the registration's path is overwritten, not refused. The registration holds the guardrail's `PreToolUse` entry — matcher
+English because it is read to recognize a plugin, not to refuse a file: `_is_our_harness_file`,
+whose one reader is `_report_shadowing` checking whether a user-level plugin is present, would report
+one where the operator wrote a narrow phrase's near likeness. The registration holds the guardrail's `PreToolUse` entry — matcher
 `Bash|Read|Write|Edit|NotebookEdit|Grep|Glob` — where the install-time probe passes, plus one
 ungated plan-state reminder entry on every claude install, a `PostToolUse` matched on `Agent`,
 running `<install-dir>/hooks/state-table-reminder.sh`, which reads `ACTIVE_PLAN.md` — file or,

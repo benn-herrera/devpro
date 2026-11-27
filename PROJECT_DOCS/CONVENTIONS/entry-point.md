@@ -23,7 +23,7 @@ Contents:
   - [Plugin membership has one home](code-definitions-and-install/plugin-membership-has-one-home.md)
   - [`devpro` names the project and a plugin](code-definitions-and-install/devpro-names-the-project-and-a-plugin.md)
   - [Runner include line is exact](code-definitions-and-install/runner-include-line-is-exact.md)
-  - [Recognizer spells rendered banner](code-definitions-and-install/recognizer-spells-rendered-banner.md)
+  - [Digest pins the two captures' agreement](code-definitions-and-install/digest-pins-the-two-captures-agreement.md)
   - [Harness resources are copied verbatim](code-definitions-and-install/harness-resources-are-copied-verbatim.md)
   - [Guardrails change together](code-definitions-and-install/guardrails-change-together.md)
   - [The build is the install's one filter](code-definitions-and-install/the-build-is-the-installs-one-filter.md)

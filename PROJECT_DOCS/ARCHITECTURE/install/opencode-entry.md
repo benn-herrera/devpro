@@ -7,7 +7,7 @@ Surfaces, Shipped files). It is written for opencode (floor 2.3.0), and its setu
 the active plan (`ACTIVE_PLAN.md` or the diced `ACTIVE_PLAN/` tree; SPEC, Shipped files). The
 install copies it, with `guardrail.ts` and, on a project install, the capture `profiler.ts` (Harness
 profiler), to the install directory as a harness resource (Renders
-and copies); a user-level install copies the entry alone.
+and copies); a user-level install copies the entry and the guardrail resource beside it.
 
 The floor is a behavioral one, not an API one: every API the entry uses exists at 2.2.6, but there
 the `subagent` tool defaults to the foreground, so `execute.after` fires at the child's completion,
@@ -41,7 +41,8 @@ opencode itself: the tests run the entry under a stub of this surface
 
 - *Guardrail first.* Where `guardrail.ts` stands beside it, `setup` awaits that module's `setup`
   before registering anything or starting the watcher, so a failed guardrail leaves no watcher
-  running. A user-level install has no `guardrail.ts`, and none runs.
+  running. A user-level install copies `guardrail.ts` beside the entry, and the entry runs it there as
+  it does in a project.
 - *The capture.* Where `profiler.ts` stands beside it, `setup` awaits that module's `setup` the same
   way, which registers the activity capture's four hooks (Harness profiler), its `experimental.idle`
   recording every session's idle, a child's included, where the reminder's is parent-scoped. A

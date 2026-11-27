@@ -60,9 +60,10 @@ below `.opencode/plugins/devpro/`. `runner_file.install_include_lines` writes th
 table's order, judging each set alone (`_with_include_line`) and writing the runner file once when
 any text changed. Mage gets no line and no `Makefile`. A line is this install's when its first path
 segment equals `harness_relpath`'s, and its path token is then spliced in place. A set's line is
-recognized by the path's shape, ending `<snippets directory name>/<snippet>` — the devpro, kb and
-retired docdicer sets share the `runner-snippets` directory name, and the snippet file name alone
-tells their shapes apart, so no set's line ever matches another's. A set whose line is reported and left does not stop the
+recognized by the path's shape, ending `<snippets directory name>/<snippet>` — the devpro and kb
+sets share the `runner-snippets` directory name, and the snippet file name alone tells their shapes
+apart, so no set's line ever matches another's. A line no shipped set claims — the retired docdicer
+set's among them — is no set's line and is left as written. A set whose line is reported and left does not stop the
 others. Where the project has no runner file, one `Makefile` is created holding every line.
 
 `runner_file` reads the runner file through `install_base.untranslated_text` (`newline=""`), so a

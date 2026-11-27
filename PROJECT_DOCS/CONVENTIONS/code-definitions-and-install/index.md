@@ -13,7 +13,7 @@ Contents:
 - [Plugin membership has one home](plugin-membership-has-one-home.md)
 - [`devpro` names the project and a plugin](devpro-names-the-project-and-a-plugin.md)
 - [Runner include line is exact](runner-include-line-is-exact.md)
-- [Recognizer spells rendered banner](recognizer-spells-rendered-banner.md)
+- [Digest pins the two captures' agreement](digest-pins-the-two-captures-agreement.md)
 - [Harness resources are copied verbatim](harness-resources-are-copied-verbatim.md)
 - [Guardrails change together](guardrails-change-together.md)
 - [The build is the install's one filter](the-build-is-the-installs-one-filter.md)

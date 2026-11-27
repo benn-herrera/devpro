@@ -40,6 +40,7 @@ replacement would clear and write through it into whatever it names. The refusal
 these: it is decided inside `install`, beside the devpro-copy symlink refusal and after `root` is
 computed, still before the first write (Renders and copies). `check_runner` refuses a runner file that
 cannot be read or decoded. Every such check, the agents file's included, runs before the first
-write, and the install directory itself is created after them. A write that then fails at the
+write, and the install directory itself is created after them; the replacement runs after them
+and before the first write. A write that then fails at the
 operating system is reported by `cli.main` as `error:` with exit 2.
 

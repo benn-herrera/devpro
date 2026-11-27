@@ -5,8 +5,7 @@
   0 within `GUARDRAIL_PROBE_SECONDS`. A missing interpreter, a missing module, a broken script and
   a hang all fail it. A failed probe drops the script and writes the registration without the
   guardrail's entry.
-  Its report line carries the exit status and first stderr line, the timeout, or the `OSError` —
-  the skip and its reason, and no path: the banner read the old report's name relied on is gone.
+  Its report line names the skip and its reason, and never a path.
   Whatever the probe's outcome, a guardrail script stands in the install directory after the run
   only where the probe passed: the replacement removed any earlier install's. The probe is one
   allowed call, not the case table, which runs in the test suite only.

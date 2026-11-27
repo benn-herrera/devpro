@@ -388,7 +388,7 @@ distinguish a capture that reads the renderer's spelling from one that carries i
 string.
 
 **The rule the digest's case is then held by.** The kept second paragraph of
-[Recognizer spells rendered banner](PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/recognizer-spells-rendered-banner.md)
+[Digest pins the two captures' agreement](PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/digest-pins-the-two-captures-agreement.md)
 already says it: "The digest test plants literal banners, so it pins the two captures' agreement and
 not the renderer's spelling." So the plants are not a defect in the test — the test states what it
 pins. What the rule does not name, and the survey adds, is the consequence: **nothing in the suite holds

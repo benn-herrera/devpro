@@ -1,8 +1,8 @@
 # Install
 
 An install is a deploy step: each harness has its own layout, and the rendered definitions, the
-package copies and the harness resources are written to the places and names that layout gives. It
-departs from a plain copy in four places.
+harness-rendered files, the package copies and the harness resources are written to the places and
+names that layout gives. It departs from a plain copy in four places.
 
 - It replaces the install directory wholesale: the tree is removed and the fresh one written,
   whatever stood in it (Renders and copies). Removing, renaming and relocating installed files is
@@ -10,8 +10,8 @@ departs from a plain copy in four places.
   accumulate.
 - It first runs into a scratch copy and compares the result. The dry run is the install itself, run
   into a scratch copy and compared with the real paths: one code path, so the up-to-date check and
-  `--dry-run` are trivial comparisons, the dry run cannot drift from the install, and there is less
-  code than a separately computed plan of writes. Detail is in Renders and copies, Preflight.
+  `--dry-run` are trivial comparisons, the dry run cannot drift from the install, and the removals
+  the replacement makes are compared like any other change. Detail is in Renders and copies, Preflight.
 - It runs a harness's guardrail script once before registering it, ships the script and registers
   the guardrail's entry only where the run passes, and writes the registration either way (Guardrail
   registration).
