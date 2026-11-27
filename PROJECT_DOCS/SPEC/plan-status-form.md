@@ -84,14 +84,12 @@ A reader of plans:
 
 A design:
 
-- The design under way stays at `ACTIVE_DESIGN.md` from before its plan is written: it is removed
-  when that plan is done, and is set aside with its plan, or alone before a plan exists. A design
-  accepted across stages stays until the last stage's plan is done: each stage is its own shippable
-  increment with its own plan, the stage boundaries are the user's to move, and an entry the design
-  holds for a later stage stays pending until that stage's work lands it, applying only the pairs
-  the design marks to that stage. The plan
-  cites the design's entries rather than restating them, a requirement found while the plan runs
-  is entered in the design, and the plan's post-plan review reads the design.
+- The design under way stays at `ACTIVE_DESIGN.md` from before its plan is written until that plan
+  is done, and is deleted in the commit that lands the plan, with its tree if it was diced. It is
+  set aside with its plan, or alone before a plan exists. It holds no pending state and marks no
+  entry to a stage. The plan cites the design's entries rather than restating them, a requirement
+  found while the plan runs is entered in the design, and the plan's post-plan review reads the
+  design.
 - Work a design has not yet written as entries is held under one `## Drafts` heading, as tickets
   in the roadmap's form.
 - A diced design is split at its `##` and `###` headings only, so each entry and each ticket is
@@ -102,10 +100,8 @@ A design:
 A design's final form:
 
 - It opens with a level-1 heading naming the change, then a statement of its intent before any
-  `##` heading, followed by this line, verbatim apart from where it wraps: "The preceding is a
-  summary of the detailed design below. Summaries are unavoidably lossy. The summary text is not
-  to be consistency checked. The design is authoritative." A diced design holds all three in its
-  `entry-point.md`.
+  `##` heading, then, as its own paragraph, the `development` skill's design summary line, verbatim
+  apart from where it wraps. A diced design holds all three in its `entry-point.md`.
 - Its only `##` headings are `## SPEC delta`, `## ARCHITECTURE delta` and `## Code delta`, spelled
   exactly so, in that order, each at most once, and at least one of them.
 - Under each, nothing before its first `###` entry; an entry runs to the next `#`, `##` or `###`
