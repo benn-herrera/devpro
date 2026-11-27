@@ -35,7 +35,7 @@ Every rendering of the definitions in the deployed surfaces has five observable 
   `inherit` or a synonym it declares (an **inherit word**), which tells the harness to use the
   session's own model — is omitted, and where every side is, the step-down model appears nowhere. No
   family tuning text reaches it.
-- **Tuning by category, recorded in the rendered definition.** Every agent definition declares a
+- **Tuning by category, recorded once per install.** Every agent definition declares a
   category, and the effective category map, the one model source on every harness, resolves it: the
   category's member is both what the definition is tuned against and the model it renders with. The
   category map comes from one of: the family; a harness's default category spec where it declares
@@ -63,11 +63,13 @@ Every rendering of the definitions in the deployed surfaces has five observable 
   written, naming the category, the value, and the settings-file entry, the harness default, or the
   family that supplied it — and the text each of
   its inherit words renders as, `inherit` among them; an empty rendering leaves the definition
-  without a model line. Every rendered definition's tuning line, its `!TUNING!` line, records the
-  family's name, the definition's category and that category's member (each `none` for a definition
-  that declares no category), the effective category map, the categories whose member the family has
-  no member-scoped tuning text for (as `stock=`), and the harness it was rendered for, so what it is
-  tuned for and what it dispatches on are readable from the definition alone. Documents, commands
+  without a model line. The rendered set's tuning table, one per install at the install destination's root, records the
+  family's name, the effective category map, the categories whose member the family has no
+  member-scoped tuning text for (as `stock=`), and the harness it was rendered for, so what the set
+  is tuned for and what it dispatches on is readable from the set alone. A definition's category and
+  member appear nowhere in the rendered output: the member is the model the definition renders with,
+  which the dispatch fields the coordinator reads already carry, and the category map is recorded in
+  the tuning table, once per install, rather than in any definition. Documents, commands
   and skills declare no category and stand outside this resolution; family-wide tuning text still
   fills their anchors. A family whose member-scoped tuning text names a member no category reaches
   — in neither its own category map nor the effective category map — is refused before anything is

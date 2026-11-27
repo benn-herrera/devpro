@@ -1,8 +1,13 @@
 # Columns and cards
 
-The board has six columns, left to right: Roadmap, Design, Drafted, Dispatchable, In progress,
-Landed. Drafted through Landed are the **plan columns**, which are read-only
+The board's columns depend on its mode. In **planning** mode, left to right: Roadmap, Design,
+Drafted, Dispatchable, Agents. In **execution** mode: Design, Drafted, Dispatchable, In progress,
+Landed, Agents. Drafted through Landed are the **plan columns**, which are read-only
 ([the plan columns are read-only](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-plan-columns-are-read-only.md#the-plan-columns-are-read-only)).
+The board is in planning mode while the active plan's status table holds no `in progress` and no
+`landed` row, and in execution mode otherwise; a project with no active plan is in planning mode.
+The last column in both modes is the agents column
+([the agents column](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-agents-column.md#the-agents-column)).
 
 | Column | Cards |
 |---|---|
@@ -10,6 +15,7 @@ Landed. Drafted through Landed are the **plan columns**, which are read-only
 | Design | each category of the active design as a separator; each ticket of it, one card each |
 | Drafted | each work package whose State cell opens with `drafted`; a State cell opening with no state word breaches [check-plan](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-plan.md#check-plan), and the board draws no card for its package |
 | Dispatchable, In progress, Landed | as the Drafted row, for their state words |
+| Agents | one card per running dispatch (the agents column) |
 
 **Roadmap cards.** The board reads `ROADMAP.md` in the layout
 ([check-roadmap](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-roadmap.md#check-roadmap)), in document order. A category is not a card: its
@@ -57,7 +63,8 @@ found and the form accepted there.
 
 **Work package cards.** A card shows the package's ID, its title, its rating word (`mechanical` or
 `expert`) or that it is unrated, and its lifetime where the status table has a `Lifetime` column,
-matched without regard to case. A package's title is as [check-plan](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-plan.md#check-plan) Terms
+matched without regard to case. A card carries a dot in each running dispatch's color whose
+dispatch works under that package (the agents column). A package's title is as [check-plan](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/check-plan.md#check-plan) Terms
 defines it; an untitled package shows untitled. A plan whose table has no `Rating` column is still
 shown, its packages unrated. Cards in a plan column follow the status table's row order.
 

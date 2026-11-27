@@ -13,6 +13,7 @@ Contents:
 - [Wiring](wiring.md)
 - [The install renders and copies](the-install-renders-and-copies.md)
 - [Serving](serving.md)
+- [The agents column](the-agents-column.md)
 - [The skill](the-skill.md)
 - [What `init` writes](what-init-writes.md)
 - [What does not exist](what-does-not-exist.md)

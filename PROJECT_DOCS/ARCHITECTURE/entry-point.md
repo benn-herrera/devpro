@@ -39,6 +39,7 @@ Contents:
 - [Packaging](packaging.md)
 - [Homebrew Delivery](homebrew-delivery.md)
 - [Banner](banner.md)
+- [The package lifetime scale](the-package-lifetime-scale.md)
 - [Why There Is No Verification Verb](why-there-is-no-verification-verb.md)
 - [Recipes](recipes.md)
 - [Agents File](agents-file.md)

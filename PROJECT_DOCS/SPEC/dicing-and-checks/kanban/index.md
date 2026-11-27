@@ -55,6 +55,7 @@ Contents:
 
 - [The project's files](the-project-s-files.md)
 - [Columns and cards](columns-and-cards.md)
+- [The agents column](the-agents-column.md)
 - [Moves between Roadmap and Design](moves-between-roadmap-and-design.md)
 - [The plan columns are read-only](the-plan-columns-are-read-only.md)
 - [Live following](live-following.md)

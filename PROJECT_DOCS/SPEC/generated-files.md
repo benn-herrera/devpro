@@ -14,7 +14,7 @@ definition; neither applies to a supporting file. For every definition and every
 - Every banner claiming a definition is generated names the source it was rendered from and states
   that the file is not for local edit.
 
-- Under opencode a rendered definition carries its banner as the comment lines a supporting file
+- Under opencode a rendered definition carries its generated banner as the comment a supporting file
   opens with and has no frontmatter; its metadata is in the registry `registry.json`, a harness-rendered
   file that carries its marker, `"plugin": "devpro"`, rather than a banner (Installed tree).
 

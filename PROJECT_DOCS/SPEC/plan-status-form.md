@@ -37,6 +37,9 @@ Terms:
   `dispatchable`, `in progress` or `landed`.
 - **rating** — a work package's rating as its plan's status table records it: `mechanical`,
   `expert`, or unrated.
+- **dispatch note** — the identifier of the dispatched agent run a package is under, as the
+  activity capture records it, written into the package's row at the dispatch it names. The row's
+  State cell's note carries it; the form gives it no cell of its own.
 - **plan size limit** — the length past which the `development` skill dices a plan before
   it is approved.
 
@@ -57,6 +60,8 @@ A plan states:
   state set ahead of its condition is as false a claim about the present as one set after it.
 - A rating cell opens with one of two words: `mechanical`, every edit enumerated, no design choice
   and no debugging; `expert`, anything else. Anything after the word is a note.
+- A dispatch note is written at the dispatch it names, into the row of the package the dispatch
+  works under, and is never inferred from brief or message text.
 - The post-plan review is a work package whose title opens with `Post-plan review`. The burndown
   section is a `## Post-plan burndown` section holding its drafting ticket, a work package whose
   title opens with `Post-plan burndown` — a heading opening with its ID and then that title; the
@@ -77,6 +82,8 @@ A reader of plans:
   with neither rating word.
 - Reads a plan as done only when its post-plan review row and its post-plan burndown row, each
   where it has one, are `landed`.
+- Reads the identifiers a row's State cell's note carries as the dispatch notes naming the
+  dispatches the package is under.
 - Reads only the `Release hardening` prefix of a hardening plan's H1 heading, nothing after it, and
   reads the release's version only from the `Release:` line.
 - Reads a plan held as a tree at `ACTIVE_PLAN/` through its `entry-point.md`; a leaf there is part of
