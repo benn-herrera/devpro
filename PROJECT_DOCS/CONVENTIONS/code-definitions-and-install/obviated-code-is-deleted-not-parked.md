@@ -1,4 +1,4 @@
-### Obviated code is deleted, not parked
+# Obviated code is deleted, not parked
 
 When a change makes code unnecessary, it goes in the
 same change — not commented out, not left unreferenced behind a "maybe someday", not kept as a

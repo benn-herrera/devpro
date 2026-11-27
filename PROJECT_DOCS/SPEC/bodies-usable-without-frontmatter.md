@@ -1,4 +1,4 @@
-## Bodies usable without frontmatter
+# Bodies usable without frontmatter
 
 The body of every rendered definition under `agents/`, the content after its banner carrier, is
 usable without frontmatter as an external (non-Claude) model's system prompt. The banner carrier is
@@ -10,4 +10,3 @@ truncated. The install does not check it.
 The extracted body does not carry the definition's model line, which
 stays in the frontmatter, or under opencode in the registry, where the rendered definition carries
 one: a caller that uses the body without a harness that reads either supplies the model itself.
-

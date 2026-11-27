@@ -13,9 +13,12 @@ directory, relative to the root and defaulting to it; claude receives it as the 
 `workdir`. A case's optional `harness`, `"claude"` or
 `"opencode"`, runs it under that implementation only. The TypeScript side runs under `bun`; a
 missing `bun` fails rather than skips, because a skip would hide drift between the two.
-"""
 
-from __future__ import annotations
+The module also holds claude's plan-state reminder, `state-table-reminder.sh`, a second hook script
+that has no case table: it asserts which project roots open its gate, that a project holding none of
+the gate paths or only a design gets silence, and that the reminder JSON carries the event the input
+names and the sentence naming the table and its upkeep.
+"""
 
 import json
 import os
@@ -35,6 +38,7 @@ from devpro.install_base import PACKAGE_ROOT
 
 _RESOURCES = PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE
 _PERL_HOOK = _RESOURCES / "claude/hooks/guardrail.pl"
+_REMINDER_HOOK = _RESOURCES / "claude/hooks/state-table-reminder.sh"
 _TS_PLUGIN = _RESOURCES / "opencode/guardrail.ts"
 _TESTS = Path(__file__).parent
 _CASES = json.loads((_TESTS / "guardrail_cases.json").read_text(encoding="utf-8"))
@@ -135,6 +139,22 @@ def _run_perl(
     )
 
 
+def _run_reminder(stdin: str, *, project_dir: Path | None = None) -> subprocess.CompletedProcess:
+    """`state-table-reminder.sh` run as Claude Code runs a plugin hook: the event's JSON on stdin, and
+    `CLAUDE_PROJECT_DIR` set to `project_dir` where one is given."""
+    env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
+    if project_dir is not None:
+        env["CLAUDE_PROJECT_DIR"] = str(project_dir)
+    return subprocess.run(
+        ["bash", str(_REMINDER_HOOK)],
+        input=stdin,
+        capture_output=True,
+        encoding="utf-8",
+        env=env,
+        check=False,
+    )
+
+
 def _hook_input(tool: str, tool_input: dict, cwd: Path | None) -> str:
     payload: dict = {"tool_name": tool, "tool_input": tool_input}
     if cwd is not None:
@@ -200,7 +220,8 @@ def test_guardrail_cases_carry_only_known_fields() -> None:
 
 def test_guardrail_matcher_names_exactly_the_claude_tools_the_case_table_covers() -> None:
     """A tool the matcher sends to the hook with no case is untested, and a case for a tool the
-    matcher omits tests a call the hook never sees."""
+    matcher omits tests a call the hook never sees. The registration's only `PreToolUse` entry is the
+    guardrail's; the plan-state reminder registers on `PostToolUse`, matched on `Agent` alone."""
     [entry] = json.loads(CLAUDE.guardrail.registration.text("devpro", ()))["hooks"]["PreToolUse"]
     matcher = set(entry["matcher"].split("|"))
     assert matcher == {_tool(case) for case in _CASES if _tool(case) in _CLAUDE_TO_OPENCODE_TOOLS}
@@ -274,3 +295,55 @@ def test_guardrail_pl_fails_as_a_hook_error_never_as_a_block(tmp_path: Path) -> 
     assert garbage.returncode == 1 and garbage.stderr.startswith("guardrail: ")
     assert unloadable.returncode == 1 and "unloadable" in unloadable.stderr
     assert rootless.returncode == 1 and rootless.stderr.startswith("guardrail: no project root")
+
+
+# The plan-state reminder: a second claude hook script, run on the event the registration names and
+# reading a plan, or the diced plan tree, at the project root.
+
+
+@pytest.mark.parametrize("gate", ["ACTIVE_PLAN.md", "ACTIVE_PLAN"])
+@pytest.mark.parametrize("from_env", [True, False], ids=["claude-project-dir", "input-cwd"])
+def test_the_reminder_speaks_where_a_plan_or_the_diced_tree_stands_at_the_project_root(
+    tmp_path: Path, gate: str, from_env: bool
+) -> None:
+    """A plan file, or the diced plan's tree, opens the gate, and either root the hook contract names
+    finds it: `CLAUDE_PROJECT_DIR` where the environment carries it, else the input's `cwd`. The answer
+    is the event the input names, which `hookSpecificOutput` must carry, and one sentence naming the
+    table and its upkeep."""
+    root = tmp_path / "project"
+    root.mkdir()
+    standing = root / gate
+    if gate == "ACTIVE_PLAN":
+        standing.mkdir()
+    else:
+        standing.write_text("# under way\n", encoding="utf-8")
+    cwd = root
+    if from_env:
+        cwd = tmp_path / "elsewhere"
+        cwd.mkdir()
+    payload = {"hook_event_name": "PostToolUse", "cwd": str(cwd), "tool_name": "Agent"}
+    done = _run_reminder(json.dumps(payload), project_dir=root if from_env else None)
+    assert (done.returncode, done.stderr) == (0, "")
+    output = json.loads(done.stdout)["hookSpecificOutput"]
+    assert output["hookEventName"] == "PostToolUse"
+    sentence = output["additionalContext"]
+    assert "state table" in sentence
+    assert "up to date" in sentence
+
+
+def test_the_reminder_is_silent_where_the_project_holds_no_gate_path(tmp_path: Path) -> None:
+    """A project with none of the gate paths has no plan state to remind anyone of, and a project hook
+    that spoke anyway would put the sentence on the parent's next model request."""
+    root = tmp_path / "project"
+    root.mkdir()
+    done = _run_reminder(json.dumps({"hook_event_name": "PostToolUse", "cwd": str(root)}), project_dir=root)
+    assert (done.returncode, done.stdout, done.stderr) == (0, "", "")
+
+
+def test_the_reminder_is_silent_where_the_project_holds_only_a_design(tmp_path: Path) -> None:
+    """A design file alone opens no gate: the reminder's subject is the plan."""
+    root = tmp_path / "project"
+    root.mkdir()
+    (root / "ACTIVE_DESIGN.md").write_text("# Active design\n", encoding="utf-8")
+    done = _run_reminder(json.dumps({"hook_event_name": "PostToolUse", "cwd": str(root)}), project_dir=root)
+    assert (done.returncode, done.stdout, done.stderr) == (0, "", "")

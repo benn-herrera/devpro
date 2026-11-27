@@ -1,4 +1,4 @@
-### Group membership
+# Group membership
 
 A group is the set of definitions whose own `Definition(...)` call names the group's membership clause
 (`CODE_PRINCIPLES_CODER` for coders, `CODE_PRINCIPLES_PLATFORM` for platform experts). The check is in

@@ -1,4 +1,4 @@
-## Rendering
+# Rendering
 
 A **model family** (`--family`) is a named group of models that assigns a model to each category and
 may add tuning text at anchors (below). A **category map** assigns one model, the category's
@@ -39,24 +39,25 @@ Every rendering of the definitions in the deployed surfaces has five observable 
   category, and the effective category map, the one model source on every harness, resolves it: the
   category's member is both what the definition is tuned against and the model it renders with. The
   category map comes from one of: the family; a harness's default category spec where it declares
-  one; or whole from the **devpro settings file**'s `[<harness>-model-map]` section for the harness
-  being rendered — a **category spec**, the text form of a category map, written in that section
-  as one `<glob>=<model>` entry per line: each glob matched against the six category names and its
+  one; or whole from the **devpro settings file**'s `[<harness>.model-map]` table for the harness
+  being rendered — a **category spec**, the text form of a category map, written in that table
+  as one `"<glob>" = "<model>"` entry: each glob matched against the six category names and its
   `<model>` assigned to every category it matches, later entries silently overwriting earlier
-  ones (`*=<model>` names all six; `*-architect=<model>` names both architect categories; a full
-  category name names one), though a glob repeated in one section is refused, naming the line. An
-  entry matching no category is refused, and a section leaving a category unnamed at its end is
+  ones (`"*"` names all six; `"*-architect"` names both architect categories; a full
+  category name names one). An
+  entry matching no category is refused, and a table leaving a category unnamed at its end is
   refused, with no fallback to the family.
 
-  The devpro settings file is `~/.config/devpro/devpro.cfg`, or the file `--config-file` names;
+  The devpro settings file is `~/.config/devpro/devpro.toml`, or the file `--config-file` names;
   the path is taken as given — there is no search, the default path or the one named — and the
   default file's absence is no config at all, while an explicitly named file that does not exist
-  is refused, naming the path. Its sections are named per harness: `[<harness>]` carries the
-  harness's settings, its `install` value among them (SPEC.md, Install destination);
-  `[<harness>-model-map]` carries its model map. A section that is neither a supported harness's
-  `[<harness>]` nor its `[<harness>-model-map]` — a `[DEFAULT]` section holding entries among
-  them — is refused, naming the section and the supported harnesses; a key in a settings section
-  that is no setting of it is refused, naming the map section it belongs in; a file that does not
+  is refused, naming the path. Its tables are named per harness: `[<harness>]` carries the
+  harness's settings, its `install` (SPEC.md, Install destination) and `components` (SPEC.md,
+  Deployed Surfaces, Plugins) values among them;
+  `[<harness>.model-map]` carries its model map. A table that is neither a supported harness's
+  `[<harness>]` nor its `[<harness>.model-map]` is refused, naming the table and the supported
+  harnesses; a key in a settings table that is no setting of it is refused, naming the model-map
+  table it belongs in; a file that does not
   parse is refused before anything is written, naming the file and the line. A harness declares the
   model shape a rendered model must have — a model outside it fails rendering before anything is
   written, naming the category, the value, and the settings-file entry, the harness default, or the
@@ -74,10 +75,11 @@ Every rendering of the definitions in the deployed surfaces has five observable 
 
 A cross-definition reference renders with the plugin's namespace under the harness: under claude and
 mage `<plugin>:<name>` for an agent, a command or a skill, and under opencode `<plugin>-<name>`.
-Apart from the plugin's name and the namespace it gives references, text differs between plugins only
+Apart from the namespace, text differs between installs only
 by an optional reference's paragraph being present or absent.
 
-References close within the shipped set, the definitions the render's plugin carries. A render in
+References close within the shipped set, the definitions the render carries — the plugin's set with
+its components on. A render in
 which a definition refers to one outside that set is refused,
 naming the definition that refers and the one it refers to, and nothing is written. An **optional
 reference** is the one exception: where its referent does not ship, the paragraph holding it is
@@ -85,4 +87,3 @@ dropped whole, and the rest of the definition is unchanged.
 
 An install renders the definitions under the tuning arguments it was given and the devpro settings
 file, where it supplies entries; Generated files, below, holds whatever they are.
-

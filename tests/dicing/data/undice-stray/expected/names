@@ -1,0 +1,5 @@
+stdout	undoc
+stdout	5
+stdout	1	0
+stderr	extra.md
+stderr	entry-point.md

@@ -1,14 +1,13 @@
 """dupe_sweep — the command line: argparse surface and pass dispatch."""
 
-from __future__ import annotations
-
 import argparse
 import logging
 import sys
 from collections.abc import Sequence
+from typing import TextIO
 
 from .corpus import SweepError
-from .passes import CODE_DEFAULTS, python_pass
+from .passes import CODE_DEFAULTS, ClusteringSettings, python_pass
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -36,11 +35,11 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Sequence[str] | None = None, *, out=None) -> int:
+def main(argv: Sequence[str] | None = None, *, out: TextIO | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     args = build_parser().parse_args(argv)
     out = out or sys.stdout
-    settings = dict(CODE_DEFAULTS)
+    settings = ClusteringSettings(**CODE_DEFAULTS)
     if args.min_words is not None:
         settings["min_tokens"] = args.min_words
     if args.coverage is not None:

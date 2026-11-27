@@ -1,0 +1,17 @@
+{
+  // `devtools/screenshot.ts`, the repository's own TypeScript: a Bun program driving a browser, so the
+  // DOM the page-side `evaluate` callbacks run in. Read from the repository root as
+  // `bunx tsc -p devtools/tsconfig.json --noEmit`; the root `tsconfig.json` keeps the shipped opencode
+  // resources' program to what ships.
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "target": "ES2025",
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "lib": ["ES2025", "DOM"],
+    "types": ["node"],
+    "skipLibCheck": true
+  },
+  "include": ["*.ts"]
+}

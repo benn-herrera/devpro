@@ -1,4 +1,4 @@
-### Composed text is never rescanned
+# Composed text is never rescanned
 
 No value a fill supplies — a clause's harness string, tuning text, a model name, an agents-file
 value — is filled again, so none can carry a placeholder that is meant to fill (ARCHITECTURE.md,

@@ -1,12 +1,12 @@
-"""The clauses module: every paragraph definitions in different modules carry, as plain
-string constants; text only one module's definitions share is that module's own.
+"""The clauses module: every paragraph that definitions and harness fields in different modules
+carry, as plain string constants; text only one module's definitions share is that module's own.
 A chunk with argument slots is a function taking keyword arguments and returning
 its text; a chunk with variants is one constant (or function) per variant,
 `CHUNK_VARIANT`. A function calls nothing, so a run of text that holds a slotted
-chunk is composed where a definition uses it. A definition interpolates these
-into its body at import. The harness and tuning strings, and the references to other
-definitions, are placeholders, spelled as `vocabulary.hole` and `vocabulary.reference`
-spell them: the only ones left for the renderer to fill.
+chunk is composed where a definition or a harness field uses it. A definition interpolates these
+into its body at import; a harness field holds one whole. The harness and tuning strings, and the
+references to other definitions, are placeholders, spelled as `vocabulary.hole` and
+`vocabulary.reference` spell them: the only ones left for the renderer to fill.
 
 No constant carries a leading or trailing newline: a definition's body places
 the blank lines between paragraphs.
@@ -17,28 +17,40 @@ PROJECT_HARNESS_DIR = "@!hrn-project-harness-dir!@"
 # The project's scratch directory is one name under every harness, so it is a literal rather than a
 # harness placeholder.
 PROJECT_TEMP_DIR = ".devpro-temp"
+# The agents file's scratch paragraph, every harness's `scratch_rule`: `harness.scratch_rule()` returns
+# it and mage's harness passes it whole.
+SCRATCH_PARAGRAPH = (
+    f"All scratch —\nthrowaway builds, probe harnesses, captured output — goes in `{PROJECT_TEMP_DIR}/` under the\n"
+    "active project root. Where it doesn't exist, create it; don't\n"
+    "improvise a location."
+)
 DISPLAY_NAME = "@!hrn-display-name!@"
 USER_HARNESS_DIR = "@!hrn-user-harness-dir!@"
 MCP_TOOL_PREFIX = "@!hrn-mcp-tool-prefix!@"
 SCRATCH_RULE = "@!hrn-scratch-rule!@"
 MEMORY_FILE = "@!hrn-memory-file!@"
 PLUGIN_NAME = "@!plg-name!@"
+PROJECT_WRAPPER = "@!plg-project-wrapper!@"
 RECIPE_RULE = "@!hrn-recipe-rule!@"
 KBASE_PROJECT_RULE = "@!hrn-kbase-project-rule!@"
 RELOAD_RULE = "@!hrn-reload-rule!@"
 TOOLS_RELOAD_RULE = "@!hrn-tools-reload-rule!@"
 SIDE_BY_SIDE_RULE = "@!hrn-side-by-side-rule!@"
+AGENTS_PATH = "@!hrn-agents-path!@"
 COLD_READ_RULE = "@!hrn-cold-read-rule!@"
 STEP_DOWN_MODEL = "@!tun-step-down-model!@"
 
 PLAN_SIZE_LIMIT_DEFAULT = "800 lines"
-PERIODIC_REVIEW_INTERVAL_DEFAULT = "3"
+PERIODIC_REVIEW_INTERVAL_DEFAULT = "5"
 
 REPOSITORY_URL = "https://github.com/benn-herrera/devpro"
 
-# Constants carrying a value rather than a clause: a new value constant is added here.
+# Constants carrying a value rather than a clause: a new value constant is added here. A member is
+# compared by equality, never by identity, so a harness passing `clauses.SCRATCH_PARAGRAPH` through
+# stays a value.
 VALUE_CONSTANTS = (
     PROJECT_TEMP_DIR,
+    SCRATCH_PARAGRAPH,
     REPOSITORY_URL,
     PLAN_SIZE_LIMIT_DEFAULT,
     PERIODIC_REVIEW_INTERVAL_DEFAULT,
@@ -165,7 +177,7 @@ CHEAP_OVER_THOROUGH = (
 )
 
 
-TESTS_PROTECT_LOGIC = """Tests protect logic by checking its effect. A test that fails when only the code's form changes — wording, formatting, structure — is a checksum of the code: friction, not protection. Where the form is the contract — output another program parses, a file someone else consumes — pinning it is protection."""
+TESTS_PROTECT_LOGIC = """Tests protect logic by checking its effect. A test that fails when only the code's form changes — wording, formatting, structure — is a checksum of the code: friction, not protection. A suite of these is a suit of armor with fixed joints — every pose change and edit needs a plasma cutter and an arc welder. It becomes a pure cost center rather than valid protection. An assertion that repeats what it asserts instead of reading it from what it tests — the constant the artifact is built from, not a hand-copied literal — fails on a change outside its subject: the same checksum, friction, not protection. Where the form is the contract — output another program parses, a file someone else consumes — pinning it is protection. A mock drives execution to the piece under test and is never the oracle for what it simulates — a test asserting against a mock's own answers validates the reading of the observation, not the system, and is not written."""
 
 TEST_PRECONDITION = """**Test precondition.** A test a package adds is written only for a named defect: the package states the defect, and the run that fails under it, before the change. Where the only failure the test can catch is the artifact's own text or structure changing, the test is not written; a property two renders are held to together is not such a pin."""
 
@@ -252,7 +264,7 @@ _EVIDENCE_WHERE = "Where the project defines an evidence location, put it there 
 
 def verification_evidence(*, forms: str = _EVIDENCE_FORMS, where: str = _EVIDENCE_WHERE) -> str:
     """Both arguments exist for a seat with no Bash, which can reach neither default."""
-    return f"""**Verification evidence**: any verification a reported conclusion rests on must be repeatable and inspectable — {forms}; never an ad-hoc sequence whose results live only in the conversation. Results that cannot be re-examined are not results. {where} Exploratory checks along the way are exempt: this binds the verifications you cite, not every look around."""
+    return f"""**Verification evidence**: any verification a reported conclusion rests on must be repeatable and inspectable — {forms}; never an ad-hoc sequence whose results live only in the conversation. Results that cannot be re-examined are not results. {where} Exploratory checks along the way are exempt: this binds the verifications you cite, not every look around. A probe that imports this repository's package first and runs it later — a `python -c`, a one-off script — runs under this repository's own venv interpreter with `PYTHONPATH=.`, or in a fresh process, because an edit made after the first import leaves stale bytecode masking it."""
 
 
 # ─── House rules ─────────────────────────────────────────────────────────────
@@ -290,7 +302,7 @@ TSAN_VISIBILITY = """ThreadSanitizer is how this class becomes visible."""
 SHELL_HOUSE_STYLE = """Bash is the shell language: `#!/usr/bin/env bash` shebang, never a plain `sh` one — test stubs and generated scripts included — unless the project or the file states a need for another shell. 2-space indent. Always brace variables — `${VAR}` not `$VAR`, including inside array indices (`arr[${i}]`) and positional params (`"${1}"`). Use the `function name() {` form, not bare `name() {`. Tests are `[[ ]]` not `[ ]`; string equality is `==` not `=`."""
 
 
-NEW_PROJECT_SETUP = f"""**New project setup**: creating a project from scratch means creating its task-runner entry point WITH the first code, never retrofitting it later. A `justfile` by default; a `Makefile` only where the top-level utility commands genuinely need dependency management — file targets with staleness rules, generated content that must rebuild when its sources change, recursive sub-builds (`$(MAKE) -C`). Aliasing commands is never reason enough to choose Make over just. Standard targets: `build`/`rebuild`, `test`, an integration-test target, and `generate`/`regenerate` wherever generation is a distinct step the build does not own — CMake project generation in the C++/CMake family, `go generate` codegen in Go, code/data generation in Python (Rust and Zig typically need none: `build.rs`/`build.zig` own generation). Omit a target only where the task genuinely does not exist for the project — never because wiring it up is effort. No project may ever require the agent or the developer to execute a major project-iteration task from a naked command line with correctly-recalled values: the target is the memory. Also created at project birth: `{PROJECT_TEMP_DIR}/`, with a `{PROJECT_TEMP_DIR}/` entry in the root `.gitignore` — the project's scratch space (throwaway builds, probe harnesses, captured output), pre-made so the scratch-space rule never stalls on a missing directory. It lives beside `{PROJECT_HARNESS_DIR}/`, never inside it — writes under `{PROJECT_HARNESS_DIR}/` trip the permission system's own-settings protections."""
+NEW_PROJECT_SETUP = f"""**New project setup**: creating a project from scratch means creating its task-runner entry point WITH the first code, never retrofitting it later. A `justfile` by default; a `Makefile` only where the top-level utility commands genuinely need dependency management — file targets with staleness rules, generated content that must rebuild when its sources change, recursive sub-builds (`$(MAKE) -C`). Aliasing commands is never reason enough to choose Make over just. Standard targets: `build`/`rebuild`, `test`, an integration-test target, and `generate`/`regenerate` wherever generation is a distinct step the build does not own — CMake project generation in the C++/CMake family, `go generate` codegen in Go, code/data generation in Python (Rust and Zig typically need none: `build.rs`/`build.zig` own generation). Omit a target only where the task genuinely does not exist for the project — never because wiring it up is effort. No project may ever require the agent or the developer to execute a major project-iteration task from a naked command line with correctly-recalled values: the target is the memory. The project's scratch space (throwaway builds, probe harnesses, captured output) is `{PROJECT_TEMP_DIR}/` under the project root, beside `{PROJECT_HARNESS_DIR}/`, never inside it — writes under `{PROJECT_HARNESS_DIR}/` trip the permission system's own-settings protections."""
 
 
 def new_project_runner_recipes(*, language: str, recipes: str = "`fmt`, `lint` and a sanitizer build") -> str:
@@ -369,6 +381,16 @@ APPLE_PROJECT_FILES = """Info.plist, entitlements, Package.swift, Xcode project 
 APPLE_BUILD_TOOLS = """`xcodebuild`, `swift build`, or `swift test`"""
 APPLE_VIOLATION_LEVEL = """as warnings/errors with structured metadata"""
 
+# ─── Running devpro from a skill ─────────────────────────────────────────────
+
+_WRAPPER_FROM_SKILL = "`../../tools/devpro.sh` resolved from this skill's own directory to an absolute path"
+_WRAPPER_RUN = "Run it with the project root as the working directory."
+WRAPPER = f"""`DP` below is the installation's wrapper, {_WRAPPER_FROM_SKILL}. {_WRAPPER_RUN}"""
+# The profiler skill renders where `init` wrote it, beside the project's committed wrapper, and where the
+# install wrote it, beside the installation's: the clause names the tree's own, one wrapper, and resolves
+# no second candidate.
+WRAPPER_PROFILER = f"""`DP` below is the tree's own wrapper — the project's committed wrapper where `init` rendered the skill, the installation's own where the install rendered it — `{PROJECT_WRAPPER}` filled with its path. {_WRAPPER_RUN}"""
+
 # ─── Critical gotchas ────────────────────────────────────────────────────────
 
 # Hazards of C and C++ as the language defines them, for seats building against a libc — not for
@@ -391,7 +413,12 @@ def pe_declare_bullet(*, act: str = "modify") -> str:
 
 PE_STOP_BULLET = """- **Stop on conflict**: if mid-task you discover you need to modify a file another agent may be editing, stop and report rather than proceeding."""
 
-PE_EXPANSION_BULLET = """- **Scope expansion**: if you discover the task is significantly larger than described — requires touching additional systems, reveals a fundamental design gap, or would affect other agents' work — stop immediately and report to the coordinator. Do not make unilateral expansion decisions."""
+# Sits in PE_LEAD after PE_READ_BULLET, because it is the one bullet about how the work is split
+# rather than about what the work may touch. Worked instance, for provenance: the P4b/P4c merge
+# (`313f95d`, `c9b4cd0`). The clause names no coordinator: this seat is user-invoked directly.
+PE_SHARED_GRAPH_BULLET = """- **Halves that share a call graph merge**: where two commits' halves share a call graph such that either alone leaves the gate red, the split is a Blocker naming the shared definitions, and the halves land as one."""
+
+PE_EXPANSION_BULLET = """- **Scope expansion**: if you discover the task is significantly larger than described — requires touching additional systems, reveals a fundamental design gap, or would affect other agents' work — stop immediately and report. Do not make unilateral expansion decisions."""
 
 
 def pe_scope_creep_bullet(*, examples: str = "improve adjacent code, add comments to unchanged files") -> str:
@@ -414,7 +441,8 @@ PE_LEAD = f"""## Parallel Execution
 
 {PE_PREAMBLE}
 
-{PE_READ_BULLET}"""
+{PE_READ_BULLET}
+{PE_SHARED_GRAPH_BULLET}"""
 
 PE_SHARED_BULLETS = f"""{PE_STOP_BULLET}
 {PE_SHARED_INFRA_BULLET}

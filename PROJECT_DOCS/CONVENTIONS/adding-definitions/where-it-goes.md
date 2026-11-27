@@ -1,4 +1,4 @@
-### Where it goes
+# Where it goes
 
 One module in `devpro/definitions/`, `devpro/definitions/agents/` or `devpro/definitions/skills/`; its
 existence is its enrollment, and nothing imports it by name. A module is registered by existing under
@@ -10,5 +10,6 @@ A module sits in the folder of the kind its definitions render: an agent's in `a
 stays at the top until a rule places it. Its name comes from its output path, not from its folder
 (What it is called).
 
-A new definition joins the devpro plugin by existing. To also ship it in the kbase plugin, add it to
-SPEC.md, Deployed Surfaces, Plugins and to `devpro/plugins/kbase.py`.
+A new definition joins the devpro set by existing. To ship it with the kbase component, add it to
+SPEC.md, Deployed Surfaces, Plugins and to the kbase component's member list in
+`devpro/components.py`.

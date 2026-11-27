@@ -10,10 +10,11 @@ otherwise none, and the install is refused. Held to one harness, the same values
 holds its harness directory (`target_holds_harness_dir`), the `detect` install setting's judgment. Every
 directory name is read from the harnesses' own values, so none is spelled here. The target is normalized
 lexically, for that matching and for the harness directory and project root built from it; it is resolved
-only where it is compared with the home directory, so two spellings of home compare equal.
+only where it is compared with the home directory, so two spellings of home compare equal. A target that
+resolves into the running devpro package's own source — `install_base.PACKAGE_ROOT`, the directory the
+package was imported from — is refused: an install there writes the set into the package it is reading,
+and an editable install then serves that set as the package's own.
 """
-
-from __future__ import annotations
 
 import os
 from dataclasses import dataclass
@@ -22,6 +23,7 @@ from pathlib import Path, PurePosixPath
 from devpro.context import harness_named, harnesses
 from devpro.errors import InputError
 from devpro.harness import Harness
+from devpro.install_base import PACKAGE_ROOT
 
 _HOME_PREFIX = "~/"
 
@@ -82,6 +84,17 @@ def require_existing_target(target: Path) -> None:
     raise InputError(f"install target '{target}' is not an existing directory — {cause}")
 
 
+def require_outside_package_source(target: Path) -> None:
+    """Refuse `target` where it resolves to the running package's source or into it, naming the boundary:
+    an install there would replace the very set `devpro` is."""
+    resolved = target.resolve()
+    if resolved == PACKAGE_ROOT or resolved.is_relative_to(PACKAGE_ROOT):
+        raise InputError(
+            f"install target '{target}' is the running devpro package's source, {PACKAGE_ROOT}, or inside it: an "
+            "install there would write into the package running it — name a project outside it; nothing written"
+        )
+
+
 def require_subdir_inside(subdir: str) -> None:
     """Refuse `subdir` where it is an absolute path or, normalized, climbs out of the target."""
     normalized = os.path.normpath(subdir)
@@ -129,14 +142,16 @@ def _detected_harness(target: Path, *, at_home: bool) -> str:
 
 
 def resolve_install_target(target: Path, *, harness: str | None, plugin: str, subdir: str | None) -> InstallTarget:
-    """The harness, harness directory and project root for installing the plugin `plugin` into `target`.
-    The harness is detected from values no plugin changes; the directories are then resolved with it
-    bound to `plugin`. With `subdir` given, the harness directory is `<target>/<subdir>` (`""`: the
-    target itself). Otherwise, in the home directory, it is the harness's user harness directory there;
-    a target that is itself the nested-plugin harness's directory is the harness directory, under its
-    parent as the project root; any other target holds it at `<target>/<project harness directory>`. A
-    target that is not an existing directory is refused."""
+    """The harness, harness directory and project root for installing the set under the one name `plugin`
+    into `target`. The harness is detected from values no selection changes; the directories are then
+    resolved with it bound to `plugin`. With `subdir` given, the harness directory is `<target>/<subdir>`
+    (`""`: the target itself). Otherwise, in the home directory, it is the harness's user harness directory
+    there; a target that is itself the nested-plugin harness's directory is the harness directory, under
+    its parent as the project root; any other target holds it at `<target>/<project harness directory>`. A
+    target that is not an existing directory, or that resolves into the running package's source, is
+    refused."""
     require_existing_target(target)
+    require_outside_package_source(target)
     target, at_home = _lexical_target(target)
     name = _detected_harness(target, at_home=at_home) if harness is None else harness
     selected = harness_named(name).bound(plugin)

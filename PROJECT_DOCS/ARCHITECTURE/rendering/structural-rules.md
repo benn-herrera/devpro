@@ -1,12 +1,13 @@
-### Structural rules
+# Structural rules
 
 The substitution-depth, shared-paragraph and prompt checks fix the properties in SPEC.md, Rendering;
 the clause group check holds its *Kind membership* — every definition of a kind carries the clauses
 that kind carries — and a group's shared clauses. Each is a test in the suite (`just test devpro`).
-`render` runs none: a syntax-tree analysis has no place on an operator's machine of unknown Python.
-The sweeps that read rendered text run per plugin (`_PLUGIN_RENDERS`), each plugin's definitions as it
-ships them, so a paragraph an optional reference drops from one plugin is judged in the other, and
-each prompt takes its own plugin's agents file.
+`dev-render` runs none: a syntax-tree analysis has no place on an operator's machine of unknown
+Python.
+The sweeps that read rendered text run over one devpro set with the kbase component on, so a
+paragraph an optional reference drops from the plain set is judged where it ships, and every
+prompt takes the one plugin's agents file.
 
 - **Substitution depth is one.** `tests/_structure.py` walks the syntax trees of the definition
   modules and `clauses.py`. A module-level constant is a string literal or an f-string over

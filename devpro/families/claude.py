@@ -5,7 +5,7 @@ from devpro.family import Family
 FAMILY = Family(
     "claude",
     {
-        "stem-architect": "fable",
+        "stem-architect": "opus",
         "stem-expert": "opus",
         "stem-mechanical": "sonnet",
         "comm-architect": "sonnet",

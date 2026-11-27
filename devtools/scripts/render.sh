@@ -6,17 +6,17 @@
 # This scan reads the slug as the install verb reads its target: the first argument that is not a
 # `--` flag, wherever it sits, is the slug (default `latest`) rather than a fixed positional, so
 # `just render --family=gemma-4` tunes the `latest` slot instead of mistaking the flag for a slug.
-# The slot holds one slot project per plugin, <slot>/<plugin>/. `--subdir=` is fixed ahead of the
-# forwarded flags in `_render-slot`, so each slot project is its install's harness directory, with no
-# .claude nest: the render lands directly under it, and a claude slot project holds the plugin at
-# <slot>/<plugin>/skills/<plugin>/.
+# The slot holds one slot project, <slot>/devpro/. `--subdir=` is fixed ahead of the forwarded flags
+# in `_render-slot`, so the slot project is its install's harness directory, with no .claude nest:
+# the render lands directly under it, and a claude slot project holds the install at
+# <slot>/devpro/skills/devpro/.
 #
 # The flags that produced a slot are recorded in it as RENDER-FLAGS.txt, so a `render-diff` between
 # two slots rendered under different tunings shows why they differ instead of reading as unexplained
 # drift. A comparison's flag sets belong to the invocations that produced each side, never to what
 # an operator recalls between them.
 #
-# Each slot project also holds its plugin's harness agents file for one harness, written through the
+# The slot project also holds its harness agents file for one harness, written through the
 # render-agents-file script: at harness/<name>/<the harness's agents-file name>, or — for a harness
 # whose own files sit at its root — at <agents-file> beside the slot project's `.mcp.json`.
 # `--harness=NAME` (default claude) is the one flag this script reads as well as forwards, in any
@@ -27,13 +27,14 @@
 # The slot is removed and rebuilt on every render. A slug starting with `reference` is refused with
 # nothing touched: those slots are the pre-1.0 oracle until stage 6 re-renders them.
 #
-# Every `--*` flag but `--plugin` is forwarded to the install; `--plugin` or `--plugin=…` is refused,
-# since `_render-slot.sh` sets it per plugin.
+# Every `--*` flag but `--components` is forwarded to the install; `--components` or
+# `--components=…` is refused, since the slot is rendered with its one fixed selection.
 #
-# Every plugin is rendered, so a `render-diff` compares each. The kbase slot project carries the
-# kb-tools package and its own MCP entry (a claude slot project's entry is the plugin's, in
-# <slot>/kbase/skills/kbase/). A harness-directory plugin's slot project (`mage`) carries no runner
-# include line and no `Makefile`, its harness writing neither.
+# The one slot project is rendered with the kbase component on, so a `render-diff` compares the whole
+# set: it carries the kb-tools package and, under a harness that renders one, the MCP entry (a
+# claude slot project's at <slot>/devpro/skills/devpro/.mcp.json), and, where the harness writes a
+# runner file, the runner include line — kb's. A harness-directory install's slot
+# project (`mage`) carries no runner include line and no `Makefile`, its harness writing neither.
 set -euo pipefail
 : "${PROJECT_ROOT:?PROJECT_ROOT is empty or unset — run this script through its justfile recipe}"
 
@@ -41,8 +42,8 @@ slug="latest"
 args=()
 have_slug=""
 for arg in "$@"; do
-    if [[ "${arg}" == --plugin || "${arg}" == --plugin=* ]]; then
-        printf '%s\n' "error: render renders every plugin; --plugin is not accepted" >&2
+    if [[ "${arg}" == --components || "${arg}" == --components=* ]]; then
+        printf '%s\n' "error: render renders the slot with the kbase component on; --components is not accepted" >&2
         exit 1
     fi
     if [[ -z "${have_slug}" && "${arg}" != --* ]]; then

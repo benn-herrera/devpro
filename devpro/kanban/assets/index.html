@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kanban</title>
+<link rel="stylesheet" href="board.css">
+</head>
+<body class="board-root">
+<nav class="site-nav scanlines">
+  <span class="project-name" id="project-name"></span>
+  <span class="views">
+    <a class="view active" href="/board/" aria-current="page">kanban</a>
+    <a class="view" href="/profiler/">profiler</a>
+  </span>
+  <span class="nav-server">
+    <span class="dot"></span>
+    <span id="connection" role="status" aria-labelledby="connection"></span>
+    <button id="stop" class="nav-stop" type="button">Stop</button>
+  </span>
+  <span class="brand">devpro</span>
+</nav>
+<!-- The dashboard's decoration polls the server's state and ends it; board.js, below, draws the board. -->
+<script src="/profiler/deco.js"></script>
+<header>
+  <h1 id="page-title" class="visually-hidden" tabindex="-1"></h1>
+  <span id="release"></span>
+  <span id="hardening" class="tag" hidden>hardening</span>
+</header>
+<div id="messages">
+  <p id="move-message" role="status"></p>
+  <p id="alert" role="alert"></p>
+</div>
+<main id="board"></main>
+<script src="board.js"></script>
+</body>
+</html>

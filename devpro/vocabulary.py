@@ -3,10 +3,8 @@ overlay anchors, definition kinds, the harness text a definition's prose may
 name, and the placeholder spelling for both. Imports nothing from the package,
 so every module may import it."""
 
-from __future__ import annotations
-
 from enum import Enum
-from typing import Literal, Union
+from typing import Literal
 
 IDENTIFIER = r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
 """Output, family and harness names, and each folder part: strict kebab, letter-led segments joined by single hyphens."""
@@ -51,7 +49,7 @@ class Unrestricted(Enum):
 
 
 ALL = Unrestricted.ALL
-Tools = Union[tuple[Tool, ...], Unrestricted]
+Tools = tuple[Tool, ...] | Unrestricted
 """An authored allowlist in authored order, or ALL. ALL emits no tools field on any harness,
 which is not the same as a tuple naming all nine tools."""
 
@@ -101,6 +99,7 @@ class OptionalHarnessText(Enum):
     RELOAD_RULE = "reload_rule"
     TOOLS_RELOAD_RULE = "tools_reload_rule"
     SIDE_BY_SIDE_RULE = "side_by_side_rule"
+    AGENTS_PATH = "agents_path"
     COLD_READ_RULE = "cold_read_rule"
 
 
@@ -119,12 +118,15 @@ class TuningText(Enum):
 
 
 class PluginText(Enum):
-    """A value of the plugin being rendered, filled in a body of every kind."""
+    """A value of the plugin being rendered, filled in a body of every kind: its name, and the path,
+    relative to the project root, of the wrapper its project install under the render's harness
+    writes (`Harness.project_wrapper`)."""
 
     NAME = "name"
+    PROJECT_WRAPPER = "project_wrapper"
 
 
-RenderValue = Union[HarnessText, OptionalHarnessText, Anchor, AgentsFileText, TuningText, PluginText]
+RenderValue = HarnessText | OptionalHarnessText | Anchor | AgentsFileText | TuningText | PluginText
 
 
 def key(name: RenderValue) -> str:

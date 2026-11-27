@@ -16,7 +16,9 @@ them into a project, or into a user's own harness setup. Text several definition
 once and filled into each; the result is rendered per harness and per model family (a line of models,
 such as Claude's). Each agent names a category — the kind of work it does at the difficulty it
 needs — and a category map names the model for each category: the family's own, unless the
-harness or the operator supplies another.
+harness or the operator supplies another. The package also ships the machinery the work runs on —
+the document dicing and checks, the activity profiler and its dashboard — absorbed from projects
+of their own (The new results).
 
 Almost all of that is assembled from well-known building blocks, used at small scale. Two results
 are new, and they are the reason the project exists. This page names both, so that work on a
@@ -35,16 +37,16 @@ the piece resembles and is not — the direction work on it must not drift.
 | Harnesses | A profile per harness: its paths, file names, frontmatter or registry shape, the paragraphs it carries and the strings it fills in | A plugin framework |
 | Plugins | A package group: a named list of definitions that an install delivers whole | A dependency resolver |
 | Model tuning | A table of model names per category for each model family, and text added at anchors — named points in a definition's text | A prompt optimizer or an evaluation system |
-| Install | A deploy step: each harness has its own layout, and the rendered files are copied to the places and names that layout gives | A package manager |
+| Install | A deploy step: each harness has its own layout, and the install replaces the plugin directory whole — the rendered files written fresh to the places and names that layout gives | A package manager |
 | The agents file | A marked block in the `AGENTS.md` (or `CLAUDE.md`) a harness loads into every session | A configuration layering system |
 | Installed resources | Files the install copies into place: helper scripts, hook scripts | A dependency installer |
 
 Where a piece is in this table, its conventional answer is the default. A design that grows a piece
 toward its "is not" column is out of scope, however natural the next step looks.
 
-## What is new
+## The new results
 
-Two things, and only these. The machinery behind both is standard, and listed above.
+The machinery behind both is standard, and listed above.
 
 **Shared text exists once.** Agents in a set share text because they must share behavior: a rule
 stated to one agent and not its neighbor is two agents that will act differently in the same
@@ -60,8 +62,26 @@ harness and model family. A harness selects which harness-specific
 paragraphs it carries, and supplies its own layout and names. A family supplies its default model
 for each category, and may add text at anchors but never replace or remove a definition's base text.
 
+**The document tools are absorbed, not built.** The plan-status form a tool reads, the category map
+an agent's model is taken from, and the dicing and check machinery — the split of a document
+into a tree, the rewriting of its links, the live board and the checks — come from projects of
+their own, carried into devpro as devpro code; ARCHITECTURE.md's Repo Layout names each, and what
+they must achieve is SPEC's to state.
+
+## The process it ships
+
+The agent set devpro ships carries a development process, and that process is designed around
+a principle: remediation opportunities — the checks, reviews and decision points — are placed
+where the applicable working context is most available to the combined human-agent collaboration.
+A defect found while the context that produced it is still live is cheap to fix; the same defect
+found post-hoc, reconstructed from artifacts alone, is expensive, and the reconstruction is where
+the cost concentrates. So the process decides at design and plan time, when a sentence can still
+change the work; surfaces findings while the session that directed the work still holds the
+thread; and records decisions at decision time. What post-hoc review remains starts from carried
+context, not reconstructed context.
+
 Volumes:
 
-- [SPEC](SPEC/entry-point.md): The devpro project renders agent, command and skill definitions to order, for any supported harness and model family, from one source in which shared text is written once; the two plugins it ships, consumed by other projects, are its flagship renderings.
+- [SPEC](SPEC/entry-point.md): The devpro project renders agent, command and skill definitions to order, for any supported harness and model family, from one source in which shared text is written once; the one plugin it ships, consumed by other projects, is its flagship rendering.
 - [ARCHITECTURE](ARCHITECTURE/entry-point.md): How the generation system, and the agent and skill set it ships, are built to satisfy SPEC.md.
 - [CONVENTIONS](CONVENTIONS/entry-point.md): House rules and project-specific traps only.

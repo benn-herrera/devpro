@@ -1,4 +1,4 @@
-### Definition modules hold only constants
+# Definition modules hold only constants
 
 A definition module holds nothing but imports, string constants and `DEFINITIONS`. It reads
 top to bottom as the file it renders. `just test` fails on any other top-level statement or call.

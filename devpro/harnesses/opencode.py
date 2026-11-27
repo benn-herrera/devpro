@@ -2,8 +2,6 @@
 bodies without frontmatter and its metadata in one registry, `registry.json`, the wire format this module
 owns and the copied entry reads."""
 
-from __future__ import annotations
-
 import json
 import re
 from collections.abc import Sequence
@@ -100,7 +98,7 @@ HARNESS = Harness(
     entry_resource="index.ts",
     default_category_spec="default",
     mcp_tool_prefix="kbase_",
-    scratch_rule=scratch_rule(harness_dir=_PROJECT_HARNESS_DIR),
+    scratch_rule=scratch_rule(),
     memory_file=f"`{_USER_HARNESS_DIR}/{_AGENTS_FILE}`",
     recipe_rule="",
     kbase_project_rule="",

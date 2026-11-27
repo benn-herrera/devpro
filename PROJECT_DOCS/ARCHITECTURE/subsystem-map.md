@@ -1,4 +1,4 @@
-## Subsystem Map
+# Subsystem Map
 
 Every entry below but the last is rendered from the definition module under `devpro/definitions/`
 named for its output path, or for its group module (Rendering). A shared-text name given
@@ -20,9 +20,9 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   `clauses.DISSENT`, which nineteen definitions carry, directs the dispute its closing sentence
   names: an order whose result satisfies every stated requirement but whose only possible variation
   is form.
-- **kbase plugin + kbase** — the `kbase` skill alone: the definition the devpro plugin excludes by name
-  and the kbase plugin delivers with the others SPEC.md, Deployed Surfaces, Plugins lists
-  (`devpro/plugins/kbase.py`). `kbase.py` owns a directory,
+- **kbase component + kbase** — the `kbase` skill alone: the definition the kbase component adds to
+  the devpro set, named among the component's contents in SPEC.md, Deployed Surfaces, Plugins
+  (`devpro/components.py`). `kbase.py` owns a directory,
   `skills/kbase/SKILL.md` routing by request and `skills/kbase/references/reading.md`,
   `building.md`, `maintaining.md`, `scoring.md`, `scoring-system.md` and `installing.md` carrying
   what each route needs; the skill entry file is the only text every session pays for, and the rule
@@ -32,7 +32,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   goes to the two supporting files that work a KB the build has finished with — reading, which
   reports, and maintaining, which modifies; `building.md` and `scoring.md` carry what their own job
   needs. The skill and its supporting files are project-portable — per-project facts live in the
-  consuming project's `kb-root/AGENTS.md`, under every harness. The kbase plugin reaches kbase, the
+  consuming project's `kb-root/AGENTS.md`, under every harness. The kbase component reaches kbase, the
   executable the operator installs (no install writes it), only through the harness's `kbase` MCP
   server, offered under that harness's `mcp_tool_prefix`. The minimum version and the formula are
   written once, as `KBASE_MIN_VERSION` and `KBASE_TAP_FORMULA` in `kbase.py`, and filled into the
@@ -47,27 +47,46 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   marketing-comms-expert, ml-engineer, prompt-engineer, prose-architect, theoretical-economist:
   single-purpose, invoked directly rather than as part of a coding pipeline.
   applied-mathematician carries the `fam-ask-vs-stipulate` anchor.
-- **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered with its
-  tools package by both plugins.
-  `docdicer.py` names its script `tools/docdicer`, relative to the skill's directory, and says its
-  first run installs docdicer beside it; the script's `--help` is the command list, which the skill
-  does not restate. The skill carries no runner-snippet advice and no install step; its one
-  runner instruction is that where the project's runner includes the docdicer snippet, docdicer is
-  run through the recipes (`docdicer`, `docdicer-check-plan`, `docdicer-kanban`, `docdicer-help`).
-  It names `check-design` and `check-roadmap` beside `check-plan`; neither has a recipe of its
-  own, and each runs through `docdicer` (`just docdicer check-design <design>`,
-  `just docdicer check-roadmap ROADMAP.md`).
+- **Tool-driving skill:** `docdicer`, one `SKILL.md` with no supporting files, delivered by every
+  install.
+  `docdicer.py` routes the session to devpro's dicing verbs — `dice`, `undice` and the check
+  verbs — run from the command line through the installation's wrapper, which `clauses.WRAPPER`
+  names: `../../tools/devpro.sh` resolved from the skill's directory (SPEC.md, Deployed Surfaces,
+  Installed tree), run with the project root as working directory. It does not restate the verbs'
+  `--help` (CONVENTIONS.md, A skill omits its tool's offered surface). The skill carries no install
+  step. Its runner instruction names the recipes of the `devpro` snippet set: where the project's
+  runner includes that set, the checks run through the recipes — `devpro-help`, and the four gates
+  `devpro-check-plan`, `devpro-check-design`, `devpro-check-design-deltas-applied` and
+  `devpro-check-roadmap`, which take no argument, each checking the active file under the project
+  root — the active plan, the active design, the active design's applied deltas and `ROADMAP.md` —
+  with a direct call through the wrapper for any other (Plugins). Its board paragraph names the
+  `dashboard` verb, run through the wrapper, for the board, the dashboard's panel, offering to run
+  it as a background process or handing over the command line, the user choosing.
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
   `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it
-  renders only where kbase ships. The docdicer version the script
-  installs is written once, as `VERSION` in `devpro/docdicer-tools/docdicer`.
+  renders only where kbase ships.
+- **Profile skill** — `profiler` (`definitions/profiler.py`): one `SKILL.md` with no
+  supporting files, delivered under every harness. It renders the newest session's trace — read from
+  either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores
+  `devpro profiler tree` walks — as text, as a self-contained HTML page, or
+  served over HTTP by the dashboard's profiler view: its serve section names the `dashboard` verb,
+  run through the tree's own wrapper, which `clauses.WRAPPER_PROFILER` names — the project's committed
+  wrapper where `init` rendered the skill outside the install directory, the installation's own where
+  the install rendered it (Rendering, Placeholders). The
+  tree's drawing is the code's rule: `tree --verbose` draws every node of the session, and the
+  plain tree draws the placeholder and marker nodes and the calls whose tool is in `PARENT_TOOLS`.
+  The skill runs the profiler through that one wrapper, which dispatches the `profiler` verb and its
+  `tree` subcommand
+  (Harness profiler).
 - **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
-  `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered by both
-  plugins under every harness. The description names the uses SPEC.md, Guide and README lists, and
+  `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
+  under every harness. Its board section routes the board to the `docdicer` skill and names no
+  command and no recipe; its install, update and
+  version commands name the `devpro` command on `PATH` (SPEC.md, Deployed Surfaces, Shipped files). The description names the uses SPEC.md, Guide and README lists, and
   says it is not for a change to the consuming project's own code. `SKILL.md` is a route, as the
   `development` skill's *Route* table is: one row per starting place SPEC.md, Guide and README
-  lists, under the never-edit rule it states. The `development` and `docdicer` rows name their skill
-  by a plain reference (`clauses.ref`), safe because both plugins ship both.
+  lists, under the never-edit rule it states. The `development`, `docdicer` and `profiler` rows name
+  their skill by a plain reference (`clauses.ref`), safe because every install carries all three.
   `references/installing.md` carries everything else about the installed set. That includes three
   paragraphs of its own, each dropped where its value is empty:
   - the `reload_rule` placeholder (Rendering, Placeholders), which says to run `/reload-plugins`
@@ -75,13 +94,13 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   - the `side_by_side_rule` placeholder, which says how to stop opencode loading a claude
     install's skills. It is kept under opencode alone;
   - an optional reference to `kbase` (`clauses.optional_ref`), which hands installing kbase itself
-    to that skill. It is kept in the kbase plugin alone.
+    to that skill. It is kept where the kbase component is on.
 
   The plugin is named through `clauses.PLUGIN_NAME`, and the repository through
   `clauses.REPOSITORY_URL`.
-- **Development skill** — `development` (`definitions/development.py`): one `SKILL.md` and six
+- **Development skill** — `development` (`definitions/development.py`): one `SKILL.md` and seven
   supporting files (`references/new-project.md`, `project-documents.md`, `project-setup.md`,
-  `adopting.md`, `release.md`, `design.md`), carried as `SkillFile`s, delivered by both plugins under every
+  `adopting.md`, `release.md`, `design.md`, `intermittent-drives.md`), carried as `SkillFile`s, delivered under every
   harness, mage included. Beside them in the skill's directory sits the development scripts
   package, `scripts/cold-read.sh`, owned by `development`: a shipped package, not one of the
   `SkillFile`s (Install, Renders and copies). The skill states one development process for the main
@@ -101,9 +120,12 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   where a term's value is written literally in a body string, so no two mentions can name a term
   differently. Its
   `docdicer` references are optional references (Rendering, Placeholders), and `docdicer` ships
-  with both plugins, so each fills. The *Plan status* and *Roadmap tickets* sections render whole
-  under every plugin; each one's `check-plan` or `check-roadmap` instruction is a paragraph of its
-  own, so an optional reference that fills to nothing drops that paragraph alone. The sentence
+  with every install, so each fills. The *Plan status* and *Roadmap tickets* sections render whole
+  under every install; each one's `check-plan` or `check-roadmap` instruction is a paragraph of its
+  own, so an optional reference that fills to nothing drops that paragraph alone. The *Design*
+  section's delta-application sentence names no runner recipe: the application is verified by
+  `check-design --deltas-applied`, the runner recipe it named retired with the docdicer tools
+  package (Recipes). The sentence
   naming the default step-down model is
   `clauses.STEP_DOWN_MODEL`, the `tun` placeholder (Rendering, Placeholders), so that sentence alone
   renders only where the rendering names a mechanical member to step down to. The entry body's
@@ -113,11 +135,12 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   `clauses.REPOSITORY_URL`. The *Dispatchability* section requires what the coding seats' bullet
   states: a package that adds a test names the defect it fails on.
 - **Install machinery** — the one entry not rendered from a definition: `install.py` renders, copies
-  and prunes; `install_base.py` holds what the install modules share (the package and checkout
-  paths, the kb-tools package paths, `VENV_DIR`, the path checks, UTF-8 text reading and the report of what an
-  install left alone); `runner_file.py` writes the runner include lines, one per `SnippetSet` the install passes it; `preflight.py` runs that
-  install into a scratch copy and compares (Install, Renders and copies); `agents_file.py`
-  does the same for the agents file (Agents File). The imports layer: `install_base.py` and
-  `install_target.py` import no other install module; `preflight.py` imports `install_base.py`;
+  and replaces the install directory wholesale; `install_base.py` holds what the install modules share (the package and checkout
+  paths, the kb-tools package paths, the path checks, UTF-8 text reading and the report of what an
+  install left alone); `runner_file.py` writes the runner include lines, one per `SnippetSet` the
+  install passes it, prepares the project's scratch directory and writes the `.gitignore` line for it;
+  `preflight.py` runs that install into a scratch copy and compares (Install, Renders and copies);
+  `agents_file.py` does the same for the agents file (Agents File). The imports layer: `install_base.py`
+  and `install_target.py` import no other install module; `preflight.py` imports `install_base.py`;
   `runner_file.py` imports `install_base.py`; `agents_file.py` imports
   `install_base.py`, `install_target.py` and `preflight.py`; `install.py` imports all of them.

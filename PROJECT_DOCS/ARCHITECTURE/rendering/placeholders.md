@@ -1,4 +1,4 @@
-### Placeholders
+# Placeholders
 
 Rendering is string formatting with named placeholders: a body's placeholders are filled per
 harness and model family, and the result is written to one file per output path (Install, Renders
@@ -17,7 +17,7 @@ for the seven harness strings, the `HarnessText` members, which every harness su
 name, project harness directory, display name — the harness's name in prose, which the `development`
 skill's attribution postscript names — user harness directory, MCP tool prefix, `scratch_rule`, the
 agents file's rule for where scratch goes, and `memory_file`, the agents file's name for the
-operator's own instructions file), and for the six harness-specific
+operator's own instructions file), and for the seven harness-specific
 paragraphs, the `OptionalHarnessText` members, each
 a whole rule: `recipe_rule` (the rule a dispatched agent follows running recipes),
 `kbase_project_rule` (how a kbase session locates its project where the server serves many),
@@ -25,14 +25,20 @@ a whole rule: `recipe_rule` (the rule a dispatched agent follows running recipes
 `guide` skill's installation reference), `tools_reload_rule` (what to do when an install's `kbase`
 tools are not offered, in its own paragraph of the `kbase` skill entry file and installation
 reference), `side_by_side_rule` (what to do where a claude install of any plugin the devpro project
-ships also reaches an opencode session, in its own paragraph of that reference) and `cold_read_rule` (how a cold
+ships also reaches an opencode session, in its own paragraph of that reference), `agents_path` (where
+the plugin's agents files sit, under a project install and for the user, in the `development` skill's
+`Dispatch` section) and `cold_read_rule` (how a cold
 reader is run, a whole bullet of the `development` skill's project-documents reference, naming
 the `development` skill's script), which a
 harness supplies as text or as the empty string, an empty one dropping the paragraph it stands in —
 and `@!fam-<anchor>!@` for an anchor, an `Anchor` member (`ask-vs-stipulate`, the one a definition
 exposes today).
 A body of any kind may carry `@!plg-name!@` (`PluginText.NAME`, filled from `ctx.plugin.name`) where
-the text must spell the plugin's name, such as the `devpro install --plugin=<plugin>` command.
+the text must spell the plugin's name, such as the mage install directory the `guide` skill's
+installation reference names. It may carry `@!plg-project-wrapper!@` (`PluginText.PROJECT_WRAPPER`, filled from
+`ctx.bound_harness.project_wrapper`) where the text must spell the path, relative to the project
+root, of the wrapper the plugin's project install under the render's harness writes — claude's
+`.claude/skills/devpro/tools/devpro.sh`.
 The agents file alone also carries `@!agf-<key>!@` for its scope name and the package version. A
 body of any kind may carry `@!tun-<key>!@` for a derived value, one computed from the `Render`'s
 category map and harness rather than supplied by either: `TuningText`'s one member, `step_down_model`,

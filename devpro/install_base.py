@@ -1,9 +1,10 @@
 """What the install modules share: where this package and its checkout sit, the kbase skill's directory
-and the kb-tools package's destination inside it, the virtual-environment directory an install leaves be, UTF-8 text reading that keeps each line's ending, and
+and the kb-tools package's destination inside it, the devpro tools package's directory and its wrapper,
+the one-line banners a carried file and a harness resource each state their origin in and the ownership
+markers a harness-rendered file does, UTF-8 text reading that keeps each line's ending, and
 the stderr report of what an install left alone."""
 
-from __future__ import annotations
-
+import re
 import sys
 from pathlib import Path
 
@@ -19,15 +20,35 @@ def checkout_root(package_root: Path) -> Path | None:
 
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
+"""The directory the running devpro package resolves to: the one source `require_outside_package_source`
+refuses an install into, the installation's copy an install run from it refuses to replace, and the one
+`init` refuses a repository's root being."""
 REPO_ROOT = checkout_root(PACKAGE_ROOT)
 
 KBASE_SKILL_DIR = "skills/kbase"
 # Below ROOT: where the kb-tools package is delivered, inside the kbase skill's own directory.
 KB_TOOLS_DIR = f"{KBASE_SKILL_DIR}/kb-tools"
-# A virtual environment a shipped tool builds beside its package: not install output, so it is neither
-# shipped nor copied into the preflight's scratch copy, never compared, so its presence alone never makes
-# an install proceed, and kept when the install clears the package's destination.
-VENV_DIR = ".venv"
+# Below ROOT: the devpro tools package — the installation's own copy of devpro and the runner snippets
+# — and the wrapper that runs that copy, which every installed hook and skill names by its own knowledge.
+TOOLS_DIR = "tools"
+WRAPPER = f"{TOOLS_DIR}/devpro.sh"
+# The mark a carried file's banner opens with: `stamped` writes it, and a harness resource carries it as
+# its own text on one of its first lines, in whatever comment syntax its format takes.
+INSTALLED_MARK = "!INSTALLED!"
+# A carried file's installed banner: the mark, a word naming where it came from, and the repository's
+# name. A harness resource and a rendered definition's digest (`devpro.profiler.directives`) read it.
+INSTALLED_BANNER = re.compile(re.escape(INSTALLED_MARK) + r" .* devpro")
+# The mark a rendered definition's banner opens with: `devpro.render.generated_text` writes it ahead of the
+# definition's module path, and a rendered definition's digest (`devpro.profiler.directives`) reads it from
+# the banner's first lines.
+GENERATED_MARK = "!GENERATED! from "
+# The ownership markers a harness-rendered file is read as, wherever `{plugin}` stands: each marker's leading
+# quoted field, which is what a registry's and every other marker's `{plugin}` slot leaves of it — the
+# guardrail registrations' (`no readable script at`), the plugin manifest's (`"name": "`), the `.mcp.json`
+# entry's (`"command": "`), the registry's (`"plugin":`). The install's refusal reads a harness file by its
+# marker whole, from `devpro.harness`, which binds `{plugin}`; the directives digest cannot load the
+# harnesses, so it reads a file's ownership by one of these, the part a marker and its bound forms share.
+HARNESS_OWNERSHIP_MARKERS: tuple[str, ...] = ("no readable script at", '"name": "', '"command": "', '"plugin":')
 
 
 def untranslated_text(path: Path) -> str:

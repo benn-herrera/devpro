@@ -1,4 +1,4 @@
-### Kinds
+# Kinds
 
 `kind` decides where the definition goes, what frontmatter the harness emits for it, and which
 fields it takes. `folder` is the path below the output root for a nested output, empty where the

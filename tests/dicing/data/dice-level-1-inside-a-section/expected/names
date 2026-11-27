@@ -1,0 +1,7 @@
+stdout	reassemble	ok	15	lines
+stdout	links	checked	3	dead	0
+stderr	extra	level-1	heading	line	9	kept	as	text
+stderr	volume	head
+stderr	section	section/index.md
+stderr	1.1.1-deeper.md
+stderr	refs	linked	0	dangling	0	distinct

@@ -1,21 +1,23 @@
 """The include lines an install writes into the consumer's runner file (justfile or Makefile) so the
-project can reach the runner snippets its shipped packages carry. Which snippet sets exist is the
-caller's: each function here takes the set it is given."""
-
-from __future__ import annotations
+project can reach the runner snippets its shipped packages carry, and the project's scratch directory
+and its `.gitignore` line. Which snippet sets exist is the caller's: each function here takes the sets
+it is given."""
 
 import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
-from devpro import install_base
+from devpro import clauses
 from devpro.context import harnesses
 from devpro.install_base import report_left_alone, utf8_text
 from devpro.render import appended_paragraph, write_text_verbatim
 
 JUSTFILE_NAMES = ("justfile", "Justfile", ".justfile")
 MAKEFILE_NAMES = ("Makefile", "makefile", "GNUmakefile")
+# The banner the first line of every runner file this install creates: what tells a file it created
+# from one the consumer wrote, which the install never removes.
+CREATED_MAKEFILE_BANNER = "# Makefile — created by the devpro installer."
 
 
 class SnippetSet(NamedTuple):
@@ -44,6 +46,26 @@ def check_runner(project: Path) -> None:
     found = _runner_file(project)
     if found is not None:
         utf8_text(found[1])
+
+
+def prepare_scratch_directory(project: Path) -> None:
+    """The scratch directory a project install leaves ready: `project / clauses.PROJECT_TEMP_DIR` created
+    where it is missing, and `project/.gitignore` carrying the one line `.devpro-temp/`, the
+    file created holding that line where the project has none. A `.gitignore` already carrying the line
+    is left as it stands, its text kept byte for byte otherwise."""
+    temp = clauses.PROJECT_TEMP_DIR
+    (project / temp).mkdir(exist_ok=True)
+    gitignore = project / ".gitignore"
+    if not gitignore.exists():
+        gitignore.write_text(f"{temp}/\n", encoding="utf-8", newline="")
+        print(f"created {gitignore} with the {temp}/ line")
+        return
+    text = utf8_text(gitignore)
+    # The line's own ending alone, not the trailing spaces a wider strip would take too: a line the
+    # file holds with spaces after it may be the operator's, and that errs toward touching nothing.
+    if any(line.rstrip("\r\n") == f"{temp}/" for line in text.splitlines()):
+        return
+    write_text_verbatim(gitignore, appended_paragraph(text, f"{temp}/", ending="\r\n" if "\r\n" in text else "\n"))
 
 
 def _snippets_path(snippet_set: SnippetSet, *, runner: str, harness_relpath: str) -> str:
@@ -81,7 +103,8 @@ class _NamedLine(NamedTuple):
     path it spells."""
 
     name: str
-    index: int
+    # `index` shadows `tuple.index`; the field is the position, and tests read it by that name.
+    index: int  # type: ignore[assignment]
     start: int
     end: int
 
@@ -114,7 +137,7 @@ def _with_include_line(
     label = snippet_set.label
     named = _named_harnesses(text, snippet_set, runner=runner)
     if len(named) > 1:
-        indexes = ", ".join(str(match.index + 1) for match in named)
+        indexes = ", ".join(str(named_line.index + 1) for named_line in named)
         report_left_alone(
             f"no include line written: {path} names the {label} snippets on lines {indexes}; merge them into one"
         )
@@ -122,32 +145,35 @@ def _with_include_line(
     if not named:
         line = include_line(snippet_set, runner=runner, harness_relpath=harness_relpath)
         return appended_paragraph(text, line), f"installed: appended the {label} include line to {path}"
-    match = named[0]
+    named_line = named[0]
     lines = text.splitlines(keepends=True)
-    prior = lines[match.index]
+    prior = lines[named_line.index]
     # The line is this install's when it spells the same first segment — the harness directory — as
     # ROOT's path does; the whole path token, ROOT's own path below that segment included, is then
     # this install's to replace.
-    if prior[match.start : match.end].split("/", 1)[0] != harness_relpath.split("/", 1)[0]:
+    if prior[named_line.start : named_line.end].split("/", 1)[0] != harness_relpath.split("/", 1)[0]:
         report_left_alone(
-            f"no include line written: {path} line {match.index + 1} already includes the {label} "
-            f"snippets for harness '{match.name}'"
+            f"no include line written: {path} line {named_line.index + 1} already includes the {label} "
+            f"snippets for harness '{named_line.name}'"
         )
         return text, None
     canonical = _snippets_path(snippet_set, runner=runner, harness_relpath=harness_relpath)
-    rewritten = f"{prior[: match.start]}{canonical}{prior[match.end :]}"
+    rewritten = f"{prior[: named_line.start]}{canonical}{prior[named_line.end :]}"
     if rewritten == prior:
         report_left_alone(
-            f"no include line written: {path} line {match.index + 1} already names the installed "
-            f"{label} snippets for harness '{match.name}'"
+            f"no include line written: {path} line {named_line.index + 1} already names the installed "
+            f"{label} snippets for harness '{named_line.name}'"
         )
         return text, None
-    lines[match.index] = rewritten
+    lines[named_line.index] = rewritten
     return "".join(lines), f"rewrote the {label} include line in {path}"
 
 
 def install_include_lines(
-    project: Path, snippet_sets: Sequence[SnippetSet], *, harness_relpath: str, real_project: Path | None = None
+    project: Path,
+    snippet_sets: Sequence[SnippetSet],
+    *,
+    harness_relpath: str,
 ) -> None:
     """Write each of `snippet_sets`' canonical include lines, in order, into `project`'s runner file:
     the justfile or Makefile probed there, else a `Makefile` created carrying every one.
@@ -160,21 +186,23 @@ def install_include_lines(
     no second line appended. A line naming another harness directory is reported and left alone, and so
     is a file holding more than one line for the set, which the operator merges by hand; either leaves
     the other sets' lines to be written. Only the runner file this run selected is examined: a second
-    runner file's stale line is left to the operator and is non-fatal. Nothing is written when `project`
-    is this repository — its own runner is the generator's, not a consumer's. `real_project`, defaulting
-    to `project`, is the project that is, where `project` is a scratch copy of it."""
-    if (project if real_project is None else real_project).resolve() == install_base.REPO_ROOT:
-        return
+    runner file's stale line is left to the operator and is non-fatal.
+
+    A line naming a set no install ships any more — the retired docdicer set's — is no set's line here:
+    it is left as written, inert where the snippets it names are gone. No runner file is created when
+    `snippet_sets` is empty."""
     labels = " and ".join(snippet_set.label for snippet_set in snippet_sets)
     found = _runner_file(project)
     if found is None:
+        if not snippet_sets:
+            return
         path = project / "Makefile"
         lines = "".join(
             f"{include_line(snippet_set, runner='make', harness_relpath=harness_relpath)}\n"
             for snippet_set in snippet_sets
         )
         path.write_text(
-            "# Makefile — created by the devpro installer.\n"
+            f"{CREATED_MAKEFILE_BANNER}\n"
             f"# Each include line below pulls in targets from the installed tree under {harness_relpath} "
             f"({labels}); add project targets below them.\n\n{lines}",
             encoding="utf-8",

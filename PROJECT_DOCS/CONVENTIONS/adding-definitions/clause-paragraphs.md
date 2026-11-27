@@ -1,4 +1,4 @@
-### Clause paragraphs
+# Clause paragraphs
 
 A sentence of the module's own that reads as its own rule stands as its own paragraph. One that
 continues the clause beside it stays joined to it. These patterns stay joined:

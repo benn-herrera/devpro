@@ -1,4 +1,4 @@
-## Code, Definitions and Install
+# Code, Definitions and Install
 
 Contents:
 
@@ -13,13 +13,25 @@ Contents:
 - [Plugin membership has one home](plugin-membership-has-one-home.md)
 - [`devpro` names the project and a plugin](devpro-names-the-project-and-a-plugin.md)
 - [Runner include line is exact](runner-include-line-is-exact.md)
-- [Recognizer spells rendered banner](recognizer-spells-rendered-banner.md)
+- [Digest pins the two captures' agreement](digest-pins-the-two-captures-agreement.md)
 - [Harness resources are copied verbatim](harness-resources-are-copied-verbatim.md)
 - [Guardrails change together](guardrails-change-together.md)
-- [Install sources are filtered](install-sources-are-filtered.md)
+- [The build is the install's one filter](the-build-is-the-installs-one-filter.md)
 - [Install parameters ship with their flags](install-parameters-ship-with-their-flags.md)
 - [Agents file changes explicitly](agents-file-changes-explicitly.md)
 - [Version has one home](version-has-one-home.md)
-- [Docdicer pin is a release](docdicer-pin-is-a-release.md)
 - [Annotations on the floor](annotations-on-the-floor.md)
+- [No version-conditional code paths](no-version-conditional-code-paths.md)
 - [Obviated code is deleted, not parked](obviated-code-is-deleted-not-parked.md)
+- [A module split runs one way](a-module-split-runs-one-way.md)
+- [A devtools tool joins the tests](a-devtools-tool-joins-the-tests.md)
+- [A lint recipe is read-only](a-lint-recipe-is-read-only.md)
+- [Shell in this repository is bash](shell-in-this-repository-is-bash.md)
+- [A harness resource's version claims testing](a-harness-resource-s-version-claims-testing.md)
+- [A hook contract is read, not assumed](a-hook-contract-is-read-not-assumed.md)
+- [A sentence two resources carry is one text](a-sentence-two-resources-carry-is-one-text.md)
+- [A host version is checked against the host's declarations](a-host-version-is-checked-against-the-host-s-declarations.md)
+- [A stand-in models the API's real semantics](a-stand-in-models-the-api-s-real-semantics.md)
+- [A runner's stand-in is type-checked](a-runner-s-stand-in-is-type-checked.md)
+- [A formatted time test pins the locale](a-formatted-time-test-pins-the-locale.md)
+- [A top-level key is a bare harness name](a-top-level-key-is-a-bare-harness-name.md)

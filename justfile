@@ -1,5 +1,11 @@
 # agents task recipes.
 
+# No recipe run writes bytecode into the source tree: an import of a resource the wheel grafts
+# wholesale would drop a `__pycache__` beside it, and the next `check-wheel` counts that cache
+# among the tree's files — bytecode for an interpreter the consumer never chose. The env var stops
+# the cache at the source; nothing in the tree needs it.
+export PYTHONDONTWRITEBYTECODE := "1"
+
 # Recipe bodies are bash, not just's default `sh`. Stating it makes the
 # contract explicit rather than inherited from whatever /bin/sh happens to be
 # on the host. `-u` (just's own default, kept) makes an unset variable a
@@ -22,35 +28,6 @@ GEN := "devpro"
 default:
     @just --list
 
-# Flags: [--plugin=NAME] [--harness=NAME] [--subdir=DIR] [--dry-run] [tuning flags]. An up-to-date
-# target is left untouched; --dry-run prints what would be created, changed and removed and writes
-# nothing. SPEC.md, Install destination has the rules.
-[doc("install a plugin into an existing target")]
-install target *args:
-    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m "{{GEN}}" install "$@"
-
-# Takes [--plugin=NAME]. Replaces only the devpro block and keeps everything outside it: replaces
-# the block in a file holding one ordered marker pair, appends it to a file with no marker line,
-# writes an absent file whole, and refuses any other file. <dir> is ~/.claude,
-# ~/.config/opencode, or a project root. [--harness NAME] (claude, opencode — the two whose
-# user-harness-dir is absolute) is inferred when <dir> is that harness's user directory and
-# required otherwise; a relative user-harness-dir, as mage's is, is never an inference basis. An
-# up-to-date file is left untouched; [--dry-run] prints whether the agents file and any redirect
-# would be created or changed and writes nothing.
-[doc("install a plugin's agents file into <dir>")]
-install-agents-file dir *args:
-    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m "{{GEN}}" install-agents-file "$@"
-
-##
-##
-## mmmm                        mmmmm                  "
-## #   "m  mmm   m   m         #   "#  mmm    mmm   mmm    mmmm    mmm    mmm
-## #    # #"  #  "m m"         #mmmm" #"  #  #"  "    #    #" "#  #"  #  #   "
-## #    # #""""   #m#          #   "m #""""  #        #    #   #  #""""   """m
-## #mmm"  "#mm"    #           #    " "#mm"  "#mm"  mm#mm  ##m#"  "#mm"  "mmm"
-##                                                          #
-##                                                          "
-
 # venv layout differs by OS: POSIX puts executables in .venv/bin, Windows in
 # .venv/Scripts with .exe suffixes. Resolved here via just's os() builtin.
 
@@ -61,31 +38,58 @@ EXE := if os() == "windows" { ".exe" } else { "" }
 VENV_PYTHON := "\"" + VENV / PYBIN / "python" + EXE + "\""
 TOOLS_RECORD := VENV / "tools.txt"
 
-# Lazy: the venv is created when its python is absent. The tool list below is recorded in
-# .venv/tools.txt after it installs; when the record is absent or differs from the list, the list
-# is installed into the existing venv and recorded again, and when it matches this runs no pip.
-# A half-built venv is repaired by deleting .venv and re-running.
-# The tools are compatible-release ranges on the install line (`~=X.Y.Z`): a venv rebuild takes
-# the newest patch release of each named minor and nothing newer, so maintenance fixes arrive
-# while what `just format-python` and `just test` do holds; a minor or major bump is an edit to
-# that line, visible in the diff. `pip` stays unpinned: it installs, it does not produce output a
-# change depends on.
+# Lazy: the venv is created when its python is absent. It installs the `dev` dependency group
+# `pyproject.toml` declares, and records the group's own text in .venv/tools.txt after it
+# installs: when the record does not hold that text, the group is installed into the existing venv
+# and recorded again, and when it does, this runs no pip. A half-built venv is repaired by deleting
+# .venv and re-running. `pip` is not in the group: it installs, it does not produce output a change
+# depends on.
+#
+# Every read of pyproject.toml refuses an empty or unexpected result, naming the read that missed,
+# before anything acts on it: a silent empty group would install nothing, and a silent empty floor
+# would be read as "too old" and rebuild the venv from whatever `python3` is first on PATH.
 _venv:
     #!/usr/bin/env bash
     set -euo pipefail
     # The project's scratch directory, so a recipe that needs it finds it.
     mkdir -p "{{PROJECT_ROOT}}/.devpro-temp"
-    tools=("pytest~=8.4.2" "isort~=6.1.0" "black~=25.11.0" "flake8~=7.3.0" "setuptools~=82.0.1" "build~=1.4.4")
+    # The floor's one home, read as the first X.Y a `>=`, `~=` or `==` specifier names: `>=3.11`,
+    # `>=3.11,<4`, `>=3.11.0` and `==3.11.*` all yield 3.11, and a spelling this misses is refused
+    # rather than acted on. Parsed with a regex, not tomllib: the python that runs this recipe is
+    # not yet known to be new enough to read it.
+    floor="$(sed -n 's/^requires-python *= *"\([^"]*\)".*/\1/p' "{{PROJECT_ROOT}}/pyproject.toml" | sed -En 's/.*(>=|~=|==)([0-9]+\.[0-9]+).*/\2/p' | head -n 1)"
+    if [[ -z "${floor}" ]]; then
+        printf '%s\n' "error: _venv found no floor in {{PROJECT_ROOT}}/pyproject.toml: requires-python must name a version as >=X.Y, ~=X.Y or ==X.Y" >&2
+        exit 1
+    fi
+    # Runs `${1}` against the floor above; a venv that exists, or one just built, must pass it. A
+    # below-floor venv is deleted and rebuilt once from `python3`, and a rebuild that lands below
+    # the floor again (or an interpreter that fails the test) is refused rather than kept.
+    function below_floor() {
+        ! "$1" -c "import sys; sys.exit(sys.version_info < tuple(map(int, '${floor}'.split('.'))))"
+    }
+    if [[ -x {{VENV_PYTHON}} ]] && below_floor {{VENV_PYTHON}}; then
+        printf '%s\n' "note: _venv rebuilds {{VENV}}: its interpreter is below the ${floor} floor" >&2
+        command rm -rf "{{VENV}}"
+    fi
     if [[ ! -x {{VENV_PYTHON}} ]]; then
-        # if /usr/bin/python3 is installed it is the crappy 3.9.6 from xcode command line tools
-        # that is actually our minspec, so use it to ensure we're not using any features
-        # beyond its ken
-        [[ "$(uname)" == Darwin ]] && export PATH=/usr/bin/:${PATH} || true
         python3 -m venv --upgrade-deps "{{VENV}}"
     fi
-    if [[ "$(cat "{{TOOLS_RECORD}}" 2>/dev/null || true)" != "$(printf '%s\n' "${tools[@]}")" ]]; then
-        {{VENV_PYTHON}} -m pip install "${tools[@]}"
-        printf '%s\n' "${tools[@]}" > "{{TOOLS_RECORD}}"
+    if below_floor {{VENV_PYTHON}}; then
+        printf '%s\n' "error: _venv rebuilt {{VENV}} from $(python3 -c 'import sys; print(sys.executable)') but it is below the ${floor} floor: put a Python ${floor} or later first on PATH" >&2
+        exit 1
+    fi
+    # The record is the group's text, read from pyproject.toml — never a second copy of the list. A
+    # non-empty group is also required because an empty one equals the missing-record fallback: the
+    # comparison below would read a group the parse lost as "unchanged" and install nothing.
+    group="$(sed -n '/^\[dependency-groups\]/,/^\[/p' "{{PROJECT_ROOT}}/pyproject.toml" | sed '1d;$d' | sed -n '/^dev = \[/,/^\]/p' | sed '1d;$d')"
+    if [[ -z "${group}" ]]; then
+        printf '%s\n' "error: _venv found no dev group in {{PROJECT_ROOT}}/pyproject.toml: [dependency-groups] must hold dev = [...] with one entry per line" >&2
+        exit 1
+    fi
+    if [[ "$(cat "{{TOOLS_RECORD}}" 2>/dev/null || true)" != "${group}" ]]; then
+        (cd "{{PROJECT_ROOT}}" && {{VENV_PYTHON}} -m pip install --group dev > /dev/null)
+        printf '%s\n' "${group}" > "{{TOOLS_RECORD}}"
     fi
 
 
@@ -102,27 +106,33 @@ RENDERED_DIR := "rendered"
 tag:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" ./devtools/scripts/tag.sh
 
+[doc("bumps devpro __version__ string in __init__.py - M)ajor, m)inor, or p)atch")]
+bump-version dot:
+  @PROJECT_ROOT="{{PROJECT_ROOT}}" ./devtools/scripts/bump-version.sh "{{dot}}"
+
 # Builds the working tree with the venv's setuptools; makes no git check and fetches nothing.
 [doc("build the wheel and sdist into dist/")]
 build: _venv
     @{{VENV_PYTHON}} -m build --no-isolation --outdir "{{PROJECT_ROOT}}/dist" "{{PROJECT_ROOT}}"
 
 # Proves the wheel's package data equals the non-.py files under devpro/ that git tracks or would
-# track, and that, installed into a throwaway venv made from <python> (default /usr/bin/python3),
-# it imports from that venv, runs as the devpro console script, installs byte-identically to the
-# checkout, and writes the mage plugin's agents file outside a checkout.
+# track, and that, installed into a throwaway venv made from <python> (default python3),
+# it imports from that venv, runs as the devpro console script, and — installed with the kbase
+# component on into a project — produces the install the built wheel produces, compared byte for
+# byte by check-wheel.sh against the same wheel's unpacked files, and writes the mage install's
+# agents file outside a checkout.
 [doc("[dev] build, then prove the wheel")]
-check-wheel python="/usr/bin/python3": build
+check-wheel python="python3": build
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" PYBIN="{{PYBIN}}" EXE="{{EXE}}" ./devtools/scripts/check-wheel.sh "$@"
 
-# Renders each plugin's install product at its own slot project rendered/<slug>/<plugin>/ (slug
-# defaults to latest; the first non-flag argument, in any position, is the slug), plus its agents
-# file for --harness=NAME (default claude) into rendered/<slug>/<plugin>/harness/<NAME>/, or at
-# the slot project's root for a harness-directory plugin (`mage`). Refuses a slug starting with
-# reference. Every --* flag but --plugin (refused: every plugin is rendered), --harness included,
-# forwards verbatim to `python3 -m devpro install` via install (--family, --config-file,
-# --harness, --verbose, ...).
-[doc("[dev] render every plugin to rendered/<slug>/")]
+# Renders the install product at its one slot project rendered/<slug>/devpro/, with the kbase
+# component on (slug defaults to latest; the first non-flag argument, in any position, is the
+# slug), plus its agents file for --harness=NAME (default claude) into
+# rendered/<slug>/devpro/harness/<NAME>/, or at the slot project's root for a harness-directory
+# install (`mage`). Refuses a slug starting with reference, and refuses --components: the slot
+# renders with the kbase component on. Every other --* flag, --harness included, forwards verbatim
+# to `python3 -m devpro install` via install (--family, --config-file, --harness, --verbose, ...).
+[doc("[dev] render devpro to rendered/<slug>/")]
 render *args:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" RENDERED_DIR="{{RENDERED_DIR}}" ./devtools/scripts/render.sh "$@"
 
@@ -138,38 +148,36 @@ retake-reference:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" RENDERED_DIR="{{RENDERED_DIR}}" ./devtools/scripts/retake-reference.sh
 
 [private]
-render-agents-file harness out plugin="":
+render-agents-file harness out:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" ./devtools/scripts/render-agents-file.sh "$@"
 
 [private]
-_harness-value plugin harness key:
+_harness-value harness key:
     @PROJECT_ROOT="{{PROJECT_ROOT}}" GEN="{{GEN}}" ./devtools/scripts/_harness-value.sh "$@"
 
-# Splits by heading level, with an optional link map TSV, then checks the leaves reassemble the
-# monolith and every relative link resolves.
-[doc("dice a markdown monolith into linked leaves")]
-dice-doc monolith out map="":
-    @just docdicer dice-doc "{{monolith}}" "{{out}}" "{{map}}"
+# Splits by heading level, one or more documents into a tree of volumes, then checks every volume
+# reassembles its document and every relative link resolves. --section writes the tree as a
+# broken-out section instead: its root's head is index.md, and no omnibus stands above it. Every
+# argument forwards verbatim.
+[doc("dice markdown documents into linked leaves")]
+dice *args:
+    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro dice {{args}}
 
-# Reads the listed documents from src-dir, keeps intermediates in work-dir, then verifies all
-# trees.
-[doc("dice a manifest's documents into volumes")]
-dice-docs manifest src work:
-    @just docdicer dice-docs "{{manifest}}" "{{src}}" "{{work}}"
-
-# <tree> is the directory holding its entry-point.md; <monolith> must not exist. Then checks the
-# monolith dices back to the same tree.
-[doc("write a diced tree back out as one document")]
-undice tree monolith:
-    @just docdicer undice "{{tree}}" "{{monolith}}"
+# <tree> is the directory holding its entry-point.md, or its index.md for a broken-out section;
+# <out> must be absent or empty. One document is written per volume, named for its volume directory,
+# and a tree holding one document is named for the tree's directory. Then checks each document
+# against its tree.
+[doc("write the documents a diced tree holds into a directory")]
+undice tree out:
+    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro undice "{{tree}}" "{{out}}"
 
 # Checks every relative link and #anchor in PROJECT_DOCS and the top-level *.md files, then that
 # every PROJECT_DOCS document is listed by its parent and reachable from its entry point; exits 1 on
 # a broken link or an orphan.
 [doc("check doc links and the PROJECT_DOCS tree")]
 check-links:
-  @just docdicer check-links PROJECT_DOCS *.md
-  @just docdicer check-tree PROJECT_DOCS
+  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-links PROJECT_DOCS *.md
+  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro check-tree PROJECT_DOCS
 
 # Reports and never gates: a difference between two slots is the expected
 # outcome of doing work, so differences exit zero. Only a comparison that could
@@ -182,20 +190,23 @@ check-links:
 # `<!-- !GENERATED! ... -->` and `<!-- !TUNING! ... -->` from its first line. Then,
 # outside fenced code, whitespace inside a paragraph collapses to one space, while
 # headings, thematic breaks, table rows, list items, fenced blocks and frontmatter stay exact
-# (devtools/render_diff.py states the rules). A copied file's `!INSTALLED!` banner
+# (devtools/render_diff.py states the rules). A copied file's `#`-comment `!INSTALLED!` banner
 # is replaced the same way. Two files are the same when that text is identical. The
 # output keeps `diff -rq`'s two line forms.
 [doc("[dev] diff two rendered slots by text")]
 render-diff a="reference-claude" b="latest":
     @PYTHONPATH="{{PROJECT_ROOT}}" RENDERED_DIR="{{RENDERED_DIR}}" python3 -m devtools.render_diff "{{a}}" "{{b}}"
 
-# No argument runs all four surfaces: devpro and dupe_sweep pytest, then docs (just check-links
-# with its defaults), then wheel (just check-wheel). A surface argument (devpro, dupe_sweep, docs,
-# wheel) runs only that one. Further arguments, never given to docs or wheel, forward to pytest: a
+# No argument runs the pytest surfaces (devpro and dupe_sweep, the cold_read and slow markers excluded by
+# default — the shipped cold-read suite costs about a fifth of the run and no checkpoint work
+# touches it), then docs (just check-links with its defaults), then wheel (just check-wheel). A
+# surface argument (devpro, dupe_sweep, cold-read, slow, docs, wheel) runs only that one — cold-read and
+# slow each run their own marker as default -m, a caller's own -m wins everywhere. Further arguments, never
+# given to docs or wheel, forward to pytest: a
 # flag (-k, -x, -q, ...) keeps the surface directory, a file or file::test path narrows the run to
 # it, and a path outside the surface's directory is refused.
 [doc("[dev] run the tests, or one surface's")]
-test surface="" *pytest_args: _venv
+test surface="" *pytest_args: _venv _js-deps
     @PROJECT_ROOT="{{PROJECT_ROOT}}" VENV_PYTHON={{VENV_PYTHON}} JUST="{{just_executable()}}" JUSTFILE="{{justfile()}}" ./devtools/scripts/test.sh "$@"
 
 FLAKE8_IGNORE := "E122,E201,E202,E203,E225,E226,E228,E261,E265,E302,E303,E501,E704,E731,W291,W293,W391,W503"
@@ -204,6 +215,80 @@ FLAKE8_IGNORE := "E122,E201,E202,E203,E225,E226,E228,E261,E265,E302,E303,E501,E7
 [doc("[dev] black, isort and flake8 the python")]
 format-python *paths: _venv
     @VENV_PYTHON={{VENV_PYTHON}} FLAKE8_IGNORE="{{FLAKE8_IGNORE}}" ./devtools/scripts/format-python.sh "$@"
+
+# shellcheck over every tracked `*.sh` file, then the same three tools over the same paths as
+# `format-python`, checking and writing nothing, then the shipped TypeScript resources against the
+# host's published declarations, the version `package.json` pins, `@opencode/plugin`, then mypy in
+# its strict mode over the package and the dev tool. mypy writes its cache to `.mypy_cache/` at the
+# repository root — gitignored, a run artifact and never a check input. A reviewer runs this one,
+# and `format-python` is what fixes what it reports.
+[doc("[dev] check the shell, the python, the types and the shipped TypeScript are clean, writing nothing")]
+lint: _venv _lint-shell _lint-typescript
+    @{{VENV_PYTHON}} -m black --check --line-length=120 tests devpro devtools
+    @{{VENV_PYTHON}} -m isort --profile black --check-only --line-length 120 tests devpro devtools
+    @{{VENV_PYTHON}} -m flake8 --ignore="{{FLAKE8_IGNORE}}" devpro devtools tests
+    @{{VENV_PYTHON}} -m mypy devpro devtools
+    @! grep '^def test_' tests/conftest.py tests/*/conftest.py
+
+# The last line of `lint` enforces that no function in any conftest.py starts with test_: pytest
+# collects no test function from a conftest.py in directory traversal, so a test_ prefix there is
+# either a helper hiding under a test's name or a test the gate never runs. grep exits 0 on a
+# match and 1 on none, so the inversion passes the check on no lines, and its failure prints the
+# offending lines.
+
+# A missing shellcheck fails the lint, never skips the step.
+_lint-shell:
+    @command -v shellcheck > /dev/null || { printf '%s\n' "error: just lint requires shellcheck on PATH" >&2; exit 1; }
+    @git ls-files -z '*.sh' | xargs -0 shellcheck
+
+# A missing bun, or an install that cannot reach the registry, fails the recipe that needs it,
+# through `_js-deps`, never as a skip. The declarations the resources import arrive through
+# `package.json`'s lockfile, `bun.lock`, which is pinned to the version `package.json` names.
+# `tsconfig.json` scopes the program to what ships, the test runners' TypeScript being dev-time only,
+# and `devtools/tsconfig.json` is the repository's own TypeScript, a dev tool rather than a shipped
+# resource.
+_lint-typescript: _js-deps
+    @cd "{{PROJECT_ROOT}}" && bunx tsc --noEmit
+    @cd "{{PROJECT_ROOT}}" && bunx tsc -p devtools/tsconfig.json --noEmit
+
+# The opencode entry's runner against the host's declarations: `tests/tsconfig.json` takes
+# `tests/opencode_entry_runner.ts`, whose stand-in for the host's compaction and prompt messages is
+# then checked against `@opencode/plugin`'s and `@opencode/schema`'s own types. `tsconfig.json`'s
+# program is the shipped resources alone, so without this the runner's invented shapes compile
+# nowhere — a stand-in no program takes is checked against nothing.
+[doc("[dev] check the opencode entry's test runner against the host's declarations")]
+lint-runner-typescript: _js-deps
+    @cd "{{PROJECT_ROOT}}" && bunx tsc -p tests/tsconfig.json --noEmit
+
+# The bun-on-PATH guard the recipes that need the root `package.json`'s dependencies depend on. A
+# missing bun fails the recipe that needs it, never skips the step.
+_bun-required:
+    @command -v bun > /dev/null || { printf '%s\n' "error: this recipe requires bun on PATH" >&2; exit 1; }
+
+# The private install those recipes depend on. A missing bun, or an install that cannot reach the
+# registry, fails the recipe that needs it, never skips the step. The install is read-only: it
+# updates `node_modules/` and leaves `package.json` and `bun.lock` as it found them, or fails where
+# the lockfile does not match them. Its output goes to stderr: stdout carries the caller's result —
+# the PNG path `screenshot` prints.
+_js-deps: _bun-required
+    @cd "{{PROJECT_ROOT}}" && bun install --frozen-lockfile >&2
+
+# Run after changing `package.json`'s dependencies: every other recipe installs frozen and fails on a
+# stale `bun.lock`. The unfrozen install is where a rewritten `bun.lock` comes from.
+[doc("[dev] install the root package.json's dependencies, rewriting bun.lock to match")]
+js-lock: _bun-required
+    @cd "{{PROJECT_ROOT}}" && bun install
+
+# Screenshots a page once it has settled, for viewing: the load, the fonts, the `--wait-for`
+# selector, then — where no selector was given — a bounded, advisory wait for network idle; a page
+# that keeps requesting is shot when the bound expires, not failed. <page> is an http(s) URL, a route
+# starting `/` with `--base <url>`, or a file path; the options are `--viewport <W>x<H>`,
+# `--wait-for <selector>`, `--color-scheme light|dark`, `--timeout <ms>` and `--out <png>`, and
+# `bun devtools/screenshot.ts --help` lists their defaults. It prints the PNG's path. The install
+# `_js-deps` runs writes its own output to stderr, so stdout holds the path alone.
+[doc("[dev] screenshot a page after it settles, for viewing")]
+screenshot *args: _js-deps
+    @cd "{{PROJECT_ROOT}}" && bun devtools/screenshot.ts "$@"
 
 # Emits candidates, never verdicts, and exits zero with findings: whether two sites are one idea is
 # a judgment, and a gate here would be claiming it.
@@ -244,6 +329,8 @@ PROJECT_DOCS/ docs
 *.md docs
 images/ docs
 pyproject.toml wheel
+package.json dupe_sweep
+bun.lock dupe_sweep
 justfile ALL
 devtools/scripts/ ALL
 "
@@ -261,6 +348,9 @@ test-changed base="":
 clause-join-sites *paths:
     @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devtools.clause_join_sites "$@"
 
+# A design's delta application is verified by `check-design --deltas-applied`; this repository runs
+# it as `just dev-check-design-deltas-applied`, over the absorbed verb.
+
 # Emits hits, never verdicts: American spellings are the standard, and this lists the British forms
 # left in tracked text for a reader to judge. The justfile and the leaf that hold the pattern and the
 # survivor list, and the plan, design and review under way, are skipped because they must quote the
@@ -269,55 +359,115 @@ clause-join-sites *paths:
 spellings:
     @git grep -n -i -E 'behaviour|colour|organis|recognis|analyse\b|analys(ed|ing)|centr(e|ing)|licenc|defence|favour|honour|labour|neighbour|travell|modell|cancell(ed|ing)|fulfil|enrolment|programme|dialogu(e|ing)|catalogu(e|ing)|grey|judgement|acknowledgement|practis|sceptic|manoeuvr(e|ing)|plough|whilst|amongst|learnt|spelt|towards|utilis|optimis|prioritis|normalis|serialis|initialis|finalis|minimis|maximis|customis|standardis|apologis|emphasis[ei]|summaris|categoris|parametris|misspelt|labell(ed|ing)' -- . ':!justfile' ':!PROJECT_DOCS/CONVENTIONS/american-english-spellings.md' ':!ACTIVE_*' || [[ $? -eq 1 ]]
 
-[doc("[dev] install this checkout's devpro here")]
-agents:
-    @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m "{{GEN}}" install "{{PROJECT_ROOT}}"
+# The wheel `build` leaves beside the tree, and the directory `agents` unpacks it into: a build
+# product, holding no `.git` entry above it.
+DIST := "dist"
+UNPACKED := DIST + "/" + GEN + "-unpacked"
+
+# The repository's own set, installed from the built wheel beside it: this repository is TARGET, and
+# the install's harness inference, its settings file and its components default are its own.
+[doc("install this checkout's devpro here, from the built wheel")]
+agents *args: build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    unpacked="{{PROJECT_ROOT}}/{{UNPACKED}}"
+    ver="$(PYTHONPATH="{{PROJECT_ROOT}}" python3 -m "{{GEN}}" --version)"
+    command rm -rf "${unpacked}"
+    mkdir -p "${unpacked}"
+    unzip -q -o "{{PROJECT_ROOT}}/{{DIST}}/{{GEN}}-${ver}-py3-none-any.whl" -d "${unpacked}"
+    PYTHONPATH="${unpacked}" python3 -m "{{GEN}}" install "{{PROJECT_ROOT}}" ${@+"${@}"}
 
 # The tap clone's one source: its origin URL, which the clone and the remote
 # set-up both take, and the location its .gitignore entry names.
 HOSTED_TAP_DIR := "homebrew-tap"
 TAP_FORMULA := "devpro"
-[doc("set up the sibling Homebrew tap clone at homebrew-tap/ - can't be used directly from here (chicken and egg")]
+[doc("set up the sibling Homebrew tap clone at homebrew-tap/")]
 tap-repo:
   @TAP_DIR="{{HOSTED_TAP_DIR}}" devtools/scripts/tap-repo.sh
 
-[doc("LIVE; NEEDS the tap clone, a pushed release: set the tap formula's v<version> tarball and sha256 and commit it there")]
-tap-update:
+[doc("LIVE; NEEDS a pub release: sets tap formula's v<version> and sha256 then commits with signature")]
+tap-update: tap-repo
   @just --justfile "{{HOSTED_TAP_DIR}}/scripts/justfile" TAP_FORMULA={{TAP_FORMULA}} tap-update
 
-[doc("LIVE; NEEDS brew and the tap clone; DESTRUCTIVE to this machine's brew install of devpro: reinstall it from a scratch formula over a tarball of the working tree's tracked files")]
-tap-local:
+[doc("DESTRUCTIVE; reinstalls global brew devpro from scratch tap of for this repo")]
+tap-local: tap-repo
   @just --justfile "{{HOSTED_TAP_DIR}}/scripts/justfile" TAP_FORMULA={{TAP_FORMULA}} tap-local
 
-[doc("clone the docdicer project as a hosted repo")]
-docdicer-repo:
-    @[[ -d docdicer ]] || git clone git@github.com:benn-herrera/docdicer
-    @cd docdicer && { [[ -d .claude ]] || ln -vs ../.claude .; }
-    @cd docdicer && { [[ -d .opencode ]] || ln -vs ../.opencode .; }
+dev-devpro *args:
+  @PYTHONPATH="{{PROJECT_ROOT}}" python3 -m devpro "${@}"
 
-[doc("use hosted docdicer to perform a task")]
-dev-dd *args: docdicer-repo
-  PYTHONPATH="{{PROJECT_ROOT}}/docdicer" python3 -m docdicer "${@}"
+[doc("serve the dashboard — the board and the session records — from the checkout's devpro")]
+dev-dashboard:
+  @just dev-devpro dashboard
 
-[doc("serve the kanban board using hosted docdicer")]
-dev-kanban:
-  @just dev-dd kanban
-
-[doc("run ACTIVE_PLAN format compliance check using hosted docdicer")]
+[doc("run ACTIVE_PLAN format compliance check")]
 dev-check-plan:
-  @just dev-dd check-plan
+  @just dev-devpro check-plan
 
-[doc("run ACTIVE_DESIGN final-form check using hosted docdicer")]
+[doc("run ACTIVE_DESIGN final-form check")]
 dev-check-design:
-  @just dev-dd check-design
+  @just dev-devpro check-design
 
-[doc("run ROADMAP format compliance check using hosted docdicer")]
+[doc("run check that ACTIVE_DESIGN deltas have been applied to project docs")]
+dev-check-design-deltas-applied:
+  @just dev-devpro check-design --deltas-applied
+
+[doc("run ROADMAP format compliance check")]
 dev-check-roadmap:
-  @just dev-dd check-roadmap
+  @just dev-devpro check-roadmap
 
-[doc("check doc links and the PROJECT_DOCS tree using hosted docdicer")]
+[doc("check doc links and the PROJECT_DOCS tree")]
 dev-check-links:
-  @just dev-dd check-links PROJECT_DOCS *.md
-  @just dev-dd check-tree PROJECT_DOCS
+  @just dev-devpro check-links PROJECT_DOCS *.md
+  @just dev-devpro check-tree PROJECT_DOCS
 
-import? ".opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.just"
+test-undice-architecture:
+  @command rm -rf .devpro-temp/undice-mono-arch
+  @just dev-devpro undice PROJECT_DOCS/ARCHITECTURE .devpro-temp/undice-mono-arch
+
+test-undice-conventions:
+  @command rm -rf .devpro-temp/undice-mono-conv
+  @just dev-devpro undice PROJECT_DOCS/CONVENTIONS .devpro-temp/undice-mono-conv
+
+test-undice-spec:
+  @command rm -rf .devpro-temp/undice-mono-spec
+  @just dev-devpro undice PROJECT_DOCS/SPEC .devpro-temp/undice-mono-spec
+
+# The periodic review interval's count: the commits since the base `.devpro-temp/plan-count-base`
+# names, then the subjects that claim a plan's landing, then that claim count and the commit count.
+# The base is a file, never a literal here — the last periodic review's landing commit writes its own
+# hash there (CONVENTIONS, planning-and-execution/the-count-is-a-target). `plan-count lands` lists
+# the claiming subjects instead: candidates a reader judges, never a verdict. Git and that one file
+# are read; nothing is written.
+[doc("[dev] count the plans that have landed since the last periodic review")]
+plan-count mode="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    base_file="{{PROJECT_ROOT}}/.devpro-temp/plan-count-base"
+    if [[ ! -f "${base_file}" ]]; then
+        printf '%s\n' "error: plan-count finds no base: ${base_file} must hold the last periodic review's landing commit" >&2
+        exit 1
+    fi
+    base="$(tr -d '[:space:]' < "${base_file}")"
+    if ! git -C "{{PROJECT_ROOT}}" cat-file -e "${base}^{commit}" 2>/dev/null; then
+        printf '%s\n' "error: plan-count's base names no commit: ${base_file} holds '${base}'" >&2
+        exit 1
+    fi
+    case "${1}" in
+    "")
+        git -C "{{PROJECT_ROOT}}" log --format=%s "${base}..HEAD" | { grep -icE "lands? (a |the )?plan|plan lands" || true; }
+        git -C "{{PROJECT_ROOT}}" log --format=%s "${base}..HEAD" | wc -l | tr -d ' '
+        ;;
+    lands | claims)
+        git -C "{{PROJECT_ROOT}}" log --format=%s "${base}..HEAD" | grep -iE "lands? (a |the )?plan|plan lands" || true
+        ;;
+    *)
+        printf '%s\n' "error: plan-count takes no argument, or 'lands'" >&2
+        exit 2
+        ;;
+    esac
+
+# optional place for local developer to put personalized recipes outside of tracking
+import? '.devpro-temp/.local-recipes/local-recipes.just'
+
+import? '.claude/skills/devpro/tools/runner-snippets/devpro.just'

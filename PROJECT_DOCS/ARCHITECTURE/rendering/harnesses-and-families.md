@@ -1,4 +1,4 @@
-### Harnesses and families
+# Harnesses and families
 
 A harness is a `Harness` dataclass (`devpro/harness.py`) holding everything that differs between
 harnesses: the seven harness strings, typed `HarnessText` — `HarnessText.MCP_TOOL_PREFIX` among
@@ -6,14 +6,17 @@ them, `mcp__plugin_{plugin}_kbase__` under claude, `mcp_kbase_` under mage and `
 opencode, a server tool's offered name being that prefix plus the tool's own, `display_name`, the
 harness's name in prose, lowercase (`claude code`, `opencode`, `mage`) and refused otherwise, and
 `scratch_rule` and `memory_file`, the agents file's rule for where scratch goes and its name for the
-operator's own instructions file (Placeholders); the six
+operator's own instructions file (Placeholders); the seven
 harness-specific paragraphs, typed `OptionalHarnessText` — `recipe_rule`, `kbase_project_rule`
 (supplied under mage alone, whose server is started `--project-dir-required`), `reload_rule`
 (supplied under claude alone: the sentence a claude install prints and the `guide` skill's
 installation reference carries), `tools_reload_rule` (supplied under claude alone: the sentence the
 `kbase` skill entry file and installation reference carry),
 `side_by_side_rule` (supplied under opencode alone, in its own
-paragraph of that reference) and `cold_read_rule` (supplied under every harness: claude and opencode share
+paragraph of that reference), `agents_path` (supplied under claude alone: the sentence the
+`development` skill's body carries naming the plugin's agents directory, `.claude/skills/devpro/agents/`
+under a project install and `~/.claude/skills/devpro/agents/` for a user-level one) and
+`cold_read_rule` (supplied under every harness: claude and opencode share
 `harness.COLD_READ_SCRIPT_RULE`, which runs `cold-read.sh`, opencode adding that the script is not yet
 reliable there, and mage, whose copy of the script refuses to run, says to start the reader by
 hand);
@@ -57,14 +60,15 @@ empty otherwise), by which install target detection knows a target that is such 
 plugin's harness directory. Whether a harness is a harness-directory plugin is
 `Harness.is_harness_dir_plugin`, `user_harness_dir == "."`.
 
-The values that vary by plugin are templates over `{plugin}`: `plugin_dir`, `project_harness_dir`,
-`reference_prefix`, `mcp_tool_prefix`, and each rendered file's and the registry's `marker`.
+The values that vary by plugin are templates over `{plugin}`: `plugin_dir`,
+`reference_prefix`, `mcp_tool_prefix`, and each rendered file's and the registry's `marker`; mage's
+`project_harness_dir` is the constant `devpro`.
 `Harness.bound(plugin_name)` fills them once with `str.replace`, not `str.format`, and takes the name
-as a string, so a harness stays a value that knows no plugin's members and `harness.py` never
-imports `plugin.py`. `Render.harness` is the harness as given, templates unfilled;
+as a string, so a harness stays a value that knows no member lists and `harness.py` never
+imports `components.py`. `Render.harness` is the harness as given, templates unfilled;
 `Render.bound_harness`, a `functools.cached_property`, is that harness bound to the render's plugin,
 and a reader that needs a bound value reads it there. Binding again starts from the templates, so a
-bound harness never holds another plugin's values. Harness detection
+bound harness never holds another binding's values. Harness detection
 (`install_target._detected_harness`) reads only plugin-independent values, so it runs before
 binding. The manifest's `name`, both prefixes, the install directory and the MCP prefix are each derived from the
 plugin's name. `inherit_synonyms` and `bare_category_spec_is_all` differ between claude and
@@ -75,40 +79,39 @@ frontmatter emitter (`agent_frontmatter`) and recipe rule (`FOREGROUND_RECIPE_RU
 `harness.py`, and holds claude's other assumed values (model pattern, aliases, tool spellings) as
 copies it may revise independently.
 
-**Plugins.** A plugin is a `Plugin` dataclass (`devpro/plugin.py`): a name and either the definition
-names it ships (`include`) or the ones it leaves out (`exclude`), validated at construction, with
-`ships(name)`. An instance is one module in `devpro/plugins/` defining `PLUGIN`, loaded by
-`loading.load` as harnesses and families are; `devpro.py` excludes `kbase`, `kbase.py` includes
-the names listed in SPEC.md, Deployed Surfaces, Plugins. A plugin is a selection of definitions and no
-profile of its own. `plugin.py` imports no harness, render or definition: the dependency direction is
-`vocabulary` ← `plugin` ← `context` → `harness`.
+**Plugins.** The selection is one module, `devpro/components.py`: the member lists of the optional
+components and the required set — every discovered definition no component names — with `ships(name)`.
+`selection()` validates a list against `discover()`, as a family is against its categories, and
+`build_render` calls it for every render. It is imported by `context` beside `harness.py` and
+`family.py`. The selection is a selection of definitions and no profile of its own.
 
 A family is a
 `Family` dataclass (`devpro/family.py`) holding the category map and the tuning text by anchor. An
-instance is one module, in `devpro/harnesses/`, `devpro/families/` or `devpro/plugins/`,
-defining `HARNESS`, `FAMILY` or `PLUGIN`, with no class in it. A harness, family or plugin is registered by its module existing, with no
+instance is one module, in `devpro/harnesses/` or `devpro/families/`,
+defining `HARNESS` or `FAMILY`, with no class in it. A harness or family is registered by its module existing, with no
 list to keep: a registry that could fall out of step with the modules is not representable.
 `loading.load` reads the modules of a package in name order and
 keys each by its module name with `_` read as `-` (`gemma_4.py` is `gemma-4`). The constructor is
 the validator: an instance missing a field, or a family not staffing exactly the six categories,
-fails at import. The `Render` record (`devpro/context.py`) carries the harness, the plugin, the family
+fails at import. The `Render` record (`devpro/context.py`) carries the harness, the selection, the family
 and the invocation's category map, and resolves a category to its rendered model text and an anchor
 to its tuning text: a category whose text is `inherit` or a synonym becomes `inherit_text`. The
 map's suppliers, in the order `build_render` applies them:
 
-1. the devpro settings file's `[<harness>-model-map]` section for the harness — its keys, one
-   entry per line under the grammar, joined for the parser; read and validated by
-   `devpro/context.py`.
+1. the devpro settings file's `[<harness>.model-map]` table for the harness — its keys, one
+   `"<glob>" = "<model>"` entry each under the grammar; read and validated by
+   `devpro/context.py` with `tomllib`.
 2. the harness's `default_category_spec` — the bare reading's remaining home (a non-empty value
    holding neither `=` nor `,` is the whole map where the harness reads it so), where the harness
    declares one.
 3. the family's own map.
 
-`Render.plugin` is the plugin, and `Render.bound_harness` binds the harness to it, so the bound
-values a render reads are always its own plugin's and no mismatch is representable. `build_render(…, plugin=)` loads
-the plugin and refuses one that names an undiscovered definition (`plugin_named`), because a misspelled
-member would otherwise drop out of the contents SPEC states for that plugin and nothing else would
-notice. `Plugin.ships(name)` is the one filter, called on the render's plugin.
+`Render` carries the selection — the plugin and the components turned on — and `Render.bound_harness`
+binds the harness to the plugin, so the bound values a render reads are always its own and no
+mismatch is representable. `build_render(…, components=)` validates
+every member name against `discover()`, because a misspelled
+member would otherwise drop out of the contents SPEC states and nothing else would
+notice. The selection's `ships(name)` is the one filter.
 `Render.step_down_model` is the step-down model text: for a definition that declares a category, its
 own discipline's mechanical member's rendered text — `stem-mechanical` for a category beginning
 `stem-`, `comm-mechanical` for one beginning `comm-`; for a definition that declares none, both

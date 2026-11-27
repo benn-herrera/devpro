@@ -1,25 +1,45 @@
-## Package and Command
+# Package and Command
 
-The devpro package installs on Python 3.9 or later, with no third-party runtime dependency. It has
+The devpro package installs on Python 3.11 or later, with no third-party runtime dependency. It has
 two install sources: a release tag's git URL,
 `git+https://github.com/benn-herrera/devpro@v<version>`, or a built wheel. No package index publishes
 it. A Homebrew tap is a distribution channel for that release archive, not a package index.
 
 The installed package provides the `devpro` command. `python3 -m devpro` is the same command:
-both print the same `--help`, and the same arguments install the same product, byte for byte.
-Every `devpro` command exits 0 on success and 2 on a refusal or an operating-system failure, printing `error: <message>` on
-stderr. Every command that takes a plugin takes it as `--plugin=NAME`, with the default
+both print the same `--help`, and the same arguments under the same Python install the same
+product, byte for byte: the interpreter the installation's wrapper records is the one value that
+varies with the Python running the install (Deployed Surfaces, Shipped files).
+
+Three maintainer verbs — `dev-render`, `render-agents-file` and `harness` — exist only where the
+environment variable `DEVPRO_DEV` is `1`. Elsewhere they are absent from `--help` and refused as an
+invalid choice, as any verb the command does not have is; no README, guide or installed definition
+names them.
+
+The install verbs — `install` and `install-agents-file` — and the maintainer verbs exit 0 on success
+and 2 on a refusal or an operating-system failure, printing `error: <message>` on stderr; the dicing and check verbs of Dicing and Checks exit 0, 1 and 2 as that section
+states; the `dashboard` verb exits 0 whenever it ends a server that was serving — an interrupt and
+the page's stop alike — and 2 on a refusal before it serves, printing `error: <message>` on stderr
+as the install verbs do. Every command that
+takes components takes them as `--components=CSV`, with the default
 Deployed Surfaces, Plugins states.
 
 devpro also runs from a checkout of this repository, as `PYTHONPATH=<clone> python3 -m devpro
 install …` (Deployed Surfaces). The install product is the same from a checkout or from an installed package.
+
+The command also carries the dicing and check surface: `devpro dice`, `devpro undice`,
+`devpro check-links`, `devpro check-tree`, `devpro check-plan`,
+`devpro check-design` and `devpro check-roadmap` (Dicing and Checks), and the
+`devpro dashboard [<project-dir>] [--port <number>]` verb — devpro's one loopback server for the
+web interface: its profiler view the rendering the retired `devpro profiler serve` drove, its board
+panel the board the retired `devpro kanban` served. The verbs run wherever the `devpro` command
+runs, and from an installation's own copy of devpro (Deployed Surfaces, Shipped files).
 
 A check that protects or assumes a checkout holds only when devpro runs from one. A worktree and
 an editable install of a clone count as one. The devpro package installed into a Python
 environment does not, wherever the environment sits, including inside another project's repository.
 Run from an installed package:
 
-- A project install of either plugin writes its runner include lines for any project (Deployed
+- A project install writes its runner include lines for any project (Deployed
   Surfaces, Plugins).
 - Installing the agents file is not refused for uncommitted changes (Agents File).
 

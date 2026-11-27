@@ -1,4 +1,4 @@
-## Why There Is No Verification Verb
+# Why There Is No Verification Verb
 
 There is no `check` verb. A render is the only thing that knows what a definition produces, so a verb that
 re-rendered a tree and compared would be asking the producer whether it agrees with itself: a
@@ -9,12 +9,13 @@ The comparison is `just render-diff`, which reads rendered output only. It repla
 block with one constant line and collapses whitespace inside a paragraph outside fenced code;
 headings, thematic breaks, list items, table rows, fenced blocks and frontmatter stay exact
 (`devtools/render_diff.py` states the rules). `just render <slug>` renders into `rendered/<slug>/`
-and refuses a slug starting with `reference`. A slot holds one slot project per plugin
-(`rendered/<slug>/devpro/`, `rendered/<slug>/kbase/`), each an install of its plugin with itself as
-project root, so beside the definitions the kbase slot project holds the kb-tools package, the harness's
-MCP entry and the runner include lines (the docdicer line for either plugin, the kb line for kbase; none in the mage slot, a harness-directory plugin), and each slot project
-holds, where the harness ships them, its own harness resources — the whole install product of both
-plugins, which is what makes a `render-diff` a comparison of both. A nested plugin's install also
+and refuses a slug starting with `reference`. A slot holds one slot project
+(`rendered/<slug>/devpro/`), an install of the devpro set with the kbase component on, with itself
+as project root, so beside the definitions it holds the kb-tools package, the harness's
+MCP entry and the runner include lines — the devpro line always, the kb line with the component
+on (none in the mage slot, a harness-directory plugin), and it
+holds, where the harness ships them, its own harness resources — the whole install product, which is
+what makes a `render-diff` a comparison of installs. A nested plugin's install also
 writes the project's `AGENTS.md` at its slot project's root, and the `CLAUDE.md` redirect beside it
 under claude, because the render's scratch home holds no global block (Agents File, Placement).
 A slot holds the claude hook script only where `perl` passes the probe on that machine, so a
@@ -32,15 +33,21 @@ literal output, every definition under `agents/` extracting frontmatter-free, pl
 and refusal, tuning-text resolution, the line cap on every rendered definition but a supporting file, and the structural rules
 (Rendering). `tests/test_devpro_install.py` holds the install and agents-file cases.
 `tests/test_opencode_entry.py` runs the opencode plugin entry under `bun` against a stub plugin
-context, and `tests/test_plugins.py` holds the plugin membership and per-plugin content cases. The
+context, and `tests/test_plugins.py` holds the selection's membership and optional-reference cases. The
 two guardrails are held to one behavior by `tests/test_guardrail.py`, which runs every case of
 `tests/guardrail_cases.json` through `guardrail.pl` under `perl` and through `guardrail.ts` under
 `bun`, but a case whose `harness` field (`claude` or `opencode`) names one implementation runs
 under that one alone (`tests/guardrail_ts_runner.ts` loads the opencode guardrail outside
 `bun test`, with its package import stubbed), and asserts each implementation's reason equals the
-table's. A case may name a
+table's. The shipped TypeScript resources are type-checked against the host's published declarations,
+the version `package.json` pins. A runner that runs a page's scripts runs them all in one shared
+scope, the way the
+browser executes a page — classic scripts share one global scope — so a redeclaration the browser
+throws on, the run throws on too. A case may name a
 working directory: `guardrail.pl` receives it as the input `cwd` beside `CLAUDE_PROJECT_DIR` set to
 the case's root, as Claude Code sends both, and `guardrail.ts` as the shell call's `workdir`. A
 missing `bun` fails the test rather than skipping it, because a skip would hide drift between the
-two. There is no verdict code: `cli.main` maps every `InputError` and `OSError` to exit 2.
+two; the `slow` surface's screenshot test fails on a missing `firefox` the same way, `firefox`
+being its browser. There is no verdict code: `cli.main` maps every `InputError` and `OSError` to
+exit 2.
 

@@ -5,15 +5,14 @@ description and skill supporting file, the agents file, and every family overlay
 
 A spelling counts as a reference when it is:
 - a hyphenated definition name as a whole word, not inside a path or a longer name;
-- any other definition name in backticks, except the two that are also a tool or a CLI
-  (`docdicer`, `kbase`);
-- one of those two in backticks followed by ` skill`.
+- any other definition name in backticks;
+- `kbase` in backticks followed by ` skill`.
 
-Role nouns ("hand that to the architect") and those two names as their programs ("Run `kbase`
-itself") are prose, and stay bare.
+Held forms spell the same reference and stay bare: a role noun ("hand that to the
+architect"), `kbase` as its program ("Run `kbase` itself"), and the harness-neutral
+spelling — the word `devpro`, one space, then a hyphenated name ("get devpro
+prompt-engineer review"), which is how text names a definition without naming a harness.
 """
-
-from __future__ import annotations
 
 import re
 from collections.abc import Collection, Iterable
@@ -27,7 +26,7 @@ from devpro.loading import load
 from devpro.render import PLACEHOLDER
 from devpro.vocabulary import reference
 
-_PROGRAM_NAMES = frozenset({"docdicer", "kbase"})
+_PROGRAM_NAMES = frozenset({"kbase"})
 
 
 def _reference_spellings(names: Collection[str]) -> re.Pattern[str]:
@@ -37,7 +36,7 @@ def _reference_spellings(names: Collection[str]) -> re.Pattern[str]:
     programs = sorted(name for name in names if name in _PROGRAM_NAMES)
     alternation = lambda chosen: "|".join(map(re.escape, chosen))
     return re.compile(
-        rf"(?<![a-z0-9_/.-])(?:{alternation(hyphenated)})(?![a-z0-9_-])"
+        rf"(?<![a-z0-9_/.-])(?<!devpro )(?:{alternation(hyphenated)})(?![a-z0-9_-])"
         rf"|`(?:{alternation(single)})`"
         rf"|`(?:{alternation(programs)})` skill\b"
     )
@@ -87,7 +86,7 @@ def test_no_definition_text_names_a_definition_outside_a_hole() -> None:
     [
         ("Prefer over python-coder for any Python task.", ["python-coder"]),
         ("revision by `architect`.", ["`architect`"]),
-        ("diced (the `docdicer` skill), and", ["`docdicer` skill"]),
+        ("diced (the `docdicer` skill), and", ["`docdicer`"]),
         ("load the `development` skill.", ["`development`"]),
         (f"Prefer over {reference('python-coder')} for any Python task.", []),
         (f"load the `{reference('development')}` skill.", []),
@@ -96,6 +95,9 @@ def test_no_definition_text_names_a_definition_outside_a_hole() -> None:
         ("Run `kbase` itself", []),
         ("the file agents/python-coder.md", []),
         ("a python-coders seat", []),
+        ("get devpro prompt-engineer review", []),
+        ("dispatch to prompt-engineer", ["prompt-engineer"]),
+        ("the devpro-check-roadmap recipe", []),
     ],
 )
 def test_the_guard_reads_exactly_the_reference_spellings(text: str, expected: list[str]) -> None:

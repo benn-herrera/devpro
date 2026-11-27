@@ -28,22 +28,22 @@ def run_walk(a: Path, b: Path) -> list[str]:
 
 
 class BodyTest(unittest.TestCase):
-    def test_banner_replaced(self):
+    def test_banner_replaced(self) -> None:
         self.assertEqual(body(NEW_BANNER), BANNERED_BODY)
 
-    def test_a_skill_files_comment_banner_is_replaced(self):
+    def test_a_skill_files_comment_banner_is_replaced(self) -> None:
         expected = b"# !BANNER!\n\n# Reading\n\nA paragraph.\n"
         self.assertEqual(body(COMMENT_BANNER), expected)
         self.assertEqual(body(COMMENT_BANNER_OTHER), expected)
         self.assertEqual(text(COMMENT_BANNER), text(COMMENT_BANNER_OTHER))
 
-    def test_installed_banners_replaced(self):
+    def test_installed_banners_replaced(self) -> None:
         banner = b"# !INSTALLED! from kb-tools/x.py \xe2\x80\x94 do not edit here\n"
         for shebang in (b"", b"#!/usr/bin/env python3\n"):
             with self.subTest(shebang=shebang):
                 self.assertEqual(body(shebang + banner + b"x = 1\n"), shebang + b"# !BANNER!\nx = 1\n")
 
-    def test_a_comment_that_is_not_a_banner_is_unchanged(self):
+    def test_a_comment_that_is_not_a_banner_is_unchanged(self) -> None:
         for data in (
             b"# a comment\nx = 1\n",
             b"#!/usr/bin/env bash\n# !INSTALLED\nx\n",
@@ -52,7 +52,7 @@ class BodyTest(unittest.TestCase):
             with self.subTest(data=data):
                 self.assertEqual(body(data), data)
 
-    def test_unbannered_files_unchanged(self):
+    def test_unbannered_files_unchanged(self) -> None:
         short_block = b"---\n# !GENERATED! from x\nname: a\n"
         wrong_prefix = b"---\n# !GENERATED! from x\n# other\nname: a\n"
         for data in (b"no frontmatter\n# !GENERATED! from x\n", short_block, wrong_prefix):
@@ -61,16 +61,16 @@ class BodyTest(unittest.TestCase):
 
 
 class TextTest(unittest.TestCase):
-    def test_a_paragraph_wrapped_two_ways_compares_equal(self):
+    def test_a_paragraph_wrapped_two_ways_compares_equal(self) -> None:
         self.assertEqual(text(b"one two\nthree  four\n"), text(b"one\ntwo three four\n"))
 
-    def test_a_paragraph_split_into_two_differs(self):
+    def test_a_paragraph_split_into_two_differs(self) -> None:
         self.assertNotEqual(text(b"one two\nthree four\n"), text(b"one two\n\nthree four\n"))
 
-    def test_a_fence_with_different_indentation_differs(self):
+    def test_a_fence_with_different_indentation_differs(self) -> None:
         self.assertNotEqual(text(b"```\nif x:\n    y\n```\n"), text(b"```\nif x:\n  y\n```\n"))
 
-    def test_inline_code_with_triple_backticks_is_not_a_fence(self):
+    def test_inline_code_with_triple_backticks_is_not_a_fence(self) -> None:
         self.assertEqual(
             text(b"```def f(x: int)```\n-> int:\n"),
             text(b"```def f(x: int)```  -> int:\n"),
@@ -80,43 +80,43 @@ class TextTest(unittest.TestCase):
             text(b"intro\n```def f(x: int) -> int:``` more\n"),
         )
 
-    def test_a_fence_with_an_info_string_stays_exact(self):
+    def test_a_fence_with_an_info_string_stays_exact(self) -> None:
         self.assertNotEqual(text(b"```python\nif x:\n    y\n```\n"), text(b"```python\nif x:\n  y\n```\n"))
 
-    def test_a_tilde_fence_is_not_closed_by_backticks(self):
+    def test_a_tilde_fence_is_not_closed_by_backticks(self) -> None:
         self.assertNotEqual(text(b"~~~\n```\nif x:\n    y\n~~~\n"), text(b"~~~\n```\nif x:\n  y\n~~~\n"))
 
-    def test_list_items_wrapped_differently_compare_equal(self):
+    def test_list_items_wrapped_differently_compare_equal(self) -> None:
         self.assertEqual(text(b"- one two\n  three\n- four  five\n"), text(b"- one\n  two three\n- four five\n"))
 
-    def test_list_items_merged_into_one_differ(self):
+    def test_list_items_merged_into_one_differ(self) -> None:
         self.assertNotEqual(text(b"- one two\n- three\n"), text(b"- one two three\n"))
 
-    def test_numbered_list_items_are_separate_units(self):
+    def test_numbered_list_items_are_separate_units(self) -> None:
         self.assertEqual(text(b"1. one\n   two\n2) three\n"), text(b"1. one two\n2) three\n"))
         self.assertNotEqual(text(b"1. one two\n2. three\n"), text(b"1. one two 2. three\n"))
 
-    def test_a_heading_is_its_own_exact_unit(self):
+    def test_a_heading_is_its_own_exact_unit(self) -> None:
         self.assertNotEqual(text(b"## Heading\nbody text\n"), text(b"## Heading body text\n"))
         self.assertNotEqual(text(b"## Heading\n"), text(b"##  Heading\n"))
         self.assertEqual(text(b"#hashtag\nbody\n"), text(b"#hashtag body\n"))
 
-    def test_table_rows_are_their_own_exact_units(self):
+    def test_table_rows_are_their_own_exact_units(self) -> None:
         self.assertNotEqual(text(b"| a | b |\n| c | d |\n"), text(b"| a | b | | c | d |\n"))
         self.assertNotEqual(text(b"intro\n| a |\n"), text(b"intro | a |\n"))
         self.assertNotEqual(text(b"| a |  b |\n"), text(b"| a | b |\n"))
 
-    def test_a_thematic_break_is_its_own_exact_unit(self):
+    def test_a_thematic_break_is_its_own_exact_unit(self) -> None:
         breaks = [b"---", b"***", b"___", b"   - - -", b"*  *  *  ", b"-----"]
         self.assertEqual(line_kinds(breaks), ["exact"] * len(breaks))
         self.assertEqual(line_kinds([b"--", b"-*-", b"    ---", b"--- x"]), ["text", "text", "text", "text"])
 
-    def test_frontmatter_with_a_changed_space_differs(self):
+    def test_frontmatter_with_a_changed_space_differs(self) -> None:
         self.assertNotEqual(text(b"---\nname: a\n---\ntext\n"), text(b"---\nname:  a\n---\ntext\n"))
 
 
 class WalkTest(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.a = Path(tmp.name) / "a"
@@ -124,17 +124,17 @@ class WalkTest(unittest.TestCase):
         self.a.mkdir()
         self.b.mkdir()
 
-    def test_banner_only_difference_prints_nothing(self):
+    def test_banner_only_difference_prints_nothing(self) -> None:
         (self.a / "f.md").write_bytes(OTHER_BANNER)
         (self.b / "f.md").write_bytes(NEW_BANNER)
         self.assertEqual(run_walk(self.a, self.b), [])
 
-    def test_body_difference_prints_one_line(self):
+    def test_body_difference_prints_one_line(self) -> None:
         (self.a / "f.md").write_bytes(NEW_BANNER)
         (self.b / "f.md").write_bytes(NEW_BANNER + b"more\n")
         self.assertEqual(run_walk(self.a, self.b), [f"Files {self.a / 'f.md'} and {self.b / 'f.md'} differ"])
 
-    def test_one_sided_file_names_its_slot(self):
+    def test_one_sided_file_names_its_slot(self) -> None:
         (self.b / "only.md").write_bytes(b"x\n")
         self.assertEqual(run_walk(self.a, self.b), [f"Only in {self.b}: only.md"])
 

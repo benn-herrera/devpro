@@ -1,0 +1,6 @@
+stdout	undoc
+stdout	2	0
+stderr	read	1-b.md
+stderr	1-b-renamed.md	1-b.md
+stderr	a.md
+stderr	extra.md

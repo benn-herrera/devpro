@@ -1,0 +1,334 @@
+/* The site's one presentation layer: this file is the board's stylesheet and the profiler's pages'
+   inlined one, so the surfaces are the board's and the identity — the project name opening the nav,
+   the brand, the active and inactive view, the nav grammar and the scanline treatment — lives here
+   for both views.
+
+   The light motif carries the warm phosphor, the dark the green: --brand is the phosphor, --accent
+   the brand at 80% brightness (the active view's smaller text), --on-accent the text that reads on the
+   accent, and --view-inactive the gray a
+   view wears when it is not the one shown — lifted, so it reads available rather than disabled.
+   The sequence diagram's palette is the layer's too — --c0…--c7, one color per hue, no hue reading as
+   the accent in the mode shown — as is each harness's mark, --harness-claude and --harness-opencode,
+   the harness brands' colors themselves in both modes.
+   The site's own light-mode green mapping and its dim value are superseded: the light
+   brand is the bright amber, dimmed only for the active view's smaller text. No second brand color
+   and no underline: the weight and the color are the selection. */
+:root {
+  color-scheme: light dark;
+  --fg: #1d1d1f;
+  --muted: #6b6b70;
+  --bg: #f4f4f6;
+  --column: #e7e7eb;
+  --zebra: #e7e7eb;
+  --card: #ffffff;
+  --line: #c9c9cf;
+  --brand: #e8a020;
+  --accent: #d09020;
+  --on-accent: #1d1d1f;
+  --view-inactive: #63636b;
+  --alert: #b3261e;
+  --c0: #c55e5d;
+  --c1: #2f7f86;
+  --c2: #5d6d7e;
+  --c3: #6c58b5;
+  --c4: #3f8a4a;
+  --c5: #b0517f;
+  --c6: #3d6fb3;
+  --c7: #8a6a4f;
+  --harness-claude: #d97757;
+  --harness-opencode: #7b7bf0;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font: 14px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #e6e6ea;
+    --muted: #9a9aa2;
+    --bg: #18181b;
+    --column: #232328;
+    --zebra: #2e2e35;
+    --card: #2e2e34;
+    --line: #45454d;
+    --brand: #3cf077;
+    --accent: #31c260;
+    --on-accent: #18181b;
+    --view-inactive: #a6a6ad;
+    --alert: #ff8a80;
+    --c0: #e07d7b;
+    --c1: #4fb0b8;
+    --c2: #d6a542;
+    --c3: #9b89e0;
+    --c4: #9aa8ba;
+    --c5: #dd7fae;
+    --c6: #6f9ee0;
+    --c7: #c29a76;
+  }
+}
+
+[hidden] { display: none !important; }
+
+/* The deco's scanline treatment: the rhythm of an amber or green screen, in the nav and the frame
+   band alone — a card surface never carries it. Decoration, so it stays behind the text. */
+.scanlines {
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgb(0 0 0 / 0.05) 0, rgb(0 0 0 / 0.05) 1px, transparent 1px, transparent 3px
+  );
+}
+@media (prefers-color-scheme: dark) {
+  .scanlines {
+    background-image: repeating-linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.04) 0, rgb(255 255 255 / 0.04) 1px, transparent 1px, transparent 3px
+    );
+  }
+}
+
+/* The top nav: the project's name opening it, then the views, then the server block at the far edge,
+   then the brand past it. The project name is monospace, heavier and about 15% larger than the view
+   names, in the foreground color; a view name is the same smaller size in both states, the active one
+   the accent at a heavier weight, the inactive the lifted gray — always a link, never struck through
+   or marked visited. The brand sits at the view names' size in the brand color, behind the hairline
+   separator that keeps it from reading as the stop's label past it — the far edge's signature. The
+   nav carries no side padding of its own: the page's padding is one rule for the whole page, so the
+   brand ends on the same edge the board's last column does. */
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+.project-name {
+  font: 700 1.15rem/1.2 var(--mono);
+  color: var(--fg);
+  letter-spacing: 0.02em;
+}
+.brand {
+  font: 600 1rem/1.2 var(--mono);
+  color: var(--brand);
+  letter-spacing: 0.02em;
+  margin-left: 0.25rem;
+  padding-left: 0.9rem;
+  border-left: 1px solid var(--line);
+}
+.views { display: flex; align-items: baseline; gap: 1.1rem; }
+.view, .view:visited {
+  font-size: 1rem;
+  color: var(--view-inactive);
+  text-decoration: none;
+}
+.view.active, .view.active:visited { color: var(--accent); font-weight: 600; }
+.view:hover, .view:focus-visible { text-decoration: none; color: var(--fg); }
+.view.active:hover, .view.active:focus-visible { color: var(--brand); }
+
+/* The profiler view's frame band: the how-to-read legend at the top, then the return to the list
+   once a page is open. It sits under the nav on every page of the view, its own padding the page's
+   vertical one alone, and it is the dashboard's decoration of a rendered page, not part of the
+   render. */
+.frame-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 1rem;
+  margin: 0;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  background: var(--column);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.frame-band .intro { margin: 0; }
+.frame-band .intro summary { color: var(--fg); font-weight: 600; cursor: pointer; }
+.frame-band .symbols { margin: 0.4rem 0 0; font-size: 0.8rem; }
+.frame-band .return { margin-left: auto; color: var(--accent); font-weight: 600; white-space: nowrap; }
+.frame-band .return:visited { color: var(--accent); }
+
+/* The template's own padding for the page — the nav, the band, the board's header, its messages and
+   the board — whatever the view, so the nav's server block and the board's last column end on one
+   edge. The board's column layout is scoped to a body that says so, so the profiler view's page keeps
+   its template's padding and flows its sequence diagram down the page. */
+body { margin: 0; color: var(--fg); background: var(--bg); }
+.site-nav, .frame-band, header, #messages, #board { padding-left: 1rem; padding-right: 1rem; }
+.board-root {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The board page's header: the release and the hardening tag, beside the heading that only a screen
+   reader reads; its own padding is the page's vertical one alone. */
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+h1 { font-size: 1.1rem; margin: 0; }
+
+/* The page's own heading, read to a screen reader while the nav's brand carries the title. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.tag {
+  padding: 0 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 0.6rem;
+  font-size: 0.8rem;
+}
+
+/* The nav's server block: the live/idle indicator and the stop, right-justified at the nav's flex
+   edge — its margin takes every pixel the brand and the view names leave. The block is a flex line
+   of its own, its items on the same baseline as the views'. */
+.nav-server {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+#connection { color: var(--muted); }
+.nav-server .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; align-self: center; }
+.nav-live .dot { background: var(--brand); }
+.nav-idle .dot { background: var(--alert); }
+.nav-idle #connection { color: var(--alert); }
+
+/* The stop is a small control beside the state it ends, in the nav's server block. */
+#stop {
+  padding: 0.1rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  background: var(--card);
+  color: var(--fg);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+#stop:disabled { color: var(--muted); cursor: default; }
+
+/* The headings a control hands focus to, when its answer would otherwise drop it: the board's hidden
+   title and the profiler view's session title carry no ring of their own. */
+h1[tabindex]:focus,
+h1[tabindex]:focus-visible { outline: none; }
+
+#messages { padding-top: 0.5rem; min-height: 1.35em; }
+#messages p { margin: 0; }
+#alert { color: var(--alert); }
+
+button { font: inherit; }
+
+/* A card's links keep the card's colours; the underline marks them, the accent shows on hover. */
+.card a { color: inherit; }
+.card a:hover, .card a:focus-visible { color: var(--accent); }
+
+#board {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(13rem, 1fr);
+  gap: 0.5rem;
+  padding-bottom: 1rem;
+  overflow-x: auto;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  background: var(--column);
+}
+
+/* Outside the scrolling .cards, so it stays put; a full-width rule, a shape no card has, sets it
+   apart in outlined and filled columns alike. */
+.column-head {
+  padding: 0.5rem 0.6rem 0.4rem;
+  border-bottom: 2px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.column h2 { font-size: 0.95rem; margin: 0; }
+
+.cards {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem;
+}
+
+.card {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  background: var(--card);
+  overflow-wrap: anywhere;
+}
+
+.card[draggable="true"] { cursor: grab; box-shadow: 0 1px 2px rgb(0 0 0 / 0.25); }
+
+/* Read-only by form, not colour alone: flat cards, in an outlined column (the plan's) or in a filled
+   one (a design entry's), against raised, grabbable ones. */
+.column.plan { background: none; border-color: var(--line); }
+.column.plan .card, .card.entry { background: none; }
+
+/* A category's or delta's heading: a full-width band, no border or corners, so it reads as a divider
+   between cards rather than as one. It holds the button its cards' collapse is, hence the cursor and
+   a title that selects nothing: the double click that toggles must not highlight it. */
+.separator {
+  margin: 0.3rem -0.5rem 0;
+  padding: 0.2rem 0.5rem;
+  background: var(--line);
+  font-weight: 600;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* The band's control carries the band's own look, over its whole width, and the page's ring where
+   keyboard focus is, as a card's link has its accent. */
+.separator button {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.separator button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Content outside the layout: a dashed outline, a shape no card has, and never draggable. */
+.layout-notice {
+  padding: 0.3rem 0.5rem;
+  border: 1px dashed var(--alert);
+  border-radius: 0.3rem;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.title { font-weight: 600; }
+.text { margin-top: 0.2rem; font-size: 0.9rem; }
+.text .para + .para { margin-top: 0.4rem; }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; }
+.meta, .group, .parked { color: var(--muted); font-size: 0.85rem; }
+.group { text-transform: uppercase; letter-spacing: 0.03em; font-size: 0.75rem; }
+.parked { margin: 0.2rem 0 0; padding-left: 1rem; }

@@ -1,29 +1,33 @@
-### Plugins
+# Plugins
 
-What each plugin delivers is SPEC.md, Deployed Surfaces,
+What each install delivers is SPEC.md, Deployed Surfaces,
 [Plugins](../../SPEC/deployed-surfaces/plugins.md); this leaf is how an install selects and ships it.
 
-**Membership.** A plugin is a `Plugin` (`devpro/plugin.py`), one module in `devpro/plugins/` defining
-`PLUGIN`: the devpro plugin states what it leaves out (`kbase`), kbase what it ships. By
-`Plugin.ships(name)` (Rendering, Harnesses and families), `render.rendered_definitions` keeps
-exactly the definitions it admits, so a definition the plugin does not carry is never rendered, and
+**Membership.** The selection is one module, `devpro/components.py`: the member lists of the optional
+components (`kbase`: the `kbase` skill), the required set being every discovered definition no
+component names. By the selection's
+`ships(name)` (Rendering, Harnesses and families), `render.rendered_definitions` keeps
+exactly the definitions it admits, so a definition the selection does not carry is never rendered, and
 the skill's directory is never created by a run that omits it. `discover()` is the closed set
-every plugin's names are checked against (`context.plugin_named`). The install filters nothing of its
-own and reads no plugin's name: everything below is keyed on a definition's name, the owner.
+every member name is checked against. The install filters nothing of its
+own and reads no component's name: everything below is keyed on a definition's name, the owner.
 
-**Owners.** A supporting artifact ships iff the definition that uses it ships. Each package is a row
-of `SHIPPED_PACKAGES` (`devpro/install.py`), a `ShippedPackage` of source, destination, owner and `snippets` (a `runner_file.SnippetSet`, or none):
+**Owners.** A supporting artifact ships iff the definition that uses it ships; the devpro tools
+package is the plugin's own, and its rows name no owner. Each package is a row of `SHIPPED_PACKAGES`
+(`devpro/install.py`), a `ShippedPackage` of source, destination, owner (or none) and `snippets` (a
+`runner_file.SnippetSet`, or none):
 
 | source in `devpro/` | destination below the install directory | owner |
 |---|---|---|
-| `docdicer-tools` | `skills/docdicer/tools` | `docdicer` |
 | `development-tools` | `skills/development/scripts` | `development` |
 | `kb-tools` | `skills/kbase/kb-tools` | `kbase` |
+| `runner-snippets` | `tools/runner-snippets` | none |
+| the package itself, `PACKAGE_ROOT` | `tools/devpro` | none |
 
-`install` takes the rows whose owner `Plugin.ships(name)` admits, and none on a user-level install. Those rows are
-what `package_copies` copies and `_clear_package_destination` empties before the copy, so the
-destination is emptied in place while the skill's `SKILL.md` and supporting files beside it are not
-touched. A harness-rendered file is owned the same way: `HarnessFile.owner` names a definition, and
+`install` takes the rows whose owner the selection's `ships(name)` admits and every row with no
+owner, and on a user-level install the rows with no owner alone. Those rows are
+what `package_copies` copies into the fresh tree the wholesale replacement writes (Renders and
+copies); nothing inside the install directory is cleared apart from that replacement. A harness-rendered file is owned the same way: `HarnessFile.owner` names a definition, and
 `shipped_harness_files` drops the file where that definition does not ship. The `kbase` owner name is
 one constant, `harness.KBASE_OWNER`, read by the kb-tools row and by every harness's `.mcp.json` and
 registry record.
@@ -44,22 +48,24 @@ renders it like any other harness-rendered file.
 
 **The runner include lines**, appended to the project's justfile or Makefile, follow the shipped
 packages that carry snippets: a `ShippedPackage` row's `snippets` field is a `runner_file.SnippetSet`
-(label, snippets directory below the package's destination, snippet name per runner), set on the
-docdicer tools row (`docdicer`) and the kb-tools row (`kb`). The lines are written where the install
+(label, snippets directory below the package's destination, snippet name per runner), set on the runner-snippets row (`devpro`) and the kb-tools row (`kb`). The lines are written where the install
 ships at least one such row and is a project install of a nested plugin
-(`_is_project_install_of_a_nested_plugin`), so both plugins write the docdicer line and kbase also
-the kb line. `ShippedPackage.installed_snippets()` joins the destination to the set's directory, and a line names the
+(`_is_project_install_of_a_nested_plugin`), so every project install writes the devpro line and one
+with the kbase component also writes the kb line. `ShippedPackage.installed_snippets()` joins the destination to the set's directory, and a line names the
 installed snippets at `<harness-relpath>/<destination>/<set directory>/<snippet>`, `harness_relpath` being the install directory
 relative to the project root, so under claude
-`.claude/skills/<plugin>/skills/docdicer/tools/runner-snippets/docdicer.just` and
-`.claude/skills/kbase/skills/kbase/kb-tools/runner-snippets/kb.just`, and under opencode the same
-below `.opencode/plugins/<plugin>/`. `runner_file.install_include_lines` writes them, in the
+`.claude/skills/devpro/tools/runner-snippets/devpro.just` and
+`.claude/skills/devpro/skills/kbase/kb-tools/runner-snippets/kb.just`, and under opencode the same
+below `.opencode/plugins/devpro/`. `runner_file.install_include_lines` writes them, in the
 table's order, judging each set alone (`_with_include_line`) and writing the runner file once when
 any text changed. Mage gets no line and no `Makefile`. A line is this install's when its first path
 segment equals `harness_relpath`'s, and its path token is then spliced in place. A set's line is
-recognized by the path's shape, ending `<snippets directory name>/<snippet>`, so the `docdicer` and
-`kb` sets never match each other's line. A set whose line is reported and left does not stop the
+recognized by the path's shape, ending `<snippets directory name>/<snippet>` — the devpro and kb
+sets share the `runner-snippets` directory name, and the snippet file name alone tells their shapes
+apart, so no set's line ever matches another's. A line no shipped set claims — the retired docdicer
+set's among them — is no set's line and is left as written. A set whose line is reported and left does not stop the
 others. Where the project has no runner file, one `Makefile` is created holding every line.
+
 `runner_file` reads the runner file through `install_base.untranslated_text` (`newline=""`), so a
 rewrite keeps each line's ending, and skips a line whose first non-blank character is `#`
 (`_named_harnesses`).

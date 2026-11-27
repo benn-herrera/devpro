@@ -26,8 +26,6 @@ Output and exit contract: prints `diff -rq`'s two line forms, `Only in <dir>: <n
 not exist.
 """
 
-from __future__ import annotations
-
 import filecmp
 import os
 import re
@@ -36,10 +34,10 @@ from pathlib import Path
 
 # Line 2 onward of a bannered file: each entry is a line prefix. `COMMENT` is a skill's
 # supporting file, whose banner lines are HTML comments from its first line.
-BANNER = (b"# !GENERATED! from ", b"# !TUNING! ")
-COMMENT = (b"<!-- !GENERATED! from ", b"<!-- !TUNING! ")
+BANNER: tuple[bytes, ...] = (b"# !GENERATED! from ", b"# !TUNING! ")
+COMMENT: tuple[bytes, ...] = (b"<!-- !GENERATED! from ", b"<!-- !TUNING! ")
 # A copied package file's banner, from line 1, or from line 2 below a `#!` line.
-INSTALLED_BANNER = (b"# !INSTALLED! from ",)
+INSTALLED_BANNER: tuple[bytes, ...] = (b"# !INSTALLED! from ",)
 FENCE_OPEN = re.compile(rb" {0,3}(?:(`{3,})[^`]*|(~{3,}).*)")
 FENCE_CLOSE = re.compile(rb" {0,3}(`{3,}|~{3,})[ \t]*")
 LIST_ITEM = re.compile(rb" {0,3}(?:[-*+]|\d+[.)]) ")

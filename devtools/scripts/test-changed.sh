@@ -50,6 +50,9 @@ hits=""
 for path in ${changed[@]+"${changed[@]}"}; do
     while read -r prefix surface; do
         [[ -n "${prefix}" ]] || continue
+        # The unquoted `${prefix}` on the `\**` branch is an intended pattern match: a `*`-prefixed row
+        # matches a slash-free path.
+        # shellcheck disable=SC2053
         if [[ "${path}" == "${prefix}" || ( "${prefix}" == */ && "${path}" == "${prefix}"* ) \
             || ( "${prefix}" == \** && "${path}" != */* && "${path}" == ${prefix} ) ]]; then
             if [[ "${surface}" == ALL ]]; then

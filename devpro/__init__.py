@@ -14,8 +14,7 @@ or a family overlay anchor, filled once by `render.filled_body`.
     clauses.py       shared text: constants, and small functions for text with slots
     harness.py       the harness dataclass, its `{plugin}` templates and their binding
     harnesses/       one module per harness, each defining HARNESS
-    plugin.py        the plugin dataclass: a name and the definitions it ships
-    plugins/         one module per plugin, each defining PLUGIN
+    components.py    the one name every install takes and each optional component's member list
     family.py        the family dataclass and its overlays, and how to author one
     families/        one module per family, each defining FAMILY
     context.py       Render, the devpro settings file and the map's grammar
@@ -27,25 +26,49 @@ or a family overlay anchor, filled once by `render.filled_body`.
     install_base.py  what the install modules share: package and checkout roots, the kb-tools package
                      paths, path checks, UTF-8 reading
     runner_file.py   the runner include lines, one per snippet set the install passes in
-    install.py       the install: renders, the shipped packages' stamped copy, and the prune
+    install.py       the install: renders, the shipped packages' stamped copy, and the replacement
     agents_file.py   the agents-file install: the marker span, redirects, and the rolling backup
+    profiler/        the absorbed activity profiler: the capture, tree and page render, its hook wiring
+    dashboard/       the dashboard verb's loopback server: the board and profiler views
+    kanban/          the board panel the dashboard serves
+    dicing/          the absorbed dicing engine: the dicing verbs, `check-links` and `check-tree`
+    doccheck/        the plan, design and roadmap checks the check verbs run
+    runner-snippets/ the shipped runner snippets a project install writes an include line for
+    development-tools/ the development component's shipped scripts
+    kb-tools/        the kbase component's shipped runner snippets
     cli.py           the argparse surface
     __main__.py      the `-m` entry
 
 Usage, where `python3 -m devpro` is the same command as `devpro`; a checkout
 runs it from the repository root with that root on PYTHONPATH:
 
-    devpro render --out DIR [--plugin NAME] [--harness NAME] [--family NAME]
-        [--config-file=FILE]
-    devpro install TARGET [--plugin NAME] [--subdir DIR] [--verbose]
-        [--dry-run] [the same tuning flags]
-    devpro install-agents-file DIR [--plugin NAME] [--harness NAME] [--dry-run]
-    devpro render-agents-file HARNESS OUT [--plugin NAME]
+    devpro install TARGET [--components=CSV] [--subdir DIR] [--verbose]
+        [--dry-run] [--harness NAME] [--family NAME] [--config-file=FILE]
+    devpro install-agents-file DIR [--harness NAME] [--dry-run]
     devpro --version
 
-The plugin is the name of a module in `plugins/`, default `context.DEFAULT_PLUGIN`. The render is deterministic:
-the text of every file is a function of the definition, the plugin, the harness,
+and, only where the environment's DEVPRO_DEV is 1, the maintainer verbs:
+
+    devpro dev-render --out DIR [--components=CSV] [--harness NAME] [--family NAME]
+        [--config-file=FILE]
+    devpro render-agents-file HARNESS OUT [--components=CSV]
+    devpro harness NAME KEY
+
+The one name is `components.NAME`: every install writes it, and every `{plugin}` template fills it.
+`--components` turns optional components on, comma-separated. The render is deterministic:
+the text of every file is a function of the definition, the components, the harness,
 the family and the category map, and of nothing else.
 """
 
-__version__ = "0.17.5"
+# The floor, checked before any other module of this package is imported: every module after this one
+# may use the floor's syntax, and this one must not. `sys` is built in, so it is here with no import of
+# this package above it; an interpreter older than the floor runs only the version test, whose
+# `version_info` is read with `getattr` so no syntax but this statement's is on the path to the refusal.
+import sys
+
+if getattr(sys, "version_info") < (3, 11):
+    _running = "%s.%s.%s" % tuple(sys.version_info[:3])
+    sys.stderr.write("error: devpro needs Python 3.11 or later, running under %s (%s)\n" % (_running, sys.executable))
+    sys.exit(1)
+
+__version__ = "0.18.0"

@@ -1,0 +1,8 @@
+stdout	9
+stdout	6	2
+stderr	volume
+stderr	section
+stderr	section
+stderr	0	0
+stderr	missing.md
+stderr	gone.md

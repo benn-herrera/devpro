@@ -7,8 +7,6 @@ remove it. Everything is read from the source's AST alone; nothing here imports
 the package, so no module (`__main__` included) runs.
 """
 
-from __future__ import annotations
-
 import ast
 import graphlib
 from pathlib import Path
@@ -28,7 +26,7 @@ def _imports(tree: ast.Module) -> list[ast.Import | ast.ImportFrom]:
     return [node for node in ast.walk(tree) if isinstance(node, (ast.Import, ast.ImportFrom))]
 
 
-def test_no_import_below_module_level():
+def test_no_import_below_module_level() -> None:
     nested = [
         f"{module}.py:{node.lineno}"
         for module, tree in _modules().items()
@@ -44,7 +42,7 @@ def _absolute_names(node: ast.Import | ast.ImportFrom) -> list[str]:
     return [node.module or ""] if node.level == 0 else []
 
 
-def test_the_package_reaches_its_own_modules_by_relative_import_and_nothing_else_by_one():
+def test_the_package_reaches_its_own_modules_by_relative_import_and_nothing_else_by_one() -> None:
     """Only a relative import is an edge the graph below reads, so an absolute
     one would be a cycle it cannot see; a parent-relative one leaves the package."""
     wrong = [
@@ -57,7 +55,7 @@ def test_the_package_reaches_its_own_modules_by_relative_import_and_nothing_else
     assert not wrong, f"imports reaching the package absolutely or leaving it relatively: {', '.join(wrong)}"
 
 
-def test_import_graph_is_acyclic():
+def test_import_graph_is_acyclic() -> None:
     modules = _modules()
     graph = {
         module: {

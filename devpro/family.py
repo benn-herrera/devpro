@@ -22,7 +22,7 @@ when the `Render` is built, rather than kept as an override that quietly never
 fires.
 
 The category map is the model source. The devpro settings file's
-`[<harness>-model-map]` section supplies it whole where the file has one;
+`[<harness>.model-map]` table supplies it whole where the file has one;
 otherwise the harness's `default_category_spec` stands in for one where it
 declares one, and otherwise it is `Family.categories`. It decides
 which member's overrides a definition is tuned against, and the `model:` text it
@@ -56,8 +56,6 @@ against which model it was observed, and when; not what the text says, but why
 it exists. Without that record a later maintainer cannot tell "still
 load-bearing" from "residue from a model we no longer use".
 """
-
-from __future__ import annotations
 
 import re
 from collections.abc import Mapping
@@ -96,9 +94,7 @@ class Family:
         if re.fullmatch(IDENTIFIER, self.name) is None:
             raise InputError(f"family '{self.name}': name is not a strict-kebab identifier")
         if tuple(self.categories) != CATEGORIES:
-            raise InputError(
-                f"family '{self.name}': categories must be exactly {', '.join(CATEGORIES)}, in that order"
-            )
+            raise InputError(f"family '{self.name}': categories must be exactly {', '.join(CATEGORIES)}, in that order")
         for category, member in self.categories.items():
             if member.split() != [member]:
                 raise InputError(f"family '{self.name}': {category} must be a non-empty member name with no whitespace")

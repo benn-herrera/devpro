@@ -3,8 +3,6 @@ harness directory of its own project, under opencode the copy a real install shi
 and the session markers set only where the case sets them. No case makes a model call.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import re
@@ -21,6 +19,8 @@ from devpro.harness import Harness
 from devpro.install_base import PACKAGE_ROOT
 from devpro.loading import load
 from devpro.render import filled_body, rendered_definitions
+
+pytestmark = pytest.mark.cold_read
 
 _SCRIPT = PACKAGE_ROOT / "development-tools" / "cold-read.sh"
 
@@ -69,7 +69,7 @@ def _place(tmp_path: Path, copy: Path) -> Path:
 
 def _rendered_body(name: str) -> str:
     """The text the opencode render of devpro writes below the banner of the definition `name`."""
-    ctx = build_render(harness="opencode", plugin="devpro", family=DEFAULT_FAMILY)
+    ctx = build_render(harness="opencode", components="", family=DEFAULT_FAMILY)
     defn = next(defn for _, defn in rendered_definitions(ctx) if defn.name == name)
     return filled_body(defn, ctx) + "\n"
 

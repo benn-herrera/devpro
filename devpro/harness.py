@@ -18,18 +18,17 @@ takes the plugin's name as a string and knows nothing of its members. The manife
 plugin-form harness renders is here, its name and marker the bound plugin's.
 """
 
-from __future__ import annotations
-
 import dataclasses
 import json
 import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Protocol
+from pathlib import Path, PurePosixPath
+from typing import Protocol, cast
 
 from devpro import __version__, clauses
 from devpro.errors import InputError
+from devpro.install_base import WRAPPER
 from devpro.vocabulary import IDENTIFIER, HarnessText, Kind, OptionalHarnessText, Tool
 
 KBASE_OWNER = "kbase"
@@ -128,14 +127,10 @@ If a recipe times out, the agent hands back naming it instead of rerunning it in
 in the background."""
 
 
-def scratch_rule(*, harness_dir: str) -> str:
-    """The agents file's scratch rule, after its `/tmp` sentence; `harness_dir` is the harness directory
-    the project scratch directory sits beside."""
-    return (
-        f"All scratch —\nthrowaway builds, probe harnesses, captured output — goes in `{clauses.PROJECT_TEMP_DIR}/` under the\n"
-        f"active project root. If it doesn't exist, stop and say so; don't\n"
-        "improvise a location."
-    )
+def scratch_rule() -> str:
+    """The agents file's scratch rule, after its `/tmp` sentence: `clauses.SCRATCH_PARAGRAPH`, the text
+    mage's harness passes too."""
+    return clauses.SCRATCH_PARAGRAPH
 
 
 class McpEntryBuilder(Protocol):
@@ -144,7 +139,7 @@ class McpEntryBuilder(Protocol):
     def __call__(self, *, command: str) -> dict[str, str | list[str]]: ...
 
 
-def mcp_json(entry: McpEntryBuilder) -> HarnessFile:
+def mcp_json(entry: McpEntryBuilder) -> "HarnessFile":
     """The plugin's own `.mcp.json` at ROOT, rendered whole where `KBASE_OWNER` ships: the `kbase` server
     alone under `mcpServers`, its entry from `entry`. JSON admits no comment, so the marker is the
     command the entry names, with `json.dumps`'s space after the colon."""
@@ -159,10 +154,13 @@ def mcp_json(entry: McpEntryBuilder) -> HarnessFile:
 class GuardrailHook:
     """The guardrail hook a harness ships and registers in a file of its own. `script` is the hook
     script's path under `resources/<harness>/`, which is also its path under ROOT; `registration` is
-    the file below ROOT registering it, written only where the script runs on the installing machine."""
+    the file below ROOT registering it, the one the install takes where the script runs on the
+    installing machine, and `registration_without_hook` is that same file where it does not: what the
+    file holds without the hook, which the install writes in place of leaving none."""
 
     script: str
     registration: HarnessFile
+    registration_without_hook: HarnessFile
 
 
 @dataclass(frozen=True)
@@ -202,13 +200,14 @@ class Harness:
     reload_rule: str = ""  # what to do when an install's agents are not offered; printed after one, "" for none
     tools_reload_rule: str = ""  # what to do when an install's kbase tools are not offered; "" for none
     side_by_side_rule: str = ""  # what a session does where another harness's install also reaches it; "" for none
+    agents_path: str = ""  # the development skill's sentence naming the plugin's agents directory; "" for none
     cold_read_rule: str = ""  # the development skill's bullet on how a cold reader is run; "" for none
 
     def __post_init__(self) -> None:
         """Refuse a non-IDENTIFIER name, an empty HarnessText field or
         model_shape, a display_name that is not lowercase, an OptionalHarnessText field that is not a string, a tools table not total in
-        Tool order, or a guardrail hook lacking a script path or a registration path, builder and
-        marker.
+        Tool order, or a guardrail hook lacking a script path, or either of its two registrations'
+        path, builder and marker.
 
         An empty string is refused of the fields a body naming them always renders, since every
         harness supplies each HarnessText and a model shape. An OptionalHarnessText is a rule a
@@ -228,16 +227,17 @@ class Harness:
         guardrail = self.guardrail
         if guardrail is not None and not (
             guardrail.script
-            and guardrail.registration.path
-            and callable(guardrail.registration.text)
-            and guardrail.registration.marker
+            and all(
+                file.path and callable(file.text) and file.marker
+                for file in (guardrail.registration, guardrail.registration_without_hook)
+            )
         ):
             raise InputError(
-                f"harness '{self.name}': guardrail hook needs a script path, and a registration path, "
-                "builder and marker"
+                f"harness '{self.name}': guardrail hook needs a script path, and for each of its two "
+                "registrations a path, builder and marker"
             )
 
-    def bound(self, plugin_name: str) -> Harness:
+    def bound(self, plugin_name: str) -> "Harness":
         """This harness for the plugin `plugin_name`: every `{plugin}` template — the plugin directory, the
         project harness directory, the reference and MCP tool prefixes, and the marker of each rendered
         file, of the registry and of the guardrail registration — filled with it."""
@@ -261,7 +261,11 @@ class Harness:
             guardrail=(
                 None
                 if guardrail is None
-                else dataclasses.replace(guardrail, registration=marked(guardrail.registration))
+                else dataclasses.replace(
+                    guardrail,
+                    registration=marked(guardrail.registration),
+                    registration_without_hook=marked(guardrail.registration_without_hook),
+                )
             ),
         )
 
@@ -283,9 +287,15 @@ class Harness:
         """The user harness directory, `~` read from HOME."""
         return Path(self.user_harness_dir).expanduser()
 
+    @property
+    def project_wrapper(self) -> str:
+        """The wrapper a project install writes, relative to the project root: `WRAPPER` below ROOT, the
+        project harness directory's plugin directory. A bound harness's, every `{plugin}` filled."""
+        return PurePosixPath(self.project_harness_dir, self.plugin_dir, WRAPPER).as_posix()
+
     def text(self, part: HarnessText | OptionalHarnessText) -> str:
         """The value of the string field `part` names; "" where an optional one is supplied nowhere."""
-        return getattr(self, part.value)
+        return cast(str, getattr(self, part.value))
 
 
 def quoted(value: str) -> str:

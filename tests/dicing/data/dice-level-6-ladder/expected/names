@@ -1,0 +1,7 @@
+stdout	links	checked	5	dead	0
+stdout	reassemble	ok	23	lines
+stderr	1-one/index.md
+stderr	1.1-sub/index.md
+stderr	1.1.1-detail.md
+stderr	refs	linked	0	dangling	0	distinct
+stderr	volume	head

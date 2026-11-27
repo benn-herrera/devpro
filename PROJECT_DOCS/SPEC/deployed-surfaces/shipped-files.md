@@ -1,39 +1,16 @@
-### Shipped files
+# Shipped files
 
 A **shipped package** is plain code, never rendered and so never carrying a generated banner,
 installed at its **package destination**, a fixed directory under the install directory. Its
 installed copy is stamped where Installed tree says: the installed banner, not the generated
 banner. A package ships with the definition it belongs to, and only where that definition ships
-(Plugins). Both plugins deliver the **docdicer tools package** at its package destination under
-the install directory, `skills/docdicer/tools/`: inside the `docdicer` skill's own directory. They
-also deliver the **development scripts package**, `skills/development/scripts/`, inside the
-`development` skill's own directory (below), under mage as under claude and opencode. The kbase
-plugin also delivers the kb-tools package (below). A user-level install delivers none (SPEC.md,
-Deployed Surfaces, Install destination). The docdicer package holds four files:
-- `docdicer`, a `bash` script, executable, carrying the installed banner below its shebang
-- `.gitignore`, holding `.venv/` and carrying no banner
-- `runner-snippets/docdicer.just` and `runner-snippets/docdicer.mk`, runner snippets for a
-  consuming project to include, each carrying the installed banner at its top. A project install of
-  either plugin under claude or opencode writes the docdicer runner include line for them (Plugins).
-  They define the recipes `docdicer`, `docdicer-check-plan`, `docdicer-kanban` and `docdicer-help`.
-
-The launcher installs docdicer on demand and takes no `--install` argument. Run as
-`tools/docdicer` from the skill's directory, on every run it:
-- rebuilds `tools/.venv` where the venv's python is missing or does not run. Where `python3` 3.9 or
-  later with its `venv` module is not on the host, it names the remedy and exits non-zero
-- installs into `tools/.venv` the docdicer version the script names, where the venv's docdicer does
-  not report that version; a failure exits non-zero
-- sends all install output to stderr
-- then passes its arguments to docdicer unchanged
-
-The first run, and any run after the venv is lost, therefore needs the network and `git`. No install
-runs the launcher. An install leaves `tools/.venv` in place; on its next run the launcher's checks
-above rebuild or update it. A `.venv` directly under a package
-destination is not install output.
-
-Where the project's runner includes the docdicer snippet, the `docdicer` skill directs the agent to
-run docdicer through its recipes rather than through `tools/docdicer`. The skill carries no other
-runner-snippet advice and no install step.
+(Plugins). Every project install delivers the **development scripts package**,
+`skills/development/scripts/`, inside the `development` skill's own directory (below), and every
+install delivers the **devpro tools package**, `tools/`
+(below), under mage as under claude and opencode. An install with the kbase component also delivers
+the kb-tools package (below). A user-level install delivers the devpro tools package and, under
+opencode, the plugin entry and the guardrail resource beside it — no other package (SPEC.md,
+Deployed Surfaces, Install destination).
 
 The development scripts package holds one file, `cold-read.sh`, a `bash` script, executable,
 carrying the installed banner below its shebang. A **cold read** is one agent reading one brief
@@ -71,10 +48,50 @@ snippets, and not an importable package either, read by the consuming project th
 include line. The snippets run `kbase` from `PATH`. Every target the snippets define is named
 `kb-<name>`. No package is a definition: a package under a
 skill's directory is neither its skill entry file nor one of its supporting files, the development
-scripts package and the docdicer tools package included.
+scripts package included.
 
-A **harness resource** is a file a harness ships, such as a guardrail script or opencode's plugin entry,
-copied as it stands and never rendered. A harness also writes harness-rendered files into the
+The devpro tools package is a shipped package installed at its own stated destination: `tools/`,
+directly under the install directory, inside no skill's directory. It holds:
+
+- `tools/devpro/`, in the install directory, a copy of the devpro package that ran the install —
+  the wheel content it staged from (Install destination) — byte-verbatim;
+- `tools/devpro.sh`, the wrapper, carrying the installed banner below its shebang, which runs that
+  copy as `python3 -m devpro` does, its arguments passed through: under the base interpreter that
+  ran the install — that Python's own executable, never a virtual environment's — where that path
+  exists; otherwise under the first `python3` on `PATH`. The wrapper checks no version itself: the
+  entry point it starts refuses where the interpreter is below the floor — exit 1, saying devpro
+  needs Python 3.11 or later and naming the interpreter it ran under — and it refuses before any
+  other module of the copy is imported. It looks for no other interpreter;
+- `tools/runner-snippets/`, the runner snippets, not an importable package, read by the consuming
+  project through the same runner include line.
+
+Every installed file that runs devpro, and every command a definition gives a session to run
+devpro, runs it through the wrapper, never the `devpro` command from `PATH` — except
+`devpro install`, `devpro install-agents-file` and `devpro --version`, which install, update by
+installing again, and report the version that would install, and so name the `devpro` command on
+`PATH`. The `devpro` command on `PATH` never hands off to an installation's copy, and only an
+install replaces the copy. An install run from an installation's own copy, into the installation
+holding that copy, installs: it passes over two things only — the devpro package under
+`tools/devpro/` and the wrapper `tools/devpro.sh` that runs it — writing nothing at either and
+reporting nothing about the pass-over, and installs everything else under the wholesale replacement
+Write safety states. Neither passed-over path is written or read back: the interpreter the wrapper records is the one
+the installation's own wrapper already carries, untouched by a re-entry run, and the installed
+version stays the one the operator chose. The
+snippets define the recipes `devpro-help`, `devpro-check-plan`,
+`devpro-check-design`, `devpro-check-design-deltas-applied` and `devpro-check-roadmap`:
+`devpro-help` showing the commands and their doc strings, then the command's help. The four gates take no
+argument, each checking the active file under the project root — the active plan, the active design,
+the active design's applied deltas and `ROADMAP.md` — that argumentlessness being what makes them
+runner-able. No `devpro-kanban` and no dicing recipes: the board is the dashboard's panel, and the
+dicing shortcuts need the arguments their direct calls give them, documented in the `docdicer` skill
+and Dicing and Checks. Both runners carry the set —
+`devpro.just` for a justfile, `devpro.mk` for a Makefile — and `devpro-help` shows the commands and
+their doc strings in either: under just from the recipes' own `[doc]` strings, under make by
+parsing the snippet's own target-list comments, the approach the retired set's make snippet used and
+the feature worked.
+
+A **harness resource** is a file a harness ships, such as a guardrail script, opencode's plugin
+entry or the plan-state reminder script, copied as it stands and never rendered. A harness also writes harness-rendered files into the
 install directory — the plugin manifest `.claude-plugin/plugin.json`, one value shared by claude and
 mage, version included, `.mcp.json` under claude and mage where `kbase` ships, rendered whole
 with the `kbase` server alone, `registry.json` under opencode, and under claude the guardrail
@@ -82,21 +99,150 @@ registration `hooks/hooks.json` (below) — which are rendered, not copied, carr
 replaced whole. `registry.json` is opencode's **registry**: the plugin's name and version and one record
 per agent, command and skill — id, body file, description, and for an agent its mode, model, color
 and permissions — and the `kbase` MCP server where `kbase` ships. An install copies the harness
-resources into the install directory, except a user-level install, which copies only opencode's
-entry, and save a file conditional on the install-time probe (below), so a resource lands at the
-path it holds below the install directory: opencode's at `<install-dir>/index.ts`, the plugin entry, and
-`<install-dir>/guardrail.ts`, and claude's at `<install-dir>/hooks/guardrail.pl` (mage ships none):
-in the install directory, outside its three deployed surfaces. Each keeps its bytes and its mode:
-the install stamps nothing on them. Every such file carries an installed banner
-(`!INSTALLED! … devpro`) in its first ten lines — the guardrails' name this repository and forbid
-edits. A harness shipping none copies nothing, which is not an error.
+resources into the install directory — a user-level install's copies being opencode's entry and the
+guardrail resource beside it — and saves a resource conditional on the install-time probe (below), so
+a resource lands at the path it holds below the install directory: opencode's at
+`<install-dir>/index.ts`, the plugin entry, `<install-dir>/guardrail.ts` and
+`<install-dir>/profiler.ts`; claude's at `<install-dir>/hooks/guardrail.pl` and
+`<install-dir>/hooks/state-table-reminder.sh` (mage ships none): in the install directory, outside
+its three deployed surfaces. Each keeps its bytes and its mode: the install stamps nothing on them.
+A harness resource ships with its banner as its source writes it, and an install adds nothing: every
+such file carries an installed banner (`!INSTALLED! … devpro`) in its first ten lines as shipped —
+the guardrails' name this repository and forbid edits. A harness shipping none copies nothing, which
+is not an error.
+
+A claude project install also ships the **activity profiler**: its code is devpro's own, and the
+hook files refer back to devpro wherever they ran the profiler's script, with the capture hook's
+contract — a capture exits 0 with nothing on the hook's stdout, the failure named on stderr —
+unchanged. The page template `view.html` the render reads is the devpro wheel's
+package data (`devpro/profiler/view.html`, read by the rendering module), not an install resource;
+and the `profiler` skill, which renders a session's recorded activity — its skill, agent and tool calls
+with timings and token costs — as text, as a self-contained HTML page, or served over HTTP: the
+dashboard, devpro's one loopback server for the web interface, renders the record files in memory
+as one panel of its site. The board is the landing surface: opening the dashboard's URL shows the
+kanban board — the project's actual current state — and the traces are the second view, reached
+from the nav. A simple top nav persists across every view: the served project's name — the served
+project root directory's name — opens the nav, bold, in the foreground color, on every page the
+dashboard
+serves, the board's own page included; then the view names `kanban` and `profiler`, selection
+switching the view; the `devpro` brand stands at the nav's far edge, past the server block, behind
+a hairline separator — intuitive, recognizable surfaces, no invented paradigms, the dynamic
+behavior spent only where it counts. The profiler pages' titles
+read `<project>: devpro profiler <page-name>` — `<page-name>` `sessions` on the index, `session`
+on a session's page — `<project>` the name the nav opens with. The nav and the views carry
+the phosphor pairing, the brand's callback to amber and green screen terminals inverted from the
+nav's scanlines deliberate — and the accent is the phosphor, no second brand
+color. The dark mode carries the phosphor green: brand `#3cf077`, the active view `#31c260`, 80%
+of the brand's brightness, the inactive view `#a6a6ad`. The light mode carries the warm phosphor:
+brand `#e8a020`, the active view `#d09020`, the inactive view `#63636b`. The surfaces are the
+board's own variable system — `board.css`'s `:root` and its `prefers-color-scheme` block — the
+site's surfaces not inherited; the site's accent values and its two-motif accent map are. The
+nav's grammar: the project name is monospace, heavier and about 15% larger than the nav items, in
+the foreground color; the `devpro` wordmark sits at the nav items' size, in the motif's brand color
+at full brightness, the far edge's signature; both view names sit in the same smaller size, no
+underline, no visited-link styling; the active view is the brand color at 80% brightness and
+heavier weight, the inactive view a lifted gray that reads available, never deactivated. The
+site's own light-mode mapping (green) and its dim value are superseded: the
+dashboard's light brand is the bright amber, dimmed only for the active view's smaller text.
+`board.css`'s `:root` carries the nav grammar's values — the phosphor brand, the accent at 80% of
+it, and the view's lifted gray — and no value of the superseded map: `--accent-dim`, the dim the
+active view's text once used, is gone rather than left standing unused.
+Retro colors, modern deco: the phosphor accents and the scanline treatment are the whole retro
+voice — the layout, spacing and componentry are ordinary modern web, no TUI replication — and the
+scanline treatment may appear in the deco, the nav or the frame band, never on a card surface,
+its placement the pass's executor call. The server's elements persist across every view, the nav's
+server block right-justified at its flex edge: a live/idle state indicator and, when live, a stop
+control; starting is the CLI's alone, no served page starting its own server. In the profiler view the how-to-read legend sits at the top of a session page's frame band — the
+index carries none — the same band carrying a return-to-list
+control, its label `Return to list`, revisable at execution as a one-string change — the pass's
+second executor call; drill-down is ordinary page navigation, the trace list to the session page
+with
+`/page/<session-id>` deep links intact and no inner-frame mechanic. One presentation layer serves
+the whole presented interface: a single CSS source the board's assets and the profiler's pages
+alike consume, the palette living there, the profiler page's re-style to the kanban presentation
+made through that shared layer, never as a second reskin. The legend's text has one home and two
+carriers, one source both read: the rendering side holds it once — the standalone render injects
+it into the page it renders, the template carrying no second copy — and the dashboard's frame band
+reads the same source, so the served session page's legend comes from the frame and the served
+index carries none. The pages and the records
+stay local: reachable only from the
+machine that runs the server. Every presentation of a recorded moment — the pages, the index and the
+text tree — reads in the reader's local time, and none shows UTC, a
+hover title included. UTC stays in what the records store and in markup no reader is shown, such
+as a `<time>` element's `datetime`. Six hook entries, one per
+event (`PostToolUse`, `PostToolUseFailure`, `PreCompact`, `PostCompact`, `SessionStart`,
+`SubagentStop`), are written into `hooks/hooks.json` on every claude project install; each runs the
+install directory's `tools/devpro.sh profiler capture claude`, appends one line to the project's
+`.devpro-temp/.profiler-claude/<session-id>.jsonl`, and a capture that fails exits 0 with nothing on
+the hook's stdout, the failure named on stderr. A claude session on the web loads no plugin's hooks
+and records nothing there; the skill names the tool's `init` for committing the hook where a session
+needs one. A user-level install renders the profiler skill like any other definition; the activity
+capture is a project install's alone: it copies no claude resource, so no profiler hook and no
+`init` under claude, and under opencode it copies its entry and the guardrail resource beside it and
+no capture `profiler.ts`. A project opencode install ships the capture `profiler.ts` beside the
+plugin entry and no profiler launcher, and
+registers no hook entries; each recorded call appends one line to the project's
+`.devpro-temp/.profiler-opencode/<session-id>.jsonl`, a capture that fails raises nothing out of the
+hook, and a mage install ships none of them. A page attributes a child session to the session that
+dispatched it: the capture extracts the child's session id into the parent call's record, the render
+groups a dispatch's child one level deep under the session that dispatched it — deeper chains read
+on the session's page, whose tree draws every dispatch as a context and, beneath a dispatch's
+context, the child's own dispatched agents, marking the fan-out whose own trace records no
+dispatch of the post-plan review's seat (`devpro-prompt-engineer`) at or before its first — links
+each Agent row to the
+child's page and heads a child page with its dispatcher, and the stores stay flat — the child never
+knows its parent at write time, the hierarchy being metadata the parent side builds, and claude
+holding no child session records at all. Every session's records carry its operational context,
+taken once at its start: the plan it worked under and a digest of the directives in force. The index
+names both for every session, `null` where a session predates the stamp, and no association is
+inferred for a session the records stamp nothing onto. The color a dispatched page's own context wears is stated
+by the accent's rule, below.
+A call's record names the model that made it where its harness states it: the index names the models a session's
+calls recorded, and a session's page names them for the session, for each context and for each
+call, showing none where no record names one.
+The index's rows alternate their tone — a zebra the eye reads across the
+columns — and each row's harness carries its own mark, a dot in the harness's brand colors:
+opencode's periwinkle, claude's coral. The index is a table the reader narrows and orders: a
+dispatched child's row shows beneath the session that dispatched it or stays out of the list, the
+harnesses are shown one at a time or together, and the reader sorts the rows by a session's agent
+count, record count, last moment or span, any order reversed, a session's page and the way back to
+the list keeping the list as the reader left it. A moment and a span read, wherever the view
+presents them, in the reader's local time; the span is one duration notation, reading as a duration
+whether it is under a second, a few seconds, a minute or hours. A dispatch row's agent names read
+without the `devpro-` prefix the delivered set gives them. A
+fan-out that records no dispatch of the post-plan review's seat up to its first dispatch is marked
+as unreviewed, on the dispatcher's row and beside the dispatch that opened it on the session page.
+A feed the view cannot assemble is named in the index's own notice, never as a session. On the page of a session nothing dispatched, the session's
+own context wears the motif's accent, its labels dark enough to read on it; on a dispatched
+session's page it wears the color the context its dispatching call opened wears on the
+dispatcher's page; and no other context wears a hue that reads as the accent in the mode shown.
+
+A claude project install also carries the plan-state reminder in that registration: one ungated
+`PostToolUse` entry matched on `Agent`, running `<install-dir>/hooks/state-table-reminder.sh`, which
+reads the same gate at the project root and injects one sentence of plan-state context. That
+sentence's text lives in the script,
+`devpro/harnesses/resources/claude/hooks/state-table-reminder.sh`, which is its one home. That entry
+is written on every claude project install,
+whatever the probe decides about the guardrail's, so its script runs on every project claude
+install. A user-level claude install writes no registration, so the reminder never registers there.
 
 Opencode loads the plugin directory and registers its agents, skills, commands and, where
-`kbase` ships, the `kbase` MCP server under the registry's ids. A change to the install directory
-is picked up without restarting opencode, except a change to `guardrail.ts`, which the plugin entry
-imports when it loads, so a changed one takes effect at the next opencode start. The plugin entry is
-written for opencode v2.2.6 and is the
-same file for both plugins; ARCHITECTURE.md, Install, Opencode entry holds how it works. A resource may be conditional on the probe: claude's guardrail is
+`kbase` ships, the `kbase` MCP server under the registry's ids, and injects a plan-state reminder
+into the parent session at agent dispatch and agent completion, gated by `ACTIVE_PLAN.md` — file
+or, where the plan was diced, the `ACTIVE_PLAN/` tree — existing at the project root. A session
+whose context the host compacts has the `devpro-development` skill activated again with the
+session's next exchange, the skill attached to that exchange's prompt through the host's own
+attachment path, where the session's context held the skill before it: the compaction drops the
+skill's text from what the session reads, and the plugin is what restores it. A change to
+the install directory is picked up without restarting opencode, except a change to `guardrail.ts` or
+`profiler.ts`, either of which the plugin entry imports when it loads, so a changed one takes effect
+at the next opencode start. The plugin entry is written for opencode and is the
+same file for both plugins; ARCHITECTURE.md, Install, Opencode entry holds how it works. It
+requires an opencode that returns the `subagent` call at dispatch and declares the
+`SessionHooks` events it registers on — the `prompt` and `compaction` hooks for the reload and
+`experimental.idle` for the reminder — 2.3.0 or later, observed at 2.4.1. A resource
+may be conditional
+on the probe: claude's guardrail is
 delivered only when one run of the script on the installing machine succeeds within a few seconds,
 and is otherwise skipped, with the reason reported and the rest of the install unaffected. The
 guardrail catches common mistakes; it is not a security boundary, and does not contain an agent
@@ -116,7 +262,8 @@ by every check, an interpreter's (`python3 -`, `perl`, `ruby`, `node`) only by t
 write check. Its own command line is read like any other. This check blocks with `Blocked: <reason>` and a pointer to the edit tools.
 
 Their `.index/` check is active only where the install directory holds the kbase skill's skill entry
-file, which they look for on every call, so an install of the devpro plugin is never blocked by it. It blocks a call
+file, which they look for on every call, so an install without the kbase component is never blocked
+by it. It blocks a call
 that reaches into `<project>/kb-root/.index/`, whose index records kbase's own tools read and
 change:
 - a shell command with a word naming a path there, existence checks (`stat`, and `test` or `[` with `-e`, `-d` or `-f`) excepted
@@ -134,12 +281,11 @@ block a shell command, the block reported is this check's.
 
 Claude's guardrail runs at session time and needs perl with core `JSON::PP`; an install also
 registers it as a `PreToolUse` entry for Bash and the file tools (Read, Write, Edit, NotebookEdit,
-Grep, Glob) in the plugin's own `hooks/hooks.json`, written beside the script and only where the
-install-time probe succeeds; no project settings file is written to register it. The entry runs the
+Grep, Glob) in the plugin's own `hooks/hooks.json`, written beside the script and holding the guardrail's
+entry only where the install-time probe succeeds; no project settings file is written to register it. The entry runs the
 script only where it stands readable: where it is missing, a call reports `guardrail hook: no readable script at <path>`
 on stderr and proceeds, and is not blocked. A claude guardrail that fails while running, through a
 missing module or an error in the script, reports on stderr and does not block the call.
 Opencode's guardrail is run by the plugin entry, which imports `guardrail.ts` from the install
-directory: the install writes no settings entry for it. A user-level install copies no
-`guardrail.ts`, and the plugin entry then runs none.
-
+directory: the install writes no settings entry for it. A user-level install copies the guardrail
+resource beside the entry, and the entry runs it there as it does in a project.

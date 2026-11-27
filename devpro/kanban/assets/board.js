@@ -1,0 +1,512 @@
+"use strict";
+
+// The board page. Everything shown comes from the server's payload (GET /api/board); every action
+// is a POST whose effect reaches the page through the same long poll, so the page holds no state of
+// its own beyond the version it last drew, the payload last drawn and the payload deferred during a
+// drag, the drag under way, whether the server answers and the bands it has collapsed. The nav's
+// server block is not this file's: `deco.js` reads the server's state and ends it.
+//
+// Its body stands inside an IIFE: this file and the deco share one classic-script scope on a page
+// that loads both, so a top-level name here is a name the deco's next helper could redeclare.
+
+(() => {
+const log = (level, message, context = {}) => console[level]({ level, message, ...context });
+
+const DRAG_TYPE = "application/x-docdicer-card";
+const ROADMAP = "roadmap";
+const DESIGN = "design";
+
+const $ = (id) => document.getElementById(id);
+const boardEl = $("board");
+
+let dragging = null; // {kind: "roadmap" | "parked" | "design", card} while a drag runs
+let deferred = null; // a payload that arrived during the drag, shown when it ends
+let drawn = null; // the version of the payload on the page; null after a failed poll
+let lastPayload = null; // the payload last drawn, which a band's collapse redraws the columns from
+const collapsed = new Set(); // the keys of the bands collapsed (bandKey), held by the page alone
+let stopped = false; // the server has not answered STOPPED_AFTER polls in a row: no drag starts
+const dragInfo = new WeakMap(); // card element -> its drag info
+const separatorCard = new WeakMap(); // Roadmap category separator element -> its card as served
+
+const STOPPED_AFTER = 3;
+const NOT_DRAWN = "board not drawn: ";
+const PARKED_BAND = "ROADMAP_DESIGNS";
+// The payload carries no card for the ROADMAP_DESIGNS band: this is what the page draws it from, and
+// its key is data on it, so nothing but that key decides where its collapse is held.
+const PARKED_BAND_CARD = { title: PARKED_BAND, kind: "category", key: `${ROADMAP}:parked` };
+
+// A part drawn as a separator band rather than as a card: a roadmap category, a design category or
+// delta.
+const isBand = (card) => card.kind === "category" || card.kind === "delta";
+
+// The key a band's collapse is held under: the card's own where it carries one, else its column, the
+// file holding it where its card names one, its title and its occurrence in that column — the file
+// telling apart two same-titled bands of a diced design, which occurrence does not.
+function bandKey(column, card) {
+  const file = card.path ? `${card.path}:` : "";
+  return card.key ?? `${column}:${file}${card.title}:${card.occurrence}`;
+}
+
+function el(tag, className, text) {
+  const e = document.createElement(tag);
+  if (className) e.className = className;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+const columnLabel = (column) => column[0].toUpperCase() + column.slice(1);
+
+// A code span, a markdown link whose text is shown in its place, strong (**x**) or emphasis (*x*);
+// the leftmost match wins, so nothing inside a code span is touched, and at one position strong is
+// tried before emphasis. Delimited text may not start or end in whitespace. Underscores are never
+// markup. Groups: 1-2 code, 3 link, 4 strong, 5 em.
+const INLINE = new RegExp(
+  [
+    "(`+)(.+?)\\1(?!`)",
+    "\\[([^\\]]*)\\]\\([^)]*\\)",
+    "\\*\\*(?=\\S)(.+?)(?<=\\S)\\*\\*",
+    "\\*(?=\\S)(.+?)(?<=\\S)\\*",
+  ].join("|"),
+  "g",
+);
+
+// Append text to parent with its code spans as <code>, links as their text, and strong and emphasis
+// as <strong> and <em>, whose contents are rendered in turn. Only text nodes and those elements are
+// created: file text never reaches the page as markup.
+function appendInline(parent, text) {
+  let at = 0;
+  for (const match of text.matchAll(INLINE)) {
+    parent.append(text.slice(at, match.index));
+    const [, ticks, code, link, strong, em] = match;
+    if (ticks) parent.append(el("code", "", code));
+    else if (link !== undefined) appendInline(parent, link);
+    else {
+      const child = el(strong !== undefined ? "strong" : "em");
+      appendInline(child, strong ?? em);
+      parent.append(child);
+    }
+    at = match.index + match[0].length;
+  }
+  parent.append(text.slice(at));
+}
+
+function inlineEl(className, text, tag = "div") {
+  const e = el(tag, className);
+  appendInline(e, text);
+  return e;
+}
+
+// A link to a file the server serves, opening in a new tab. It does not drag itself, so a drag
+// started on it drags the card holding it.
+function linkEl(href) {
+  const a = el("a");
+  a.href = href;
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.draggable = false;
+  return a;
+}
+
+// A card's title, a link to href where there is one.
+function titleEl(text, href) {
+  if (!href) return inlineEl("title", text);
+  const e = el("div", "title");
+  const a = linkEl(href);
+  appendInline(a, text);
+  e.append(a);
+  return e;
+}
+
+// ---- rendering ---------------------------------------------------------------------------------
+
+// Draw payload unless it is the version already drawn: a long poll that times out answers the
+// same version, and redrawing it would only reset what the user scrolled.
+function render(payload) {
+  if (dragging) {
+    deferred = payload; // replacing the dragged element mid-drag would cancel the drag
+    return;
+  }
+  if (payload.version === drawn) return;
+  try {
+    const { board } = payload;
+    $("release").textContent = board.release ? `Release ${board.release}` : "";
+    $("hardening").hidden = !board.hardening;
+    const title = `${payload.project} kanban`;
+    document.title = title;
+    $("page-title").textContent = title;
+    $("project-name").textContent = payload.project;
+    $("connection").title = `devpro v${payload.devpro_version}`;
+    renderColumns(payload);
+    drawn = payload.version;
+    lastPayload = payload;
+    if ($("alert").textContent.startsWith(NOT_DRAWN)) showAlert("");
+  } catch (error) {
+    showAlert(NOT_DRAWN + String(error.message || error));
+    log("error", "board not drawn", { version: payload.version, error: String(error) });
+  }
+}
+
+function renderColumns(payload) {
+  const { board, plan_columns } = payload;
+  const scrolled = new Map();
+  for (const section of boardEl.querySelectorAll(".column")) {
+    scrolled.set(section.dataset.column, section.querySelector(".cards").scrollTop);
+  }
+  const keys = [ROADMAP, DESIGN, ...plan_columns];
+  const lists = new Map();
+  const sections = keys.map((key) => {
+    const section = el("section", plan_columns.includes(key) ? "column plan" : "column");
+    section.dataset.column = key;
+    const head = el("div", "column-head");
+    head.append(el("h2", "", columnLabel(key)));
+    const list = el("div", "cards");
+    section.append(head, list);
+    lists.set(key, list);
+    return section;
+  });
+
+  // The keys of the bands the payload draws; a collapse whose band is gone is dropped before the
+  // columns are drawn.
+  const bands = new Set([
+    ...board.roadmap.filter(isBand).map((card) => bandKey(ROADMAP, card)),
+    ...board.design.filter(isBand).map((card) => bandKey(DESIGN, card)),
+    ...(board.parked.length ? [bandKey(ROADMAP, PARKED_BAND_CARD)] : []),
+  ]);
+  for (const key of collapsed) if (!bands.has(key)) collapsed.delete(key);
+  const roadmap = lists.get(ROADMAP);
+  for (const notice of board.notices) lists.get(notice.column).append(noticeEl(notice));
+  for (const card of showing(board.roadmap, ROADMAP)) roadmap.append(roadmapCard(card, ROADMAP));
+  if (board.parked.length) {
+    for (const card of showing([PARKED_BAND_CARD, ...board.parked], ROADMAP)) {
+      const element = isBand(card) ? separatorEl(card, ROADMAP) : parkedCard(card, { kind: "parked", card });
+      roadmap.append(element);
+    }
+  }
+  for (const card of showing(board.design, DESIGN)) lists.get(DESIGN).append(designCard(card, DESIGN));
+  // A work package whose State cell opens with no state word names no column: the board draws no card.
+  for (const pkg of board.packages) lists.get(pkg.state)?.append(packageCard(pkg));
+  boardEl.replaceChildren(...sections);
+  for (const [key, list] of lists) list.scrollTop = scrolled.get(key) ?? 0;
+}
+
+// The cards of a column left showing by its bands, in order: a band opens for the cards below it,
+// and those cards show only while it is not collapsed.
+function showing(cards, column) {
+  let band = null;
+  return cards.filter((card) => {
+    if (!isBand(card)) return !collapsed.has(band);
+    band = bandKey(column, card);
+    return true;
+  });
+}
+
+function draggable(element, info) {
+  element.draggable = true;
+  dragInfo.set(element, info);
+  return element;
+}
+
+// A category or a delta: a separator band, a heading below the column's, not a card. The heading
+// stays in the outline and holds a native button for the cards below it: a double click, Enter or
+// Space collapses them and shows them again, and the marker after its text shows which state it is
+// in, a form and not a colour.
+function separatorEl(card, column) {
+  const key = bandKey(column, card);
+  const isCollapsed = collapsed.has(key);
+  const button = el("button");
+  button.type = "button";
+  button.dataset.band = key;
+  button.setAttribute("aria-expanded", String(!isCollapsed));
+  appendInline(button, card.title);
+  const marker = el("span", "", isCollapsed ? "▸" : "▾");
+  marker.setAttribute("aria-hidden", "true");
+  button.append(" ", marker);
+  const band = el("h3", "separator");
+  band.append(button);
+  return band;
+}
+
+// Content outside the layout, shown at the head of the column it names: where it is, the text
+// found as written (an empty one as `found an empty line`, as check-roadmap and check-design say it)
+// and the form accepted there.
+function noticeEl(notice) {
+  const e = el("div", "layout-notice");
+  const found = el("div", "", notice.found ? "found: " : "found an empty line");
+  if (notice.found) found.append(el("code", "", notice.found));
+  e.append(el("div", "meta", `${notice.path}:${notice.line}`), found, inlineEl("", `accepted: ${notice.accepted}`));
+  return e;
+}
+
+// A roadmap part: a category's separator, or a ticket's card titled over its text, which drags.
+function roadmapCard(card, column) {
+  if (isBand(card)) {
+    const separator = separatorEl(card, column);
+    separatorCard.set(separator, card);
+    return separator;
+  }
+  const e = el("div", "card");
+  e.append(titleEl(card.title, card.href));
+  if (card.text) e.append(textEl(card.text));
+  if (card.parked && card.parked.length) {
+    const list = el("ul", "parked");
+    list.append(...card.parked.map((path) => el("li", "", path)));
+    e.append(list);
+  }
+  return draggable(e, { kind: "roadmap", card });
+}
+
+// A piece of parked work: its title, a link to its heading where it is a link ticket's (href), and a
+// link to each of its files, paths[k] to hrefs[k].
+function parkedCard({ title, paths, hrefs, href }, info) {
+  const e = el("div", "card");
+  e.append(el("div", "group", "parked"), titleEl(title, href));
+  for (const [k, path] of paths.entries()) {
+    const a = linkEl(hrefs[k]);
+    a.textContent = path;
+    const meta = el("div", "meta");
+    meta.append(a);
+    e.append(meta);
+  }
+  return draggable(e, info);
+}
+
+// A ticket's text as markdown paragraphs: blank lines separate them, a paragraph's lines join with
+// one space.
+function textEl(text) {
+  const e = el("div", "text");
+  for (const block of text.split(/\n[ \t]*\n/)) {
+    const line = block.split("\n").map((l) => l.trim()).filter(Boolean).join(" ");
+    if (!line) continue;
+    const para = el("div", "para");
+    appendInline(para, line);
+    e.append(para);
+  }
+  return e;
+}
+
+// A design part. A category or a delta is a separator; a delta's entry is a flat card that does not
+// drag. A ticket's card: a link ticket looks like its parked work's parked card, any other is
+// titled over the ticket's text; either drags as the design card served.
+function designCard(card, column) {
+  if (isBand(card)) return separatorEl(card, column);
+  const info = { kind: "design", card };
+  if (card.parked !== null) {
+    return parkedCard({ title: card.title, paths: card.parked, hrefs: card.parked_hrefs, href: card.href }, info);
+  }
+  const e = el("div", card.kind === "entry" ? "card entry" : "card");
+  e.append(titleEl(card.title, card.href));
+  if (card.text) e.append(textEl(card.text));
+  return card.kind === "ticket" ? draggable(e, info) : e;
+}
+
+// A work package's card; not draggable, its state changing only by an edit to the plan.
+function packageCard(pkg) {
+  const e = el("div", "card");
+  e.append(titleEl(`${pkg.id} ${pkg.title || "untitled"}`, pkg.href));
+  const meta = [pkg.rating ?? "unrated"];
+  if (pkg.lifetime) meta.push(`Lifetime: ${pkg.lifetime}`);
+  e.append(el("div", "meta", meta.join(" · ")));
+  return e;
+}
+
+// ---- actions -----------------------------------------------------------------------------------
+
+// #move-message (role="status") carries the move message, #alert (role="alert") failures.
+const showMoveMessage = (text) => ($("move-message").textContent = text);
+const showAlert = (text) => ($("alert").textContent = text);
+
+// POST an action; its effect on the board arrives through the long poll. Resolves to the response
+// body, or to null where the action failed, the failure shown naming its cause. Only a 409 is a
+// refusal that wrote nothing; a 500 names any files the move had already written.
+async function act(path, body) {
+  showMoveMessage("");
+  showAlert("");
+  try {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const answer = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    if (response.ok) return answer;
+    const refused = response.status === 409 ? "Not moved: " : "";
+    const written = answer.written && answer.written.length ? ` (already written: ${listed(answer.written)})` : "";
+    showAlert(refused + answer.error + written);
+    log("warn", "action failed", { path, body, status: response.status, error: answer.error });
+  } catch (error) {
+    showAlert(String(error.message || error));
+    log("warn", "action failed", { path, body, error: String(error) });
+  }
+  return null;
+}
+
+// "a", "a and b", "a, b and c"
+const listed = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`);
+
+// ---- drag and drop -----------------------------------------------------------------------------
+
+// The only drops accepted: a roadmap or parked card on Design, a design ticket's card on Roadmap.
+// Elsewhere dragover is left uncancelled, so the browser refuses the drop and the card returns.
+function accepts(info, column) {
+  if (column === DESIGN) return info.kind === "roadmap" || info.kind === "parked";
+  return column === ROADMAP && info.kind === "design";
+}
+
+// The element under the pointer, a text node's parent for the text node.
+const targetElement = (event) => (event.target instanceof Element ? event.target : event.target.parentElement);
+
+// The column under the pointer.
+function dropColumn(event) {
+  const node = targetElement(event);
+  const section = node && node.closest(".column");
+  return section ? section.dataset.column : null;
+}
+
+// The Roadmap category separator nearest above the pointer, as served: the band dropped on, else
+// the last band whose top is above the card or gap dropped on; null where none is, or where the drop
+// lands on the column's head band, which stays in place while the cards scroll beneath it. The
+// ROADMAP_DESIGNS band is no category's and is passed over.
+function separatorAbove(event) {
+  const node = targetElement(event);
+  if (node && node.closest(".column-head")) return null;
+  let found = null;
+  for (const band of boardEl.querySelectorAll(`.column[data-column="${ROADMAP}"] .separator`)) {
+    if (band.getBoundingClientRect().top > event.clientY) break;
+    if (separatorCard.has(band)) found = separatorCard.get(band);
+  }
+  return found;
+}
+
+boardEl.addEventListener("dragstart", (event) => {
+  // A drag may start on an element inside the card, such as its title's link.
+  const card = targetElement(event)?.closest(".card");
+  const info = card ? dragInfo.get(card) : undefined;
+  if (!info) return;
+  if (stopped) {
+    event.preventDefault();
+    return;
+  }
+  dragging = info;
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData(DRAG_TYPE, info.card.id ?? info.card.title); // Firefox starts no drag without data
+});
+
+boardEl.addEventListener("dragend", () => {
+  dragging = null;
+  if (deferred) {
+    const payload = deferred;
+    deferred = null;
+    render(payload);
+  }
+});
+
+boardEl.addEventListener("dragover", (event) => {
+  const column = dropColumn(event);
+  if (!dragging || !column || !accepts(dragging, column)) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+});
+
+// A move between Roadmap and Design; the move message names the files it wrote, in write order.
+function moveTicket(path, body, destination) {
+  act(path, body).then((answer) => {
+    if (answer) showMoveMessage(`Moved "${body.card.title}" to ${destination}: wrote ${listed(answer.written)}.`);
+  });
+}
+
+boardEl.addEventListener("drop", (event) => {
+  const column = dropColumn(event);
+  if (!dragging || !column || !accepts(dragging, column)) return;
+  event.preventDefault();
+  const { card } = dragging;
+  if (column === DESIGN) {
+    moveTicket("/api/to-design", { card }, "Design");
+  } else {
+    // The ticket joins the category whose separator is nearest above the drop; with none, the first.
+    moveTicket("/api/to-roadmap", { card, target: separatorAbove(event) }, "Roadmap");
+  }
+});
+
+// Anything dragged in that is not a card, such as a file, is refused everywhere, so that the
+// browser's default drop does not replace the page with it.
+for (const type of ["dragover", "drop"]) {
+  document.addEventListener(type, (event) => {
+    if (dragging) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "none";
+  });
+}
+
+// ---- collapsed bands ---------------------------------------------------------------------------
+
+// A band's collapse, by a double click on its button or by Enter or Space while the button has focus:
+// the key is added or dropped and the columns are redrawn from the payload last drawn, which draws
+// no card under a collapsed band, so a card a poll adds under one stays hidden too. The two refusals
+// are `render`'s: there is no payload to redraw from, and a redraw mid-drag would cancel the drag.
+function toggleBand(band) {
+  if (!lastPayload || dragging) return;
+  const key = band.dataset.band;
+  if (collapsed.has(key)) collapsed.delete(key);
+  else collapsed.add(key);
+  renderColumns(lastPayload);
+  // The redraw replaced the band: the band drawn under that key takes focus, so Enter and Space
+  // toggle it again without re-tabbing.
+  const redrawn = [...boardEl.querySelectorAll("[data-band]")].find((e) => e.dataset.band === key);
+  redrawn?.focus();
+}
+
+// The band's button under the pointer or the event's target, if any.
+function bandOf(event) {
+  const node = targetElement(event);
+  return node && node.closest("[data-band]");
+}
+
+boardEl.addEventListener("dblclick", (event) => {
+  const band = bandOf(event);
+  if (band) toggleBand(band);
+});
+
+// Only a double click toggles, so the button's activation, a click, is no toggle: Enter and Space are
+// taken here, and their default on a button, a click, changes nothing.
+boardEl.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const band = bandOf(event);
+  if (band) toggleBand(band);
+});
+
+// ---- live following ----------------------------------------------------------------------------
+
+// Each answer carries a version; asking with it waits until the board changes. After a failure the
+// next ask carries no version, and the version drawn is forgotten, since a restarted server counts
+// versions from 1 again.
+// The nav's server block (`deco.js`) reads the server's state and ends it: a failure here only backs
+// off and asks again, and the indicator reads the server idle where it answers nothing.
+async function follow() {
+  let since = null;
+  let delay = 500;
+  let failures = 0;
+  while (true) {
+    let payload;
+    try {
+      const response = await fetch(since === null ? "/api/board" : `/api/board?since=${since}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      payload = await response.json();
+    } catch (error) {
+      if (failures === 0) log("warn", "board connection lost", { error: String(error) });
+      failures += 1;
+      since = null;
+      drawn = null;
+      await new Promise((resolve) => setTimeout(resolve, delay * (0.5 + Math.random())));
+      delay = Math.min(delay * 2, 8000);
+      continue;
+    }
+    since = payload.version;
+    delay = 500;
+    failures = 0;
+    stopped = false;
+    render(payload);
+  }
+}
+
+follow();
+})();

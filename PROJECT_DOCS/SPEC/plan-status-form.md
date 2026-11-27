@@ -1,6 +1,6 @@
-## Plan Status Form
+# Plan Status Form
 
-Both plugins' `development` skill gives plans one form for package headings, status and release,
+The `development` skill gives plans one form for package headings, status and release,
 gives a design one final form and the roadmap's tickets one form, and gives one place for the
 roadmap's tickets, for the plan and design under way and for those set aside, so that a tool
 reading plans, designs and the roadmap finds each in the same place and reads it the same way.
@@ -24,7 +24,7 @@ once no `ACTIVE_*` file or diced tree is at the root.
 Terms:
 
 - **plan** — a tracked document, or a tree of them where the plan was diced, written under the
-  plugins' `development` skill, that lays out work as work packages and records their progress.
+  `development` skill, that lays out work as work packages and records their progress.
 - **design** — a tracked document a plan is written from. It holds no work packages, sequencing or
   status.
 - **roadmap** — intended work not yet taken up, at whatever stage of refinement: a ticket in
@@ -37,7 +37,7 @@ Terms:
   `dispatchable`, `in progress` or `landed`.
 - **rating** — a work package's rating as its plan's status table records it: `mechanical`,
   `expert`, or unrated.
-- **plan size limit** — the length past which the plugins' `development` skill dices a plan before
+- **plan size limit** — the length past which the `development` skill dices a plan before
   it is approved.
 
 The form:
@@ -57,8 +57,9 @@ A plan states:
   state set ahead of its condition is as false a claim about the present as one set after it.
 - A rating cell opens with one of two words: `mechanical`, every edit enumerated, no design choice
   and no debugging; `expert`, anything else. Anything after the word is a note.
-- The post-plan review and the post-plan burndown are work packages, each with its own ID and row.
-  The review's title opens with `Post-plan review` and the burndown's with `Post-plan burndown`; the
+- The post-plan review is a work package whose title opens with `Post-plan review`. The burndown
+  section is a `## Post-plan burndown` section holding its drafting ticket, a work package whose
+  title opens with `Post-plan burndown` — a heading opening with its ID and then that title; the
   rest of each title is free. A plan has a post-plan review row only with a post-plan burndown row,
   and a burndown row only with a review row.
 - A plan carries `Release: <version>` as the first non-blank line after the plan's H1 heading once
@@ -83,10 +84,12 @@ A reader of plans:
 
 A design:
 
-- The design under way stays at `ACTIVE_DESIGN.md` from before its plan is written: it is removed
-  when that plan is done, and is set aside with its plan, or alone before a plan exists. The plan
-  cites the design's entries rather than restating them, a requirement found while the plan runs
-  is entered in the design, and the plan's post-plan review reads the design.
+- The design under way stays at `ACTIVE_DESIGN.md` from before its plan is written until that plan
+  is done, and is deleted in the commit that lands the plan, with its tree if it was diced. It is
+  set aside with its plan, or alone before a plan exists. It holds no pending state and marks no
+  entry to a stage. The plan cites the design's entries rather than restating them, a requirement
+  found while the plan runs is entered in the design, and the plan's post-plan review reads the
+  design.
 - Work a design has not yet written as entries is held under one `## Drafts` heading, as tickets
   in the roadmap's form.
 - A diced design is split at its `##` and `###` headings only, so each entry and each ticket is
@@ -97,10 +100,8 @@ A design:
 A design's final form:
 
 - It opens with a level-1 heading naming the change, then a statement of its intent before any
-  `##` heading, followed by this line, verbatim apart from where it wraps: "The preceding is a
-  summary of the detailed design below. Summaries are unavoidably lossy. The summary text is not
-  to be consistency checked. The design is authoritative." A diced design holds all three in its
-  `entry-point.md`.
+  `##` heading, then, as its own paragraph, the `development` skill's design summary line, verbatim
+  apart from where it wraps. A diced design holds all three in its `entry-point.md`.
 - Its only `##` headings are `## SPEC delta`, `## ARCHITECTURE delta` and `## Code delta`, spelled
   exactly so, in that order, each at most once, and at least one of them.
 - Under each, nothing before its first `###` entry; an entry runs to the next `#`, `##` or `###`

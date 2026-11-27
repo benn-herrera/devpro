@@ -20,14 +20,12 @@ Paths name definition modules relative to the repository root. With none, every 
 over is read, in sorted path order.
 """
 
-from __future__ import annotations
-
 import ast
 import importlib
 import sys
 from collections.abc import Iterator
 from pathlib import Path
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from devpro import clauses
 from devpro.definitions import is_private
@@ -43,11 +41,14 @@ class Clause(NamedTuple):
     name: str
 
 
-def _evaluated(expr: ast.expr, *, namespace: dict, filename: str) -> str:
-    return eval(compile(ast.Expression(expr), filename, "eval"), namespace)
+def _evaluated(expr: ast.expr, *, namespace: dict[str, Any], filename: str) -> str:
+    """An interpolation's value, evaluated against the module's namespace: a clause function's
+    return is text by contract, which the annotation states rather than proves."""
+    text: str = eval(compile(ast.Expression(expr), filename, "eval"), namespace)
+    return text
 
 
-def _module_argument_texts(expr: ast.expr, *, namespace: dict, filename: str) -> list[str]:
+def _module_argument_texts(expr: ast.expr, *, namespace: dict[str, Any], filename: str) -> list[str]:
     """The text of each module constant `expr` passes to a function."""
     return [
         _evaluated(arg, namespace=namespace, filename=filename)
@@ -69,21 +70,29 @@ def _names_a_value_constant(expr: ast.expr) -> bool:
     )
 
 
-def composed_bodies(source: str, *, namespace: dict, filename: str) -> Iterator[tuple[str, list[Clause | None]]]:
+def composed_bodies(
+    source: str, *, namespace: dict[str, Any], filename: str
+) -> Iterator[tuple[str, list[Clause | None]]]:
     """Each `body=` f-string in `source`, composed against `namespace`, with the clause each character
     came from, or None for the module's own text."""
     for node in ast.walk(ast.parse(source)):
         if not (isinstance(node, ast.keyword) and node.arg == "body" and isinstance(node.value, ast.JoinedStr)):
             continue
-        text, mask = "", []
+        text: str = ""
+        mask: list[Clause | None] = []
         for part in node.value.values:
             if isinstance(part, ast.Constant):
+                if not isinstance(part.value, str):
+                    continue
                 text += part.value
                 mask += [None] * len(part.value)
+                continue
+            if not isinstance(part, ast.FormattedValue):
                 continue
             expr = part.value
             piece = _evaluated(expr, namespace=namespace, filename=filename)
             names = {name.id for name in ast.walk(expr) if isinstance(name, ast.Name)}
+            piece_mask: list[Clause | None]
             if "clauses" not in names or PLACEHOLDER.fullmatch(piece) or _names_a_value_constant(expr):
                 piece_mask = [None] * len(piece)
             else:
@@ -101,7 +110,7 @@ def composed_bodies(source: str, *, namespace: dict, filename: str) -> Iterator[
 def units(text: str) -> list[list[int]]:
     """The `[start, end)` span of each paragraph and list item of `text`, a list item's marker excluded."""
     spans: list[list[int]] = []
-    current = None
+    current: list[int] | None = None
     pos = 0
     lines = text.split("\n")
     for line, kind in zip(lines, line_kinds([line.encode() for line in lines])):
@@ -110,7 +119,8 @@ def units(text: str) -> list[list[int]]:
         if kind in ("fence", "exact", "blank"):
             current = None
         elif kind == "item" or current is None:
-            marker = LIST_ITEM.match(line.encode()).end() if kind == "item" else 0
+            match = LIST_ITEM.match(line.encode())
+            marker = match.end() if kind == "item" and match else 0
             current = [start + marker, start + len(line)]
             spans.append(current)
         else:
@@ -118,14 +128,14 @@ def units(text: str) -> list[list[int]]:
     return spans
 
 
-def join_sites(source: str, *, namespace: dict, path: str) -> list[str]:
+def join_sites(source: str, *, namespace: dict[str, Any], path: str) -> list[str]:
     """One `<path>:<line>: <clause> + …` line per unit of a body in `source` that joins a clause to
     the module's own text."""
     sites = []
     for text, mask in composed_bodies(source, namespace=namespace, filename=path):
         for start, end in units(text):
-            clauses = sorted({mask[i] for i in range(start, end) if mask[i]})
-            own = "".join(text[i] for i in range(start, end) if not mask[i])
+            clauses = sorted({clause for clause in mask[start:end] if clause is not None})
+            own = "".join(text[i] for i in range(start, end) if mask[i] is None)
             if clauses and own.strip():
                 sites.append(f"{path}:{clauses[0].lineno}: {' + '.join(clause.name for clause in clauses)}")
     return sites

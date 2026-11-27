@@ -1,4 +1,4 @@
-## Rendering
+# Rendering
 
 A definition is its rendered text with placeholders. A module under `devpro/definitions/` reads
 top to bottom as the file it renders and defines `DEFINITIONS`, a tuple of `Definition` records

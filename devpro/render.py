@@ -1,9 +1,7 @@
-"""The renderer: every definition a render's plugin ships to its file text, its banner, the
+"""The renderer: every definition a render ships to its file text, its banner, the
 files a harness renders beside them, and the writer. Holds no prose, knows no
 individual definition, fills a body's placeholders in one pass and never rescans
 what it filled, and writes the rendered definitions and harness files."""
-
-from __future__ import annotations
 
 import dataclasses
 import functools
@@ -13,13 +11,15 @@ from pathlib import Path, PurePosixPath
 from typing import cast
 
 from devpro import __version__
+from devpro.components import Components
 from devpro.context import DEFAULT_FAMILY, Render, map_spec
 from devpro.definition import Definition, SkillFile
 from devpro.definitions import discover
 from devpro.errors import InputError
+from devpro.family import Family
 from devpro.harness import AgentFields, FrontmatterForm, Harness, HarnessFile, ShippedDefinition, quoted
+from devpro.install_base import GENERATED_MARK
 from devpro.loading import load
-from devpro.plugin import Plugin
 from devpro.vocabulary import (
     ALL,
     AgentsFileText,
@@ -29,16 +29,14 @@ from devpro.vocabulary import (
     Kind,
     OptionalHarnessText,
     PluginText,
+    Tools,
     TuningText,
     hole,
     optional_reference,
     reference,
 )
 
-GENERATED_MARK = "!GENERATED! from "
-GENERATED_NOTICE = (
-    "do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md."
-)
+GENERATED_NOTICE = "do not edit here: request changes to devpro."
 PLACEHOLDER = re.compile(r"@![a-z0-9.-]+!@")
 
 
@@ -60,8 +58,8 @@ def keyed_by_path(
 
 def definitions() -> tuple[tuple[str, Definition], ...]:
     """Every discovered definition but the agents file, which has no output path, as keyed_by_path gives
-    it. The duplicate check runs over all of them, so a collision a definition outside a render's plugin
-    takes part in is refused by every render rather than only by one that ships it."""
+    it. The duplicate check runs over all of them, so a collision a definition outside a render's shipped
+    set takes part in is refused by every render rather than only by one that ships it."""
     return keyed_by_path(
         (module, tuple(defn for defn in entries if defn.kind is not Kind.AGENTS_FILE)) for module, entries in discover()
     )
@@ -72,12 +70,14 @@ def agent_fields(defn: Definition, ctx: Render) -> AgentFields:
     ctx.model(defn.category); tools to spellings (None for ALL); governed as the de-duplicated image of
     ctx.harness.tools in table order."""
     table = ctx.harness.tools
+    # An agent's `tools` and `category` are non-None by `Definition.__post_init__`'s refusal.
+    tools = cast(Tools, defn.tools)
     return AgentFields(
         name=defn.name,
         description=filled_description(defn, ctx),
-        model=ctx.model(defn.category),
+        model=ctx.model(cast(Category, defn.category)),
         color=defn.color,
-        tools=None if defn.tools is ALL else tuple(spelling for tool in defn.tools for spelling in table[tool]),
+        tools=None if tools is ALL else tuple(spelling for tool in tools for spelling in table[tool]),
         governed=tuple(dict.fromkeys(spelling for spellings in table.values() for spelling in spellings)),
     )
 
@@ -159,7 +159,7 @@ def _references(prefix: str, shipped: frozenset[str]) -> dict[str, str]:
 
 def filled_text(body: str, defn: Definition, ctx: Render, *, where: str) -> str:
     """`body` with every placeholder filled in one pass: a harness text from ctx.bound_harness, the
-    plugin's name from ctx.plugin, an anchor from ctx.overlay for the definition's category ("" where the
+    plugin's name from ctx.plugin and its project install's wrapper from ctx.bound_harness, an anchor from ctx.overlay for the definition's category ("" where the
     family fills none), the step-down model from the render seated at the definition's category for every
     kind, a reference to a definition
     the render ships as ctx.bound_harness.reference_prefix and its name, and for the agents file alone its
@@ -174,6 +174,7 @@ def filled_text(body: str, defn: Definition, ctx: Render, *, where: str) -> str:
     values.update({hole(anchor): seated.overlay(anchor) for anchor in Anchor})
     values[hole(TuningText.STEP_DOWN_MODEL)] = seated.step_down_model
     values[hole(PluginText.NAME)] = ctx.plugin.name
+    values[hole(PluginText.PROJECT_WRAPPER)] = ctx.bound_harness.project_wrapper
     references = _references(ctx.bound_harness.reference_prefix, shipped)
     values.update(references)
     if defn.kind is Kind.AGENTS_FILE:
@@ -229,8 +230,8 @@ def render_skill_file(defn: Definition, file: SkillFile, ctx: Render, *, module:
 
 
 def rendered_definitions(ctx: Render) -> tuple[tuple[str, Definition], ...]:
-    """The definitions `render_all` renders, as `definitions` gives them: those `ctx.plugin` ships: its
-    plugin's members."""
+    """The definitions `render_all` renders, as `definitions` gives them: those `ctx.plugin` ships, the
+    selection's members and every definition no component names."""
     return tuple(entry for entry in definitions() if ctx.plugin.ships(entry[1].name))
 
 
@@ -283,12 +284,13 @@ def render_all(ctx: Render) -> tuple[tuple[PurePosixPath, str], ...]:
     return tuple(sorted(rendered))
 
 
-def render_agents_file(harness: Harness, plugin: Plugin, *, scope: str) -> str:
-    """The harness agents file as a fresh file holds it for `plugin`: the agents-file definition's body
-    filled for `harness` bound to `plugin` and for `scope`, under the default family's own categories,
-    whatever the invocation's tuning and with no harness model-shape check, then one final newline."""
+def render_agents_file(harness: Harness, plugin: Components, *, scope: str) -> str:
+    """The harness agents file as a fresh file holds it for the selection `plugin`: the agents-file
+    definition's body filled for `harness` bound to the selection's name and for `scope`, under the
+    default family's own categories, whatever the invocation's tuning and with no harness model-shape
+    check, then one final newline."""
     [defn] = [defn for _, entries in discover() for defn in entries if defn.kind is Kind.AGENTS_FILE]
-    family = load("devpro.families", "FAMILY")[DEFAULT_FAMILY]
+    family = cast(dict[str, Family], load("devpro.families", "FAMILY"))[DEFAULT_FAMILY]
     ctx = Render(harness=harness, plugin=plugin, family=family, category_map=dict(family.categories), scope=scope)
     return filled_body(defn, ctx) + "\n"
 
@@ -299,15 +301,16 @@ def write_text_verbatim(path: Path, text: str) -> None:
         stream.write(text)
 
 
-def appended_paragraph(text: str, paragraph: str) -> str:
-    """`text` unchanged, then `paragraph` after one blank line, ending with a newline."""
+def appended_paragraph(text: str, paragraph: str, *, ending: str = "\n") -> str:
+    """`text` unchanged, then `paragraph` after one blank line, ending with `ending`: the caller passes
+    the line ending the text carries, and every line this adds takes it too."""
     if not text:
-        return f"{paragraph}\n"
-    if text.endswith("\n\n"):
-        return f"{text}{paragraph}\n"
-    if text.endswith("\n"):
-        return f"{text}\n{paragraph}\n"
-    return f"{text}\n\n{paragraph}\n"
+        return f"{paragraph}{ending}"
+    if text.endswith(f"{ending}{ending}"):
+        return f"{text}{paragraph}{ending}"
+    if text.endswith(ending):
+        return f"{text}{ending}{paragraph}{ending}"
+    return f"{text}{ending}{ending}{paragraph}{ending}"
 
 
 def write_renders(out: Path, renders: Iterable[tuple[PurePosixPath, str]]) -> list[Path]:

@@ -1,7 +1,7 @@
 # KB maintenance targets. This file is installed at
 # <harness-relpath>/skills/kbase/kb-tools/runner-snippets/ — <harness-relpath>
-# being the kbase plugin's install directory relative to the project root:
-# .claude/skills/kbase under claude, .opencode/plugins/kbase under opencode — and is
+# being the install directory relative to the project root:
+# .claude/skills/devpro under claude, .opencode/plugins/devpro under opencode — and is
 # included from the consuming project's Makefile by one installed line (never
 # copied into it):
 #
@@ -10,10 +10,9 @@
 # A consumer running just instead gets the `import?` line pointing at
 # `<harness-relpath>/skills/kbase/kb-tools/runner-snippets/kb.just` (just >= 1.33).
 #
-# The line is written by `devpro install . --plugin=kbase`, run from the consumer root — not
-# by anything in this tree. The non-fatal `-include` form is deliberate: if
-# the installed tree is absent — not yet installed, or removed — the
-# consumer's Makefile keeps working and only these KB targets go missing.
+# The non-fatal `-include` form is deliberate: if the installed tree is
+# absent — not yet installed, or removed — the consumer's Makefile keeps
+# working and only these KB targets go missing.
 #
 # Assumed consumer layout: the repo root (where make runs) contains kb-root/.
 # kbase finds the KB from the working directory, so these targets run from

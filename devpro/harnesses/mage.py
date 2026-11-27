@@ -1,8 +1,6 @@
 """The mage harness: the shared frontmatter emitter and recipe rule from `devpro.harness`, the rest of
 claude's vocabulary copied, and the plugin manifest."""
 
-from __future__ import annotations
-
 import re
 
 from devpro import clauses
@@ -31,8 +29,8 @@ HARNESS = Harness(
     name="mage",
     # no redirect to AGENTS.md, used directly. file installed with agent set, not separately.
     agents_file="CLAUDE.md",
-    # the plugin directory under the install target
-    project_harness_dir="{plugin}",
+    # the install directory under the target: the one name every install takes
+    project_harness_dir="devpro",
     display_name="mage",
     # the harness's own directory: CLAUDE.md sits beside .mcp.json, at the plugin's root
     user_harness_dir=".",
@@ -40,10 +38,7 @@ HARNESS = Harness(
     # mage namespaces a plugin's agents, commands and skills as Claude Code does
     reference_prefix="{plugin}:",
     mcp_tool_prefix="mcp_kbase_",
-    scratch_rule=(
-        f"All scratch —\nthrowaway builds, probe harnesses, captured output — goes in `{clauses.PROJECT_TEMP_DIR}/` under the\n"
-        "active project root. If it doesn't exist, stop and say so; don't improvise a location."
-    ),
+    scratch_rule=clauses.SCRATCH_PARAGRAPH,
     memory_file="the mage plugin's `CLAUDE.md` (outside its marker lines)",
     recipe_rule=FOREGROUND_RECIPE_RULE,
     kbase_project_rule=_KBASE_PROJECT_RULE,

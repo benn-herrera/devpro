@@ -9,7 +9,7 @@ description = "Devpro renders agent, command and skill definitions to order, for
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = []
 
 [project.scripts]
@@ -18,11 +18,56 @@ devpro = "devpro.cli:main"
 [project.urls]
 Repository = "https://github.com/benn-herrera/devpro"
 
+# The dev toolchain `.venv` runs (PEP 735): a dependency group is development-only and never
+# distribution metadata, so no wheel of this package carries or installs it. The line convention and
+# the group's record are stated in `PROJECT_DOCS/ARCHITECTURE/packaging.md`.
+[dependency-groups]
+dev = [
+    "pytest~=9.2",
+    "isort~=9.0",
+    "black~=26.10",
+    "flake8~=7.5",
+    "mypy~=2.4.1",
+    "setuptools~=84.2",
+    "build~=1.6",
+]
+
 [tool.setuptools.packages.find]
 include = ["devpro", "devpro.*"]
 
 [tool.setuptools.package-data]
-devpro = ["kb-tools/**/*", "harnesses/resources/**/*", "docdicer-tools/**/*", "docdicer-tools/**/.*", "development-tools/**/*"]
+devpro = [
+    "kb-tools/**/*",
+    "runner-snippets/**/*",
+    "harnesses/resources/**/*",
+    "development-tools/**/*",
+    "kanban/assets/**/*",
+    "profiler/view.html",
+    "profiler/deco.js",
+]
 
 [tool.setuptools.dynamic]
 version = { attr = "devpro.__version__" }
+
+# Strict mypy over what ships and the repository's own dev tool, the paths `just lint` passes.
+# `tests/` stays outside them: a test tree's signal has not proved worth the quieting its fixture
+# indirection asks. See `PROJECT_DOCS/ARCHITECTURE/recipes.md`.
+[tool.mypy]
+strict = true
+python_version = "3.11"
+# Keep mypy's cache out of the project root: it writes under the scratch directory instead, so a lint
+# run leaves no `.mypy_cache` beside the source.
+cache_dir = ".devpro-temp/.mypy_cache"
+
+[tool.pytest.ini_options]
+# Keep pytest's cache out of the project root: it writes under the scratch directory instead, so a
+# test run leaves no `.pytest_cache` beside the source. See `PROJECT_DOCS/CONVENTIONS/` — "Scratch
+# for tests and recipes".
+cache_dir = ".devpro-temp/.pytest_cache"
+# `-ra` lists every skip, xfail and xpass in the run's short summary with its reason — the witness
+# the interrupt rule's `isolate` verdict names: a quarantine that reports, not one that vanishes.
+addopts = ["-ra"]
+markers = [
+    "cold_read: the shipped cold-read.sh suite, one test per subprocess case — a rare manual surface (`just test cold-read`), excluded from the default run",
+    "slow: a test that earns its cost but not its place in the default run — the screenshot suite today (`just test slow`), excluded from the default run",
+]

@@ -55,6 +55,7 @@ rule governs.
 | planning or running a release | `references/release.md` |
 | writing, revising or reviewing the project documents | `references/project-documents.md` |
 | writing or applying a design's deltas | `references/design.md` |
+| a drive the user names at need — a survey, an observation, a reorganization — or the question of what drives exist | `references/intermittent-drives.md` |
 
 A reference is read only when its row is reached; the rest of this file applies in every case.
 
@@ -66,14 +67,14 @@ The rules use these terms.
 
 | Term | Fixed as | What it is |
 | --- | --- | --- |
-| {ACTIVE_DESIGN_TERM} | `ACTIVE_DESIGN.md` at the repository root | the one design under way, which feeds a plan |
-| {ACTIVE_PLAN_TERM} | `ACTIVE_PLAN.md` at the repository root | the one plan under way |
+| {ACTIVE_DESIGN_TERM} | `ACTIVE_DESIGN.md` at the repository root, else the `ACTIVE_DESIGN/` tree there, read from its `entry-point.md` | the one design under way, which feeds a plan |
+| {ACTIVE_PLAN_TERM} | `ACTIVE_PLAN.md` at the repository root, or the `ACTIVE_PLAN/` tree there, read from its `entry-point.md` | the one plan under way |
 | {PARKED_DESIGNS_TERM} | `ROADMAP_DESIGNS/` at the repository root | where work set aside waits |
 | {ROADMAP_TERM} | `ROADMAP.md` at the repository root for its tickets, and the {PARKED_DESIGNS_TERM} for work set aside | intended work not yet taken up, at whatever stage of refinement |
 | {SCRATCH_TERM} | `{clauses.PROJECT_TEMP_DIR}/` at the repository root | untracked working files |
 | {REFERENCE_SEARCH_TERM} | `git grep -l '<name>'` | lists every file that references a name |
 | {POST_PLAN_REVIEWERS_TERM} | the agent for each domain the plan changed substantively — a change where a defect would pass unseen without that seat: the coder for each changed language, `{clauses.ref(name="architect")}` where structure, or the project documents' claims about the code, changed, `{clauses.ref(name="tech-writer")}` where READMEs or human-facing guides changed, `{clauses.ref(name="prompt-engineer")}` where model-facing text, the project documents or ROADMAP.md changed | the agents that review a finished plan |
-| {REVIEW_DOCUMENT_TERM} | `ACTIVE_PLAN_REVIEW.md` at the repository root | the post-plan review's findings, which the post-plan burndown is drafted from |
+| {REVIEW_DOCUMENT_TERM} | `ACTIVE_PLAN_REVIEW.md` at the repository root | the post-plan review's findings, which the burndown items are drafted from |
 
 **Bindable terms.** A project binds one with a line `<term>: <value>` in CONVENTIONS.md, and a
 binding replaces the default. A term marked — has no default.
@@ -147,8 +148,13 @@ bindable term that has no default and is unbound, ask the user for it then, thro
   under `{SPEC_DELTA_TERM}` or `{ARCHITECTURE_DELTA_TERM}` applies it to its target verbatim except
   its relative links: those are written relative to the file the entry is in, and each move rebases
   them where the destination is in another directory. The project's link check, where it has one,
-  confirms them. *Purpose:* the text the user accepted reaches the contract documents as accepted,
-  its links still resolving.
+  confirms them. The design's delta application is verified by the dicing verb
+  `check-design --deltas-applied`, which confirms each pair's `becomes` block occurs in
+  its target with each run of whitespace read as one space, and the from-text is gone where the
+  becomes-text does not contain it; the application is done when that run reports every pair landed.
+  An entry that states a whole leaf or a removal has no pair for it to confirm.
+  *Purpose:* the text the user accepted reaches the contract documents as accepted, its links still
+  resolving.
 - The {ACTIVE_DESIGN_TERM} stays from before its plan is written until that plan is done, and is
   deleted, with its tree if it was diced, in the commit that lands the plan. A requirement or
   structural decision found while the plan runs is entered in the design, as an entry under its
@@ -161,6 +167,11 @@ bindable term that has no default and is unbound, ask the user for it then, thro
 
 ## Plans
 
+- The plan's first draft is the {clauses.ref(name="architect")} definition's to write: the session
+  dispatches it — from the accepted design where one precedes the plan, from the findings where
+  none does — and writes no draft of its own. *Purpose:* the plan is written by the seat that also
+  reviews and revises it, so one discipline owns the artifact, and what the session approves is
+  that discipline's output.
 - Plans and designs are tracked files; notes not yet shaped into either are scratch, in the
   {SCRATCH_TERM}. *Purpose:* a plan or design survives in version control, and unshaped
   notes are not mistaken for either.
@@ -201,9 +212,19 @@ bindable term that has no default and is unbound, ask the user for it then, thro
   diced at its `##` and `###` headings only, so each entry and each ticket is one file. Once approved,
   a plan is diced only when the user asks. *Purpose:* each executor reads whole the part it acts on.
 
+- A diced design keeps no monolith beside its tree: the dice's passing exit — the leaves reassembling
+  the monolith, every link resolving — retires the monolith, and the tree is the design's one source
+  from then on. Edit a diced design leaf by leaf, or undice it to one working monolith, edit that and
+  re-dice the tree from it, leaving no monolith behind. *Purpose:* two copies diverge, and each
+  reader takes a different text as the design.
+
 - An approved plan runs to completion: blockers that need the user surface during planning.
   *Purpose:* the user approves once and is not called back mid-run for a question planning could
   have asked.
+
+- Offering a plan for approval sets, in that same turn, every package that meets *Dispatchability*
+  to `dispatchable`; no `go` is needed for it. *Purpose:* a plan offered with rows still `drafted`
+  overstates what is unready.
 
 - Each section of a plan or design gets one `{clauses.ref(name="prompt-engineer")}` review and one
   revision; a revision applying that review's findings is not re-reviewed. A later change — a
@@ -229,14 +250,17 @@ plan the same way.
   after the word is a note (`landed: inventory 49`). `drafted`: not yet ready to hand to an agent as it
   stands. `dispatchable`: the package meets every condition in
   *Dispatchability* now — set in the turn the last condition holds, never at authoring time, however
-  settled the package's text looks. `in progress`: dispatched and not landed. `landed`: accepted and
+  settled the package's text looks. Run order neither makes a package dispatchable nor withholds the
+  state, and a waiting package carries no note for the wait — the wait is a fact of run order, not a
+  condition that makes the row what it is. `in progress`: dispatched and not landed. `landed`: accepted and
   committed.
 - Each package's `Rating` cell opens with `mechanical` or `expert`, rated as *Dispatch* rates its
-  dispatch; anything after the word is a note. *Purpose:* whoever reads the table sees which work runs on the
+  dispatch; anything after the word is a note, and names no model (*Dispatch*). *Purpose:* whoever reads the table sees which work runs on the
   {STEP_DOWN_MODEL_TERM}.
-- The post-plan review and the post-plan burndown (*Post-plan review*) are packages, each with its
-  own ID and row; the review's title opens with `Post-plan review`, the burndown's with
-  `Post-plan burndown`.
+- The post-plan review is a package whose title opens with `Post-plan review`; the burndown
+  section is a `## Post-plan burndown` section holding its drafting ticket, whose title
+  opens with `Post-plan burndown`. That section heading is not a package title: a package
+  titled only with its ID breaches the pairing (*Post-plan review*).
 - The table states each package's place at every moment, not only at a commit
   boundary; a commit whose tree includes a package's work includes that
   package's row, and work committed without its row is corrected in the commit
@@ -249,7 +273,10 @@ plan the same way.
   then reads as one that landed nothing.
 
 After each edit to a plan, run `check-plan` on it (on its `entry-point.md` where it is diced; the
-`{clauses.optional_ref(name="docdicer")}` skill) and fix what it reports.
+`{clauses.optional_ref(name="docdicer")}` skill) and fix what it reports. A change to a plan-form
+rule is verified only by a `check-plan` run over a plan holding the new form.
+*Purpose:* a delta check reads source text and nothing else, so no other target catches
+plan-form drift.
 
 ## Roadmap tickets
 
@@ -285,9 +312,10 @@ A work package is dispatchable only when:
   definitions carry. *Purpose:* an order for a test with no named defect is refused before
   a dispatch exists;
 - its done-line names, from the project's runner targets, those that check what the package changes
-  (a package that changes only documents names only document checks, such as a link check), run
-  once, at the package's end; the package is done when that run passes, or fails only where the plan
-  names the breakage the package leaves and the later package or `ROADMAP.md` item that resolves it.
+  (a package that changes only documents names only document checks, such as a link check or a delta
+  check), run once, at the package's end; the package is done when that run passes, or fails only
+  where the plan names the breakage the package leaves and the later package or `ROADMAP.md` item
+  that resolves it.
   *Purpose:* done is a run anyone can repeat, not a judgment, and no package hands on a breakage the
   plan does not account for;
 - a before/after measurement done-line carries a passing run on the base commit, taken during
@@ -306,11 +334,16 @@ approved can run as approved.
 
 ## Dispatch
 
+{clauses.AGENTS_PATH}
+
 - Rate each dispatch mechanical or expert by what it must decide, not how much it types: mechanical
   is every edit enumerated, no design choice, no debugging; anything else is expert. Mechanical
   runs on the {STEP_DOWN_MODEL_TERM}, through the {STEP_DOWN_APPLICATION_TERM} where a dispatch cannot choose
   its model; expert runs on the agent's own model. *Purpose:* settled work costs less, and judgment
   keeps the model it needs.
+- A plan states a package's rating, never its model: the {STEP_DOWN_MODEL_TERM} is resolved when the
+  dispatch is made, as *Terms* states, not written into the plan. *Purpose:* a model recorded in a
+  plan is a pin the plan cannot keep current.
 - Before dispatching, state the agent count and model. More than one agent at once on the most
   capable model the installed agents name waits for a go that names the count. *Purpose:* a
   fan-out's cost shows only once it is spent.
@@ -337,6 +370,11 @@ approved can run as approved.
   writing the code cannot comply with limits it was never given.
 - Packages that share a build run serially in the shared tree. *Purpose:* one package's half-done
   edit does not fail another's build.
+- When dispatches are concurrent, a package stages and commits only its own paths
+  (`git commit -- <paths>`), never the shared index whole; where the index holds a path another
+  package staged, that path is unstaged before the commit, or the commit waits. *Purpose:* disjoint
+  edits stay disjoint when two agents share a working tree — a commit that reads the whole index
+  either carries another package's work or leaves it behind.
 
 ## Acceptance
 
@@ -380,12 +418,29 @@ approved can run as approved.
   harness instruction says. Write it on every pull request; removing it at submission is the user's
   choice. *Purpose:* the submitter takes full responsibility for the change, so the line names the
   harness and no model.
+- A commit that removes text speaking for the owner without the owner's own words names what it
+  removed in its body, so the record states the gap and not only the correction. *Purpose:* an
+  unauthorized claim's provenance is the evidence a later reader needs to trust the removal.
 
 ## Post-plan review
 
-- Every plan holding a shipped package ends with two packages: the post-plan review, then the
-  post-plan burndown. *Purpose:* review and its fixes are planned work, not a step dropped when the
-  plan lands.
+- Every plan holding a shipped package ends with the post-plan review package, then the
+  burndown section and its drafting ticket. *Purpose:* review and its fixes are planned
+  work, not a step dropped when the plan lands.
+- The drafting ticket's work: draft the section's items from the {REVIEW_DOCUMENT_TERM}
+  — work packages under the section, one per root-cause group, each with its own ID,
+  status-table row, rating and one-commit close — run one
+  `{clauses.ref(name="prompt-engineer")}` usability review over the drafted items
+  together, apply the revision, and set each item's row by its state. Drafting the items
+  edits the plan, so the session is the worker; the ticket's row still moves through the
+  states.
+  *Purpose:* the burndown items' real dispatches are visible on the board, each with its own
+  rating.
+- The items move through the states individually, and the plan lands once the last item's
+  row is `landed`; the drafting ticket stays `landed` throughout. Where the review finds
+  nothing needing a fix, the drafting ticket lands having drafted no items, and the plan
+  ends — a normal landing. *Purpose:* the count of burndown items per plan is recorded
+  data the process's tuning reads.
 - The {POST_PLAN_REVIEWERS_TERM} are given the project documents and the design, where there is
   one, not the plan, and review the changes and their tests against the project's standards and
   fitness for purpose. *Purpose:* they judge what shipped, not how well it matches the plan's
@@ -395,15 +450,14 @@ approved can run as approved.
   reconciling them into one account, without waiting for an approval between the last report and
   the write-up. The {REVIEW_DOCUMENT_TERM} is never diced. The review's row is
   `landed` in the commit that adds the {REVIEW_DOCUMENT_TERM}. *Purpose:* the
-  burndown is drafted from one record of what was found.
-- Until the review lands, the burndown's section holds only: "Drafted from `ACTIVE_PLAN_REVIEW.md`
-  once the post-plan review lands." Then you draft the burndown's work list from the
-  {REVIEW_DOCUMENT_TERM}; it replaces that text where the section is, in the plan or in its leaf.
-- The burndown gets `{clauses.ref(name="prompt-engineer")}` usability review, then your revision, before it is
-  `dispatchable`. *Purpose:* the agents that execute from it can act on each item without inventing
-  what it leaves open.
+  burndown items are drafted from one record of what was found.
+- Until the review lands, the drafting ticket's body holds only: "Drafted from
+  `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands." The drafted items
+  are packages under the section, each with its own heading and row; that
+  placeholder body is removed, and the section's opening carries a sentence
+  naming the {REVIEW_DOCUMENT_TERM} it was drafted from.
 - The {REVIEW_DOCUMENT_TERM} is deleted in the commit that lands the plan, not before. *Purpose:*
-  the burndown cites it until it lands, and a review left in place after reads as findings still
+  the burndown items cite it until it lands, and a review left in place after reads as findings still
   open.
 - The review of a release's hardening plan (`references/release.md`), and any review the user asks
   to include one, includes a user-flow audit, in the {REVIEW_DOCUMENT_TERM}: of the project's user-facing commands and flows, for
@@ -415,12 +469,18 @@ approved can run as approved.
 
 - Once the {PERIODIC_REVIEW_INTERVAL_TERM}'s count of plans has landed since the last periodic
   review, the next plan is a periodic review, before any other plan is made active. It looks past
-  single changes, at what has accumulated across them. *Purpose:* drift that no single change
-  caused accumulates whether or not anyone looks, and is found on a count the process keeps, not
-  when someone remembers.
-- The count is read from the history: a plan's landing commit says it lands a plan, and a periodic
-  review's landing commit says it lands a periodic review. *Purpose:* the count needs no file of its
-  own to keep current.
+  single changes, at what has accumulated across them. The review also waits for a coherent
+  feature boundary: where a project carries incomplete work split across plans, the interval's
+  being met is not enough — the boundary is, and the review waits for it. *Purpose:* drift that
+  no single change caused accumulates whether or not anyone looks, and is found on a count the
+  process keeps, not when someone remembers; and the review's product is high-level signal about
+  the whole project, which a project mid-flight buries under undone work that is not signal.
+- The {PERIODIC_REVIEW_INTERVAL_TERM}'s count is what the runner target `just plan-count` prints:
+  the commits landed since the last periodic review, read from the landing commits' subjects — a
+  plan's says it lands a plan, a periodic review's that it lands a periodic review. The periodic
+  review's own landing commit writes its full hash to the base the target counts from, alongside the
+  subject that claims the landing. *Purpose:* the count needs no file of its own to keep current,
+  and is a machine's answer rather than a number remembered.
 - Its members, each skipped when its subject has had no substantive change since it last ran: the
   full review of the project documents (`references/project-documents.md`, *Full review*). Each
   member judges only what changed since it last ran, and reopens nothing settled. *Purpose:* the
@@ -429,15 +489,21 @@ approved can run as approved.
   directs — has no design: it delivers findings, not a contract delta, so it goes straight to a plan,
   and the plan is what the user approves. *Purpose:* a design written before the review runs would
   state findings it has not produced.
+- The review runs like the burndown section, wider in panel and aperture: its tracking plan opens
+  as the panel is dispatched, carrying a ticket per seat beside a ticket for drafting the review's
+  plan from the findings; that drafting is the {clauses.ref(name="architect")} definition's to
+  write, not the session's, and the drafted items take the
+  `{clauses.ref(name="prompt-engineer")}` usability review and the revision any plan's packages
+  take to become dispatchable. *Purpose:* the review's running state is on the board as any plan's
+  is, and its plan is drafted from findings, never before them.
 - The full review is staffed by a default panel of eight, two seats for each of
   `{clauses.ref(name="architect")}`, `{clauses.ref(name="prompt-engineer")}`,
   `{clauses.ref(name="tech-writer")}` and the project's coder agent
-  (`{clauses.ref(name="tech-writer")}` for a project with no code): a conformance seat, which judges
-  with that agent's own review criteria and reports a departure from THESIS.md, SPEC.md,
-  ARCHITECTURE.md or CONVENTIONS.md those criteria surface; and a consistency seat, which asks
-  whether the texts assert one thing and whether the code does what ARCHITECTURE.md says, and reports
-  each inconsistency it finds. *Purpose:* one seat given both questions answers the first and skims
-  the second, so the split is what buys the second question.
+  (`{clauses.ref(name="tech-writer")}` for a project with no code). Each kind's conformance seat
+  judges to that agent's own review criteria and owns no consistency pair, reporting the departures
+  from THESIS.md, SPEC.md, ARCHITECTURE.md or CONVENTIONS.md those criteria surface, and its
+  consistency seat is the one the pairs below assign. *Purpose:* one seat given both questions
+  answers the first and skims the second, so the split is what buys the second question.
 - Each consistency seat owns its pairs and reads both sides whole:
   - `{clauses.ref(name="prompt-engineer")}`: THESIS.md against SPEC.md;
   - `{clauses.ref(name="architect")}`: SPEC.md against ARCHITECTURE.md;
@@ -448,12 +514,13 @@ approved can run as approved.
 
   *Purpose:* one owner per pair keeps a single defect from being reported by three seats, and a text
   read in part hides contradictions a whole read shows.
-- Its members' findings are its post-plan review, written to the {REVIEW_DOCUMENT_TERM}, and are
-  fixed in its post-plan burndown, outside any release's hardening. *Purpose:* cleanup has a home that is not a release.
-- The findings take one ID per defect as they are written to the {REVIEW_DOCUMENT_TERM}: one entry
-  per defect, naming every seat that reported it. The burndown cites that ID and groups the findings
-  by root cause, not one item per finding. *Purpose:* a defect every seat can see is still one
-  defect, and one cause is fixed once.
+- Its members' findings are its post-plan review, written to the {REVIEW_DOCUMENT_TERM},
+  and are fixed in its burndown items, outside any release's hardening. *Purpose:*
+  cleanup has a home that is not a release.
+- The findings take one ID per defect as they are written to the {REVIEW_DOCUMENT_TERM}:
+  one entry per defect, naming every seat that reported it. The burndown section's items
+  cite that ID and group the findings by root cause, several findings to one item.
+  *Purpose:* a defect every seat can see is still one defect, and one cause is fixed once.
 
 ## Pre-release
 
@@ -501,7 +568,7 @@ one's answer feeds the next.
 6. Go to `references/project-setup.md` to bind the terms.
 
 A project with no code has runner targets too: its done-lines and its {CHECKPOINT_GATE_TERM} may
-name a link check or a document build.""",
+name a link check, a delta check or a document build.""",
             ),
             SkillFile(
                 path="references/project-documents.md",
@@ -582,11 +649,21 @@ interpolate from, so it invents.
   code that implements the ruling; errors the platform raises are handled like any other error.
 - A check earns its place by enforcing something the contract documents state; a check for a
   condition they do not name is a rule nobody asked for, and goes.
+- Specificity past the reader's need: a project document states each subject at the exactness its
+  reader needs to act on it or check it, and no finer. Where the code states a fact in its own text —
+  a signature, a field list, a value's spelling — the document names the fact and leaves the exact
+  form to the code it names, transcribes it only where the document's reader must check that form:
+  a transcription is a second home for a statement only the code's changes move.
+  The rule holds the durable documents; a plan or a design is
+  short-lived and states whatever its work needs.
 - A guard that standard tools in the same role lack is a departure: it tells every reader the
   project is different, and they reach for unusual designs elsewhere. It goes unless ARCHITECTURE.md
   states a reason for it that holds.
 - Where a comparison with standard tools decides whether one check stays, apply the same comparison
   to every check of that concern.
+- A statement of the owner's intent, permission or practice is authorized only by the owner's own
+  words; without them it goes. *Purpose:* a claim the owner never made reads the same as one the
+  owner made.
 
 *Purpose:* the documents and the code teach their readers only what the project does.
 
@@ -722,7 +799,7 @@ without the user's go.
 contribute — taken through the {ACTIVE_DESIGN_TERM} and the {ACTIVE_PLAN_TERM} like any other work. Its membership
 is the plans that carry its `Release:` line and land before the owner activates the hardening plan.
 Free development activates plans for the release one at a time, each an ordinary plan with its own
-post-plan review and post-plan burndown; the hardening plan, whose H1 heading opens with `Release hardening`, hardens the
+post-plan review and burndown section; the hardening plan, whose H1 heading opens with `Release hardening`, hardens the
 release and delivers it. A plan names the release when it is activated for it: the first non-blank
 line after the plan's H1 heading is `Release: <version>`, exactly that form. Work in the
 {PARKED_DESIGNS_TERM}, plan or design, names no release. *Purpose:* the plan under way shows the
@@ -763,7 +840,7 @@ release it serves, and no release is promised for work not yet taken up.
 
 ## Delivery
 
-- The release is tagged after the hardening plan's post-plan burndown lands, on a commit the
+- The release is tagged after the hardening plan's drafting ticket lands, on a commit the
   {CHECKPOINT_GATE_TERM} passed on; any change after that run, a version bump included, runs it again.
   *Purpose:* what ships is what was reviewed and verified.""",
             ),
@@ -785,7 +862,8 @@ release it serves, and no release is promised for work not yet taken up.
     to the section's `#anchor` where the section exists, plain text where the change creates it.
   - The body, in that document's voice, is exactly one of: one or more pairs of a passage of the
     target and its replacement; the whole text of a new leaf or section; a statement that the leaf
-    or section is removed. Each passage, each replacement and each whole text is a fenced block.
+    or section is removed. Each passage, each replacement and each whole text is a fenced block, a
+    pair's passage marked `**As it stands:**` and its replacement `**Becomes:**`.
 
   *Purpose:* an entry is applied to its target as written, with nothing left to interpret, and the
   headings and tables it carries are never read as the design's or the plan's own.
@@ -803,6 +881,76 @@ release it serves, and no release is promised for work not yet taken up.
 
   *Purpose:* each designed code change answers to a statement the documents make, so no design
   lands code they do not describe.""",
+            ),
+            SkillFile(
+                path="references/intermittent-drives.md",
+                body=f"""The methods for work a user names at need, when the standing cycle does not carry it. Nothing
+here runs on a schedule, an interval, or an agent's own judgment: the user directs the drive and
+the moment, and no seat starts one — an agent that sees the conditions for one met proposes it to
+the user and waits. *Purpose:* the methods a run proved valuable stay written and reusable at
+need, without becoming steps the cycle performs by default.
+
+## The constraints
+
+- **The gate.** The user directs the drive and the moment. A drive waits for a quiescent
+  repository: the {ACTIVE_PLAN_TERM} landed, its {REVIEW_DOCUMENT_TERM} consumed, no work in flight.
+- **The order.** A drive inventories before it judges, and it proposes without executing: the
+  rework its findings justify runs as plan packages, never inside the drive.
+- **The product.** A findings document — the inventory, the judgments, each fact stated with the
+  command that answers it. A drive fixes nothing and runs no probe beyond its stated method. The
+  fixes its findings justify go to the next plan's packages or to the {ROADMAP_TERM}, never the
+  drive; where the user directs the findings into a review instead, they land as that review's
+  findings.
+- **The life.** The product document is tracked and dies in the commit that lands the plan it fed.
+  A drive's method lives here; a drive's instance lives in the plan it fed and dies with it.
+- **The preference.** Where a drive's finding is a check a machine could run every test pass, the
+  finding's home is the gates, not the next drive. The drive judges what a machine cannot: shape,
+  balance, marginal value.
+
+## The test-suite survey
+
+A full read of the test suite's shape. The inventory first: per-directory collection counts, each
+file's subject in a line. Then the lenses the user's brief states — the pattern one run used:
+
+- **Shotgun versus deliberate.** For each parametrized or generated family, ask: does any single
+  input case fail for a reason no other case in the family fails for? Where none can, the family
+  proves one fact by iterating an input space, and it collapses to a representative per distinct
+  failure mode. The count drops as a side effect, never as a goal.
+- **Tier balance.** Classify the suite by what its cases exercise — unit, contract/integration,
+  end-to-end — and read the unit layer's marginal tests against what the integration tier holds:
+  past roughly eighty percent unit coverage, a marginal unit test is a prime suspect for
+  form-over-function.
+- **Suite health.** Duplicate test names, tests defined where no collection reaches them, a file
+  interleaving subjects, a collection count that drifts without a named change.
+
+A survey is the drive to offer after a large restructuring, when the suite has grown materially,
+or when the user suspects form-over-function has accumulated — the user directs it.
+
+## The observation drive
+
+Where a contract states a behavioral fact nothing has measured — an outcome the documents assert
+and no run has answered — the drive to offer is the observation: measure the fact, and land what
+the measurement answers. The shape: state the prediction from the code first; record the method and
+the raw output to the {SCRATCH_TERM} before any conclusion; then land one of two things, and they
+are different. Where the measurement answers the claim, the measured fact goes into the document
+leaf making the claim — and where the observed fact is one a runner could pin every test pass, the
+pin goes to the gates as a finding. Where the measurement cannot reach the claim, the leaf states
+the unsettled state instead, and the raw record is cited. A residual candidate the observation
+leaves after its fact lands goes to the {ROADMAP_TERM}. A worked instance: the wholesale
+replacement of a plugin directory under a running session whose own module watches that directory —
+the prediction held: the host's file-watch events arrived batched, one refresh landed after the
+write pass, and the session's registration was restored without going empty; the measured account
+landed beside the entry leaf, and the batching's end went to the {ROADMAP_TERM} as a candidate.
+
+## The suite reorganization drive
+
+Where layout debt accumulates — interleaved subjects, monolithic files, seams the packages suggest
+the tests should follow — the drive to offer is the reorganization. The shape: inventory the suite,
+propose the layout the package seams name, and cut the move as packages. The acceptance is stated,
+not judged by eye: the test runner's collection count before the move and after is equal, or the
+difference is exactly the one the move intends, the count taken by the same collection run on both
+sides. A worked instance: the suite split along package seams, each directory one seam with its own
+conftest, the runner scripts moving with the seam they serve.""",
             ),
         ),
     ),

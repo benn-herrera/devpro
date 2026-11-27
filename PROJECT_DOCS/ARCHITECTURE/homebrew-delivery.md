@@ -1,4 +1,4 @@
-## Homebrew Delivery
+# Homebrew Delivery
 
 The mechanism behind the distribution channel of SPEC.md, Package and Command and the Homebrew
 install of SPEC.md, Guide and README. Two repositories are in it, and each owns what the other

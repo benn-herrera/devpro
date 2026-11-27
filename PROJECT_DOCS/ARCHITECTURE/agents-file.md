@@ -1,4 +1,4 @@
-## Agents File
+# Agents File
 
 The agents file is rendered from the agents-file definition
 (`devpro/definitions/harness_agents_file.py`), a definition of the agents-file kind. Its body is
@@ -7,11 +7,11 @@ agents-file block from the begin marker line to the end marker line.
 `render.render_agents_file(harness, plugin, scope=...)` fills it for the harness bound to the plugin,
 under the default family's own categories, with no model-shape check. The `development` bullet is an
 optional
-reference to `development` in its own paragraph, and both plugins ship it, so both blocks carry it.
+reference to `development` in its own paragraph, and every install carries it, so the block carries it.
 The scratch rule and the memory file's name are the harness's `scratch_rule` and `memory_file`
-(Rendering, Placeholders); the rule names the scratch directory
-([Installed tree](../SPEC/deployed-surfaces/installed-tree.md)); under claude and opencode it names
-the harness directory beside it, and mage's names none. `agents_file`
+(Rendering, Placeholders); the rule is `clauses.SCRATCH_PARAGRAPH`, the one paragraph every
+harness's field carries, and it names the scratch directory
+([Installed tree](../SPEC/deployed-surfaces/installed-tree.md)). `agents_file`
 passes `GLOBAL_SCOPE` for a user harness directory and otherwise the directory's name.
 
 `devpro/agents_file.py` implements the install SPEC.md specifies. It finds the agents-file block
@@ -46,17 +46,21 @@ another name. A project install's preflight reads the global agents file through
 decision (`_install_managed_paths`), so its directory is a managed base and `--dry-run` names those
 paths whole.
 
-**The plugin on the marker.** The begin marker line reads `vvv-devpro <plugin> <version> …`: the
-plugin is `@!plg-name!@` (`clauses.PLUGIN_NAME`), the version `@!agf-version!@`. A file holds one
-block, because two blocks with different markers would deliver the shared rules twice to every
+**The plugin on the marker.** The begin marker line reads `vvv-devpro <version> …`: the version is
+`@!agf-version!@`, with no plugin word (`clauses.PLUGIN_NAME` appears in the marker of an earlier
+revision, `vvv-devpro devpro <version>`, and a legacy `kbase`-stamped line reads `vvv-devpro kbase
+<version>`). A file holds one block, because two blocks would deliver the shared rules twice to every
 session that reads the file (SPEC.md, Rendering). `agents_file._block_plugin` reads the first word
-after the marker's opening as a plugin name, and `_release` the word after it. A begin line whose
-first word is no plugin's name is a block of no plugin, with no release. On a project install
-`checked_followed_agents_file` keeps a global block current as the plugin `_held_plugin` reads from its
-begin line (`install-agents-file --plugin=<plugin>` into the user harness directory is what changes it), and a
-block of no plugin as the installing plugin's. The block of no plugin differs in content from the
-plugin's, so it is rewritten under the existing rule for a stamp that is not a release version. Mage
-writes the plugin's block into `<plugin>/CLAUDE.md` in its own directory, so no conflict arises.
+after the marker's opening as this install's plugin name, so `devpro …` is this install's block and
+every other first word — the absent one of the harness-neutral marker, a retired `kbase` — is a block
+of no plugin. `_release` reads the version: the second word of a stamp naming this install's plugin,
+the first version-shaped word of a block of no plugin, and none for a stamp naming a retired plugin.
+A block of no plugin thus keeps its release, so `checked_followed_agents_file` keeps a global block
+current as `_block_plugin` reads it from its begin line (`install-agents-file` into the user harness
+directory is what changes it). A block of no plugin's content matches the render's, so it is left as
+it stands whatever its stamp; one that differs is replaced unless its stamp is a later release,
+which is reported and left. Mage writes the plugin's block into `devpro/CLAUDE.md` in its own
+directory, so no conflict arises.
 
 **Version stamp.** The begin marker line carries `@!agf-version!@`, filled by `render.filled_text` from
 `devpro.__version__` for the agents file alone. `checked_agents_file` compares the existing block with
