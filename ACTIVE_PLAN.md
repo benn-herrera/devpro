@@ -21,7 +21,7 @@ before anything is approved or dispatched.
 | B2 | landed | expert |
 | B3 | drafted: retired before dispatch | expert |
 | B4 | landed | expert |
-| B5 | dispatchable | expert |
+| B5 | in progress | expert |
 | B6 | dispatchable | expert |
 | B7 | dispatchable | expert |
 | B8 | dispatchable | expert |
