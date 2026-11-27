@@ -57,7 +57,7 @@ progress.
 | B6 | landed | expert |
 | B7 | landed | mechanical |
 | B8 | landed | mechanical |
-| B9 | dispatchable | expert |
+| B9 | landed | expert |
 
 ### P1 — the paired deltas applied to the project documents
 
@@ -862,8 +862,8 @@ Intended lifetime: shipped. Rating: expert.
 Outcome: the house rules name the two traps the review found and the one sentence that scopes
 the type check.
 
-Scope (facts from the review document's R29–R31; the proposals they carry are quoted at their
-sources):
+Scope (facts from the review document's R29–R31, R33; the proposals they carry are quoted at
+their sources):
 - A new leaf under the [Planning and Execution](PROJECT_DOCS/CONVENTIONS/entry-point.md) tree: **no function in a `conftest.py` starts with `test_`**; the file
   carries fixtures and bare-named helpers, and a test-shaped function found there is one of a
   stale duplicate, a misnamed helper, or a zombie asserting removed machinery — the pytest
@@ -878,12 +878,12 @@ sources):
   lands where its reader looks for it: the prompt-engineer writing these leaves decides which
   leaf carries it (R30's, a stand-in's own, or the hook-contract leaf) and writes the smallest
   statement.
-- A third new leaf, beside R29's (R33 — added after the items' reviews took): a dispatched run
-  writes no package-manager lock, manifest or vendor file into the repository root — the tooling
-  change is the owner's decision, and a stray lockfile's provenance is not adoption. This
-  bullet's text is changed after the items' `devpro-prompt-engineer` usability review and
-  `devpro-architect` revision; the changed text takes its review of the change only before this
-  item dispatches (*Plans*).
+- A third new leaf, beside R29's (R33): **no dispatched run writes a package-manager lock,
+  manifest or vendor file into the repository root** — a tool one agent's environment happens to
+  carry is not thereby the project's, and tooling the project has not adopted waits on the
+  owner's decision. This bullet's text is changed after the items' `devpro-prompt-engineer`
+  usability review and `devpro-architect` revision, and takes its review of the change only
+  before this item dispatches (*Plans*).
 
 In-scope tests: none. Done-line: `just dev-check-links`, `just dev-check-plan`. Checkpoint gate
 once: `just test`, `just lint`, `just sweep-python`.

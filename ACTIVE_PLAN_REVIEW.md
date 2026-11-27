@@ -227,6 +227,12 @@ neither confirms nor contradicts R6.
 
 ### Contract gaps (findings about the `CONVENTIONS/` tree, with proposed wording in the seats' reports)
 
+- **R33 — Note (the owner).** A dispatched run writes no package-manager lock, manifest or
+  vendor file into the repository root: the stray untracked `uv.lock` (created during this
+  plan's run window, referenced by nothing tracked, contents matching no dependency set the
+  project keeps) is the observed failure, and the owner removed it rather than adopt the tool.
+  The rule and the trap it names — an agent "getting ideas" about tooling the project has not
+  authorized — belong in a CONVENTIONS leaf beside R29's. B9 carries it.
 - **R29 — python-coder, architect.** No leaf states that tests live in `test_*.py` and
   `conftest.py` carries fixtures — the rule R1 and R2 turn on, and the collection trap that hid
   R1. Adopt the python-coder's proposed leaf under *Planning and Execution*.
