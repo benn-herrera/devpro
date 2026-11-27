@@ -16,13 +16,13 @@
 // gets execution to the record's construction and vouches for no host behavior. What is under
 // measure is the capture: what its construction writes for these inputs.
 
-import "./opencode_plugin_stub.ts"
+import "../opencode_plugin_stub.ts"
 
 type Callback = (event: unknown) => unknown
 type Input = { directory: string }
 
 const input: Input = JSON.parse(await Bun.stdin.text())
-const source = new URL("../devpro/harnesses/resources/opencode/profiler.ts", import.meta.url).pathname
+const source = new URL("../../devpro/harnesses/resources/opencode/profiler.ts", import.meta.url).pathname
 const profiler = await import(source)
 
 const hooks = new Map<string, Callback[]>()

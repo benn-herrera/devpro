@@ -7,14 +7,14 @@
 // the record the plugin writes for the session next carries, and every record line each store the readers
 // read holds, its two stamp keys where it carries them.
 
-import "./opencode_plugin_stub.ts"
+import "../opencode_plugin_stub.ts"
 import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 
 type Input = { directory: string; session: string }
 
 const input: Input = JSON.parse(await Bun.stdin.text())
-const source = new URL("../devpro/harnesses/resources/opencode/profiler.ts", import.meta.url).pathname
+const source = new URL("../../devpro/harnesses/resources/opencode/profiler.ts", import.meta.url).pathname
 // `sessionStamp` is module-private; the copy the probe loads exports it, as the serialize runner's copy
 // exports `serialize`, so what the probe reads with is the function the capture appends with.
 const patched = `${input.directory}/profiler-stamp-probe.ts`

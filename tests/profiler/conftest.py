@@ -1,27 +1,4 @@
-"""The activity profiler's contract, driven through the wrapper the install writes: one capture
-writes a schema-4 record, `tree --format html`'s page data carries the keys `view.html` parses, and the
-installed wrapper is the wrapper the install wrote. It fails on the port defect that renames or drops a
-record field the page data carries — the rename or drop ships green and renders an empty page.
-
-One record the port itself owns: `tree` renders an opencode session's store beside the claude
-capture's — the split that is the capture's purpose, and whose loss the single-store read would not
-show. `test_the_two_masks_redact_alike` holds the two harnesses' masking to one sample list, since
-JavaScript's `\\w` is ASCII where Python's is not, and
-`test_the_capture_builds_its_record_over_host_shape_inputs` holds the capture's own record
-construction to the child session its result names under each host shape the floor covers.
-
-One more is `init`'s: `init` writes the skill and the committed hook's one command, removing the
-launchers and files older inits left in the hook directory.
-
-The stores' rename is the last group's: an install and an `init` move each `*-profiler` store under
-`.devpro-temp/` to its `.profiler-*` name and name the move, and neither ever merges one store into
-another.
-
-The package is imported from the repository root, which `just test` puts on PYTHONPATH. The tests run
-the wrapper the install writes — `tools/devpro.sh` beside this package's copy in the installed tree —
-and no test relies on a devpro installed on the host: the install runs in the test's directory, so the
-wrapper runs this checkout's code.
-"""
+"""Shared helpers and fixtures for the profiler tests: the installed wrapper, the devpro shim, the run and serve runners, the store writers and the project install."""
 
 import hashlib
 import json
@@ -75,21 +52,13 @@ from devpro.profiler.read import REVIEW_SEAT, list_sessions, read_sessions, stor
 from devpro.profiler.values import CAPTURED_EVENTS, _epoch_ms, earliest_stamp
 from tests.conftest import page_data
 from tests.fixtures import fixture_file
-from tests.test_devpro_install import _claude_plugin, _definition_install
+from tests.install.conftest import _claude_plugin, _definition_install
 
-# The serve path's carrier of the shared layer: the one file the board panel serves, which the pages
-# it serves name instead of the inline text `SHARED_CSS` holds.
 LAYER_LINK = f'<link rel="stylesheet" href="{BOARD_PATH}board.css">'
-
 _HERE = Path(__file__).parent
-_PACKAGE_ROOT = Path(__file__).resolve().parents[1]
-# The samples both masking implementations are held to: the credential shapes the profiler's SECRETS are
-# written for, and the same shapes holding a non-ASCII letter, where JavaScript's `\w` stops matching.
+_PACKAGE_ROOT = Path(__file__).resolve().parents[2]
 _MASK_SAMPLES = "mask_samples.txt"
-# How long a dashboard's URL may take to appear, and how long one fetch may take to answer.
 _SERVE_TIMEOUT_S = 15.0
-
-# The four keys the hook's own payload carries (the guardrail's probe payload apart from the values).
 _PAYLOAD = json.dumps(
     {
         "hook_event_name": "PostToolUse",
@@ -98,13 +67,7 @@ _PAYLOAD = json.dumps(
         "tool_input": {"command": "ls"},
     }
 )
-
-# The fields this payload fills, in the schema `view.html` and `tree` read: a rename or a drop of
-# any of them changes the record's shape.
 _RECORD_FIELDS = {"v", "harness", "at", "session", "tool", "name", "ok", "args", "branch", "plan", "directives"}
-
-# The keys `view.html` reads from the page's data and from one call row. The stamp's two are read off
-# the records alike, `null` for a session that carries none.
 _PAGE_KEYS = {"session", "branch", "models", "plan", "directives", "contexts", "markers", "calls"}
 _CALL_KEYS = {
     "ctx",
@@ -1755,8 +1718,6 @@ def test_the_standalone_render_carries_the_decoration_its_pages_script_reads(tmp
     assert "const { localDay, clock, dur, scaled } = globalThis.devproFormat;" in printed.stdout
 
 
-# The form a page script's body opens with: an IIFE, its body inside and its helpers private to it —
-# the arrow the index's script and the deco use, the `function` spelling an equivalent.
 _IIFE_OPENINGS = ("(() => {", "(function () {")
 
 
@@ -1935,9 +1896,6 @@ def test_a_script_naming_no_name_renders_no_word(tmp_path: Path) -> None:
 
     assert run.returncode == 0, run.stderr
     assert run.stdout.strip() == "skill,devpro-docdicer"
-
-
-# ---------- the stores' rename, and an install's migration of them ----------
 
 
 def _devpro(cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:

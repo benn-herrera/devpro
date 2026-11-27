@@ -1,14 +1,4 @@
-"""The agents-file render and installer, and the definition install, each case checked against values
-the code under test did not compute: the marker span, the bytes kept outside it, the refusals that
-write nothing, the redirects, the kb-tools and devpro tools packages and their banners, the kb
-install path, the kbase `.mcp.json`, the runner include line, the project's scratch directory and its
-`.gitignore` line, the harness resources a harness ships as
-they stand, the umask a package copy lands under, the prune, the refusal to overwrite a file without
-this repository's banner, the claude guardrail hook's probe and registration, the removal of entries
-earlier installs registered, and the checkout premise with the checks that stand down outside one.
-
-The package is imported from the repository root, which `just test` puts on PYTHONPATH.
-"""
+"""Shared helpers and fixtures for the install tests: the installed tree, the agents-file render, staging, and the plugin and definition installs."""
 
 import argparse
 import dataclasses
@@ -54,12 +44,7 @@ from devpro.install import (
 )
 from devpro.install_base import PACKAGE_ROOT, REPO_ROOT, checkout_root, utf8_text
 from devpro.loading import load
-from devpro.render import (
-    filled_body,
-    render_agents_file,
-    render_all,
-    render_definition,
-)
+from devpro.render import filled_body, render_agents_file, render_all, render_definition
 from devpro.runner_file import _named_harnesses, install_include_lines, prepare_scratch_directory
 from devpro.vocabulary import CATEGORIES, AgentsFileText, Kind, PluginText, hole
 from tests._structure import kbase_skill_output_paths
@@ -70,9 +55,7 @@ _SNIPPET_SETS = {
 }
 _KB_SNIPPETS = _SNIPPET_SETS["kb-tools"]
 _DEVPRO_SNIPPETS = _SNIPPET_SETS["runner-snippets"]
-
 _BEGIN = " <!-- vvv-devpro do not edit at or between marker lines. devpro-vvv -->"
-"""The begin marker line an earlier, unstamped revision wrote: a block of no plugin."""
 _END = " <!-- ^^^-devpro do not edit at or between marker lines. devpro-^^^ -->"
 _AGENTS_FILE = next(defn for _, entries in discover() for defn in entries if defn.kind is Kind.AGENTS_FILE)
 
@@ -88,11 +71,7 @@ def _agents_file_stamp(*, plugin: str | None) -> str:
 
 
 _STAMPED_BEGIN = _agents_file_stamp(plugin=NAME)
-
 _SNIPPET_HELP = "devpro-help"
-
-# The wrapper line each snippet's every recipe runs: `@$(DEVPRO) <command>` in the make snippet, the
-# one templated wrapper in the just one.
 _SNIPPET_WRAPPER_LINE = re.compile(
     r"^\s*@(?:\$\(DEVPRO\)|\{\{quote\(source_directory\(\) / \"\.\.\" / \"devpro\.sh\"\)\}\}) (.*)$"
 )
@@ -157,9 +136,6 @@ def _staged(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Callable[[Path, 
     return stage
 
 
-# The agents-file render.
-
-
 def test_the_fresh_render_holds_the_title_and_one_marker_span() -> None:
     user_dir = Path(CLAUDE.user_harness_dir).expanduser()
     text = render_agents_file(CLAUDE, PLAIN, scope=scope_name(CLAUDE, user_dir))
@@ -173,9 +149,6 @@ def test_an_agents_file_hole_in_any_other_kind_is_an_unknown_placeholder() -> No
     ctx = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     with pytest.raises(InputError, match=re.escape("definition 'probe': unknown placeholder @!agf-scope-name!@")):
         filled_body(defn, ctx)
-
-
-# The installer. A project directory under opencode writes AGENTS.md and nothing else.
 
 
 def _install(directory: Path, harness: Harness = OPENCODE, uncommitted: tuple[str, ...] = ()) -> None:
@@ -415,10 +388,6 @@ def test_a_relative_user_directory_is_the_destination_itself(tmp_path: Path) -> 
     }
 
 
-# The definition install. A consumer project receives its set under its harness directory, and — with
-# the kbase component on — the kb-tools package in the kbase skill's own directory, with the `kbase`
-# MCP entry and the runner include line.
-
 _CLAUDE_RENDER = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
 _KBASE_CLAUDE_RENDER = dataclasses.replace(_CLAUDE_RENDER, plugin=WITH_KBASE)
 _MAGE_RENDER = Render(harness=MAGE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
@@ -434,7 +403,6 @@ _OPENCODE_RENDER = build_render(
 )
 _KBASE_OPENCODE_RENDER = dataclasses.replace(_OPENCODE_RENDER, plugin=WITH_KBASE)
 _NEW_BANNER = "---\n# !GENERATED! from devpro/definitions/gone.py — x\n# !TUNING! y\n---\n\nbody\n"
-# A skill's supporting file: no frontmatter, so its banner rides on two HTML comment lines.
 _COMMENT_BANNER = "<!-- !GENERATED! from devpro/definitions/kbase.py — x -->\n<!-- !TUNING! y -->"
 
 
@@ -453,20 +421,12 @@ def _committed() -> tuple[str, ...]:
     return ()
 
 
-# The harness resources: the files a harness ships for its own harness directory, copied into ROOT as
-# they stand. A harness that ships none copies nothing.
-
 _TS_GUARDRAIL = "guardrail.ts"
 _GUARDRAIL = "hooks/guardrail.pl"
 _REMINDER = "hooks/state-table-reminder.sh"
 _SETTINGS = ".claude/settings.json"
-# A claude install writes its set into its plugin directory, below the harness directory it is given.
 _CLAUDE_PLUGIN_RELPATH = f".claude/{CLAUDE.bound(NAME).plugin_dir}"
-# The devpro tools package's line: the one every project install of a nested plugin writes.
 _DEVPRO_SET_LINE = f"import? '{_CLAUDE_PLUGIN_RELPATH}/tools/runner-snippets/devpro.just'"
-# The activity profiler: the wrapper the claude install writes beside its package copy — the hook's own
-# command names it — the skill, and the registration entries that feed the capture. The launcher it
-# once shipped is gone from the resources, and an install removes a tree an older release wrote.
 _PROFILER = "profiler"
 _PROFILER_EVENTS = (
     "PostToolUse",
@@ -1223,9 +1183,6 @@ def test_an_opencode_kb_install_registers_the_server_in_its_registry_and_leaves_
     assert registry["mcp"] == {"kbase": {"type": "local", "command": ["kbase", "mcp"]}}
 
 
-# mage's `.mcp.json` is the plugin's own, at ROOT rather than at the project the plugin is installed under.
-
-
 def test_a_mage_kbase_install_renders_its_mcp_json_whole_beside_the_set_at_root(tmp_path: Path) -> None:
     """ROOT is the install's own, so `.mcp.json` there is rendered whole: a prior one of ours is replaced,
     a server beside the entry included, and the project root holds no `.mcp.json` at all. The manifest
@@ -1269,9 +1226,6 @@ def test_a_mage_kbase_install_ships_the_kbase_toolchain(tmp_path: Path) -> None:
     assert (root / _KBASE_PACKAGE).is_file()
     assert (root / "skills/kbase").is_dir()
 
-
-# A mage install is a plugin directory that is carried or published from where it stands: nothing in it
-# names this machine, nothing in it fires a hook, and the manifest is owned by the marker it states.
 
 _MAGE_MANIFEST = ".claude-plugin/plugin.json"
 
@@ -1941,9 +1895,6 @@ def test_a_package_copy_lands_at_the_umasks_mode_and_a_resource_at_the_shipped_o
     assert stat.S_IMODE((_claude_plugin(root) / _GUARDRAIL).stat().st_mode) == 0o755
 
 
-# The development scripts package: copied into the development skill's own directory on every project
-# install, its script stamped by name.
-
 _COLD_READ_SOURCE = PACKAGE_ROOT / "development-tools" / "cold-read.sh"
 
 
@@ -1977,11 +1928,6 @@ def test_a_user_level_install_ships_no_cold_read_script(_home: Path) -> None:
     assert _installed_cold_reads(_home) == []
 
 
-# The devpro tools package: the installation's own copy of devpro and the wrapper that runs it, at
-# ROOT's `tools/` on every install.
-
-# The environment an installed wrapper runs in where no devpro is on PATH and nothing is importable
-# from this checkout.
 _NO_DEVPRO_PATH = "/usr/bin:/bin"
 
 
@@ -2300,10 +2246,6 @@ def test_reinstall_prunes_only_our_stale_definitions(tmp_path: Path, capsys) -> 
     }
 
 
-# The overwrite refusal: an install writes over a file at a render or resource target only when that
-# file carries this repository's banner for its kind, and otherwise refuses before the first write.
-
-# A resource header as a file of the harness's own carries it, in a syntax the predicate does not parse.
 _RESOURCE_HEADER = "// !INSTALLED! from elsewhere — request changes from the devpro project\n"
 
 
@@ -2429,10 +2371,6 @@ def test_every_shipped_resource_carries_the_header_its_reinstall_needs(tmp_path:
         assert f"!INSTALLED! from {origin} — " in banner, source
         assert "request changes from the devpro project" in banner, source
         assert "local needs belong in your CONVENTIONS.md" in banner, source
-
-
-# The claude guardrail hook: shipped and registered in the plugin's own `hooks/hooks.json` when one run
-# of the script on this machine succeeds.
 
 
 def _claude_root(project: Path) -> Path:
@@ -2629,10 +2567,6 @@ def test_a_probe_that_hangs_fails_within_its_timeout(tmp_path: Path, capsys, mon
     [skipped] = [line for line in capsys.readouterr().err.splitlines() if line.startswith("guardrail hook skipped")]
     assert "did not exit within 0.5 seconds" in skipped
 
-
-# The preflight: `install` and `install-agents-file` first run into a scratch copy of the paths they
-# manage and compare it with the target, so an up-to-date target is left untouched and `--dry-run`
-# prints the difference without writing.
 
 _UP_TO_DATE = "up to date: "
 
@@ -2935,9 +2869,6 @@ def test_no_printed_path_or_refusal_names_the_scratch_copy(
     assert list(scratch.iterdir()) == []
 
 
-# The claude plugin: a user-level plugin shadowing a project's is reported.
-
-
 def _user_level_plugin(home: Path) -> Path:
     """A user-level claude plugin installed under `home`: its manifest's path."""
     root = home / ".claude"
@@ -2991,9 +2922,6 @@ def test_the_reload_rule_is_printed_after_an_install_that_writes_and_not_when_up
     out = capsys.readouterr().out
     assert _UP_TO_DATE in out and CLAUDE.reload_rule not in out
 
-
-# The agents file follows the set: a claude or opencode project install keeps the block current in the
-# user-global agents file where that holds it, and otherwise in the project's AGENTS.md.
 
 _HARNESS_NAMED = {"claude": CLAUDE, "opencode": OPENCODE}
 
@@ -3140,10 +3068,6 @@ def test_a_dry_run_names_the_global_files_whole_and_the_projects_relative(tmp_pa
     assert {str(global_file), "AGENTS.md"} <= groups["changed"]
     assert {str(global_file.parent / "backup.CLAUDE.md"), "backup.AGENTS.md"} <= groups["created"]
     assert not (global_file.parent / "backup.CLAUDE.md").exists() and not (project / "backup.AGENTS.md").exists()
-
-
-# What stands on a path the install writes is met as it stands: an obstacle the operating system
-# reports ends the run as an error, and a dry run ends the same way.
 
 
 def _run_outcome(argv: list[str], capsys, *, planted: Path) -> tuple[object, list[str], dict[str, set[str]]]:

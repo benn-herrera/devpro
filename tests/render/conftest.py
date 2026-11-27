@@ -1,14 +1,4 @@
-"""The devpro package's own logic, each case checked against values the renderer did not compute: the
-map's grammar and the settings file that supplies one, the rendered model text, the three families'
-pins, the CLI's Render refusals, the frontmatter of each kind — an agent's and a skill's against
-literal lines of the pre-1.0 render, a command's and a document's as bare fixtures pinned to their
-render's shape — every rendered definition extracting frontmatter-free, placeholder filling and
-refusal, overlay resolution and stock, Definition refusals, the loader's refusal, the description's
-one line and balanced code spans, the line cap, and the package's source invariants as walks of its
-syntax trees.
-
-The package is imported from the repository root, which `just test` puts on PYTHONPATH.
-"""
+"""Shared helpers and fixtures for the render tests: the inherit selection, the prefixed harnesses, the claude render, and the skill/coder/reviewer definitions."""
 
 import ast
 import dataclasses
@@ -112,7 +102,6 @@ _ALL_INHERIT = dict.fromkeys(CATEGORIES, "inherit")
 _SELECTIONS = (PLAIN, WITH_KBASE)
 _PACKAGE = Path(devpro.__file__).parent
 _SUPPLIER = "--config-file /home/me/.config/devpro/devpro.toml, table '[claude.model-map]'"
-"""A settings-file supply's provenance, as its table names it."""
 
 
 @pytest.mark.parametrize(
@@ -530,10 +519,6 @@ _OPENCODE_PERMISSIONS = {
     "websearch": "allow",
     "subagent": "deny",
 }
-
-# A command and a document take no frontmatter value of their own, so each fixture is the least a
-# definition of its kind can be: a name, a kind and a body. Each body does one thing — names the user
-# harness directory — so that the placeholder fill is observable.
 _COMMAND = Definition(
     name="probe",
     kind=Kind.COMMAND,
@@ -751,8 +736,6 @@ def test_render_all_emits_every_file_of_a_shipped_skill_and_the_selection_drops_
     assert not any(path.parts[:2] == ("skills", "kbase") for path in without)
 
 
-# mage's output is a Claude Code plugin directory: claude's vocabulary and one file of its own, the
-# manifest.
 _MAGE_RENDER = Render(
     harness=MAGE, plugin=WITH_KBASE, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)
 )
@@ -1137,8 +1120,6 @@ def test_the_step_down_model_fills_a_skill_supporting_file_as_it_fills_skill_md(
     assert rendered.endswith("\n\nStep down to stem-mechanical=sonnet, comm-mechanical=haiku.\n")
 
 
-# A paragraph a tuning hole stands in is dropped whole where the value fills to nothing; a list or table
-# in that paragraph would go with it.
 _TUNING_HOLES = re.compile("|".join(re.escape(hole(part)) for part in TuningText))
 _LIST_OR_TABLE_LINE = re.compile(r"^\s*(?:[-*] |\d+\. |\|)", re.MULTILINE)
 
@@ -1283,9 +1264,6 @@ def test_family_text_renders_the_seats_overlay_or_leaves_no_empty_paragraph(
     assert _with_family_text(family=family, category=category, body=body) == rendered
 
 
-# Filled text is literal: what a fill puts into a body is never filled again. Each value below carries a
-# hole the fill expands — to the harness's agents file name — so any second pass over filled text
-# changes the output.
 _BAIT = hole(HarnessText.AGENTS_FILE)
 _BAITED_FAMILY = Family(
     "baited",
@@ -1476,9 +1454,6 @@ def test_discovery_raises_where_a_subpackage_does_not_import(tmp_path: Path, mon
         discover()
 
 
-# Source invariants, over every module of the package.
-
-
 def _walked(root: Path) -> list[Path]:
     """Each module under a root, a directory or one file, a hidden directory's files left out: a
     launcher's `.venv` beside its tools is not package source."""
@@ -1530,7 +1505,6 @@ def test_definitions_and_text_reach_nothing_outside_their_arguments() -> None:
 
 
 _HOOK_WIRING = "devpro/profiler/hooks.py"
-# The renderer's imports the hook wiring may hold inside a function, and the functions that hold them.
 _HOOK_WIRING_IMPORTS = ("from devpro.context import build_render", "from devpro.render import render_all")
 
 
@@ -1905,10 +1879,7 @@ def test_check_structure_holds_a_definition_module_to_its_folder(
     assert check_structure([path]) == ([f"{path}:3: {FOLDER_KIND_RULE}"] if violates else [])
 
 
-# Shared text has one source: a paragraph two outputs carry is not written out in either.
-
 _CLAUDE_RENDER = Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
-# The sweeps below read each selection as it ships: its definitions and its agents file, under claude.
 _SELECTION_RENDERS = tuple(
     Render(harness=CLAUDE, plugin=components, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories))
     for components in _SELECTIONS
@@ -2170,13 +2141,8 @@ def _repeatable_sentence() -> str:
     )
 
 
-# A prompt delivers each shared span once: no clause reached twice, no sentence written twice.
-
 _CLAUSE_GRAPH = clause_graph((_PACKAGE / "clauses.py").read_text(encoding="utf-8"))
 _HARNESS_STRINGS = {hole(part) for part in (*HarnessText, *PluginText)}
-# A reference names one definition, like the scratch directory's name names one directory and the plugin
-# name one plugin, and the scratch rule is one paragraph every harness passes: a sentence's word or a
-# value, not a span a prompt could deliver twice.
 _SENTENCE_HOLES = (
     frozenset(
         name for name, value in vars(devpro.clauses).items() if isinstance(value, str) and value in _HARNESS_STRINGS

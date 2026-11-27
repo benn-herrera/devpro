@@ -5,7 +5,7 @@
 // and passes whole, and the session id's length. Stdout: JSON {bytes, session} — the record line's
 // byte count and the session id's length after `serialize` fitted it.
 
-import "./opencode_plugin_stub.ts"
+import "../opencode_plugin_stub.ts"
 import { readFileSync } from "node:fs"
 
 type Input = { directory: string; record: Record<string, unknown>; sessionLength: number }
@@ -13,7 +13,7 @@ type Input = { directory: string; record: Record<string, unknown>; sessionLength
 const input: Input = JSON.parse(await Bun.stdin.text())
 // A missing length would silently measure an empty session; the test's whole claim is the field's fit.
 if (typeof input.sessionLength !== "number") throw new Error("stdin carries no sessionLength")
-const source = new URL("../devpro/harnesses/resources/opencode/profiler.ts", import.meta.url).pathname
+const source = new URL("../../devpro/harnesses/resources/opencode/profiler.ts", import.meta.url).pathname
 // `serialize` is module-private; the copy the probe loads exports it, so what the test measures is
 // the function the capture appends with.
 const patched = `${input.directory}/profiler-serialize-probe.ts`

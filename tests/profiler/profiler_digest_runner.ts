@@ -9,14 +9,14 @@
 // Stdout: JSON {stamp, manifest, markers}: the stamp fields the capture computes for a session starting
 // now, the per-file digests its manifest holds, and the ownership markers the module recognizes.
 
-import "./opencode_plugin_stub.ts"
+import "../opencode_plugin_stub.ts"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
 type Input = { directory: string; markersDirectory?: string | null; probeDirectory: string }
 
 const input: Input = JSON.parse(await Bun.stdin.text())
-const sourcePath = new URL("../devpro/harnesses/resources/opencode/profiler.ts", import.meta.url).pathname
+const sourcePath = new URL("../../devpro/harnesses/resources/opencode/profiler.ts", import.meta.url).pathname
 
 // probe loads a copy of the module with one line rewritten to export what it holds privately, as the stamp
 // runner's copy exports `sessionStamp`: what the probe reads with is what the capture writes with.
