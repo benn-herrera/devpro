@@ -124,6 +124,24 @@ workflow is already in place.
 
 ## Maintenance
 
+### The periodic review's panel gains the test-suite audit seat
+
+The next periodic review (and each after, while the finding holds) staffs one more seat: a
+test-suite audit. Three lenses, in the user's framing:
+
+- **Shotgun versus deliberate.** Sort parametrized and generated tests by whether each case could
+  fail differently — a property or oracle stated, counterexamples minimized — or whether the family
+  iterates an input space proving one trivial fact. Collapse the shotgun kind to the envelope of
+  distinct failure modes; the count drops as a side effect, never as a goal.
+- **Tier balance.** Classify the suite by what it exercises — unit, contract/integration,
+  end-to-end — and read the unit layer's marginal tests against what the integration tier holds.
+  Reading rule: past roughly eighty percent unit coverage, the marginal tests are prime suspects
+  for form-over-function; where no coverage metric exists, distinguish organic bloat from
+  metric-chasing.
+- **Gap by mechanism.** A coverage gap is never the finding by itself; name the mechanism the gap
+  needs — unit for algorithmic behavior, integration or contract instruments for wiring and seams,
+  structural comparison and behavioral probes for structural logic — and propose that mechanism.
+
 ### (STICKY) Periodic load-bearing-ness pruning pass
 
 A pass over definition clauses, across model generations: apply strip-first-observe-patch
