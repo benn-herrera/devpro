@@ -406,9 +406,10 @@ line — a constant the package does not define — is corrected or dropped. No 
 In-scope tests: none — document only. Done-line: `just check-links`.
 Serial: after B7 (shared file `renders-and-copies.md`).
 
-**The hold.** The plan stops here: the items above are drafted, not approved. The user discusses
-the findings, the remedies and the decisions the items carry — named in B4, B5, B6, B11, B16 and
-the coverage note above — before any row leaves `drafted`.
+The plan lands: the burndown's last item is landed. The plan's place in the history: the
+landing commit claims the landing, and the next periodic review counts landed plans from it
+(`.devpro-temp/plan-count-base` carries this landing's hash; `just plan-count` prints the
+interval's count).
 
 ### B17 — the reminder's sentence lives at its two code homes
 
