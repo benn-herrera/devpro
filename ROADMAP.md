@@ -191,6 +191,23 @@ beside `@opencode/plugin`, would hold it.
 currently vetoed because bun gets updated and if we break under a new bun that is a finding.
 mind may change about this later.
 
+### The install's fully-owned wipe semantics
+
+The user's ruling: devpro is exclusively a harness plugin, and a harness plugin's directory is
+100% its own — the loose-files-into-shared-locations era is history. The install therefore
+replaces the plugin directory wholesale: wipe the tree, copy fresh, no banner recognition, no
+foreign-file refusal, no stale list, no prune's per-file judgment, no `.bak` carve-out, no
+`RETIRED_*` inventory — the retirement question dissolves with the wipe. Two exceptions stand:
+the re-entry run passes over the copy it runs from (and keeps its symlinked-copy refusal), and
+the shared files outside the directory keep their handling — the agents file's block and the
+hook entries in the settings file. The managed-directories notion is past the Pieces table's
+"is not" barrier: the thesis's entry for it names the wipe.
+
+The work is a design before it is a plan — SPEC's write-safety and deployed-surfaces, the
+THESIS Pieces entry, ARCHITECTURE's install leaves and the `install.py` rewrite — drafted once
+the periodic review's burndown lands and the repository is quiescent. B16's document-only
+carve-out retirement is subsumed by the write-safety rewrite either way.
+
 ## Testing
 
 ### The opencode capture's host-shape reads are verified by live dispatch alone
