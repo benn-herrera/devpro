@@ -44,7 +44,7 @@ draft plan before anything is approved or dispatched.
 | P4 | landed | expert |
 | PR | landed | expert |
 | PB | landed | expert |
-| B1 | dispatchable | expert |
+| B1 | in progress | expert |
 | B2 | dispatchable | expert |
 | B3 | dispatchable | expert |
 | B4 | dispatchable | expert |
