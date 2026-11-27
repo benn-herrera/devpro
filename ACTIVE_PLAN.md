@@ -47,7 +47,7 @@ progress.
 | PR | landed | expert |
 | PB | landed | expert |
 | B1 | landed | expert |
-| B2 | dispatchable | expert |
+| B2 | landed | expert |
 | B3 | dispatchable | mechanical |
 | B4 | dispatchable | expert |
 | B5 | dispatchable | expert |

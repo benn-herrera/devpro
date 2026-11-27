@@ -251,6 +251,15 @@ _lint-typescript: _js-deps
     @cd "{{PROJECT_ROOT}}" && bunx tsc --noEmit
     @cd "{{PROJECT_ROOT}}" && bunx tsc -p devtools/tsconfig.json --noEmit
 
+# The opencode entry's runner against the host's declarations: `tests/tsconfig.json` takes
+# `tests/opencode_entry_runner.ts`, whose stand-in for the host's compaction and prompt messages is
+# then checked against `@opencode/plugin`'s and `@opencode/schema`'s own types. `tsconfig.json`'s
+# program is the shipped resources alone, so without this the runner's invented shapes compile
+# nowhere (ACTIVE_PLAN_REVIEW.md, R5).
+[doc("[dev] check the opencode entry's test runner against the host's declarations")]
+lint-runner-typescript: _js-deps
+    @cd "{{PROJECT_ROOT}}" && bunx tsc -p tests/tsconfig.json --noEmit
+
 # The bun-on-PATH guard the recipes that need the root `package.json`'s dependencies depend on. A
 # missing bun fails the recipe that needs it, never skips the step.
 _bun-required:

@@ -16,6 +16,7 @@
 // version: the hooks register on every install.
 
 import { Plugin } from "@opencode/plugin"
+import type { SessionRequestMessage } from "@opencode/plugin/promise/session"
 import { existsSync, readFileSync, statSync, watch } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { basename, dirname, join } from "node:path"
@@ -70,35 +71,42 @@ function planStanding(root: string): boolean {
 // summary, which drops the skill's text, and no declared hook fires when the compacted context
 // resumes. The one the host declares for a compaction, `compaction`, runs before its request; the
 // event after it that can carry an activation is the session's next `prompt`, the admission the
-// host resolves a prompt's attachments at. So the compaction's hook reads the marker off its
+// host resolves a prompt's attachments at. So the compaction's hook reads the skill's name off its
 // pre-compaction context and records the session there, and that prompt attaches the skill. The
 // marker is a set of session ids, added at a compaction and removed by the prompt that reads it, so
-// a session compacted twice is reloaded twice and one whose context never held the skill is never
-// touched.
+// a session compacted twice is reloaded twice; the name is the marker's text because the host's
+// request messages carry an activation as a `skill` tool call and its `<skill_content name="…">`
+// result, not as a skill-kind message, so a context holding the name only through the Agents file's
+// mention of it marks too.
 const skillName = "devpro-development"
 
 // The marker's text, the skill's name without the invocation's `@`: a skill message nests its body
 // under a `content` part, so a JSON-escaped copy of the request would not hold the name itself.
 const skillMark = skillName
 
-// Whether a compaction request's context still holds a skill's activation. The host's skill message
-// carries the skill's id, name and body (SessionMessage.Skill), but the field a compaction's request
-// is built from is the provider message, and which of the three survives into it is the compaction
-// request's own business: the body does, because a skill's activation is a skill name and the body's
-// text.
+// Whether a compaction request's context still holds a skill's activation. The host records an
+// activation as a `SessionMessage.Skill` whose body is a plain `text` field
+// (`@opencode/schema/dist/session-message.d.ts:540-554`, no `content` part), but the messages a
+// compaction's hook gets are already provider request messages, and no skill message survives into
+// them as that kind: observed at 2.4.2, the activation arrives as a `skill` tool call and its
+// `tool-result`, whose `<skill_content name="…">` header carries the skill's name
+// (`.devpro-temp/b2-probe/README.md`).
 function holdsInvocation(text: string): boolean {
   return text.includes(skillMark)
 }
 
-// The texts a compaction request's message holds: a text part's `text`, and the same under a
-// message's `content` part list, which is where the host nests a skill message's body.
-function textOf(message: unknown): string[] {
-  if (typeof message !== "object" || message === null) return []
-  const record = message as Record<string, unknown>
-  const texts: string[] = []
-  if (typeof record.text === "string") texts.push(record.text)
-  if (Array.isArray(record.content)) for (const part of record.content) texts.push(...textOf(part))
-  return texts
+// The texts a compaction request's message holds: each part's `text`, and a tool result's own text
+// value, which is where an executed tool's output — the skill's body among them — is carried.
+function textOf(message: SessionRequestMessage): string[] {
+  return message.content.flatMap((part) => {
+    const texts: string[] = []
+    if ("text" in part && typeof part.text === "string") texts.push(part.text)
+    if ("result" in part) {
+      const result = part.result as { type?: unknown; value?: unknown }
+      if (result.type === "text" && typeof result.value === "string") texts.push(result.value)
+    }
+    return texts
+  })
 }
 
 // The reminder's sentence, byte for byte what claude's state-table-reminder.sh emits, and the gate
