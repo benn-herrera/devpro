@@ -2,6 +2,7 @@
 `/page/<id>`, the board panel at `/board/` and the root paths its script calls, the served documents,
 and the guards both panels carry."""
 
+import http.client
 import io
 import json
 import os
@@ -367,18 +368,39 @@ def test_a_card_moves_to_the_design_and_back_at_the_paths_the_page_calls(tmp_pat
     assert (root / "ROADMAP.md").read_text(encoding="utf-8") == roadmap
 
 
-def test_the_stops_path_answers_and_ends_the_serving(tmp_path: Path) -> None:
-    """The board's page stops the server at `/api/stop`: the answer is `{}` and the next request is
-    refused — a stop answered without ending the serving is a button that does nothing."""
+@pytest.mark.parametrize(
+    "method, content_type, body",
+    [
+        pytest.param("POST", "application/json", b"{}", id="the-pages-own-json-body"),
+        pytest.param("GET", None, None, id="a-get-with-no-body"),
+        pytest.param("POST", None, None, id="a-post-with-no-body"),
+        pytest.param("POST", "text/plain", b"stop", id="a-post-that-is-not-json"),
+    ],
+)
+def test_the_stops_path_answers_and_ends_the_serving(
+    tmp_path: Path, method: str, content_type: str | None, body: bytes | None
+) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a stop sent by any other sender — a bare GET, a
+    script posting no body, no JSON header — meeting 415 or 400 while the server keeps serving, the
+    operator believing they stopped it.
+
+    The stop answers `{}` and ends the serving whatever the method, the body or its content type; the
+    page's own `POST` carrying `{}` as JSON is one sender among them."""
     server = DashboardServer(str(project(tmp_path / "proj", {"ROADMAP.md": "## Next\n"})), stderr=io.StringIO())
     thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})
     thread.start()
     client = Client(server.url)
+    connection = http.client.HTTPConnection(client.host, client.port, timeout=TIMEOUT)
+    headers = {"Content-Type": content_type} if content_type else {}
     try:
-        assert client.post("api/stop", {}) == (200, {})
+        connection.request(method, "/api/stop", body=body, headers=headers)
+        response = connection.getresponse()
+        answered = response.status, json.loads(response.read())
         thread.join(TIMEOUT)
+        assert answered == (200, {})
         assert not thread.is_alive()
     finally:
+        connection.close()
         server.server_close()
 
 
@@ -433,7 +455,7 @@ def test_no_other_file_is_served(tmp_path: Path, serve, path: str) -> None:
         pytest.param("GET", "board/board.js", b"", 200, id="board-script"),
         pytest.param("GET", "", b"", 302, id="root"),
         pytest.param("POST", "api/to-design", b"[]", 400, id="move"),
-        pytest.param("POST", "api/stop", b"[]", 400, id="stop"),
+        pytest.param("POST", "api/stop", b"[]", 200, id="stop"),
     ],
 )
 @pytest.mark.parametrize(

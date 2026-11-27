@@ -11,7 +11,8 @@ Endpoints, each answering JSON but the page's files and the served documents:
   it, the `plan_columns` its page draws, the `project`'s name, and `devpro_version`, the version its
   connection indicator names; where `since` is the version the server
   holds, the answer waits until the board changes or `LONG_POLL_SECONDS` pass.
-- `POST /api/stop` `{}`: answers `{}`, then stops the server serving the panel.
+- `GET` or `POST /api/stop`: answers `{}`, then stops the server serving the panel. Any method or
+  body asks it; the page's `POST` with `{}` is its own choice, not the endpoint's requirement.
 - `POST /api/to-design` `{"card": <a roadmap or parked card as served>}`: move the card's ticket into
   the active design (for a parked card, the link ticket written for it).
 - `POST /api/to-roadmap` `{"card": <a design card as served>, "target": <the Roadmap separator
@@ -87,7 +88,7 @@ class KanbanServer:
 
     The panel binds no socket of its own: its answers are written onto the dashboard's. The dashboard
     takes a handler over the request it has read, `panel_handler`, and answers with the panel's routes
-    the paths its page calls. Its own `POST /api/stop` stops the dashboard serving it."""
+    the paths its page calls. Its own `GET` or `POST /api/stop` stops the dashboard serving it."""
 
     def __init__(self, root: str, *, stderr: TextIO, after: Any) -> None:
         """after is the dashboard server the panel answers onto, whose address it reports, which its
@@ -271,6 +272,9 @@ class _Handler(BaseHTTPRequestHandler):
         if not self._local_host():
             return
         url = urlsplit(self.path)
+        if url.path == self._STOP:
+            self._stop()
+            return
         if url.path == "/api/board":
             since = parse_qs(url.query).get("since")
             self._send_json(200, self.server.payload(since[0] if since else None))
@@ -285,8 +289,11 @@ class _Handler(BaseHTTPRequestHandler):
         if not self._local_host():
             return
         path = urlsplit(self.path).path
+        if path == self._STOP:
+            self._stop()
+            return
         action = self._ACTIONS.get(path)
-        if action is None and path != self._STOP:
+        if action is None:
             self._send_json(404, {"error": f"no such endpoint: {self.path}"})
             return
         if self.headers.get_content_type() != "application/json":
@@ -299,12 +306,6 @@ class _Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(length))
             if not isinstance(body, dict):
                 raise BadRequest("the body must be a JSON object")
-            if action is None:
-                # Answered before stopping, as a move's answer cannot be: the dashboard's shutdown
-                # returns once its serve_forever has ended.
-                self._send_json(200, {})
-                self.server.shutdown()
-                return
             self._send_json(200, action(self.server, body))
         except (ValueError, BadRequest) as e:
             self._send_json(400, {"error": str(e)})
@@ -315,6 +316,13 @@ class _Handler(BaseHTTPRequestHandler):
         except OSError as e:
             root = self.server.root
             self._send_json(500, {"error": f"cannot read: {root_relative(root, _unreadable(e, root))}"})
+
+    def _stop(self) -> None:
+        """Answer `{}` to a stop and shut the server this panel answers onto: the answer is written
+        before the shutdown, whose call returns only once the serve_forever has ended. Any method or
+        body asks the stop — the page's own `{}` JSON body is its choice, not the endpoint's."""
+        self._send_json(200, {})
+        self.server.shutdown()
 
     def _send_json(self, status: int, payload: dict[str, Any], *, page: bool = False) -> None:
         self._send(status, json.dumps(payload).encode("ascii"), "application/json", page=page)

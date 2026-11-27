@@ -522,16 +522,6 @@ def test_a_bad_request_is_refused(panel, served_project, path, content_type, bod
     assert (Path(served_project) / "ROADMAP.md").read_text(encoding="utf-8") == _ROADMAP
 
 
-def test_a_stop_request_that_is_not_json_is_refused_and_the_board_still_answers(panel):
-    """A stop the panel cannot read is refused, and the board goes on answering: the version it
-    answers is the one its first read gave, the served project standing as the run found it."""
-    client = panel
-    headers = {"Host": urlsplit(client.url).netloc, "Content-Type": "text/plain", "Content-Length": "2"}
-
-    assert client.raw("POST", "api/stop", body=b"{}", headers=headers)[0] == 415
-    assert client.board()["version"] == 1
-
-
 def test_a_cross_origin_preflight_is_not_granted(panel):
     client = panel
     headers = {
