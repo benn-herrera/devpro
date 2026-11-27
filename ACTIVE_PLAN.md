@@ -43,7 +43,7 @@ P7 owes its `devpro-prompt-engineer` usability review and `devpro-architect` rev
 | P5 | landed | expert |
 | P6 | landed | mechanical |
 | P7 | landed | expert |
-| PR | dispatchable | expert |
+| PR | landed | expert |
 | PB | dispatchable | expert |
 
 ### P1 — the paired deltas applied to the project documents
