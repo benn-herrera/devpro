@@ -16,7 +16,7 @@ before anything is approved or dispatched.
 | Package | State | Rating |
 | --- | --- | --- |
 | R1 | landed | expert |
-| R2 | drafted | expert |
+| R2 | in progress | expert |
 
 ### R1 — the panel runs and the findings synthesize
 
