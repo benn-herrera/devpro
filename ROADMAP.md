@@ -254,3 +254,15 @@ preflight's scratch run then writes through the link into the operator's real fi
 install directory. The decision is between staging the link as a link, refusing with a message
 naming the symlink and the operator's move, or reading the copy's opinion without opening either
 side — a design before a fix, and a test that fails on each candidate's defect.
+
+### The re-entry copy's integrity has no reference to check it against
+
+Found retiring B23's guard: `is_the_running_copy` makes the copy and `PACKAGE_ROOT` one directory
+on a re-entry run, so a "missing shipped file" check comparing the copy against what the package
+ships compares the copy with itself — the expected-but-absent set is empty by construction, and a
+test of the guard cannot fail without breaking the re-entry definition. The fragility the review's
+W1 names is real (a copy short a file stays short silently, the pass-over keeping what the copy
+holds), but its remedy needs a reference that outlives the copy: an install-time manifest of the
+shipped files (a RECORD-style list the install writes and the next re-entry reads), or an
+acceptance of the residual risk stated in the leaves. A design decision before a fix; the B22
+tests and the mage-symlink ticket are adjacent.

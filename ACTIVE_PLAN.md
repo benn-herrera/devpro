@@ -24,7 +24,7 @@ remaining suite, feeding this plan's burndown — fixes, never the survey itself
 | B20 | landed | expert |
 | B21 | landed | expert |
 | B22 | landed | expert |
-| B23 | in progress | expert |
+| B23 | drafted: retired in execution | expert |
 | B24 | dispatchable | expert |
 | B25 | in progress | expert |
 | B26 | dispatchable | expert |
@@ -336,20 +336,21 @@ case passes, the seam is invisible and recorded in the report; if not, `prefligh
 Each new or changed test states its defect in the house docstring form. Done-line: `just test`,
 `just lint`.
 
-### B23 — the re-entry integrity guard
+### B23 — the re-entry integrity guard — retired in execution
 
-Intended lifetime: shipped. Rating: expert. Fixes W1.
+Intended lifetime: shipped. Rating: expert. Fixes W1 — **retired**: W1's remedy is self-referential
+and no guard can be written as specified.
 
-Outcome: a re-entry run whose copy is short a shipped file refuses, naming the file, instead of
-completing with the copy short.
-
-Scope: `devpro/install.py` (before the replacement, beside the re-entry judgment), and the two
-documents enumerating refusals — `ARCHITECTURE/install/install-entry.md:38-45` and SPEC's refusal
-sentences — gain the third refusal. Semantics: the check runs over the copy at its real path
-before the replacement; the expected set is `_wheel_files` over `PACKAGE_ROOT` with the same
-exclusions `_re_entry_kept` applies (`__pycache__`, `.pyc`); a shipped relative path the copy
-lacks refuses the install naming it. Test: a copy with a planted-missing shipped path fails the
-install naming it — `clauses.TEST_PRECONDITION`-house form. Done-line: `just test`, `just lint`.
+`is_the_running_copy` makes the copy and `PACKAGE_ROOT` one directory on a re-entry run, so a
+missing-shipped-file check comparing the copy against what the package ships compares the copy
+with itself; the expected-but-absent set is empty by construction (measured in a disposable
+worktree: the guard's check returns `[]` inside a real re-entry run, and pointing `PACKAGE_ROOT`
+at a separate release tree turns the run into a non-re-entry install). The guard was built,
+verified by read, and unwound from `install.py`, `install-entry.md`, `write-safety.md` and
+`conftest.py` without landing. The fragility W1 names stands — the reference that would resolve it
+(an install-time manifest of shipped files) takes a design decision, recorded in the ROADMAP
+Maintenance ticket "The re-entry copy's integrity has no reference to check it against". The plan's
+proof-prediction for the empty-row staging was also corrected in the record (B22's landing note).
 
 ### B24 — the dry-run both-groups defect
 
