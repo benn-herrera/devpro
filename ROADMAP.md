@@ -130,8 +130,9 @@ The next periodic review (and each after, while the finding holds) staffs one mo
 test-suite audit. Three lenses, in the user's framing:
 
 The seat is test-driven, not yet a fixture: this review's run was its first, and its full work —
-the inventory and the behavioral probes below — runs once more on this repository after the
-review's burndown lands and the repository is quiescent. The `development` skill's *Periodic
+the inventory and the behavioral probes below — runs as the second ticket of the next plan (the
+eyeball audit of the tests remaining after the managed-directory strip), on a quiescent
+repository. The `development` skill's *Periodic
 review* section gains the seat as its default panel's ninth only if that drive earns it; until
 the drive is ruled on, the seat is chartered here and named nowhere in the definition.
 
@@ -206,7 +207,9 @@ hook entries in the settings file. The managed-directories notion is past the Pi
 The work is a design before it is a plan — SPEC's write-safety and deployed-surfaces, the
 THESIS Pieces entry, ARCHITECTURE's install leaves and the `install.py` rewrite — drafted once
 the periodic review's burndown lands and the repository is quiescent. B16's document-only
-carve-out retirement is subsumed by the write-safety rewrite either way.
+carve-out retirement is subsumed by the write-safety rewrite either way. The next plan holds
+exactly two tickets, in this order: the strip this design describes, then the eyeball audit of
+the tests that remain after the cleanup (the test-suite audit seat's drive, per its own ticket).
 
 ## Testing
 
