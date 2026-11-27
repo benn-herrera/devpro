@@ -54,7 +54,7 @@ progress.
 | B3 | landed | mechanical |
 | B4 | landed | expert |
 | B5 | landed | expert |
-| B6 | landed | mechanical |
+| B6 | in progress | expert |
 | B7 | dispatchable | mechanical |
 | B8 | dispatchable | mechanical |
 | B9 | dispatchable | expert |
@@ -776,7 +776,7 @@ and this item's three revised pairs — every one landed.
 
 ### B6 — the project name's binding test and docstrings (R20's code half, R22's docstring half)
 
-Intended lifetime: shipped. Rating: mechanical.
+Intended lifetime: shipped. Rating: expert.
 
 Outcome: the board's title and the profiler's nav and title are bound to one name by a test;
 the name's docstrings state their own contracts.
