@@ -1,25 +1,41 @@
 """The render: the text tree, the self-contained HTML page, and the index and pages the dashboard's
 profiler view serves.
 
-The page template `view.html` is this package's own data, read through `importlib.resources`, so the
-render finds it wherever devpro is installed. The stylesheet the page and the index carry is the
-board's own, `devpro.kanban.assets/board.css`: the presented interface's one presentation
-layer, carried by the two flows each its own way. The standalone render inlines the layer —
-`SHARED_CSS`, that file's text — because the standalone page must load nothing, so its palette is
-the board's from the identical file; the dashboard serves the pages with the layer linked to the
-same file the board panel serves.
+The stores' read, the child-end join and the dispatch hierarchy — `Depth` and the chain beneath a
+page — are `read.py`'s; this module imports them and renders what they return. The page template
+`view.html` is this package's own data, read through `importlib.resources`, so the render finds it
+wherever devpro is installed. The stylesheet the page and the index carry is the board's own,
+`devpro.kanban.assets/board.css`: the presented interface's one presentation layer, carried by the
+two flows each its own way. The standalone render inlines the layer — `SHARED_CSS`, that file's text
+— because the standalone page must load nothing, so its palette is the board's from the identical
+file; the dashboard serves the pages with the layer linked to the same file the board panel serves.
 """
 
 import html
-import json
 import math
 import re
 from importlib.resources import files
 from pathlib import Path
-from typing import Any, NamedTuple, TypedDict
+from typing import Any, TypedDict
 from urllib.parse import quote
 
 from .capture import fill_context_tokens, spent_tokens, transcript_files
+from .read import (
+    AGENT_PREFIX,
+    Depth,
+    Dispatcher,
+    call_label,
+    depth_children,
+    dispatcher_of,
+    dispatches,
+    joined_session,
+    list_sessions,
+    read_sessions,
+    rendered_name,
+    review_fanouts,
+    session_harness,
+    store_directories,
+)
 from .values import (
     CONTEXT_WIDTH,
     COPY_AGENT_TYPE,
@@ -27,7 +43,6 @@ from .values import (
     DUPLICATE_EVENT_MS,
     HANDBACK,
     MAIN,
-    NAME_LIMIT,
     PARENT_TOOLS,
     SESSION_WIDTH,
     TRACE_DIR,
@@ -40,7 +55,6 @@ from .values import (
     _round_half_up,
     clip,
     earliest_stamp,
-    mask,
     read_text,
 )
 
@@ -132,19 +146,6 @@ def strict_fill(text: str, fills: dict[str, str]) -> str:
     return re.sub(pattern, lambda match: fills[match.group()], text)
 
 
-def read_trace(file: Path) -> list[Json]:
-    """The records a trace holds: a torn line is skipped."""
-    records = []
-    for line in (read_text(file) or "").split("\n"):
-        if not line.strip():
-            continue
-        try:
-            records.append(json.loads(line))
-        except ValueError:
-            continue
-    return records
-
-
 def start_of(record: Json) -> int | float:
     """When the call started: its recorded end less its duration."""
     return (_epoch_ms(record.get("at")) or 0) - (record.get("duration_ms") or 0)
@@ -182,52 +183,6 @@ def subagent_stops(records: list[Json]) -> dict[str, Json]:
         if record.get("event") == "SubagentStop" and record.get("agent_id"):
             stops[record["agent_id"]] = {**stops.get(record["agent_id"], {}), **record}
     return stops
-
-
-IDLE = "experimental.idle"
-
-
-def child_episodes(sessions: list[Json]) -> dict[tuple[str | None, str], Json]:
-    """A child session id -> its latest idle with no background work running: where that session's run
-    ended, keyed on the store's harness with the id so a join across stores rides on neither alone.
-
-    The episode-end contract, as `the-opencode-capture` leaf states it and the join reads it. An
-    opencode session idles each time an episode closes — the agent loop finished and nothing is
-    queued — and a wake that follows its own background work, or a dispatcher's follow-up, opens
-    another episode whose idle is later. An idle seen with background work listed is no episode's end,
-    so it is not kept; the latest kept one ends the child, and the span the join reads runs from the
-    dispatch to it — including, where the child opened background work of its own, the wait for it.
-    The `background` field is the capture's own: claude stamps a bool and opencode a count, and both
-    read as none held where falsy — `0`, `False` and a record naming neither alike."""
-    episodes: dict[tuple[str | None, str], Json] = {}
-    for session in sessions:
-        for record in session["records"]:
-            if record.get("event") == IDLE and record.get("session") and not record.get("background"):
-                episodes[(record.get("harness"), str(record["session"]))] = record
-    return episodes
-
-
-def joined_session(session: Json, sessions: list[Json]) -> Json:
-    """A session with each opencode dispatch row joined to its child's end: the child's agent, model
-    and end read from the child's own store rather than the dispatch's acknowledgment, the fill
-    `with_stop` once performed for the episode. `child_episodes` is built here, once, over every store
-    `sessions` holds — the read boundary — so the map is computed at the read and threaded through no
-    render signature, and its key carries the harness with the id so a cross-store join rides on
-    neither alone. A dispatch whose child's end never came keeps the acknowledgment as it was written."""
-    episodes = child_episodes(sessions)
-    records = []
-    for record in session["records"]:
-        child = record.get("child_agent_id")
-        episode = episodes.get((record.get("harness"), str(child)), None) if child else None
-        if episode is not None:
-            record = {
-                **record,
-                "child_agent_type": episode.get("agent_type") or record.get("child_agent_type"),
-                "model": episode.get("model") or record.get("model"),
-                "duration_ms": max(0, (_epoch_ms(episode.get("at")) or 0) - (_epoch_ms(record.get("at")) or 0)),
-            }
-        records.append(record)
-    return {**session, "records": records}
 
 
 # Traces captured before a background skill was told apart from a finished one hold Claude Code's
@@ -311,42 +266,13 @@ def unique_events(records: list[Json]) -> list[Json]:
     return kept
 
 
-TOOL_WORDS = {"Skill": "skill", "Agent": "agent"}
-
-# The prefix an agent set's definitions carry their names under, dropped where a page renders one: the
-# stored records and the feed keep the name as recorded. It is the install's one name,
-# `components.NAME`; `pages` spells it rather than importing a module the capture path may not pay
-# for, and the lane test pins the spelling to `components.NAME`.
-AGENT_PREFIX = "devpro-"
 # Where the index script's prefix line stands in the template, `index_html` replacing it with the line
 # below: a mark a carrier has filled is no unfilled one, so the strict fill lets neither stand.
 AGENT_PREFIX_MARK = "/*AGENT_PREFIX*/"
 # The one line of JavaScript both pages' scripts get the prefix from, beside the template scripts that
-# read it: a rendering fills their `AGENT_PREFIX` mark with this text, so the four spellings — this
-# constant, the index's row strip and `view.html`'s `shownName` — are one line the lane checks.
+# read it: a rendering fills their `AGENT_PREFIX` mark with this text, so the four spellings — the
+# prefix constant, the index's row strip and `view.html`'s `shownName` — are one line the lane checks.
 AGENT_PREFIX_LINE = f"const AGENT_PREFIX = '{AGENT_PREFIX}';"
-
-
-def rendered_name(name: str | None, tool: str | None) -> str | None:
-    """An Agent call's name as a page renders it: the set's prefix dropped. Every other call's name is
-    as recorded — a Bash command's `devpro-check-plan` is that command, not the set's prefix."""
-    return name.removeprefix(AGENT_PREFIX) if name and tool == "Agent" else name
-
-
-def bare_agent_name(record: Json) -> str | None:
-    """An opencode agent dispatch's agent by its bare name — the name the detector compares against
-    `REVIEW_SEAT`: the set's prefix dropped, as `rendered_name` drops it at the render. The host may
-    report the name either way; the record's `harness` is the tool here, an opencode agent call's
-    `name` being the agent it loaded (`profiler.ts`'s `callRecord`)."""
-    name = record.get("name")
-    return rendered_name(str(name), "Agent") if name else None
-
-
-def call_label(tool: str | None, name: str | None) -> str:
-    """The name leads and the kind follows: `review (skill)`, `counter (agent)`, `wc -l a (Bash)`."""
-    word = TOOL_WORDS.get(tool or "", tool or "")
-    rendered = rendered_name(name, tool)
-    return f"{rendered} ({word})" if rendered else word
 
 
 def context_of(record: Json) -> str:
@@ -663,17 +589,6 @@ def ansi_colors(contexts: list[Json]) -> dict[str, int]:
     }
 
 
-class Dispatcher(NamedTuple):
-    """A session's dispatcher, as the band and the page's root context read it: the session that
-    dispatched this one, the call that did, the tool it ran as, and the hue that call's context wears
-    on its dispatcher's page."""
-
-    session: str
-    name: str
-    tool: str | None
-    hue: int
-
-
 def _context_spend(records: list[Json]) -> dict[str, Json]:
     """context id -> {new, cached, out, calls}: from the transcripts while they exist, otherwise what
     capture recorded for each subagent."""
@@ -715,18 +630,6 @@ def render_tree(records: list[Json], *, verbose: bool = False, color: bool = Fal
     walk(build_forest(records, [marker for marker in markers if marker["kind"] == "compact"]), 0)
     options["longest"] = max([0] + [(node.get("record") or {}).get("duration_ms") or 0 for node, _ in shown])
     return "\n".join([tree_header()] + [format_line(node, depth, **options) for node, depth in shown])
-
-
-class Depth(NamedTuple):
-    """What a page's depth-2 chain reads, built once at the read boundary: the sessions
-    `read_sessions` read, `dispatches`' map of their hierarchy, and `review_fanouts`' verdicts.
-    Threading them as one value keeps the render signatures to the session and its dispatcher, and
-    the reads stay the caller's — the chain rebuilds no store path and parses no store the read did
-    not, nothing being rebuilt per render."""
-
-    sessions: list[Json]
-    dispatched: dict[str, tuple[str, str, str | None]]
-    verdicts: dict[str, bool]
 
 
 def session_data(
@@ -771,7 +674,7 @@ def session_data(
         "models": models_in(calls),
         "plan": stamp.get("plan"),
         "directives": stamp.get("directives"),
-        "children": depth_children(depth, session) if depth else [],
+        "children": depth_children(depth, session, PAGE_PREFIX) if depth else [],
         "unreviewed": bool(depth and depth.verdicts.get(session["id"])),
         "contexts": [
             {**context, "spent": spend.get(context["id"]), "models": models_in(by_context.get(context["id"], []))}
@@ -855,43 +758,6 @@ def render_html(session: Json, *, dispatcher: Dispatcher | None, depth: Depth | 
     )
 
 
-def session_of(path: Path) -> Json:
-    """One trace as `list_sessions` shapes it: its records and its first and last moments.
-
-    It reads the store path the listing found, its id the file's name, so nothing derives a store's
-    path from a session id: a page's dispatcher and its depth-2 chains read the sessions a read
-    returned."""
-    records = read_trace(path)
-    starts: list[int] = []
-    ends: list[int] = []
-    for record in records:
-        end = _epoch_ms(record.get("at"))
-        if end is None:
-            continue
-        ends.append(end)
-        starts.append(end - (record.get("duration_ms") or 0))
-    return {
-        "id": path.name[: -len(".jsonl")],
-        "path": path,
-        "records": records,
-        "first": min(starts, default=math.inf),
-        "last": max(ends, default=-math.inf),
-    }
-
-
-def list_sessions(directory: Path | str) -> list[Json]:
-    """Every session trace under `directory`, with its records and its first and last moments.
-
-    Every store under `.devpro-temp/` is read — the directories named exactly for a harness the
-    captures write, `values.TRACE_STORES` — so both harnesses' sessions reach one tree, and a session
-    id is unique across them."""
-    traces: list[Path] = []
-    stores = Path(directory) / TRACE_DIR.parent
-    for store in sorted(stores / name for name in TRACE_STORES if (stores / name).is_dir()):
-        traces.extend(path for path in store.iterdir() if path.name.endswith(".jsonl"))
-    return [session for session in (session_of(path) for path in traces) if session["records"]]
-
-
 FORMATS = ("text", "html")
 VALUE_FLAGS = ("--branch", "--format")
 
@@ -954,7 +820,7 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
         dispatched = dispatches(sessions)
         return render_html(
             joined_session(chosen[0], sessions),
-            dispatcher=dispatcher_of(chosen[0]["id"], sessions),
+            dispatcher=dispatcher_of(chosen[0]["id"], sessions, contexts_of),
             depth=Depth(
                 sessions=sessions,
                 dispatched=dispatched,
@@ -973,30 +839,6 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
 # ---------- the served index and pages ----------
 
 
-def store_directories(directory: Path | str) -> list[Path]:
-    """The stores under the project's scratch directory — each named exactly for a harness the captures
-    write — in the order they are read."""
-    stores = Path(directory) / TRACE_DIR.parent
-    return sorted(stores / name for name in TRACE_STORES if (stores / name).is_dir())
-
-
-def read_sessions(directory: Path | str) -> list[Json]:
-    """`list_sessions`'s sessions, the index's and the pages' one read: each store the exact names
-    find, walked a session at a time so a store's own listing is the one read that fails where it
-    does. A store that cannot be read raises out of it."""
-    sessions: list[Json] = []
-    for store in store_directories(directory):
-        traces = [path for path in store.iterdir() if path.name.endswith(".jsonl")]
-        sessions.extend(session_of(path) for path in traces)
-    return [session for session in sessions if session["records"]]
-
-
-def session_harness(session: Json) -> str:
-    """The harness's name, as the session's own records carry it, masked and clipped like any field."""
-    harness = next((record.get("harness") for record in session["records"] if record.get("harness")), "")
-    return clip(mask(str(harness)), NAME_LIMIT)
-
-
 def models_in(records: list[Json]) -> list[str]:
     """The distinct models calls name, in the order they first appear, and none where no call names one.
     An event record is no call, so a marker naming a model states none."""
@@ -1006,137 +848,6 @@ def models_in(records: list[Json]) -> list[str]:
         if record.get("tool") and isinstance(model, str) and model and model not in models:
             models.append(model)
     return models
-
-
-def dispatches(sessions: list[Json]) -> dict[str, tuple[str, str, str | None]]:
-    """child session id -> the session that dispatched it, that call's name and the tool it ran as.
-
-    Only an opencode record names a session: its `child_agent_id` is a session id. A claude record's
-    is an agent id, and claude records its subagents' calls in the parent's own file, so no claude
-    session is ever a child here. A child two sessions name keeps the first in list order, and a
-    session naming itself is no child: it would be dropped from the index's top level and drawn as
-    its own child. The tool is the call's: a page rendering the dispatcher's name drops the set's
-    prefix on an Agent call and on no other."""
-    found: dict[str, tuple[str, str, str | None]] = {}
-    for session in sessions:
-        for record in session["records"]:
-            child = dispatch_child(record)
-            if child is not None:
-                found.setdefault(child, (session["id"], str(record.get("name") or ""), record.get("tool")))
-    return found
-
-
-def review_fanouts(sessions: list[Json], dispatched: dict[str, tuple[str, str, str | None]]) -> dict[str, bool]:
-    """session id -> whether the fan-out detector marks it unreviewed, for every dispatched session
-    that dispatched agents of its own. `dispatched` is `dispatches`' map, the caller's one read of
-    the stores' hierarchy — the page and the feed each hold it already, so the detector derives no
-    second. Its selection is that map's, so a claude session is in no answer: it names no session,
-    and its subagents stand on its page already.
-
-    A dispatched session whose records dispatch further agents is a fan-out, and it is unreviewed
-    where the records standing at or before its first dispatch name no dispatch of the review seat
-    (`REVIEW_SEAT`). The name read is the record's `name`, the set's prefix dropped where it carries
-    one (`bare_agent_name`): on an opencode agent call it is the agent the call loaded,
-    `child_agent_id` the context it opened. A fan-out with a review, and a dispatched session that
-    fans out nothing, are left out — their rows carry no mark."""
-    verdicts: dict[str, bool] = {}
-    for session in sessions:
-        if session["id"] not in dispatched:
-            continue
-        records = session["records"]
-        first = next((index for index, record in enumerate(records) if dispatch_child(record) is not None), None)
-        if first is not None:
-            reviewed = any(bare_agent_name(record) == REVIEW_SEAT for record in records[: first + 1])
-            verdicts[session["id"]] = not reviewed
-    return verdicts
-
-
-def dispatch_child(record: Json) -> str | None:
-    """The session a record dispatched, where it is one `dispatches` makes a child of: an opencode
-    record naming a session, and never the session naming itself. A claude record's
-    `child_agent_id` is an agent id."""
-    child = record.get("child_agent_id")
-    if record.get("harness") != "opencode" or not child:
-        return None
-    return None if str(child) == record.get("session") else str(child)
-
-
-def _child_page(record: Json) -> str | None:
-    """A record's child as a link to its page, where `dispatch_child` names a session — an opencode
-    record's, never claude's agent id."""
-    return PAGE_PREFIX + quote(str(record["child_agent_id"])) if dispatch_child(record) is not None else None
-
-
-def child_dispatches(records: list[Json]) -> list[Json]:
-    """The agents a dispatched session dispatched of its own, read from its records in the sessions
-    `read_sessions` already read — one level deeper and no deeper.
-
-    Each is the call that dispatched it: its name and tool, and the child session's page where its
-    record names one. A record naming a child and no session — claude's — is no agent here, its
-    calls drawn as contexts on the session's page already. The stored record, for an opencode call,
-    carries `agent_id: null` and the agent in `name`."""
-    return [
-        {"name": record.get("name"), "tool": record.get("tool"), "childPage": _child_page(record)}
-        for record in records
-        if dispatch_child(record) is not None
-    ]
-
-
-def depth_children(depth: Depth, session: Json) -> list[Json]:
-    """A session's children as its page draws them beneath its dispatches: each child's own
-    dispatched agents, read from the child's records `depth`'s sessions hold. `depth` is the read
-    boundary's one build of the sessions, the stores' hierarchy and the verdicts; a child's verdict is
-    the row's own (`session_data`'s `unreviewed`), never the child's entry — the mark stands beside the
-    dispatch that opened the fan-out.
-
-    Every child the session dispatched is here, a child of no agents carrying none; the agents are
-    one level deeper and no deeper, the child's own records and never its children's. A dispatch
-    whose child the read holds no session for is absent from the draw: the store a child's id names
-    is never guessed from the id."""
-    sessions = {session["id"]: session["records"] for session in depth.sessions}
-    return [
-        {
-            "id": child,
-            "name": name,
-            "tool": tool,
-            "agents": child_dispatches(sessions.get(child, [])),
-        }
-        for child, (parent, name, tool) in sorted(depth.dispatched.items())
-        if parent == session["id"]
-    ]
-
-
-def dispatcher_of(session: str, sessions: list[Json]) -> Dispatcher | None:
-    """The session that dispatched `session`, the call that did, the tool it ran as and the hue that
-    call opened its context in — named by the stores' other sessions. The band's per-page fact and
-    the page's root context both read it: the one lookup whoever fills either runs, so the dump's
-    page and the served page name the same dispatcher, and the child's root wears the color the
-    dispatcher's own page draws that context in.
-
-    The child's records name no parent, so the hue is read off the dispatcher's records: they are the
-    ones `contexts_of` draws the dispatcher's page from, so the child's record is the context whose id
-    is the child's session id. That page's root hue is the dispatcher's own, read from the session
-    that dispatched it up the chain — 0 where nothing did, and 0 at the session where the walk meets
-    one it has already visited. Nothing is written at capture: the chain is walked at each read."""
-    found = dispatches([x for x in sessions if x["id"] != session]).get(session)
-    if not found:
-        return None
-    parent, name, tool = found
-    root_hue, upstream, visited = 0, parent, {session}
-    while upstream not in visited:
-        visited.add(upstream)
-        up = dispatcher_of(upstream, sessions)
-        if up is None:
-            break
-        root_hue, upstream = up.hue, up.session
-    contexts, _ = contexts_of(next(x["records"] for x in sessions if x["id"] == parent), root_hue=root_hue)
-    return Dispatcher(parent, name, tool, next(context["hue"] for context in contexts if context["id"] == session))
-
-
-# The review seat the fan-out detector names: an agent set's post-plan reviewer, the development
-# skill's own definition of it. `bare_agent_name` reads a dispatch record's `name` — the agent an
-# opencode agent call loaded (`profiler.ts`'s `callRecord`) — down to the bare name this holds.
-REVIEW_SEAT = "prompt-engineer"
 
 
 def traces_feed(directory: Path | str) -> list[Json]:

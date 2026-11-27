@@ -35,10 +35,9 @@ from devpro.profiler.pages import (
     LEGEND,
     RETURN_MARK,
     SHARED_CSS,
-    dispatches,
-    read_sessions,
     traces_feed,
 )
+from devpro.profiler.read import dispatches, read_sessions
 from tests.conftest import page_data
 
 from .conftest import PLAN, TIMEOUT, Client, project, record, store
@@ -646,7 +645,8 @@ def test_a_session_page_is_served_without_reading_the_stores_a_second_time(tmp_p
 
     monkeypatch.setattr("devpro.profiler.pages.read_sessions", counted_read)
     monkeypatch.setattr("devpro.dashboard.server.read_sessions", counted_read)
-    monkeypatch.setattr("devpro.profiler.pages.dispatches", counted_grouping)
+    monkeypatch.setattr("devpro.dashboard.server.dispatches", counted_grouping)
+    monkeypatch.setattr("devpro.profiler.read.dispatches", counted_grouping)
     page = served.get("page/s-one")[2].decode("utf-8")
 
     assert reads == [str(root), str(root)]
@@ -669,6 +669,7 @@ def test_the_static_index_answers_without_reading_the_stores(tmp_path: Path, ser
         reads.append(str(directory))
         return real_read(directory)
 
+    monkeypatch.setattr("devpro.profiler.read.read_sessions", counted_read)
     monkeypatch.setattr("devpro.profiler.pages.read_sessions", counted_read)
     monkeypatch.setattr("devpro.dashboard.server.read_sessions", counted_read)
     served.get("profiler/")

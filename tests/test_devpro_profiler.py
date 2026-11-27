@@ -67,11 +67,9 @@ from devpro.profiler.pages import (
     call_label,
     clock,
     index_html,
-    list_sessions,
-    read_sessions,
     stamp,
-    store_directories,
 )
+from devpro.profiler.read import list_sessions, read_sessions, store_directories
 from devpro.profiler.values import CAPTURED_EVENTS, _epoch_ms, earliest_stamp
 from tests.conftest import page_data
 from tests.fixtures import fixture_file

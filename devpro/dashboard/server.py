@@ -44,7 +44,16 @@ from urllib.parse import unquote, urlsplit
 
 from devpro import __version__
 from devpro.profiler import pages
-from devpro.profiler.pages import PAGE_PREFIX, PROFILER_PATH, Dispatcher, dispatcher_of, read_sessions
+from devpro.profiler.pages import PAGE_PREFIX, PROFILER_PATH
+from devpro.profiler.read import (
+    Depth,
+    Dispatcher,
+    dispatcher_of,
+    dispatches,
+    joined_session,
+    read_sessions,
+    review_fanouts,
+)
 from devpro.profiler.values import Json, git_root
 
 from ..errors import InputError
@@ -76,7 +85,7 @@ def profiler_page(
     *,
     return_to: str | None,
     dispatcher: Dispatcher | None,
-    depth: pages.Depth | None = None,
+    depth: Depth | None = None,
 ) -> str:
     """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
     frame band, the decoration's script, the shared layer linked — assembled by `page_for`, this
@@ -161,22 +170,22 @@ class DashboardServer(ThreadingHTTPServer):
 
         The store read is the page's own; the dispatcher its band names is looked up beside it, once,
         as the depth-2 chain's measurements are — one `dispatches` over the sessions this read holds,
-        the detector's verdicts off it, and the same sessions threaded to the render as `pages.Depth`,
+        the detector's verdicts off it, and the same sessions threaded to the render as `Depth`,
         so no chain re-reads or rebuilds a child's store. The page of the session that named this one
         is a second render, never a second index."""
         session_record = pages.session_for(PAGE_PREFIX + session, self.root)
         if session_record is None:
             return None
         sessions = read_sessions(self.root)
-        dispatched = pages.dispatches(sessions)
+        dispatched = dispatches(sessions)
         return profiler_page(
-            pages.joined_session(session_record, sessions),
+            joined_session(session_record, sessions),
             return_to=PROFILER_PATH,
-            dispatcher=dispatcher_of(session, sessions),
-            depth=pages.Depth(
+            dispatcher=dispatcher_of(session, sessions, pages.contexts_of),
+            depth=Depth(
                 sessions=sessions,
                 dispatched=dispatched,
-                verdicts=pages.review_fanouts(sessions, dispatched),
+                verdicts=review_fanouts(sessions, dispatched),
             ),
         )
 
