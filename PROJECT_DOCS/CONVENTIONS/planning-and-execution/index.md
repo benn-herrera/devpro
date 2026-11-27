@@ -18,3 +18,4 @@ Contents:
 - [A verification entry names what the run produced](a-verification-entry-names-what-the-run-produced.md)
 - [A failing test is an interrupt](a-failing-test-is-an-interrupt.md)
 - [A renamed leaf takes its contents entries](a-renamed-leaf-takes-its-contents-entries.md)
+- [The count is a target](the-count-is-a-target.md)

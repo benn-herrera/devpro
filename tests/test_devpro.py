@@ -905,6 +905,19 @@ def test_the_router_routes_to_every_reference_that_ships_and_no_other(skill: Def
     assert routed, "no route parsed from the table, so the comparison above would pass vacuously"
 
 
+@pytest.mark.parametrize("harness", harnesses(), ids=lambda name: name)
+def test_the_development_skill_names_the_target_that_counts_landed_plans(harness: str) -> None:
+    """The section states a count, so it must name a recipe the runner carries: a target the skill names
+    and the justfile lacks is a count its reader cannot read."""
+    ctx = build_render(components="", harness=harness, family="claude")
+    [text] = [text for path, text in render_all(ctx) if str(path).endswith("development/SKILL.md")]
+    targets = set(re.findall(r"`just ([\w-]+)`", text))
+    assert targets, "no `just` target parsed from the rendered section, so the check below would pass vacuously"
+    justfile = Path(__file__).resolve().parent.parent / "justfile"
+    recipes = set(re.findall(r"^([a-z][\w-]*) *[^\n:]*:", justfile.read_text(encoding="utf-8"), re.M))
+    assert sorted(targets - recipes) == []
+
+
 def test_filled_text_names_the_file_an_unknown_placeholder_stands_in() -> None:
     ctx = _CLAUDE_RENDER
     with pytest.raises(

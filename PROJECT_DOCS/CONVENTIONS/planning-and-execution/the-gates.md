@@ -6,6 +6,9 @@ step-down application: the dispatch's `model` parameter
 periodic review interval: 8
 ```
 
+The count that interval is met against is read, never recalled: `just plan-count` (The count is a
+target).
+
 The landing rule, a process discipline no target checks: a plan is landed only when the gates have
 been run over its last landing commit, not over each package's own. The observation it names is the
 gates' own output from that commit, the log each run leaves under `.devpro-temp/<job>-<target>.log`;

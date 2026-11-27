@@ -474,9 +474,12 @@ approved can run as approved.
   no single change caused accumulates whether or not anyone looks, and is found on a count the
   process keeps, not when someone remembers; and the review's product is high-level signal about
   the whole project, which a project mid-flight buries under undone work that is not signal.
-- The count is read from the history: a plan's landing commit says it lands a plan, and a periodic
-  review's landing commit says it lands a periodic review. *Purpose:* the count needs no file of its
-  own to keep current.
+- The {PERIODIC_REVIEW_INTERVAL_TERM}'s count is what the runner target `just plan-count` prints:
+  the commits landed since the last periodic review, read from the landing commits' subjects — a
+  plan's says it lands a plan, a periodic review's that it lands a periodic review. The periodic
+  review's own landing commit writes its full hash to the base the target counts from, alongside the
+  subject that claims the landing. *Purpose:* the count needs no file of its own to keep current,
+  and is a machine's answer rather than a number remembered.
 - Its members, each skipped when its subject has had no substantive change since it last ran: the
   full review of the project documents (`references/project-documents.md`, *Full review*). Each
   member judges only what changed since it last ran, and reopens nothing settled. *Purpose:* the
@@ -495,12 +498,11 @@ approved can run as approved.
 - The full review is staffed by a default panel of eight, two seats for each of
   `{clauses.ref(name="architect")}`, `{clauses.ref(name="prompt-engineer")}`,
   `{clauses.ref(name="tech-writer")}` and the project's coder agent
-  (`{clauses.ref(name="tech-writer")}` for a project with no code): a conformance seat, which judges
-  with that agent's own review criteria and reports a departure from THESIS.md, SPEC.md,
-  ARCHITECTURE.md or CONVENTIONS.md those criteria surface; and a consistency seat, which asks
-  whether the texts assert one thing and whether the code does what ARCHITECTURE.md says, and reports
-  each inconsistency it finds. *Purpose:* one seat given both questions answers the first and skims
-  the second, so the split is what buys the second question.
+  (`{clauses.ref(name="tech-writer")}` for a project with no code). Each kind's conformance seat
+  judges to that agent's own review criteria and owns no consistency pair, reporting the departures
+  from THESIS.md, SPEC.md, ARCHITECTURE.md or CONVENTIONS.md those criteria surface, and its
+  consistency seat is the one the pairs below assign. *Purpose:* one seat given both questions
+  answers the first and skims the second, so the split is what buys the second question.
 - Each consistency seat owns its pairs and reads both sides whole:
   - `{clauses.ref(name="prompt-engineer")}`: THESIS.md against SPEC.md;
   - `{clauses.ref(name="architect")}`: SPEC.md against ARCHITECTURE.md;

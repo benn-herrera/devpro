@@ -417,6 +417,40 @@ test-undice-spec:
   @command rm -rf .devpro-temp/undice-mono-spec
   @just dev-devpro undice PROJECT_DOCS/SPEC .devpro-temp/undice-mono-spec
 
+# The periodic review interval's count: the commits since the base `.devpro-temp/plan-count-base`
+# names, then the subjects that claim a plan's landing, then that claim count and the commit count.
+# The base is a file, never a literal here — the last periodic review's landing commit writes its own
+# hash there (CONVENTIONS, planning-and-execution/the-count-is-a-target). `plan-count lands` lists
+# the claiming subjects instead: candidates a reader judges, never a verdict. Git and that one file
+# are read; nothing is written.
+[doc("[dev] count the plans that have landed since the last periodic review")]
+plan-count mode="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    base_file="{{PROJECT_ROOT}}/.devpro-temp/plan-count-base"
+    if [[ ! -f "${base_file}" ]]; then
+        printf '%s\n' "error: plan-count finds no base: ${base_file} must hold the last periodic review's landing commit" >&2
+        exit 1
+    fi
+    base="$(tr -d '[:space:]' < "${base_file}")"
+    if ! git -C "{{PROJECT_ROOT}}" cat-file -e "${base}^{commit}" 2>/dev/null; then
+        printf '%s\n' "error: plan-count's base names no commit: ${base_file} holds '${base}'" >&2
+        exit 1
+    fi
+    case "${1}" in
+    "")
+        git -C "{{PROJECT_ROOT}}" log --format=%s "${base}..HEAD" | grep -icE "lands? (a |the )?plan|plan lands"
+        git -C "{{PROJECT_ROOT}}" log --format=%s "${base}..HEAD" | wc -l | tr -d ' '
+        ;;
+    lands | claims)
+        git -C "{{PROJECT_ROOT}}" log --format=%s "${base}..HEAD" | grep -iE "lands? (a |the )?plan|plan lands" || true
+        ;;
+    *)
+        printf '%s\n' "error: plan-count takes no argument, or 'lands'" >&2
+        exit 2
+        ;;
+    esac
+
 # optional place for local developer to put personalized recipes outside of tracking
 import? '.devpro-temp/.local-recipes/local-recipes.just'
 
