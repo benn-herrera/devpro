@@ -1,7 +1,7 @@
 """The include lines an install writes into the consumer's runner file (justfile or Makefile) so the
-project can reach the runner snippets its shipped packages carry, the cleanup of the line a retired
-package left there, and the project's scratch directory and its `.gitignore` line. Which snippet sets
-exist is the caller's: each function here takes the sets it is given."""
+project can reach the runner snippets its shipped packages carry, and the project's scratch directory
+and its `.gitignore` line. Which snippet sets exist is the caller's: each function here takes the sets
+it is given."""
 
 import re
 from collections.abc import Mapping, Sequence
@@ -129,57 +129,6 @@ def _named_harnesses(text: str, snippet_set: SnippetSet, *, runner: str) -> list
     return found
 
 
-def _without_lines(text: str, indexes: Sequence[int]) -> str:
-    """`text` without the lines at `indexes`, every other byte as written."""
-    dropped = set(indexes)
-    return "".join(line for index, line in enumerate(text.splitlines(keepends=True)) if index not in dropped)
-
-
-def _remove_a_created_runner_file_left_without_a_line(path: Path, text: str, *, line_removed: bool) -> None:
-    """Remove `path` when the cleanup left it holding no include line and nothing but the comments this
-    install creates it with — a Makefile it created and the consumer added nothing to. One holding the
-    consumer's own targets is left, reported: it is theirs now, and the install removes only what it
-    created and only while that holds nothing of the consumer's. `line_removed` is what this run removed;
-    a file left with no line where the run removed none is reported as found, not as left over."""
-    lines = text.splitlines()
-    if (
-        not lines
-        or lines[0] != CREATED_MAKEFILE_BANNER
-        or not all(not line.strip() or line.lstrip().startswith("#") for line in lines[1:])
-    ):
-        report_left_alone(
-            f"left {path} in place holding no include line: it holds content other than this install's"
-            if line_removed
-            else f"left {path} in place: it holds no include line, and this install removed none"
-        )
-        return
-    path.unlink()
-    print(f"removed {path}: the installer created it and it holds no include line")
-
-
-def _remove_retired_line(
-    text: str, retired_set: SnippetSet, *, runner: str, path: str, harness_relpath: str
-) -> tuple[str, list[str], bool]:
-    """`text` without this install's include line for `retired_set` — every such line, the set having
-    no package left to write one beside — the messages naming what the cleanup did, and whether it
-    removed a line. A line naming this harness directory is recognized by the shape `_snippet_pattern`
-    reads and removed; one naming another harness directory's snippets is reported and left. Lines of
-    any other set are untouched."""
-    removed: list[int] = []
-    messages: list[str] = []
-    for named_line in _named_harnesses(text, retired_set, runner=runner):
-        line = text.splitlines(keepends=True)[named_line.index]
-        if line[named_line.start : named_line.end].split("/", 1)[0] != harness_relpath.split("/", 1)[0]:
-            report_left_alone(
-                f"no {retired_set.label} include line removed: {path} line {named_line.index + 1} names the "
-                f"retired {retired_set.label} snippets for harness '{named_line.name}'"
-            )
-            continue
-        removed.append(named_line.index)
-        messages.append(f"removed the retired {retired_set.label} include line from {path} line {named_line.index + 1}")
-    return _without_lines(text, removed), messages, bool(removed)
-
-
 def _with_include_line(
     text: str, snippet_set: SnippetSet, *, runner: str, path: Path, harness_relpath: str
 ) -> tuple[str, str | None]:
@@ -225,7 +174,6 @@ def install_include_lines(
     snippet_sets: Sequence[SnippetSet],
     *,
     harness_relpath: str,
-    retired_set: SnippetSet | None = None,
 ) -> None:
     """Write each of `snippet_sets`' canonical include lines, in order, into `project`'s runner file:
     the justfile or Makefile probed there, else a `Makefile` created carrying every one.
@@ -240,10 +188,9 @@ def install_include_lines(
     the other sets' lines to be written. Only the runner file this run selected is examined: a second
     runner file's stale line is left to the operator and is non-fatal.
 
-    `retired_set` is a set no shipped package carries any more: its lines are removed rather than
-    written (`_remove_retired_line`), and removing the last one from a runner file this run created
-    removes the file. No runner file is created, or a `Makefile` touched, when neither there is a line
-    to write nor that runner file holds a retired line."""
+    A line naming a set no install ships any more — the retired docdicer set's — is no set's line here:
+    it is left as written, inert where the snippets it names are gone. No runner file is created when
+    `snippet_sets` is empty."""
     labels = " and ".join(snippet_set.label for snippet_set in snippet_sets)
     found = _runner_file(project)
     if found is None:
@@ -266,11 +213,6 @@ def install_include_lines(
     prior = utf8_text(path)
     text = prior
     messages: list[str] = []
-    line_removed = False
-    if retired_set is not None:
-        text, messages, line_removed = _remove_retired_line(
-            text, retired_set, runner=runner, path=str(path), harness_relpath=harness_relpath
-        )
     for snippet_set in snippet_sets:
         text, message = _with_include_line(text, snippet_set, runner=runner, path=path, harness_relpath=harness_relpath)
         if message is not None:
@@ -279,5 +221,3 @@ def install_include_lines(
         write_text_verbatim(path, text)
     for message in messages:
         print(message)
-    if retired_set is not None and text != prior:
-        _remove_a_created_runner_file_left_without_a_line(path, text, line_removed=line_removed)

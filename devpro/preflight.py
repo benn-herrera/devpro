@@ -68,7 +68,8 @@ def _scratch_bases(bases: Sequence[Path], *, scratch: Path) -> tuple[list[Path],
 
 def _copy_managed(managed: Sequence[tuple[Path, Sequence[str]]], *, scratch_bases: Sequence[Path]) -> None:
     """Copy each managed path that exists to the same position below its base's counterpart: a directory
-    as its tree, and a file as its bytes. A directory a managed path sits in is
+    as its tree, a file as its bytes, and a symlink as the link it is, pointing where it pointed. A
+    directory a managed path sits in is
     created where the real one exists, since an install's checks read whether it does; where a regular
     file stands in its place instead, or in a base's, the outermost such file is copied, so the install
     meets the same obstacle. A relative naming a wildcard stands for every path it matches, as the
@@ -111,21 +112,31 @@ def _copy_managed(managed: Sequence[tuple[Path, Sequence[str]]], *, scratch_base
                 if obstacle is not None and (base / obstacle).is_file():
                     (scratch_base / obstacle).parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(base / obstacle, scratch_base / obstacle)
-            if real.is_dir():
+            if real.is_symlink():
+                copy.symlink_to(os.readlink(real))
+            elif real.is_dir():
                 shutil.copytree(real, copy, symlinks=True, dirs_exist_ok=True)
             elif real.is_file():
                 shutil.copy2(real, copy)
 
 
 def _tree(base: Path) -> tuple[set[Path], set[Path]]:
-    """Every file and every directory below `base`, relative to it. `base` is read
-    as it resolves, so a spelling that reaches the tree through a symlink reads the same one."""
+    """Every file and every directory below `base`, relative to it, `base` read as it resolves so a
+    spelling that reaches the tree through a symlink reads the same one. A symlink below `base` is named
+    as the file it is and never followed: what it points at, inside `base` or out, is what the run
+    leaves as it found it. `base` itself is not followed: a base that is a symlink — an install
+    directory about to be refused for holding the devpro-copy link — reads as the empty tree, so the
+    preflight raises the run's own refusal rather than writing through the link into the copy."""
     files: set[Path] = set()
     directories: set[Path] = set()
-    root = base.resolve()
-    for directory, subdirs, names in os.walk(root):
-        files.update(Path(directory, name).relative_to(root) for name in names)
-        directories.update(Path(directory, name).relative_to(root) for name in subdirs)
+    if base.is_symlink():
+        return files, directories
+    for directory, subdirs, names in os.walk(base):
+        links = [name for name in subdirs if Path(directory, name).is_symlink()]
+        for name in [*links, *names]:
+            files.add(Path(directory, name).relative_to(base))
+        subdirs[:] = [name for name in subdirs if name not in links]
+        directories.update(Path(directory, name).relative_to(base) for name in subdirs)
     return files, directories
 
 

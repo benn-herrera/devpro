@@ -8,9 +8,9 @@ plan-state reminder injected into the parent session when a subagent call comple
 subagent's session goes idle with nothing running on it; a failed call, a session still holding
 background work, a session with no parent and a project holding only a design inject nothing. The
 two resources inject one sentence, byte for byte. A
-user-level install, which ships no guardrail beside the entry, registers the same way, and with no
-gate path at the project root it injects no reminder. A missing `bun` fails rather than skips, as in
-`tests/test_guardrail.py`.
+user-level install copies the guardrail beside the entry, so the entry runs it there and registers the
+same way, while with no capture beside it and no gate path at the project root it injects no reminder. A
+missing `bun` fails rather than skips, as in `tests/test_guardrail.py`.
 """
 
 import functools
@@ -203,10 +203,13 @@ def test_a_record_model_is_the_one_the_transform_writes(tmp_path: Path) -> None:
     assert "model" not in registered["agents"][unconfigured["id"]]
 
 
-def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_injects_no_reminder(tmp_path: Path) -> None:
+def test_a_user_level_opencode_entry_runs_the_guardrail_beside_it_and_injects_no_reminder(
+    tmp_path: Path,
+) -> None:
     OPENCODE.user_dir.mkdir(parents=True)
     plugin, registry = _installed(OPENCODE.user_dir, harness_dir=OPENCODE.user_dir)
-    assert not (plugin / "guardrail.ts").exists()
+    # A user-level install copies the guardrail resource beside the entry, and the entry runs it there.
+    assert (plugin / "guardrail.ts").exists()
     banner = _banner((plugin / registry["agents"][0]["file"]).read_text(encoding="utf-8"))
     command_path = _add_probe_command(plugin, registry, banner=banner)
     (plugin / "registry.json").write_text(json.dumps(registry), encoding="utf-8")
@@ -221,9 +224,10 @@ def test_a_user_level_opencode_entry_with_no_guardrail_beside_it_injects_no_remi
         command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
     )
 
-    # The user-level install copies no capture beside the entry, so it registers the reminder's idle
-    # hook alone.
-    assert out["hooks"] == ["execute.after"]
+    # The guardrail's `execute.before` and the entry's own `execute.after` are registered; the capture,
+    # which a user-level install does not copy, registers none of its own, so the reminder's idle hook
+    # stands alone and no synthetic message is injected.
+    assert out["hooks"] == ["execute.before", "execute.after"]
     assert out["sessionHooks"] == ["experimental.idle"]
     assert out["synthetics"] == []
     (registered,) = out["states"]

@@ -9,18 +9,16 @@ import pytest
 from devpro.cli import main
 from devpro.components import NAME
 from devpro.harnesses.claude import HARNESS as CLAUDE
-from devpro.install import HARNESS_RESOURCES_SOURCE, RETIRED_SNIPPET_SET, ShippedPackage, install
+from devpro.install import HARNESS_RESOURCES_SOURCE, ShippedPackage, install
 from devpro.install_base import PACKAGE_ROOT, utf8_text
-from devpro.runner_file import install_include_lines, prepare_scratch_directory
+from devpro.runner_file import prepare_scratch_directory
 
 from .conftest import (
     _CLAUDE_RENDER,
     _GUARDRAIL,
-    _OPENCODE_RENDER,
     _PROFILER,
     _PROFILER_SKILL,
     _REGISTRATION,
-    _RESOURCE_HEADER,
     _TS_GUARDRAIL,
     _UP_TO_DATE,
     _claude_plugin,
@@ -111,30 +109,6 @@ def test_preparing_the_scratch_directory_keeps_every_other_byte_of_the_gitignore
     assert utf8_text(gitignore) == f"{prior}\r\n\r\n.devpro-temp/\r\n"
 
 
-def test_the_makefile_the_installer_created_is_removed_with_its_last_line(tmp_path: Path, capsys) -> None:
-    """The cleanup removes the docdicer line and leaves the file it created holding nothing. It goes with
-    its last include line, reported as removed; one the consumer added targets to is theirs and is left,
-    reported as holding no include line, its own line gone."""
-    docdicer_mk = "-include .opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.mk\n"
-    removed = tmp_path / "removed"
-    removed.mkdir()
-    kept = tmp_path / "kept"
-    kept.mkdir()
-    for project in (removed, kept):
-        # The bytes a project install leaves a project with neither runner file: the banner, then the line.
-        install_include_lines(project, [RETIRED_SNIPPET_SET], harness_relpath=".opencode")
-    with (kept / "Makefile").open("a", encoding="utf-8") as stream:
-        stream.write("\nall:\n\t@echo hi\n")
-    for project in (removed, kept):
-        install_include_lines(project, [], harness_relpath=".opencode", retired_set=RETIRED_SNIPPET_SET)
-    assert not (removed / "Makefile").exists()
-    text = (kept / "Makefile").read_text(encoding="utf-8")
-    assert docdicer_mk not in text and text.endswith("\nall:\n\t@echo hi\n")
-    out, err = capsys.readouterr()
-    assert f"removed {removed / 'Makefile'}: the installer created it and it holds no include line" in out
-    assert f"left {kept / 'Makefile'} in place holding no include line" in err
-
-
 def test_a_package_destination_is_replaced_whole_from_the_staged_tree(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, _staged
 ) -> None:
@@ -181,23 +155,25 @@ def test_a_user_level_claude_install_renders_the_profile_skill_and_copies_no_res
     assert not (plugin / _REGISTRATION).exists()
 
 
-def test_a_user_level_opencode_install_copies_the_entry_and_no_guardrail(_home: Path, tmp_path: Path, _staged) -> None:
-    """A user-level install delivers no guardrail, but the plugin registers only through its entry, so
-    the entry is the one harness resource it copies, and it reaches across no other harness's
-    resources at all: the carve-out admits a project install's copy list, not this one."""
-    resources = {
-        name: f"{_RESOURCE_HEADER}export const {name.replace('.ts', '')} = 1\n" for name in ("index.ts", _TS_GUARDRAIL)
-    }
-    _staged(
-        tmp_path / "repo",
-        tuple((f"{HARNESS_RESOURCES_SOURCE}/opencode/{name}", text) for name, text in resources.items()),
-    )
+def test_two_user_level_opencode_installs_leave_the_plugin_as_this_release_ships_it(_home: Path, capsys) -> None:
+    """A user-level install replaces its directory wholesale, so a second run over what the first left
+    finds the entry and the guardrail resource byte-identical to the release's and reports the harness
+    directory up to date — the wipe neither deleted a file the run ships nor rewrote one the release
+    did not change. Defect: the wipe deletes a plugin file the user-level run does not rewrite, or the
+    second run's tree differs from the release's."""
     root = _home / ".config/opencode"
     root.mkdir(parents=True)
-    install(root, _OPENCODE_RENDER, verbose=False, project_root=_home, uncommitted=_committed)
+    argv = ["install", str(root), "--harness=opencode"]
+    main(argv)
     plugin = _opencode_plugin(root)
-    assert (plugin / "index.ts").read_text(encoding="utf-8") == resources["index.ts"]
-    assert not (plugin / _TS_GUARDRAIL).exists()
+    first = {name: (plugin / name).read_bytes() for name in ("index.ts", _TS_GUARDRAIL)}
+    capsys.readouterr()
+    main(argv)
+    assert _UP_TO_DATE in capsys.readouterr().out
+    for name, data in first.items():
+        source = PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / "opencode" / name
+        assert data == source.read_bytes(), name
+        assert (plugin / name).read_bytes() == data, name
     assert not (plugin / _PROFILER).exists()
 
 

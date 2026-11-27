@@ -67,5 +67,6 @@ def is_private(parts: tuple[str, ...]) -> bool:
 
 def _refuse(name: str) -> None:
     """The `onerror` `walk_packages` calls for a subpackage it cannot import: raised, never swallowed,
-    so a definition set that shrank silently cannot reach an install's prune step."""
+    so a definition set that shrank silently cannot reach an install's replacement, which writes the
+    definitions discovery found and nothing else."""
     raise ImportError(f"definition subpackage '{name}' does not import")

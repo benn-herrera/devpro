@@ -307,7 +307,10 @@ def test_a_home_directory_target_installs_user_level_into_the_user_directory(
     cli.main(["install", str(_home), *harness_args])
     assert (_home / set_dir / "agents").is_dir()
     assert not (_home / root / ".claude").exists() and not (_home / root / ".opencode").exists()
-    assert not (_home / set_dir / "hooks").exists() and not (_home / set_dir / "guardrail.ts").exists()
+    # A user-level opencode install copies the guardrail resource beside the entry, never a
+    # registration file; claude's user-level install copies no resource and registers nothing.
+    assert not (_home / set_dir / "hooks").exists()
+    assert (_home / set_dir / "guardrail.ts").is_file() is (root == ".config/opencode")
     assert all(_paths(_home / other) == [] for other in present if other != root)
 
 
@@ -343,13 +346,15 @@ def test_a_claude_user_level_kb_install_writes_the_definitions_and_the_plugins_m
     assert not any((_home / path).exists() for path in ["Makefile", ".mcp.json", ".claude.json"])
 
 
-def test_an_opencode_user_level_kb_install_writes_no_guardrail_or_settings(_home: Path) -> None:
+def test_an_opencode_user_level_kb_install_copies_the_guardrail_and_writes_no_settings(_home: Path) -> None:
     root = _home / ".config/opencode"
     root.mkdir(parents=True)
     cli.main(["install", str(root), "--components=kbase"])
     plugin = _opencode_plugin(root)
     assert (plugin / "skills/kbase/SKILL.md").is_file()
-    assert not (plugin / "guardrail.ts").exists()
+    # The entry runs the guardrail resource beside it at user level as it does in a project.
+    assert (plugin / "guardrail.ts").is_file() and (plugin / "index.ts").is_file()
+    assert not (plugin / "profiler.ts").exists()
     assert not [path for path in _paths(_home) if Path(path).name in ("opencode.json", "opencode.jsonc")]
 
 

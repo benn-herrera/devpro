@@ -13,22 +13,17 @@ import pytest
 
 from devpro import __version__
 from devpro.cli import main
-from devpro.errors import InputError
 from devpro.harness import Harness
 from devpro.harnesses.claude import HARNESS as CLAUDE
 from devpro.harnesses.opencode import HARNESS as OPENCODE
 from devpro.install import (
-    _RESOURCE_BANNER_LINES,
     HARNESS_RESOURCES_SOURCE,
-    RETIRED_RESOURCE_FILES,
     SHIPPED_PACKAGES,
-    _is_our_resource,
     harness_resource_copies,
     install,
 )
 from devpro.install_base import PACKAGE_ROOT
 from devpro.loading import load
-from devpro.render import render_all
 
 from .conftest import (
     _CLAUDE_PLUGIN_RELPATH,
@@ -170,9 +165,9 @@ def test_an_install_run_from_an_installations_copy_into_that_installation_reente
 
 
 def test_a_symlinked_copy_destination_is_refused(tmp_path: Path, capsys) -> None:
-    """`is_the_running_copy` and the copy's clear-and-write both read the copy destination resolved, so a
-    link planted there sends an install's clear (an `rmtree`) and its copy through the link into whatever
-    it names. The install refuses, naming the link, and leaves the link's target untouched. Defect
+    """`is_the_running_copy` and the replacement's pass-over both read the copy destination resolved, so
+    a link planted there sends the pass-over and the copy through the link into whatever it names. The
+    install refuses, naming the link, and leaves the link's target untouched. Defect
     (TEST_PRECONDITION): such a run clears and writes through the link, or refuses without naming the path."""
     project = tmp_path / "project"
     project.mkdir()
@@ -183,7 +178,7 @@ def test_a_symlinked_copy_destination_is_refused(tmp_path: Path, capsys) -> None
     sensitive = foreign / "keep.txt"
     sensitive.write_text("do not delete\n", encoding="utf-8")
     shutil.rmtree(copy)
-    copy.symlink_to(foreign)
+    copy.symlink_to(foreign, target_is_directory=True)
     capsys.readouterr()
     with pytest.raises(SystemExit) as exit_info:
         main(["install", str(project), "--harness=claude"])
@@ -208,8 +203,8 @@ def test_a_user_level_reentry_reports_up_to_date_and_passes_over_its_wrapper(
     copy = plugin / "tools/devpro"
     _staged(copy, ())
     wrapper = plugin / "tools/devpro.sh"
-    # A non-shipped byte a non-re-entry run would overwrite by rewriting the wrapper; a re-entry run passes
-    # over it. The wrapper keeps its installed header, so the foreign-target check still reads it as ours.
+    # A non-shipped byte a non-re-entry run would overwrite by rewriting the wrapper; a re-entry run
+    # passes over it, and the replacement removes nothing around it.
     wrapper.write_bytes(wrapper.read_bytes() + b"\n# re-entry left this\n")
     wrapper_before = wrapper.read_bytes()
     plugin_before = _files(plugin)
@@ -251,56 +246,62 @@ def test_a_user_level_install_writes_the_devpro_tools_package_and_no_other(_home
     assert os.access(plugin / "tools/devpro.sh", os.X_OK)
 
 
-@pytest.mark.usefixtures("_no_uncommitted")
-def test_an_install_removes_the_dicing_snippets_package_an_earlier_install_left(tmp_path: Path, capsys) -> None:
-    """The dry run names the removal the install then makes. Defect: the retired home's files carry the
-    installed banner, which `prune` leaves be, so they survived the move to the devpro tools package."""
+def test_a_foreign_file_inside_the_install_directory_is_removed_and_named_in_the_dry_run(
+    tmp_path: Path, capsys
+) -> None:
+    """Nothing inside the install directory is read to decide its fate: a file the consumer left there —
+    hand-written, carrying no banner — goes with the tree, and the dry run names it in its removed
+    group before the run that removes it. Defect: a file that is not ours survives a changing install,
+    or the dry run omits its removal while the run makes it."""
     project = tmp_path / "project"
     project.mkdir()
     argv = ["install", str(project), "--harness=claude"]
     main(argv)
-    retired = _claude_plugin(project / ".claude") / "skills/docdicer/dicing-snippets"
-    _plant(retired / "runner-snippets/devpro.just", "# !INSTALLED! from devpro/dicing-snippets/x — y\n")
+    plugin = _claude_plugin(project / ".claude")
+    foreign = _plant(plugin / "agents/mine.md", "---\nname: mine\n---\n")
+    my_directory = _plant(plugin / "notes/keep.txt", "mine\n").parent
     groups = _assert_dry_run_predicts(argv, project=project, capsys=capsys)
-    assert not retired.exists()
-    assert f"{retired.relative_to(project).as_posix()}/" in groups["removed"]
+    assert not foreign.exists() and not my_directory.exists()
+    removed = {foreign.relative_to(project).as_posix(), f"{my_directory.relative_to(project).as_posix()}/"}
+    assert removed <= groups["removed"]
 
 
-@pytest.mark.usefixtures("_no_uncommitted")
-def test_an_install_removes_the_retired_launcher_and_its_directory(tmp_path: Path, capsys) -> None:
-    """A tree an earlier release wrote holding `profiler/hp.sh` and the launcher's later name: the install
-    removes both, and the directory they leave empty with them, and the dry run names every removal it
-    then makes, on a re-install of the same version. Defect: the copy is one-way and removes nothing, so
-    a retired launcher stood in the install directory for good."""
+def test_a_symlink_inside_the_install_directory_is_removed_not_followed(tmp_path: Path, capsys) -> None:
+    """A link inside the install directory is unlinked as the link it is: whatever it names, outside the
+    install directory, keeps every file. Defect: the wipe follows the link out of the install
+    directory, removing what it names."""
     project = tmp_path / "project"
     project.mkdir()
     argv = ["install", str(project), "--harness=claude"]
     main(argv)
-    stale = _claude_plugin(project / ".claude") / _PROFILER
-    for name in RETIRED_RESOURCE_FILES:
-        _plant(project / ".claude" / "skills" / "devpro" / name, "# !INSTALLED! from devpro/harnesses/x — y\n")
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    keep = _plant(elsewhere / "keep.txt", "keep\n")
+    link = _claude_plugin(project / ".claude") / "linked"
+    link.symlink_to(elsewhere)
     groups = _assert_dry_run_predicts(argv, project=project, capsys=capsys)
-    assert not stale.exists()
-    assert f"{stale.relative_to(project).as_posix()}/" in groups["removed"]
+    assert keep.read_text(encoding="utf-8") == "keep\n"
+    assert not link.exists()
+    assert f"{link.relative_to(project).as_posix()}/" in groups["removed"]
 
 
-@pytest.mark.usefixtures("_no_uncommitted")
-def test_an_install_leaves_a_retired_name_it_did_not_write(tmp_path: Path, capsys) -> None:
-    """A `profiler/` directory holding the consumer's own file is the consumer's: neither the file, at a
-    retired name or beside one, nor the directory is removed, because only a file carrying this
-    repository's installed header is ours to delete."""
+def test_a_stale_pyc_under_the_re_entry_copy_is_absent_and_the_copy_byte_identical(
+    tmp_path: Path, _staged, capsys
+) -> None:
+    """A re-entry run passes over the copy's own files by path and removes everything else inside the
+    copy's tree, a stale bytecode file included, and rewrites none of the copy it runs from. Defect:
+    the pass-over preserves junk, or the replacement rewrites the copy the run executes from."""
     project = tmp_path / "project"
     project.mkdir()
-    argv = ["install", str(project), "--harness=claude"]
-    main(argv)
-    theirs = _claude_plugin(project / ".claude") / _PROFILER
-    for name in RETIRED_RESOURCE_FILES:
-        _plant(theirs / name, "#!/bin/sh\n# the operator's own profiler\n")
-    _plant(theirs / "notes.md", "notes\n")
+    main(["install", str(project), "--harness=claude"])
+    copy = _claude_plugin(project / ".claude") / "tools/devpro"
+    _staged(copy, ())
+    copy_before = _files(copy)
+    stale = _plant(copy / "tool.cpython-311.pyc", "bytecode\n")
     capsys.readouterr()
-    main(argv)
-    assert all((theirs / name).is_file() for name in RETIRED_RESOURCE_FILES)
-    assert (theirs / "notes.md").is_file()
+    main(["install", str(project), "--harness=claude"])
+    assert not stale.exists()
+    assert _files(copy) == copy_before
 
 
 def test_the_cold_read_script_installed_under_mage_refuses(tmp_path: Path) -> None:
@@ -323,115 +324,6 @@ def test_the_cold_read_script_installed_under_mage_refuses(tmp_path: Path) -> No
     assert "claude and opencode only" in result.stderr
 
 
-def test_install_writes_every_render_and_stamps_the_packages_once(installed: Path) -> None:
-    assert all((installed / path).is_file() for path, _ in render_all(_KBASE_CLAUDE_RENDER))
-    kb_mk = (installed / "skills/kbase/kb-tools/runner-snippets/kb.mk").read_text(encoding="utf-8").split("\n")
-    source_mk = (PACKAGE_ROOT / "kb-tools/runner-snippets/kb.mk").read_text(encoding="utf-8").split("\n")
-    assert kb_mk[0].startswith("# !INSTALLED! from devpro/kb-tools/runner-snippets/kb.mk — ")
-    assert kb_mk[1:] == source_mk
-
-
-def test_the_stale_list_keeps_a_safety_copy(tmp_path: Path, capsys) -> None:
-    """Prune's own guard, not a copy filter: a safety copy (a `.bak` suffix) never enters the stale
-    list, while a generated file beside it does. Defect: with the denylist gone, prune would remove a
-    consumer's backup from the rendered surfaces. No re-install rewrites it, the rendered files being
-    unchanged, so nothing else can account for the safety copy's survival."""
-    project = tmp_path / "project"
-    root = project / ".claude"
-    root.mkdir(parents=True)
-    _definition_install(root, _KBASE_CLAUDE_RENDER, project_root=project)
-    plugin = _claude_plugin(root)
-    planted = {
-        # A safety copy beside a render, in the rendered skill's own directory: the `.bak` is the
-        # consumer's.
-        "skills/kbase/references/shipped.md.bak": _NEW_BANNER,
-        "skills/kbase/references/ours.md": _NEW_BANNER,
-    }
-    for relative, text in planted.items():
-        _plant(plugin / relative, text)
-    capsys.readouterr()
-    _definition_install(root, _KBASE_CLAUDE_RENDER, project_root=project)
-    out = capsys.readouterr().out
-    assert f"pruned {plugin / 'skills/kbase/references/ours.md'}" in out
-    left = {relative for relative in planted if (plugin / relative).exists()}
-    assert left == {"skills/kbase/references/shipped.md.bak"}
-
-
-def test_reinstall_prunes_only_our_stale_definitions(tmp_path: Path, capsys) -> None:
-    install(tmp_path, _CLAUDE_RENDER, verbose=False, uncommitted=_committed)
-    plugin = _claude_plugin(tmp_path)
-    planted = {
-        "agents/kb-maintainer.md": _NEW_BANNER,
-        "agents/gone/old.md": _NEW_BANNER,
-        "agents/gone-too/deeper/old.md": _NEW_BANNER,
-        "agents/mine.md": "---\nname: mine\n---\n",
-        "agents/x.md.00.bak": _NEW_BANNER,
-    }
-    for relative, text in planted.items():
-        (plugin / relative).parent.mkdir(parents=True, exist_ok=True)
-        (plugin / relative).write_text(text, encoding="utf-8")
-    capsys.readouterr()
-    install(tmp_path, _CLAUDE_RENDER, verbose=False, uncommitted=_committed)
-    left = {relative for relative in planted if (plugin / relative).exists()}
-    assert left == {"agents/mine.md", "agents/x.md.00.bak"}
-    assert not (plugin / "agents/gone").exists() and not (plugin / "agents/gone-too").exists()
-    pruned = {line for line in capsys.readouterr().out.splitlines() if line.startswith("pruned ")}
-    assert pruned == {
-        f"pruned {plugin / 'agents/gone-too/deeper/old.md'}",
-        f"pruned {plugin / 'agents/gone/old.md'}",
-        f"pruned {plugin / 'agents/kb-maintainer.md'}",
-    }
-
-
-def test_a_hand_written_file_at_a_render_target_is_refused_with_nothing_written(tmp_path: Path) -> None:
-    root = tmp_path / ".claude"
-    mine = _claude_plugin(root) / "agents/python-coder.md"
-    mine.parent.mkdir(parents=True)
-    mine.write_text("---\nname: python-coder\n---\n\nmy own agent\n", encoding="utf-8")
-    before = _files(tmp_path)
-    with pytest.raises(InputError, match=re.escape(f"'{mine}'")):
-        _definition_install(root, project_root=tmp_path)
-    assert _files(tmp_path) == before
-
-
-def test_a_wrapper_no_install_wrote_is_refused_with_nothing_written(tmp_path: Path) -> None:
-    """Defect: the wrapper was not among the checked targets, so a project's own `tools/devpro.sh` was
-    overwritten without a word."""
-    root = tmp_path / ".claude"
-    mine = _plant(_claude_plugin(root) / "tools/devpro.sh", "#!/bin/sh\necho mine\n")
-    before = _files(tmp_path)
-    with pytest.raises(InputError, match=re.escape(f"'{mine}'")):
-        _definition_install(root, project_root=tmp_path)
-    assert _files(tmp_path) == before
-
-
-def test_a_directory_at_a_render_target_is_refused_with_nothing_written(tmp_path: Path) -> None:
-    root = tmp_path / ".claude"
-    target = _claude_plugin(root) / "agents/python-coder.md"
-    target.mkdir(parents=True)
-    (target / "inside.md").write_text("mine\n", encoding="utf-8")
-    before = _files(tmp_path)
-    with pytest.raises(InputError, match=re.escape(f"'{target}'")):
-        _definition_install(root, project_root=tmp_path)
-    assert _files(tmp_path) == before
-
-
-def test_every_failing_target_is_named_in_one_refusal(tmp_path: Path) -> None:
-    """Render and resource targets are collected together, so the operator clears them in one pass."""
-    root = tmp_path / ".opencode"
-    plugin_root = _opencode_plugin(root)
-    first, second = (plugin_root.joinpath(*relative.parts) for relative, _ in render_all(_OPENCODE_RENDER)[:2])
-    guardrail = plugin_root / _TS_GUARDRAIL
-    for path in (first, second, guardrail):
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("mine\n", encoding="utf-8")
-    before = _files(tmp_path)
-    with pytest.raises(InputError) as refusal:
-        _definition_install(root, _OPENCODE_RENDER, project_root=tmp_path)
-    assert all(f"'{path}'" in str(refusal.value) for path in (first, second, guardrail))
-    assert _files(tmp_path) == before
-
-
 def test_a_reinstall_overwrites_its_own_renders_kb_skill_files_included(tmp_path: Path) -> None:
     """A local edit that keeps the banner is still ours: the frontmatter carrier and a supporting
     file's comment carrier each pass, and the render replaces the edit."""
@@ -449,30 +341,21 @@ def test_a_reinstall_overwrites_its_own_renders_kb_skill_files_included(tmp_path
 
 
 @pytest.mark.parametrize(
-    "head, refused",
-    [
-        ("", True),
-        ("// filler\n" * 9 + _RESOURCE_HEADER, False),
-        ("// filler\n" * 10 + _RESOURCE_HEADER, True),
-    ],
+    "head",
+    ["", "// filler\n" * 9 + _RESOURCE_HEADER, "// filler\n" * 10 + _RESOURCE_HEADER],
     ids=["no-header", "header-on-line-10", "header-on-line-11"],
 )
-def test_a_resource_target_passes_only_with_the_header_in_its_first_ten_lines(
-    tmp_path: Path, head: str, refused: bool
-) -> None:
+def test_a_resource_destination_is_replaced_whatever_stands_there(tmp_path: Path, head: str) -> None:
+    """The replacement reads no header at a destination: a file standing at a harness resource's path is
+    overwritten with the resource as this release ships it, wherever a banner would have sat. Defect: a
+    header gate refusing the install over a file without it."""
     root = tmp_path / ".opencode"
     guardrail = _opencode_plugin(root) / _TS_GUARDRAIL
     guardrail.parent.mkdir(parents=True)
     guardrail.write_text(f"{head}export const mine = 1\n", encoding="utf-8")
     source = (PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / "opencode" / _TS_GUARDRAIL).read_bytes()
-    before = _files(tmp_path)
-    if refused:
-        with pytest.raises(InputError, match=re.escape(f"'{guardrail}'")):
-            _definition_install(root, _OPENCODE_RENDER, project_root=tmp_path)
-        assert _files(tmp_path) == before
-    else:
-        _definition_install(root, _OPENCODE_RENDER, project_root=tmp_path)
-        assert guardrail.read_bytes() == source
+    _definition_install(root, _OPENCODE_RENDER, project_root=tmp_path)
+    assert guardrail.read_bytes() == source
 
 
 def test_a_prior_installs_resource_is_overwritten(tmp_path: Path) -> None:
@@ -486,16 +369,17 @@ def test_a_prior_installs_resource_is_overwritten(tmp_path: Path) -> None:
     assert guardrail.read_bytes() == (PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / "opencode" / _TS_GUARDRAIL).read_bytes()
 
 
-def test_every_shipped_resource_carries_the_header_its_reinstall_needs(tmp_path: Path) -> None:
-    """A resource without the header would refuse its own second install, and the banner a reader finds
-    in an installed tree names the file it came from and where a local need goes."""
+def test_every_shipped_resource_carries_its_installed_banner_as_shipped(tmp_path: Path) -> None:
+    """The banner a reader finds in an installed tree names the file it came from and where a local need
+    goes. The install copies the file as it stands — it stamps nothing on a resource — so the banner is
+    shipped text the source test holds for every file a harness ships, required by nothing an install
+    reads back."""
     harnesses = load("devpro.harnesses", "HARNESS")
     sources = [source for name in harnesses for source, _ in harness_resource_copies(tmp_path, harness=name)]
     assert sources
-    assert [source for source in sources if not _is_our_resource(source)] == []
     for source in sources:
         origin = f"{PACKAGE_ROOT.name}/{source.relative_to(PACKAGE_ROOT).as_posix()}"
-        head = source.read_text(encoding="utf-8").splitlines()[:_RESOURCE_BANNER_LINES]
+        head = source.read_text(encoding="utf-8").splitlines()[:10]
         banner = next((line for line in head if "!INSTALLED!" in line), "")
         assert f"!INSTALLED! from {origin} — " in banner, source
         assert "request changes from the devpro project" in banner, source
@@ -523,23 +407,6 @@ def test_a_failed_probe_installs_everything_else_and_neither_ships_nor_registers
     assert not (tmp_path / _SETTINGS).exists()
     [skipped] = [line for line in capsys.readouterr().err.splitlines() if line.startswith("guardrail hook skipped")]
     assert reason in skipped and "left in place" not in skipped
-
-
-def test_a_failed_probe_leaves_the_earlier_script_in_place_and_names_it(
-    tmp_path: Path, capsys, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Nothing replaces the script, so it stays and is named; the registration is written on every
-    install, so it is replaced whole rather than named as left."""
-    root = _claude_root(tmp_path)
-    _definition_install(root, project_root=tmp_path)
-    before = _files(tmp_path)
-    monkeypatch.setattr("devpro.install.GUARDRAIL_INTERPRETER", "devpro-no-such-perl")
-    capsys.readouterr()
-    _definition_install(root, project_root=tmp_path)
-    after = _files(tmp_path)
-    script = _claude_plugin(root) / _GUARDRAIL
-    assert after[script.relative_to(tmp_path).as_posix()] == before[script.relative_to(tmp_path).as_posix()]
-    assert f"left in place from an earlier install: {script}" in capsys.readouterr().err
 
 
 def test_a_probe_that_fails_and_then_passes_registers_the_guardrail_again(
@@ -828,22 +695,25 @@ def test_an_agents_file_dry_run_names_the_files_and_writes_nothing(tmp_path: Pat
 def test_no_printed_path_or_refusal_names_the_scratch_copy(
     tmp_path: Path, capsys, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A refusal the copy run raises names the real file; the scratch copy is gone afterwards."""
+    """A refusal the copy run raises names the real link; the scratch copy is gone afterwards."""
     scratch = tmp_path / "scratch"
     scratch.mkdir()
     monkeypatch.setattr("tempfile.tempdir", str(scratch))
     project = tmp_path / "project"
     root = project / ".claude"
     root.mkdir(parents=True)
-    argv = ["install", str(project), "--harness=claude", "--dry-run"]
-    main(argv)
+    main(["install", str(project), "--harness=claude"])
     printed = capsys.readouterr().out
-    mine = _plant(_claude_plugin(root) / "agents/python-coder.md", "mine\n")
+    link = _claude_plugin(root)
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    shutil.rmtree(link)
+    link.symlink_to(elsewhere, target_is_directory=True)
     with pytest.raises(SystemExit) as exit_info:
-        main(argv)
+        main(["install", str(project), "--harness=claude"])
     assert exit_info.value.code == 2
     refusal = capsys.readouterr().err
-    assert f"'{mine}'" in refusal
+    assert f"'{link}'" in refusal
     assert str(scratch) not in printed + refusal
     assert list(scratch.iterdir()) == []
 

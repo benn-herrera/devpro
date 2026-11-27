@@ -113,27 +113,6 @@ def test_the_profile_skill_renders_under_every_harness() -> None:
         assert PurePosixPath(_PROFILER_SKILL) in dict(render_all(ctx)), ctx.harness.name
 
 
-def test_a_second_install_leaves_the_copied_plugin_standing_and_prunes_only_the_stale_render(
-    tmp_path: Path, capsys
-) -> None:
-    """The copied file is in `keep`, so a re-install neither rewrites it away nor prunes it: the one
-    rendered file planted beside it is what goes."""
-    root = tmp_path / ".opencode"
-    root.mkdir()
-    _definition_install(root, _OPENCODE_RENDER, project_root=tmp_path)
-    copied = _opencode_plugin(root) / _TS_GUARDRAIL
-    before = copied.read_bytes()
-    stale = _opencode_plugin(root) / "agents/gone.md"
-    stale.write_text(_NEW_BANNER, encoding="utf-8")
-    capsys.readouterr()
-    _definition_install(root, _OPENCODE_RENDER, project_root=tmp_path)
-    assert copied.read_bytes() == before
-    assert not stale.exists()
-    out = capsys.readouterr().out
-    assert f"pruned {stale}" in out
-    assert f"pruned {copied}" not in out
-
-
 def test_the_package_copy_stages_every_file_the_running_package_holds(tmp_path: Path, _staged) -> None:
     """The package copy takes its source tree whole, less the `__pycache__` directories no wheel
     carries: that source is the clone's own tree when the install runs from a checkout, which has no

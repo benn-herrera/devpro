@@ -86,7 +86,7 @@ def require_existing_target(target: Path) -> None:
 
 def require_outside_package_source(target: Path) -> None:
     """Refuse `target` where it resolves to the running package's source or into it, naming the boundary:
-    an install there would overwrite or prune the very set `devpro` is."""
+    an install there would replace the very set `devpro` is."""
     resolved = target.resolve()
     if resolved == PACKAGE_ROOT or resolved.is_relative_to(PACKAGE_ROOT):
         raise InputError(

@@ -10,7 +10,6 @@ import pytest
 
 from devpro.cli import main
 from devpro.errors import InputError
-from devpro.install import RETIRED_SNIPPET_SET
 from devpro.install_base import PACKAGE_ROOT
 from devpro.runner_file import _named_harnesses, install_include_lines
 
@@ -187,23 +186,16 @@ def test_an_install_whose_project_is_this_repository_writes_the_devpro_include_l
     assert _DEVPRO_SET_LINE in (project / "justfile").read_text(encoding="utf-8").splitlines()
 
 
-def test_a_retired_docdicer_line_is_removed_and_reported(tmp_path: Path, capsys) -> None:
-    """`skills/docdicer/tools/` is pruned at the next install, so a line importing its snippets outlives
-    the snippets it names and the recipes vanish silently. Both of this harness's lines go, each removal
-    reported; a line naming another harness directory's snippets is reported and left."""
+def test_a_project_install_leaves_a_retired_docdicer_line_as_written(tmp_path: Path) -> None:
+    """A line naming a set no install ships any more is no set's line to judge: the install leaves it as
+    written and appends its own set's line beside it. Defect: the install removed the retired line and
+    named the removal in its report."""
     docdicer_just = f"import? '{_CLAUDE_PLUGIN_RELPATH}/skills/docdicer/tools/runner-snippets/docdicer.just'"
-    (tmp_path / "justfile").write_text(
-        f"default:\n  @echo hi\n\n{docdicer_just}\n{docdicer_just}\nimport? '.opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.just'\n",
-        encoding="utf-8",
-    )
-    install_include_lines(tmp_path, [], harness_relpath=".claude", retired_set=RETIRED_SNIPPET_SET)
-    assert (tmp_path / "justfile").read_text(encoding="utf-8") == (
-        "default:\n  @echo hi\n\n"
-        "import? '.opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.just'\n"
-    )
-    out, err = capsys.readouterr()
-    assert out.count("removed the retired docdicer include line from") == 2
-    assert "names the retired docdicer snippets for harness 'opencode'" in err
+    (tmp_path / "justfile").write_text(f"default:\n  @echo hi\n\n{docdicer_just}\n", encoding="utf-8")
+    install_include_lines(tmp_path, [_KB_SNIPPETS], harness_relpath=".claude")
+    text = (tmp_path / "justfile").read_text(encoding="utf-8")
+    assert docdicer_just in text
+    assert text.count("runner-snippets/kb.just") == 1
 
 
 def test_a_project_install_without_the_kbase_component_writes_the_devpro_include_line_only(
@@ -233,44 +225,6 @@ def test_a_gitignore_already_carrying_the_line_is_left_as_it_stands(tmp_path: Pa
         b".venv/\n.devpro-temp/\n",
         state[".gitignore"][1],
     )
-
-
-def test_a_runner_file_holding_no_retired_line_is_reported_as_found_not_as_left(tmp_path: Path, capsys) -> None:
-    """The removal helper runs on a file this install's write changed, which an append does as surely as
-    a removal, so it reaches a consumer's own Makefile the cleanup touched nothing in. That file is left
-    reported as holding no include line and nothing removed — not as left over after a removal."""
-    (tmp_path / "Makefile").write_text("all:\n\t@echo hi\n", encoding="utf-8")
-    install_include_lines(tmp_path, [_KB_SNIPPETS], harness_relpath=".opencode", retired_set=RETIRED_SNIPPET_SET)
-    out, err = capsys.readouterr()
-    assert "removed" not in out
-    assert f"left {tmp_path / 'Makefile'} in place: it holds no include line, and this install removed none" in err
-    assert "holding no include line: it holds content other than this install's" not in err
-
-
-def test_a_devpro_set_line_survives_the_retired_docdicer_lines_cleanup(tmp_path: Path, capsys) -> None:
-    """The devpro set and the retired docdicer set both sit in a `runner-snippets/` directory, so a
-    cleanup matching that directory name rather than the snippet file name would take the devpro line
-    for a docdicer one and delete it — and delete it in the same run's write, a line that would
-    otherwise have been appended the run after. The docdicer line beside it goes; the devpro line
-    stands, under whatever tree it spells, and is reported left alone where it already names the
-    installed snippets."""
-    devpro_just = f"import? '{_CLAUDE_PLUGIN_RELPATH}/tools/runner-snippets/devpro.just'"
-    docdicer_just = f"import? '{_CLAUDE_PLUGIN_RELPATH}/skills/docdicer/tools/runner-snippets/docdicer.just'"
-    (tmp_path / "justfile").write_text(f"default:\n  @echo hi\n\n{devpro_just}\n{docdicer_just}\n", encoding="utf-8")
-    install_include_lines(tmp_path, [], harness_relpath=".claude", retired_set=RETIRED_SNIPPET_SET)
-    assert (tmp_path / "justfile").read_text(encoding="utf-8") == f"default:\n  @echo hi\n\n{devpro_just}\n"
-    out = capsys.readouterr().out
-    assert out.count("removed the retired docdicer include line from") == 1
-
-
-def test_the_retired_cleanup_leaves_a_devpro_set_line_alone_in_a_makefile(tmp_path: Path) -> None:
-    """The `-include` form is recognized on the same shape, so the Makefile side is the same defect: a
-    line ending `runner-snippets/devpro.mk` is not a retired docdicer line."""
-    devpro_mk = "-include .opencode/plugins/devpro/tools/runner-snippets/devpro.mk"
-    docdicer_mk = "-include .opencode/plugins/devpro/skills/docdicer/tools/runner-snippets/docdicer.mk"
-    (tmp_path / "Makefile").write_text(f"all:\n\t@echo hi\n\n{devpro_mk}\n{docdicer_mk}\n", encoding="utf-8")
-    install_include_lines(tmp_path, [], harness_relpath=".opencode", retired_set=RETIRED_SNIPPET_SET)
-    assert (tmp_path / "Makefile").read_text(encoding="utf-8") == f"all:\n\t@echo hi\n\n{devpro_mk}\n"
 
 
 def test_no_two_snippet_sets_name_the_same_snippet() -> None:

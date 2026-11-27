@@ -2,24 +2,31 @@
 directory and the project root from TARGET. The set is written into ROOT, the harness's `plugin_dir`
 below the harness directory, or the harness directory itself where that is empty.
 
+ROOT is the plugin's own, entire: an install replaces it wholesale. After every check and before the
+first write, the install removes ROOT's contents — every file and subdirectory below it, whatever wrote
+them — and writes the fresh tree into the emptied directory. Nothing inside ROOT is read to decide its
+fate: no banner, no stale list, no file judged ours or foreign. Two pass-overs are taken by path: on a
+re-entry run the devpro copy's own files and the wrapper stand, and the agents file's path stands where
+it falls inside ROOT (mage). ROOT itself is never removed, and an install keeps no backup of what it
+replaces: the consumer's git is the record of what an install changed.
+
 Every definition the selection ships is rendered into ROOT's agents/, commands/ and skills/. Each
 skill-owned shipped package whose owning definition rendered is copied to its stated destination: the
 development scripts inside the development skill's directory, and the kb-tools package, with the
 `kbase` MCP entry, inside the kbase skill's. Every install writes the devpro tools package into ROOT's
-tools/ — the running package's own copy, the wrapper that runs it and the runner snippets — and removes
-the dicing snippets package's retired home. A project install writes the include line of each copied
-package carrying runner snippets into the consumer's runner file, and removes a line an earlier release
-wrote there for the retired docdicer package. Each file the installing harness ships is copied into
-ROOT as it stands, and the harness's hooks are registered in a file of their own under ROOT, its
-guardrail's entry only where one install-time run of the guardrail succeeds. A harness-directory
-install below its project root also gets its agents file in its harness directory. The project's
-profiler stores from before the `.profiler-*` rename — `claude-profiler` and `opencode-profiler` — are
-renamed in place, once, with the move printed.
+tools/ — the running package's own copy, the wrapper that runs it and the runner snippets. A project
+install writes the include line of each copied package carrying runner snippets into the consumer's
+runner file. Each file the installing harness ships is copied into ROOT as it stands, and the harness's
+hooks are registered in a file of their own under ROOT, its guardrail's entry only where one
+install-time run of the guardrail succeeds. A harness-directory install below its project root also
+gets its agents file in its harness directory. The project's profiler stores from before the
+`.profiler-*` rename — `claude-profiler` and `opencode-profiler` — are renamed in place, once, with the
+move printed.
 
 A target that resolves into the running devpro package's own source is refused before anything is
-written, and so is an install run from an installation's own copy into that installation. The install
-overwrites without ceremony only what carries this repository's banner, refusing over any other file at
-a path it writes: the consumer's git is the record of what an install changed. Where the devpro
+written, and so are an install run from an installation's own copy into that installation, one whose
+devpro-copy destination is a symlink, and one whose install directory itself is a symlink: each link
+would let the replacement clear and write through it into whatever it names. Where the devpro
 settings file names harnesses and `--harness` is not given, `install_selected` drives one install per
 harness it names, each rendered from that harness's settings-file map and component list."""
 
@@ -32,7 +39,6 @@ import stat
 import subprocess
 import sys
 from collections.abc import Callable, Iterable, Mapping
-from functools import partial
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
@@ -50,8 +56,6 @@ from devpro.context import HarnessSettings, MapSupply, Render, harness_named
 from devpro.errors import InputError
 from devpro.harness import KBASE_OWNER, GuardrailHook, Harness, HarnessFile
 from devpro.install_base import (
-    GENERATED_MARK,
-    INSTALLED_BANNER,
     KB_TOOLS_DIR,
     PACKAGE_ROOT,
     TOOLS_DIR,
@@ -131,8 +135,8 @@ DEVPRO_COPY = f"{TOOLS_DIR}/devpro"
 # and an ownerless one — the devpro tools package's — on every install, user-level included. A
 # destination is a consumer contract — a skill names its own tools relative to its directory, and an
 # installed runner line names its snippets directory — so each is stated, never derived.
-# `package_copies`, the `!INSTALLED!` stamping, the destination replacement and the runner include
-# lines all read this table; the include lines land in its order.
+# `package_copies`, the `!INSTALLED!` stamping and the runner include lines all read this table; the
+# include lines land in its order.
 SHIPPED_PACKAGES: tuple[ShippedPackage, ...] = (
     ShippedPackage("development-tools", DEVELOPMENT_SCRIPTS_PACKAGE, "development"),
     ShippedPackage(
@@ -149,53 +153,20 @@ SHIPPED_PACKAGES: tuple[ShippedPackage, ...] = (
         SnippetSet("kb", "runner-snippets", {"just": "kb.just", "make": "kb.mk"}),
     ),
 )
-# The dicing snippets package's home before it joined the devpro tools package: an install removes it
-# whole, since its files carry the installed banner, which `prune` leaves be.
-RETIRED_PACKAGE_DIR = "skills/docdicer/dicing-snippets"
-# The snippet set of the docdicer tools package, retired with the absorbed dicing verbs: no row ships
-# it, and a project install removes the line an earlier release wrote for it. Its shape is all that is
-# left of it — the directory name and the snippet per runner an include line ended in.
-RETIRED_SNIPPET_SET = SnippetSet(
-    "docdicer", "skills/docdicer/tools/runner-snippets", {"just": "docdicer.just", "make": "docdicer.mk"}
-)
 # The harness resources: files a harness ships that land in ROOT as they stand, copied and never
 # rendered. The directory below this one in the source is the harness's own
 # name, and the destination is ROOT itself — both stated, neither derived from a directory listing.
 HARNESS_RESOURCES_SOURCE = "harnesses/resources"
-# The resource files an earlier release copied into ROOT and this one ships nothing at, in the order
-# they are read: the profiler's launcher, whose first name is the one every release since wrote and
-# whose second is the name it carried before the rename. The one-way copy would leave them for good,
-# so an install removes them. The removal runs on every install, not on a version change alone, so
-# reinstalling a tree an older release wrote cleans it. Only a file carrying this repository's
-# installed header is removed; anything else at a retired name is not ours to delete.
-RETIRED_RESOURCE_FILES = ("profiler/profiler.sh", "profiler/hp.sh")
-# A directory a retired resource file lived in, removed once that leaves it empty: a directory holding
-# anything else is the consumer's and is left.
-RETIRED_RESOURCE_DIRS = ("profiler",)
 # The interpreter the install-time probe runs a guardrail hook script under, found on PATH, and how long
 # that run may take before it counts as failed.
 GUARDRAIL_INTERPRETER = "perl"
 GUARDRAIL_PROBE_SECONDS = 5.0
-# A safety copy, which a consumer's own backup is and no install writes: `prune` keeps it out of its
-# stale list.
-EXCLUDED_SUFFIX = ".bak"
 # Copied package files of a script or build-file type carry the one-line installed banner: by suffix,
 # or by name for an extensionless script. Every other file — a `.gitignore` among them — is copied
 # byte-verbatim.
 STAMPED_SUFFIXES = frozenset({".py", ".sh", ".mk", ".just"})
 STAMPED_NAMES: frozenset[str] = frozenset()
-SURFACES = ("agents", "commands", "skills")
-# The generated-banner prefixes, built from the mark `render` writes above the payload, and the prefix
-# of the module path a payload names: `devpro/`, which every module path below `devpro/definitions/`
-# opens with. A file opening with one of these is one this repository wrote; the bare mark followed by
-# anything else is somebody else's file.
-_GENERATED = f"# {GENERATED_MARK}".encode("utf-8")
-_COMMENT_GENERATED = f"<!-- {GENERATED_MARK}".encode("utf-8")
-_PAYLOAD_PATH = f"{PACKAGE_ROOT.name}/".encode("utf-8")
 _INSTALLED_NOTICE = GENERATED_NOTICE
-# The installed banner over bytes: a resource's header is read without decoding it.
-_RESOURCE_BANNER = re.compile(INSTALLED_BANNER.pattern.encode("utf-8"))
-_RESOURCE_BANNER_LINES = 10
 
 
 # The wrapper `tools/devpro.sh`, its `@INTERPRETER@` slot filled with the shell-quoted path of the
@@ -261,12 +232,6 @@ def _installed_version(init: Path) -> str | None:
     return match.group(1) if match else None
 
 
-def _is_stale_candidate(relative: Path) -> bool:
-    """Whether a file below a package destination may enter `prune`'s stale list: not a safety copy. A
-    `.bak` is the consumer's."""
-    return relative.suffix != EXCLUDED_SUFFIX
-
-
 def _wheel_files(root: Path) -> list[Path]:
     """Every file below a staging source, `__pycache__` directories left out: bytecode is no wheel
     content, and a pip-compiled install of the wheel holds some the wheel itself does not."""
@@ -294,17 +259,14 @@ def harness_resource_copies(root: Path, *, harness: str) -> list[tuple[Path, Pat
 
     These files are the harness's own, not this repository's generated product: each is copied
     byte-verbatim with its mode preserved and nothing else — no `!INSTALLED!` banner, no stamping. Each
-    must carry its own `!INSTALLED! … devpro` header in its first ten lines: that header is how a
-    later install knows the target is one it wrote, and a target without it refuses the install. A
-    harness shipping no resources directory copies nothing, which is not an error. No harness's list
-    reaches another harness's directory: opencode's capture is its plugin's own, and the profiler's
-    resources are gone.
+    carries its own `!INSTALLED! … devpro` header in its first ten lines, as shipped: it tells an
+    operator the source is elsewhere, and no install reads one back. A harness shipping no resources
+    directory copies nothing, which is not an error. No harness's list reaches another harness's
+    directory: opencode's capture is its plugin's own, and the profiler's resources are gone.
 
-    The copy is one-way and is not a mirror: a resource file this repository drops is not removed from
-    a consumer, because `prune` owns the three rendered surfaces and nothing outside them, and what
-    lands here stays until the consuming project removes it. The one exception is a resource file
-    `RETIRED_RESOURCE_FILES` names, which `install` removes from the install directory where it carries
-    this repository's header."""
+    What lands here stays only as long as the release ships it: the next install's wholesale
+    replacement of ROOT removes a resource file this repository drops, and everything else standing
+    beside it."""
     source = PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / harness
     return _harness_resource_pairs(source, root)
 
@@ -326,107 +288,15 @@ def stamped(data: bytes, *, origin: str) -> bytes:
     return shebang + b"\n" + banner + rest
 
 
-def _bannered(line: bytes, prefix: bytes) -> bool:
-    """Whether `line` opens with `prefix` and then a payload naming a module path this repository
-    writes — not merely the mark, which any hand-written comment can carry."""
-    return line.startswith(prefix) and line[len(prefix) :].startswith(_PAYLOAD_PATH)
-
-
-def _is_ours(path: Path) -> bool:
-    """A generated file, by the carrier it opens with: an HTML comment on line 1 — how a skill's supporting
-    file holds its banner, having no frontmatter — or a frontmatter block whose banner sits on line 2.
-    A file that cannot be read is not ours."""
-    try:
-        with path.open("rb") as handle:
-            head = [handle.readline() for _ in range(2)]
-    except OSError:
-        return False
-    return _bannered(head[0], _COMMENT_GENERATED) or (head[0].rstrip() == b"---" and _bannered(head[1], _GENERATED))
-
-
-def _is_our_resource(path: Path) -> bool:
-    """A harness resource this repository ships, by the `!INSTALLED! … devpro` header on one of its
-    first ten lines. A file that cannot be read is not ours."""
-    try:
-        with path.open("rb") as handle:
-            head = [handle.readline() for _ in range(_RESOURCE_BANNER_LINES)]
-    except OSError:
-        return False
-    return any(_RESOURCE_BANNER.search(line) is not None for line in head)
-
-
 def _is_our_harness_file(path: Path, *, marker: str) -> bool:
     """A harness-rendered file this repository wrote: the marker the file states about itself appears in
-    it. A file that cannot be read or decoded is not ours."""
+    it. A file that cannot be read or decoded is not ours. Its one reader is `_report_shadowing`, which
+    reads a user harness directory outside the replacement: no install gates a write or a removal on it."""
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
         return False
     return marker in text
-
-
-def _refuse_foreign_targets(
-    *,
-    render_targets: Iterable[Path],
-    resource_targets: Iterable[Path],
-    harness_targets: Iterable[tuple[Path, str]],
-) -> None:
-    """Refuse an install that would overwrite a file it did not write. A target that exists passes only
-    where the claim its class makes of it holds: a render by its generated banner, a resource — the
-    wrapper among them — by its installed header, a harness-rendered file — `(path, marker)` — by the
-    marker that file states about itself. Every failing path is named in the one refusal, so the operator
-    clears them in one pass."""
-    claims: list[tuple[Path, Callable[[Path], bool]]] = [
-        *((target, _is_ours) for target in render_targets),
-        *((target, _is_our_resource) for target in resource_targets),
-        *((target, partial(_is_our_harness_file, marker=marker)) for target, marker in harness_targets),
-    ]
-    foreign = [target for target, ours in claims if target.exists() and not ours(target)]
-    if foreign:
-        named = ", ".join(f"'{target}'" for target in foreign)
-        raise InputError(
-            f"install would overwrite files it did not write: {named} — move or remove each, then re-install"
-        )
-
-
-def prune(root: Path, *, keep: set[Path]) -> list[Path]:
-    """Remove every regular file under ROOT's surfaces that is not in `keep`, is no safety copy, and is
-    ours; then each directory that leaves empty, walking upward from the file to the first
-    directory that still holds anything, the surface included and ROOT never.
-
-    The skill-owned package destinations sit inside the skills surface — `skills/kbase/kb-tools/` and
-    `skills/development/scripts/` — the devpro tools package outside every surface, and no destination is carved out by
-    name. None needs to be: a copied package file carries the `!INSTALLED!` banner or none, never the
-    generated one `_is_ours` reads, so it is untouched here rather than pruned, and a safety copy never
-    enters the stale list (`_is_stale_candidate`). Every file under a surface is thus either ours or
-    untouched. A definition of ours this run did not write — one its plugin does not ship — is stale
-    and removed, while one the run wrote is in `keep`. Nothing outside ROOT's surfaces is walked, so
-    another plugin's ROOT beside this one is never read.
-
-    A harness-rendered file such as the plugin manifest or `.mcp.json` carries no generated banner, so
-    wherever it sits it is neither pruned nor read as a stale render. Each is rendered on every install
-    of a plugin that ships its owner, and ROOT is that plugin's alone, so none has a stale form to
-    remove."""
-    stale = [
-        path
-        for surface in SURFACES
-        for path in _files_below(root / surface)
-        if path not in keep and path.is_file() and _is_stale_candidate(path.relative_to(root)) and _is_ours(path)
-    ]
-    for path in stale:
-        path.unlink()
-    for path in stale:
-        parent = path.parent
-        # An earlier stale file's walk may already have removed this one's directory.
-        while parent != root and parent.exists() and not any(parent.iterdir()):
-            parent.rmdir()
-            parent = parent.parent
-    return stale
-
-
-def _files_below(top: Path) -> list[Path]:
-    """Every non-directory `os.walk` lists below `top`, sorted."""
-    return sorted(Path(directory, name) for directory, _, names in os.walk(top) for name in names)
 
 
 def _guardrail_probe(script: Path, *, project: Path) -> str | None:
@@ -497,58 +367,37 @@ def _guardrail_in_play(harness: Harness, *, user_level: bool) -> GuardrailHook |
 
 
 def _resource_copies(root: Path, *, harness: Harness, user_level: bool) -> list[tuple[Path, Path]]:
-    """The harness resources an install copies: every one on a project install, and only the entry that
-    registers the plugin on a user-level one, which delivers no guardrail."""
+    """The harness resources an install copies: every one on a project install, and on a user-level one
+    the entry that registers the plugin and the guardrail resource beside it — opencode's `index.ts` and
+    `guardrail.ts` — so the entry runs the guardrail at user level as it does in a project. A harness
+    with no entry copies nothing at user level."""
     copies = harness_resource_copies(root, harness=harness.name)
     if not user_level:
         return copies
     if not harness.entry_resource:
         return []
-    return [(source, target) for source, target in copies if target == root / harness.entry_resource]
+    entry = PurePosixPath(harness.entry_resource)
+    beside_the_entry = {entry.as_posix(), (entry.parent / GUARDRAIL_RESOURCE).as_posix()}
+    return [(source, target) for source, target in copies if target.relative_to(root).as_posix() in beside_the_entry]
 
 
-def _retired_resource_targets(root: Path) -> list[Path]:
-    """The retired resource files standing at `root`, in the order `RETIRED_RESOURCE_FILES` lists them,
-    that carry this repository's installed header: the files this release stopped shipping. A name
-    holding anything else is not ours to delete."""
-    standing = (root / name for name in RETIRED_RESOURCE_FILES if (root / name).is_file())
-    return [path for path in standing if _is_our_resource(path)]
-
-
-def _retired_resource_dirs(root: Path) -> list[Path]:
-    """The retired resource directories standing empty at `root`, in the order `RETIRED_RESOURCE_DIRS`
-    lists them: a directory that still holds anything is the consumer's and is left."""
-    standing = (root / name for name in RETIRED_RESOURCE_DIRS)
-    return [path for path in standing if path.is_dir() and not any(path.iterdir())]
-
-
-def _clear_package_destination(destination: Path) -> None:
-    """Empty the directory at `destination` for the package copy: every entry there is removed per its
-    shape — a directory tree removed, any other entry unlinked — leaving the destination holding
-    nothing; the destination absent, nothing done."""
-    if destination.is_dir():
-        for entry in destination.iterdir():
-            if entry.is_dir():
-                shutil.rmtree(entry)
-            else:
-                entry.unlink()
-    else:
-        destination.unlink(missing_ok=True)
+GUARDRAIL_RESOURCE = "guardrail.ts"
+"""The guardrail resource an entry that registers itself runs from beside itself."""
 
 
 def is_the_running_copy(root: Path) -> bool:
     """Whether `root`'s devpro copy is the package this install runs from: its resolved destination is the
     running package's source. An install from an installation's own copy into the installation holding that
-    copy — a re-entry run — passes over that copy and the wrapper that runs it, so neither is cleared or
-    written and the copy the run executes from stays whole."""
+    copy — a re-entry run — passes over that copy and the wrapper that runs it: the replacement leaves
+    the copy's own files and the wrapper standing, so the copy the run executes from stays whole."""
     return (root / DEVPRO_COPY).resolve() == PACKAGE_ROOT
 
 
 def _refuse_symlinked_copy(root: Path) -> None:
     """Refuse an install whose devpro-copy destination is a symlink. `is_the_running_copy` reads that
-    destination resolved and the copy's clear-and-write read it as it resolves, so a link there lets the
-    pass-over's two paths be defeated — the copy cleared and rewritten through the link into whatever it
-    names. Refuse, naming the link, before either reads it."""
+    destination resolved and the replacement's pass-over reads it as it resolves, so a link there lets
+    the pass-over's two paths be defeated — the copy cleared and rewritten through the link into whatever
+    it names. Refuse, naming the link, before either reads it."""
     copy = root / DEVPRO_COPY
     if copy.is_symlink():
         raise InputError(
@@ -556,6 +405,57 @@ def _refuse_symlinked_copy(root: Path) -> None:
             "install would clear and write through it into whatever it names; remove the link, then "
             "re-install; nothing written"
         )
+
+
+def _refuse_symlinked_install_directory(root: Path) -> None:
+    """Refuse an install whose install directory is a symlink: the wholesale replacement would clear and
+    write through the link into whatever it names. Decided on the real paths, before anything is
+    written, as the devpro copy's own refusal is."""
+    if root.is_symlink():
+        raise InputError(
+            f"install refuses '{root}': the install directory is a symlink, not a real directory — the "
+            "install replaces its contents wholesale and would clear and write through the link into "
+            "whatever it names; remove the link, then re-install; nothing written"
+        )
+
+
+def _replaced(root: Path, *, keep: frozenset[str]) -> None:
+    """Empty the install directory for the fresh tree: every entry below `root` removed — a directory
+    tree removed, any other entry unlinked, a symlink unlinked as the link it is and never followed —
+    save the paths `keep` names, relative to `root`, which stand as they are, and a directory `keep`
+    names or holds a path below: that one is walked, so a file beside the kept ones goes like any other.
+    `root` itself stays. No error is swallowed: an `OSError` propagates, and the install stops rather
+    than writing over what it could not clear."""
+    if root.is_dir():
+        _replaced_below(root, prefix="", keep=keep)
+
+
+def _replaced_below(directory: Path, *, prefix: str, keep: frozenset[str]) -> None:
+    """`_replaced` for one directory of the walk, `prefix` its path relative to the install directory."""
+    for entry in directory.iterdir():
+        relative = f"{prefix}{entry.name}"
+        if entry.is_symlink() or not entry.is_dir():
+            if relative not in keep:
+                entry.unlink()
+        elif any(kept.startswith(f"{relative}/") for kept in keep) or relative in keep:
+            # A directory on the way to a kept path, or one `keep` names: it stands, and everything inside
+            # it that `keep` does not name goes — a stale bytecode file beside the copy's own files is no
+            # passed-over path.
+            _replaced_below(entry, prefix=f"{relative}/", keep=keep)
+        else:
+            shutil.rmtree(entry)
+
+
+def _re_entry_kept(copy: Path) -> frozenset[str]:
+    """The paths a re-entry run's replacement passes over, relative to the install directory: the devpro
+    copy's own files — the tree its `SHIPPED_PACKAGES` row ships, `_wheel_files`' filter applied to the
+    copy the run executes from — and the wrapper that runs it. The row ships a filtered tree, never the
+    copy's listing, so a stale bytecode file beside the copy's own files is no passed-over path.
+    Everything else inside the copy's tree goes with the tree."""
+    row = next(package for package in SHIPPED_PACKAGES if package.destination == DEVPRO_COPY)
+    shipped = (path for path in _wheel_files(copy / row.source) if path.suffix != ".pyc")
+    own = (path.relative_to(copy / row.source).as_posix() for path in shipped)
+    return frozenset({*(f"{DEVPRO_COPY}/{relative}" for relative in own), WRAPPER})
 
 
 def _write_created(target: Path, data: bytes, *, mode: int) -> None:
@@ -623,13 +523,13 @@ def install(
     project = _lexical(harness_dir if project_root is None else Path(project_root))
     user_level = ctx.harness.name in user_dir_harnesses(harness_dir if real_harness_dir is None else real_harness_dir)
     harness_relpath = _harness_relpath(root, project)
-    # Every check runs before the first write: a symlinked copy destination, the running copy's own
-    # installation, the render, the guardrail probe that decides whether its script is a resource target,
-    # each render, harness-file and resource target the install would overwrite, the runner file where a
-    # shipped package carries runner snippets, and the agents file's. ROOT itself is created only after
-    # all of them.
+    # Every check runs before the replacement and the first write: a symlinked copy destination and a
+    # symlinked install directory, the running copy's own installation, the render, the guardrail probe
+    # that decides whether its script is a copy, the runner file where a shipped package carries runner
+    # snippets, and the agents file's. ROOT itself is created only after all of them.
     real_root = (harness_dir if real_harness_dir is None else real_harness_dir) / ctx.bound_harness.plugin_dir
     _refuse_symlinked_copy(real_root)
+    _refuse_symlinked_install_directory(real_root)
     re_entry = is_the_running_copy(real_root)
     renders = render_all(ctx)
     packages = [
@@ -638,9 +538,8 @@ def install(
         if package.owner is None or (not user_level and ctx.plugin.ships(package.owner))
     ]
     if re_entry:
-        # A re-entry run passes over the copy it runs from: dropping its row keeps its destination from
-        # being cleared and its files from being rewritten. That destination is under `tools/`, outside
-        # `prune`'s surfaces, and its files carry no generated banner, so it is not at risk there either.
+        # A re-entry run passes over the copy it runs from: dropping its row keeps its files from being
+        # rewritten. The replacement passes over them too, by path (`_re_entry_kept`).
         packages = [package for package in packages if package.destination != DEVPRO_COPY]
     package_files = [
         (package, source, target) for package in packages for source, target in package_copies(root, package)
@@ -649,15 +548,14 @@ def install(
     guardrail = _guardrail_in_play(ctx.bound_harness, user_level=user_level)
     snippet_sets = [snippets for package in packages if (snippets := package.installed_snippets()) is not None]
     # A project install of a nested plugin touches the project's runner file: it writes each shipped
-    # set's include line and removes the retired docdicer line where the project holds one, whichever
-    # shipped packages it carries — the retiree's cleanup needing no set of its own. Its scratch
-    # directory and `.gitignore` line are prepared on the same condition but not by this write: a project
-    # already holding the line writes nothing here and is still prepared below. Nothing else — a mage
-    # or user-level install — reads or writes any of them.
+    # set's include line, whichever shipped packages it carries. Its scratch directory and `.gitignore`
+    # line are prepared on the same condition but not by this write: a project already holding the line
+    # writes nothing here and is still prepared below. Nothing else — a mage or user-level install —
+    # reads or writes any of them.
     nested_project_install = _is_project_install_of_a_nested_plugin(ctx.harness, user_level=user_level)
     guardrail_skipped: str | None = None
     own_files = shipped_harness_files(ctx)
-    harness_files = list(own_files)
+    guardrail = _guardrail_in_play(ctx.bound_harness, user_level=user_level)
     if guardrail is not None:
         script = PACKAGE_ROOT / HARNESS_RESOURCES_SOURCE / ctx.harness.name / guardrail.script
         guardrail_skipped = _guardrail_probe(script, project=project)
@@ -666,26 +564,11 @@ def install(
         # The registration is written on every install, holding what the file holds without the hook
         # where the probe fails: a render is replaced whole, so a later probe failure rewrites it.
         registration = guardrail.registration if guardrail_skipped is None else guardrail.registration_without_hook
-        harness_files.append(registration)
         renders = (*renders, (PurePosixPath(registration.path), harness_file_text(registration, ctx)))
-    registers_guardrail = guardrail is not None and guardrail_skipped is None
-    # The harness's own rendered files are a class of their own at the refusal: their ownership is the
-    # marker each states, not a banner a JSON file has no way to carry.
-    harness_markers = {PurePosixPath(file.path): file.marker for file in harness_files}
+    registers_the_hook = guardrail is not None and guardrail_skipped is None
+    # Everything this install copies, the wrapper with it, in one list for the report and for verbose's
+    # write log. A re-entry run writes neither the copy (dropped from `packages` above) nor the wrapper.
     wrapper = root / WRAPPER
-    _refuse_foreign_targets(
-        render_targets=[root.joinpath(*relative.parts) for relative, _ in renders if relative not in harness_markers],
-        resource_targets=[*(target for _, target in resource_files), wrapper],
-        harness_targets=[
-            (root.joinpath(*relative.parts), harness_markers[relative])
-            for relative, _ in renders
-            if relative in harness_markers
-        ],
-    )
-    # Everything this install copies, the wrapper with it, in one list: `keep` and the report below count
-    # a harness's own files with the packages', so neither reads as a stale render. A re-entry run writes
-    # neither the copy (dropped from `packages` above) nor the wrapper, so both leave this list and the
-    # count it feeds; each is under `tools/`, outside `prune`'s surfaces, so neither is at risk there.
     copied = [
         *(target for _, _, target in package_files),
         *(() if re_entry else (wrapper,)),
@@ -708,9 +591,15 @@ def install(
         )
 
     root.mkdir(parents=True, exist_ok=True)
+    # The version the report names is the one standing before the replacement: the copy it names is
+    # removed by the replacement a moment later.
     replaced_version = _installed_version(root / DEVPRO_COPY / "__init__.py")
-    for package in packages:
-        _clear_package_destination(root / package.destination)
+    pass_over: frozenset[str] = frozenset()
+    if re_entry:
+        pass_over |= _re_entry_kept(root / DEVPRO_COPY)
+    if agents_file is not None:
+        pass_over |= {path.relative_to(root).as_posix() for path in agents_file.paths if path.is_relative_to(root)}
+    _replaced(root, keep=pass_over)
     for package, source, target in package_files:
         data = source.read_bytes()
         if package.stamps and (source.suffix in STAMPED_SUFFIXES or source.name in STAMPED_NAMES):
@@ -721,27 +610,16 @@ def install(
         # place rather than rewriting it.
         wrapper_data = wrapper_text(base_interpreter()).encode("utf-8")
         _write_created(wrapper, stamped(wrapper_data, origin=f"{PACKAGE_ROOT.name}/install.py"), mode=0o777)
-    retired_package = root / RETIRED_PACKAGE_DIR
-    retired_package_found = retired_package.is_dir()
-    if retired_package_found:
-        shutil.rmtree(retired_package)
     for source, target in resource_files:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, target)
         shutil.copymode(source, target)
-    retired_resources = _retired_resource_targets(root)
-    for path in retired_resources:
-        path.unlink()
-    retired_dirs = _retired_resource_dirs(root)
-    for path in retired_dirs:
-        path.rmdir()
     written = write_renders(root, renders)
     if agents_file is not None:
         write_agents_file(agents_file)
     if followed is not None:
         write_followed_agents_file(followed)
 
-    pruned = prune(root, keep={*written, *copied})
     print(f"installed: {len(written)} rendered files, {len(copied)} copied files → {root}")
     copy_dir = root / DEVPRO_COPY
     if not re_entry:
@@ -751,24 +629,11 @@ def install(
             print(f"devpro {__version__} installed → {copy_dir}")
         else:
             print(f"devpro {replaced_version} replaced by devpro {__version__} → {copy_dir}")
-    if retired_package_found:
-        print(f"removed {retired_package}")
-    for path in retired_resources:
-        print(f"removed {path}")
-    for path in retired_dirs:
-        print(f"removed {path}")
-    for path in pruned:
-        print(f"pruned {path}")
     if verbose:
         for path in [*copied, *written]:
             print(f"wrote {path}")
     if nested_project_install:
-        install_include_lines(
-            project,
-            snippet_sets,
-            harness_relpath=harness_relpath,
-            retired_set=RETIRED_SNIPPET_SET,
-        )
+        install_include_lines(project, snippet_sets, harness_relpath=harness_relpath)
     # The preparation is the install's, not the runner file's: a project already holding the line writes
     # nothing there, and the scratch directory is still the install's to keep ready. Its idempotence is
     # what leaves a prepared `.gitignore` as it stands.
@@ -779,12 +644,10 @@ def install(
     # Called straight, with no migration passed, this call is the only one, so it makes the one rename.
     for line in (store_migration or _one_project_renamed_once(project))(project):
         print(line)
-    if guardrail is not None and not registers_guardrail:
-        # Neither prune nor the resource copy removes a resource this run skipped, so the script is
-        # named; the registration is written on every install, so it is never left.
-        earlier = root / guardrail.script
-        left = f"; left in place from an earlier install: {earlier}" if _is_our_resource(earlier) else ""
-        report_left_alone(f"guardrail hook skipped, neither installed nor registered: {guardrail_skipped}{left}")
+    if guardrail is not None and not registers_the_hook:
+        # The replacement removed any earlier install's script, so none stands after the run; the skip
+        # and its reason are reported, and no path.
+        report_left_alone(f"guardrail hook skipped, neither installed nor registered: {guardrail_skipped}")
     _report_shadowing(root, harness=ctx.bound_harness, files=own_files, user_level=user_level)
     if ctx.harness.reload_rule:
         print(ctx.harness.reload_rule)
@@ -799,31 +662,19 @@ def _install_managed_paths(
 ) -> list[tuple[Path, list[str]]]:
     """(base, paths relative to it) for everything an install of `ctx` into `harness_dir` may read or
     write: the project root as spelled, the harness directory, ROOT and the harness's user harness
-    directory, in that order, ROOT keeping its position below the harness directory. Named from what
-    the install writes by, never a listing of a directory, which in a user harness directory holds the
-    operator's own trees. Each decision the install takes on what only its run knows — the guardrail
-    probe — is taken here as though it went the way that writes more, and every package destination
-    and harness-rendered file is named whichever definitions the selection ships."""
+    directory, in that order, ROOT keeping its position below the harness directory.
+
+    ROOT is managed whole: the replacement removes every entry below it, so the managed set is every one
+    of them — the re-entry pass-over trees and, under mage, the agents file's path included, each staged
+    as it stands — and the preflight's comparison reads the removals the replacement makes against that
+    whole staging. The bases outside it keep the paths they name — the runner file and the runner-file
+    names, the scratch `.gitignore`, the agents files, the stores' rename pairs — so every write outside
+    the replacement stays predicted. Each decision the install takes on what only its run knows — the
+    guardrail probe, the re-entry judgment — is taken here as though it went the way that writes more;
+    the pass-over itself lives in the replacement's exclusions, not in this set."""
     harness, bound = ctx.harness, ctx.bound_harness
     root = harness_dir / bound.plugin_dir
     under_harness_dir: list[str] = []
-    under_root = [
-        *SURFACES,
-        *(package.destination for package in SHIPPED_PACKAGES),
-        WRAPPER,
-        RETIRED_PACKAGE_DIR,
-        # Read and removed rather than written: the preflight has to see the removal to predict it.
-        *RETIRED_RESOURCE_FILES,
-        *RETIRED_RESOURCE_DIRS,
-        *(
-            target.relative_to(root).as_posix()
-            for _, target in _resource_copies(root, harness=harness, user_level=user_level)
-        ),
-        *(file.path for file in bound.harness_files),
-    ]
-    guardrail = _guardrail_in_play(bound, user_level=user_level)
-    if guardrail is not None:
-        under_root.append(guardrail.registration.path)
     under_project: list[str] = []
     if _is_project_install_of_a_nested_plugin(harness, user_level=user_level):
         under_project += [
@@ -858,9 +709,28 @@ def _install_managed_paths(
     return [
         (project, under_project),
         (harness_dir, under_harness_dir),
-        (root, under_root),
+        (root, _every_entry_below(root)),
         (global_dir, under_global_dir),
     ]
+
+
+def _every_entry_below(root: Path) -> list[str]:
+    """Every file below `root`, relative to it, each directory on the way named so the copy recreates it
+    and the obstacles the install's checks read stand: a directory is named once, not its tree below it
+    a second time, since copying a named directory copies all it holds. A symlink is named as the link
+    it is, never followed. Nothing where `root` is absent, and `root` itself where it is a file, which
+    the install's own refusal reads."""
+    if root.is_symlink():
+        return []
+    if not root.is_dir():
+        return [root.as_posix()] if root.exists() else []
+    entries: list[str] = []
+    for directory, subdirs, names in os.walk(root):
+        links = [name for name in subdirs if Path(directory, name).is_symlink()]
+        subdirs[:] = sorted(name for name in subdirs if name not in links)
+        entries += [Path(directory, name).relative_to(root).as_posix() for name in [*subdirs, *links]]
+        entries += [Path(directory, name).relative_to(root).as_posix() for name in sorted(names)]
+    return entries
 
 
 def preflighted_install(
@@ -883,12 +753,7 @@ def preflighted_install(
     passes one shared across them, so the real project is renamed by its first real run alone."""
     project = _lexical(harness_dir if project_root is None else Path(project_root))
     user_level = ctx.harness.name in user_dir_harnesses(harness_dir)
-    managed = _install_managed_paths(
-        harness_dir,
-        ctx,
-        project=project,
-        user_level=user_level,
-    )
+    managed = _install_managed_paths(harness_dir, ctx, project=project, user_level=user_level)
     run_preflighted(
         managed,
         install=lambda bases: install(

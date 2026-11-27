@@ -134,7 +134,8 @@ export default Plugin.define({
   // opencode takes the id before setup runs, so it is read synchronously; setup's read logs a failure.
   id: pluginId(),
   async setup(ctx: Context) {
-    // A user-level install ships no guardrail.
+    // The guardrail stands beside the entry at user level as in a project, and the entry runs it where
+    // it is there.
     if (existsSync(guardrailPath)) await (await import(guardrailPath)).default.setup(ctx)
     // Nor does it ship the capture, which writes its records into the project's `.devpro-temp/`.
     if (existsSync(profilerPath)) await (await import(profilerPath)).default.setup(ctx)

@@ -11,7 +11,6 @@ import pytest
 
 from devpro import __version__
 from devpro.cli import build_parser, main
-from devpro.errors import InputError
 from devpro.install import install
 from devpro.install_base import PACKAGE_ROOT, REPO_ROOT
 from tests._structure import kbase_skill_output_paths
@@ -247,18 +246,18 @@ def test_a_second_mage_install_passes_over_its_own_manifest_byte_identical(tmp_p
     assert manifest.read_bytes() == written
 
 
-def test_an_operators_manifest_without_the_marker_is_refused_with_nothing_written(tmp_path: Path) -> None:
-    """A plugin of another name at that path is the operator's own, so the install refuses it whole and
-    names it, writing nothing — no render lands before the refusal."""
+def test_an_operators_manifest_at_the_path_is_replaced_by_the_rendered_one(tmp_path: Path) -> None:
+    """A plugin manifest standing at the path — another plugin's, or the operator's own — is nothing the
+    replacement reads: the fresh render overwrites it whole, naming this plugin. Defect: a marker at the
+    manifest's path gating the install, refusing a manifest that is not ours."""
     project = tmp_path
     root = project / "plugins/devpro"
     manifest = root / _MAGE_MANIFEST
     manifest.parent.mkdir(parents=True)
     manifest.write_text('{"name": "other"}\n', encoding="utf-8")
-    before = _files(tmp_path)
-    with pytest.raises(InputError, match=re.escape(f"'{manifest}'")):
-        _definition_install(root, _MAGE_RENDER, project_root=project)
-    assert _files(tmp_path) == before
+    _definition_install(root, _MAGE_RENDER, project_root=project)
+    replaced = json.loads(manifest.read_text(encoding="utf-8"))
+    assert replaced["name"] == "devpro" and replaced["version"] == __version__
 
 
 def test_a_verbose_mage_install_lists_the_manifest_as_written(tmp_path: Path, capsys) -> None:

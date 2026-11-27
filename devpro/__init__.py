@@ -26,7 +26,7 @@ or a family overlay anchor, filled once by `render.filled_body`.
     install_base.py  what the install modules share: package and checkout roots, the kb-tools package
                      paths, path checks, UTF-8 reading
     runner_file.py   the runner include lines, one per snippet set the install passes in
-    install.py       the install: renders, the shipped packages' stamped copy, and the prune
+    install.py       the install: renders, the shipped packages' stamped copy, and the replacement
     agents_file.py   the agents-file install: the marker span, redirects, and the rolling backup
     profiler/        the absorbed activity profiler: the capture, tree and page render, its hook wiring
     dashboard/       the dashboard verb's loopback server: the board and profiler views

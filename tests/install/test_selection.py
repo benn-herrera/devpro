@@ -218,18 +218,20 @@ def test_a_harness_the_settings_file_does_not_name_is_not_installed(tmp_path: Pa
 
 def test_a_refusal_mid_loop_names_its_harness_and_earlier_installs_stand(tmp_path: Path, capsys) -> None:
     """The named harnesses install in name order, so claude's install stands when opencode, the
-    name-later one, refuses over a file at a path it would write."""
+    name-later one, refuses over a symlinked install directory."""
     project = tmp_path / "project"
     project.mkdir()
-    mine = _opencode_plugin(project / ".opencode") / "agents/python-coder.md"
-    mine.parent.mkdir(parents=True)
-    mine.write_text("---\nname: python-coder\n---\n\nmy own agent\n", encoding="utf-8")
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    plugin = _opencode_plugin(project / ".opencode")
+    plugin.parent.mkdir(parents=True)
+    plugin.symlink_to(elsewhere, target_is_directory=True)
     settings = settings_file(tmp_path, '[claude]\ninstall = "always"\n\n[opencode]\ninstall = "always"\n')
     with pytest.raises(SystemExit) as exited:
         main(["install", str(project), f"--config-file={settings}"])
     assert exited.value.code == 2
     err = capsys.readouterr().err
-    assert "harness 'opencode'" in err and str(mine) in err
+    assert "harness 'opencode'" in err and str(plugin) in err
     assert (_claude_plugin(project / ".claude") / "agents/python-coder.md").is_file()
 
 
