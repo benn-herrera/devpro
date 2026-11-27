@@ -243,26 +243,3 @@ whether the floor's range still needs all three, is what the dispatch answers.
 harnesses' text go unchecked. The sentence check the previous ticket adds raises the stakes:
 overlay text and other harnesses escape at sentence granularity, where a shared sentence is small
 enough to hide inside a paragraph that differs.
-
-### The symlinked mage agents file needs a design decision
-
-Found by the strip's B22 probe: under mage the install directory is the harness directory, so an
-operator's agents file that is a symlink makes the install refuse (`FileExistsError`) — the agents
-file is named twice in the managed bases, and the second copy recreates the symlink over the
-regular file the first left. The naive repair (staging the copied link as a link) is worse: the
-preflight's scratch run then writes through the link into the operator's real file outside the
-install directory. The decision is between staging the link as a link, refusing with a message
-naming the symlink and the operator's move, or reading the copy's opinion without opening either
-side — a design before a fix, and a test that fails on each candidate's defect.
-
-### The re-entry copy's integrity has no reference to check it against
-
-Found retiring B23's guard: `is_the_running_copy` makes the copy and `PACKAGE_ROOT` one directory
-on a re-entry run, so a "missing shipped file" check comparing the copy against what the package
-ships compares the copy with itself — the expected-but-absent set is empty by construction, and a
-test of the guard cannot fail without breaking the re-entry definition. The fragility the review's
-W1 names is real (a copy short a file stays short silently, the pass-over keeping what the copy
-holds), but its remedy needs a reference that outlives the copy: an install-time manifest of the
-shipped files (a RECORD-style list the install writes and the next re-entry reads), or an
-acceptance of the residual risk stated in the leaves. A design decision before a fix; the B22
-tests and the mage-symlink ticket are adjacent.
