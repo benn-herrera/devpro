@@ -42,7 +42,7 @@ potential remedies with the session before anything is drafted from them.
 | P2 | landed | expert |
 | P3 | landed | expert |
 | P4 | landed | expert |
-| PR | drafted | expert |
+| PR | in progress | expert |
 | PB | drafted | expert |
 
 ## P1 — the Python type gate
