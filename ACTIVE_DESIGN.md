@@ -35,8 +35,10 @@ leaves it.
 ```
 The install directory is the plugin's own, entire. An install replaces it wholesale: before the
 first write it removes the install directory's contents — every file and subdirectory, whatever
-wrote them — and writes the fresh tree into the emptied directory: the rendered definitions, the
-shipped packages, the harness resources and the harness-rendered files. A user-level install
+wrote them — and writes the fresh tree into the emptied directory: what the install ships — the
+rendered definitions, the shipped packages and the harness-rendered files the component selection
+admits, and the harness resources the installing harness ships, the guardrail script's only where
+its install-time probe succeeds (Shipped files). A user-level install
 replaces wholesale as a project install does: the destination directory it owns is wiped and the
 full product it ships is written into it — under opencode the plugin entry and the guardrail
 resource beside it are rewritten on every user-level run, never deleted — so the plugin a
@@ -541,7 +543,10 @@ Under the install directory: the install directory managed whole — the managed
     below it, the re-entry pass-over trees and, under mage, the agents file's path included, each
     staged as it stands, a link staged as the link it is and never followed — so the scratch run's
     replacement meets what the real tree holds, passes over what it passes over, and the comparison
-    reads the removals it makes against that whole staging.
+    reads the removals it makes against that whole staging. The bases outside the install directory
+    keep the managed paths they name — the runner file and the runner-file names, the scratch
+    `.gitignore`, the agents files, the stores' rename pairs — so every write outside the
+    replacement stays predicted.
 ```
 
 ### [Install](PROJECT_DOCS/ARCHITECTURE/install/index.md)
@@ -807,6 +812,14 @@ The leaf's closing sentence — a hook command spelling a retired launcher stays
 
 The install modules' new shape, the documents above carrying the behavior:
 
+The replacement's write pass writes what the install ships and nothing else, each part under the
+one filter it already answers to: a rendered definition, a shipped-package row and a
+harness-rendered file by the component selection's membership (`ships(name)`), judged at the
+install's level — a user-level install writing the ownerless rows alone; a harness resource by the
+harness's resource list at that level; the guardrail script by the install-time probe, a failed
+probe writing none. SPEC's enumeration and ARCHITECTURE's "whose owner ships" agree by
+construction.
+
 `devpro/install.py` keeps, unchanged in behavior: `is_the_running_copy` and
 `_refuse_symlinked_copy` — the re-entry pass-over and its symlink refusal, preserved exactly; the
 guardrail probe and the registration's two forms; the agents-file calls
@@ -839,10 +852,14 @@ symlinked-install-directory refusal, decided beside the devpro-copy refusal on t
 is corrected with it. Comments citing the prune step
 or a retirement list (`devpro/install_target.py`'s overwrite-or-prune sentence,
 `devpro/definitions/__init__.py`'s prune-step sentence) reword to the replacement.
-`devpro/preflight.py` and `_install_managed_paths` take the managed set the Preflight passage
-states: one base, the install directory, whose managed paths are every entry below it — the
-pass-over trees included, staged as they stand, a link staged as the link it is and never followed —
-the pass-over itself living in the replacement's exclusions, not in the managed set; the two symlink
+`devpro/preflight.py` and `_install_managed_paths` keep the managed set's four bases — the project
+root, the harness directory, the install directory, the user harness directory — the
+install-directory base becoming every entry below it, the pass-over trees included, staged as they
+stand, a link staged as the link it is and never followed, the pass-over itself living in the
+replacement's exclusions, not in the managed set. The bases outside the replaced directory keep the
+paths they name — the runner file and the runner-file names, the scratch `.gitignore`, the agents
+files, the stores' rename pairs — so the dry run keeps predicting every write outside the
+replacement. The two symlink
 refusals read the real paths, so the scratch run raises them as the real run would.
 
 One CONVENTIONS leaf is invalidated with no delta of this design's to carry it: the first paragraph
