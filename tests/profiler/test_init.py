@@ -1,82 +1,15 @@
 """retired launchers• skill removal• store rename"""
 
 import json
-import shlex
 import subprocess
 from pathlib import Path
 
 import pytest
 
-from devpro.profiler.hooks import RETIRED_HOOK_FILES, RETIRED_LAUNCHERS
 from devpro.profiler.read import read_sessions, store_directories
 from devpro.profiler.values import CAPTURED_EVENTS
 
 from .conftest import _install_project, _profiler_init, _run, _write_store
-
-
-@pytest.mark.parametrize("launcher", RETIRED_LAUNCHERS)
-def test_init_clears_an_older_runs_launcher_and_files(tmp_path: Path, _wrapper: Path, launcher: str) -> None:
-    """A committed hook directory holding an older `init`'s launcher — under any name it wrote, the one
-    this release retired included — beside `hp.py` and `view.html`: a re-run removes every one of
-    them, writes the skill, registers the project's wrapper's command, and leaves no hook directory
-    where nothing else stands in it. A committed hook running devpro beside a stale `hp.py` is the
-    half-absorbed install."""
-    project = tmp_path / "project"
-    project.mkdir()
-    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    hook_dir = project / ".claude" / "harness-profiler"
-    hook_dir.mkdir(parents=True)
-    for name in (launcher, *RETIRED_HOOK_FILES):
-        (hook_dir / name).write_text("an older init's copy\n", encoding="utf-8")
-
-    done = _profiler_init(_wrapper, project)
-
-    assert done.returncode == 0, done.stderr
-    assert not hook_dir.exists()
-    assert (project / ".claude" / "skills" / "profiler" / "SKILL.md").is_file()
-    settings = (project / ".claude" / "settings.json").read_text(encoding="utf-8")
-    assert ".claude/skills/devpro/tools/devpro.sh" in settings
-    assert "harness-profiler" not in settings
-
-
-def test_init_renames_a_committed_hook_written_under_a_launcher_name(tmp_path: Path, _wrapper: Path) -> None:
-    """A repository whose committed hook spells a launcher name — the file `hp.sh` and the registered
-    command running it: `init` removes the file and re-registers the command on the project's committed
-    wrapper. The consuming-project migration is the `init`'s, run before the install refreshes."""
-    project = tmp_path / "project"
-    project.mkdir()
-    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    hook_dir = project / ".claude" / "harness-profiler"
-    hook_dir.mkdir(parents=True)
-    (hook_dir / "hp.sh").write_text("an older init's copy\n", encoding="utf-8")
-    settings_file = project / ".claude" / "settings.json"
-    old_entry = {
-        "hooks": {
-            event: [
-                {
-                    "matcher": "*",
-                    "hooks": [
-                        {
-                            "type": "command",
-                            "command": '/bin/bash "$CLAUDE_PROJECT_DIR/.claude/harness-profiler/hp.sh" capture claude',
-                            "timeout": 5,
-                            "async": True,
-                        }
-                    ],
-                }
-            ]
-            for event in CAPTURED_EVENTS
-        }
-    }
-    settings_file.write_text(json.dumps(old_entry, indent=2) + "\n", encoding="utf-8")
-
-    done = _profiler_init(_wrapper, project)
-
-    assert done.returncode == 0, done.stderr
-    assert not hook_dir.exists()
-    settings = settings_file.read_text(encoding="utf-8")
-    assert ".claude/skills/devpro/tools/devpro.sh" in settings
-    assert "harness-profiler" not in settings
 
 
 @pytest.mark.parametrize("install", ["opencode", "foreign-wrapper"], ids=["opencode-shaped", "foreign-wrapper"])
@@ -125,41 +58,6 @@ def test_init_refuses_an_opencode_shaped_repo_rather_than_register_a_second_capt
     assert named in done.stderr, done.stderr
     assert json.loads(settings_file.read_text(encoding="utf-8")) == original
     assert not (project / ".claude" / "skills" / "profiler").exists()
-
-
-@pytest.mark.parametrize("beside", [[], ["notes.md"]], ids=["alone", "beside-a-file"])
-def test_init_removes_the_skill_an_older_init_rendered_under_its_former_name(
-    tmp_path: Path, _wrapper: Path, beside: list[str]
-) -> None:
-    """A repository holding a committed `.claude/skills/show-profile/SKILL.md`, the skill under its name
-    before `profiler`: a re-run removes it, and its directory where nothing else is left in it, and the
-    `git add` line it prints stages that removal. Without the unlink the older skill stands beside the
-    renamed one, two skills answering the same request; without the path in the printed line, following
-    it commits the new skill and leaves the old one in the repository."""
-    project = tmp_path / "project"
-    project.mkdir()
-    git = ["git", "-c", "user.name=test", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false"]
-    subprocess.run([*git, "init", "-q"], cwd=project, check=True)
-    retired = project / ".claude" / "skills" / "show-profile"
-    retired.mkdir(parents=True)
-    for name in ("SKILL.md", *beside):
-        (retired / name).write_text("an older init's copy\n", encoding="utf-8")
-    subprocess.run([*git, "add", "."], cwd=project, check=True)
-    subprocess.run([*git, "commit", "-q", "-m", "an older init"], cwd=project, check=True)
-
-    done = _profiler_init(_wrapper, project)
-
-    assert done.returncode == 0, done.stderr
-    assert not (retired / "SKILL.md").exists()
-    assert retired.is_dir() is bool(beside)
-    assert all((retired / name).is_file() for name in beside)
-    assert (project / ".claude" / "skills" / "profiler" / "SKILL.md").is_file()
-    add_line = next(line.strip() for line in done.stdout.splitlines() if line.strip().startswith("git add "))
-    subprocess.run(shlex.split(add_line), cwd=project, check=True)
-    staged = subprocess.run(
-        ["git", "diff", "--cached", "--name-status"], cwd=project, check=True, capture_output=True, text=True
-    ).stdout.splitlines()
-    assert "D\t.claude/skills/show-profile/SKILL.md" in staged
 
 
 def test_a_rename_leaves_a_directory_that_is_no_profiler_store_alone(tmp_path: Path) -> None:

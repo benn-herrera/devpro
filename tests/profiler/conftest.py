@@ -28,7 +28,6 @@ from devpro.harnesses import claude, mage, opencode
 from devpro.install_base import HARNESS_OWNERSHIP_MARKERS
 from devpro.profiler.capture import mask, stored_stamp
 from devpro.profiler.directives import read_stamp
-from devpro.profiler.hooks import RETIRED_HOOK_FILES, RETIRED_LAUNCHERS
 from devpro.profiler.pages import (
     AGENT_PREFIX,
     AGENT_PREFIX_LINE,
@@ -1224,71 +1223,6 @@ def _profiler_init(wrapper: Path, project: Path) -> subprocess.CompletedProcess[
     """`profiler init claude` in `project`, through the installed wrapper `wrapper` and the test's
     devpro."""
     return _run(wrapper, "init", "claude", cwd=project)
-
-
-@pytest.mark.parametrize("launcher", RETIRED_LAUNCHERS)
-def test_init_clears_an_older_runs_launcher_and_files(tmp_path: Path, _wrapper: Path, launcher: str) -> None:
-    """A committed hook directory holding an older `init`'s launcher — under any name it wrote, the one
-    this release retired included — beside `hp.py` and `view.html`: a re-run removes every one of
-    them, writes the skill, registers the project's wrapper's command, and leaves no hook directory
-    where nothing else stands in it. A committed hook running devpro beside a stale `hp.py` is the
-    half-absorbed install."""
-    project = tmp_path / "project"
-    project.mkdir()
-    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    hook_dir = project / ".claude" / "harness-profiler"
-    hook_dir.mkdir(parents=True)
-    for name in (launcher, *RETIRED_HOOK_FILES):
-        (hook_dir / name).write_text("an older init's copy\n", encoding="utf-8")
-
-    done = _profiler_init(_wrapper, project)
-
-    assert done.returncode == 0, done.stderr
-    assert not hook_dir.exists()
-    assert (project / ".claude" / "skills" / "profiler" / "SKILL.md").is_file()
-    settings = (project / ".claude" / "settings.json").read_text(encoding="utf-8")
-    assert ".claude/skills/devpro/tools/devpro.sh" in settings
-    assert "harness-profiler" not in settings
-
-
-def test_init_renames_a_committed_hook_written_under_a_launcher_name(tmp_path: Path, _wrapper: Path) -> None:
-    """A repository whose committed hook spells a launcher name — the file `hp.sh` and the registered
-    command running it: `init` removes the file and re-registers the command on the project's committed
-    wrapper. The consuming-project migration is the `init`'s, run before the install refreshes."""
-    project = tmp_path / "project"
-    project.mkdir()
-    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
-    hook_dir = project / ".claude" / "harness-profiler"
-    hook_dir.mkdir(parents=True)
-    (hook_dir / "hp.sh").write_text("an older init's copy\n", encoding="utf-8")
-    settings_file = project / ".claude" / "settings.json"
-    old_entry = {
-        "hooks": {
-            event: [
-                {
-                    "matcher": "*",
-                    "hooks": [
-                        {
-                            "type": "command",
-                            "command": '/bin/bash "$CLAUDE_PROJECT_DIR/.claude/harness-profiler/hp.sh" capture claude',
-                            "timeout": 5,
-                            "async": True,
-                        }
-                    ],
-                }
-            ]
-            for event in CAPTURED_EVENTS
-        }
-    }
-    settings_file.write_text(json.dumps(old_entry, indent=2) + "\n", encoding="utf-8")
-
-    done = _profiler_init(_wrapper, project)
-
-    assert done.returncode == 0, done.stderr
-    assert not hook_dir.exists()
-    settings = settings_file.read_text(encoding="utf-8")
-    assert ".claude/skills/devpro/tools/devpro.sh" in settings
-    assert "harness-profiler" not in settings
 
 
 @pytest.mark.parametrize("install", ["opencode", "foreign-wrapper"], ids=["opencode-shaped", "foreign-wrapper"])

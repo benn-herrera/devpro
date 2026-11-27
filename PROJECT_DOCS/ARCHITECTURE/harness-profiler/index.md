@@ -15,7 +15,6 @@ Contents:
 - [Serving](serving.md)
 - [The skill](the-skill.md)
 - [What `init` writes](what-init-writes.md)
-- [What removes the retired path](what-removes-the-retired-path.md)
 - [What does not exist](what-does-not-exist.md)
 - [The opencode capture](the-opencode-capture.md)
 - [The stores and their rename](the-stores-and-their-rename.md)

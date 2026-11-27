@@ -27,7 +27,6 @@ Contents:
   - [Serving](harness-profiler/serving.md)
   - [The skill](harness-profiler/the-skill.md)
   - [What `init` writes](harness-profiler/what-init-writes.md)
-  - [What removes the retired path](harness-profiler/what-removes-the-retired-path.md)
   - [What does not exist](harness-profiler/what-does-not-exist.md)
   - [The opencode capture](harness-profiler/the-opencode-capture.md)
   - [The stores and their rename](harness-profiler/the-stores-and-their-rename.md)

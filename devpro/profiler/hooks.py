@@ -36,14 +36,6 @@ from .values import (
 )
 
 HOOK_TIMEOUT_S = 5
-HOOK_DIR = Path(".claude") / "harness-profiler"
-# The launchers an older `init` wrote into the hook directory, under the names they had before the file
-# was retired: an `init` unlinks them, and a hook command spelling one stays this tool's.
-RETIRED_LAUNCHERS = ("hp.sh", "hp", "profiler.sh")
-# The files an older `init` copied into the hook directory beside the launcher, which no install ships.
-RETIRED_HOOK_FILES = ("hp.py", "view.html")
-# The skill directory an older `init` rendered, under the skill's name before `profiler`.
-RETIRED_SKILL = Path("skills") / "show-profile"
 # A claude project install's directory in a repository, the claude plugin's: its wrapper is the one file
 # the install writes there. The profiler's skill names the same wrapper as its runner.
 INSTALL_WRAPPER = ".claude/skills/devpro/tools/devpro.sh"
@@ -71,18 +63,6 @@ def _hook_command(wrapper: str) -> str:
 # The committed hook's command: the project's committed wrapper, which `init` renders the skill beside,
 # named from the project root the hook is run from.
 HOOK_COMMAND = _hook_command(f'"$CLAUDE_PROJECT_DIR/{INSTALL_WRAPPER}"')
-# The commands an older `init` wrote: a launcher under the hook directory, in each name it had, run
-# under `/bin/bash`. A hook spelling one stays this tool's, and an `init` re-run replaces it.
-OLD_HOOK_COMMANDS = tuple(
-    f'/bin/bash "$CLAUDE_PROJECT_DIR/{HOOK_DIR.as_posix()}/{name}" capture claude' for name in RETIRED_LAUNCHERS
-)
-# The spellings a settings file holds for one of those commands, the file read as text for them: a
-# registration is found there whatever JSON shape it takes.
-_OUR_COMMAND_SPELLINGS = (
-    *(f"{HOOK_DIR.as_posix()}/{name}" for name in RETIRED_LAUNCHERS),
-    *(INSTALL_WRAPPER.rsplit("/", count)[0] for count in range(len(INSTALL_WRAPPER.split("/")) - 1, 0, -1)),
-    *OLD_HOOK_COMMANDS,
-)
 
 
 # The one harness `init` writes settings for: claude's hook is the only one `init` registers, and each
@@ -106,13 +86,12 @@ def hook_entry(harness: str) -> Json:
 
 
 def is_recognized_command(command: str | None, *, harness: str) -> bool:
-    """Whether `command` is a capture this tool wrote for `harness`, under the committed wrapper or an
-    older launcher."""
-    return command in (_hook_command(f'"$CLAUDE_PROJECT_DIR/{PROJECT_WRAPPERS[harness]}"'), *OLD_HOOK_COMMANDS)
+    """Whether `command` is a capture this tool wrote for `harness`, under the committed wrapper."""
+    return command == _hook_command(f'"$CLAUDE_PROJECT_DIR/{PROJECT_WRAPPERS[harness]}"')
 
 
 def is_our_command(command: str | None) -> bool:
-    """Whether `command` is one this tool wrote, under the committed wrapper or an older launcher."""
+    """Whether `command` is one this tool wrote, under the committed wrapper."""
     return is_recognized_command(command, harness=INIT_HARNESS)
 
 
@@ -134,9 +113,7 @@ def foreign_hook_command(settings: Json) -> str | None:
 
 def merge_hooks(settings: Json, *, harness: str) -> Json:
     """`settings` with this tool's entries for `harness` on every captured event, in the place of the
-    first one it wrote and appending nothing while another install's command stands in them.
-
-    An entry an older `init` wrote is replaced in place, so a re-run picks up new hook options."""
+    first one it wrote and appending nothing while another install's command stands in them."""
     merged = {**settings, "hooks": {**(settings.get("hooks") or {})}}
     if foreign_hook_command(settings) is not None:
         return merged
@@ -199,22 +176,8 @@ def init(argv: list[str], cwd: Path | str) -> str:
     skill = repo / ".claude" / PROFILER_SKILL
     skill.mkdir(parents=True, exist_ok=True)
     (skill / "SKILL.md").write_text(profiler_skill_text(), encoding="utf-8")
-    target = repo / HOOK_DIR
-    retired = [path for path in (target / name for name in (*RETIRED_LAUNCHERS, *RETIRED_HOOK_FILES)) if path.exists()]
-    for path in retired:
-        path.unlink()
-    if target.is_dir() and not any(target.iterdir()):
-        target.rmdir()
-    retired_skill = repo / ".claude" / RETIRED_SKILL
-    removed_retired_skill = (retired_skill / "SKILL.md").is_file()
-    (retired_skill / "SKILL.md").unlink(missing_ok=True)
-    if retired_skill.is_dir() and not any(retired_skill.iterdir()):
-        retired_skill.rmdir()
-    retired_dirs = [Path(".claude") / RETIRED_SKILL] if removed_retired_skill else []
     staged = [
         Path(".claude") / PROFILER_SKILL,
-        *retired_dirs,
-        *(path.relative_to(repo) for path in retired),
         Path(".claude") / "settings.json",
     ]
 

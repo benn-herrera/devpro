@@ -36,7 +36,7 @@ review and `devpro-architect` revision (*Dispatchability*), which run after this
 | P3 | landed | expert |
 | P4 | landed | expert |
 | P5 | landed | expert |
-| P6 | dispatchable | mechanical |
+| P6 | landed | mechanical |
 | PR | dispatchable | expert |
 | PB | dispatchable | expert |
 
@@ -376,7 +376,12 @@ test doubles), `devpro-architect` (the structure and the applied leaves), and
 document; its read is reviewed by no seat, and its only artifact is the plan's fact block. They are
 given the project documents and [ACTIVE_DESIGN.md](ACTIVE_DESIGN.md), not the plan — the reviewers
 of P5's work are also given P4's fact block, the design deferring the hook's name to it — and
-review the changes and their tests against the project's standards and fitness for purpose. Each
+review the changes and their tests against the project's standards and fitness for purpose. Before
+the burndown is drafted, the session runs the live compaction observation the run deferred — the
+user's direction: an opencode session whose context holds the `devpro-development` skill goes
+through a compaction, and the observation, whether the entry's marker matches the host's message
+shape and the invocation is delivered or not, is recorded in the review document as a finding, so
+any issue it surfaces is a burndown item. Each
 reviewer writes their own review in the scratch directory, independently — each reviewer's report
 file present in `.devpro-temp/`, its entries grouped by root cause; the session synthesizes
 the reviews into `ACTIVE_PLAN_REVIEW.md`, one entry per defect naming every seat that reported it,
