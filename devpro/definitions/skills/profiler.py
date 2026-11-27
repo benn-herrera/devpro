@@ -34,8 +34,10 @@ installed here: say so and stop.
 
 Under claude, where the hook is not installed and the session cannot install it, `bash PROFILER init claude`
 writes it into this repository's `.claude/` and prints the `git add` line to commit; run it only when
-the user asks for profiling there. `init` is claude's alone: opencode's plugin records
-every call itself, so an opencode session does not need it.
+the user asks for profiling there. `init claude` is claude's alone: opencode's plugin records
+every call itself, so an opencode session does not need it, and an `init claude` over a repository
+whose install is opencode's — or whose settings already name a hook command it did not write —
+refuses and names what it found.
 
 {clauses.WRAPPER_PROFILER}
 

@@ -1326,6 +1326,54 @@ def test_init_renames_a_committed_hook_written_under_a_launcher_name(tmp_path: P
     assert "harness-profiler" not in settings
 
 
+@pytest.mark.parametrize("install", ["opencode", "foreign-wrapper"], ids=["opencode-shaped", "foreign-wrapper"])
+def test_init_refuses_an_opencode_shaped_repo_rather_than_register_a_second_capture(
+    tmp_path: Path, _wrapper: Path, install: str
+) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: `is_our_command` recognized only the `.claude/…`
+    wrapper, so a re-`init` over a repository whose hook entry names the opencode plugin's
+    `devpro/plugins/devpro/tools/devpro.sh` appends a second entry on every event — `merge_hooks`
+    matching the command against one `.claude/…` literal, `init` registering `profiler capture
+    claude` beside an opencode install's capture in the same settings.
+
+    Two repositories the claude `init` did not write: one whose install is opencode's (its plugin
+    wrapper on disk), one whose entry names a wrapper neither install wrote. `init claude` refuses
+    each as `error: <message>` on stderr with status 2, naming what it found, and writes nothing —
+    the settings file and the skill are as they were."""
+    project = tmp_path / "project"
+    project.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    command = '"$CLAUDE_PROJECT_DIR/devpro/plugins/devpro/tools/devpro.sh" profiler capture claude'
+    if install == "opencode":
+        opencode = project / "devpro" / "plugins" / "devpro" / "tools"
+        opencode.mkdir(parents=True)
+        (opencode / "devpro.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+        named = "devpro/plugins/devpro/tools/devpro.sh"
+    else:
+        named = ".devpro-temp/their-wrapper.sh"
+        command = f'"$CLAUDE_PROJECT_DIR/{named}" profiler capture claude'
+    settings_file = project / ".claude" / "settings.json"
+    settings_file.parent.mkdir(parents=True)
+    original = {
+        "hooks": {
+            event: [{"matcher": "*", "hooks": [{"type": "command", "command": command, "timeout": 5, "async": True}]}]
+            for event in CAPTURED_EVENTS
+        }
+    }
+    settings_file.write_text(json.dumps(original, indent=2) + "\n", encoding="utf-8")
+
+    # The wrapper's `devpro` shim written into the project would be a directory here, beside the
+    # opencode install's `devpro/`: the run gets a bare PATH instead, which the wrapper consults only for
+    # its interpreter, the recorded one.
+    done = _run(_wrapper, "init", "claude", cwd=project, path="/usr/bin:/bin")
+
+    assert done.returncode == 2, done.stdout
+    assert done.stderr.startswith("error: "), done.stderr
+    assert named in done.stderr, done.stderr
+    assert json.loads(settings_file.read_text(encoding="utf-8")) == original
+    assert not (project / ".claude" / "skills" / "profiler").exists()
+
+
 @pytest.mark.parametrize("beside", [[], ["notes.md"]], ids=["alone", "beside-a-file"])
 def test_init_removes_the_skill_an_older_init_rendered_under_its_former_name(
     tmp_path: Path, _wrapper: Path, beside: list[str]

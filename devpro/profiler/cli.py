@@ -30,7 +30,7 @@ def add_verbs(subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]")
     profiler.add_argument(
         "arguments",
         nargs=argparse.REMAINDER,
-        help="tree | init | capture <harness>",
+        help="tree | init <harness> | capture <harness>",
     )
 
 
@@ -53,7 +53,10 @@ def silent_stdout() -> None:
 
 
 def run(args: argparse.Namespace) -> int:
-    """Run the profiler subcommand `args.arguments` names, and return its exit status."""
+    """Run the profiler subcommand `args.arguments` names, and return its exit status. A refusal is
+    reported as `error: <message>` on stderr with status 2, as every verb's is."""
+    from devpro.errors import InputError
+
     from .capture import capture
     from .hooks import USAGE, init
     from .pages import UsageError, tree
@@ -82,8 +85,8 @@ def run(args: argparse.Namespace) -> int:
         if command == "init":
             print(init(rest, Path.cwd()))
             return 0
-    except UsageError as error:
-        print(error, file=sys.stderr)
-        return 1
+    except (InputError, UsageError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
     print(USAGE)
     return 1 if command else 0
