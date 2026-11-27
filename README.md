@@ -47,7 +47,7 @@ in just over 16K lines of runtime code, including vision tower support and an Op
   `PATH`, and `devpro` exits non-zero, saying so, below the floor. A pip or pipx install is refused
   before it starts: `Package 'devpro' requires a different Python: <version> not in '>=3.11'`. No
   install checks the version.
-- `just` 1.27.0 or later, where the project's runner is a justfile, and 1.33.0 or later there wherever the devpro line ships: every project install of a nested plugin writes that line, an `import?`, which earlier `just` rejects; the `kb` include line an install with the kbase component also writes rides the same floor. No install checks the version.
+- `just` 1.33.0 or later, where the project's runner is a justfile: every project install of a nested plugin writes the devpro include line, an `import?`, which earlier `just` rejects; the `kb` include line an install with the kbase component also writes rides the same floor. No install checks the version.
 - `perl` with core `JSON::PP` for the claude guardrail: without them the install skips the hook, says so in one line, and installs everything else.
 
 ## Quick Start Guide
@@ -61,13 +61,10 @@ brew install devpro
 ```
 or
 ```sh
-pipx install "git+https://github.com/benn-herrera/devpro@v0.17.5"
+pipx install "git+https://github.com/benn-herrera/devpro"
 pipx ensurepath
 ```
 then open a new shell, so `devpro` is on your `PATH`.
-
-The pipx line names the newest release tag. Nothing checks it: the release plan re-stamps it, by hand,
-in the release that publishes a version.
 
 Author identity: <https://keyoxide.org/wkd/benn@bennherrera.dev>
 

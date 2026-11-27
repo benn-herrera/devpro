@@ -68,11 +68,10 @@ installs with.
 
 ## Requirements
 
-- `just` 1.27.0 or later, where the project's runner is a justfile, and 1.33.0 or later there
-  wherever the devpro line ships — on every project install of a nested plugin: the `devpro`
-  include line such an install writes is an `import?`, which earlier `just` rejects, and so is the
-  `kb` include line an install with the kbase component also writes, which rides the same 1.33.0
-  floor. No install checks the version.
+- `just` 1.33.0 or later, where the project's runner is a justfile: the `devpro` include line
+  every project install of a nested plugin writes is an `import?`, which earlier `just` rejects,
+  and so is the `kb` include line an install with the kbase component also writes, which rides
+  the same 1.33.0 floor. No install checks the version.
 - `perl` on `PATH` with core `JSON::PP`, for the claude guardrail hook. Without them a claude install
   skips the hook and its registration, says why in one line, and installs everything else.
 
