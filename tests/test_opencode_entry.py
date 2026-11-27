@@ -362,12 +362,13 @@ def test_both_harnesses_inject_one_sentence(tmp_path: Path) -> None:
 
 
 def test_the_agents_file_name_attaches_the_skill_where_no_activation_did(tmp_path: Path) -> None:
-    """The marker is the skill's name in the compaction request's text, so a session whose context
-    holds only the Agents file — the file every project carries names the skill — marks at its
-    compaction and has the skill attached at the prompt after it, though no activation ever ran. It
-    fails on a marker narrowed to the skill's kind alone: the host's request messages carry no
-    skill-kind message (`.devpro-temp/b2-probe/README.md`), so a kind matcher would leave every
-    session whose context really held the skill unmarked and never reload it."""
+    """`clauses.TEST_PRECONDITION`: the defect is a marker narrowed to the skill's kind alone — the
+    host's request messages carry no skill-kind message (`.devpro-temp/b2-probe/README.md`), so a
+    kind matcher would leave every session whose context really held the skill unmarked and never
+    reload it. The marker is the skill's name in the compaction request's text, so a session whose
+    context holds only the Agents file — the file every project carries names the skill — marks at
+    its compaction and has the skill attached at the prompt after it, though no activation ever
+    ran."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)
