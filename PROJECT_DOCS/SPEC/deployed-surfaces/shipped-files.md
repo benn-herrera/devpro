@@ -175,7 +175,7 @@ dispatched it: the capture extracts the child's session id into the parent call'
 groups a dispatch's child one level deep under the session that dispatched it — deeper chains read
 on the session's page, whose tree draws every dispatch as a context and, beneath a dispatch's
 context, the child's own dispatched agents, marking the fan-out whose own trace records no
-review-chain dispatch before its first — links each Agent row to the
+review-chain dispatch at or before its first — links each Agent row to the
 child's page and heads a child page with its dispatcher, and the stores stay flat — the child never
 knows its parent at write time, the hierarchy being metadata the parent side builds, and claude
 holding no child session records at all. Every session's records carry its operational context,

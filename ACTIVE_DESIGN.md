@@ -39,7 +39,7 @@ dispatched it: the capture extracts the child's session id into the parent call'
 groups a dispatch's child one level deep under the session that dispatched it — deeper chains read
 on the session's page, whose tree draws every dispatch as a context and, beneath a dispatch's
 context, the child's own dispatched agents, marking the fan-out whose own trace records no
-review-chain dispatch before its first — links each Agent row to the
+review-chain dispatch at or before its first — links each Agent row to the
 child's page and heads a child page with its dispatcher, and the stores stay flat — the child never
 knows its parent at write time, the hierarchy being metadata the parent side builds, and claude
 holding no child session records at all. Every session's records carry its operational context,
@@ -214,7 +214,7 @@ record names one. The chain reads from the child's store beside the join the dis
 signals take (The opencode capture) — one level deeper and no deeper; a claude session's nested
 agents stand on its page already, its subagents' records its own store holds. The detector reads the
 opencode dispatch chains at the same read: a dispatched session whose records dispatch further
-agents is a fan-out, and the fan-out whose own records, before its own first dispatch, name no
+agents is a fan-out, and the fan-out whose own records, at or before its own first dispatch, name no
 dispatch of the review seat, `devpro-prompt-engineer`, is the unreviewed fan-out. Its mark stands
 beside the dispatch that opened it, on the session page, and on the dispatcher's index row in its
 agents cell, after the count — the count the column sorts stays the count. The index gains no second
