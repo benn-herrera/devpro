@@ -942,12 +942,17 @@ Pieces table's Install row in `PROJECT_DOCS/entry-point.md`:
 
 The "is not" column stands: the wipe is the replace half of a deploy, not dependency management.
 
-#### The opencode entry's watcher under the wipe is a behavioral fact the plan records as unsettled
+#### The opencode entry's watcher under the wipe — settled by observation (B25)
 
 The entry's watcher refreshes on any filesystem event under the install directory
 (`devpro/harnesses/resources/opencode/index.ts:251`), and the wipe is thousands of delete and create
-events in one run: installed agent definitions vanish for the run's duration. Whether that reads as
-one reload, several, or a window a session can register into is a behavioral fact nothing in the
-written record answers. The plan records it as unsettled, and the strip's drive observes what a wipe
-does to a live opencode session before any remediation is designed.
+events in one run. The observation drive (B25, `.devpro-temp/B25-watcher/` holds the raw record;
+the measured account is landed in `ARCHITECTURE/install/opencode-entry.md`, "The replacement under
+the running session"): `fs.watch` delivers all callbacks after the run in one batch, the quiet
+period cannot start inside it, exactly one refresh lands after the write pass, and the session's
+registration never goes empty — the empty state is reachable only with a forced gap longer than
+the quiet period, and a later refresh restores it. SPEC, Write Safety carries the consumer
+statement: the registration across a replacement is not a guarantee. Settled; the residual
+candidate (a refresh storm if Bun's event batching ever stops batching) is a next-plan finding on
+the ROADMAP.
 

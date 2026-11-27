@@ -26,7 +26,7 @@ remaining suite, feeding this plan's burndown — fixes, never the survey itself
 | B22 | landed | expert |
 | B23 | drafted: retired in execution | expert |
 | B24 | drafted: retired in execution | expert |
-| B25 | in progress | expert |
+| B25 | landed | expert |
 | B26 | dispatchable | expert |
 
 ## Ticket 1 — the strip
