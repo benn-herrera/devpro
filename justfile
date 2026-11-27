@@ -439,7 +439,7 @@ plan-count mode="":
     fi
     case "${1}" in
     "")
-        git -C "{{PROJECT_ROOT}}" log --format=%s "${base}..HEAD" | grep -icE "lands? (a |the )?plan|plan lands"
+        git -C "{{PROJECT_ROOT}}" log --format=%s "${base}..HEAD" | { grep -icE "lands? (a |the )?plan|plan lands" || true; }
         git -C "{{PROJECT_ROOT}}" log --format=%s "${base}..HEAD" | wc -l | tr -d ' '
         ;;
     lands | claims)
