@@ -58,7 +58,7 @@ line or neither post-plan package is valid. A plan has a breach where:
 The form also has a work package's heading, at any level, open with its row's ID and then its
 title, as the table's breach holds. A heading that fails to open with the ID cannot be told from
 one that only mentions it, so the breach does not try: its accepted form states both cases, each
-with its remedy. The post-plan burndown's drafting ticket pairs by title alone, as the Terms define
+with its remedy. The drafting ticket pairs by title alone, as the Terms define
 it: a heading pairs whether or not a `## Post-plan burndown` section is present, the section the
 [plan status form](../plan-status-form.md) has hold that ticket.
 

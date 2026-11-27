@@ -73,7 +73,7 @@ The rules use these terms.
 | {SCRATCH_TERM} | `{clauses.PROJECT_TEMP_DIR}/` at the repository root | untracked working files |
 | {REFERENCE_SEARCH_TERM} | `git grep -l '<name>'` | lists every file that references a name |
 | {POST_PLAN_REVIEWERS_TERM} | the agent for each domain the plan changed substantively — a change where a defect would pass unseen without that seat: the coder for each changed language, `{clauses.ref(name="architect")}` where structure, or the project documents' claims about the code, changed, `{clauses.ref(name="tech-writer")}` where READMEs or human-facing guides changed, `{clauses.ref(name="prompt-engineer")}` where model-facing text, the project documents or ROADMAP.md changed | the agents that review a finished plan |
-| {REVIEW_DOCUMENT_TERM} | `ACTIVE_PLAN_REVIEW.md` at the repository root | the post-plan review's findings, which the post-plan burndown is drafted from |
+| {REVIEW_DOCUMENT_TERM} | `ACTIVE_PLAN_REVIEW.md` at the repository root | the post-plan review's findings, which the burndown items are drafted from |
 
 **Bindable terms.** A project binds one with a line `<term>: <value>` in CONVENTIONS.md, and a
 binding replaces the default. A term marked — has no default.
@@ -256,8 +256,8 @@ plan the same way.
 - Each package's `Rating` cell opens with `mechanical` or `expert`, rated as *Dispatch* rates its
   dispatch; anything after the word is a note, and names no model (*Dispatch*). *Purpose:* whoever reads the table sees which work runs on the
   {STEP_DOWN_MODEL_TERM}.
-- The post-plan review is a package whose title opens with `Post-plan review`; the post-plan
-  burndown is a `## Post-plan burndown` section holding its drafting ticket, whose title
+- The post-plan review is a package whose title opens with `Post-plan review`; the burndown
+  section is a `## Post-plan burndown` section holding its drafting ticket, whose title
   opens with `Post-plan burndown`. That section heading is not a package title: a package
   titled only with its ID breaches the pairing (*Post-plan review*).
 - The table states each package's place at every moment, not only at a commit
@@ -433,7 +433,7 @@ approved can run as approved.
   together, apply the revision, and set each item's row by its state. Drafting the items
   edits the plan, so the session is the worker; the ticket's row still moves through the
   states.
-  *Purpose:* the burndown's real dispatches are visible on the board, each with its own
+  *Purpose:* the burndown items' real dispatches are visible on the board, each with its own
   rating.
 - The items move through the states individually, and the plan lands once the last item's
   row is `landed`; the drafting ticket stays `landed` throughout. Where the review finds
@@ -449,14 +449,14 @@ approved can run as approved.
   reconciling them into one account, without waiting for an approval between the last report and
   the write-up. The {REVIEW_DOCUMENT_TERM} is never diced. The review's row is
   `landed` in the commit that adds the {REVIEW_DOCUMENT_TERM}. *Purpose:* the
-  burndown is drafted from one record of what was found.
+  burndown items are drafted from one record of what was found.
 - Until the review lands, the drafting ticket's body holds only: "Drafted from
   `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands." The drafted items
   are packages under the section, each with its own heading and row; that
   placeholder body is removed, and the section's opening carries a sentence
   naming the {REVIEW_DOCUMENT_TERM} it was drafted from.
 - The {REVIEW_DOCUMENT_TERM} is deleted in the commit that lands the plan, not before. *Purpose:*
-  the burndown cites it until it lands, and a review left in place after reads as findings still
+  the burndown items cite it until it lands, and a review left in place after reads as findings still
   open.
 - The review of a release's hardening plan (`references/release.md`), and any review the user asks
   to include one, includes a user-flow audit, in the {REVIEW_DOCUMENT_TERM}: of the project's user-facing commands and flows, for
@@ -488,7 +488,7 @@ approved can run as approved.
   directs — has no design: it delivers findings, not a contract delta, so it goes straight to a plan,
   and the plan is what the user approves. *Purpose:* a design written before the review runs would
   state findings it has not produced.
-- The review runs like the post-plan burndown, wider in panel and aperture: its tracking plan opens
+- The review runs like the burndown section, wider in panel and aperture: its tracking plan opens
   as the panel is dispatched, carrying a ticket per seat beside a ticket for drafting the review's
   plan from the findings; that drafting is the {clauses.ref(name="architect")} definition's to
   write, not the session's, and the drafted items take the
@@ -514,7 +514,7 @@ approved can run as approved.
   *Purpose:* one owner per pair keeps a single defect from being reported by three seats, and a text
   read in part hides contradictions a whole read shows.
 - Its members' findings are its post-plan review, written to the {REVIEW_DOCUMENT_TERM},
-  and are fixed in its post-plan burndown, outside any release's hardening. *Purpose:*
+  and are fixed in its burndown items, outside any release's hardening. *Purpose:*
   cleanup has a home that is not a release.
 - The findings take one ID per defect as they are written to the {REVIEW_DOCUMENT_TERM}:
   one entry per defect, naming every seat that reported it. The burndown section's items
@@ -798,7 +798,7 @@ without the user's go.
 contribute — taken through the {ACTIVE_DESIGN_TERM} and the {ACTIVE_PLAN_TERM} like any other work. Its membership
 is the plans that carry its `Release:` line and land before the owner activates the hardening plan.
 Free development activates plans for the release one at a time, each an ordinary plan with its own
-post-plan review and post-plan burndown; the hardening plan, whose H1 heading opens with `Release hardening`, hardens the
+post-plan review and burndown section; the hardening plan, whose H1 heading opens with `Release hardening`, hardens the
 release and delivers it. A plan names the release when it is activated for it: the first non-blank
 line after the plan's H1 heading is `Release: <version>`, exactly that form. Work in the
 {PARKED_DESIGNS_TERM}, plan or design, names no release. *Purpose:* the plan under way shows the
@@ -839,7 +839,7 @@ release it serves, and no release is promised for work not yet taken up.
 
 ## Delivery
 
-- The release is tagged after the hardening plan's post-plan burndown lands, on a commit the
+- The release is tagged after the hardening plan's drafting ticket lands, on a commit the
   {CHECKPOINT_GATE_TERM} passed on; any change after that run, a version bump included, runs it again.
   *Purpose:* what ships is what was reviewed and verified.""",
             ),

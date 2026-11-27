@@ -57,8 +57,8 @@ A plan states:
   state set ahead of its condition is as false a claim about the present as one set after it.
 - A rating cell opens with one of two words: `mechanical`, every edit enumerated, no design choice
   and no debugging; `expert`, anything else. Anything after the word is a note.
-- The post-plan review is a work package whose title opens with `Post-plan review`. The post-plan
-  burndown is a `## Post-plan burndown` section holding its drafting ticket, a work package whose
+- The post-plan review is a work package whose title opens with `Post-plan review`. The burndown
+  section is a `## Post-plan burndown` section holding its drafting ticket, a work package whose
   title opens with `Post-plan burndown` — a heading opening with its ID and then that title; the
   rest of each title is free. A plan has a post-plan review row only with a post-plan burndown row,
   and a burndown row only with a review row.

@@ -14,7 +14,7 @@ serves it:
 
 - starting a design: the `development` skill's *Design*;
 - how the development process runs, or where the user's work stands: this skill's usage reference;
-- the board: the `docdicer` skill's `kanban`;
+- the board: the `docdicer` skill's `dashboard`;
 - installing, updating, inspecting and changing the set: this skill's installation reference;
 - the consuming project's own design: that project's contract documents.
 
@@ -41,8 +41,8 @@ The skill carries two reference pages, which the session reads when its starting
     `profiler` skill's recording of a claude or opencode project install, which needs no more
     than what delivers it (Shipped files, the activity profiler), and ships nothing under mage;
   - what the operator sets up for a cold read: `DEVPRO_COLD_READ_DIR`;
-  - rendering for another model family: it names the flag and leaves its grammar to SPEC.md,
-    Rendering;
+  - rendering for another model family: it names the flag and leaves its grammar to `devpro install
+    --help`;
   - what a rendering pins by default: a claude install pins its family's members; an opencode or
     mage install pins none — under opencode the definitions carry no model, under mage they carry
     `model: inherit` — unless the devpro settings file carries entries for the harness;
@@ -76,7 +76,7 @@ The skill carries two reference pages, which the session reads when its starting
   - the plan cut from it, and approving the plan, after which it runs to completion;
   - running the plan: the go the session needs before it acts (the agents file devpro installs),
     what it dispatches and commits, and when and why it asks the user anything;
-  - the post-plan review, the burndown and landing the plan;
+  - the post-plan review, the burndown section and landing the plan;
   - a release: what the user decides, the hardening plan, and tagging;
   - the periodic review: when it comes due and what it holds up;
   - the roadmap: tickets in `ROADMAP.md`, work set aside in `ROADMAP_DESIGNS/`, and when work

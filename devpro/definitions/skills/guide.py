@@ -361,19 +361,19 @@ commits' messages.
   file or diced tree is at the root: "Bring back orders-export." Dropped for good, it is abandoned
   and leaves `ROADMAP_DESIGNS/`.
 
-## The post-plan review, the burndown and landing
+## The post-plan review, the burndown section and landing
 
 *Post-plan review*, *Plans*.
 
 - **Part of the approved plan.** After the last work package the session runs the review and the
-  burndown under the same approval; no new go is needed. A plan with no shipped package has neither.
+  burndown section under the same approval; no new go is needed. A plan with no shipped package has neither.
 - **The review:** one reviewer agent per domain the plan changed: the coder for each changed
   language, an architect where structure changed, a technical writer where READMEs or guides
   changed, a prompt engineer where model-facing text or the project documents changed. They are
   given the project documents and the design, not the plan. Appearing: `ACTIVE_PLAN_REVIEW.md`,
   their findings, committed with the review's row `landed`.
-- **The burndown:** a `## Post-plan burndown` section holding its drafting ticket; the session
-  drafts the fix list from `ACTIVE_PLAN_REVIEW.md` into the section — one package per root-cause
+- **The burndown section:** a `## Post-plan burndown` section holding its drafting ticket; the session
+  drafts the burndown items from `ACTIVE_PLAN_REVIEW.md` into the section — one package per root-cause
   group, each with its own row and rating — has the items reviewed as the
   `{clauses.ref(name="development")}` skill's *Post-plan review* states, and runs them like any
   package.
@@ -434,7 +434,7 @@ commits' messages.
   hardening is converging. A livable issue needing more is deferred to `ROADMAP.md` and named in the
   hardening plan's status. Its post-plan review adds an audit of the project's user-facing commands
   and flows, which feeds the next design.
-- **Tagging:** after the hardening plan's burndown lands, on a commit the checkpoint gate passed on;
+- **Tagging:** after the hardening plan's drafting ticket lands, on a commit the checkpoint gate passed on;
   any change after that, a version bump included, runs the gate again. Name the act to have the
   session make it.
 
@@ -459,7 +459,7 @@ above follows one plan, this one looks at what many plans have left behind.
   accepts the term list first where the review revises the set, and decides each contradiction and
   each piece pushed past its THESIS.md "it is not".
 - **Then** its findings go in `ACTIVE_PLAN_REVIEW.md`, one ID per defect however many seats
-  reported it, and its burndown cites that ID and groups them by root cause rather than one item
+  reported it, and its burndown items cite that ID and group them by root cause rather than one item
   per finding. The session brings a plan and never a design — the review produces findings, not
   a contract change — so it goes straight to a plan (*Lighter process*), which the user approves
   as any other; its landing commit says it lands a periodic review.
@@ -483,10 +483,10 @@ For a returning user, read the root and say what is next and what to say:
 - **`ACTIVE_PLAN.md`:** its Status table. Nothing past `dispatchable`, and no package commit in
   `git log`: awaiting approval, or approved and not started. A row `in progress`: the run is under
   way. Work packages `landed` and the review's row not: the review is next. `ACTIVE_PLAN_REVIEW.md`
-  present: the burndown is next or under way. Every row `landed`: the landing commit is next.
+  present: the burndown section is next or under way. Every row `landed`: the landing commit is next.
 - **`ACTIVE_PLAN.md` with no `ACTIVE_DESIGN.md`:** a plan that went straight to the plan.
 - **A `Release:` line:** the plan serves that release; a title opening `Release hardening`: the
-  release is hardening, and its tag follows the burndown.
+  release is hardening, and its tag follows the drafting ticket.
 - **An `ACTIVE_PLAN/` or `ACTIVE_DESIGN/` directory:** the same, split into files; read its
   `entry-point.md`.
 
