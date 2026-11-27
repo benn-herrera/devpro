@@ -20,7 +20,7 @@ remaining suite, feeding this plan's burndown — fixes, never the survey itself
 | P3 | landed | expert |
 | P4 | landed | expert |
 | P5 | drafted | expert |
-| B19 | in progress | expert |
+| B19 | landed | expert |
 | B20 | landed | expert |
 | B21 | landed | expert |
 | B22 | dispatchable | expert |
