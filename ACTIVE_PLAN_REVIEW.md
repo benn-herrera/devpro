@@ -39,6 +39,11 @@ The design promises one digest for one directives state; nothing holds it:
 - The TS digest path never runs in CI, and no test binds the two implementations (typescript,
   architect).
 
+**Ruling (user):** the standing symlink policy settles the link half of this finding — a symlink is
+hashed as what it points at; the TS side follows file links to their targets, matching Python, and
+neither walk descends directory links (cycle safety). The fix that binds the two captures states
+this in the leaf rather than leaving it to library defaults.
+
 ## F3 — High: the digest's file set is not what the leaf states · architect, typescript, prompt-engineer
 
 - Ownership markers never reach the digest: `is_installed` checks banners only, so
