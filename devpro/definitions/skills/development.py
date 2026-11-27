@@ -485,6 +485,13 @@ approved can run as approved.
   directs — has no design: it delivers findings, not a contract delta, so it goes straight to a plan,
   and the plan is what the user approves. *Purpose:* a design written before the review runs would
   state findings it has not produced.
+- The review runs like the post-plan burndown, wider in panel and aperture: its tracking plan opens
+  as the panel is dispatched, carrying a ticket per seat beside a ticket for drafting the review's
+  plan from the findings; that drafting is the {clauses.ref(name="architect")} definition's to
+  write, not the session's, and the drafted items take the
+  `{clauses.ref(name="prompt-engineer")}` usability review and the revision any plan's packages
+  take to become dispatchable. *Purpose:* the review's running state is on the board as any plan's
+  is, and its plan is drafted from findings, never before them.
 - The full review is staffed by a default panel of eight, two seats for each of
   `{clauses.ref(name="architect")}`, `{clauses.ref(name="prompt-engineer")}`,
   `{clauses.ref(name="tech-writer")}` and the project's coder agent
