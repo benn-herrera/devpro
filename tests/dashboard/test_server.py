@@ -33,6 +33,8 @@ from devpro.profiler.pages import (
     DISPATCHED_MARK,
     LAYER_MARK,
     LEGEND,
+    PROJECT_MARK,
+    PROJECT_TITLE_MARK,
     RETURN_MARK,
     SHARED_CSS,
     traces_feed,
@@ -508,6 +510,31 @@ def test_every_page_answer_forbids_sniffing_and_restricts_its_sources(tmp_path: 
     assert "Content-Security-Policy" not in headers
 
 
+@pytest.mark.parametrize(
+    "path, title",
+    [
+        pytest.param("profiler/", "proj: devpro profiler sessions", id="index"),
+        pytest.param("page/s-one", "proj: devpro profiler session", id="session-page"),
+    ],
+)
+def test_the_served_pages_open_their_nav_and_their_title_on_the_project(
+    tmp_path: Path, serve, path: str, title: str
+) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a served page whose nav opens with the `devpro`
+    brand or whose title names no project, so the operator with several dashboard windows open cannot
+    tell whose records each shows.
+
+    Both views of one served project — the index and a session's page — open the nav on the project's
+    name, in the span the layer styles, and carry `<project>: devpro profiler <page-name>` as the
+    page's title, the board's title naming the same directory."""
+    root = project(tmp_path / "proj", {})
+    store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
+    page = serve(root).get(path)[2].decode("utf-8")
+
+    assert re.search(r'<nav class="site-nav scanlines"><span class="project-name">proj</span>', page)
+    assert re.search(rf"<title>{re.escape(title)}</title>", page)
+
+
 def test_the_profiler_view_carries_its_nav_and_no_legend(tmp_path: Path, serve) -> None:
     """`clauses.TEST_PRECONDITION`: the defect is the index carrying the legend, which the view keeps
     for a session's page alone. `/profiler/` carries the frame band without it, and the nav with
@@ -519,6 +546,7 @@ def test_the_profiler_view_carries_its_nav_and_no_legend(tmp_path: Path, serve) 
 
     assert LEGEND not in index
     assert 'class="frame-band' in index
+    assert re.search(r'<span class="project-name">proj</span><span class="views">', index)
     assert re.search(r'<a class="view active" href="/profiler/" aria-current="page">profiler</a>', index)
     assert re.search(r'<a class="view" href="/board/">kanban</a>', index)
 
@@ -550,7 +578,12 @@ def test_every_profiler_view_page_renders_the_way_the_file_flow_renders_it(
     assert page.count('class="site-nav') == 1 and page.count('id="connection"') == 1 and page.count('id="stop"') == 1
     assert page.count("<script>") == scripts
     assert page.count('<script src="/profiler/deco.js">') == 1 and page.count("api/state") == 0
-    assert not [mark for mark in (LAYER_MARK, DECO_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK) if mark in page]
+    assert page.count('class="project-name"') == 1
+    assert not [
+        mark
+        for mark in (LAYER_MARK, DECO_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK, PROJECT_MARK, PROJECT_TITLE_MARK)
+        if mark in page
+    ]
 
 
 def test_the_pages_csp_admits_the_pages_own_blocks(tmp_path: Path, serve) -> None:
@@ -588,6 +621,22 @@ def test_the_served_pages_link_a_shared_layer_whose_bytes_are_the_one_homes(tmp_
     assert SHARED_CSS not in page
 
 
+def test_the_board_pages_nav_slot_is_filled_from_the_payloads_project(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a board page whose nav's project slot stands
+    empty — the fill the board's payload carries dropped on the board page, the one view the
+    project's name does not open — so the board reads as nobody's while the title, the same name,
+    scrolls away.
+
+    The board page carries the slot, `id="project-name"` in the span the layer styles, and
+    `board.js`'s `render` fills it with the payload's own `project`, beside the title it writes from
+    the same field: the page names nothing on the board's behalf, and the script names the field."""
+    page = serve(project(tmp_path / "proj", {})).get("board/")[2].decode("utf-8")
+    script = (ASSETS / "board.js").read_text(encoding="utf-8")
+
+    assert re.search(r'<span class="project-name" id="project-name"></span>', page)
+    assert re.search(r'\$\("project-name"\)\.textContent = payload\.project;', script)
+
+
 def test_the_board_page_holds_its_deco_once_and_the_nav_supplies_it(tmp_path: Path, serve) -> None:
     """`/board/` carries the nav's server block — the indicator and the stop — once, and names two
     scripts, the files the board path serves beside it: the nav's, whose text the board's own file
@@ -597,6 +646,7 @@ def test_the_board_page_holds_its_deco_once_and_the_nav_supplies_it(tmp_path: Pa
     page = serve(project(tmp_path / "proj", {})).get("board/")[2].decode("utf-8")
 
     assert page.count('id="connection"') == 1 and page.count('id="stop"') == 1
+    assert page.count('class="project-name"') == 1
     assert re.findall(r'<script src="([^"]+)"', page) == ["/profiler/deco.js", "board.js"]
 
 

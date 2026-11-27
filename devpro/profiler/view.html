@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- Written by devpro's profiler (`devpro profiler tree --format html`). The standalone render fetches nothing and runs from the file the flow wrote. -->
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>devpro — profiler view: session</title>
+<title><!--PROJECT_TITLE-->: devpro profiler session</title>
 <!--DECO-->
 <!--LAYER-->
 <style>
@@ -36,11 +36,11 @@ svg .spawn rect { stroke:var(--panel); stroke-width:1; }
 .detail { margin:2px 0 8px; padding:8px 10px; border-left:3px solid var(--line); white-space:pre-wrap; word-break:break-word; }
 .detail b { color:var(--muted); font-weight:500; display:inline-block; min-width:64px; }
 </style></head><body>
-<nav class="site-nav scanlines"><span class="brand">devpro</span><span class="views"><a class="view" href="/board/">kanban</a><a class="view active" href="/profiler/" aria-current="page">profiler</a></span><span class="nav-server">
+<nav class="site-nav scanlines"><!--PROJECT--><span class="views"><a class="view" href="/board/">kanban</a><a class="view active" href="/profiler/" aria-current="page">profiler</a></span><span class="nav-server">
   <span class="dot"></span>
   <span id="connection" role="status" aria-labelledby="connection"></span>
   <button id="stop" class="nav-stop" type="button">Stop</button>
-</span></nav>
+</span><span class="brand">devpro</span></nav>
 <div class="frame-band scanlines"><!--LEGEND--><!--DISPATCHED--><!--RETURN--></div>
 <h1>Session <span id="sid"></span></h1>
 <div class="sub" id="subline"></div>

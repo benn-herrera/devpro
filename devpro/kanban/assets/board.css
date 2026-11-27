@@ -1,6 +1,7 @@
 /* The site's one presentation layer: this file is the board's stylesheet and the profiler's pages'
-   inlined one, so the surfaces are the board's and the identity — the brand, the active and inactive
-   view, the nav grammar and the scanline treatment — lives here for both views.
+   inlined one, so the surfaces are the board's and the identity — the project name opening the nav,
+   the brand, the active and inactive view, the nav grammar and the scanline treatment — lives here
+   for both views.
 
    The light motif carries the warm phosphor, the dark the green: --brand is the phosphor, --accent
    the brand at 80% brightness (the active view's smaller text), --on-accent the text that reads on the
@@ -84,12 +85,14 @@
   }
 }
 
-/* The top nav: the brand, then the views, then the server block at the far edge. The brand is
-   monospace, heavier and about 15% larger than the view names at full brightness; a view name is the
-   same smaller size in both states, the active one the accent at a heavier weight, the inactive the
-   lifted gray — always a link, never struck through or marked visited. It carries no side padding of
-   its own: the page's padding is one rule for the whole page, so the nav's server block ends on the
-   same edge the board's last column does. */
+/* The top nav: the project's name opening it, then the views, then the server block at the far edge,
+   then the brand past it. The project name is monospace, heavier and about 15% larger than the view
+   names, in the foreground color; a view name is the same smaller size in both states, the active one
+   the accent at a heavier weight, the inactive the lifted gray — always a link, never struck through
+   or marked visited. The brand sits at the view names' size in the brand color, behind the hairline
+   separator that keeps it from reading as the stop's label past it — the far edge's signature. The
+   nav carries no side padding of its own: the page's padding is one rule for the whole page, so the
+   brand ends on the same edge the board's last column does. */
 .site-nav {
   display: flex;
   flex-wrap: wrap;
@@ -100,10 +103,18 @@
   background: var(--card);
   border-bottom: 1px solid var(--line);
 }
+.project-name {
+  font: 700 1.15rem/1.2 var(--mono);
+  color: var(--fg);
+  letter-spacing: 0.02em;
+}
 .brand {
-  font: 600 1.15rem/1.2 var(--mono);
+  font: 600 1rem/1.2 var(--mono);
   color: var(--brand);
   letter-spacing: 0.02em;
+  margin-left: 0.25rem;
+  padding-left: 0.9rem;
+  border-left: 1px solid var(--line);
 }
 .views { display: flex; align-items: baseline; gap: 1.1rem; }
 .view, .view:visited {

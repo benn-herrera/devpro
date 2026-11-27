@@ -125,7 +125,7 @@ def test_every_script_spelling_of_the_prefix_is_the_services_one(tmp_path: Path)
 
     if shutil.which("bun") is None:
         pytest.fail("bun is not on PATH: the prefix's scripts cannot be read without it")
-    index = index_html()
+    index = index_html("project")
     view = (_PACKAGE_ROOT / "devpro" / "profiler" / "view.html").read_text(encoding="utf-8")
     assert AGENT_PREFIX_MARK in view
 

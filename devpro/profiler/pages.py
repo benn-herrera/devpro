@@ -13,6 +13,7 @@ file; the dashboard serves the pages with the layer linked to the same file the 
 
 import html
 import math
+import os
 import re
 from importlib.resources import files
 from pathlib import Path
@@ -273,6 +274,23 @@ AGENT_PREFIX_MARK = "/*AGENT_PREFIX*/"
 # read it: a rendering fills their `AGENT_PREFIX` mark with this text, so the four spellings — the
 # prefix constant, the index's row strip and `view.html`'s `shownName` — are one line the lane checks.
 AGENT_PREFIX_LINE = f"const AGENT_PREFIX = '{AGENT_PREFIX}';"
+# The project's name in the page's title, escaped as text, and the nav's opening slot on every page
+# the templates render — the name `pages.project_fill` puts in the span the layer's `.project-name`
+# rule styles. Every fill hands both a name: the serve path the served project's, the standalone
+# render the project it renders for, so no page carries either mark standing.
+PROJECT_TITLE_MARK = "<!--PROJECT_TITLE-->"
+PROJECT_MARK = "<!--PROJECT-->"
+
+
+def project_fill(project: str) -> str:
+    """The nav's opening slot as a page carries it: the project name, escaped, in the span the
+    layer's `.project-name` rule styles — bold, in the foreground color."""
+    return f'<span class="project-name">{html.escape(project)}</span>'
+
+
+def project_fills(project: str) -> dict[str, str]:
+    """Both the templates' project marks, filled: the title's the name as text, the nav's the span."""
+    return {PROJECT_TITLE_MARK: html.escape(project), PROJECT_MARK: project_fill(project)}
 
 
 def context_of(record: Json) -> str:
@@ -725,35 +743,39 @@ def _inlined_session_data(
 def _rendering(
     session: Json,
     *,
+    project: str,
     dispatcher: Dispatcher | None,
     return_to: str | None,
     depth: Depth | None = None,
 ) -> str:
-    """The page's one rendering: the template's own text with the session's data, the band's facts and
-    the prefix line filled, the layer's and the deco's marks left standing for their carriers' fills —
-    `render_html` inlines both texts, a file being unable to load a server's file, and the serve path
-    fills the two links (`served_page`). One rendering, two carriers."""
+    """The page's one rendering: the template's own text with the session's data, the nav's project
+    name, the band's facts and the prefix line filled, the layer's and the deco's marks left standing
+    for their carriers' fills — `render_html` inlines both texts, a file being unable to load a
+    server's file, and the serve path fills the two links (`served_page`). One rendering, two
+    carriers."""
     template = (files(__package__) / "view.html").read_text(encoding="utf-8")
     return strict_fill(
         template,
         {
             DATA_MARK: _inlined_session_data(session, dispatcher=dispatcher, depth=depth),
             AGENT_PREFIX_MARK: AGENT_PREFIX_LINE,
+            **project_fills(project),
             **band_fills(dispatcher=dispatcher, return_to=return_to, legend=True),
         },
     )
 
 
-def render_html(session: Json, *, dispatcher: Dispatcher | None, depth: Depth | None = None) -> str:
+def render_html(session: Json, *, project: str, dispatcher: Dispatcher | None, depth: Depth | None = None) -> str:
     """One self-contained page: the package's template with the presentation layer, the deco, the
-    how-to-read legend and the trace inlined, and the frame band's per-page facts the session's stores
-    name — the way back to the list, and the dispatcher where one dispatched it — the same facts the
-    served page fills, the layer's and the deco's carriage the differences between the carriers: a file
-    links neither, so it carries both texts and the page's script finds the one notation they hold.
-    An opencode dispatch's child-end join is already in the session's records (`joined_session`, at the
-    read boundary); the depth-2 chain reads the child's store through `depth`."""
+    how-to-read legend and the trace inlined, the nav opening on the project's name, and the frame
+    band's per-page facts the session's stores name — the way back to the list, and the dispatcher
+    where one dispatched it — the same facts the served page fills, the layer's and the deco's
+    carriage the differences between the carriers: a file links neither, so it carries both texts and
+    the page's script finds the one notation they hold. An opencode dispatch's child-end join is
+    already in the session's records (`joined_session`, at the read boundary); the depth-2 chain reads
+    the child's store through `depth`."""
     return strict_fill(
-        _rendering(session, dispatcher=dispatcher, return_to=PROFILER_PATH, depth=depth),
+        _rendering(session, project=project, dispatcher=dispatcher, return_to=PROFILER_PATH, depth=depth),
         {LAYER_MARK: LAYER_INLINE, DECO_MARK: DECO_INLINE},
     )
 
@@ -787,7 +809,8 @@ def stamp(ms: int | float) -> str:
 
 
 def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
-    """The session the arguments choose, as the text tree or as the html page."""
+    """The session the arguments choose, as the text tree or as the html page — the page's nav naming
+    the project `directory` is in, as the board's title names one served project."""
     options = parse_tree_args(argv)
     sessions = list_sessions(directory)
     if not sessions:
@@ -820,6 +843,7 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
         dispatched = dispatches(sessions)
         return render_html(
             joined_session(chosen[0], sessions),
+            project=os.path.basename(directory),
             dispatcher=dispatcher_of(chosen[0]["id"], sessions, contexts_of),
             depth=Depth(
                 sessions=sessions,
@@ -918,21 +942,22 @@ def _feed_entry(
     return entry
 
 
-def index_html() -> str:
+def index_html(project: str) -> str:
     """The index of record files, static: its page file carries no row, and its script renders them
     from the feed `/api/traces` answers (`traces_feed`) — the board's pattern, the payload consumed
     client-side. The rows' order and their dispatcher grouping are the feed's.
 
     The index carries the presentation layer and names no view of its own: opened on its own it
     stands beside no board, so the deco — the nav, the frame band and the decoration's script, which
-    holds the one notation the page's script calls — is the template's own text, the band filled with
-    none of its per-page facts (the index carrying no legend, no dispatcher and no way back), and the
-    two carriage marks left standing — filled by the serve path with their links (`served_page`), its
-    one consumer, since no file flow writes the index.
-    The script's mark is the one prefix line, `AGENT_PREFIX_LINE`, filled here."""
+    holds the one notation the page's script calls — is the template's own text, the nav opening on the
+    project's name, and the band filled with none of its per-page facts (the index carrying no legend,
+    no dispatcher and no way back), and the two carriage marks left standing — filled by the serve
+    path with their links (`served_page`), its one consumer, since no file flow writes the index.
+    The script's mark is the one prefix line, `AGENT_PREFIX_LINE`, filled here; the nav's opening slot
+    and the title carry the project's name, the caller's."""
     return strict_fill(
         INDEX.replace(AGENT_PREFIX_MARK, AGENT_PREFIX_LINE),
-        band_fills(dispatcher=None, return_to=None, legend=False),
+        {**project_fills(project), **band_fills(dispatcher=None, return_to=None, legend=False)},
     )
 
 
@@ -1003,7 +1028,7 @@ RETURN_MARK = "<!--RETURN-->"
 INDEX = """<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<title>devpro — profiler view: sessions</title>
+<title><!--PROJECT_TITLE-->: devpro profiler sessions</title>
 <!--DECO-->
 <!--LAYER-->
 <style>
@@ -1057,11 +1082,11 @@ th[aria-sort="ascending"] .sort::after { content: " ▲"; }
 th[aria-sort="descending"] .sort::after { content: " ▼"; }
 .notice { color: var(--fg); border-left: 3px solid var(--c0); padding: 0.3rem 0 0.3rem 0.6rem; margin: 0 0 0.6rem; }
 </style>
-<nav class="site-nav scanlines"><span class="brand">devpro</span><span class="views"><a class="view" href="/board/">kanban</a><a class="view active" href="/profiler/" aria-current="page">profiler</a></span><span class="nav-server">
+<nav class="site-nav scanlines"><!--PROJECT--><span class="views"><a class="view" href="/board/">kanban</a><a class="view active" href="/profiler/" aria-current="page">profiler</a></span><span class="nav-server">
   <span class="dot"></span>
   <span id="connection" role="status" aria-labelledby="connection"></span>
   <button id="stop" class="nav-stop" type="button">Stop</button>
-</span></nav>
+</span><span class="brand">devpro</span></nav>
 <div class="frame-band scanlines"><!--LEGEND--><!--DISPATCHED--><!--RETURN--></div>
 <main>
 <h1>Sessions</h1>
@@ -1411,15 +1436,16 @@ def session_for(path: str, directory: Path | str) -> Json | None:
 def page_for(
     session: Json,
     *,
+    project: str,
     return_to: str | None,
     dispatcher: Dispatcher | None,
     depth: Depth | None = None,
 ) -> str:
-    """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
-    frame band with its legend, the decoration's script, the presentation layer linked — the band's
-    per-page facts the dashboard's own lookup names, one legend on the page and the script once. The
-    layer's carriage is the serve path's own fill (`served_page`), where the render inlined the
-    layer's text. An opencode dispatch's child-end join is already in the session's records
-    (`joined_session`, at the read boundary), and the depth-2 chain reads the child's store through
-    `depth` beside it."""
-    return served_page(_rendering(session, dispatcher=dispatcher, return_to=return_to, depth=depth))
+    """A page of the profiler view as the dashboard serves it: the view's own text — the nav opening
+    on the project's name, the frame band with its legend, the decoration's script, the presentation
+    layer linked — the band's per-page facts the dashboard's own lookup names, one legend on the page
+    and the script once. The layer's carriage is the serve path's own fill (`served_page`), where the
+    render inlined the layer's text. An opencode dispatch's child-end join is already in the session's
+    records (`joined_session`, at the read boundary), and the depth-2 chain reads the child's store
+    through `depth` beside it."""
+    return served_page(_rendering(session, project=project, dispatcher=dispatcher, return_to=return_to, depth=depth))

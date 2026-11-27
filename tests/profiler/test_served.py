@@ -206,6 +206,10 @@ def test_the_served_page_is_the_html_the_file_flow_writes(tmp_path: Path, _wrapp
     # The serve path names the layer's one file where the file flow inlines its text: one source, two
     # carriers.
     assert served.count(LAYER_LINK) == 1 and SHARED_CSS not in served
+    # The project the bare render names is the directory the flow ran in, as the served page names the
+    # served project: the file opened from disk stands alone without the name dropped.
+    assert re.search(r'<nav class="site-nav scanlines"><span class="project-name">project</span>', printed.stdout)
+    assert "<title>project: devpro profiler session</title>" in printed.stdout
 
 
 def test_an_unrecorded_session_id_is_a_404_and_no_traceback(tmp_path: Path, _wrapper: Path) -> None:

@@ -41,6 +41,8 @@ from devpro.profiler.pages import (
     DISPATCHED_MARK,
     INDEX,
     LAYER_MARK,
+    PROJECT_MARK,
+    PROJECT_TITLE_MARK,
     RETURN_MARK,
     SHARED_CSS,
     call_label,
@@ -1797,7 +1799,7 @@ def test_every_script_spelling_of_the_prefix_is_the_services_one(tmp_path: Path)
 
     if shutil.which("bun") is None:
         pytest.fail("bun is not on PATH: the prefix's scripts cannot be read without it")
-    index = index_html()
+    index = index_html("project")
     view = (_PACKAGE_ROOT / "devpro" / "profiler" / "view.html").read_text(encoding="utf-8")
     assert AGENT_PREFIX_MARK in view
 
@@ -2103,18 +2105,19 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     that the text no longer carries, and leaves no mark it filled standing. `index_html`, fed an
     `INDEX` whose legend mark the text no longer carries yet still told to fill it, raises;
     `strict_fill` on `view.html` with a mark removed, still told to fill it, raises the same. A rendered session page
-    and the served page and index then carry no mark the fill was handed standing. The `INDEX` swap
+    and the served page and index then carry no mark the fill was handed standing — the title's
+    project-name mark and the nav's among them, filled on every page that carries them. The `INDEX` swap
     is for this check alone: `monkeypatch` reverts at the end and the serve below runs in a child
     process that reads `INDEX` from disk, so nothing after it sees the swap."""
     # (a) `index_html`: an `INDEX` whose legend mark the text no longer carries, still told to fill it.
     monkeypatch.setattr("devpro.profiler.pages.INDEX", INDEX.replace(BAND_LEGEND, ""))
     with pytest.raises(KeyError):
-        index_html()
+        index_html("project")
     # (a) the fill itself: `view.html` with a mark removed, still told to fill it.
-    from devpro.profiler.pages import strict_fill
+    from devpro.profiler.pages import project_fills, strict_fill
 
     view_text = (_PACKAGE_ROOT / "devpro" / "profiler" / "view.html").read_text(encoding="utf-8")
-    fills = {DATA_MARK: "data", LAYER_MARK: "layer", BAND_LEGEND: "legend"}
+    fills = {DATA_MARK: "data", LAYER_MARK: "layer", BAND_LEGEND: "legend", **project_fills("project")}
     with pytest.raises(KeyError):
         strict_fill(view_text.replace(BAND_LEGEND, ""), fills)
     # (a) the fill's own strictness: a value carrying its mark leaves it standing — refused.
@@ -2127,12 +2130,22 @@ def test_the_strict_fill_refuses_unknown_and_unfilled_marks_and_leaves_none_stan
     launcher = _installed_wrapper(tmp_path / "harness")
     printed = _run(launcher, "tree", "s-claude", "--format", "html", cwd=project)
     assert printed.returncode == 0, printed.stderr
-    for mark in (LAYER_MARK, DECO_MARK, DATA_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
+    marks = (
+        LAYER_MARK,
+        DECO_MARK,
+        DATA_MARK,
+        BAND_LEGEND,
+        DISPATCHED_MARK,
+        RETURN_MARK,
+        PROJECT_TITLE_MARK,
+        PROJECT_MARK,
+    )
+    for mark in marks:
         assert mark not in printed.stdout, f"{mark} left standing in the rendered page"
     with _serve(cwd=project) as url:
         page = _fetch(f"{url}page/s-claude")
         index = _fetch(f"{url}profiler/")
-    for mark in (LAYER_MARK, DECO_MARK, DATA_MARK, BAND_LEGEND, DISPATCHED_MARK, RETURN_MARK):
+    for mark in marks:
         assert mark not in page, f"{mark} left standing in the served page"
         assert mark not in index, f"{mark} left standing in the served index"
     assert "$rows" not in index

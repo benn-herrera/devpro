@@ -83,16 +83,18 @@ _NO_SUCH_PAGE = "No such page"
 def profiler_page(
     session: Json,
     *,
+    project: str,
     return_to: str | None,
     dispatcher: Dispatcher | None,
     depth: Depth | None = None,
 ) -> str:
-    """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
-    frame band, the decoration's script, the shared layer linked — assembled by `page_for`, this
-    module adding the band's per-page facts, the way back and the dispatcher its lookup names. A page's
-    dispatch rows join to their child's end at the read boundary, already in the session's records,
-    and its depth-2 chain reads the child's store through `depth` beside that join."""
-    return pages.page_for(session, return_to=return_to, dispatcher=dispatcher, depth=depth)
+    """A page of the profiler view as the dashboard serves it: the view's own text — the nav opening
+    on the project's name, the frame band, the decoration's script, the shared layer linked —
+    assembled by `page_for`, this module adding the band's per-page facts, the way back and the
+    dispatcher its lookup names. A page's dispatch rows join to their child's end at the read
+    boundary, already in the session's records, and its depth-2 chain reads the child's store through
+    `depth` beside that join."""
+    return pages.page_for(session, project=project, return_to=return_to, dispatcher=dispatcher, depth=depth)
 
 
 def loopback(url: str) -> bool:
@@ -150,12 +152,13 @@ class DashboardServer(ThreadingHTTPServer):
 
     def profiler_index(self) -> str:
         """The profiler view's static index, as the dashboard serves it: the page's own text under
-        the nav and the band, the band carrying no legend — a session's page carries the how-to-read
+        the nav and the band, the nav opening on the served project's name — the board's title names
+        the same directory — the band carrying no legend — a session's page carries the how-to-read
         one — and its rows rendered by its script from `traces`.
 
         `CLAUDE_PROJECT_DIR` is not followed — it names the outermost claude session's launch
         directory, which for a terminal-launched server is another project."""
-        return pages.served_page(pages.index_html())
+        return pages.served_page(pages.index_html(os.path.basename(self.root)))
 
     def traces(self) -> bytes:
         """The index's feed as the JSON answer `/api/traces` serves: `pages.traces_feed`'s entries,
@@ -164,9 +167,9 @@ class DashboardServer(ThreadingHTTPServer):
 
     def page(self, session: str) -> str | None:
         """The page at `/page/<session>`, or nothing where it names no recorded session: the view's
-        own text — the nav, the band, the shared layer linked — with the band's per-page facts, whose
-        return control leads back to the list and whose heading names the session that dispatched it,
-        where one did.
+        own text — the nav opening on the served project's name, the band, the shared layer linked —
+        with the band's per-page facts, whose return control leads back to the list and whose heading
+        names the session that dispatched it, where one did.
 
         The store read is the page's own; the dispatcher its band names is looked up beside it, once,
         as the depth-2 chain's measurements are — one `dispatches` over the sessions this read holds,
@@ -180,6 +183,7 @@ class DashboardServer(ThreadingHTTPServer):
         dispatched = dispatches(sessions)
         return profiler_page(
             joined_session(session_record, sessions),
+            project=os.path.basename(self.root),
             return_to=PROFILER_PATH,
             dispatcher=dispatcher_of(session, sessions, pages.contexts_of),
             depth=Depth(

@@ -134,6 +134,7 @@ function render(payload) {
     const title = `${payload.project} kanban`;
     document.title = title;
     $("page-title").textContent = title;
+    $("project-name").textContent = payload.project;
     $("connection").title = `devpro v${payload.devpro_version}`;
     renderColumns(payload);
     drawn = payload.version;
