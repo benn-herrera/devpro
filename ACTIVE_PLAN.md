@@ -56,7 +56,7 @@ progress.
 | B5 | landed | expert |
 | B6 | landed | expert |
 | B7 | landed | mechanical |
-| B8 | in progress | mechanical |
+| B8 | landed | mechanical |
 | B9 | dispatchable | expert |
 
 ### P1 — the paired deltas applied to the project documents
