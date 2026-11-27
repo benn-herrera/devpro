@@ -32,7 +32,7 @@ before anything is approved or dispatched.
 | B13 | landed | expert |
 | B14 | in progress | mechanical |
 | B15 | landed | expert |
-| B16 | dispatchable | expert |
+| B16 | in progress | expert |
 | B17 | landed | expert |
 | B18 | landed | expert |
 
