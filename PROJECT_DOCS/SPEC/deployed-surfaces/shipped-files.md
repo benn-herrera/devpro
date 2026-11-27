@@ -229,12 +229,13 @@ Opencode loads the plugin directory and registers its agents, skills, commands a
 `kbase` ships, the `kbase` MCP server under the registry's ids, and injects a plan-state reminder
 into the parent session at agent dispatch and agent completion, gated by `ACTIVE_PLAN.md` — file
 or, where the plan was diced, the `ACTIVE_PLAN/` tree — existing at the project root. A session
-whose context the host compacts has the `devpro-development` skill's invocation re-delivered once
-the compaction ends, where the session's context held the skill before it: the compaction drops the
+whose context the host compacts has the `devpro-development` skill activated again with the
+session's next exchange, the skill attached to that exchange's prompt through the host's own
+attachment path, where the session's context held the skill before it: the compaction drops the
 skill's text from what the session reads, and the plugin is what restores it. A change to
 the install directory is picked up without restarting opencode, except a change to `guardrail.ts` or
 `profiler.ts`, either of which the plugin entry imports when it loads, so a changed one takes effect
-at the next opencode start. The plugin entry is written for opencode (floor 2.3.0) and is the
+at the next opencode start. The plugin entry is written for opencode and is the
 same file for both plugins; ARCHITECTURE.md, Install, Opencode entry holds how it works. A resource
 may be conditional
 on the probe: claude's guardrail is

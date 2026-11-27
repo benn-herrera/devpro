@@ -1,18 +1,19 @@
 // !INSTALLED! from devpro/harnesses/resources/opencode/index.ts — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
 //
-// Written for opencode (floor 2.3.0): the entry of one plugin the devpro project ships, the
+// It is written for opencode (floor 2.3.0): the entry of one plugin the devpro project ships, the
 // directory holding this file. Registers the plugin's agents, commands, skills and MCP servers from
 // registry.json and the Markdown bodies it lists, re-reads them whenever anything in this directory
 // changes, runs the guardrail beside it where one is installed, reminds a parent session to update
 // the active plan's status table when it dispatches a subagent and when that subagent's session
-// finishes, and re-delivers the development skill's invocation after the host compacts a session
-// whose context held it.
+// finishes, and re-activates the development skill on the next prompt of a session the host has
+// compacted where that session's context held it.
 //
-// The floor is a behavioral one, not an API one: every API used here exists at 2.2.6, but there the
-// `subagent` tool defaults to the foreground, so `execute.after` fires at the child's completion,
-// behind the idle hook — a parent gets two completion nudges and none at the dispatch. From 2.3.0
-// the call returns at once and the child runs in the background, which makes the call's return the
-// dispatch moment.
+// The floor is 2.3.0, where the `subagent` call stops defaulting to the foreground: from it the call
+// returns at once and the child runs in the background, so `execute.after`'s return is the dispatch
+// moment rather than a nudge behind the idle that reports the child's completion. The skill's reload
+// stands on a surface read from the host's published declarations — the `prompt` and `compaction`
+// events of `SessionHooks`, which the pinned 2.4.1 declares — and no path here checks the host's
+// version: the hooks register on every install.
 
 import { Plugin } from "@opencode/plugin"
 import { existsSync, readFileSync, statSync, watch } from "node:fs"
@@ -68,16 +69,17 @@ function planStanding(root: string): boolean {
 // The development skill's reload: the host's compaction replaces the session's context with a
 // summary, which drops the skill's text, and no declared hook fires when the compacted context
 // resumes. The one the host declares for a compaction, `compaction`, runs before its request; the
-// event after it that can carry a delivery is the compacted session's next `experimental.idle`. So
-// the compaction's hook reads the marker off its pre-compaction context and records the session
-// there, and that idle re-delivers the invocation. The marker is a set of session ids, added at a
-// compaction and removed by the delivery that reads it, so a session compacted twice is reloaded
-// twice and one whose context never held the skill is never touched.
-const skillInvocation = "@devpro-development"
+// event after it that can carry an activation is the session's next `prompt`, the admission the
+// host resolves a prompt's attachments at. So the compaction's hook reads the marker off its
+// pre-compaction context and records the session there, and that prompt attaches the skill. The
+// marker is a set of session ids, added at a compaction and removed by the prompt that reads it, so
+// a session compacted twice is reloaded twice and one whose context never held the skill is never
+// touched.
+const skillName = "devpro-development"
 
-// The marker's text, the invocation without its `@`: a skill message nests its body under a
-// `content` part, so a JSON-escaped copy of the request would not hold the invocation itself.
-const skillMark = skillInvocation.slice(1)
+// The marker's text, the skill's name without the invocation's `@`: a skill message nests its body
+// under a `content` part, so a JSON-escaped copy of the request would not hold the name itself.
+const skillMark = skillName
 
 // Whether a compaction request's context still holds a skill's activation. The host's skill message
 // carries the skill's id, name and body (SessionMessage.Skill), but the field a compaction's request
@@ -213,30 +215,31 @@ export default Plugin.define({
 
     // The development skill's reload. A compaction records the session where the context it is about
     // to replace held the skill, and sets no `result`, so the host still authors the summary. The
-    // compacted context's next idle delivers the invocation once and clears the marker; a second
-    // compaction records the session again, so a session compacted twice is reloaded twice.
+    // session's next prompt then carries the skill among its `skills`, the host's own attachment
+    // path, so the host activates it with that exchange, its text in the same request. The marker is
+    // spent by that prompt, and a second compaction records the session again, so a session compacted
+    // twice is reloaded twice.
     const reloaded = new Set<string>()
-    const deliverSkill = async (sessionID: string) => {
-      if (!reloaded.delete(sessionID)) return
-      try {
-        // Queued rather than steering: the summary is what the session resumes with, and the
-        // invocation follows it as the next message the model reads.
-        await ctx.session.synthetic({ sessionID, text: skillInvocation, delivery: "queue" })
-      } catch (err) {
-        log(`cannot re-deliver the development skill to the session ${sessionID}`, err)
-        // The marker stands for the next idle, where the delivery is tried again.
-        reloaded.add(sessionID)
+    await ctx.session.hook("prompt", async (prompt) => {
+      if (!reloaded.delete(prompt.sessionID)) return
+      // The skill's id is read from the domain as the prompt comes in, never assumed: the domain is
+      // where the transform above put the skill, and its entry is the one the host activates.
+      const listed = (await ctx.skill.list()).data.find((skill) => String(skill.name) === skillName)
+      if (listed === undefined) {
+        log(`no skill the plugin lists is named ${skillName}`, "nothing to activate")
+        return
       }
-    }
+      // The prompt's own list is kept. The brands the host puts on a skill's id are made from its
+      // strings, and no maker stands in the published declarations this file is checked against, so the
+      // id the attachment carries is the string the domain lists for the skill.
+      const id = String(listed.id)
+      const attached = prompt.prompt.skills ?? []
+      if (attached.some((skill) => String(skill.id) === id)) return
+      prompt.prompt.skills = [...attached, { id } as { id: NonNullable<typeof attached[number]>["id"] }]
+    })
     await ctx.session.hook("compaction", (compaction) => {
       if (!compaction.messages.some((message) => textOf(message).some(holdsInvocation))) return
       reloaded.add(compaction.sessionID)
-    })
-    // Every session's idle, not the parent-scoped one the reminder reads: a compaction may land on
-    // the primary session, which has no parent, and on the session whose context held the skill.
-    await ctx.session.hook("experimental.idle", async (idle) => {
-      if (idle.background.length > 0) return
-      await deliverSkill(idle.sessionID)
     })
 
     // Every callback reads `held`, which only setup and the watcher replace: a callback that threw

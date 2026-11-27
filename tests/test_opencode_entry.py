@@ -86,10 +86,13 @@ def _run_entry(
     writes: list[dict],
     command: dict,
     compactions: tuple[str, str] = ("", ""),
+    prompts: list[dict] | None = None,
 ) -> dict:
     """The runner's output for the entry installed in `plugin`, for a session opened at `directory` in
-    the project rooted at `project`, and for the two compactions of the primary session's context the
-    runner fires at its end, each handed the text it held."""
+    the project rooted at `project`, for the two compactions of the primary session's context the
+    runner fires at its end, each handed the text it held, and for the prompts the runner admits: the
+    one after each compaction, on the primary session, carrying no skill of its own unless `prompts`
+    names them, then each remaining prompt of `prompts` in the order given."""
     done = subprocess.run(
         ["bun", str(_RUNNER)],
         input=json.dumps(
@@ -100,6 +103,7 @@ def _run_entry(
                 "writes": writes,
                 "command": command,
                 "compactions": [{"sessionID": "ses_primary", "text": text} for text in compactions],
+                "prompts": prompts or [{"sessionID": "ses_primary", "skills": []} for _ in compactions],
             }
         ),
         capture_output=True,
@@ -148,14 +152,14 @@ def test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds(tmp_path
     # Registration order follows the code: the guardrail's `execute.before`, the entry's reminder
     # `execute.after`, then the capture's pair. The capture's setup runs before the entry's own
     # registrations, so its `model.request` and its idle hook precede the entry's idle and the
-    # compaction pair the skill's reload registers beside it.
+    # skill's reload, whose prompt hook stands beside its compaction hook.
     assert out["hooks"] == ["execute.before", "execute.before", "execute.after", "execute.after"]
     assert out["sessionHooks"] == [
         "model.request",
         "experimental.idle",
         "experimental.idle",
+        "prompt",
         "compaction",
-        "experimental.idle",
     ]
     assert set(first["agents"]) == {a["id"] for a in registry["agents"]}
     assert set(first["skills"]) == {s["id"] for s in registry["skills"]}
@@ -237,11 +241,12 @@ def test_a_user_level_opencode_entry_runs_the_guardrail_beside_it_and_injects_no
     )
 
     # The capture, which a user-level install does not copy, registers none of its own, so the
-    # reminder's idle hook stands alone and the skill's reload registers its compaction and idle; no
-    # compaction's context held the skill and no synthetic message is injected.
+    # reminder's idle hook stands alone and the skill's reload registers its prompt and compaction
+    # hooks; no compaction's context held the skill and no synthetic message is injected.
     assert out["hooks"] == ["execute.before", "execute.after"]
-    assert out["sessionHooks"] == ["experimental.idle", "compaction", "experimental.idle"]
+    assert out["sessionHooks"] == ["experimental.idle", "prompt", "compaction"]
     assert out["synthetics"] == []
+    assert out["attachments"] == [{"sessionID": "ses_primary", "skills": []}] * 2
     (registered,) = out["states"]
     assert set(registered["agents"]) == {a["id"] for a in registry["agents"]}
     assert set(registered["skills"]) == {s["id"] for s in registry["skills"]}
@@ -292,8 +297,9 @@ def test_the_gate_is_the_plan_file_or_tree_and_silent_for_a_design_or_nothing(tm
 def test_both_harnesses_inject_one_sentence(tmp_path: Path) -> None:
     """The entry's injection is byte for byte the sentence claude's reminder script emits: one table,
     one rule at one strength, held to it here rather than by a reader comparing the two resources. The
-    compactions the runner fires carried the skill, and their reload's sentence is the skill's
-    invocation — not the reminder's, which is what this test weighs against claude's."""
+    compactions the runner fires carried the skill, and their reload rides the next prompt's skills
+    rather than a message — nothing it carries can read as the reminder's, which is what this test
+    weighs against claude's."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)
@@ -311,17 +317,16 @@ def test_both_harnesses_inject_one_sentence(tmp_path: Path) -> None:
     assert claude.returncode == 0, claude.stderr
     sentence = json.loads(claude.stdout)["hookSpecificOutput"]["additionalContext"]
 
-    assert {injected["text"] for injected in out["synthetics"] if injected["text"] != "@devpro-development"} == {
-        sentence
-    }
+    assert {injected["text"] for injected in out["synthetics"]} == {sentence}
 
 
-def test_a_compacted_context_that_held_the_skill_gets_its_invocation_re_delivered(tmp_path: Path) -> None:
+def test_a_compacted_context_that_held_the_skill_attaches_it_to_the_next_prompt(tmp_path: Path) -> None:
     """A session whose context held the development skill's body states the marker at the compaction,
-    and the idle that follows the compaction delivers `@devpro-development` — once, queued behind
-    the summary the session resumes with — while no compaction's context holding nothing does.
-    It fails on a compaction that drops the skill's text and restores nothing: the session
-    continues without the development process, a surface no assertion on what is registered reaches."""
+    and the prompt admitted after it carries the development skill among its `skills` — the one skill,
+    and no other where the prompt carried none — while a compaction whose context held nothing
+    attaches nothing at the prompt after it. It fails on a prompt hook that attaches to a prompt of a
+    session the marker never recorded, or to every prompt: the session continues without the
+    development process."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)
@@ -335,18 +340,16 @@ def test_a_compacted_context_that_held_the_skill_gets_its_invocation_re_delivere
         compactions=("devpro-development", ""),
     )
 
-    delivered = [
-        (injected["on"], injected["sessionID"], injected["text"], injected["delivery"])
-        for injected in out["synthetics"]
-        if injected["text"] == "@devpro-development"
+    assert out["attachments"] == [
+        {"sessionID": "ses_primary", "skills": ["devpro-development"]},
+        {"sessionID": "ses_primary", "skills": []},
     ]
-    assert delivered == [("experimental.idle", "ses_primary", "@devpro-development", "queue")]
 
 
-def test_a_compacted_context_that_held_no_skill_injects_nothing(tmp_path: Path) -> None:
-    """A compaction of a context that held neither the skill's body nor its invocation delivers
-    nothing: the skill is never forced on a session that never carried it. It fails on an injection
-    keyed to every compaction."""
+def test_a_compacted_context_that_held_no_skill_attaches_nothing(tmp_path: Path) -> None:
+    """A compaction of a context that held neither the skill's body nor its name marks no session, and
+    the prompts after it carry what they carried: the skill is never forced on a session that never
+    carried it. It fails on an attachment keyed to every prompt."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)
@@ -360,15 +363,20 @@ def test_a_compacted_context_that_held_no_skill_injects_nothing(tmp_path: Path) 
         compactions=("", ""),
     )
 
+    assert out["attachments"] == [
+        {"sessionID": "ses_primary", "skills": []},
+        {"sessionID": "ses_primary", "skills": []},
+    ]
     assert out["synthetics"] == []
 
 
-def test_a_second_compaction_re_delivers_the_invocation_again(tmp_path: Path) -> None:
-    """The same session compacts twice, its context holding the skill both times, and the idle after
-    each compaction delivers `@devpro-development`: once per compaction, in order. It fails on a
-    marker that latches the first delivery and silences every later one — the session's second
-    compaction would leave it running without the development process though its context held the
-    skill at it, a surface no single-compaction test reaches."""
+def test_a_second_compaction_attaches_again_while_the_marker_is_spent_by_one_prompt(tmp_path: Path) -> None:
+    """The same session compacts twice, its context holding the skill both times, and the prompt after
+    each compaction attaches it; a second prompt after that attaches nothing, the marker having been
+    spent by the first. It fails on a marker that latches the first delivery and silences every later
+    one — the session's second compaction would leave it running without the development process,
+    though its context held the skill at it — and on one that delivers again on every prompt, forcing
+    the skill on an exchange that was not the compaction's."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)
@@ -380,6 +388,80 @@ def test_a_second_compaction_re_delivers_the_invocation_again(tmp_path: Path) ->
         writes=[],
         command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
         compactions=("devpro-development", "devpro-development"),
+        prompts=[
+            {"sessionID": "ses_primary", "skills": []},
+            {"sessionID": "ses_primary", "skills": []},
+            {"sessionID": "ses_primary", "skills": []},
+        ],
     )
 
-    assert [injected["text"] for injected in out["synthetics"]] == ["@devpro-development", "@devpro-development"]
+    assert out["attachments"] == [
+        {"sessionID": "ses_primary", "skills": ["devpro-development"]},
+        {"sessionID": "ses_primary", "skills": ["devpro-development"]},
+        {"sessionID": "ses_primary", "skills": []},
+    ]
+
+
+def test_the_attachment_names_the_skill_the_domain_lists(tmp_path: Path) -> None:
+    """The attachment's id is the skill domain's own entry for the development skill — the id the
+    entry's transform registers — not a string the attachment invented, and the prompt's own
+    attachment is kept beside it where the operator invoked another skill. It fails on an attachment
+    whose id names no skill the domain lists: the host has nothing to activate, and refuses the
+    prompt."""
+    project = tmp_path / "project"
+    project.mkdir()
+    plugin, command_path, banner = _probe_entry(project)
+    registry = json.loads((plugin / "registry.json").read_text(encoding="utf-8"))
+    listed = {record["id"] for record in registry["skills"]}
+
+    out = _run_entry(
+        plugin,
+        directory=project,
+        project=project,
+        writes=[],
+        command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
+        compactions=("devpro-development", ""),
+        prompts=[{"sessionID": "ses_primary", "skills": ["kbase"]}, {"sessionID": "ses_primary", "skills": []}],
+    )
+
+    (registered,) = out["states"]
+    assert set(registered["skills"]) == listed
+    assert "devpro-development" in listed
+    assert out["attachments"] == [
+        {"sessionID": "ses_primary", "skills": ["kbase", "devpro-development"]},
+        {"sessionID": "ses_primary", "skills": []},
+    ]
+    assert [log for log in out["log"] if "no skill the plugin lists" in log] == []
+
+
+def test_a_skill_the_domain_does_not_list_attaches_nothing_and_reports(tmp_path: Path) -> None:
+    """An install whose registry carries no development skill attaches nothing at the prompt after a
+    compaction and says so on stderr, naming the skill. The install is the differential: the same
+    compaction and prompt attach the skill on the install that ships it. It fails on an attachment
+    appended after a failed lookup: the host has nothing to activate, and refuses the prompt."""
+    project = tmp_path / "project"
+    project.mkdir()
+    plugin, command_path, banner = _probe_entry(project)
+    registry = json.loads((plugin / "registry.json").read_text(encoding="utf-8"))
+    assert any(record["id"] == "devpro-development" for record in registry["skills"])
+    registry["skills"] = [record for record in registry["skills"] if record["id"] != "devpro-development"]
+    (plugin / "registry.json").write_text(json.dumps(registry), encoding="utf-8")
+
+    out = _run_entry(
+        plugin,
+        directory=project,
+        project=project,
+        writes=[],
+        command={"name": "kbase-probe", "path": str(command_path), "text": f"{banner}New command.\n", "user": "go"},
+        compactions=("devpro-development", ""),
+        prompts=[{"sessionID": "ses_primary", "skills": []}, {"sessionID": "ses_primary", "skills": []}],
+    )
+
+    assert "devpro-development" not in out["states"][0]["skills"]
+    assert out["attachments"] == [
+        {"sessionID": "ses_primary", "skills": []},
+        {"sessionID": "ses_primary", "skills": []},
+    ]
+    assert [log for log in out["log"] if "devpro-development" in log] == [
+        f"devpro: plugin {NAME}: no skill the plugin lists is named devpro-development: nothing to activate"
+    ]

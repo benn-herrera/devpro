@@ -8,24 +8,29 @@ one commit; the closing commit carries a body and the attribution line (*Commits
 the development skill). The checkpoint gate is `just test`, then `just lint`, then `just
 sweep-python` (CONVENTIONS, [The
 gates](PROJECT_DOCS/CONVENTIONS/planning-and-execution/the-gates.md)) — run once, before the
-checkpoint commit, never between edits. Run order is serial, P1 → P2 → P3 → P4 → P5 → P6: the
+checkpoint commit, never between edits. Run order is serial, P1 → P2 → P3 → P4 → P5 → P6 → P7: the
 packages share the tree. P4 precedes P5 because P5 writes hook names only what the pinned host declares may give it,
-and P4 is the run that reads and records them.
+and P4 is the run that reads and records them; P7 reads its hook's name from the same declarations
+(`session.d.ts:199`), after the live test it stands behind.
 
 The design's delta application is verified by `just dev-check-design-deltas-applied`; the check has
 no subset mode — it exits 1 whenever any pair has not landed. The design states six pairs and two
-no-pair entries: ACTIVE_DESIGN.md :20, :41 and :60 — SPEC [Shipped
-files](ACTIVE_DESIGN.md#shipped-files), landed by P1; :91 — [Serving](ACTIVE_DESIGN.md#serving),
-landed by P1; :110 — [Opencode entry](ACTIVE_DESIGN.md#opencode-entry), landed by P1; :138 — [The
+no-pair entries: ACTIVE_DESIGN.md :20, :41 — SPEC [Shipped
+files](ACTIVE_DESIGN.md#shipped-files), landed by P1; the entry's third pair, :60, revised and
+landed by P7; :91 — [Serving](ACTIVE_DESIGN.md#serving), landed by P1; :111 — [Opencode
+entry](ACTIVE_DESIGN.md#opencode-entry), landed by P1, revised and re-applied by P7; :141 — [The
 page template and its
 presentation](ACTIVE_DESIGN.md#the-page-template-and-its-presentation), landed by P1; [What removes
 the retired path](ACTIVE_DESIGN.md#what-removes-the-retired-path), a whole leaf with no pair,
 removed by P6; [Serving, The index](ACTIVE_DESIGN.md#serving-the-index), a code-delta entry with no
 pair, closed by P3. The two no-pair entries are witnessed by P3's and P6's done-lines, and the
-design's delta application is complete when both have landed.
+design's delta application is complete when both have landed. The revised pairs — the Shipped
+files entry's third pair and the Opencode-entry pair — carry the P7 decision: the re-activation
+rides the session's next prompt, the host's own attachment path, the idle mention injection the
+live compaction test found inert deleted — and P7 applies the revised text.
 
-No row below is `dispatchable` yet: each package still owes its `devpro-prompt-engineer` usability
-review and `devpro-architect` revision (*Dispatchability*), which run after this draft returns.
+P7 owes its `devpro-prompt-engineer` usability review and `devpro-architect` revision
+(*Dispatchability*); P1–P6 are landed and owe neither, PR and PB are `dispatchable`.
 
 ## Status
 
@@ -37,6 +42,7 @@ review and `devpro-architect` revision (*Dispatchability*), which run after this
 | P4 | landed | expert |
 | P5 | landed | expert |
 | P6 | landed | mechanical |
+| P7 | landed | expert |
 | PR | dispatchable | expert |
 | PB | dispatchable | expert |
 
@@ -364,6 +370,125 @@ In-scope tests beyond the deletions: the surviving `init` suite — `tests/profi
 (the opencode-shaped refusal), `:165` onward (the store renames) — must pass unedited. Done-line:
 `just test devpro`, `just dev-check-links`, `just dev-check-design-deltas-applied`, `just lint`.
 
+### P7 — the compaction's re-activation rides the session's next prompt
+
+Intended lifetime: shipped. Rating: expert.
+
+Outcome: an opencode session whose context held the `devpro-development` skill keeps it through a
+compaction: the compaction hook records the session's marker as P5 landed it, and the session's
+next prompt — the `prompt` hook — carries the skill attached to its `skills`, the host's own
+activation path, so the host activates the skill with that exchange ([Shipped
+files](ACTIVE_DESIGN.md#shipped-files), [Opencode entry](ACTIVE_DESIGN.md#opencode-entry), the
+revised pairs). The live test that ran before the review — an opencode session on the updated
+install compacted with the skill in context; the record at
+`.devpro-temp/compaction-hooks/raw-observation.md`, with the operator's account — delivered the
+injection as a bare `@devpro-development` with no skill content: the host never expands a mention
+in a synthetic message, and a synthetic can never *be* an activation, whose message type the
+synthetic input does not carry. The idle mention injection P5 landed is inert, and this package
+replaces its leg.
+
+Facts (quoted, the pinned host's published declarations):
+
+- `node_modules/@opencode/plugin/dist/effect/session.d.ts:199` — `readonly prompt: SessionPrompt;`
+  — the hook name `"prompt"` stands in `SessionHooks`, reached through `SessionDomain`'s
+  `hook: ModelHooks<SessionHooks>` (`:215`).
+- `node_modules/@opencode/plugin/dist/effect/session.d.ts:16` — `prompt:
+  Types.DeepMutable<PromptInput.Prompt>;` — the prompt hook's input is deep-mutable, and the hook
+  callbacks return `void` (`dist/effect/registration.d.ts:10`, P4's read), so mutation is the
+  output.
+- `node_modules/@opencode/client/dist/effect/api/api.d.ts:249` — `readonly skills?:
+  ReadonlyArray<PromptInput.SkillAttachment> | undefined;` in `SessionPromptInput` (`:243–255`) —
+  a prompt input carries skill attachments.
+- `node_modules/@opencode/schema/dist/prompt-input.d.ts:34-45` — `SkillAttachment` is
+  `{ readonly id: Schema.brand<Schema.String, "Skill.ID">, mention?: { start, end, text } }` — the
+  shape a parsed mention becomes; the id is the brand, `Skill.ID` the prose gloss.
+- `node_modules/@opencode/schema/dist/session-message.d.ts:542-555` — a skill activation is a
+  session message `type: "skill"` with typed `skill` and `name` fields;
+  `SessionSyntheticInput` (`node_modules/@opencode/client/dist/effect/api/api.d.ts:269-279`) has
+  no type field — the synthetic vehicle is closed, this package's premise.
+
+Scope: `devpro/harnesses/resources/opencode/index.ts` — the delivery leg P5 added deleted whole,
+`index.ts:235–240` (the `experimental.idle` that consumes the marker and sends the
+`@devpro-development` synthetic) with `deliverSkill` (:219–230); the reminder's idle hook
+(:204–212) stands untouched. The `prompt` hook added: on a prompt whose session id stands in the
+marker set — the set the compaction hook (`index.ts:231–234`) adds to, cleared by the prompt
+hook's delivery and by nothing else — the hook appends the development skill to the prompt's
+`skills`, the id resolved from the plugin's skill domain
+(`node_modules/@opencode/plugin/dist/effect/plugin.d.ts:55`; the domain at
+`dist/effect/skill.d.ts:12–15`, the editor its `transform` hands at `:5–11`), matched to the skill
+the marker names, never hardcoded; a lookup that matches no skill reports and appends nothing.
+The compaction hook and its marker set stand as P5 landed them. `tests/test_opencode_entry.py` —
+the P5 delivery tests rewritten for the attachment, each naming its defect below;
+`tests/opencode_entry_runner.ts` — the runner declares the prompt hook's context and its `skill`
+double gains `list()`, a change to what the code reads being a change to the runners' declared
+contexts, in this change (CONVENTIONS, [A hook contract is read, not
+assumed](PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-hook-contract-is-read-not-assumed.md));
+`tests/opencode_plugin_stub.ts` — only where the pass-through shape does.
+
+Reference search: `git grep -n "opencode_plugin_stub\|opencode_entry_runner\|synthetics" -- tests`
+— the P5 block's search, re-run at execution, every hit outside the four files above reported to
+the session. The search that survives this package's change and states its own scope:
+`git grep -n "synthetics" -- tests/test_opencode_entry.py`, re-run after the rewrite, every hit in
+the rewritten tests' scope in this package's scope — the reader the deletion removes
+(`filter injected["text"] == "@devpro-development"`) is gone, so no pre-change line list is
+restated here. The guardrail and profiler runners import the stub only and change only where the
+stub's pass-through shape does.
+
+The tests pinning the behavior this package must not disturb, in scope to verify:
+`tests/test_opencode_entry.py:112`
+(`test_the_opencode_entry_registers_and_reloads_what_the_plugin_holds`), `:240`
+(`test_the_gate_is_the_plan_file_or_tree_and_silent_for_a_design_or_nothing`), `:281`
+(`test_both_harnesses_inject_one_sentence`), and the profiler runners named above. A test failing
+on behavior this package does not state it changes is reported as a finding, never edited to pass.
+
+The tests this package changes and adds, each naming the defect it fails on by the
+test-precondition clause:
+
+- a session whose context held the skill goes through a compaction, and the session's next prompt
+  carries the skill in its `skills` — fails on a prompt hook that attaches to a prompt of a session
+  the marker never recorded, or to every prompt;
+- a session whose context held no marker attaches nothing at any prompt — fails on an attachment
+  keyed to every prompt, the skill forced on sessions that never carried it;
+- a session whose context held the skill goes through a second compaction, and the next prompt
+  after it carries the attachment again, while a second prompt on the same session, the marker
+  spent, attaches nothing — fails on a marker that latches the first delivery and silences every
+  later one, or one that delivers again on every prompt;
+- the attachment's id is the id the plugin's skill domain lists for the development skill — fails
+  on an attachment whose id names no skill the domain lists, the host having nothing to activate;
+- a lookup that matches no skill appends nothing and reports — fails on an attachment appended
+  after a failed lookup, the host having nothing to activate.
+
+The two revised pairs are applied to their leaves in this package
+(`PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md` — the pair's span from "A session whose
+context the host compacts" to "…the plugin is what restores it.";
+`PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md`, the reload sentences), with the doc-set
+search each application ends by running (CONVENTIONS, [A delta application ends by searching the
+doc set](PROJECT_DOCS/CONVENTIONS/planning-and-execution/a-delta-application-ends-by-searching-the-doc-set.md));
+a statement the application leaves false outside these leaves is reported to the session, not
+rewritten here. The floor question is settled by measurement, not by a new numeral: the pinned
+`@opencode/plugin` 2.4.1's `SessionHooks` declares both `prompt` and `compaction`, and so do the
+published 2.2.6, 2.3.0, 2.3.2 and 2.4.0 tarballs — no version adds the hooks, no numeral is earned,
+and the host declarations' version has one home, `package.json`'s pin, not the resource
+(CONVENTIONS, [A harness resource's version claims
+testing](PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-harness-resource-s-version-claims-testing.md)).
+The leaf's floor line stands as it is; the ARCH pair's trailing "the floor line below extends to
+what it adds" is deleted as false — the entry's reload uses no API the floor sentence does not
+already cover. The same application drops the parenthetical the SPEC leaf carries at
+`shipped-files.md:237` — its sentence reads `The plugin entry is written for opencode and is the
+same file for both plugins;` — and the ARCH pair's applied text drops it from the leaf's opening
+sentence with it, the numeral a resource names a floor only where its own line records the
+observation earning it.
+
+Done-line: `just test devpro`, `just dev-check-links`, `just dev-check-design-deltas-applied` —
+exit 0 with `pairs: 6, landed: 6, pending: 0, drifted: 0, conflicting: 0, problems: 0` —
+`just lint`.
+
+After this package lands, the user live-tests the mechanism: a skill-holding session compacts,
+the first exchange carries the skill's activation with its content in that same request. Where
+the activation lands only on the turn after, the throw-away exchange returns and the user's
+ruling is straight to the feature's removal — the fallback, a later decision, not this package's
+work.
+
 ## PR — Post-plan review
 
 Intended lifetime: shipped (it reviews shipped work). Rating: expert.
@@ -376,12 +501,12 @@ test doubles), `devpro-architect` (the structure and the applied leaves), and
 document; its read is reviewed by no seat, and its only artifact is the plan's fact block. They are
 given the project documents and [ACTIVE_DESIGN.md](ACTIVE_DESIGN.md), not the plan — the reviewers
 of P5's work are also given P4's fact block, the design deferring the hook's name to it — and
-review the changes and their tests against the project's standards and fitness for purpose. Before
-the burndown is drafted, the session runs the live compaction observation the run deferred — the
-user's direction: an opencode session whose context holds the `devpro-development` skill goes
-through a compaction, and the observation, whether the entry's marker matches the host's message
-shape and the invocation is delivered or not, is recorded in the review document as a finding, so
-any issue it surfaces is a burndown item. Each
+review the changes and their tests against the project's standards and fitness for purpose. The
+live compaction observation the run deferred has run, before this review: a skill-holding session
+on the updated install compacted, the injection delivered as a bare `@devpro-development` with no
+skill content, and the record — the prediction, the operator's account, the vehicle rulings —
+stands at `.devpro-temp/compaction-hooks/raw-observation.md`. Its finding enters the review
+document as a finding, so any issue it surfaces is a burndown item. Each
 reviewer writes their own review in the scratch directory, independently — each reviewer's report
 file present in `.devpro-temp/`, its entries grouped by root cause; the session synthesizes
 the reviews into `ACTIVE_PLAN_REVIEW.md`, one entry per defect naming every seat that reported it,
