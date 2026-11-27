@@ -25,7 +25,7 @@ remaining suite, feeding this plan's burndown — fixes, never the survey itself
 | B21 | landed | expert |
 | B22 | landed | expert |
 | B23 | drafted: retired in execution | expert |
-| B24 | in progress | expert |
+| B24 | drafted: retired in execution | expert |
 | B25 | in progress | expert |
 | B26 | dispatchable | expert |
 
@@ -352,23 +352,20 @@ verified by read, and unwound from `install.py`, `install-entry.md`, `write-safe
 Maintenance ticket "The re-entry copy's integrity has no reference to check it against". The plan's
 proof-prediction for the empty-row staging was also corrected in the record (B22's landing note).
 
-### B24 — the dry-run both-groups defect
+### B24 — the dry-run both-groups defect — retired in execution
 
-Intended lifetime: shipped. Rating: expert. Fixes W2, and the architect's N4 trailing-slash note.
+Intended lifetime: shipped. Rating: expert. Fixes W2 — **retired**: W2's state is not reachable on
+the landed strip.
 
-Outcome: the dry run never lists one path in both the created and removed groups; a directory the
-run makes is not a removal, and a file the run writes is not removed.
-
-Scope: `devpro/preflight.py` — the comparison subtracts what the replacement writes before naming
-removals, two forms stated separately (directories the run makes; files the run writes); the
-observation surface is `_assert_dry_run_predicts` asserting `groups['created']` ∩
-`groups['removed']` is empty over a non-empty install directory. `devpro/install.py:717-723` —
-`_every_entry_below`'s docstring is reworded to the walk as it is (the pruning the docstring claims
-is not built; pruning the walk is not in scope). `_shown`'s trailing-slash-from-disk read is
-loosened to match its docstring's claim or the docstring loosened — the code is the surviving
-form. Test: the `_assert_dry_run_predicts` case over a non-empty install directory (the existing
-case at `conftest.py:2036` runs the real install, not the dry run). Done-line: `just test`, `just
-lint`.
+The seat's probes (`.devpro-temp/B24-loop-before.log` and companions) measured the raw
+`created ∩ removed` intersection over a non-empty install directory as empty: the wholesale
+replacement makes the before and after trees share every prior path by construction, so the
+comparison's `prior - after` names only genuinely foreign paths. A pin asserting the disjoint
+groups cannot fail on any reachable path — the test-precondition rule excludes it; if the owner
+wants a regression guard anyway, that is a ruling, not a default. The two real residue defects the
+item surfaced — `_every_entry_below`'s docstring claiming a pruning the walk does not do, and
+`_shown`'s trailing-slash read following a link against its docstring's claim — are cosmetic and
+move to B26's enumerated scope.
 
 ### B25 — the watcher observation drive
 
@@ -407,7 +404,12 @@ statement placed in the leaf J1's rule names. J3 the banner-spelling pin followi
 uncollected duplicate at `tests/install/conftest.py:307` (twin of `:35`) deleted — `:1361` is a
 live, non-duplicate test and is not touched. J10 the repeat-count case read against its tier, its
 judgment recorded in the item's report. Only tests whose assertions change carry a defect
-statement; deletions and read-only judgments state their subject. Done-line: `just test`, `just
+statement; deletions and read-only judgments state their subject. Also in scope, the two cosmetic
+residue defects B24's retirement surfaced: `devpro/install.py:717-723` — `_every_entry_below`'s
+docstring reworded to the walk as it is (it claims a subtree pruning the walk does not do);
+`devpro/preflight.py:274-279` — `_shown`'s trailing-slash read no longer follows a link to the
+target it names (prefer reading directory-ness from `removed_directories`, which already carries
+the answer). Done-line: `just test`, `just
 lint`, `just check-links`.
 
 ### P5 — Post-plan burndown
