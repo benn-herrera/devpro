@@ -28,6 +28,14 @@ or a family overlay anchor, filled once by `render.filled_body`.
     runner_file.py   the runner include lines, one per snippet set the install passes in
     install.py       the install: renders, the shipped packages' stamped copy, and the prune
     agents_file.py   the agents-file install: the marker span, redirects, and the rolling backup
+    profiler/        the absorbed activity profiler: the capture, tree and page render, its hook wiring
+    dashboard/       the dashboard verb's loopback server: the board and profiler views
+    kanban/          the board panel the dashboard serves
+    dicing/          the absorbed dicing engine: the dicing verbs, `check-links` and `check-tree`
+    doccheck/        the plan, design and roadmap checks the check verbs run
+    runner-snippets/ the shipped runner snippets a project install writes an include line for
+    development-tools/ the development component's shipped scripts
+    kb-tools/        the kbase component's shipped runner snippets
     cli.py           the argparse surface
     __main__.py      the `-m` entry
 

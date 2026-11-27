@@ -2,6 +2,7 @@
 
 __pycache__/
 .pytest_*/
+.mypy_cache/
 .venv/
 
 # where the wheel and the sdist land

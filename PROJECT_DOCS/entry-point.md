@@ -16,7 +16,9 @@ them into a project, or into a user's own harness setup. Text several definition
 once and filled into each; the result is rendered per harness and per model family (a line of models,
 such as Claude's). Each agent names a category — the kind of work it does at the difficulty it
 needs — and a category map names the model for each category: the family's own, unless the
-harness or the operator supplies another.
+harness or the operator supplies another. The package also ships the machinery the work runs on —
+the document dicing and checks, the activity profiler and its dashboard — absorbed from projects
+of their own (The new results).
 
 Almost all of that is assembled from well-known building blocks, used at small scale. Two results
 are new, and they are the reason the project exists. This page names both, so that work on a

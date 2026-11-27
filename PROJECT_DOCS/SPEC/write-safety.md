@@ -13,7 +13,8 @@ leaves it.
 The install removes — naming each in its install report — every file under a deployed surface of
 its install directory, and of no other directory, that it did not write and that carries a generated
 banner, and with them any
-directory that leaves empty; this removal takes no file that lacks a generated banner. The install
+directory that leaves empty; this removal takes no file that lacks a generated banner. A safety
+copy — a file carrying the `.bak` suffix — never enters that stale list. The install
 directory itself is never removed, and a directory that was already empty stays. A package
 destination is replaced whole, `skills/kbase/kb-tools/` included, except a `.venv` directly under it,
 which stays. The development scripts and devpro tools packages are replaced the same way. The

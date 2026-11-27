@@ -53,16 +53,21 @@ a file.
 
 ## Answer
 
-In two or three lines: how many records the trace holds, as the profiler's own view of the session
-states it — the trace list at `/profiler/`, whose row for the session states the count, is its
-source; never a count of lines you take yourself, where a record is a call or an event marker and a
-call the plugin and the committed hook both recorded appears twice — and, for a claude session, the
-three
-most expensive contexts by duration with their tokens, read from `bash PROFILER tree --verbose`, which draws
-every node of the session; the plain tree draws the placeholder and marker nodes and the calls whose
-tool is in `PARENT_TOOLS` — the skills, agents and compactions — so a session of plain tool calls
-prints the column header alone on the plain tree. An opencode session records no token counts,
-so say so where those columns are blank. Then the URL the dashboard printed. Do not paste the tree.
+`PROFILER` is the tree's own wrapper, run with `bash`.
+
+Answer in two or three lines:
+- how many records the trace holds, as the profiler's own view of the session states it — the trace
+list at `/profiler/`, whose row for the session states the count, is its source; never a count of
+lines you take yourself, where a record is a call or an event marker and a call the plugin and the
+committed hook both recorded appears twice;
+- for a claude session, the three most expensive contexts by duration with their tokens, read from
+`bash PROFILER tree --verbose`, which draws every node of the session; the plain tree draws the
+placeholder and marker nodes and the calls whose tool is in `PARENT_TOOLS` — the skills, agents and
+compactions — so a session of plain tool calls prints the column header alone on the plain tree;
+- an opencode session records no token counts, so say so where those columns are blank;
+- then the URL the dashboard printed.
+
+Do not paste the tree.
 
 Where the plain tree prints the column header alone, nothing was recorded: say so and stop. Where
 `tree` instead exits 1 with `No traces in …` on stderr, no store `tree` reads holds a record. Under

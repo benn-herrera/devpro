@@ -31,7 +31,7 @@ before anything is approved or dispatched.
 | B12 | dispatchable | expert |
 | B13 | dispatchable | expert |
 | B14 | dispatchable | mechanical |
-| B15 | in progress | expert |
+| B15 | landed | expert |
 | B16 | dispatchable | expert |
 
 ### R1 — the panel runs and the findings synthesize

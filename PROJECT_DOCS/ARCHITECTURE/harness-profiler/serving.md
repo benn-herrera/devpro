@@ -130,7 +130,7 @@ call's in its detail — a context or a call showing none where it recorded none
 context recorded several —
 and the header line names beside the session's models the plan's title and the directives digest,
 where the records carry them and nothing where they do not.
-and shows a session's calls: a session of
+The detail also shows a session's calls: a session of
 nothing but tool calls renders those calls as its calls content, never an empty tree under a calls
 header. The server runs until interrupted (Ctrl-C) or stopped from the page; either exits 0.
 

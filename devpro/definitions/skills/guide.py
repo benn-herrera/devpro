@@ -94,11 +94,8 @@ the same venv; for pipx, `pipx install --force "git+<repository>@v<version>"` li
 with `devpro install … --dry-run` and rerun the same `devpro install`, each with the target and flags
 it already installs with. This holds under every harness, mage included.
 
-A project installed by 0.17.x upgrades in two runs, as the repository's README states that walk under
-*Updating* ({clauses.REPOSITORY_URL}): the first prunes the retired docdicer tools, the docdicer
-skill's earlier files and the include line that named them, and writes the include line of the
-devpro tools package's runner snippets into the same runner file; the second reports nothing. The launcher's `.venv` under
-`skills/docdicer/tools/` survives both, inert, and the operator deletes `skills/docdicer/tools/` once.
+A project installed by 0.17.x upgrades by the walk the repository's README states under *Updating*
+({clauses.REPOSITORY_URL}).
 
 Where a project's `.devpro-temp/` holds a profiler store from before the `.profiler-*` rename —
 `claude-profiler/` or `opencode-profiler/` — the install renames it in place and prints
