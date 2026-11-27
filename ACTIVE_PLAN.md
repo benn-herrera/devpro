@@ -20,7 +20,7 @@ before anything is approved or dispatched.
 | B1 | landed | expert |
 | B2 | landed | expert |
 | B3 | drafted: retired before dispatch | expert |
-| B4 | dispatchable | expert |
+| B4 | in progress | expert |
 | B5 | dispatchable | expert |
 | B6 | dispatchable | expert |
 | B7 | dispatchable | expert |
@@ -137,8 +137,6 @@ select every file under `devpro/`, the three assets included — proved with the
 `test-changed.sh` selector's own matching rule), and the mandated TEST_PRECONDITION test would
 have passed on HEAD. No code change; F3 is closed by the evidence. The serial note "B3 before
 B9" is spent with it — B9 needs no ordering constraint beyond B14's.
-
-### B4 — `profiler init claude`: the verb is harness-scoped
 
 ### B4 — `profiler init claude`: the verb is harness-scoped
 
