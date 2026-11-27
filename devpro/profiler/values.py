@@ -80,13 +80,14 @@ def _number(value: object) -> float | int:
     return cast(float | int, value) if _is_number(value) else 0
 
 
-def _json(value: object) -> str:
+def _json(value: object, *, ensure_ascii: bool = True) -> str:
     """`value` as compact JSON, the shape a record line and the page's data take.
 
     Every character outside ASCII is escaped, and a lone surrogate `json.loads` admits from a `\\ud800`
     escape is escaped too: the line is then pure ASCII, so the bytes `serialize` counts are the bytes the
-    file holds, whatever the writing call's encoding or error policy does with the text."""
-    return json.dumps(value, ensure_ascii=True, separators=(",", ":"))
+    file holds, whatever the writing call's encoding or error policy does with the text. `ensure_ascii=False`
+    writes such text as it stands, the shape the directives digest hashes (`directives._canonical`)."""
+    return json.dumps(value, ensure_ascii=ensure_ascii, separators=(",", ":"))
 
 
 def _iso(moment: datetime) -> str:

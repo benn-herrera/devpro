@@ -84,11 +84,16 @@ what happened under what plan and which directives — the before-and-after comp
 skill tuning is judged by. The stamp is two fields on the record, `plan` and `directives`, taken
 once per session: `plan` the active plan's title, the first level-1 heading of the project's
 `ACTIVE_PLAN.md`, or of `ACTIVE_PLAN/entry-point.md` where the plan is diced; `directives` a digest
-of the directives the session's harness loaded the devpro set from — the files beneath the project's
-harness directory that carry an installed banner or an ownership marker (Installed tree), together
-with the project's agents file, the set whatever stands at the session's start, so the digest
-fingerprints state and not install history. The digest is sha256 over the sorted `(path, digest)`
-pairs, each file's digest sha256 of its bytes, every path project-relative. A field the project
+of the directives in force — every file beneath each of the project's harness directories, `.claude/`,
+`.opencode/` and `devpro/`, that carries an installed banner or an ownership marker (Installed tree),
+walked whole whatever harness the session runs on, together with the project root's `AGENTS.md` — the
+set whatever stands at the session's start, so the digest fingerprints state and not install history. A
+`CLAUDE.md` beside it that names it is a redirect and carries no directive of its own, and the digest
+omits it. The digest is sha256 over the sorted `(path, digest)` pairs, each file's digest sha256 of its
+bytes, every path project-relative; the pairs are hashed as compact JSON with the non-ASCII text in
+their paths and digests written as UTF-8 bytes, not escaped, so the two captures hash one byte string.
+A file link is followed — a symlink is hashed as the file it points at — and a directory link is not
+entered, so the walk cannot leave a harness directory or cycle. A field the project
 gives the capture nothing for — no active plan, no file carrying a banner or marker — is left out
 by the Python capture and `null` by the opencode's, the absent rendering each capture's records
 already take.

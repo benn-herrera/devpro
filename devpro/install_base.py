@@ -1,7 +1,7 @@
 """What the install modules share: where this package and its checkout sit, the kbase skill's directory
 and the kb-tools package's destination inside it, the devpro tools package's directory and its wrapper,
-the one-line banners a carried file and a harness resource each state their origin in, UTF-8 text reading
-that keeps each line's ending, and
+the one-line banners a carried file and a harness resource each state their origin in and the ownership
+markers a harness-rendered file does, UTF-8 text reading that keeps each line's ending, and
 the stderr report of what an install left alone."""
 
 import re
@@ -38,6 +38,13 @@ INSTALLED_MARK = "!INSTALLED!"
 # A carried file's installed banner: the mark, a word naming where it came from, and the repository's
 # name. A harness resource and a rendered definition's digest (`devpro.profiler.directives`) read it.
 INSTALLED_BANNER = re.compile(re.escape(INSTALLED_MARK) + r" .* devpro")
+# The ownership markers a harness-rendered file is read as, wherever `{plugin}` stands: each marker's leading
+# quoted field, which is what a registry's and every other marker's `{plugin}` slot leaves of it — the
+# guardrail registrations' (`no readable script at`), the plugin manifest's (`"name": "`), the `.mcp.json`
+# entry's (`"command": "`), the registry's (`"plugin":`). The install's refusal reads a harness file by its
+# marker whole, from `devpro.harness`, which binds `{plugin}`; the directives digest cannot load the
+# harnesses, so it reads a file's ownership by one of these, the part a marker and its bound forms share.
+HARNESS_OWNERSHIP_MARKERS: tuple[str, ...] = ("no readable script at", '"name": "', '"command": "', '"plugin":')
 
 
 def untranslated_text(path: Path) -> str:

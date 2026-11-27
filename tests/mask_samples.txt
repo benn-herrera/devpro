@@ -5,3 +5,5 @@ Bearer abcéfghij
 xghp_abcdefghijklmnop
 sk-abcdefghijklm
 token=abcéfghijkl
+apikey=abcéfghijkl
+api_key=abcéfghijkl

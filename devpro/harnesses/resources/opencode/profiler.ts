@@ -89,8 +89,10 @@ const SECRETS: [RegExp, string][] = [
 // `devpro/profiler/values.py` states the same three as `[\w]` with Unicode semantics; JavaScript's `\w` is ASCII, and the
 // `\p{L}\p{N}` classes above are what make a credential holding a non-ASCII letter mask alike. The
 // lookbehind is that `\w` boundary written for the same classes, since `\b` would not take them.
-// `test_devpro_profiler.py` holds the two implementations to one sample list.
-const SECRET_KEY = /token|secret|password|api_?key|authorization|credential/i
+// `SECRET_KEY` is the Python's too, its alternation the same: `api[_-]?key`, not `api_?key`, which would
+// leave an `apikey` key unmasked there and mask it here. `test_devpro_profiler.py` holds the two
+// implementations to one sample list.
+const SECRET_KEY = /token|secret|password|api[_-]?key|authorization|credential/i
 // JSON.stringify escapes the line terminators JSON leaves raw; this does not, so a record carrying
 // one stays one line and python reads it back as the same JSON.
 const LINE_TERMINATOR: [string, string][] = [
@@ -424,9 +426,10 @@ function sessionFile(root: string, session: string): string {
 const stampOf = new Map<string, Stamp>()
 // The project harness directories whose installed files are directives, and the project's agents file.
 // The set is `devpro/profiler/directives.py`'s, but this module cannot import it: it ships into the host
-// and loads no devpro package. opencode's own is `.opencode/`, which opencode also loads a `.claude/`
-// beside; mage's is `devpro/`; the agents file is the project root's `AGENTS.md`.
-const HARNESS_DIRS = [".opencode", ".claude", "devpro"]
+// and loads no devpro package. All three are walked whatever harness the session runs on, so a project's
+// directives are one digest on either capture. opencode's own is `.opencode/`, beside the `.claude/` it
+// also loads; mage's is `devpro/`; the agents file is the project root's `AGENTS.md`.
+const HARNESS_DIRS = [".claude", ".opencode", "devpro"]
 const AGENTS_FILE = "AGENTS.md"
 const PLAN_FILE = "ACTIVE_PLAN.md"
 const DICED_PLAN_FILE = join("ACTIVE_PLAN", "entry-point.md")
@@ -438,6 +441,15 @@ const GENERATED_BANNER_HEAD = 2
 // source, and the repository's name. `devpro/install_base.py` holds the same pattern as `INSTALLED_BANNER`.
 const INSTALLED_BANNER = /!INSTALLED! .* devpro/
 const INSTALLED_BANNER_LINES = 10
+// A harness-rendered file's ownership marker, the leading quoted field of the marker `devpro/harness.py`
+// holds per file and fills with the plugin: `"name": "devpro"` in the plugin manifest, `"command": "kbase"`
+// in `.mcp.json`, `"plugin": "<name>"` in the registry, and `no readable script at` in `hooks/hooks.json`.
+// `HARNESS_OWNERSHIP_MARKERS` in `devpro/install_base.py` is the list, and `profiler_digest_runner.ts` fails
+// when the two diverge.
+const OWNERSHIP_MARKERS = ["no readable script at", '"name": "', '"command": "', '"plugin":']
+// A redirect's only non-blank line opens with this: `@AGENTS.md`, a harness reading the agents file under
+// another name. `devpro/agents_file.py` reads one the same way.
+const REDIRECT_PREFIX = "@"
 // The bytes a store's stamp is read from, and the record lines a window holds: a session's stamp is its
 // first record's, and a record is at most `LINE_LIMIT` bytes, so the store's first `STORE_HEAD_RECORDS`
 // records lie inside the `STORE_HEAD_BYTES` read, and one window decides both. The count is
@@ -456,7 +468,9 @@ function relative(file: string, root: string): string {
   return file.startsWith(root) ? file.slice(root.length + 1).split("\\").join("/") : file.split("\\").join("/")
 }
 
-// filesBelow is every file below a directory, by name order, down to the depth an install writes at.
+// filesBelow is every file below a directory, by name order, down to the depth an install writes at. A
+// directory link is not entered, so the walk cannot leave the harness directory or cycle; a file link is
+// followed, and hashed as the file it points at, as the Python's walk does.
 function filesBelow(directory: string): string[] {
   const found: string[] = []
   const walk = (current: string, depth: number): void => {
@@ -469,7 +483,14 @@ function filesBelow(directory: string): string[] {
     }
     for (const entry of entries.sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0))) {
       const path = join(current, entry.name)
-      if (entry.isDirectory()) walk(path, depth + 1)
+      // A directory link is never entered: only a file link is followed, to the file it points at.
+      if (entry.isSymbolicLink()) {
+        try {
+          if (statSync(path).isFile()) found.push(path)
+        } catch {
+          continue
+        }
+      } else if (entry.isDirectory()) walk(path, depth + 1)
       else if (entry.isFile()) found.push(path)
     }
   }
@@ -478,7 +499,8 @@ function filesBelow(directory: string): string[] {
 }
 
 // isInstalled is the Python's `is_installed`: a rendered definition's banner on one of the file's first
-// two lines, or the installed banner on one of its first ten. A file that cannot be read is not installed.
+// two lines, the installed banner on one of its first ten, or a harness-rendered file's ownership marker
+// anywhere in its content. A file that cannot be read is not installed.
 function isInstalled(file: string): boolean {
   let text: string
   try {
@@ -488,7 +510,15 @@ function isInstalled(file: string): boolean {
   }
   const lines = text.split("\n")
   if (lines.slice(0, GENERATED_BANNER_HEAD).some((line) => line.includes(GENERATED_BANNER))) return true
-  return lines.slice(0, INSTALLED_BANNER_LINES).some((line) => INSTALLED_BANNER.test(line))
+  if (lines.slice(0, INSTALLED_BANNER_LINES).some((line) => INSTALLED_BANNER.test(line))) return true
+  return OWNERSHIP_MARKERS.some((marker) => text.includes(marker))
+}
+
+// isRedirect is the Python's `is_redirect`: the file's only non-blank line is `@<path>`, naming another
+// file and carrying no directive of its own.
+function isRedirect(text: string): boolean {
+  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean)
+  return lines.length === 1 && lines[0].startsWith(REDIRECT_PREFIX) && lines[0].length > REDIRECT_PREFIX.length
 }
 
 function planTitle(root: string): string | null {
@@ -505,6 +535,13 @@ function planTitle(root: string): string | null {
   return null
 }
 
+// canonical is the bytes a digest is hashed through: compact JSON, its non-ASCII text as UTF-8 bytes and
+// its separators as the two ASCII characters. `JSON.stringify` writes text outside ASCII as it stands and
+// escapes the lone surrogate that makes a path no UTF-8 text, as Python's `ensure_ascii=False` does.
+function canonical(value: unknown): Uint8Array {
+  return new Uint8Array(Buffer.from(compact(value), "utf8"))
+}
+
 // readStamp computes the stamp from the directives standing at `root` now, and returns the digest's
 // per-file digests beside it, which its manifest records.
 function readStamp(root: string): [Stamp, [string, string][]] {
@@ -517,11 +554,14 @@ function readStamp(root: string): [Stamp, [string, string][]] {
   }
   const agentsFile = join(root, AGENTS_FILE)
   if (existsSync(agentsFile) && statSync(agentsFile).isFile()) {
-    pairs.push([AGENTS_FILE.split("\\").join("/"), sha256(readFileSync(agentsFile))])
+    const agentsBytes = readFileSync(agentsFile)
+    if (!isRedirect(agentsBytes.toString("utf8"))) {
+      pairs.push([AGENTS_FILE.split("\\").join("/"), sha256(agentsBytes)])
+    }
   }
   const sorted = pairs.sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
   return [
-    { plan: planTitle(root), directives: sorted.length ? sha256(compact(sorted)) : null },
+    { plan: planTitle(root), directives: sorted.length ? sha256(canonical(sorted)) : null },
     sorted,
   ]
 }
