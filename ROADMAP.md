@@ -141,6 +141,10 @@ test-suite audit. Three lenses, in the user's framing:
 - **Gap by mechanism.** A coverage gap is never the finding by itself; name the mechanism the gap
   needs — unit for algorithmic behavior, integration or contract instruments for wiring and seams,
   structural comparison and behavioral probes for structural logic — and propose that mechanism.
+- **Deliverable, named ahead of the review:** a reorganization item for the accumulated test
+  monoliths — `tests/test_devpro_profiler.py`-scale files — collecting tests by subject and splitting
+  along the package's seams, the layout `tests/dashboard/` and `tests/dicing/` already model. The
+  review's burndown drafts the split from the audit's inventory, with no behavior change riding it.
 
 ### (STICKY) Periodic load-bearing-ness pruning pass
 
