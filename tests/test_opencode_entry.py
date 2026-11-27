@@ -390,12 +390,12 @@ def test_the_agents_file_name_attaches_the_skill_where_no_activation_did(tmp_pat
 
 
 def test_a_compacted_context_that_held_the_skill_attaches_it_to_the_next_prompt(tmp_path: Path) -> None:
-    """A session whose context held the development skill's activation states the marker at the
-    compaction, and the prompt admitted after it carries the development skill among its `skills` —
-    the one skill, and no other where the prompt carried none — while a compaction whose context held
-    no text at all attaches nothing at the prompt after it. It fails on a prompt hook that attaches to
-    a prompt of a session the marker never recorded, or to every prompt: the session continues
-    without the development process."""
+    """`clauses.TEST_PRECONDITION`: the defect is a prompt hook that attaches to a prompt of a
+    session the marker never recorded, or to every prompt, the session continuing without the
+    development process. A session whose context held the development skill's activation states the
+    marker at the compaction, and the prompt admitted after it carries the development skill among
+    its `skills` — the one skill, and no other where the prompt carried none — while a compaction
+    whose context held no text at all attaches nothing at the prompt after it."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)
@@ -416,9 +416,9 @@ def test_a_compacted_context_that_held_the_skill_attaches_it_to_the_next_prompt(
 
 
 def test_a_compacted_context_that_held_no_skill_attaches_nothing(tmp_path: Path) -> None:
-    """A compaction of a context that held neither the skill's body nor its name marks no session, and
-    the prompts after it carry what they carried: the skill is never forced on a session that never
-    carried it. It fails on an attachment keyed to every prompt."""
+    """`clauses.TEST_PRECONDITION`: the defect is an attachment keyed to every prompt. A compaction
+    of a context that held neither the skill's body nor its name marks no session, and the prompts
+    after it carry what they carried: the skill is never forced on a session that never carried it."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)
@@ -440,12 +440,13 @@ def test_a_compacted_context_that_held_no_skill_attaches_nothing(tmp_path: Path)
 
 
 def test_a_second_compaction_attaches_again_while_the_marker_is_spent_by_one_prompt(tmp_path: Path) -> None:
-    """The same session compacts twice, its context holding the skill both times, and the prompt after
-    each compaction attaches it; a second prompt after that attaches nothing, the marker having been
-    spent by the first. It fails on a marker that latches the first delivery and silences every later
-    one — the session's second compaction would leave it running without the development process,
-    though its context held the skill at it — and on one that delivers again on every prompt, forcing
-    the skill on an exchange that was not the compaction's."""
+    """`clauses.TEST_PRECONDITION`: the defect is a marker that latches the first delivery and
+    silences every later one — the session's second compaction would leave it running without the
+    development process, though its context held the skill at it — or one that delivers again on
+    every prompt, forcing the skill on an exchange that was not the compaction's. The same session
+    compacts twice, its context holding the skill both times, and the prompt after each compaction
+    attaches it; a second prompt after that attaches nothing, the marker having been spent by the
+    first."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)
@@ -476,11 +477,11 @@ def test_a_second_compaction_attaches_again_while_the_marker_is_spent_by_one_pro
 
 
 def test_the_attachment_names_the_skill_the_domain_lists(tmp_path: Path) -> None:
-    """The attachment's id is the skill domain's own entry for the development skill — the id the
-    entry's transform registers — not a string the attachment invented, and the prompt's own
-    attachment is kept beside it where the operator invoked another skill. It fails on an attachment
-    whose id names no skill the domain lists: the host has nothing to activate, and refuses the
-    prompt."""
+    """`clauses.TEST_PRECONDITION`: the defect is an attachment whose id names no skill the domain
+    lists: the host has nothing to activate, and refuses the prompt. The attachment's id is the skill
+    domain's own entry for the development skill — the id the entry's transform registers — not a
+    string the attachment invented, and the prompt's own attachment is kept beside it where the
+    operator invoked another skill."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)
@@ -508,10 +509,10 @@ def test_the_attachment_names_the_skill_the_domain_lists(tmp_path: Path) -> None
 
 
 def test_a_skill_the_domain_does_not_list_attaches_nothing_and_reports(tmp_path: Path) -> None:
-    """An install whose registry carries no development skill attaches nothing at the prompt after a
-    compaction and says so on stderr, naming the skill. The install is the differential: the same
-    compaction and prompt attach the skill on the install that ships it. It fails on an attachment
-    appended after a failed lookup: the host has nothing to activate, and refuses the prompt."""
+    """`clauses.TEST_PRECONDITION`: the defect is an attachment appended after a failed lookup: the
+    host has nothing to activate, and refuses the prompt. An install whose registry carries no
+    development skill attaches nothing at the prompt after a compaction and says so on stderr,
+    naming the skill."""
     project = tmp_path / "project"
     project.mkdir()
     plugin, command_path, banner = _probe_entry(project)

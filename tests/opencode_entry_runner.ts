@@ -1,31 +1,45 @@
 // Runs opencode's plugin entry, index.ts, under a stub plugin context, for tests/test_opencode_entry.py.
 //
 // Usage: bun tests/opencode_entry_runner.ts
-// Stdin: JSON {entry, directory, project, writes, command, compactions, prompts, skillLoads}: the
-// installed entry; the directory the session opened at and the project root above it, the reminder's
-// gate reading the root rather than the opened directory; files ({path, text}) written one at a
-// time, each awaited until a reload its watcher triggers changes what is registered; a command
-// ({name, path, text, user}) executed with the user's text before and after its body file is
-// replaced by text; the provider request messages each of two compactions of the primary session's
-// context holds; the sessions to admit a prompt for, each {sessionID, skills}, the skills being the
-// ids the operator's own prompt already attached; and {name, path} entries whose body the runner
-// appends — banner stripped, a `# Skill: <name>` heading in its place — to the Agents file's text in
-// the false-positive session's context.
-// Stdout: JSON {id, hooks, sessionHooks, states, prompts, synthetics, attachments, log}: the plugin
-// id, the tool and session hooks it registered, what it had registered after setup and after each
-// write, the text each execute prompted, every synthetic message a hook injected, naming the event
-// that fired the hook and the session it went to, the skills each admitted prompt carried, in the
-// order it carried them, and the reports the entry wrote as it ran. Every callback registered for an
-// event fires, so a hook name the entry registers twice reaches both registrations. A state holds
-// the agents store opencode keeps an agent in, the one its transform edits. The runner fails where
-// an execute's prompt drops the invocation's session id or delivery, or where a reminder hook the
-// entry must register is missing. It exits once the plugin's cleanup has run; a watcher the cleanup
-// left open keeps it running.
+// Stdin: JSON {entry, directory, project, writes, command, compactions, prompts, skillLoads}, each
+// key the runner fires in this order:
+//   entry — the installed entry
+//   directory — the directory the session opened at and the project root above it, the reminder's
+//     gate reading the root rather than the opened directory
+//   project — the project root
+//   writes — files ({path, text}) written one at a time, each awaited until a reload its watcher
+//     triggers changes what is registered
+//   command — ({name, path, text, user}) executed with the user's text before and after its body
+//     file is replaced by text
+//   compactions — the provider request messages each of two compactions of the primary session's
+//     context holds
+//   prompts — the sessions to admit a prompt for, each {sessionID, skills}, the skills being the ids
+//     the prompt draft carries before the hook runs
+//   skillLoads — {name, path} entries whose body the runner appends — banner stripped, a `# Skill:
+//     <name>` heading in its place — to the Agents file's text in the false-positive session's
+//     context
+// Stdout: JSON {id, hooks, sessionHooks, states, prompts, synthetics, attachments, log}, each key in
+// this order:
+//   id — the plugin id
+//   hooks — the tool hooks the entry registered
+//   sessionHooks — the session hooks the entry registered
+//   states — what it had registered after setup and after each write; a state holds the agents store
+//     opencode keeps an agent in, the one its transform edits
+//   prompts — the text each execute prompted
+//   synthetics — every synthetic message a hook injected, naming the event that fired the hook and
+//     the session it went to
+//   attachments — the skills each admitted prompt carried, in the order it carried them
+//   log — the reports the entry wrote as it ran
+// Every callback registered for an event fires, so a hook name the entry registers twice reaches
+// both registrations. The runner fails where an execute's prompt drops the invocation's session id
+// or delivery, or where a reminder or reload hook the entry must register is missing. It exits once
+// the plugin's cleanup has run; a watcher the cleanup left open keeps it running.
 //
-// The runner fires, in order: each reminder path; each of the two compactions of the primary
-// session and the prompt admitted after it; then the false-positive session's compaction and
-// prompt; then any prompt the input names beyond those. Each compaction fires every callback
-// registered for it, the capture's included.
+// The runner fires, in order: each reminder path — a subagent dispatch and its completion, and the
+// calls the entry must ignore; then each of the two compactions of the primary session and the
+// prompt admitted after it; then the false-positive session's compaction and prompt; then any prompt
+// the input names beyond those. Each compaction and each prompt fires every callback registered for
+// it, the capture's included.
 //
 // Run outside `bun test`: the "@opencode/plugin" stub must be registered before the entry loads.
 

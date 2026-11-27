@@ -54,9 +54,9 @@ progress.
 | B3 | landed | mechanical |
 | B4 | landed | expert |
 | B5 | landed | expert |
-| B6 | in progress | expert |
-| B7 | dispatchable | mechanical |
-| B8 | dispatchable | mechanical |
+| B6 | landed | expert |
+| B7 | landed | mechanical |
+| B8 | in progress | mechanical |
 | B9 | dispatchable | expert |
 
 ### P1 — the paired deltas applied to the project documents
@@ -887,4 +887,3 @@ sources):
 
 In-scope tests: none. Done-line: `just dev-check-links`, `just dev-check-plan`. Checkpoint gate
 once: `just test`, `just lint`, `just sweep-python`.
-
