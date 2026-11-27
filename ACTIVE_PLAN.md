@@ -34,7 +34,7 @@ review and `devpro-architect` revision (*Dispatchability*), which run after this
 | P1 | landed | mechanical |
 | P2 | landed | expert |
 | P3 | landed | expert |
-| P4 | dispatchable | expert |
+| P4 | landed | expert |
 | P5 | dispatchable | expert |
 | P6 | dispatchable | mechanical |
 | PR | dispatchable | expert |
@@ -231,6 +231,34 @@ answer does not give; the name is the host's published declarations' to give, an
 the design's compaction premise stays unsettled. Where P4's answer is that the host declares no
 compaction hook, this package returns to the session with the design's premise unmet rather than
 wiring an assumed name.
+
+P4's answer. The read ran `grep -rn "compact" node_modules/@opencode/plugin/dist
+--include='*.d.ts'` over the pinned `@opencode/plugin` 2.4.1 declarations (first hits
+`dist/effect/session.d.ts:52` and `:65`); raw excerpts in `.devpro-temp/compaction-hooks/`:
+
+- `event: compaction` — the hook `ctx.session.hook` accepts is `"compaction"`,
+  `dist/effect/session.d.ts:201` (`readonly compaction: SessionCompaction` in `SessionHooks`,
+  reached through `SessionDomain`'s `hook: ModelHooks<SessionHooks>` at `:215`), the line-identical
+  `dist/promise/session.d.ts:201` beside it; `SessionRequestKind`'s `"compaction"` member (`:65`)
+  stays a request kind, not a hook, as P4's text above warns.
+- `accepted: result (summary, native, metadata, tokens)` — the hook callback returns `void`
+  (`dist/effect/registration.d.ts:10`, `dist/promise/registration.d.ts:9`), so output is set on the
+  hook's input: `result`, the `SessionCompactionResult` the compaction replays
+  (`dist/effect/session.d.ts:53`, fields at `:44`–`:50`), beside the inherited mutable context
+  fields `system`, `messages`, `options` (`:33`–`:35`) and `tools` (`:39`–`:42`).
+- `lands: before the compaction's model request` — the hook's context is the pre-compaction
+  context, and the `result` it sets becomes the compaction the session resumes from, skipping the
+  model request (`dist/effect/session.d.ts:52`); no declared hook fires when the compacted context
+  resumes.
+
+Each answer's authority sits in the pinned host's published declarations,
+`node_modules/@opencode/plugin/dist/effect/session.d.ts` with the line-identical
+`dist/promise/session.d.ts` twin and the hook signatures' `void` callback returns in
+`dist/effect/registration.d.ts:10` and `dist/promise/registration.d.ts:9` — which for P5's
+implementation choice means the hook name is `"compaction"` as above, the marker is read from the
+hook's pre-compaction context, and the re-delivery of `@devpro-development` must be carried in the
+`result` that context lets the hook set (the compaction the session resumes from), because the
+declarations give no hook that fires when the compacted context resumes.
 
 Scope: `devpro/harnesses/resources/opencode/index.ts` — the compaction hook and the follow-up
 injection, beside the reminder's two hooks; `tests/test_opencode_entry.py`;
