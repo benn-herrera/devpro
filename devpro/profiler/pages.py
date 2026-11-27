@@ -283,13 +283,15 @@ PROJECT_MARK = "<!--PROJECT-->"
 
 
 def project_fill(project: str) -> str:
-    """The nav's opening slot as a page carries it: the project name, escaped, in the span the
-    layer's `.project-name` rule styles — bold, in the foreground color."""
+    """The nav's opening slot as a page carries it: the span the layer's `.project-name` rule styles —
+    bold, in the foreground color — holding the project's name, escaped. It always takes the name raw:
+    `project_fills` hands it the same unescaped value it escapes for the title."""
     return f'<span class="project-name">{html.escape(project)}</span>'
 
 
 def project_fills(project: str) -> dict[str, str]:
-    """Both the templates' project marks, filled: the title's the name as text, the nav's the span."""
+    """Both the templates' project marks, filled from one raw name: the title's the name as text, the
+    nav's the span."""
     return {PROJECT_TITLE_MARK: html.escape(project), PROJECT_MARK: project_fill(project)}
 
 

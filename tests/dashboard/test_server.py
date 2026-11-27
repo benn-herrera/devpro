@@ -650,6 +650,33 @@ def test_the_board_page_holds_its_deco_once_and_the_nav_supplies_it(tmp_path: Pa
     assert re.findall(r'<script src="([^"]+)"', page) == ["/profiler/deco.js", "board.js"]
 
 
+def test_every_page_that_names_the_served_project_names_the_one_directory(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a surface naming the served project differently from
+    its siblings — the board's title, the profiler's title or its nav's span derived on its own, so a
+    change to one derivation alone leaves the pages disagreeing while each still names a project.
+
+    The three surfaces the dashboard serves open on one name: the board's `<title>`, which
+    `board.js` writes from the payload's `project` as ``${payload.project} kanban``, and the profiler
+    index's `<title>`, its nav's `.project-name` span and the session page's `<title>` — the served
+    project's name, the SPEC clause's (`Shipped files`: the project root's directory name, the name the
+    board's title carries)."""
+    root = project(tmp_path / "proj", {})
+    store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
+    client = serve(root)
+    payload = json.loads(client.get("api/board")[2])
+    index = client.get("profiler/")[2].decode("utf-8")
+    page = client.get("page/s-one")[2].decode("utf-8")
+    script = (ASSETS / "board.js").read_text(encoding="utf-8")
+
+    board_title = re.search(r"const title = `\$\{payload\.project\} (.*)`;", script).group(1)
+    profiler_name = re.search(r'<span class="project-name">(.*?)</span>', index).group(1)
+    index_title = re.search(r"<title>(.*): devpro profiler sessions</title>", index).group(1)
+    page_title = re.search(r"<title>(.*): devpro profiler session</title>", page).group(1)
+
+    assert board_title == "kanban"
+    assert payload["project"] == index_title == page_title == profiler_name
+
+
 def _band(page: str) -> str:
     """A session page's frame band: from the band's opening div to its close.
 

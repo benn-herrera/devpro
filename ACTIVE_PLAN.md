@@ -54,7 +54,7 @@ progress.
 | B3 | landed | mechanical |
 | B4 | landed | expert |
 | B5 | landed | expert |
-| B6 | in progress | mechanical |
+| B6 | landed | mechanical |
 | B7 | dispatchable | mechanical |
 | B8 | dispatchable | mechanical |
 | B9 | dispatchable | expert |
