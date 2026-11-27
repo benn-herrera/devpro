@@ -20,6 +20,14 @@ remaining suite, feeding this plan's burndown — fixes, never the survey itself
 | P3 | landed | expert |
 | P4 | landed | expert |
 | P5 | drafted | expert |
+| B19 | drafted | expert |
+| B20 | drafted | mechanical |
+| B21 | drafted | expert |
+| B22 | drafted | expert |
+| B23 | drafted | expert |
+| B24 | drafted | expert |
+| B25 | drafted | expert |
+| B26 | drafted | expert |
 
 ## Ticket 1 — the strip
 
@@ -215,11 +223,130 @@ exists, committed, its entries naming their seats.
 
 ## Post-plan burndown
 
-The burndown items are drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands, the
-survey's findings drafted alongside them.
+The items below are drafted from `ACTIVE_PLAN_REVIEW.md` — the four seats' findings — with the
+test-suite survey's judgments (`ACTIVE_TEST_SURVEY.md`) drafted alongside them, grouped by root
+cause. The strip's residue items (B19–B24) close the seams the strip opened; the survey's small
+fixes (B25) and the deferred structural judgments close the survey's. Each closes in one commit.
+
+### B19 — the strip's SPEC and rendered-definition reconciliation
+
+Intended lifetime: shipped. Rating: expert. Fixes H1, H2, W3, W4, W5, W6 (the leaves' half), C3.
+
+Scope: `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md` (:170-171 the false user-level
+sentence; :100-106 the two-vs-three resource count; :108-110 the banner guarantee restated as the
+shipped-as-is fact), `plugins.md` (:50-51 the user-level "alone" completed; :69-71 the matrix-wide
+runner-line rule and the "inert" qualification; :84-91 the mage hazard — a file the operator keeps
+inside the harness directory outside `devpro/` is removed by the next install), `write-safety.md`
+(:20-31 the symlink-unlinked clause added to the consumer outcome; :8-11 the user-level product
+list cut to the wipe half citing Install destination; the stores-and-backup pointer clause),
+`devpro/definitions/skills/guide.py:116-117` — the false "no guardrail" sentence replaced with the
+guardrail-resource truth. Facts: the contradictions are quoted in `ACTIVE_PLAN_REVIEW.md` H1–H3,
+W3–W6; re-run `grep -n` on each span before editing. The mage `--subdir` dry-run case (N4) is
+probed during this item and its outcome recorded in the item's report.
+
+In-scope tests: the rendered-definition structural tests (`tests/render/`) over guide.py. Done-
+line: `just check-links`, `just test`, `just lint`.
+
+### B20 — the strip's ARCHITECTURE and CONVENTIONS residue
+
+Intended lifetime: shipped. Rating: mechanical. Fixes W9, W10, W11, W12, W13, and the document
+halves of N1.
+
+Scope, each fix enumerated in `ACTIVE_PLAN_REVIEW.md`: `ARCHITECTURE/install/renders-and-copies.md`
+(:104-108 the four negatives; :110-116 the stale line citations; :125-128 the managed-set
+enumeration; :126-127 the four-field `checked_agents_file` shape), `install/plugins.md:62-65`
+(the retired docdicer set's recognition membership), `install/guardrail-hook.md:18-19` (the
+foreign/refused reason for a deleted judgment), `install/guardrail-registration.md:8-9`
+(implementation detail and rationale cut), `install/index.md:3-5` (the fourth writer named) and
+`:11-14` (the rationale clause), `install-entry.md:42-44` ("the replacement runs after them"),
+`CONVENTIONS/code-definitions-and-install/recognizer-spells-rendered-banner.md` (cut to the digest
+duty, rename to "Digest pins the two captures' agreement", `entry-point.md` and `index.md`
+following), `untracked-output-is-not-source.md:6-7` (the whole-tree reason). In-scope tests: none
+— document only. Done-line: `just check-links`.
+
+### B21 — README owns the record decision and the stale upgrade prose
+
+Intended lifetime: shipped. Rating: expert. Fixes W6 (README's half), and the tech-writer findings
+the review names.
+
+Scope: `README.md` (:100-104 and :216-224 the piecewise docdicer-removal claims replaced with the
+wipe's outcome — the retired home and earlier files go with the tree, the include line stays until
+the operator deletes it; :229-234 the `.venv`-survival paragraph cut — the directory is gone under
+the wipe; :83-95 the gitignore instruction given its reason; the missing paragraph after :113 —
+the install replaces the directory whole, `--dry-run` lists what would go, a file you need lives
+outside). Recommended wording is in `.devpro-temp/p4-pe.md` §11. Done-line: `just check-links`.
+
+### B22 — the preserved pairs' failing tests
+
+Intended lifetime: shipped. Rating: expert. Fixes C2, H4, W14, and the version-direction lost pin.
+
+Scope: `tests/install/`. Three tests the design named that cannot fail, plus one seam: (1) the
+mage agents-file pass-over — a changing second mage install over a `CLAUDE.md` holding operator
+text and an earlier block, asserting text and `backup.CLAUDE.md` survive and the path is absent
+from the dry run's removed group (must fail with `pass_over` minus the agents path); (2) the
+re-entry pass-over — the copy's row staged populated plus a stale `.pyc`, asserting the files
+survive and the `.pyc` does not (must fail on the empty-row staging it replaces); (3) the
+version-direction report — an older and a newer `__version__` written into `tools/devpro/__init__.py`,
+the report naming both directions. The `_differs` seam (a special-file pass-over path) is probed
+by (1): if the plain case passes, the seam is invisible and recorded as such. Each carries its
+defect in the house docstring form. Facts and spans are quoted in `ACTIVE_PLAN_REVIEW.md` C2, H4,
+W14 and the conformance seat's report. Done-line: `just test`, `just lint`.
+
+### B23 — the re-entry integrity guard
+
+Intended lifetime: shipped. Rating: expert. Fixes W1.
+
+Scope: `devpro/install.py` (`_re_entry_kept`'s caller, before the replacement). On a re-entry run,
+refuse — the same `InputError` shape the other refusals use — when the running copy lacks a
+relative path `_wheel_files` over `PACKAGE_ROOT` produces, naming the path: the replacement would
+remove what the pass-over cannot restore. Test: a copy with a planted-missing shipped path fails
+the install naming it. Done-line: `just test`, `just lint`.
+
+### B24 — the dry-run both-groups defect
+
+Intended lifetime: shipped. Rating: expert. Fixes W2, and the architect's N4 trailing-slash note.
+
+Scope: `devpro/preflight.py` (the comparison — a directory the run also makes is not a removal, a
+file the run also wrote is not removed), `devpro/install.py:717-723` (`_every_entry_below`'s
+docstring stating a pruning the walk does not do — reworded or the walk pruned), `_shown`'s
+trailing-slash-from-disk note. Test: a `_assert_dry_run_predicts` case over a non-empty install
+directory — the existing case at `conftest.py:2036` runs the real install, not the dry run.
+Done-line: `just test`, `just lint`.
+
+### B25 — the watcher observation drive
+
+Intended lifetime: shipped. Rating: expert. Fixes C1.
+
+Scope: the behavioral observation the design's Drafts item records as unsettled — what a wipe does
+to a live opencode session whose entry watches the install directory (`index.ts:251`): run an
+install under a live session, record what the watcher does (the events, the refresh, the session's
+state after), and write the answer where it belongs — the measured fact into the survey's
+successor record and a SPEC caveat if the outcome is one an operator must know. The observation's
+method is recorded in `.devpro-temp/` before it runs. No code change is in scope; a code change
+the observation makes necessary is a finding for the next plan. Done-line: `just check-links`
+(the recorded outcome lands in a leaf).
+
+### B26 — the survey's small fixes and the deferred rest
+
+Intended lifetime: shipped. Rating: expert. Fixes J1, J2, J3, J6, J8, J10 of
+`ACTIVE_TEST_SURVEY.md`; J4, J5 are the CONVENTIONS clauses B20/B22 carry; J7, J9, J11, J12 and
+the three contract-gap proposals defer to `ROADMAP.md` (the Maintenance ticket this plan's
+ ROADMAP ticket names), where `check-roadmap` holds their form.
+
+Scope: `tests/install/` — J1 the real-tree case for `check-wheel` (the CONVENTIONS rule's case:
+the test hands the check the repository the index names; the gitignored-stray gap the survey
+proved is the `__pycache__` shape `_wheel_files` closes — the test pins that); J6 `test_runners.py`
+re-homed to the seam it serves; J8 the uncollected duplicate test in `conftest.py:1361` removed;
+J10 the repeat-count case read against its tier; J2 the index-vs-filesystem statement placed in
+the leaf J1's rule names; J3 the banner-spelling pin following `profiler_digest_runner.ts`'s
+rewrite-the-source pattern where the survey locates it. Each fix's TEST_PRECONDITION-style defect
+statement rides the test it adds or changes. Done-line: `just test`, `just lint`, `just
+check-links`.
 
 ### P5 — Post-plan burndown
 
 Intended lifetime: shipped. Rating: expert.
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+The items above are drafted from `ACTIVE_PLAN_REVIEW.md` and `ACTIVE_TEST_SURVEY.md`; their rows
+move through the states as the items dispatch and land, and the plan lands once the last item's
+row is `landed`.
