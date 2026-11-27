@@ -104,7 +104,19 @@ def test_the_profiler_view_serves_its_list_and_its_pages(tmp_path: Path, serve) 
     assert (data["session"], [call["name"] for call in data["calls"]]) == ("s-one", ["ls"])
 
 
-SESSION_KEYS = {"harness", "id", "models", "records", "agents", "first", "last", "span", "plan", "directives"}
+SESSION_KEYS = {
+    "harness",
+    "id",
+    "models",
+    "records",
+    "agents",
+    "first",
+    "last",
+    "span",
+    "plan",
+    "directives",
+    "unreviewed",
+}
 DISPATCHED_KEYS = SESSION_KEYS | {"dispatcher"}
 
 
@@ -152,6 +164,7 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
             "span": 0,
             "plan": None,
             "directives": None,
+            "unreviewed": False,
         },
         {
             "harness": "opencode",
@@ -164,6 +177,7 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
             "span": 0,
             "plan": None,
             "directives": None,
+            "unreviewed": False,
             "dispatcher": {"session": "s-parent", "name": "devpro-coder", "tool": "Agent"},
         },
         {
@@ -177,6 +191,7 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
             "span": 0,
             "plan": None,
             "directives": None,
+            "unreviewed": False,
         },
     ]
     assert [set(entry) for entry in entries] == [SESSION_KEYS, DISPATCHED_KEYS, SESSION_KEYS]
@@ -579,12 +594,14 @@ def _band(page: str) -> str:
 
 
 def test_a_session_page_is_served_without_reading_the_stores_a_second_time(tmp_path: Path, serve, monkeypatch) -> None:
-    """One `/page/<id>` request walks the stores twice and groups the sessions once over the whole tree
-    — the page's own read from which the tree's grouping falls out, and the dispatcher lookup's, which
-    groups the sessions then too — while the walk up the dispatcher chain it starts stays inside the
-    sessions the lookup already holds: a chain that re-read a store per step pays a read for every
-    ancestor a session has, and a page paying that per render has lost the cost the first read already
-    paid."""
+    """One `/page/<id>` request walks the stores twice — the page's own read, and the dispatcher
+    lookup's — and groups the sessions without one group per render: the server's `dispatches` over
+    the sessions that read holds, the lookup's own over the same tree, and the lookup's walk up the
+    dispatcher chain, which groups the sessions at each ancestor it steps to rather than re-reading a
+    store per step. The render's depth-2 chain reads the server's one map and groups nothing: a
+    render that grouped again, or a chain that re-read a store per step, pays a read or a group for
+    every ancestor a session has, and a page paying that per render has lost the cost the first read
+    already paid."""
     root = project(tmp_path / "proj", {})
     store(root, "s-one", [_tool_call("s-one", "2026-01-01T00:00:00.000Z", "ls")])
     store(
@@ -615,7 +632,7 @@ def test_a_session_page_is_served_without_reading_the_stores_a_second_time(tmp_p
     page = served.get("page/s-one")[2].decode("utf-8")
 
     assert reads == [str(root), str(root)]
-    assert groupings == [1, 1]
+    assert groupings == [2, 1, 1]
     assert re.search(r'<strong>Dispatched by</strong> <a href="/page/s-parent">s-parent</a> — coder', page)
 
 
@@ -826,6 +843,189 @@ def test_a_grandchilds_root_wears_the_hue_its_dispatchers_page_draws_it_in(tmp_p
     assert (child_contexts[0]["id"], child_contexts[0]["hue"]) == ("main", 2)
     assert (grand_root["id"], grand_root["label"]) == ("main", "tech-writer")
     assert grand_root["hue"] == drawn
+
+
+def test_a_session_page_draws_the_agents_its_child_dispatched(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a dispatched session's page whose payload carries no
+    depth-2 chain — before the change, `page/s-parent`'s data has no `children` key at all, so the
+    page stops at its child's own context and never names the agents the child dispatched.
+
+    The session page is the depth view: beneath each dispatch the page draws the agents the child
+    dispatched of its own, read from the child's own store — `s-child`'s records dispatch
+    `devpro-architect` into `s-grand` and run a Bash call, so `s-parent`'s page carries `s-child`
+    with that one agent, named after the call and linked to `s-grand`'s page. One level deeper and no
+    deeper: `s-grand` dispatches nothing, so its entry under `s-child`'s page carries no agents, the
+    depth-2 draw not following the chain a third level."""
+    root = project(tmp_path / "proj", {})
+    store(
+        root,
+        "s-parent",
+        [
+            record("2026-01-01T00:00:00.000Z", tool="Agent", name="devpro-coder", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "s-child"}
+        ],
+        directory=".profiler-opencode",
+    )
+    store(
+        root,
+        "s-child",
+        [
+            record("2026-01-01T00:00:01.000Z", tool="Agent", name="devpro-architect", session="s-child")
+            | {"harness": "opencode", "child_agent_id": "s-grand"},
+            _tool_call("s-child", "2026-01-01T00:00:03.000Z", "ls") | {"harness": "opencode"},
+        ],
+        directory=".profiler-opencode",
+    )
+    store(
+        root,
+        "s-grand",
+        [_tool_call("s-grand", "2026-01-01T00:00:04.000Z", "ls") | {"harness": "opencode"}],
+        directory=".profiler-opencode",
+    )
+    served = serve(root)
+
+    parent = page_data(served.get("page/s-parent")[2].decode("utf-8"))
+    child = page_data(served.get("page/s-child")[2].decode("utf-8"))
+
+    assert parent["children"] == [
+        {
+            "id": "s-child",
+            "name": "devpro-coder",
+            "tool": "Agent",
+            "agents": [{"name": "devpro-architect", "tool": "Agent", "childPage": "/page/s-grand"}],
+            "unreviewed": True,
+        }
+    ]
+    assert [(row["id"], row["agents"]) for row in child["children"]] == [("s-grand", [])]
+
+
+def test_a_fanout_with_no_review_before_its_first_dispatch_is_marked(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a dashboard that reads a nested fan-out as the
+    process working whatever its trace holds — before the change, `s-fan` dispatches agents with no
+    review of them recorded, and neither its page nor its dispatcher's row says so.
+
+    The detector reads the opencode dispatch chains: a dispatched session whose records dispatch
+    further agents is a fan-out, and the fan-out whose own records, before its own first dispatch,
+    name no dispatch of `devpro-prompt-engineer` is the unreviewed one. `s-fan` dispatches
+    `devpro-architect` first and only then `devpro-prompt-engineer`, so its review came after its
+    first dispatch and it is marked: its page's header line carries `unreviewed fan-out`, and its
+    dispatcher `s-root`'s feed entry carries `unreviewed: true` with the agents count still the
+    count. `s-reviewed` dispatches the review seat first, so it is a fan-out no mark names."""
+    root = project(tmp_path / "proj", {})
+    store(
+        root,
+        "s-root",
+        [
+            record("2026-01-01T00:00:00.000Z", tool="Agent", name="devpro-coder", session="s-root")
+            | {"harness": "opencode", "child_agent_id": "s-fan"},
+            record("2026-01-01T00:00:20.000Z", tool="Agent", name="devpro-prompt-engineer", session="s-root")
+            | {"harness": "opencode", "child_agent_id": "s-reviewed"},
+        ],
+        directory=".profiler-opencode",
+    )
+    # A fan-out that dispatched before any review: unreviewed.
+    store(
+        root,
+        "s-fan",
+        [
+            record("2026-01-01T00:00:01.000Z", tool="Agent", name="devpro-architect", session="s-fan")
+            | {"harness": "opencode", "child_agent_id": "s-leaf"},
+            record("2026-01-01T00:00:05.000Z", tool="Agent", name="devpro-prompt-engineer", session="s-fan")
+            | {"harness": "opencode", "child_agent_id": "s-leaf-2"},
+        ],
+        directory=".profiler-opencode",
+    )
+    # A fan-out whose first dispatch is the review seat: reviewed — the review arrives before the
+    # work fans out.
+    store(
+        root,
+        "s-reviewed",
+        [
+            record("2026-01-01T00:00:21.000Z", tool="Agent", name="devpro-prompt-engineer", session="s-reviewed")
+            | {"harness": "opencode", "child_agent_id": "s-leaf-3"},
+            record("2026-01-01T00:00:25.000Z", tool="Agent", name="devpro-coder", session="s-reviewed")
+            | {"harness": "opencode", "child_agent_id": "s-leaf-4"},
+        ],
+        directory=".profiler-opencode",
+    )
+    for leaf, at in (("s-leaf", "01"), ("s-leaf-2", "06"), ("s-leaf-3", "22"), ("s-leaf-4", "26")):
+        store(
+            root,
+            leaf,
+            [_tool_call(leaf, f"2026-01-01T00:00:{at}.000Z", "ls") | {"harness": "opencode"}],
+            directory=".profiler-opencode",
+        )
+    served = serve(root)
+    feed = {entry["id"]: entry for entry in json.loads(served.get("api/traces")[2]) if "id" in entry}
+    fan_page = served.get("page/s-fan")[2].decode("utf-8")
+    reviewed_page = served.get("page/s-reviewed")[2].decode("utf-8")
+
+    fan = page_data(fan_page)
+    reviewed = page_data(reviewed_page)
+
+    assert fan["unreviewed"] is True
+    assert reviewed["unreviewed"] is False
+    assert feed["s-root"]["agents"] == 2 and feed["s-root"]["unreviewed"] is True
+    # The mark is the dispatcher's: the feed carries its child's verdict on the dispatcher's entry,
+    # never on the child's own row — the index draws it in the agents cell, and the child's page
+    # names it in its header line off this payload field.
+    assert "unreviewed" in feed["s-fan"] and feed["s-fan"]["unreviewed"] is False
+
+
+def test_the_index_marks_an_unreviewed_fanout_beside_its_count(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a flat index whose agents cell carries the count
+    alone, so the reader looking at the list cannot tell a dispatcher whose child fanned out with no
+    review from one whose child did not — before the change, `s-root`'s cell reads `1 agent` and its
+    child's fan-out is invisible in the list.
+
+    The mark stands in the same cell, after the count: `s-root`'s child `s-fan` dispatches an agent
+    and records no review before it, so `s-root`'s feed entry carries `unreviewed` and its row's
+    agents cell draws the count and the mark, not the mark in place of the count. The count the
+    column sorts on is still `agents`; the index gains no second row level for the value. A
+    dispatcher whose child fans out nothing carries no mark."""
+    root = project(tmp_path / "proj", {})
+    store(
+        root,
+        "s-root",
+        [
+            record("2026-01-01T00:00:00.000Z", tool="Agent", name="devpro-coder", session="s-root")
+            | {"harness": "opencode", "child_agent_id": "s-fan"},
+            record("2026-01-01T00:00:20.000Z", tool="Agent", name="devpro-coder", session="s-root")
+            | {"harness": "opencode", "child_agent_id": "s-plain"},
+        ],
+        directory=".profiler-opencode",
+    )
+    store(
+        root,
+        "s-fan",
+        [
+            record("2026-01-01T00:00:01.000Z", tool="Agent", name="devpro-architect", session="s-fan")
+            | {"harness": "opencode", "child_agent_id": "s-leaf"}
+        ],
+        directory=".profiler-opencode",
+    )
+    store(
+        root,
+        "s-plain",
+        [_tool_call("s-plain", "2026-01-01T00:00:22.000Z", "ls") | {"harness": "opencode"}],
+        directory=".profiler-opencode",
+    )
+    store(
+        root,
+        "s-leaf",
+        [_tool_call("s-leaf", "2026-01-01T00:00:02.000Z", "ls") | {"harness": "opencode"}],
+        directory=".profiler-opencode",
+    )
+    served = serve(root)
+    feed = {entry["id"]: entry for entry in json.loads(served.get("api/traces")[2])}
+    index = served.get("profiler/")[2].decode("utf-8")
+
+    assert (feed["s-root"]["agents"], feed["s-root"]["unreviewed"]) == (2, True)
+    # The cell draws the count and then the mark in the same cell — a `.mark` span appended to the
+    # agents cell, never a row of its own: the flat table keeps its one row level.
+    assert "const agents = el('td', session.agents ? count : '', 'col-agents');" in index
+    assert "if (session.unreviewed) agents.append(' ', el('span', 'unreviewed fan-out', 'mark'));" in index
+    assert "agents," in index
 
 
 def test_the_agents_cell_reads_the_count_as_agents(tmp_path: Path, serve) -> None:

@@ -1267,6 +1267,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "span": 1,
             "plan": None,
             "directives": None,
+            "unreviewed": False,
         },
         {
             "harness": "opencode",
@@ -1279,6 +1280,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "span": 0,
             "plan": None,
             "directives": None,
+            "unreviewed": False,
         },
         {
             "harness": "opencode",
@@ -1291,6 +1293,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "span": 0,
             "plan": None,
             "directives": None,
+            "unreviewed": False,
         },
         {
             "harness": "opencode",
@@ -1303,6 +1306,7 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
             "span": 1,
             "plan": None,
             "directives": None,
+            "unreviewed": False,
             "dispatcher": {"session": "s-dispatcher", "name": "devpro-coder", "tool": "Agent"},
         },
     ]

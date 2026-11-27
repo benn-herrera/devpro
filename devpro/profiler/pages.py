@@ -707,7 +707,23 @@ def render_tree(records: list[Json], *, verbose: bool = False, color: bool = Fal
     return "\n".join([tree_header()] + [format_line(node, depth, **options) for node, depth in shown])
 
 
-def session_data(session: Json, *, dispatcher: Dispatcher | None = None) -> Json:
+class Depth(NamedTuple):
+    """What a page's depth-2 chain reads, built once at the read boundary: the scratch directory
+    the child's own store is found under, `dispatches`' map of the stores' hierarchy, and
+    `review_fanouts`' verdicts. Threading the three as one value keeps the render signatures to the
+    session and its dispatcher, and the reads stay the caller's — nothing is rebuilt per render."""
+
+    directory: Path
+    dispatched: dict[str, tuple[str, str, str | None]]
+    verdicts: dict[str, bool]
+
+
+def session_data(
+    session: Json,
+    *,
+    dispatcher: Dispatcher | None = None,
+    depth: Depth | None = None,
+) -> Json:
     """The page data `view.html` inlines at its data mark: the session's calls as the file flow
     draws them, one source for the standalone render and the served page alike.
 
@@ -720,7 +736,12 @@ def session_data(session: Json, *, dispatcher: Dispatcher | None = None) -> Json
     An opencode dispatch's child ends in the child's own store, and the join to it is already in the
     session's records by the time they reach here (`joined_session`, at the read boundary). The stamp
     is the session's, read off the same records (`session_stamp`), `None` for a session that carries
-    none."""
+    none.
+
+    `children` is the depth-2 chain: beneath each dispatch the page draws the agents the child
+    dispatched of its own, read from the child's store through `depth`, and its `unreviewed` mark
+    where the detector holds one. A page rendered without a read of the stores (`depth` is `None`)
+    carries no children and no mark: the standalone text-less render and a test's own payload."""
     calls = unique_calls(fill_context_tokens(session["records"]))
     contexts, markers = contexts_of(
         session["records"],
@@ -738,6 +759,8 @@ def session_data(session: Json, *, dispatcher: Dispatcher | None = None) -> Json
         "models": models_in(calls),
         "plan": stamp.get("plan"),
         "directives": stamp.get("directives"),
+        "children": depth_children(depth, session) if depth else [],
+        "unreviewed": bool(depth and depth.verdicts.get(session["id"])),
         "contexts": [
             {**context, "spent": spend.get(context["id"]), "models": models_in(by_context.get(context["id"], []))}
             for context in contexts
@@ -771,15 +794,26 @@ def session_data(session: Json, *, dispatcher: Dispatcher | None = None) -> Json
     }
 
 
-def _inlined_session_data(session: Json, *, dispatcher: Dispatcher | None) -> str:
+def _inlined_session_data(
+    session: Json,
+    *,
+    dispatcher: Dispatcher | None,
+    depth: Depth | None = None,
+) -> str:
     """`session_data` as the JSON a page's script inlines: `<` escaped so tool output cannot close the
     script tag, and `/` escaped so it cannot spell a fill's mark — `/*DATA*/null` among them, which
     the strict fill refuses in a value."""
-    data = session_data(session, dispatcher=dispatcher)
+    data = session_data(session, dispatcher=dispatcher, depth=depth)
     return _json(data).replace("<", "\\u003c").replace("/", "\\/")
 
 
-def _rendering(session: Json, *, dispatcher: Dispatcher | None, return_to: str | None) -> str:
+def _rendering(
+    session: Json,
+    *,
+    dispatcher: Dispatcher | None,
+    return_to: str | None,
+    depth: Depth | None = None,
+) -> str:
     """The page's one rendering: the template's own text with the session's data, the band's facts and
     the prefix line filled, the layer's and the deco's marks left standing for their carriers' fills —
     `render_html` inlines both texts, a file being unable to load a server's file, and the serve path
@@ -788,29 +822,32 @@ def _rendering(session: Json, *, dispatcher: Dispatcher | None, return_to: str |
     return strict_fill(
         template,
         {
-            DATA_MARK: _inlined_session_data(session, dispatcher=dispatcher),
+            DATA_MARK: _inlined_session_data(session, dispatcher=dispatcher, depth=depth),
             AGENT_PREFIX_MARK: AGENT_PREFIX_LINE,
             **band_fills(dispatcher=dispatcher, return_to=return_to, legend=True),
         },
     )
 
 
-def render_html(session: Json, *, dispatcher: Dispatcher | None) -> str:
+def render_html(session: Json, *, dispatcher: Dispatcher | None, depth: Depth | None = None) -> str:
     """One self-contained page: the package's template with the presentation layer, the deco, the
     how-to-read legend and the trace inlined, and the frame band's per-page facts the session's stores
     name — the way back to the list, and the dispatcher where one dispatched it — the same facts the
     served page fills, the layer's and the deco's carriage the differences between the carriers: a file
     links neither, so it carries both texts and the page's script finds the one notation they hold.
     An opencode dispatch's child-end join is already in the session's records (`joined_session`, at the
-    read boundary)."""
+    read boundary); the depth-2 chain reads the child's store through `depth`."""
     return strict_fill(
-        _rendering(session, dispatcher=dispatcher, return_to=PROFILER_PATH),
+        _rendering(session, dispatcher=dispatcher, return_to=PROFILER_PATH, depth=depth),
         {LAYER_MARK: LAYER_INLINE, DECO_MARK: DECO_INLINE},
     )
 
 
 def session_of(path: Path) -> Json:
-    """One trace as `list_sessions` shapes it: its records and its first and last moments."""
+    """One trace as `list_sessions` shapes it: its records and its first and last moments.
+
+    It reads the store path it is given, so the store a session id names is `session_store`'s to
+    build: the read a dispatched session's own store takes beside the join (`joined_session`)."""
     records = read_trace(path)
     starts: list[int] = []
     ends: list[int] = []
@@ -827,6 +864,14 @@ def session_of(path: Path) -> Json:
         "first": min(starts, default=math.inf),
         "last": max(ends, default=-math.inf),
     }
+
+
+def session_store(directory: Path | str, identifier: str) -> Path:
+    """The store path a session id names: its trace in whichever store the captures write
+    (`values.TRACE_STORES`, under `directory` — the scratch directory `store_directories` reads).
+    `session_of` takes a path, and the stores are flat, one file per session under each."""
+    named = [Path(directory) / name / f"{identifier}.jsonl" for name in TRACE_STORES]
+    return next((path for path in named if path.is_file()), named[0])
 
 
 def list_sessions(directory: Path | str) -> list[Json]:
@@ -901,7 +946,16 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
         if len(chosen) > 1:
             listing = "\n".join(f"  {session['id'][:SESSION_WIDTH]}  {stamp(session['first'])}" for session in chosen)
             raise UsageError(f"The html page shows one session. Pick one by id prefix:\n{listing}")
-        return render_html(joined_session(chosen[0], sessions), dispatcher=dispatcher_of(chosen[0]["id"], sessions))
+        dispatched = dispatches(sessions)
+        return render_html(
+            joined_session(chosen[0], sessions),
+            dispatcher=dispatcher_of(chosen[0]["id"], sessions),
+            depth=Depth(
+                directory=Path(directory) / TRACE_DIR.parent,
+                dispatched=dispatched,
+                verdicts=review_fanouts(sessions, dispatched),
+            ),
+        )
     if not branch:
         return render_tree(joined_session(chosen[0], sessions)["records"], verbose=options["verbose"], color=color)
     blocks = []
@@ -973,10 +1027,86 @@ def dispatches(sessions: list[Json]) -> dict[str, tuple[str, str, str | None]]:
     found: dict[str, tuple[str, str, str | None]] = {}
     for session in sessions:
         for record in session["records"]:
-            child = record.get("child_agent_id")
-            if record.get("harness") == "opencode" and child and str(child) != session["id"]:
-                found.setdefault(str(child), (session["id"], str(record.get("name") or ""), record.get("tool")))
+            child = dispatch_child(record)
+            if child is not None:
+                found.setdefault(child, (session["id"], str(record.get("name") or ""), record.get("tool")))
     return found
+
+
+def review_fanouts(sessions: list[Json], dispatched: dict[str, tuple[str, str, str | None]]) -> dict[str, bool]:
+    """session id -> whether the fan-out detector marks it unreviewed, for every dispatched session
+    that dispatched agents of its own. `dispatched` is `dispatches`' map, the caller's one read of
+    the stores' hierarchy — the page and the feed each hold it already, so the detector derives no
+    second. Its selection is that map's, so a claude session is in no answer: it names no session,
+    and its subagents stand on its page already.
+
+    A dispatched session whose records dispatch further agents is a fan-out, and it is unreviewed
+    where the records standing at or before its first dispatch name no dispatch of the review seat
+    (`REVIEW_SEAT`). The name read is the record's `name`: on an opencode agent call that is the
+    agent the call loaded, `child_agent_id` the context it opened. A fan-out with a review, and a
+    dispatched session that fans out nothing, are left out — their rows carry no mark."""
+    verdicts: dict[str, bool] = {}
+    for session in sessions:
+        if session["id"] not in dispatched:
+            continue
+        records = session["records"]
+        first = next((index for index, record in enumerate(records) if dispatch_child(record) is not None), None)
+        if first is not None:
+            reviewed = any(record.get("name") == REVIEW_SEAT for record in records[: first + 1])
+            verdicts[session["id"]] = not reviewed
+    return verdicts
+
+
+def dispatch_child(record: Json) -> str | None:
+    """The session a record dispatched, where it is one `dispatches` makes a child of: an opencode
+    record naming a session, and never the session naming itself. A claude record's
+    `child_agent_id` is an agent id."""
+    child = record.get("child_agent_id")
+    if record.get("harness") != "opencode" or not child:
+        return None
+    return None if str(child) == record.get("session") else str(child)
+
+
+def _child_page(record: Json) -> str | None:
+    """A record's child as a link to its page, where `dispatch_child` names a session — an opencode
+    record's, never claude's agent id."""
+    return PAGE_PREFIX + quote(str(record["child_agent_id"])) if dispatch_child(record) is not None else None
+
+
+def child_dispatches(directory: Path | str, session: Json) -> list[Json]:
+    """The agents a dispatched session dispatched of its own, read from its own store beside the
+    join the dispatch row's signals take — one level deeper and no deeper.
+
+    Each is the call that dispatched it: its name and tool, and the child session's page where its
+    record names one. A record naming a child and no session — claude's — is no agent here, its
+    calls drawn as contexts on the session's page already. The stored record, for an opencode call,
+    carries `agent_id: null` and the agent in `name`."""
+    records = read_trace(session_store(directory, str(session["id"])))
+    return [
+        {"name": record.get("name"), "tool": record.get("tool"), "childPage": _child_page(record)}
+        for record in records
+        if dispatch_child(record) is not None
+    ]
+
+
+def depth_children(depth: Depth, session: Json) -> list[Json]:
+    """A session's children as its page draws them beneath its dispatches: each child's own
+    dispatched agents, read from the child's store, and its `unreviewed` mark where the detector
+    holds one. `depth` is the read boundary's one build of the stores' hierarchy and verdicts.
+
+    Every child the session dispatched is here, a child of no agents carrying none; the agents are
+    one level deeper and no deeper, the child's own store and never its children's."""
+    return [
+        {
+            "id": child,
+            "name": name,
+            "tool": tool,
+            "agents": child_dispatches(depth.directory, {"id": child}),
+            "unreviewed": depth.verdicts.get(child, False),
+        }
+        for child, (parent, name, tool) in sorted(depth.dispatched.items())
+        if parent == session["id"]
+    ]
 
 
 def dispatcher_of(session: str, sessions: list[Json]) -> Dispatcher | None:
@@ -1006,6 +1136,12 @@ def dispatcher_of(session: str, sessions: list[Json]) -> Dispatcher | None:
     return Dispatcher(parent, name, tool, next(context["hue"] for context in contexts if context["id"] == session))
 
 
+# The review seat the fan-out detector names: an agent set's post-plan reviewer, the development
+# skill's own definition of it. A dispatch record's `name` is the agent an opencode agent call loaded
+# (`profiler.ts`'s `callRecord`), so the detector compares that field against this literal.
+REVIEW_SEAT = "devpro-prompt-engineer"
+
+
 def traces_feed(directory: Path | str) -> list[Json]:
     """The feed `/api/traces` answers, the index's rows' one source: one JSON entry per recorded
     session, in the order the index draws them.
@@ -1022,6 +1158,7 @@ def traces_feed(directory: Path | str) -> list[Json]:
     schema's one definition: the index's own script renders the rows from exactly these keys."""
     sessions = read_sessions(directory)
     dispatched = dispatches(sessions)
+    verdicts = review_fanouts(sessions, dispatched)
     children: dict[str, list[Json]] = {}
     for session in sessions:
         if session["id"] in dispatched:
@@ -1030,7 +1167,14 @@ def traces_feed(directory: Path | str) -> list[Json]:
     for session in sorted(
         (session for session in sessions if session["id"] not in dispatched), key=lambda session: session["first"]
     ):
-        entries.append(_feed_entry(session, dispatched.get(session["id"]), len(children.get(session["id"], ()))))
+        entries.append(
+            _feed_entry(
+                session,
+                dispatched.get(session["id"]),
+                len(children.get(session["id"], ())),
+                any(verdicts.get(child["id"]) for child in children.get(session["id"], ())),
+            )
+        )
         for child in sorted(children.get(session["id"], ()), key=lambda session: session["first"]):
             entries.append(_feed_entry(child, dispatched.get(child["id"])))
     if not entries:
@@ -1038,10 +1182,14 @@ def traces_feed(directory: Path | str) -> list[Json]:
     return entries
 
 
-def _feed_entry(session: Json, dispatcher: tuple[str, str, str | None] | None, agents: int = 0) -> Json:
+def _feed_entry(
+    session: Json, dispatcher: tuple[str, str, str | None] | None, agents: int = 0, unreviewed: bool = False
+) -> Json:
     """One session's entry in the feed: `agents` the count of the sessions `dispatcher` and its
-    siblings name as children, `dispatcher` itself left out where none dispatched the session, and
-    the stamp's `plan` and `directives`, `null` where the session's records carry none."""
+    siblings name as children, `dispatcher` itself left out where none dispatched the session,
+    `unreviewed` where one of those children is a fan-out its trace records no review before its
+    first dispatch for, and the stamp's `plan` and `directives`, `null` where the session's records
+    carry none. The count is the count the index's column sorts on, the mark standing beside it."""
     stamp = session_stamp(session["records"])
     entry = {
         "harness": session_harness(session),
@@ -1054,6 +1202,7 @@ def _feed_entry(session: Json, dispatcher: tuple[str, str, str | None] | None, a
         "span": _round_half_up((session["last"] - session["first"]) / 1000),
         "plan": stamp.get("plan"),
         "directives": stamp.get("directives"),
+        "unreviewed": unreviewed,
     }
     if dispatcher:
         dispatcher_session, name, tool = dispatcher
@@ -1228,7 +1377,7 @@ th[aria-sort="descending"] .sort::after { content: " ▼"; }
 // children beneath it. The moments are epoch
 // milliseconds and become the row's `<time>` elements, drawn local at birth — the reader's clock,
 // 24-hour. Reads the entry's own keys and nothing else: `harness`, `id`, `models`,
-// `records`, `agents`, `first`, `last`, `span`, `plan`, `directives`, `dispatcher`, and
+// `records`, `agents`, `first`, `last`, `span`, `plan`, `directives`, `unreviewed`, `dispatcher`, and
 // `stores` on a feed that drew nothing, naming how many stores the exact names read. The page's body is
 // wrapped: the controls' state and the sort in force live in the page's URL, and the helpers for
 // them are the page's own.
@@ -1318,12 +1467,16 @@ const row = ({ session, dispatched, children = 0 }) => {
   const window = el('td', undefined, 'col-one');
   window.append(moments(session));
   const count = session.agents === 1 ? '1 agent' : session.agents + ' agents';
+  // The fan-out mark stands after the count, in the same cell: the count the column sorts on stays
+  // the count, and the flat table gains no second row level for it.
+  const agents = el('td', session.agents ? count : '', 'col-agents');
+  if (session.unreviewed) agents.append(' ', el('span', 'unreviewed fan-out', 'mark'));
   tr.append(
     harness,
     id,
     el('td', session.models.join(', '), 'col-model'),
     el('td', session.records + ' records', 'col-records'),
-    el('td', session.agents ? count : '', 'col-agents'),
+    agents,
     window,
     el('td', dur(session.span * 1000), 'col-span'),
     stampCell(session.plan, PLAN_CHARS, 'col-plan'),
@@ -1552,11 +1705,13 @@ def page_for(
     *,
     return_to: str | None,
     dispatcher: Dispatcher | None,
+    depth: Depth | None = None,
 ) -> str:
     """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
     frame band with its legend, the decoration's script, the presentation layer linked — the band's
     per-page facts the dashboard's own lookup names, one legend on the page and the script once. The
     layer's carriage is the serve path's own fill (`served_page`), where the render inlined the
     layer's text. An opencode dispatch's child-end join is already in the session's records
-    (`joined_session`, at the read boundary)."""
-    return served_page(_rendering(session, dispatcher=dispatcher, return_to=return_to))
+    (`joined_session`, at the read boundary), and the depth-2 chain reads the child's store through
+    `depth` beside it."""
+    return served_page(_rendering(session, dispatcher=dispatcher, return_to=return_to, depth=depth))

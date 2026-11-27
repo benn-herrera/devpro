@@ -173,10 +173,15 @@ registers no hook entries; each recorded call appends one line to the project's
 hook, and a mage install ships none of them. A page attributes a child session to the session that
 dispatched it: the capture extracts the child's session id into the parent call's record, the render
 groups a dispatch's child one level deep under the session that dispatched it — deeper chains read
-on the session's page, whose tree draws every dispatch as a context — links each Agent row to the
+on the session's page, whose tree draws every dispatch as a context and, beneath a dispatch's
+context, the child's own dispatched agents, marking the fan-out whose own trace records no
+review-chain dispatch before its first — links each Agent row to the
 child's page and heads a child page with its dispatcher, and the stores stay flat — the child never
 knows its parent at write time, the hierarchy being metadata the parent side builds, and claude
-holding no child session records at all. The color a dispatched page's own context wears is stated
+holding no child session records at all. Every session's records carry its operational context,
+taken once at its start: the plan it worked under and a digest of the directives in force. The index
+names both for every session, empty where a session predates the stamp, and no association is
+inferred for a session the records stamp nothing onto. The color a dispatched page's own context wears is stated
 by the accent's rule, below.
 A call's record names the model that made it where its harness states it: the index names the models a session's
 calls recorded, and a session's page names them for the session, for each context and for each

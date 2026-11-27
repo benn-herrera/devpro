@@ -39,13 +39,14 @@ import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
+from pathlib import Path
 from typing import Any, TextIO
 from urllib.parse import unquote, urlsplit
 
 from devpro import __version__
 from devpro.profiler import pages
 from devpro.profiler.pages import PAGE_PREFIX, PROFILER_PATH, Dispatcher, dispatcher_of, read_sessions
-from devpro.profiler.values import Json, git_root
+from devpro.profiler.values import TRACE_DIR, Json, git_root
 
 from ..errors import InputError
 from ..kanban.server import HOST, KanbanServer
@@ -76,12 +77,14 @@ def profiler_page(
     *,
     return_to: str | None,
     dispatcher: Dispatcher | None,
+    depth: pages.Depth | None = None,
 ) -> str:
     """A page of the profiler view as the dashboard serves it: the view's own text — the nav, the
     frame band, the decoration's script, the shared layer linked — assembled by `page_for`, this
     module adding the band's per-page facts, the way back and the dispatcher its lookup names. A page's
-    dispatch rows join to their child's end at the read boundary, already in the session's records."""
-    return pages.page_for(session, return_to=return_to, dispatcher=dispatcher)
+    dispatch rows join to their child's end at the read boundary, already in the session's records,
+    and its depth-2 chain reads the child's store through `depth` beside that join."""
+    return pages.page_for(session, return_to=return_to, dispatcher=dispatcher, depth=depth)
 
 
 def loopback(url: str) -> bool:
@@ -157,16 +160,24 @@ class DashboardServer(ThreadingHTTPServer):
         return control leads back to the list and whose heading names the session that dispatched it,
         where one did.
 
-        The store read is the page's own; the dispatcher its band names is looked up beside it, once.
-        The page of the session that named this one is a second render, never a second index."""
+        The store read is the page's own; the dispatcher its band names is looked up beside it, once,
+        as the depth-2 chain's map is — one `dispatches` over the sessions this read holds, and the
+        detector's verdicts off it, threaded to the render as `pages.Depth`. The page of the session
+        that named this one is a second render, never a second index."""
         session_record = pages.session_for(PAGE_PREFIX + session, self.root)
         if session_record is None:
             return None
         sessions = read_sessions(self.root)
+        dispatched = pages.dispatches(sessions)
         return profiler_page(
             pages.joined_session(session_record, sessions),
             return_to=PROFILER_PATH,
             dispatcher=dispatcher_of(session, sessions),
+            depth=pages.Depth(
+                directory=Path(self.root) / TRACE_DIR.parent,
+                dispatched=dispatched,
+                verdicts=pages.review_fanouts(sessions, dispatched),
+            ),
         )
 
     def start(self) -> None:

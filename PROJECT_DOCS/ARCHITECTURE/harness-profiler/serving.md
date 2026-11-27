@@ -62,7 +62,18 @@ it — a dispatch's child one level deep; deeper chains read on the session's pa
 every dispatch as a context — that session's row carrying the count of the rows beneath it and each
 child's naming, after its id and with no lead-in, the call that dispatched it — the indent, the
 accent-colored border at its left edge and its tone mark it a child; the rows alternate their tone,
-and each carries its harness's mark.
+and each carries its harness's mark. The session page is the depth view, and the depth-2 chain is
+its newest level: beneath a dispatch's context the page draws the child's own dispatched agents,
+each named after the call that dispatched it and linked to its page where the child's dispatch
+record names one. The chain reads from the child's store beside the join the dispatch row's own
+signals take (The opencode capture) — one level deeper and no deeper; a claude session's nested
+agents stand on its page already, its subagents' records its own store holds. The detector reads the
+opencode dispatch chains at the same read: a dispatched session whose records dispatch further
+agents is a fan-out, and the fan-out whose own records, before its own first dispatch, name no
+dispatch of the review seat, `devpro-prompt-engineer`, is the unreviewed fan-out. Its mark stands
+beside the dispatch that opened it, on the session page, and on the dispatcher's index row in its
+agents cell, after the count — the count the column sorts stays the count. The index gains no second
+row level: the mark is the flat table's whole fan-out surface.
 
 ## The moments and their form
 
