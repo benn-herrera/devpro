@@ -141,10 +141,6 @@ if (Number.isFinite(first)) {
 const facts = [D.branch && `branch ${D.branch}`, `${D.calls.length} calls`, `${D.contexts.length} contexts`, modelPhrase(D.models) && `model ${modelPhrase(D.models)}`, D.plan && `plan ${D.plan}`, D.directives && `directives ${D.directives.slice(0, 12)}`].filter(Boolean);
 if (Number.isFinite(first)) head.append(item(' · '));
 facts.forEach((text, i) => head.append(item(`${i ? ' · ' : ''}${text}`)));
-// The fan-out mark: in the header line that heads this session, the reader told that its trace
-// records no review of the agents it dispatched before its first dispatch — the mark that stands on
-// the index row of the session it was the dispatcher's fan-out of.
-if (D.unreviewed) head.append(item(' · unreviewed fan-out'));
 
 // ---------- sequence diagram: one lifeline per context ----------
 
@@ -448,14 +444,16 @@ function drawTree() {
     // The depth-2 chain: beneath a dispatch's context, the agents the child dispatched of its own,
     // each named after the call that dispatched it and linked to its page where the child's own
     // record names one. These are the chain's floor: the agents' own dispatches are not drawn. The
-    // fan-out mark is not here — it stands on the page of the session that opened the fan-out, in
-    // its header line, beside the fact that it recorded no review of what it dispatched.
+    // fan-out mark stands in this row, after those names, where this session's trace records no
+    // review of what it dispatched before its first dispatch — the mark beside the dispatch that
+    // opened the fan-out, and in the index row's agents cell of the session that dispatched it.
     const downstream = c.child ? D.children.find((child) => child.id === c.child) : null;
     if (shown && downstream && downstream.agents.length) {
       h += `<div class="row sub" style="padding-left:${pad + 22}px"><span></span><span></span><span></span><span></span><span></span><span></span>`
         + `<span class="call">${downstream.agents.map((a) => (a.childPage
           ? `<a href="${esc(a.childPage)}">${esc(shownName(a.tool, a.name) || kindWord(a.tool))}</a>`
-          : esc(shownName(a.tool, a.name) || kindWord(a.tool)))).join(', ')}</span></div>`;
+          : esc(shownName(a.tool, a.name) || kindWord(a.tool)))).join(', ')}`
+        + `${D.unreviewed ? '<span class="mark">unreviewed fan-out</span>' : ''}</span></div>`;
     }
   });
   walk('root', 0);

@@ -333,6 +333,15 @@ def rendered_name(name: str | None, tool: str | None) -> str | None:
     return name.removeprefix(AGENT_PREFIX) if name and tool == "Agent" else name
 
 
+def bare_agent_name(record: Json) -> str | None:
+    """An opencode agent dispatch's agent by its bare name — the name the detector compares against
+    `REVIEW_SEAT`: the set's prefix dropped, as `rendered_name` drops it at the render. The host may
+    report the name either way; the record's `harness` is the tool here, an opencode agent call's
+    `name` being the agent it loaded (`profiler.ts`'s `callRecord`)."""
+    name = record.get("name")
+    return rendered_name(str(name), "Agent") if name else None
+
+
 def call_label(tool: str | None, name: str | None) -> str:
     """The name leads and the kind follows: `review (skill)`, `counter (agent)`, `wc -l a (Bash)`."""
     word = TOOL_WORDS.get(tool or "", tool or "")
@@ -741,9 +750,10 @@ def session_data(
     none.
 
     `children` is the depth-2 chain: beneath each dispatch the page draws the agents the child
-    dispatched of its own, read from the child's records in `depth`'s sessions, and its `unreviewed`
-    mark where the detector holds one. A page rendered without a read of the stores (`depth` is
-    `None`) carries no children and no mark: the standalone text-less render and a test's own payload."""
+    dispatched of its own, read from the child's records in `depth`'s sessions. `unreviewed` is this
+    session's own verdict — the fan-out it is — the mark the page draws beside the dispatch that
+    opened it. A page rendered without a read of the stores (`depth` is `None`) carries no children
+    and no mark: the standalone text-less render and a test's own payload."""
     calls = unique_calls(fill_context_tokens(session["records"]))
     contexts, markers = contexts_of(
         session["records"],
@@ -1025,9 +1035,10 @@ def review_fanouts(sessions: list[Json], dispatched: dict[str, tuple[str, str, s
 
     A dispatched session whose records dispatch further agents is a fan-out, and it is unreviewed
     where the records standing at or before its first dispatch name no dispatch of the review seat
-    (`REVIEW_SEAT`). The name read is the record's `name`: on an opencode agent call that is the
-    agent the call loaded, `child_agent_id` the context it opened. A fan-out with a review, and a
-    dispatched session that fans out nothing, are left out — their rows carry no mark."""
+    (`REVIEW_SEAT`). The name read is the record's `name`, the set's prefix dropped where it carries
+    one (`bare_agent_name`): on an opencode agent call it is the agent the call loaded,
+    `child_agent_id` the context it opened. A fan-out with a review, and a dispatched session that
+    fans out nothing, are left out — their rows carry no mark."""
     verdicts: dict[str, bool] = {}
     for session in sessions:
         if session["id"] not in dispatched:
@@ -1035,7 +1046,7 @@ def review_fanouts(sessions: list[Json], dispatched: dict[str, tuple[str, str, s
         records = session["records"]
         first = next((index for index, record in enumerate(records) if dispatch_child(record) is not None), None)
         if first is not None:
-            reviewed = any(record.get("name") == REVIEW_SEAT for record in records[: first + 1])
+            reviewed = any(bare_agent_name(record) == REVIEW_SEAT for record in records[: first + 1])
             verdicts[session["id"]] = not reviewed
     return verdicts
 
@@ -1073,9 +1084,10 @@ def child_dispatches(records: list[Json]) -> list[Json]:
 
 def depth_children(depth: Depth, session: Json) -> list[Json]:
     """A session's children as its page draws them beneath its dispatches: each child's own
-    dispatched agents, read from the child's records `depth`'s sessions hold, and its `unreviewed`
-    mark where the detector holds one. `depth` is the read boundary's one build of the sessions, the
-    stores' hierarchy and the verdicts.
+    dispatched agents, read from the child's records `depth`'s sessions hold. `depth` is the read
+    boundary's one build of the sessions, the stores' hierarchy and the verdicts; a child's verdict is
+    the row's own (`session_data`'s `unreviewed`), never the child's entry — the mark stands beside the
+    dispatch that opened the fan-out.
 
     Every child the session dispatched is here, a child of no agents carrying none; the agents are
     one level deeper and no deeper, the child's own records and never its children's. A dispatch
@@ -1088,7 +1100,6 @@ def depth_children(depth: Depth, session: Json) -> list[Json]:
             "name": name,
             "tool": tool,
             "agents": child_dispatches(sessions.get(child, [])),
-            "unreviewed": depth.verdicts.get(child, False),
         }
         for child, (parent, name, tool) in sorted(depth.dispatched.items())
         if parent == session["id"]
@@ -1123,9 +1134,9 @@ def dispatcher_of(session: str, sessions: list[Json]) -> Dispatcher | None:
 
 
 # The review seat the fan-out detector names: an agent set's post-plan reviewer, the development
-# skill's own definition of it. A dispatch record's `name` is the agent an opencode agent call loaded
-# (`profiler.ts`'s `callRecord`), so the detector compares that field against this literal.
-REVIEW_SEAT = "devpro-prompt-engineer"
+# skill's own definition of it. `bare_agent_name` reads a dispatch record's `name` — the agent an
+# opencode agent call loaded (`profiler.ts`'s `callRecord`) — down to the bare name this holds.
+REVIEW_SEAT = "prompt-engineer"
 
 
 def traces_feed(directory: Path | str) -> list[Json]:

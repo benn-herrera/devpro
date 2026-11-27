@@ -889,10 +889,12 @@ def test_a_session_page_draws_the_agents_its_child_dispatched(tmp_path: Path, se
             "name": "devpro-coder",
             "tool": "Agent",
             "agents": [{"name": "devpro-architect", "tool": "Agent", "childPage": "/page/s-grand"}],
-            "unreviewed": True,
         }
     ]
     assert [(row["id"], row["agents"]) for row in child["children"]] == [("s-grand", [])]
+    # The fan-out mark is the dispatcher row's, never a child entry's: no key states it on the entry
+    # the chain draws.
+    assert "unreviewed" not in parent["children"][0]
 
 
 def test_the_depth_draw_reads_the_sessions_the_read_returned(tmp_path: Path, serve) -> None:
@@ -935,14 +937,13 @@ def test_the_depth_draw_reads_the_sessions_the_read_returned(tmp_path: Path, ser
     parent = page_data(served.get("page/s-parent")[2].decode("utf-8"))
 
     # The dispatcher's page drew s-child's agents after s-child's store was gone: the read's records,
-    # not a re-read of the store.
+    # not a re-read of the store. The fan-out mark is the row's own, never a child entry's.
     assert parent["children"] == [
         {
             "id": "s-child",
             "name": "devpro-coder",
             "tool": "Agent",
             "agents": [],
-            "unreviewed": False,
         }
     ]
     # One level and no deeper: s-child's page carries s-grand, and s-grand dispatches nothing.
@@ -952,7 +953,6 @@ def test_the_depth_draw_reads_the_sessions_the_read_returned(tmp_path: Path, ser
             "name": "devpro-architect",
             "tool": "Agent",
             "agents": [],
-            "unreviewed": False,
         }
     ]
 
@@ -966,9 +966,9 @@ def test_a_fanout_with_no_review_before_its_first_dispatch_is_marked(tmp_path: P
     further agents is a fan-out, and the fan-out whose own records, before its own first dispatch,
     name no dispatch of `devpro-prompt-engineer` is the unreviewed one. `s-fan` dispatches
     `devpro-architect` first and only then `devpro-prompt-engineer`, so its review came after its
-    first dispatch and it is marked: its page's header line carries `unreviewed fan-out`, and its
-    dispatcher `s-root`'s feed entry carries `unreviewed: true` with the agents count still the
-    count. `s-reviewed` dispatches the review seat first, so it is a fan-out no mark names."""
+    first dispatch and it is marked: its own page's payload carries the verdict its chain row draws
+    the mark from, and `s-root`'s feed entry carries `unreviewed: true` with the agents count still
+    the count. `s-reviewed` dispatches the review seat first, so it is a fan-out no mark names."""
     root = project(tmp_path / "proj", {})
     store(
         root,
@@ -1021,13 +1021,85 @@ def test_a_fanout_with_no_review_before_its_first_dispatch_is_marked(tmp_path: P
     fan = page_data(fan_page)
     reviewed = page_data(reviewed_page)
 
+    # The mark stands beside the dispatch that opened the fan-out, and nowhere on the flat row: the
+    # fan-out's own payload carries the verdict the chain row below its dispatch reads, its
+    # dispatcher's entry carries the mark the index row draws, and the child's own entry carries none.
+    # The template draws the mark in the chain row alone — the header line that once carried it draws
+    # none.
     assert fan["unreviewed"] is True
     assert reviewed["unreviewed"] is False
+    template = files("devpro.profiler").joinpath("view.html").read_text(encoding="utf-8")
+    assert template.count("unreviewed fan-out") == 1
+    assert "head.append(item(' · unreviewed fan-out'))" not in template
+    assert '<span class="mark">unreviewed fan-out</span>' in template
     assert feed["s-root"]["agents"] == 2 and feed["s-root"]["unreviewed"] is True
-    # The mark is the dispatcher's: the feed carries its child's verdict on the dispatcher's entry,
-    # never on the child's own row — the index draws it in the agents cell, and the child's page
-    # names it in its header line off this payload field.
+    # The mark is the dispatcher's row's: the feed carries its child's verdict on the dispatcher's
+    # entry, never on the child's own.
     assert "unreviewed" in feed["s-fan"] and feed["s-fan"]["unreviewed"] is False
+
+
+def test_the_review_seat_is_read_by_its_bare_name(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is the fan-out detector comparing a dispatch record's
+    `name` against the prefixed spelling while the page renders the name bare — a host reporting the
+    bare name leaves the review dispatch unrecognized, and a reviewed fan-out draws the unreviewed
+    mark, silently.
+
+    The comparison reads the bare name: `s-bare` dispatches `prompt-engineer`, no prefix on the
+    record, before it dispatches `coder`, and nothing marks it — not its own page, not its
+    dispatcher's chain row, not the feed. A record naming the seat with the prefix reads the same
+    (`s-prefixed`), and a fan-out with no review before its first dispatch is still marked
+    (`s-unreviewed`), its dispatcher's chain row carrying the mark after its agents' names."""
+
+    def dispatch(session: str, at: str, name: str, child: str) -> dict:
+        return record(at, tool="Agent", name=name, session=session) | {
+            "harness": "opencode",
+            "child_agent_id": child,
+        }
+
+    root = project(tmp_path / "proj", {})
+    for root_session, at, child in (
+        ("s-root", "00", "s-bare"),
+        ("s-root-two", "10", "s-prefixed"),
+        ("s-root-three", "30", "s-unreviewed"),
+    ):
+        store(
+            root,
+            root_session,
+            [dispatch(root_session, f"2026-01-01T00:00:{at}.000Z", "devpro-coder", child)],
+            directory=".profiler-opencode",
+        )
+    for session, first, second in (
+        ("s-bare", "prompt-engineer", "coder"),
+        ("s-prefixed", "devpro-prompt-engineer", "devpro-coder"),
+        ("s-unreviewed", "architect", "prompt-engineer"),
+    ):
+        store(
+            root,
+            session,
+            [
+                dispatch(session, "2026-01-01T00:00:01.000Z", first, "s-leaf-a"),
+                dispatch(session, "2026-01-01T00:00:05.000Z", second, "s-leaf-b"),
+            ],
+            directory=".profiler-opencode",
+        )
+    for leaf in ("s-leaf-a", "s-leaf-b"):
+        store(
+            root,
+            leaf,
+            [_tool_call(leaf, "2026-01-01T00:00:02.000Z", "ls") | {"harness": "opencode"}],
+            directory=".profiler-opencode",
+        )
+    served = serve(root)
+    feed = {entry["id"]: entry for entry in json.loads(served.get("api/traces")[2]) if "id" in entry}
+
+    # The bare record is the review: the verdict does not flip on the spelling the host reports.
+    assert page_data(served.get("page/s-bare")[2].decode("utf-8"))["unreviewed"] is False
+    assert page_data(served.get("page/s-prefixed")[2].decode("utf-8"))["unreviewed"] is False
+    assert not feed["s-root"]["unreviewed"] and not feed["s-root-two"]["unreviewed"]
+    # The one fan-out with no review before its first dispatch is the one marked — its dispatcher's
+    # payload carries the verdict its chain row reads, and no reviewed fan-out's carries it.
+    assert page_data(served.get("page/s-unreviewed")[2].decode("utf-8"))["unreviewed"] is True
+    assert feed["s-root-three"]["unreviewed"] is True
 
 
 def test_the_index_marks_an_unreviewed_fanout_beside_its_count(tmp_path: Path, serve) -> None:
