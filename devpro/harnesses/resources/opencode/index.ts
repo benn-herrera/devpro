@@ -1,6 +1,6 @@
 // !INSTALLED! from devpro/harnesses/resources/opencode/index.ts — do not edit here: request changes from the devpro project; local needs belong in your CONVENTIONS.md.
 //
-// It is written for opencode (floor 2.3.0): the entry of one plugin the devpro project ships, the
+// It is written for opencode: the entry of one plugin the devpro project ships, the
 // directory holding this file. Registers the plugin's agents, commands, skills and MCP servers from
 // registry.json and the Markdown bodies it lists, re-reads them whenever anything in this directory
 // changes, runs the guardrail beside it where one is installed, reminds a parent session to update
@@ -8,9 +8,10 @@
 // finishes, and re-activates the development skill on the next prompt of a session the host has
 // compacted where that session's context held it.
 //
-// The floor is 2.3.0, where the `subagent` call stops defaulting to the foreground: from it the call
-// returns at once and the child runs in the background, so `execute.after`'s return is the dispatch
-// moment rather than a nudge behind the idle that reports the child's completion.
+// It needs the declarations `package.json` pins: `subagent` returns at once, so `execute.after`'s
+// return is the dispatch moment, and the session hooks `prompt` and `compaction` are declared. The
+// entry has been observed working from those, and below or above them it may work, your mileage may
+// vary.
 
 import { Plugin } from "@opencode/plugin"
 import type { SessionRequestMessage } from "@opencode/plugin/promise/session"

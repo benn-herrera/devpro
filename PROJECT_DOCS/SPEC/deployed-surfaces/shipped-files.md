@@ -236,7 +236,10 @@ skill's text from what the session reads, and the plugin is what restores it. A 
 the install directory is picked up without restarting opencode, except a change to `guardrail.ts` or
 `profiler.ts`, either of which the plugin entry imports when it loads, so a changed one takes effect
 at the next opencode start. The plugin entry is written for opencode and is the
-same file for both plugins; ARCHITECTURE.md, Install, Opencode entry holds how it works. A resource
+same file for both plugins; ARCHITECTURE.md, Install, Opencode entry holds how it works. It
+requires an opencode that returns the `subagent` call at dispatch and declares the
+`SessionHooks` events it registers on — the `prompt` and `compaction` hooks for the reload and
+`experimental.idle` for the reminder — 2.3.0 or later, observed at 2.4.1. A resource
 may be conditional
 on the probe: claude's guardrail is
 delivered only when one run of the script on the installing machine succeeds within a few seconds,

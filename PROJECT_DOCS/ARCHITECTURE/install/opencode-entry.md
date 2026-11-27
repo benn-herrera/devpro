@@ -17,11 +17,11 @@ install copies it, with `guardrail.ts` and, on a project install, the capture `p
 profiler), to the install directory as a harness resource (Renders
 and copies); a user-level install copies the entry and the guardrail resource beside it.
 
-The floor is a behavioral one, not an API one: every API the entry uses exists at 2.2.6, but there
-the `subagent` tool defaults to the foreground, so `execute.after` fires at the child's completion,
-behind the idle hook — a parent gets two completion nudges and none at the dispatch. From 2.3.0 the
-call returns at once and the child runs in the background, which makes the call's return the
-dispatch moment.
+The entry's host requirement is SPEC's (SPEC.md, Deployed Surfaces, Shipped files). The floor is a
+behavioral one: the `subagent` tool defaults to the foreground below 2.3.0, so `execute.after`
+fires at the child's completion, behind the idle hook — a parent gets two completion nudges and
+none at the dispatch. From 2.3.0 the call returns at once and the child runs in the background,
+which makes the call's return the dispatch moment.
 
 **The opencode API it uses.** It imports `Plugin` from `@opencode/plugin` and exports
 `Plugin.define({ id, setup })`.
