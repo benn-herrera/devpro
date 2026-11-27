@@ -15,7 +15,7 @@ remaining suite, feeding this plan's burndown — fixes, never the survey itself
 
 | Package | State | Rating |
 | --- | --- | --- |
-| P1 | in progress | mechanical |
+| P1 | landed | mechanical |
 | P2 | dispatchable | expert |
 | P3 | dispatchable | expert |
 | P4 | dispatchable | expert |
