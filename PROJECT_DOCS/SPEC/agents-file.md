@@ -6,11 +6,12 @@ supported harness. Its content depends on the harness, the plugin and where it i
 name of the directory it is installed in.
 
 The installed content is one **agents-file block**, from a begin marker line
-`<!-- vvv-devpro devpro <version> … devpro-vvv -->` to an end marker line
-`<!-- ^^^-devpro … devpro-^^^ -->`. A file holds one block, and the plugin word on the begin marker
-says whose it is. `install-agents-file` into a user harness directory leaves a project's copy in
-place; the next project install removes it. A
-**redirect file** is a one-line `@AGENTS.md` under another name a harness reads.
+`<!-- vvv-devpro <version> … devpro-vvv -->` to an end marker line
+`<!-- ^^^-devpro … devpro-^^^ -->`. The version is the release that last changed the block's
+content, and the begin marker carries no plugin word. A file holds one block. Marker lines are
+recognized by their fixed ends alone, whether or not they carry a version. `install-agents-file`
+into a user harness directory leaves a project's copy in place; the next project install removes it.
+A **redirect file** is a one-line `@AGENTS.md` under another name a harness reads.
 
 `devpro install-agents-file DIR [--harness=NAME]` installs the devpro plugin's agents file into the
 directory the operator names — the harness's user harness directory or a project's own — and is the
@@ -21,11 +22,10 @@ also writes it, under the same rules as `install-agents-file`, in two cases:
   inside that plugin's own directory;
 - on every claude or opencode project install, which keeps the agents-file block in exactly one
   place:
-  - if the global agents file holds any marker line, the install keeps it current
-    there, as the plugin its begin marker names, and removes any project copy, reporting what it
-    removed and why. A block whose begin marker names no plugin — a legacy `kbase`-stamped block
-    included — is kept as the installing plugin's. Only the block goes from the project: every other
-    byte of the project's
+  - if the global agents file holds any marker line, the install keeps it current there, as the
+    plugin named by the first word after its begin marker's opening — or the installing plugin's,
+    where that word names no plugin — and removes any project copy, reporting what it removed and
+    why. Only the block goes from the project: every other byte of the project's
     `AGENTS.md` stays, one rolling backup is made, and the file stays even if emptied. A global
     agents file whose marker lines are not one ordered pair refuses the project install with
     nothing written.
@@ -53,9 +53,13 @@ reads or writes the project's file of that other name.
 
 The installed file carries the repository's content as the agents-file block, recognized by the
 fixed ends of its marker lines, so a block any earlier revision with these markers wrote is still
-found. A marker line of a release before 0.17.0, which spells the generator's earlier name, is not
-a marker line: a file holding only those is a file with no marker line, and the block is appended
-after them. Installation
+found. An earlier begin marker line carrying a plugin word — `vvv-devpro devpro <version>` or a
+legacy `vvv-devpro kbase <version>` — is a marker line too: the word names a present or a retired
+plugin, the block it opens is the block, and the install replaces it in place, as a block stamped
+with this release's plugin. A version is read from the second word of a begin marker naming this
+plugin, and from the first version-shaped word of any other, so a block stamped with a retired
+plugin's name has no version and is replaced rather than read for downgrade. A line without one of
+these fixed ends is no marker line. Installation
 replaces that block and keeps every other byte of the file as the operator's, writes an absent file
 whole, appends the block at the end of a file with no marker line, every existing byte kept, and
 refuses with nothing written a file with any other marker lines than one ordered pair. A
