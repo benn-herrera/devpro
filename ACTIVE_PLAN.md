@@ -334,7 +334,9 @@ diced. This package's row is `landed` in the commit that adds the review documen
 
 Drafted from `ACTIVE_PLAN_REVIEW.md` (the post-plan review: four seats, twelve findings F1–F12) —
 one item per root-cause group, each closing in exactly one commit; the findings are cited by
-F-number and the review document carries each one's evidence and locations.
+F-number and the review document carries each one's evidence and locations. Run order is serial,
+B1 → B2 → B3 → B4 → B5 → B6: B1 and B2 share `profiler.ts`'s stamp functions, and B2's binding
+test runs code B1 restructures.
 
 ### PB Post-plan burndown
 
@@ -344,66 +346,91 @@ pass, revised, and set by state. This ticket's row lands with the drafting.
 
 ### B1 — the stamp is taken once, on every path
 
-Fixes F1 and F4. After the fix: the stamp is copied wholesale — both fields from the same earliest-
-`at` stamped record, never key-by-key, so a plan arriving mid-session cannot stamp a later record;
-a store holding no stamped record is a legacy store and stays unstamped — no fresh stamp is minted
-beside or after records that lack one (the leaf's migration posture governs, and its wording is
-amended in step with the design entry to state the legacy case); the TS reader's window is
-conclusive for the records it reads and answers unstamped, never a fresh stamp, where it is not;
-the manifest is written wherever a digest is stamped, copied or fresh; and the capture's read is
-bounded — the earliest stamped record sits at the store's head — with no full parse per hook.
+Fixes F1 and F4. After the fix, the observable the tests plant: a record written after the
+session's first stamped record carries the same set of stamp keys that record carries — no key is
+gained later — so a session whose plan arrives mid-session gets no `plan` key on any later record;
+and no store that already holds records is ever freshly stamped. The mechanism:
+
+- the stamp is copied wholesale from the earliest-`at` stamped record — the whole stamp, not the
+  present keys of it;
+- a store holding no stamped record is a legacy store and stays unstamped (the leaf's migration
+  posture governs; its wording is amended in step with the design entry to state the legacy case
+  plainly);
+- the TS reader's window reads from the file's beginning, where the earliest records sit; the
+  first stamped record within the window governs, and the window's end reached without one means
+  unstamped — never a fresh stamp beside old records;
+- the manifest is consulted first on the copy path; where none stands for the digest, the per-file
+  digests are recomputed from the files as they stand and written, and the leaf states that such a
+  manifest may postdate the digest it is keyed by;
+- the read is bounded — no full parse of the store per hook.
+
 Scope: `devpro/profiler/capture.py`, `devpro/harnesses/resources/opencode/profiler.ts`,
-`ACTIVE_DESIGN.md`'s stamp entry and its applied leaf in step, tests. New tests name their defects.
+`ACTIVE_DESIGN.md`'s stamp entry and its applied leaf in step, tests naming the defects above.
 
 ### B2 — one digest, bound
 
 Fixes F2 and F3. Both captures build the digest by one stated construction, byte-canonical — path
-and file-digest bytes joined without JSON escaping, non-ASCII safe — over the same file set: the
-installed-banner and ownership-marker recognizers (the incumbent install machinery reused, so
-`registry.json` and `hooks.json` reach the digest), both harness directories walked (the leaf states
-the project-wide set in the plural, amended in step with the design entry), and the agents file the
-project root's `AGENTS.md`. File links are followed — a symlink is hashed as what it points at,
-the user's ruling — and directory links are not descended; the leaf states it. A binding test runs
-both implementations over one fixture project and asserts byte-equal digests and manifests.
-Scope: `devpro/profiler/directives.py`, `devpro/harnesses/resources/opencode/profiler.ts`,
+and file-digest bytes joined without JSON escaping, non-ASCII safe — over one project-wide file
+set, stated and walked identically by both captures: every file beneath all of
+`PROJECT_HARNESS_DIRS` carrying an installed banner or an ownership marker (the incumbent install
+machinery reused, so `registry.json` and `hooks.json` reach the digest), plus the project root's
+`AGENTS.md`; a `CLAUDE.md` redirect that names it carries no directive of its own and is not
+hashed, and the leaf says so. File links are followed — a symlink is hashed as what it points at,
+the user's ruling — and directory links are not descended: the Python walk stops treating a
+symlinked harness directory as a directory to enter, as the TS side already does; the leaf states
+both halves. The binding test runs both implementations over one fixture project that plants a
+file in every walked directory and asserts byte-equal digests and manifests. Scope:
+`devpro/profiler/directives.py`, `devpro/harnesses/resources/opencode/profiler.ts`,
 `ACTIVE_DESIGN.md`'s stamp entry and its applied leaf in step, tests.
 
 ### B3 — the read side reads once and pins once
 
-Fixes F5, F7 and F12. One earliest-selection reader whose null-`at` handling is stated once; the
-Depth bundle carries the child stores read once per render — `session_store` takes the paths
-`read_sessions` already read and fails closed on an id outside the safe set; the index's column
-count has one home (the header-cell list) and the pin asserts the span equals the header-cell
-count; serving.md's feed-key list gains `unreviewed` (design pair and target in step); the feed
-schema has one pin at the read boundary. Scope: `devpro/profiler/pages.py`, `view.html`, the
-dashboard and profiler tests, `ACTIVE_DESIGN.md` and `serving.md` in step.
+Fixes F5, F7 and F12. The rulings, stated:
+
+- One earliest-selection reader over records; a record whose `at` is absent never governs the
+  stamp's ordering (the read side's current rule), and the capture side aligns to it.
+- The depth-2 draw's child records come from the sessions `read_sessions` already read — the store
+  path is never rebuilt from the id, the "safe set" question dissolves, and a child absent from
+  that read is absent from the draw.
+- The index's column count has one home, the header-cell list; the width sum and the `colSpan`
+  derive from it, and the pin asserts the span equals the header-cell count.
+- The feed schema has one pin, in `tests/dashboard/test_server.py`, replacing the literal
+  `SESSION_KEYS`/`DISPATCHED_KEYS` sets; serving.md's feed-key list gains `unreviewed` (design
+  pair and target in step).
+
+Scope: `devpro/profiler/pages.py`, `view.html`, `tests/dashboard/test_server.py`, the profiler
+tests, `ACTIVE_DESIGN.md` and `serving.md` in step.
 
 ### B4 — the mark where the design drew it
 
-Fixes F6 and F8. The unreviewed mark stands beside the dispatch that opened it on the dispatcher's
-page and in the dispatcher's index row's agents cell, after the count; the fan-out's own
-header-line mark is removed, and the per-child `unreviewed` key is either wired to the draw or
-retired with its pin — the executor picks one and says which. The detector's boundary is pinned by
-a test: whether the agent name arrives prefixed or bare at the reading site is fixed, and the
-comparison handles it in one place. Scope: `devpro/profiler/pages.py`, `view.html`, tests.
+Fixes F6 and F8. The unreviewed mark stands in the depth-2 chain row on the dispatcher's page —
+after the child's agents' names in that row's call span — and in the dispatcher's index row's
+agents cell, after the count. The fan-out's own header-line mark is removed, and the `view.html`
+comment recording the opposite choice is edited in step. The per-child `unreviewed` key is retired
+with its pin: the design puts the mark beside the dispatch and nowhere on the flat row. The
+detector's boundary: the comparison reads the bare name, the prefix strip applied in one helper
+beside the renderer's own, and a test plants a prefixed record and asserts the verdict. Scope:
+`devpro/profiler/pages.py`, `view.html`, tests.
 
 ### B5 — terms and the leaves left behind
 
 Fixes F9 and F10. Document work, each edit's wording in the target leaf's own voice: SPEC's
 "empty where a session predates the stamp" states the `null` rendering (design pair and target in
 step); serving.md's "review seat" phrase names the post-plan review's seat; the lint gate's two
-statements state one path ownership — the recipe's arguments are the gate's paths, `pyproject.toml`
-owns none — in `recipes.md` and the CONVENTIONS leaf together; `the-opencode-capture.md` is amended
-to state what the capture now reads and writes, the manifest outside its store, in the tree's
-voice; the ARCHITECTURE entry-point's listing gains the stamp leaf; the CONVENTIONS lint leaf's
-opening sentence notes the cache the checker writes — the title stands, the recipe writes no
-source. Scope: documents only.
+statements attribute the paths to the mypy line — mypy's arguments name the gate's paths
+(`devpro`, `devtools`), the recipe's other lines' arguments are not the gate's, and `tests/` stays
+outside them — in `recipes.md` and the CONVENTIONS leaf together; `the-opencode-capture.md` is
+amended to state what the capture now reads and writes, the manifest outside its store, in the
+tree's voice; the ARCHITECTURE entry-point's listing gains the stamp leaf; the CONVENTIONS lint
+leaf gains the sentence "the checker caches its analysis under the scratch directory and writes no
+source" — the title stands, the recipe writes no source. Scope: documents only.
 
 ### B6 — hygiene
 
 Fixes F11. Edits enumerated: the dead `held`/`s` alias at `linkrewrite.py:66-69` removed;
 `GENERATED_MARK` moves to `install_base.py` beside `INSTALLED_BANNER`, `render.py` and
-`directives.py` importing it, the import-rule test guarding the direction; mypy's cache moves under
-`.devpro-temp/` (`cache_dir` in `[tool.mypy]`), the repository root keeping none. Scope:
-`devpro/dicing/linkrewrite.py`, `devpro/install_base.py`, `devpro/render.py`,
-`devpro/profiler/directives.py`, `pyproject.toml`.
+`directives.py` importing it — the import direction is `directives → install_base ← render`, and
+no new test is written for it; mypy's cache moves under `.devpro-temp/` (`cache_dir` in
+`[tool.mypy]`), and the promise is observable: a `lint` run leaves no `.mypy_cache` at the
+repository root. Scope: `devpro/dicing/linkrewrite.py`, `devpro/install_base.py`,
+`devpro/render.py`, `devpro/profiler/directives.py`, `pyproject.toml`.
