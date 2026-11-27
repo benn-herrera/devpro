@@ -197,7 +197,11 @@ machinery it would take to distinguish.
 Scope: `devpro/kanban/server.py` (:292-294 the 415, :309-310 the 400, :302-307 the stop).
 `devpro/dashboard/server.py` and `devpro/dashboard/cli.py` leave this item's scope — the exit
 half is ruled out. In-scope tests: the stop-route cases in `tests/dashboard/test_server.py` gain
-the GET and the no-body cases. Done-line: `just test`, `just lint`.
+the GET and the no-body cases, and the test pinning the retired stop contract —
+`tests/dashboard/test_board_panel.py:525`
+`test_a_stop_request_that_is_not_json_is_refused_and_the_board_still_answers`, whose text/plain
+→ 415 premise the ruling retires — is deleted, its subject carried positively by the new cases.
+Done-line: `just test`, `just lint`.
 
 ### B7 — the install's ARCHITECTURE statements catch up
 
