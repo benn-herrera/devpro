@@ -30,9 +30,9 @@ until their subjects exist.
 
 The user's standing direction: when this plan lands, the periodic review starts immediately — the
 interval's count is met and this plan's landing is the coherent feature boundary, so the next plan
-is the full review, straight to a plan with no design before it. When the panel's findings are
-written to the review document, the run holds there: the user goes over the findings and the
-potential remedies with the session before anything is drafted from them.
+is the full review, straight to a plan with no design before it. The review rolls through the
+findings collected and its plan drafted, and holds there: the user discusses the findings and the
+draft plan before anything is approved or dispatched.
 
 ## Status
 
@@ -43,7 +43,13 @@ potential remedies with the session before anything is drafted from them.
 | P3 | landed | expert |
 | P4 | landed | expert |
 | PR | landed | expert |
-| PB | drafted | expert |
+| PB | landed | expert |
+| B1 | drafted | expert |
+| B2 | drafted | expert |
+| B3 | drafted | expert |
+| B4 | drafted | expert |
+| B5 | drafted | expert |
+| B6 | drafted | mechanical |
 
 ## P1 — the Python type gate
 
@@ -326,6 +332,78 @@ diced. This package's row is `landed` in the commit that adds the review documen
 
 ## Post-plan burndown
 
+Drafted from `ACTIVE_PLAN_REVIEW.md` (the post-plan review: four seats, twelve findings F1–F12) —
+one item per root-cause group, each closing in exactly one commit; the findings are cited by
+F-number and the review document carries each one's evidence and locations.
+
 ### PB Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review landed: items B1–B6 below, drafted
+by the session from the review document, usability-reviewed together by one `devpro-prompt-engineer`
+pass, revised, and set by state. This ticket's row lands with the drafting.
+
+### B1 — the stamp is taken once, on every path
+
+Fixes F1 and F4. After the fix: the stamp is copied wholesale — both fields from the same earliest-
+`at` stamped record, never key-by-key, so a plan arriving mid-session cannot stamp a later record;
+a store holding no stamped record is a legacy store and stays unstamped — no fresh stamp is minted
+beside or after records that lack one (the leaf's migration posture governs, and its wording is
+amended in step with the design entry to state the legacy case); the TS reader's window is
+conclusive for the records it reads and answers unstamped, never a fresh stamp, where it is not;
+the manifest is written wherever a digest is stamped, copied or fresh; and the capture's read is
+bounded — the earliest stamped record sits at the store's head — with no full parse per hook.
+Scope: `devpro/profiler/capture.py`, `devpro/harnesses/resources/opencode/profiler.ts`,
+`ACTIVE_DESIGN.md`'s stamp entry and its applied leaf in step, tests. New tests name their defects.
+
+### B2 — one digest, bound
+
+Fixes F2 and F3. Both captures build the digest by one stated construction, byte-canonical — path
+and file-digest bytes joined without JSON escaping, non-ASCII safe — over the same file set: the
+installed-banner and ownership-marker recognizers (the incumbent install machinery reused, so
+`registry.json` and `hooks.json` reach the digest), both harness directories walked (the leaf states
+the project-wide set in the plural, amended in step with the design entry), and the agents file the
+project root's `AGENTS.md`. File links are followed — a symlink is hashed as what it points at,
+the user's ruling — and directory links are not descended; the leaf states it. A binding test runs
+both implementations over one fixture project and asserts byte-equal digests and manifests.
+Scope: `devpro/profiler/directives.py`, `devpro/harnesses/resources/opencode/profiler.ts`,
+`ACTIVE_DESIGN.md`'s stamp entry and its applied leaf in step, tests.
+
+### B3 — the read side reads once and pins once
+
+Fixes F5, F7 and F12. One earliest-selection reader whose null-`at` handling is stated once; the
+Depth bundle carries the child stores read once per render — `session_store` takes the paths
+`read_sessions` already read and fails closed on an id outside the safe set; the index's column
+count has one home (the header-cell list) and the pin asserts the span equals the header-cell
+count; serving.md's feed-key list gains `unreviewed` (design pair and target in step); the feed
+schema has one pin at the read boundary. Scope: `devpro/profiler/pages.py`, `view.html`, the
+dashboard and profiler tests, `ACTIVE_DESIGN.md` and `serving.md` in step.
+
+### B4 — the mark where the design drew it
+
+Fixes F6 and F8. The unreviewed mark stands beside the dispatch that opened it on the dispatcher's
+page and in the dispatcher's index row's agents cell, after the count; the fan-out's own
+header-line mark is removed, and the per-child `unreviewed` key is either wired to the draw or
+retired with its pin — the executor picks one and says which. The detector's boundary is pinned by
+a test: whether the agent name arrives prefixed or bare at the reading site is fixed, and the
+comparison handles it in one place. Scope: `devpro/profiler/pages.py`, `view.html`, tests.
+
+### B5 — terms and the leaves left behind
+
+Fixes F9 and F10. Document work, each edit's wording in the target leaf's own voice: SPEC's
+"empty where a session predates the stamp" states the `null` rendering (design pair and target in
+step); serving.md's "review seat" phrase names the post-plan review's seat; the lint gate's two
+statements state one path ownership — the recipe's arguments are the gate's paths, `pyproject.toml`
+owns none — in `recipes.md` and the CONVENTIONS leaf together; `the-opencode-capture.md` is amended
+to state what the capture now reads and writes, the manifest outside its store, in the tree's
+voice; the ARCHITECTURE entry-point's listing gains the stamp leaf; the CONVENTIONS lint leaf's
+opening sentence notes the cache the checker writes — the title stands, the recipe writes no
+source. Scope: documents only.
+
+### B6 — hygiene
+
+Fixes F11. Edits enumerated: the dead `held`/`s` alias at `linkrewrite.py:66-69` removed;
+`GENERATED_MARK` moves to `install_base.py` beside `INSTALLED_BANNER`, `render.py` and
+`directives.py` importing it, the import-rule test guarding the direction; mypy's cache moves under
+`.devpro-temp/` (`cache_dir` in `[tool.mypy]`), the repository root keeping none. Scope:
+`devpro/dicing/linkrewrite.py`, `devpro/install_base.py`, `devpro/render.py`,
+`devpro/profiler/directives.py`, `pyproject.toml`.
