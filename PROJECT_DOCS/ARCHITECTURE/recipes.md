@@ -75,8 +75,9 @@ repository's own `devtools/screenshot.ts` under `devtools/tsconfig.json`: a dev 
 it does not ship. One more still type-checks the Python: mypy in its strict mode over `devpro/` and
 `devtools/`, run through the venv's own interpreter, nothing bespoke built around it — the checker a
 `dev`-group dependency like the venv's other tools, its configuration `pyproject.toml`'s, a line
-with the compatible-release specifier the group's lines already take. The gate's paths are the
-package and the dev tool; `tests/` stays outside them until a test tree's signal proves worth the
+with the compatible-release specifier the group's lines already take. The gate's paths are mypy's
+arguments — the package and the dev tool; the recipe's other checks' arguments are not the gate's,
+and `tests/` stays outside them until a test tree's signal proves worth the
 quieting its fixture indirection asks. A checker release changes what the gate reports only with a
 change to the group line: the pin is the record, as the other tools' are.
 

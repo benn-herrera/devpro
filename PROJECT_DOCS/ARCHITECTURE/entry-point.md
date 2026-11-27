@@ -31,6 +31,7 @@ Contents:
   - [What does not exist](harness-profiler/what-does-not-exist.md)
   - [The opencode capture](harness-profiler/the-opencode-capture.md)
   - [The stores and their rename](harness-profiler/the-stores-and-their-rename.md)
+  - [The operational-context stamp](harness-profiler/the-operational-context-stamp.md)
 - [Rendering](rendering/index.md)
   - [Placeholders](rendering/placeholders.md)
   - [Kinds](rendering/kinds.md)

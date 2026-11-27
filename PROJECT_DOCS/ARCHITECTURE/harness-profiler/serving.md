@@ -72,7 +72,7 @@ signals take (The opencode capture) — one level deeper and no deeper; a claude
 agents stand on its page already, its subagents' records its own store holds. The detector reads the
 opencode dispatch chains at the same read: a dispatched session whose records dispatch further
 agents is a fan-out, and the fan-out whose own records, at or before its own first dispatch, name no
-dispatch of the review seat, `devpro-prompt-engineer`, is the unreviewed fan-out. Its mark stands
+dispatch of the post-plan review's seat, `devpro-prompt-engineer`, is the unreviewed fan-out. Its mark stands
 beside the dispatch that opened it, on the session page, and on the dispatcher's index row in its
 agents cell, after the count — the count the column sorts stays the count. The index gains no second
 row level: the mark is the flat table's whole fan-out surface.

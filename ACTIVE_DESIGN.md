@@ -44,7 +44,7 @@ child's page and heads a child page with its dispatcher, and the stores stay fla
 knows its parent at write time, the hierarchy being metadata the parent side builds, and claude
 holding no child session records at all. Every session's records carry its operational context,
 taken once at its start: the plan it worked under and a digest of the directives in force. The index
-names both for every session, empty where a session predates the stamp, and no association is
+names both for every session, `null` where a session predates the stamp, and no association is
 inferred for a session the records stamp nothing onto.
 ```
 
@@ -68,8 +68,9 @@ repository's own `devtools/screenshot.ts` under `devtools/tsconfig.json`: a dev 
 it does not ship. One more still type-checks the Python: mypy in its strict mode over `devpro/` and
 `devtools/`, run through the venv's own interpreter, nothing bespoke built around it — the checker a
 `dev`-group dependency like the venv's other tools, its configuration `pyproject.toml`'s, a line
-with the compatible-release specifier the group's lines already take. The gate's paths are the
-package and the dev tool; `tests/` stays outside them until a test tree's signal proves worth the
+with the compatible-release specifier the group's lines already take. The gate's paths are mypy's
+arguments — the package and the dev tool; the recipe's other checks' arguments are not the gate's,
+and `tests/` stays outside them until a test tree's signal proves worth the
 quieting its fixture indirection asks. A checker release changes what the gate reports only with a
 change to the group line: the pin is the record, as the other tools' are.
 ```
@@ -232,7 +233,7 @@ signals take (The opencode capture) — one level deeper and no deeper; a claude
 agents stand on its page already, its subagents' records its own store holds. The detector reads the
 opencode dispatch chains at the same read: a dispatched session whose records dispatch further
 agents is a fan-out, and the fan-out whose own records, at or before its own first dispatch, name no
-dispatch of the review seat, `devpro-prompt-engineer`, is the unreviewed fan-out. Its mark stands
+dispatch of the post-plan review's seat, `devpro-prompt-engineer`, is the unreviewed fan-out. Its mark stands
 beside the dispatch that opened it, on the session page, and on the dispatcher's index row in its
 agents cell, after the count — the count the column sorts stays the count. The index gains no second
 row level: the mark is the flat table's whole fan-out surface.

@@ -180,7 +180,7 @@ child's page and heads a child page with its dispatcher, and the stores stay fla
 knows its parent at write time, the hierarchy being metadata the parent side builds, and claude
 holding no child session records at all. Every session's records carry its operational context,
 taken once at its start: the plan it worked under and a digest of the directives in force. The index
-names both for every session, empty where a session predates the stamp, and no association is
+names both for every session, `null` where a session predates the stamp, and no association is
 inferred for a session the records stamp nothing onto. The color a dispatched page's own context wears is stated
 by the accent's rule, below.
 A call's record names the model that made it where its harness states it: the index names the models a session's

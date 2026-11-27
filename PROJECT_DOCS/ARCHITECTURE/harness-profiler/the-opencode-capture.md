@@ -12,6 +12,10 @@ hook appends a lifecycle record the tree does not draw — writing them to its o
 record read from its own `.profiler-*` store. A call that dispatches a child — a `subagent` or
 `task` call, which from 2.3.0 returns at once — is recorded by the pair at its return, the launch
 acknowledgment, and carried to its child's end by the child's own signals (Dispatched children).
+Beside the hooks' payloads the capture reads the two facts the stamp records — the plan's title and
+the directives state ([The operational-context stamp](the-operational-context-stamp.md)) — and the
+digest's manifest is written under `.devpro-temp/.profiler-directives/`, which is not a store and
+no reader of the stores reads as one.
 
 ## Dispatched children
 
