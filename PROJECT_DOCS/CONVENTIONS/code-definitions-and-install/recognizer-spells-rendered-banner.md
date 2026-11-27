@@ -16,5 +16,7 @@ harness-rendered file it reads by the ownership markers `HARNESS_OWNERSHIP_MARKE
 `HarnessFile.marker` keeps, so one marker reads a file whole where the captured value differs. The
 list stands there rather than beside the harnesses because the install's harness modules cannot be
 loaded on the capture path. The opencode capture's TypeScript derives its list the same way, and the
-byte-equality digest test is the pin: it holds the two captures to one digest over the same project
-tree, so a marker whose spelling changes on either side fails it.
+byte-equality digest test is the pin for the two captures' agreement: it holds them to one digest over
+the same project tree, and fails where their marker lists or their walks disagree over it. The
+banners' spelling is the install recognizer's case to hold, as the first paragraph states — the
+digest test plants literal ones, so it pins the agreement and not the renderer's spelling.
