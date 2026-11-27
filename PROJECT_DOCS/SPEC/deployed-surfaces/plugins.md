@@ -104,5 +104,5 @@ refuses or warns on Windows.
 
 devpro, the generator, needs Python 3.11 or later on the host; the kbase component's toolchain is the
 `kbase` executable the operator installs, which needs no Python.
-Everything else the kbase component needs (pandoc 3.12, git, a way to reach a model) is kbase's own
-requirement, which the operator meets.
+Kbase is installed by Homebrew, which carries the package's dependencies; the operator's requirement
+is the one Homebrew states.
