@@ -6,11 +6,14 @@ from pathlib import Path
 
 from devpro.components import NAME
 from devpro.harnesses import claude, mage, opencode
-from devpro.install_base import HARNESS_OWNERSHIP_MARKERS
+from devpro.install import stamped
+from devpro.install_base import GENERATED_MARK, HARNESS_OWNERSHIP_MARKERS, INSTALLED_MARK
 from devpro.profiler.capture import mask, stored_stamp
 from devpro.profiler.directives import read_stamp
 from devpro.profiler.values import earliest_stamp
+from devpro.render import generated_text, harness_file_text
 
+from ..install.conftest import _CLAUDE_RENDER
 from .conftest import _HERE, _MASK_SAMPLES, _digest_runner, _plan, _run_ts
 
 
@@ -136,3 +139,58 @@ def test_the_capture_and_the_read_side_select_the_earliest_stamp_by_one_rule(tmp
 
     assert earliest_stamp([unplaced]) == {}
     assert stored_stamp(store) is None
+
+
+def _banner_run(project: Path, probe: Path) -> dict[str, object]:
+    """The shipped `profiler.ts`'s two banner constants and whether its recognizer lists the one file
+    `project` holds under its harness directory."""
+    probe.mkdir()
+    return json.loads(
+        _run_ts(
+            _HERE / "profiler_banner_runner.ts",
+            directory=probe,
+            stdin=json.dumps({"directory": str(project), "probeDirectory": str(probe)}),
+        ).stdout
+    )
+
+
+def _recognizes(tmp_path: Path, index: int, text: str) -> tuple[bool, bool]:
+    """`is_installed` and the TS recognizer over one file of `text` under a `.claude/agents/`, each side
+    given a tree of its own — `index`'s, so a run's trees never stand in another's — and neither writing
+    into the other's."""
+    verdicts = []
+    for side in ("python", "typescript"):
+        project = tmp_path / str(index) / side
+        (project / ".claude" / "agents").mkdir(parents=True)
+        (project / ".claude" / "agents" / "coder.md").write_text(text, encoding="utf-8")
+        if side == "python":
+            verdicts.append(bool(read_stamp(project)[1]))
+        else:
+            verdicts.append(bool(_banner_run(project, tmp_path / str(index) / f"{side}-probe")["recognized"]))
+    return verdicts[0], verdicts[1]
+
+
+def test_the_banner_the_recognizers_read_is_the_one_the_writers_write(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: no case held the digest's spelling to anything that writes a
+    banner — the plants carry `!GENERATED! from` as their own text, so the two captures were held to each
+    other while either spelling could drift from the renderer's and the installer's, and a file an install
+    wrote would digest to nothing.
+
+    `GENERATED_MARK` is the prefix of the renderer's own text and `INSTALLED_MARK` the one `stamped` writes,
+    both without decoration so a carrier's own comment syntax does not enter; the shipped `profiler.ts`
+    holds the generated one whole and its pattern the mark and this repository's name, ` .* ` read as the
+    one space; and both recognizers accept a file carrying either banner and refuse one carrying neither."""
+    assert generated_text("devpro.definitions.agents.coder").startswith(GENERATED_MARK)
+    assert stamped(b"tool\n", origin="devpro/x.py").startswith(f"# {INSTALLED_MARK} from devpro/x.py — ".encode())
+    written = _banner_run(tmp_path / "project", tmp_path / "constants")
+    # The pattern's ` .* ` is read back as the one space it separates, which leaves the mark and the name it
+    # requires in place: the TS side writes no banner, so the name is the one thing only it can state.
+    assert (written["generatedBanner"], written["installedBanner"]) == (GENERATED_MARK, f"{INSTALLED_MARK} devpro")
+
+    generated = f"# {generated_text('devpro.definitions.agents.coder')}\nbody\n"
+    installed = stamped(b"#!/bin/sh\n", origin="devpro/x.sh").decode("utf-8")
+    [rendered] = [file for file in claude.HARNESS.bound(NAME).harness_files if file.owner is not None]
+    assert _recognizes(tmp_path, 0, generated) == (True, True)
+    assert _recognizes(tmp_path, 1, installed) == (True, True)
+    assert _recognizes(tmp_path, 2, harness_file_text(rendered, _CLAUDE_RENDER)) == (True, True)
+    assert _recognizes(tmp_path, 3, "#!/bin/sh\necho plain\n") == (False, False)

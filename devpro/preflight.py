@@ -220,7 +220,14 @@ def preflight(
             created_directories += [base / relative for relative in sorted(left_empty)]
             removed_at = (prior - after - left) | (prior_directories - after_directories)
             removed += [base / relative for relative in sorted(removed_at)]
-            removed_directories += [base / relative for relative in sorted(removed_at & prior_directories)]
+            # A path the run no longer holds as a directory reads as one where it stood as a directory:
+            # a directory link is a file to the comparison — never followed — and the directory it was
+            # to the operator, which a created one reads as too.
+            removed_directories += [
+                base / relative
+                for relative in sorted(removed_at)
+                if relative in prior_directories or (base / relative).is_symlink() and relative not in left
+            ]
             changed += [
                 base / relative
                 for relative in sorted(after & prior)
@@ -272,11 +279,12 @@ def _same_files(base: Path, old: Path, files: Sequence[Path], copy: Path) -> boo
 
 
 def _shown(path: Path, *, report_root: Path, directory: bool = False) -> str:
-    """`path` relative to `report_root` where it sits below it, else whole. A path the run would create
-    and one it would remove read as directories with a trailing `/`, never from the path on disk, which
-    a created directory is not yet and a removed one no longer is."""
+    """`path` relative to `report_root` where it sits below it, else whole, with the trailing `/` a
+    directory reads with. Which paths are directories is the difference's to say, never the path on disk:
+    a created directory is not there yet, and a removed one is gone. A removed directory link is one of
+    them, named by the difference — reading it back would follow it to whatever stands at its target."""
     shown = str(path.relative_to(report_root)) if path.is_relative_to(report_root) else str(path)
-    return f"{shown}/" if directory or path.is_dir() else shown
+    return f"{shown}/" if directory else shown
 
 
 def run_preflighted(

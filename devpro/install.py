@@ -715,11 +715,12 @@ def _install_managed_paths(
 
 
 def _every_entry_below(root: Path) -> list[str]:
-    """Every file below `root`, relative to it, each directory on the way named so the copy recreates it
-    and the obstacles the install's checks read stand: a directory is named once, not its tree below it
-    a second time, since copying a named directory copies all it holds. A symlink is named as the link
-    it is, never followed. Nothing where `root` is absent, and `root` itself where it is a file, which
-    the install's own refusal reads."""
+    """Every entry below `root`, relative to it: each directory and each file, the tree below a directory
+    walked and its entries named one by one, so an obstacle an install's checks read anywhere in the tree
+    stands in the copy at its own path. A symlink to a directory is named as the link it is and not
+    entered, which is what keeps the walk off what it points at; every other directory is walked into.
+    Nothing where `root` is absent, nothing where it is a symlink, and `root` itself where it is a file,
+    which the install's own refusal reads."""
     if root.is_symlink():
         return []
     if not root.is_dir():

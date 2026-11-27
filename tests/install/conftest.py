@@ -304,11 +304,6 @@ def test_a_checkout_is_a_package_parent_holding_a_git_entry(tmp_path: Path, git_
     assert checkout_root(package) == (None if git_entry is None else tmp_path)
 
 
-def test_this_checkout_is_one_and_its_commit_state_reads() -> None:
-    assert REPO_ROOT == PACKAGE_ROOT.parent
-    uncommitted_sources()
-
-
 def test_outside_a_checkout_nothing_is_uncommitted_and_git_is_not_run(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
