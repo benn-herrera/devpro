@@ -1824,40 +1824,6 @@ def test_a_wrapper_run_from_a_directory_holding_a_devpro_package_runs_the_copy(t
     assert (ran.returncode, ran.stdout) == (0, f"{__version__}\n"), ran.stderr
 
 
-def test_an_install_run_from_an_installations_copy_into_that_installation_reenters(
-    tmp_path: Path, _staged, capsys
-) -> None:
-    """An install run from an installation's own copy into the installation holding that copy passes over
-    the copy and the wrapper that runs it — writing nothing at either and reporting nothing about the
-    pass-over — and installs everything else, the added kbase component among them. The copy is the
-    running package by `_staged`'s `PACKAGE_ROOT` rebinding, so the checkout's `main` runs the second call
-    in-process against it: `copy.resolve()` is `devpro.install`'s `PACKAGE_ROOT` while its own code runs.
-    Defect (TEST_PRECONDITION): such a run refuses, or clears and rewrites the copy it runs from, or passes
-    over a path other than the two named."""
-    project = tmp_path / "project"
-    project.mkdir()
-    main(["install", str(project), "--harness=claude"])
-    plugin = _claude_plugin(project / ".claude")
-    copy = plugin / "tools/devpro"
-    wrapper = plugin / "tools/devpro.sh"
-    _staged(copy, ())
-    copy_before = _files(copy)
-    wrapper_before = wrapper.read_bytes()
-    plugin_before = _files(plugin)
-    foreign = _plant(plugin / "tools/runner-snippets/foreign.just", "foreign\n")
-    capsys.readouterr()
-    # Exit 0: a re-entry run returns from `main` rather than raising SystemExit, as the refused run once did.
-    main(["install", str(project), "--harness=claude", "--components=kbase"])
-    captured = capsys.readouterr()
-    assert "tools/devpro" not in captured.out
-    assert "tools/devpro" not in captured.err
-    assert _files(copy) == copy_before
-    assert wrapper.read_bytes() == wrapper_before
-    added = set(_files(plugin)) - set(plugin_before)
-    assert any(relative.startswith("skills/kbase/") for relative in added)
-    assert not foreign.exists()
-
-
 def test_a_symlinked_copy_destination_is_refused(tmp_path: Path, capsys) -> None:
     """`is_the_running_copy` and the copy's clear-and-write both read the copy destination resolved, so a
     link planted there sends an install's clear (an `rmtree`) and its copy through the link into whatever
@@ -1897,8 +1863,8 @@ def test_a_user_level_reentry_reports_up_to_date_and_passes_over_its_wrapper(
     copy = plugin / "tools/devpro"
     _staged(copy, ())
     wrapper = plugin / "tools/devpro.sh"
-    # A non-shipped byte a non-re-entry run would overwrite by rewriting the wrapper; a re-entry run passes
-    # over it. The wrapper keeps its installed header, so the foreign-target check still reads it as ours.
+    # A non-shipped byte a non-re-entry run would overwrite by rewriting the wrapper; a re-entry run
+    # passes over it.
     wrapper.write_bytes(wrapper.read_bytes() + b"\n# re-entry left this\n")
     wrapper_before = wrapper.read_bytes()
     plugin_before = _files(plugin)

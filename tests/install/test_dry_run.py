@@ -26,9 +26,11 @@ from devpro.install_base import PACKAGE_ROOT
 from devpro.loading import load
 
 from .conftest import (
+    _BEGIN,
     _CLAUDE_PLUGIN_RELPATH,
     _CLAUDE_RENDER,
     _COLD_READ_SOURCE,
+    _END,
     _GUARDRAIL,
     _GUARDRAIL_MATCHER,
     _KBASE_CLAUDE_RENDER,
@@ -46,6 +48,7 @@ from .conftest import (
     _UP_TO_DATE,
     _agents_file_in_a_project,
     _assert_dry_run_predicts,
+    _block,
     _changed_since,
     _claude_plugin,
     _claude_root,
@@ -134,20 +137,22 @@ def test_an_install_run_from_an_installations_copy_into_that_installation_reente
     tmp_path: Path, _staged, capsys
 ) -> None:
     """An install run from an installation's own copy into the installation holding that copy passes over
-    the copy and the wrapper that runs it — writing nothing at either and reporting nothing about the
-    pass-over — and installs everything else, the added kbase component among them. The copy is the
-    running package by `_staged`'s `PACKAGE_ROOT` rebinding, so the checkout's `main` runs the second call
-    in-process against it: `copy.resolve()` is `devpro.install`'s `PACKAGE_ROOT` while its own code runs.
-    Defect (TEST_PRECONDITION): such a run refuses, or clears and rewrites the copy it runs from, or passes
-    over a path other than the two named."""
+    the copy and the wrapper — writing nothing at either and reporting nothing about the pass-over — and
+    installs everything else, the added kbase component among them. The copy is the running package by
+    `_staged`'s `PACKAGE_ROOT` rebinding — its row populated, so the kept-file branch of the replacement
+    is the one that runs, with a stale `.pyc` beside the row file the row does not ship. Defect
+    (TEST_PRECONDITION): such a run refuses, rewrites the copy's row file or drops it, keeps the stale
+    `.pyc`, or passes over a path other than the two named."""
     project = tmp_path / "project"
     project.mkdir()
     main(["install", str(project), "--harness=claude"])
     plugin = _claude_plugin(project / ".claude")
     copy = plugin / "tools/devpro"
     wrapper = plugin / "tools/devpro.sh"
-    _staged(copy, ())
-    copy_before = _files(copy)
+    _staged(copy, (("tool.py", "probe\n"),))
+    shipped_file = copy / "tool.py"
+    expected = _files(copy)
+    stale = _plant(copy / "tool.cpython-311.pyc", "bytecode\n")
     wrapper_before = wrapper.read_bytes()
     plugin_before = _files(plugin)
     foreign = _plant(plugin / "tools/runner-snippets/foreign.just", "foreign\n")
@@ -157,7 +162,9 @@ def test_an_install_run_from_an_installations_copy_into_that_installation_reente
     captured = capsys.readouterr()
     assert "tools/devpro" not in captured.out
     assert "tools/devpro" not in captured.err
-    assert _files(copy) == copy_before
+    assert shipped_file.read_bytes() == b"probe\n"
+    assert not stale.exists()
+    assert _files(copy) == expected
     assert wrapper.read_bytes() == wrapper_before
     added = set(_files(plugin)) - set(plugin_before)
     assert any(relative.startswith("skills/kbase/") for relative in added)
@@ -220,8 +227,10 @@ def test_a_user_level_reentry_reports_up_to_date_and_passes_over_its_wrapper(
     assert wrapper.read_bytes() == wrapper_before
 
 
-def test_reinstalling_over_a_copy_of_another_version_reports_both_versions(tmp_path: Path, capsys) -> None:
-    """Defect: before the devpro tools package nothing named a version change."""
+def test_a_reinstall_over_an_older_copy_reports_the_version_it_replaces(tmp_path: Path, capsys) -> None:
+    """The install replaces the copy whichever of the two versions is the newer, and its report names the
+    version it replaces and the version it installs. Defect: an older copy is replaced without the
+    version it held being named, so the operator reads a run that changed what it ran as no change."""
     project = tmp_path / "project"
     project.mkdir()
     argv = ["install", str(project), "--harness=claude"]
@@ -233,7 +242,36 @@ def test_reinstalling_over_a_copy_of_another_version_reports_both_versions(tmp_p
     )
     capsys.readouterr()
     main(argv)
-    assert any("0.0.1" in line and __version__ in line for line in capsys.readouterr().out.splitlines())
+    replaced = [line for line in capsys.readouterr().out.splitlines() if __version__ in line]
+    assert replaced == [f"devpro 0.0.1 replaced by devpro {__version__} → {init.parent}"]
+
+
+def test_a_reinstall_over_a_newer_copy_reports_the_version_it_replaces_and_the_one_it_installs(
+    tmp_path: Path, capsys
+) -> None:
+    """The direction the first case cannot show: a copy holding a version newer than this release is
+    replaced too — the install writes its own regardless of which is newer — and the report names the
+    newer version being replaced by this one. Defect: a run over a newer copy reports the install of this
+    version without naming the version it holds, reads the newer copy as up to date, or names the two the
+    other way round."""
+    project = tmp_path / "project"
+    project.mkdir()
+    argv = ["install", str(project), "--harness=claude"]
+    main(argv)
+    init = _claude_plugin(project / ".claude") / "tools/devpro/__init__.py"
+    newer = f"{int(__version__.split('.')[0]) + 1}.0.0"
+    init.write_text(
+        init.read_text(encoding="utf-8").replace(f'__version__ = "{__version__}"', f'__version__ = "{newer}"'),
+        encoding="utf-8",
+    )
+    capsys.readouterr()
+    main(argv)
+    out = capsys.readouterr().out
+    assert [line for line in out.splitlines() if newer in line] == [
+        f"devpro {newer} replaced by devpro {__version__} → {init.parent}"
+    ]
+    assert _UP_TO_DATE not in out
+    assert f'__version__ = "{__version__}"' in init.read_text(encoding="utf-8")
 
 
 def test_a_user_level_install_writes_the_devpro_tools_package_and_no_other(_home: Path) -> None:
@@ -562,6 +600,45 @@ def test_a_changed_component_installs(tmp_path: Path, capsys) -> None:
     main(["install", *argv, "--components=kbase"])
     assert _UP_TO_DATE not in capsys.readouterr().out
     assert _files(project) != files
+
+
+@pytest.mark.usefixtures("_no_uncommitted")
+@pytest.mark.parametrize(
+    ("changing",),
+    [(["--components=kbase"],), ([],)],
+    ids=["added-component", "plain"],
+)
+def test_a_changing_mage_install_passes_over_the_agents_file_it_does_not_rewrite(
+    tmp_path: Path, capsys, changing: list[str]
+) -> None:
+    """Mage's install directory is the harness directory `--subdir` names, so the plugin's `CLAUDE.md`
+    sits there at ROOT's root — naming neither the directory the preflight makes for the run nor the
+    one the harness directory sits in. The replacement must pass the file over by path, so the
+    operator's text above and below the block and the block the earlier run wrote stand, the backup the
+    rewrite makes holds the whole prior file, and a dry run lists nothing at or below the file. Defect
+    (TEST_PRECONDITION): a run that does not pass the agents file over removes it before
+    `write_agents_file` rewrites it — the operator's text with it — and writes the backup from the run's
+    own render; a dry run names the file or its directory among the removals."""
+    argv, project = _mage_below_its_project(tmp_path, pytest.MonkeyPatch())
+    main(argv)
+    mage = project / "plugins/devpro"
+    agents = mage / "CLAUDE.md"
+    above, below = "# My rules\n\nkeep this above\n", "\nkeep this below\n"
+    earlier = "earlier block\n"
+    prior = f"{above} {_BEGIN}\n{earlier}{_END}{below}"
+    agents.write_text(prior, encoding="utf-8")
+    capsys.readouterr()
+    main([*argv, *changing])
+    block = "\n".join(_block(CLAUDE))
+    assert agents.read_text(encoding="utf-8") == f"{above}{block}{below}"
+    assert (mage / "backup.CLAUDE.md").read_text(encoding="utf-8") == prior
+    capsys.readouterr()
+    main([*argv, *changing, "--dry-run"])
+    printed = _dry_run_groups(capsys.readouterr().out)
+    assert not any(
+        PurePosixPath(path).name in ("CLAUDE.md", "backup.CLAUDE.md") for paths in printed.values() for path in paths
+    )
+    assert agents.read_text(encoding="utf-8") == f"{above}{block}{below}"
 
 
 @pytest.mark.usefixtures("_no_uncommitted")
