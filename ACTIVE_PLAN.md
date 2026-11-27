@@ -18,7 +18,7 @@ remaining suite, feeding this plan's burndown — fixes, never the survey itself
 | P1 | landed | mechanical |
 | P2 | landed | expert |
 | P3 | landed | expert |
-| P4 | dispatchable | expert |
+| P4 | in progress | expert |
 | P5 | drafted | expert |
 
 ## Ticket 1 — the strip
