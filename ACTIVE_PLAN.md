@@ -13,7 +13,7 @@ package adds code for it.
 
 | Package | State | Rating | Lifetime | Notes |
 |---|---|---|---|---|
-| P1 | dispatchable | mechanical | shipped | |
+| P1 | landed | mechanical | shipped | |
 | P2 | dispatchable | expert | shipped | |
 | P3 | dispatchable | expert | shipped | |
 | P4 | dispatchable | mechanical | persistent | parallel with code packages |

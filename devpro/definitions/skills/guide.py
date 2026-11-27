@@ -325,9 +325,10 @@ commits' messages.
   holding its drafting ticket. A plan longer
   than the plan size limit may be the `ACTIVE_PLAN/` tree read from its `entry-point.md`; the plan
   under way is that tree or the document `ACTIVE_PLAN.md`.
-- **Lifetime**, stated per package: **shipped**, the whole process (the default); **exploratory**,
-  its done-line and the checkpoint gate, no post-plan review; **throwaway**, in the scratch directory
-  only and never committed.
+- **Lifetime**, stated per package: **shipped**, reaches a user — the whole process (the default);
+  **persistent**, tracked in the repository and reaching no user (tests, the project documents,
+  ROADMAP.md, CI, configuration) — its done-line and the checkpoint gate, no post-plan review;
+  **transient**, in the scratch directory only and never committed.
 - **Before it is offered**, every package has been reviewed for usability and revised, the plan
   passes `check-plan`, and anything that needs the user has been asked. Questions belong here.
 - **The user decides:** approve it, or say what to change. Say "The plan is approved. Run it." An
@@ -392,7 +393,7 @@ commits' messages.
 *Skipping a step*.
 
 - **Only the user drops a step.** "Skip the design; go straight to a plan." "Make this plan
-  exploratory." "Throwaway: don't commit it." "Just make the fix, no plan."
+  persistent." "Transient: don't commit it." "Just make the fix, no plan."
 - **The session may propose one**: going straight to the plan where the design is small and already
   settled in the conversation, or a lighter lifetime where the code's warrants it. The proposal names
   each step dropped and what is lost; it takes effect only when the user adopts it: "Yes, straight
@@ -406,7 +407,7 @@ commits' messages.
   fix, no plan." is no go for a commit; the session commits the change on words that name the
   commit: "Commit it."
 - A one-line fix still gets the whole process unless the user drops steps; short of no plan, the
-  lightest path is straight to an exploratory plan.
+  lightest path is straight to a persistent plan.
 
 ## The roadmap
 

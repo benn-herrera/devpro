@@ -178,13 +178,14 @@ bindable term that has no default and is unbound, ask the user for it then, thro
 - A reference's target is at least as durable as the document that cites it: a tracked document
   cites only tracked paths; an untracked brief may cite scratch. *Purpose:* a citation that outlives
   its target sends the next reader to invent what it said.
-- Rigor scales with the code's intended lifetime (*Skipping a step*). The plan states each
-  package's intended lifetime, and by default it gets: **shipped** → the whole of this skill;
-  **exploratory** → the done-line and the {CHECKPOINT_GATE_TERM}, no post-plan review;
-  **throwaway** → the {SCRATCH_TERM} only, never committed. The plan sets the lifetime,
-  never the agent doing the work; code that outlives its stated lifetime gets the whole process
-  before it ships. *Purpose:* process costs what the code will cost to keep, and no one lowers
-  the bar by leaving the lifetime unstated.
+- Rigor scales with the code's durability (*Skipping a step*). The plan states each
+  package's intended lifetime, and by default it gets: **shipped** — reaches a user — the whole
+  of this skill; **persistent** — tracked in the repository, never reaches a user: tests, the
+  project documents, ROADMAP.md, CI, configuration — the done-line and the {CHECKPOINT_GATE_TERM},
+  no post-plan review; **transient** — the {SCRATCH_TERM} only, never committed. The plan sets the
+  lifetime, never the agent doing the work; code that outlives its stated lifetime gets the whole
+  process before it ships. *Purpose:* process costs what the code will cost to keep, and no one
+  lowers the bar by leaving the lifetime unstated.
 - One {ACTIVE_PLAN_TERM}: kickoff decisions, package boundaries, sequencing, status. A plan or
   design carries outcomes, their consequences and the principles still steering open choices, never
   decision history. *Purpose:* agents execute from one current statement of intent, not from an
@@ -814,7 +815,7 @@ release it serves, and no release is promised for work not yet taken up.
 - Each feature considered and not chosen goes into `ROADMAP.md`, and design already done for it into
   the {PARKED_DESIGNS_TERM} with no release named. *Purpose:* scoping a feature out loses nothing, so
   nothing is kept in to save it.
-- Every package in the release's plans is shipped (SKILL.md, *Plans*): exploratory work is re-rated
+- Every package in the release's plans is shipped (SKILL.md, *Plans*): persistent work is re-rated
   when its plan is taken into the release. *Purpose:* the process a shipped package owes is paid
   before hardening, not during it.
 
