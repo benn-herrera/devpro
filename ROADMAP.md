@@ -121,6 +121,14 @@ workflow is already in place.
 
 ## Maintenance
 
+### The rendered `!TUNING!` comment leaves the agent's reading path
+
+Every rendered definition carries an HTML comment naming the family, the seat's category and member, the whole category map, the stock list and the harness. No agent that loads the file can act on any of it: a skill's line literally reads `category=none member=none`, and an agent's own dispatch data is consumed by the coordinator at dispatch time, not by the reading agent. Text a reader cannot act on is the noise the project's own emphasis-economy rule forbids — it saps attention on every invocation of every definition in the set.
+
+The direction, the user's: the per-file comment is deleted from the rendered output entirely. What survives is the data, re-homed: one set-level artifact rendered once per install — the tuning table the thesis's model-tuning piece names (the category map, the stock list, family and harness), read by the coordinator once, beside per-agent dispatch fields where the coordinator needs them. The tuning mechanism survives; its rendered form changes.
+
+The design's first acts are the verifications this ticket has not run: whether a SPEC or ARCHITECTURE leaf pins the comment's shape (the rendering and tuning leaves), and whether any test, check or script consumes the line (`git grep` over the render machinery, `render-diff`, the render-property assertions) — those consumers move with the data or are deleted with the comment, never left pointing.
+
 ### (STICKY) Periodic load-bearing-ness pruning pass
 
 A pass over definition clauses, across model generations: apply strip-first-observe-patch
