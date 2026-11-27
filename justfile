@@ -255,7 +255,7 @@ _lint-typescript: _js-deps
 # `tests/opencode_entry_runner.ts`, whose stand-in for the host's compaction and prompt messages is
 # then checked against `@opencode/plugin`'s and `@opencode/schema`'s own types. `tsconfig.json`'s
 # program is the shipped resources alone, so without this the runner's invented shapes compile
-# nowhere (ACTIVE_PLAN_REVIEW.md, R5).
+# nowhere — a stand-in no program takes is checked against nothing.
 [doc("[dev] check the opencode entry's test runner against the host's declarations")]
 lint-runner-typescript: _js-deps
     @cd "{{PROJECT_ROOT}}" && bunx tsc -p tests/tsconfig.json --noEmit
