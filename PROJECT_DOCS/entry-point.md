@@ -37,7 +37,7 @@ the piece resembles and is not — the direction work on it must not drift.
 | Harnesses | A profile per harness: its paths, file names, frontmatter or registry shape, the paragraphs it carries and the strings it fills in | A plugin framework |
 | Plugins | A package group: a named list of definitions that an install delivers whole | A dependency resolver |
 | Model tuning | A table of model names per category for each model family, and text added at anchors — named points in a definition's text | A prompt optimizer or an evaluation system |
-| Install | A deploy step: each harness has its own layout, and the rendered files are copied to the places and names that layout gives | A package manager |
+| Install | A deploy step: each harness has its own layout, and the install replaces the plugin directory whole — the rendered files written fresh to the places and names that layout gives | A package manager |
 | The agents file | A marked block in the `AGENTS.md` (or `CLAUDE.md`) a harness loads into every session | A configuration layering system |
 | Installed resources | Files the install copies into place: helper scripts, hook scripts | A dependency installer |
 

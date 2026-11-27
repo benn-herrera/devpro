@@ -27,17 +27,18 @@ directory compare equal. The resolver decides neither the install directory nor 
 install is user-level; `cli.py` passes the harness directory to `install`, which computes
 `root = harness_dir / harness.plugin_dir` and decides user-level from
 `user_dir_harnesses(harness_dir)` naming the harness, whatever the route to it, and then renders
-and prunes and skips the packages, guardrail and the runner include lines, and the harness resources
-but the entry that registers the plugin (Install, Renders and copies). Prune is in terms of
+and skips the packages, guardrail and the runner include lines, and the harness resources but the
+entry that registers the plugin and the guardrail resource beside it (Install, Renders and copies). The wholesale replacement is in terms of
 the install directory, and the agents file in terms of the harness directory, which holds the
 install directory. `install.py` writes the agents file in the harness directory for a harness-directory
 plugin whose harness directory is not the project root. A claude or opencode project install also
 runs `agents_file.checked_followed_agents_file` (Agents File). `resolve_install_target` makes the
 target, harness and `--subdir` refusals of SPEC.md, Install destination, before anything is written;
 the `--subdir` refusal is judged as typed. It adds the unexpanded-`~` hint to the target refusal
-where the target's first component is `~`. Refused too, with nothing written: a rendered-definition
-or harness-resource destination holding a file without the generated banner, and a harness-rendered
-file without its marker. `check_runner` refuses a runner file that
+where the target's first component is `~`. Refused too, with nothing written: an install directory that is a symlink — the wholesale
+replacement would clear and write through it into whatever it names. The refusal is not one of
+these: it is decided inside `install`, beside the devpro-copy symlink refusal and after `root` is
+computed, still before the first write (Renders and copies). `check_runner` refuses a runner file that
 cannot be read or decoded. Every such check, the agents file's included, runs before the first
 write, and the install directory itself is created after them. A write that then fails at the
 operating system is reported by `cli.main` as `error:` with exit 2.

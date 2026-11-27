@@ -10,7 +10,7 @@ The rule that bodies are usable without frontmatter governs every rendered defin
 definition; neither applies to a supporting file. For every definition and every file it produces:
 
 - Its content is exactly what the generator renders for it from its source, deterministically; a
-  rendered file whose source no longer exists is pruned on the next install.
+  rendered definition whose source no longer exists is absent from the next install's tree.
 - Every banner claiming a definition is generated names the source it was rendered from and states
   that the file is not for local edit.
 
@@ -21,4 +21,5 @@ definition; neither applies to a supporting file. For every definition and every
 A definition that fails to render refuses the install with nothing written.
 
 A file without a generated banner is not a rendered definition this repository produced, and is
-outside this guarantee — Write Safety, below, is what governs meeting one at a destination.
+outside this guarantee; inside the install directory the wholesale replacement removes it (Write
+Safety), and no install writes a rendered definition anywhere else.

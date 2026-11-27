@@ -67,6 +67,6 @@ surrounding project. `PACKAGE_ROOT` and `REPO_ROOT` are defined in `install_base
 | check | in a checkout | outside |
 |---|---|---|
 | `uncommitted_sources`, before an agents-file write into a user harness directory | refuses on uncommitted sources; a failed `git status` refuses with `InputError` | returns `()` without running git |
-| the two refused writes — a foreign file at a rendered-definition destination, and the no-write paths (`.claude/settings*`, `opencode.json`, `opencode.jsonc`) | refuses the install, naming each path | the same refusal; git is not run |
+| the refused write — the no-write paths (`.claude/settings*`, `opencode.json`, `opencode.jsonc`) | refuses the install, naming each path | the same refusal; git is not run |
 
 Only a missing premise stands a check down: in a checkout nothing changes.

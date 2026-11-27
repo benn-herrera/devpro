@@ -1,10 +1,9 @@
 # Installed tree
 
-An installed tree is not for local edit: a re-install overwrites the files that carry this
-repository's banner and removes what this repository no longer produces, and over any other file at
-a rendered-definition or harness-resource destination it refuses and writes nothing (SPEC.md,
-Write Safety). A package destination belongs to this repository entire, and no file there is for local
-edit.
+An installed tree is not for local edit: each install replaces the install directory wholesale —
+the fresh tree overwrites everything that stands in it, whatever wrote it (SPEC.md, Write Safety) —
+so no file in the install directory, a package destination included, is for local edit, and the
+consumer's git is the record of what an install changed.
 
 An installed tree needs no devpro installation: it runs its own copy of devpro, in the devpro tools
 package (Shipped files), so removing the devpro package, or replacing it with another version,

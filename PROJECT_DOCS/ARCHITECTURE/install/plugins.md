@@ -26,9 +26,8 @@ package is the plugin's own, and its rows name no owner. Each package is a row o
 
 `install` takes the rows whose owner the selection's `ships(name)` admits and every row with no
 owner, and on a user-level install the rows with no owner alone. Those rows are
-what `package_copies` copies and `_clear_package_destination` empties before the copy, so the
-destination is emptied in place while the skill's `SKILL.md` and supporting files beside it are not
-touched. A harness-rendered file is owned the same way: `HarnessFile.owner` names a definition, and
+what `package_copies` copies into the fresh tree the wholesale replacement writes (Renders and
+copies); nothing inside the install directory is cleared apart from that replacement. A harness-rendered file is owned the same way: `HarnessFile.owner` names a definition, and
 `shipped_harness_files` drops the file where that definition does not ship. The `kbase` owner name is
 one constant, `harness.KBASE_OWNER`, read by the kb-tools row and by every harness's `.mcp.json` and
 registry record.
@@ -65,15 +64,6 @@ recognized by the path's shape, ending `<snippets directory name>/<snippet>` —
 retired docdicer sets share the `runner-snippets` directory name, and the snippet file name alone
 tells their shapes apart, so no set's line ever matches another's. A set whose line is reported and left does not stop the
 others. Where the project has no runner file, one `Makefile` is created holding every line.
-
-The retired docdicer set's line is still this install's to clean up, the cleanup staying as stage 1
-landed it: the dicing verbs are devpro's own (Dicing and Checks), and the install removes the
-docdicer line as SPEC.md, Plugins, states it — recognized by the same shape rule that recognizes
-its own lines (`_snippet_pattern`), removed, and the removal named in the install report; a
-docdicer line naming another harness directory's snippets is reported and left. The cleanup stands
-beside the devpro line's return: the retired set's snippets are `docdicer.just` and `docdicer.mk`,
-paths that point at nothing any more, and the devpro set ships `devpro.just` and `devpro.mk`, so
-the cleanup never touches a line of the new set.
 
 `runner_file` reads the runner file through `install_base.untranslated_text` (`newline=""`), so a
 rewrite keeps each line's ending, and skips a line whose first non-blank character is `#`

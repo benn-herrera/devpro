@@ -66,12 +66,9 @@ the snippets inside the installed tree (under claude,
 `.claude/skills/devpro/skills/kbase/kb-tools/runner-snippets/`; under opencode, the same below
 `.opencode/plugins/devpro/`). The line does nothing where the snippets are absent: `import? '<path>'`
 in a justfile, `-include <path>` in a Makefile. A project with neither runner file gets a `Makefile`
-created to hold every line the install writes. The line an install wrote for the docdicer tools
-package — retired with the absorbed dicing verbs, and none of its snippet paths point at anything
-any more — the install removes itself: a non-comment line
-whose snippets path ends `runner-snippets/docdicer.just` or `runner-snippets/docdicer.mk` and whose
-first path segment is the harness directory this install writes is removed, the removal named in the
-install report; a docdicer line naming another harness directory's snippets is reported and left.
+created to hold every line the install writes. A line naming a set no install ships any more — the
+retired docdicer set's — is no set's line to judge: it is left as written, inert where the snippets
+it names are gone.
 
 Each set is judged on its own: one set's line never counts as another's. A runner file keeps at
 most one line per set. A line already naming a set's snippets under this install's top-level

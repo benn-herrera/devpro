@@ -49,11 +49,13 @@ however the target reached it, and names the plugin's directory: `~/.claude/skil
 `~/.config/opencode/plugins/devpro/`. A user-level install renders the definitions the install
 carries — the plugin's set with its components on — and the harness-rendered files (the plugin
 manifest and `.mcp.json` where `kbase` ships, or
-the registry `registry.json`), prunes as any install does, and writes nothing else but the devpro
-tools package (Shipped files) and, under opencode, the plugin entry, a harness resource without
-which the plugin cannot register: no other harness resource, no install-time probe or guardrail
-registration (Shipped files), no other shipped package (neither `kb-tools/` nor the development
-scripts package), no runner include line and no runner file. A user-level install with the kbase
+the registry `registry.json`), replaces the install directory wholesale as any install does
+(SPEC.md, Write Safety), and writes nothing else but the devpro tools package (Shipped files) and,
+under opencode, the plugin entry and the guardrail resource beside it, both rewritten on every
+user-level run, never deleted — so the entry runs the guardrail at user level as it does in a
+project. No install-time probe or guardrail registration (Shipped files), no other shipped package
+(neither `kb-tools/` nor the development scripts package), no runner include line and no runner
+file; and the capture `profiler.ts` is not copied, the activity capture staying a project install's. A user-level install with the kbase
 component under opencode registers the `kbase` MCP server through the registry ([Plugins](plugins.md)).
 
 A user-level claude install and a project's of the same plugin share a name, and Claude Code loads the

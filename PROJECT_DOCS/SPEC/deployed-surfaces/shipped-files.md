@@ -71,9 +71,10 @@ installing again, and report the version that would install, and so name the `de
 install replaces the copy. An install run from an installation's own copy, into the installation
 holding that copy, installs: it passes over two things only — the devpro package under
 `tools/devpro/` and the wrapper `tools/devpro.sh` that runs it — writing nothing at either and
-reporting nothing about the pass-over, and installs everything else, each write under the overwrite
-rules Write safety states. The wrapper records the interpreter the install ran under; a re-entry run
-replaces the copy, not the interpreter — the installed version stays the one the operator chose. The
+reporting nothing about the pass-over, and installs everything else under the wholesale replacement
+Write safety states. Neither passed-over path is written or read back: the interpreter the wrapper records is the one
+the installation's own wrapper already carries, untouched by a re-entry run, and the installed
+version stays the one the operator chose. The
 snippets define the recipes `devpro-help`, `devpro-check-plan`,
 `devpro-check-design`, `devpro-check-design-deltas-applied` and `devpro-check-roadmap`:
 `devpro-help` showing the commands and their doc strings, then the command's help. The four gates take no
@@ -96,8 +97,9 @@ registration `hooks/hooks.json` (below) — which are rendered, not copied, carr
 replaced whole. `registry.json` is opencode's **registry**: the plugin's name and version and one record
 per agent, command and skill — id, body file, description, and for an agent its mode, model, color
 and permissions — and the `kbase` MCP server where `kbase` ships. An install copies the harness
-resources into the install directory, except a user-level install, which copies only opencode's
-entry, and save a file conditional on the install-time probe (below), so a resource lands at the
+resources into the install directory — a user-level install's copies being opencode's entry and the
+guardrail resource beside it — and save a file conditional on the install-time probe (below), so a
+resource lands at the
 path it holds below the install directory: opencode's at `<install-dir>/index.ts`, the plugin entry,
 `<install-dir>/guardrail.ts` and `<install-dir>/profiler.ts`;
 claude's at `<install-dir>/hooks/guardrail.pl` and
@@ -267,5 +269,5 @@ script only where it stands readable: where it is missing, a call reports `guard
 on stderr and proceeds, and is not blocked. A claude guardrail that fails while running, through a
 missing module or an error in the script, reports on stderr and does not block the call.
 Opencode's guardrail is run by the plugin entry, which imports `guardrail.ts` from the install
-directory: the install writes no settings entry for it. A user-level install copies no
-`guardrail.ts`, and the plugin entry then runs none.
+directory: the install writes no settings entry for it. A user-level install copies the guardrail resource beside the entry, and the entry runs it there as
+it does in a project.

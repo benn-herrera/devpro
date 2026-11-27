@@ -7,8 +7,8 @@ A harness that declares a `guardrail` (`Harness.guardrail`, a `GuardrailHook`) s
 install registers rather than only copies; claude declares one, opencode sets `None` because its
 plugin entry (`index.ts`) imports `guardrail.ts` and runs its `setup` inside its own, and mage sets
 `None` and ships no hook at all. `guardrail.ts` keeps its `Plugin.define` export so the bun runner
-loads it alone, and the entry imports it only where the file stands beside it, which a user-level
-install does not copy. Plugin discovery lists only the direct children of `plugins/`, so the file
+loads it alone, and the entry imports it only where the file stands beside it — where a user-level
+install copies it beside the entry, the guardrail runs at user level as it does in a project. Plugin discovery lists only the direct children of `plugins/`, so the file
 inside the plugin directory is not also loaded as an opencode plugin module of its own. The `GuardrailHook`
 names the `script` under `resources/<harness>/`, which is also its path under the install
 directory; the `HarnessFile` for the plugin's `hooks/hooks.json` twice over — `registration`, built

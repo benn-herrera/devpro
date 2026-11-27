@@ -5,26 +5,23 @@ each supporting file it lists — and every harness-rendered file whose owner sh
 manifest and `.mcp.json` under claude and mage, `registry.json` under opencode), replaces
 the destination of each `SHIPPED_PACKAGES` row whose owner ships whole with a copy — copies each
 harness resource the installing harness ships into the install directory as it stands — bar a
-guardrail script whose probe fails (below) — writes the rendered definitions over what is there,
-and removes each file under the install directory's `agents/`, `commands/` or `skills/` that this
-run did not write, that is ours by its own carrier: frontmatter holding a
-`!GENERATED!` line, or a comment line opening with it, which is how a skill's supporting file holds
-its banner — save where prune's own guard, below, keeps a file. `prune` walks the three surfaces (`_files_below`) of the install directory and nothing
-else, and the upward walk visits only a stale file's ancestors and stops at the install directory.
-The walk is one install directory's: under claude the install directory
-(`.claude/skills/devpro/`) sits inside the harness directory's `skills/` beside what the project
-keeps there, so a walk wider than the install directory would delete a neighbor's. That walk needs no carve-out for a package destination: the development scripts package and the
-kb-tools package sit inside the install directory's `skills/` — `skills/development/scripts/` and
-`skills/kbase/kb-tools/`, each in its skill's own directory — where every file they hold is stamped
-installed or left unstamped, never generated, and the devpro tools package sits at `tools/`,
-outside the three surfaces the walk visits, so every file under those trees is still either ours or
-untouched. The staleness rule is prune's own, stated here rather than inherited: a safety copy (a
-`.bak` suffix) never enters the stale list. No venv is ever delivered and none is created under an
-install directory, so the stale list has no venv case: no file a venv holds is ours by its own
-carrier. A definition of ours that this run did not write, such as one its plugin
-does not ship, is stale and goes — every one of its files, a skill's included. Every definition is
-rendered before the first write. A file at a rendered-definition destination that has lost the
-generated banner, or is a directory, refuses the install.
+guardrail script whose probe fails (below) — and writes the rendered definitions. The fresh tree is
+made in one step: after every check and before the first write, the install removes the install
+directory's contents — every file and subdirectory below it, whatever wrote them — save the two
+pass-overs it takes by path, never by content: on a re-entry run, the devpro copy's own files under
+`tools/devpro/` — the set its `SHIPPED_PACKAGES` row stages — and the wrapper `tools/devpro.sh`
+stand while everything else inside the copy's tree, stale bytecode included, goes; and the agents
+file's path stands where it sits inside the install directory (mage). Then the copies, the
+resources and the renders fill the emptied directory. Nothing inside the install directory is read
+to decide its fate: no generated banner, no installed header, no ownership marker gates a write or
+a removal, no stale list is kept, no removal is exempt and no file is judged ours or foreign — the
+install directory is the plugin's own, and what a consumer left inside it goes with the tree. A
+user-level install's product is the plugin's definitions, the harness-rendered files, the devpro
+tools package and, under opencode, the entry and the guardrail resource beside it, each rewritten
+by the run that ships it. The install directory is refused where it is a symlink, beside the devpro
+copy's own symlink refusal — both decided on the real paths, before anything is written — for the
+same hazard: the replacement would clear and write through the link into whatever it names. Every
+definition is rendered before the first write.
 
 Both staging paths stage from the built wheel: the package copy writes the files the running
 package holds, and the harness resource copy copies its files as the resource trees stand. The
@@ -32,10 +29,8 @@ wheel's content, once built, is what a consumer install writes: it is the instal
 and the build is the one filter over it — `.dist-info/RECORD` that content's manifest, and
 `just check-wheel` holds the declared package data equal to the tree and fails on any of this
 repository's own project documents in the wheel (Packaging). An install run from a checkout
-(`PYTHONPATH=<clone>`) has no build under it and stages the clone's tree as it stands. Every copy
-writes each file with the mode the
-process umask gives a new file plus the source's execute bits, and `prune`
-keeps its own guard above.
+(`PYTHONPATH=<clone>`) has no build under it and stages the clone's tree as it stands. Every copy writes each file with the mode the process umask gives a new file plus the source's
+execute bits.
 
 A copied file outside the devpro copy (`tools/devpro/`, copied byte-verbatim) takes the installed
 banner when its suffix is in `STAMPED_SUFFIXES` (`.py`, `.sh`, `.mk`, `.just`) or its name
@@ -45,9 +40,8 @@ among them — is copied byte-verbatim.
 
 The development scripts package, `devpro/development-tools/`, takes the same package copy and adds
 no code path: one row, `("development-tools", DEVELOPMENT_SCRIPTS_PACKAGE, "development")`, in
-`SHIPPED_PACKAGES`. Its one file, `cold-read.sh`, is stamped by suffix and keeps its execute bits under the umask's mode,
-and the
-package is replaced whole and never pruned. It is one script for both harnesses, never rendered. It
+`SHIPPED_PACKAGES`. Its one file, `cold-read.sh`, is stamped by suffix and keeps its execute bits under the umask's
+mode, and the package is replaced whole. It is one script for both harnesses, never rendered. It
 finds its harness by name, from the nearest ancestor of its own resolved path called `.claude` or
 `.opencode`. Under claude its run directory stays empty and the plugin loads by `--plugin-dir`, from
 the nearest ancestor holding `.claude-plugin/`; under opencode it finds the nearest ancestor holding
@@ -81,14 +75,17 @@ names is read from the replaced copy's `tools/devpro/__init__.py` and the runnin
 
 **Re-entry.** An install whose devpro-copy destination resolves to the package it runs from
 (`is_the_running_copy`) is a re-entry run — an install from an installation's own copy into the
-installation holding it (`:539-544`) — and it passes over that copy and the wrapper that runs it. The
-copy's `SHIPPED_PACKAGES` row is dropped before the copies are built (`:640-644`), so its destination
-is never cleared and its files are never rewritten; the wrapper's write is skipped (`:719-723`); and
+installation holding it — and it passes over that copy and the wrapper that runs it: the wholesale
+replacement removes everything below the install directory except the copy's own files — the set
+its `SHIPPED_PACKAGES` row stages — and the wrapper, everything else inside the copy's tree going
+with the tree; the copy's
+`SHIPPED_PACKAGES` row is dropped before the copies are built, the wrapper's write is skipped, and
 the sentence naming the copy's destination in the report is skipped with it, so neither passed-over
-path is written or reported (`:747-753`). Everything else the install does, it does as any install
-does. A symlinked copy destination refuses the install before either read (`_refuse_symlinked_copy`,
-`:547-558`): the pass-over reads that destination resolved and the copy writes it as it resolves, so a
-link there would let the two passed-over paths be cleared and rewritten through it.
+path is written or reported and the copy the run executes from stays whole. Everything else the
+install does, it does as any install does. A symlinked copy destination refuses the install before
+either read (`_refuse_symlinked_copy`): the pass-over reads that destination resolved and the copy
+writes it as it resolves, so a link there would let the two passed-over paths be cleared and
+rewritten through it.
 
 The harness resource copy borrows nothing from the package path:
 `harness_resource_copies` reads `resources/<harness>/` — the wheel's own copy of it — and writes
@@ -100,31 +97,21 @@ plugin's own, and `_CROSS_HARNESS_SOURCES` is gone with the profiler payload's c
 A guardrail script is the exception to copying every file: it joins the
 copies only when the probe below passes; its registration joins the rendered definitions on every
 install. A
-user-level install copies one resource only, the harness's entry (`Harness.entry_resource`,
-opencode's `index.ts`): the plugin cannot register without it, and the entry imports the guardrail
-only where `guardrail.ts` stands beside it. Before the
-first write, `_RESOURCE_BANNER` (`!INSTALLED! .* devpro`) is matched against the first ten lines
-of an existing destination. Package destinations are exempt from the banner and marker checks.
-`_clear_package_destination` empties the directory a destination is, and unlinks any other file
-there. No error is swallowed: an `OSError` from the clear propagates. The harness resources join the same `copies` list as the packages', so the prune's
-`keep` holds them and the install report counts them: a harness resource never reads as a stale
-rendered definition. The copy is one-way, not a mirror — `prune` owns the install directory's
-`agents/`, `commands/` and `skills/` and nothing outside them — with one exception: a file
-`RETIRED_RESOURCE_FILES` names is removed where it carries this
-repository's header, on every install, and a directory `RETIRED_RESOURCE_DIRS` names is removed once
-that leaves it empty, a directory holding anything else being the consumer's. One directory goes
-whole rather than only when it empties: `RETIRED_PACKAGE_DIR`
-(`skills/docdicer/dicing-snippets`, `install.py:154`), the dicing snippets package's home before it
-joined the devpro tools package, which `install` removes with everything under it where an earlier
-install left it (`:724`) and names in its report (`:754`) — `prune` leaves its files standing, since
-its files carry the installed banner. A harness-rendered file is checked a
-third way, by its `HarnessFile.marker`.
+user-level install's resource copies are the harness's entry (`Harness.entry_resource`,
+opencode's `index.ts`) and the guardrail resource beside it: the plugin cannot register without the
+entry, and the entry imports the guardrail only where `guardrail.ts` stands beside it — the
+guardrail running at user level through the entry, as it does in a project. The harness resources join the same `copies` list as the packages', and the install report counts
+them. The copy is not a mirror and keeps no retirement inventory: the wholesale replacement removes
+whatever stands and the fresh tree holds only what this release ships — no retired resource name,
+no retired package directory, no banner or marker check on any destination, no per-destination
+clearing. The changing install's report does not enumerate removals; the dry run is the
+enumeration surface.
 
 **Preflight.** The CLI reaches `install` through `install.preflighted_install`,
 which runs the unchanged install into a scratch copy of the paths it manages and compares the
 scratch copy with the real paths (`devpro/preflight.py`). The install decides what is written,
 run where its writes cannot reach the real paths; `_install_managed_paths` is a hand-kept list of
-where it may write, and the dry-run prediction tests (`_assert_dry_run_predicts`, which has a
+where it may write and remove, and the dry-run prediction tests (`_assert_dry_run_predicts`, which has a
 user-level case) hold that list against the install. Nothing recorded from an earlier install takes
 part.
 
@@ -136,13 +123,14 @@ part.
   `checked_followed_agents_file` decision that fall outside the project (Agents File, Placement).
   Under the harness directory: where
   the run writes an agents file, the `path`, `destination`, `backup` and `native` of a non-writing
-  `checked_agents_file` call. Under the install directory: the three deployed surfaces, which the
-  prune walks, the destination of every `SHIPPED_PACKAGES` row whichever definitions the plugin
-  ships, the harness's resource destinations (at user level, the entry alone), every
-  harness-rendered file — the manifest, `.mcp.json`, `registry.json` — the retired resource names
-  (`RETIRED_RESOURCE_FILES`' and `RETIRED_RESOURCE_DIRS`', unlinked and removed on every install),
-  `RETIRED_PACKAGE_DIR` (read and removed, so the preflight predicts the removal), and
-  the guardrail registration. Under the project root, on a project install: the justfile and Makefile names unless the harness
+  `checked_agents_file` call. Under the install directory: the install directory managed whole — the managed set is every entry
+  below it, the re-entry pass-over trees and, under mage, the agents file's path included, each
+  staged as it stands, a link staged as the link it is and never followed — so the scratch run's
+  replacement meets what the real tree holds, passes over what it passes over, and the comparison
+  reads the removals it makes against that whole staging. The bases outside the install directory
+  keep the managed paths they name — the runner file and the runner-file names, the scratch
+  `.gitignore`, the agents files, the stores' rename pairs — so every write outside the
+  replacement stays predicted. Under the project root, on a project install: the justfile and Makefile names unless the harness
   is a harness-directory plugin, and the `.gitignore` the installation prepares
   (The scratch directory) — the scratch directory itself is not managed: the install creates it
   where missing and the comparison does not read what the project holds inside it. Also under the
