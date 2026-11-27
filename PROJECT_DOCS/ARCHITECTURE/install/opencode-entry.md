@@ -4,7 +4,13 @@
 Surfaces, Shipped files). It is written for opencode (floor 2.3.0), and its setup registers `ctx.tool.hook("execute.after")` filtered to `subagent` and
 `ctx.session.hook("experimental.idle")` for a session whose `parentID` is set, injecting
 `ctx.session.synthetic` into the parent session at agent dispatch and agent completion, gated by
-the active plan (`ACTIVE_PLAN.md` or the diced `ACTIVE_PLAN/` tree; SPEC, Shipped files). The
+the active plan (`ACTIVE_PLAN.md` or the diced `ACTIVE_PLAN/` tree; SPEC, Shipped files) — and
+carries the development skill's reload after a compaction: the hook the host gives a compaction
+records the session's marker, that its context held the `devpro-development` skill, and the
+injection that follows the compaction re-delivers the skill's invocation, `@devpro-development`,
+where the marker stands. The hooks' names are the host's published declarations' to give, read
+there at execution and never assumed (CONVENTIONS, Code, Definitions and Install, A hook contract
+is read, not assumed); the floor line below extends to what it adds. The
 install copies it, with `guardrail.ts` and, on a project install, the capture `profiler.ts` (Harness
 profiler), to the install directory as a harness resource (Renders
 and copies); a user-level install copies the entry and the guardrail resource beside it.

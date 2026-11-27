@@ -110,9 +110,10 @@ child's page the dashboard does not serve answers the 404 any unrecorded session
 
 ## The nav and the server block
 
-A top nav persists across both views — the `devpro` brand, then `kanban` and `profiler`, the active
-view in the motif's accent and the inactive one a lifted gray, then the server block right-justified
-at the nav's flex edge: the live/idle state indicator and the stop — and in the profiler view a frame
+A top nav persists across both views — the served project's name opening it, bold in the foreground
+color, then `kanban` and `profiler`, the active view in the motif's accent and the inactive one a
+lifted gray, then the server block right-justified at the nav's flex edge: the live/idle state
+indicator and the stop, the `devpro` brand at the nav's far edge past it, behind a separator — and in the profiler view a frame
 band sits under it, carrying on a session's page the how-to-read legend at its top and `Return to
 list` back to `/profiler/`, and on the index neither; drill-down is ordinary page navigation, and no inner frame exists. The nav
 and the band are the view's pages' own text, assembled with the page by the one strict fill; the

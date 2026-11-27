@@ -50,9 +50,12 @@ assembly makes runs, and a test walks what that fill is handed — `view.html` a
 ## The index template and the nav
 
 The index's `INDEX` template carries the same `<!--LAYER-->` mark, and the deco is the templates' own
-text: the brand, the two view names and, right-justified at the nav's flex edge on every view, the
-server block — the live/idle indicator and the stop — with each view's active state known statically,
-the standalone render and the served page alike carrying what the template holds.
+text: the project name's slot opening the nav — the name a fill the strict fill carries, the serve
+path filling the served project's, the standalone render the project it renders for — then the two
+view names and, right-justified at the nav's flex edge on every view, the
+server block — the live/idle indicator and the stop — with the `devpro` brand at the nav's far edge past it, behind a
+separator, each view's active state known statically, the standalone render and the served page
+alike carrying what the template holds.
 
 ## The template's own rules
 

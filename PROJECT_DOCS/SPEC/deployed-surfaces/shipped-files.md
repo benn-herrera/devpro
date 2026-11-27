@@ -121,9 +121,14 @@ with timings and token costs — as text, as a self-contained HTML page, or serv
 dashboard, devpro's one loopback server for the web interface, renders the record files in memory
 as one panel of its site. The board is the landing surface: opening the dashboard's URL shows the
 kanban board — the project's actual current state — and the traces are the second view, reached
-from the nav. A simple top nav persists across every view: the `devpro` brand, then the view names
-`kanban` and `profiler`, selection switching the view — intuitive, recognizable surfaces, no
-invented paradigms, the dynamic behavior spent only where it counts. The nav and the views carry
+from the nav. A simple top nav persists across every view: the served project's name — the project root's
+directory name, the name the board's title carries — opens the nav, bold, in the foreground color,
+on every page the dashboard serves; then the view names `kanban` and `profiler`, selection
+switching the view; the `devpro` brand stands at the nav's far edge, past the server block, behind
+a hairline separator, where it cannot read as the stop's label — intuitive, recognizable surfaces,
+no invented paradigms, the dynamic behavior spent only where it counts. The profiler pages' titles
+read `<project>: devpro profiler <page-name>` — `<page-name>` `sessions` on the index, `session`
+on a session's page — the project named as the board's title names it. The nav and the views carry
 the phosphor pairing, the brand's callback to amber and green screen terminals inverted from the
 nav's scanlines deliberate — and the accent is the phosphor, no second brand
 color. The dark mode carries the phosphor green: brand `#3cf077`, the active view `#31c260`, 80%
@@ -131,8 +136,9 @@ of the brand's brightness, the inactive view `#a6a6ad`. The light mode carries t
 brand `#e8a020`, the active view `#d09020`, the inactive view `#63636b`. The surfaces are the
 board's own variable system — `board.css`'s `:root` and its `prefers-color-scheme` block — the
 site's surfaces not inherited; the site's accent values and its two-motif accent map are. The
-nav's grammar: the brand wordmark is monospace, heavier and about 15% larger than the nav items,
-in the motif's brand color at full brightness; both view names sit in the same smaller size, no
+nav's grammar: the project name is monospace, heavier and about 15% larger than the nav items, in
+the foreground color; the `devpro` wordmark sits at the nav items' size, in the motif's brand color
+at full brightness, the far edge's signature; both view names sit in the same smaller size, no
 underline, no visited-link styling; the active view is the brand color at 80% brightness and
 heavier weight, the inactive view a lifted gray that reads available, never deactivated. The
 site's own light-mode mapping (green) and its dim value are superseded: the
@@ -222,7 +228,10 @@ install. A user-level claude install writes no registration, so the reminder nev
 Opencode loads the plugin directory and registers its agents, skills, commands and, where
 `kbase` ships, the `kbase` MCP server under the registry's ids, and injects a plan-state reminder
 into the parent session at agent dispatch and agent completion, gated by `ACTIVE_PLAN.md` — file
-or, where the plan was diced, the `ACTIVE_PLAN/` tree — existing at the project root. A change to
+or, where the plan was diced, the `ACTIVE_PLAN/` tree — existing at the project root. A session
+whose context the host compacts has the `devpro-development` skill's invocation re-delivered once
+the compaction ends, where the session's context held the skill before it: the compaction drops the
+skill's text from what the session reads, and the plugin is what restores it. A change to
 the install directory is picked up without restarting opencode, except a change to `guardrail.ts` or
 `profiler.ts`, either of which the plugin entry imports when it loads, so a changed one takes effect
 at the next opencode start. The plugin entry is written for opencode (floor 2.3.0) and is the
