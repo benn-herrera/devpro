@@ -118,13 +118,24 @@ where `pages.py`/`capture.py` logic lives. The big parametrized families are mos
 bite, no behavior change riding it — plus the ticket's missing acceptance test (same item count,
 test-files-only diff).
 
+## F19 — High: the `.venv` carve-out is promised by SPEC and removed by the code · architect-consistency
+
+SPEC promises the `.venv`-under-package-destination carve-out — an interpreter a user built inside
+an installed package destination is theirs; ARCHITECTURE is silent; and `install.py:525` removes
+it — data-loss shaped, since the venv may hold a working environment the operator chose. Needs the
+user's ruling at the hold. (Also from the same seat: the profiler view's user-facing behaviors —
+index controls, sorting, the unreviewed mark, duration notation — are asserted only in
+ARCHITECTURE, a boundary breach folded into F15's coverage work.)
+
 ## F17 — Note: text defects and stale statements · multiple seats
 
 serving.md's fused sentences; the spellings catalog's line-number cites; the stale `.pyc`; the
 profiler skill's *Answer* count and double binding; the guide's 0.17.x walk carried as rule and its
 dead `docdicer` tools path; THESIS's plain-terms paragraph predating the shipped tooling surface;
 the package docstring versus `repo-layout.md`'s absorbed-subpackage list; `.mypy_cache`'s
-convention; the `.bak` carve-out and packaging-table row.
+convention; the `.bak` carve-out and packaging-table row; THESIS's "two results are new" leaving
+out the plan-status form and the category/dispatch model, and its category-map statement describing
+a single input where the shipped mechanism is computed (pe-consistency F4/F5).
 
 ## F18 — Note: verifications left open · coder-consistency
 
