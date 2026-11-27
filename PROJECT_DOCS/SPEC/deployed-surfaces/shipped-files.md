@@ -206,8 +206,10 @@ dispatcher's page; and no other context wears a hue that reads as the accent in 
 
 A claude project install also carries the plan-state reminder in that registration: one ungated
 `PostToolUse` entry matched on `Agent`, running `<install-dir>/hooks/state-table-reminder.sh`, which
-reads the same gate at the project root and injects the same sentence as opencode's — `Automated reminder: keep
-the ACTIVE_PLAN state table up to date.` That entry is written on every claude project install,
+reads the same gate at the project root and injects one sentence of plan-state context. That
+sentence's text lives in the script,
+`devpro/harnesses/resources/claude/hooks/state-table-reminder.sh`, which is its one home. That entry
+is written on every claude project install,
 whatever the probe decides about the guardrail's, so its script runs on every project claude
 install. A user-level claude install writes no registration, so the reminder never registers there.
 

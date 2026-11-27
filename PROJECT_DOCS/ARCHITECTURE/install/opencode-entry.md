@@ -64,8 +64,9 @@ opencode itself: the tests run the entry under a stub of this surface
   `parentID` `ctx.session.get` reports — is the one injected into. An idle session that still holds
   running work reports nothing: the wake that follows that work fires the hook again, and that idle
   is the completion. Each injection is one `ctx.session.synthetic` message delivered `steer`, so it
-  belongs to the execution that just ran, and its text is the sentence claude's reminder script
-  emits, byte for byte: `Reminder: keep the ACTIVE_PLAN state table up to date.`
+  belongs to the execution that just ran, and its text is the plan-state reminder's sentence, whose
+  text lives in this entry — `devpro/harnesses/resources/opencode/index.ts`, its one home — and
+  restates the sentence claude's `state-table-reminder.sh` emits.
 - *Watcher.* A recursive `fs.watch` on the install directory schedules a refresh after a 100 ms
   quiet period. Refreshes are serialized on one promise chain, so an older read never replaces a
   newer one. A refresh re-reads the registry and calls the four `reload()`s; a failure is logged and the

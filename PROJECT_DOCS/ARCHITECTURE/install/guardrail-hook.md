@@ -21,14 +21,16 @@ at the registration's path is overwritten, not refused. The registration holds t
 ungated plan-state reminder entry on every claude install, a `PostToolUse` matched on `Agent`,
 running `<install-dir>/hooks/state-table-reminder.sh`, which reads `ACTIVE_PLAN.md` — file or,
 where the plan was diced, the `ACTIVE_PLAN/` tree — at the project root and emits a one-sentence
-`hookSpecificOutput.additionalContext` reminder, `Reminder: keep the ACTIVE_PLAN state table up to
-date.` The entry fires at the `Agent` call's return — the subagent's completion where the call
-ran in the foreground, the dispatch turn where it moved to the background — and a background
-subagent's completion injects nothing. A user-level claude install takes no guardrail, so it writes
-no registration and the reminder never registers there, where opencode's entry registers its hooks on
-a user-level install as on a project one. Every claude install therefore runs the guardrail script
-on each file-tool call as well as each Bash call, and with the kbase component off the script finds
-the kbase signal absent and lets a file-tool call through. The entry's command is a short `sh` program that
+`hookSpecificOutput.additionalContext` reminder. That sentence's text lives in the script,
+`devpro/harnesses/resources/claude/hooks/state-table-reminder.sh`, which is its one home, so a
+wording change is the script's alone. The entry fires at the `Agent` call's return — the
+subagent's completion where the call ran in the foreground, the dispatch turn where it moved to the
+background — and a background subagent's completion injects nothing. A user-level claude install
+takes no guardrail, so it writes no registration and the reminder never registers there, where
+opencode's entry registers its hooks on a user-level install as on a project one. Every claude
+install therefore runs the guardrail script on each file-tool call as well as each Bash call, and
+with the kbase component off the script finds the kbase signal absent and lets a file-tool call
+through. The entry's command is a short `sh` program that
 `exec`s `perl` on `${CLAUDE_PLUGIN_ROOT}/hooks/guardrail.pl` only when that is a readable file, and
 otherwise writes the missing-script report to stderr and exits 1. Claude Code gives a plugin's hook
 processes `CLAUDE_PLUGIN_ROOT`, so the command names no harness directory and needs no quoting
