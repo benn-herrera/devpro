@@ -17,7 +17,7 @@ before anything is approved or dispatched.
 | --- | --- | --- |
 | R1 | landed | expert |
 | R2 | landed | expert |
-| B1 | in progress | expert |
+| B1 | landed | expert |
 | B2 | dispatchable | expert |
 | B3 | dispatchable | expert |
 | B4 | dispatchable | expert |
