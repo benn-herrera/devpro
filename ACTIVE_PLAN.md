@@ -19,7 +19,7 @@ before anything is approved or dispatched.
 | R2 | landed | expert |
 | B1 | landed | expert |
 | B2 | landed | expert |
-| B3 | in progress | expert |
+| B3 | drafted: retired before dispatch | expert |
 | B4 | dispatchable | expert |
 | B5 | dispatchable | expert |
 | B6 | dispatchable | expert |
@@ -77,9 +77,7 @@ item carries it.
 
 **Serial order where files are shared.** B8 before B14 — both cut the profiler surface, and the
 test layout maps onto the module seams B8 settles (`tests/test_devpro_profiler.py:53` imports the
-`pages` symbols the split moves). B3 before B9 — both edit CONVENTIONS leaves (disjoint files,
-`reference-retakes-follow-acceptance.md` against the rest; one pass over the tree keeps the
-edits from interleaving). B9 before B14 — the REVIEW_SEAT pin's home is the profiler test file
+`pages` symbols the split moves). B9 before B14 — the REVIEW_SEAT pin's home is the profiler test file
 B14 splits; the pin lands before the split and moves with it. B7 before B13 — the README
 re-entry sentence B13 lands restates the ARCHITECTURE statement B7 lands. B7 before B16 — both
 touch `ARCHITECTURE/install/renders-and-copies.md`. B2 before B15 — both touch
@@ -128,23 +126,19 @@ dicing engine (one sentence, not two — pe-consistency's F4 choice), citing
 
 In-scope tests: none — document only. Done-line: `just check-links`.
 
-### B3 — a package-data change reaches every gate and every slot
+### B3 — retired, not executed
 
-Intended lifetime: shipped. Rating: expert. Fixes F3.
+The user retired B3 before dispatch: F3's evidence compared the new source against old
+point-in-time render runs (`agents`, `pe-postplan`, `pr-pe-review`, mtimes predating the source
+edit), not living copies — `latest` and the `reference-*` slots were and are byte-identical to
+the package tree, and the user re-rendered the stale snapshots the same day. The item's map
+rows were no-ops (`TEST_SURFACE_MAP`'s `devpro/ devpro` and `devpro/ wheel` prefix rows already
+select every file under `devpro/`, the three assets included — proved with the
+`test-changed.sh` selector's own matching rule), and the mandated TEST_PRECONDITION test would
+have passed on HEAD. No code change; F3 is closed by the evidence. The serial note "B3 before
+B9" is spent with it — B9 needs no ordering constraint beyond B14's.
 
-Scope: `justfile` (`TEST_SURFACE_MAP` from :304), the `lint`/`_lint-typescript` recipes,
-`PROJECT_DOCS/CONVENTIONS/planning-and-execution/reference-retakes-follow-acceptance.md`. Facts
-(re-run): `grep -n "deco\.js\|board\.css\|view\.html" justfile` → no hits; every `rendered/` slot
-is a byte copy — `cmp devpro/profiler/deco.js rendered/latest/devpro/skills/devpro/tools/devpro/profiler/deco.js`
-→ identical today, so the drift is silent until the next asset edit. Decision carried: the
-TEST_SURFACE_MAP rows (`devpro/profiler/deco.js`, `devpro/profiler/view.html`,
-`devpro/kanban/assets/board.css` → `devpro`) plus the CONVENTIONS sentence the contract gap names;
-the check-wheel slot comparison is not built.
-
-In-scope tests: a new test-changed selection case asserting a changed `deco.js` selects the
-`devpro` surface — TEST_PRECONDITION: the silent divergence F3 states (the gate's map skips the
-assets); no existing test pins the map's rows. Done-line: `just test`, `just lint`,
-`just test-changed`.
+### B4 — `profiler init claude`: the verb is harness-scoped
 
 ### B4 — `profiler init claude`: the verb is harness-scoped
 
