@@ -1,5 +1,6 @@
 """page data keys• deco• legend• IIFE/prefix lanes"""
 
+import json
 import re
 import subprocess
 from pathlib import Path
@@ -168,6 +169,56 @@ def test_every_script_spelling_of_the_prefix_is_the_services_one(tmp_path: Path)
 
     assert run.returncode == 0, run.stderr
     assert run.stdout.split("\n")[:2] == ["coder", "coder (agent) / devpro-tool (Bash)"]
+
+
+_ROW_STUB = """
+const node = (tag) => ({ tag, children: [], textContent: '', title: '',
+  append(...nodes) { this.children.push(...nodes); },
+  setAttribute(name, value) { this[name] = value; } });
+globalThis.document = {
+  createElement: node,
+  getElementById: () => node('div'),
+  querySelector: () => null,
+  querySelectorAll: () => [],
+};
+globalThis.location = { search: '', pathname: '/' };
+globalThis.history = { replaceState() {} };
+globalThis.fetch = () => new Promise(() => {});
+"""
+
+# A stamped session drawn from inside the script's own IIFE, its cells' texts printed.
+_ROW_DRAW = """
+  const stamped = { id: 'x', harness: 'claude', models: [], records: 1, agents: 2, first: 0, last: 0,
+    span: 0, plan: 'p'.repeat(60), directives: 'abcdef0123456789' };
+  console.log(JSON.stringify(row({ session: stamped }).children.map((cell) => cell.textContent)));
+"""
+
+
+def test_the_index_scripts_helpers_are_its_own(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is `stampCell` calling `clip(value, chars)` while the
+    `INDEX` script defines it nowhere — the session page's script defines the helper, and the scripts'
+    IIFEs share nothing but the deco's one global — so a stamped row throws `ReferenceError: clip is
+    not defined` before the table draws, and the page reads as a feed of no sessions.
+
+    The index's script runs whole beside the deco's, a bare node stub standing for the page the row
+    build touches; a session stamped with a plan past its budget and a full digest draws the helper's
+    cuts, in the row's own cells. A missing bun fails rather than skips, as the file's other engine
+    readings do."""
+    import shutil
+
+    if shutil.which("bun") is None:
+        pytest.fail("bun is not on PATH: the index's script cannot be drawn without it")
+    [body] = _inline_script_bodies(INDEX)
+    closed = body.rindex("})();")
+    script = body[:closed] + _ROW_DRAW + body[closed:]
+    deco = (_PACKAGE_ROOT / "devpro" / "profiler" / "deco.js").read_text(encoding="utf-8")
+    (tmp_path / "row.js").write_text(_ROW_STUB + deco + script, encoding="utf-8")
+    run = subprocess.run(["bun", str(tmp_path / "row.js")], capture_output=True, text=True, stdin=subprocess.DEVNULL)
+
+    assert run.returncode == 0, run.stderr
+    cells = json.loads(run.stdout.strip())
+    assert cells[-2] == "p" * 39 + "…"
+    assert cells[-1] == "abcdef01234…"
 
 
 def test_the_decoration_states_durations_in_the_one_notation(tmp_path: Path) -> None:

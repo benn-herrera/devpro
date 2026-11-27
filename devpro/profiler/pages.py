@@ -1164,6 +1164,11 @@ const moments = (session) => {
   return cell;
 };
 
+// A text cut to its budget, its last character the ellipsis where it overruns: this script's own
+// helper, the session page carrying the same one in its own script — the scripts' IIFEs share
+// nothing, the deco's one global aside.
+const clip = (t, n) => (t.length > n ? t.slice(0, n - 1) + '…' : t);
+
 // A stamp field's cell, where the session is stamped: `plan` cut to PLAN_CHARS with its ellipsis,
 // `directives` the digest's first DIGEST_CHARS characters — the whole in either cell's `title`, and
 // nothing where the feed carries `null`, a session the records stamp nothing onto.
