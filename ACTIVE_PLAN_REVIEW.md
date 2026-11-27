@@ -127,6 +127,15 @@ The TS capture's `SECRET_KEY`-style alternation (`profiler.ts:~159`) carries an 
 `/api_?key/` pattern where `directives.py:61` escapes it — the two implementations of one mask
 rule diverge, the same root cause as F2's duplicated constants; folded into B2's scope.
 
+## F14 — Note: two convention gaps surfaced by the digest work · python (B2 report)
+
+Proposed CONVENTIONS statements, for the periodic review to weigh: the directives digest's marker
+list is `HARNESS_OWNERSHIP_MARKERS` in `install_base.py` — `harness.py` cannot be read from the
+digest (import cycle), so the list is written there and the port copies it, with the
+marker-agreement test the pin; and a test that drives a private function of `profiler.ts` writes
+its probe copy outside the project root — the probe is a visible file, and a fixed probe path is
+module-cached by Bun across calls.
+
 ## What held
 
 The schema-bump discipline (both captures' constants and every pin moved together), the store as
