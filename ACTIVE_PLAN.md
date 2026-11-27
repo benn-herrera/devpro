@@ -49,7 +49,7 @@ draft plan before anything is approved or dispatched.
 | B3 | landed | expert |
 | B4 | landed | expert |
 | B5 | landed | expert |
-| B6 | in progress | mechanical |
+| B6 | landed | mechanical |
 
 ## P1 — the Python type gate
 
