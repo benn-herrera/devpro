@@ -43,13 +43,13 @@ draft plan before anything is approved or dispatched.
 | P3 | landed | expert |
 | P4 | landed | expert |
 | PR | landed | expert |
-| PB | in progress | expert |
-| B1 | drafted | expert |
-| B2 | drafted | expert |
-| B3 | drafted | expert |
-| B4 | drafted | expert |
-| B5 | drafted | expert |
-| B6 | drafted | mechanical |
+| PB | landed | expert |
+| B1 | dispatchable | expert |
+| B2 | dispatchable | expert |
+| B3 | dispatchable | expert |
+| B4 | dispatchable | expert |
+| B5 | dispatchable | expert |
+| B6 | dispatchable | mechanical |
 
 ## P1 — the Python type gate
 
