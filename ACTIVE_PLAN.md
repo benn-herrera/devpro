@@ -33,6 +33,7 @@ before anything is approved or dispatched.
 | B14 | in progress | mechanical |
 | B15 | landed | expert |
 | B16 | dispatchable | expert |
+| B17 | in progress | expert |
 | B18 | landed | expert |
 
 ### R1 — the panel runs and the findings synthesize
@@ -408,6 +409,23 @@ Serial: after B7 (shared file `renders-and-copies.md`).
 **The hold.** The plan stops here: the items above are drafted, not approved. The user discusses
 the findings, the remedies and the decisions the items carry — named in B4, B5, B6, B11, B16 and
 the coverage note above — before any row leaves `drafted`.
+
+### B17 — the reminder's sentence lives at its two code homes
+
+Intended lifetime: shipped. Rating: expert. Fixes the reminder-text coupling the user ruled rot-bait
+(the finding the run surfaced as the five-file sync).
+
+The ruling: SPEC and ARCHITECTURE state the mechanism — opencode injects at agent dispatch and
+completion via `ctx.session.synthetic`, claude registers the ungated `PostToolUse` entry running
+`state-table-reminder.sh`, both gated on `ACTIVE_PLAN.md` at the project root — and name the
+sentence's two code homes (`devpro/harnesses/resources/claude/hooks/state-table-reminder.sh:53`,
+`devpro/harnesses/resources/opencode/index.ts:72`) without quoting it; the byte-for-byte claim
+between them goes, so the sentence's wording is the code's alone to change.
+
+Scope: `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md` (:198-199), the claude half of
+`PROJECT_DOCS/ARCHITECTURE/install/guardrail-hook.md` (:20-30), the opencode half of
+`PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md` (:62-68). No code change. In-scope tests:
+none — document only. Done-line: `just check-links`.
 
 ### B18 — kbase's prerequisites are Homebrew's to name
 
