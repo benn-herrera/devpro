@@ -5,4 +5,4 @@ document shape it no longer writes — names the inputs that no longer fit, and 
 by name rather than expressing them wrongly or leaving them out.
 
 R11 is the worked instance: a title-less document dices to exit 2 with `volume b: no opening
-level-1 heading` and nothing written (`ACTIVE_PLAN.md` §B3).
+level-1 heading` (`dicedoc.py`) and nothing written.

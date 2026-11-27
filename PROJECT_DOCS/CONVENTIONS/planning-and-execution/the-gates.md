@@ -24,6 +24,6 @@ surface, the link and tree check). Cross-surface coupling is removed, not paid f
 unrelated surfaces.
 
 `check-wheel` compares the wheel's package data with `git ls-files --cached --others --exclude-standard`
-(`devtools/scripts/check-wheel.sh:48`), so a package-data deletion cannot pass the wheel surface
-before it is staged — a tree whose package-data change is unstaged fails it, with the deletion on
-the index still expected and absent from the wheel.
+(`devtools/scripts/check-wheel.sh:48`, the `in_tree` assignment), so a package-data deletion cannot pass
+the wheel surface before it is staged — a tree whose package-data change is unstaged fails it, with the
+deletion on the index still expected and absent from the wheel.

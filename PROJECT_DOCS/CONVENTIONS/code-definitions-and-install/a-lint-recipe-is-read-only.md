@@ -8,7 +8,10 @@ installs the declarations it reads and emits nothing, with a second `bunx tsc -p
 not ship, and mypy in its strict mode over `devpro/` and `devtools/`, configured in `pyproject.toml`,
 its arguments the gate's paths — `tests/` stays outside them; a checker release changes what the
 gate reports only with a change to the group line, the pin being the record as the other tools' are.
-The checker caches its analysis under the scratch directory and writes no source.
+`flake8`'s live rule set is the justfile's `FLAKE8_IGNORE`, its ignore list the whole of what the
+check leaves out; a rule added there or dropped is that line's change, and nothing else states which
+codes the lint reports. The checker caches its analysis under the scratch directory and writes no
+source.
 `format-python` is the rewriting form, run to
 fix what `lint` reports. A reviewer changes nothing, so it runs `lint`: `format-python` run in its
 place reports success over a tree it just changed.

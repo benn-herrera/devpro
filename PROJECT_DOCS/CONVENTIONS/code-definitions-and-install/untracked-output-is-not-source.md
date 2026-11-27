@@ -7,3 +7,7 @@ sourced from. The next install replaces what it wrote, `skills/kbase/kb-tools/` 
 change belongs at the source, not in the copy. Before an edit brief names a path, `git ls-files <path>` settles
 which it is, and the brief names the source. Running definitions point at the copy, which is how a
 brief comes to name it.
+
+`rendered/` is the whole of that: it is gitignored, every slot under it is output the render and the
+retake write, and nothing it holds is ever read back as input. A worktree or a render placed there
+is scratch, deleted with the rest of the tree it stands beside.

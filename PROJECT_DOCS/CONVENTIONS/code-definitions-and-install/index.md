@@ -23,6 +23,7 @@ Contents:
 - [Annotations on the floor](annotations-on-the-floor.md)
 - [No version-conditional code paths](no-version-conditional-code-paths.md)
 - [Obviated code is deleted, not parked](obviated-code-is-deleted-not-parked.md)
+- [A module split runs one way](a-module-split-runs-one-way.md)
 - [A devtools tool joins the tests](a-devtools-tool-joins-the-tests.md)
 - [A lint recipe is read-only](a-lint-recipe-is-read-only.md)
 - [Shell in this repository is bash](shell-in-this-repository-is-bash.md)

@@ -8,6 +8,6 @@ leaf, which holds the catalog; and the plan, design and review under way (`ACTIV
 the forms. A hit outside them is one of two exceptions, and its case names the act: a file that
 must quote a British form is skipped by the justfile, so add the file to the recipe's pathspecs;
 an American form the pattern over-matches enters the catalog, so add the word here. The catalog
-holds the one word no stem can spare: `misspelt`, a code name — the test symbol at
-`tests/test_plugins.py:47` and `:48` — whose prose occurrences still match and change to
-`misspelled`.
+holds the one word no stem can spare: `misspelt`, a code name — the test symbol in
+`tests/test_plugins.py`'s `test_a_component_naming_an_undiscovered_definition_refuses_every_render`
+— whose prose occurrences still match and change to `misspelled`.

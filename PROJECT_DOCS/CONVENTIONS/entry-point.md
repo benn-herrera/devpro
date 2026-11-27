@@ -33,6 +33,7 @@ Contents:
   - [Annotations on the floor](code-definitions-and-install/annotations-on-the-floor.md)
   - [No version-conditional code paths](code-definitions-and-install/no-version-conditional-code-paths.md)
   - [Obviated code is deleted, not parked](code-definitions-and-install/obviated-code-is-deleted-not-parked.md)
+  - [A module split runs one way](code-definitions-and-install/a-module-split-runs-one-way.md)
   - [A devtools tool joins the tests](code-definitions-and-install/a-devtools-tool-joins-the-tests.md)
   - [A lint recipe is read-only](code-definitions-and-install/a-lint-recipe-is-read-only.md)
   - [Shell in this repository is bash](code-definitions-and-install/shell-in-this-repository-is-bash.md)

@@ -45,6 +45,8 @@ import pytest
 
 from devpro.components import NAME
 from devpro.dashboard.server import BOARD_PATH
+from devpro.definitions import discover
+from devpro.definitions.skills.development import POST_PLAN_REVIEWERS_TERM
 from devpro.harnesses import claude, mage, opencode
 from devpro.install_base import HARNESS_OWNERSHIP_MARKERS
 from devpro.profiler.capture import mask, stored_stamp
@@ -69,7 +71,7 @@ from devpro.profiler.pages import (
     index_html,
     stamp,
 )
-from devpro.profiler.read import list_sessions, read_sessions, store_directories
+from devpro.profiler.read import REVIEW_SEAT, list_sessions, read_sessions, store_directories
 from devpro.profiler.values import CAPTURED_EVENTS, _epoch_ms, earliest_stamp
 from tests.conftest import page_data
 from tests.fixtures import fixture_file
@@ -2186,3 +2188,18 @@ def test_the_strict_fill_refuses_a_value_carrying_another_marks_mark() -> None:
 
     with pytest.raises(KeyError):
         strict_fill(f"{BAND_LEGEND}{RETURN_MARK}", {BAND_LEGEND: RETURN_MARK, RETURN_MARK: "back"})
+
+
+def test_the_review_seat_is_the_definition_sets_post_plan_reviewer() -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is `REVIEW_SEAT` drifting from the definition the skill's
+    `post-plan reviewers` term names as the reviewer of model-facing text — the definition renamed, or
+    the read's literal renamed, one side only — so a fan-out that definition reviewed is marked
+    unreviewed on every consumer's install, and no test fails because each side names the seat and
+    nothing holds them together.
+
+    A built definition names an agent as the plugin's prefix and the agent's name, while the detector
+    reads a dispatch down to the bare name (`bare_agent_name`), so the seat is a bare name the term's
+    line names as one its references name, read off the shipped definition rather than written here."""
+    [skill] = (defn for _, entries in discover() for defn in entries if defn.name == "development")
+    seat = skill.body.split(POST_PLAN_REVIEWERS_TERM, 1)[1].split("\n", 1)[0]
+    assert REVIEW_SEAT in re.findall(r"`@!ref-([a-z-]+)!@`", seat)
