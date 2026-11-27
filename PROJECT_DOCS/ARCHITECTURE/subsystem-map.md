@@ -98,9 +98,9 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
 
   The plugin is named through `clauses.PLUGIN_NAME`, and the repository through
   `clauses.REPOSITORY_URL`.
-- **Development skill** — `development` (`definitions/development.py`): one `SKILL.md` and six
+- **Development skill** — `development` (`definitions/development.py`): one `SKILL.md` and seven
   supporting files (`references/new-project.md`, `project-documents.md`, `project-setup.md`,
-  `adopting.md`, `release.md`, `design.md`), carried as `SkillFile`s, delivered under every
+  `adopting.md`, `release.md`, `design.md`, `intermittent-drives.md`), carried as `SkillFile`s, delivered under every
   harness, mage included. Beside them in the skill's directory sits the development scripts
   package, `scripts/cold-read.sh`, owned by `development`: a shipped package, not one of the
   `SkillFile`s (Install, Renders and copies). The skill states one development process for the main

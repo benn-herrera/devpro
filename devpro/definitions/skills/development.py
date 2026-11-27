@@ -55,6 +55,7 @@ rule governs.
 | planning or running a release | `references/release.md` |
 | writing, revising or reviewing the project documents | `references/project-documents.md` |
 | writing or applying a design's deltas | `references/design.md` |
+| a drive the user names at need — a survey, an observation, a reorganization — or the question of what drives exist | `references/intermittent-drives.md` |
 
 A reference is read only when its row is reached; the rest of this file applies in every case.
 
@@ -880,6 +881,76 @@ release it serves, and no release is promised for work not yet taken up.
 
   *Purpose:* each designed code change answers to a statement the documents make, so no design
   lands code they do not describe.""",
+            ),
+            SkillFile(
+                path="references/intermittent-drives.md",
+                body=f"""The methods for work a user names at need, when the standing cycle does not carry it. Nothing
+here runs on a schedule, an interval, or an agent's own judgment: the user directs the drive and
+the moment, and no seat starts one — an agent that sees the conditions for one met proposes it to
+the user and waits. *Purpose:* the methods a run proved valuable stay written and reusable at
+need, without becoming steps the cycle performs by default.
+
+## The constraints
+
+- **The gate.** The user directs the drive and the moment. A drive waits for a quiescent
+  repository: the {ACTIVE_PLAN_TERM} landed, its {REVIEW_DOCUMENT_TERM} consumed, no work in flight.
+- **The order.** A drive inventories before it judges, and it proposes without executing: the
+  rework its findings justify runs as plan packages, never inside the drive.
+- **The product.** A findings document — the inventory, the judgments, each fact stated with the
+  command that answers it. A drive fixes nothing and runs no probe beyond its stated method. The
+  fixes its findings justify go to the next plan's packages or to the {ROADMAP_TERM}, never the
+  drive; where the user directs the findings into a review instead, they land as that review's
+  findings.
+- **The life.** The product document is tracked and dies in the commit that lands the plan it fed.
+  A drive's method lives here; a drive's instance lives in the plan it fed and dies with it.
+- **The preference.** Where a drive's finding is a check a machine could run every test pass, the
+  finding's home is the gates, not the next drive. The drive judges what a machine cannot: shape,
+  balance, marginal value.
+
+## The test-suite survey
+
+A full read of the test suite's shape. The inventory first: per-directory collection counts, each
+file's subject in a line. Then the lenses the user's brief states — the pattern one run used:
+
+- **Shotgun versus deliberate.** For each parametrized or generated family, ask: does any single
+  input case fail for a reason no other case in the family fails for? Where none can, the family
+  proves one fact by iterating an input space, and it collapses to a representative per distinct
+  failure mode. The count drops as a side effect, never as a goal.
+- **Tier balance.** Classify the suite by what its cases exercise — unit, contract/integration,
+  end-to-end — and read the unit layer's marginal tests against what the integration tier holds:
+  past roughly eighty percent unit coverage, a marginal unit test is a prime suspect for
+  form-over-function.
+- **Suite health.** Duplicate test names, tests defined where no collection reaches them, a file
+  interleaving subjects, a collection count that drifts without a named change.
+
+A survey is the drive to offer after a large restructuring, when the suite has grown materially,
+or when the user suspects form-over-function has accumulated — the user directs it.
+
+## The observation drive
+
+Where a contract states a behavioral fact nothing has measured — an outcome the documents assert
+and no run has answered — the drive to offer is the observation: measure the fact, and land what
+the measurement answers. The shape: state the prediction from the code first; record the method and
+the raw output to the {SCRATCH_TERM} before any conclusion; then land one of two things, and they
+are different. Where the measurement answers the claim, the measured fact goes into the document
+leaf making the claim — and where the observed fact is one a runner could pin every test pass, the
+pin goes to the gates as a finding. Where the measurement cannot reach the claim, the leaf states
+the unsettled state instead, and the raw record is cited. A residual candidate the observation
+leaves after its fact lands goes to the {ROADMAP_TERM}. A worked instance: the wholesale
+replacement of a plugin directory under a running session whose own module watches that directory —
+the prediction held: the host's file-watch events arrived batched, one refresh landed after the
+write pass, and the session's registration was restored without going empty; the measured account
+landed beside the entry leaf, and the batching's end went to the {ROADMAP_TERM} as a candidate.
+
+## The suite reorganization drive
+
+Where layout debt accumulates — interleaved subjects, monolithic files, seams the packages suggest
+the tests should follow — the drive to offer is the reorganization. The shape: inventory the suite,
+propose the layout the package seams name, and cut the move as packages. The acceptance is stated,
+not judged by eye: the test runner's collection count before the move and after is equal, or the
+difference is exactly the one the move intends, the count taken by the same collection run on both
+sides. A worked instance: the suite split along package seams, each directory one seam with its own
+conftest, the runner scripts moving with the seam they serve.""",
             ),
         ),
     ),
