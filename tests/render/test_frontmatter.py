@@ -8,15 +8,24 @@ from pathlib import Path, PurePosixPath
 
 import pytest
 
-from devpro.context import Render
+from devpro.context import Render, map_spec
 from devpro.definition import Definition
 from devpro.errors import InputError
 from devpro.families.claude import FAMILY as CLAUDE_FAMILY
 from devpro.harness import HarnessFile, ShippedDefinition
 from devpro.harnesses.claude import HARNESS as CLAUDE
+from devpro.harnesses.mage import HARNESS as MAGE
 from devpro.harnesses.opencode import HARNESS as OPENCODE
 from devpro.loading import load
-from devpro.render import agent_fields, filled_body, render_all, render_definition, render_skill_file, write_renders
+from devpro.render import (
+    agent_fields,
+    filled_body,
+    render_all,
+    render_definition,
+    render_skill_file,
+    tuning_table,
+    write_renders,
+)
 from devpro.vocabulary import CATEGORIES, HarnessText, Kind
 from tests.conftest import PLAIN
 
@@ -32,6 +41,13 @@ from .conftest import (
     _python_coder,
     _security_reviewer,
     _skill,
+)
+
+# One render of each harness, so the banner and tuning-table cases cover every carrier.
+_RENDERS = (
+    Render(harness=CLAUDE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)),
+    Render(harness=MAGE, plugin=PLAIN, family=CLAUDE_FAMILY, category_map=dict(CLAUDE_FAMILY.categories)),
+    _OPENCODE_RENDER,
 )
 
 
@@ -125,14 +141,8 @@ def test_a_command_renders_its_banner_straight_into_a_body_naming_the_user_harne
     lines = render_definition(_COMMAND, ctx, module="devpro.definitions.probe").split("\n")
     assert lines[0] == "---"
     assert lines[1].startswith("# !GENERATED! from devpro/definitions/probe.py — ")
-    assert lines[2] == (
-        "# !TUNING! family=claude category=none member=none category-map=stem-architect=inherit,"
-        "stem-expert=inherit,stem-mechanical=inherit,comm-architect=inherit,comm-expert=inherit,"
-        "comm-mechanical=inherit stock=stem-architect,stem-expert,stem-mechanical,comm-architect,"
-        "comm-expert,comm-mechanical harness=claude"
-    )
-    assert lines[3] == "---"
-    body = "\n".join(lines[4:])
+    assert lines[2] == "---"
+    body = "\n".join(lines[3:])
     assert not body.startswith("\n"), "a blank line after the closing fence opens the file with an empty paragraph"
     assert body.strip(), "the command renders no body"
     assert CLAUDE.text(HarnessText.USER_HARNESS_DIR) in body
@@ -145,8 +155,7 @@ def test_a_document_renders_no_field_of_its_own() -> None:
     lines = render_definition(_DOCUMENT, ctx, module="devpro.definitions.probe").split("\n")
     assert lines[0] == "---"
     assert lines[1].startswith("# !GENERATED! from devpro/definitions/probe.py — ")
-    assert " category=none member=none category-map=" in lines[2]
-    assert lines[3] == "---"
+    assert lines[2] == "---"
 
 
 @pytest.mark.skipif(shutil.which("sed") is None, reason="extraction needs sed")
@@ -177,19 +186,16 @@ def test_a_skill_renders_a_directory_two_fields_and_a_comment_bannered_reference
     lines = render_definition(defn, ctx, module="devpro.definitions.probe").split("\n")
     assert lines[0] == "---"
     assert lines[1].startswith("# !GENERATED! from devpro/definitions/probe.py — ")
-    assert " category=none member=none " in lines[2]
-    assert lines[3:6] == [
+    assert lines[2:5] == [
         "name: probe",
         'description: "Use when the user asks about the knowledge base."',
         "---",
     ]
-    assert lines[6:] == ["", "Route the request to the reference it asks for.", ""]
+    assert lines[5:] == ["", "Route the request to the reference it asks for.", ""]
     reference = render_skill_file(defn, defn.files[0], ctx, module="devpro.definitions.probe").split("\n")
     assert reference[0].startswith("<!-- !GENERATED! from devpro/definitions/probe.py — ")
     assert reference[0].endswith(" -->")
-    assert reference[1].startswith("<!-- !TUNING! family=")
-    assert reference[1].endswith(" -->")
-    assert reference[2:] == ["", "Read a claim before you cite it.", ""]
+    assert reference[1:] == ["", "Read a claim before you cite it.", ""]
 
 
 @pytest.mark.parametrize(
@@ -198,23 +204,50 @@ def test_a_skill_renders_a_directory_two_fields_and_a_comment_bannered_reference
     ids=lambda defn: defn.kind.value,
 )
 def test_an_opencode_definition_opens_with_the_comment_banner_and_no_frontmatter(defn: Definition) -> None:
-    """Every kind opens with the two banner lines as HTML comments and the blank line after them, and
-    what follows is the filled body entire: the registry, not the file, carries its metadata."""
+    """Every kind opens with the banner line as an HTML comment and the blank line after it, and what
+    follows is the filled body entire: the registry, not the file, carries its metadata."""
     lines = render_definition(defn, _OPENCODE_RENDER, module="devpro.definitions.probe").split("\n")
     assert lines[0].startswith("<!-- !GENERATED! from devpro/definitions/probe.py — ")
     assert lines[0].endswith(" -->")
-    assert lines[1].startswith("<!-- !TUNING! family=") and lines[1].endswith(" -->")
-    assert lines[2] == ""
-    assert "\n".join(lines[3:]) == filled_body(defn, _OPENCODE_RENDER) + "\n"
+    assert lines[1] == ""
+    assert "\n".join(lines[2:]) == filled_body(defn, _OPENCODE_RENDER) + "\n"
 
 
 def test_every_opencode_output_but_the_registry_holds_the_comment_banner_and_then_only_its_body() -> None:
-    """Over the whole render, each file opens with the two comment banner lines and a blank line, and
-    no frontmatter fence or second banner follows; the registry is the one other output."""
+    """Over the whole render, each definition's file opens with the comment banner line and a blank line,
+    and no second banner or frontmatter fence follows; the registry is the one other output, a file
+    carrying its own ownership marker rather than a banner."""
     renders = dict(render_all(_OPENCODE_RENDER))
-    assert renders.pop(PurePosixPath("registry.json"))
+    registry = renders.pop(PurePosixPath("registry.json"))
+    assert "!GENERATED!" not in registry
     assert len(renders) > 20
     for path, text in renders.items():
-        generated, tuning, blank, body = text.split("\n", 3)
-        assert generated.startswith("<!-- !GENERATED! ") and tuning.startswith("<!-- !TUNING! "), path
-        assert blank == "" and not body.startswith("---\n") and "<!-- !GENERATED!" not in body, path
+        generated, blank, body = text.split("\n", 2)
+        assert generated.startswith("<!-- !GENERATED! ") and generated.endswith(" -->"), path
+        assert blank == "" and not body.startswith("---\n"), path
+        assert not body.startswith("<!--"), path
+
+
+def test_no_rendered_definition_carries_the_tuning_data() -> None:
+    """The tuning data rides on no rendered file: neither the `!TUNING!` line nor the values it spelled
+    — the family, the effective category map, the definition's category and member, the harness — stand
+    in any definition's text; the tuning table, one per install, is their only carrier."""
+    for ctx in _RENDERS:
+        for path, text in render_all(ctx):
+            assert "!TUNING!" not in text, path
+            assert f" category-map={map_spec(ctx.category_map)}" not in text, path
+            assert f" member={ctx.family.categories[CATEGORIES[0]]}" not in text, path
+
+
+@pytest.mark.parametrize("ctx", _RENDERS, ids=lambda ctx: ctx.harness.name)
+def test_the_tuning_table_is_what_an_install_writes_beside_the_render(ctx: Render) -> None:
+    """The tuning table is written with the renders and verbatim: `install` adds it at ROOT's root as
+    `tuning.md`, where `render_all` puts no file, so the two never collide; it carries the render's
+    family, effective map, stock list and harness, each the render's own values."""
+    assert PurePosixPath("tuning.md") not in dict(render_all(ctx))
+    assert tuning_table(ctx) == (
+        f"- family={ctx.family.name}\n"
+        f"- category-map={map_spec(ctx.category_map)}\n"
+        f"- stock={','.join(ctx.stock) or 'none'}\n"
+        f"- harness={ctx.harness.name}\n"
+    )

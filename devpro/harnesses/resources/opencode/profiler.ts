@@ -435,6 +435,7 @@ const PLAN_FILE = "ACTIVE_PLAN.md"
 const DICED_PLAN_FILE = join("ACTIVE_PLAN", "entry-point.md")
 // A rendered definition's banner is written first: `# !GENERATED! from …` in its frontmatter, or inside
 // the HTML comment a skill's supporting file opens with, and on the second line behind a frontmatter fence.
+// Two lines cover both carriers.
 const GENERATED_BANNER = "!GENERATED! from "
 const GENERATED_BANNER_HEAD = 2
 // A carried file's installed banner, on one of the first ten lines: `!INSTALLED!`, a word naming the

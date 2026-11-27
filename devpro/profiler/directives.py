@@ -30,6 +30,7 @@ PLAN_FILES = (Path("ACTIVE_PLAN.md"), Path("ACTIVE_PLAN") / "entry-point.md")
 HEADING = "# "
 # A rendered definition's banner is written first: `# !GENERATED! from …` in its frontmatter, or inside
 # the HTML comment a skill's supporting file opens with, and on the second line behind a frontmatter fence.
+# Two lines cover both carriers.
 GENERATED_BANNER_HEAD = 2
 # A carried file's installed banner sits on one of the file's first ten lines.
 BANNER_LINES = 10

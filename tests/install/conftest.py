@@ -153,7 +153,7 @@ _OPENCODE_RENDER = build_render(
     ),
 )
 _KBASE_OPENCODE_RENDER = dataclasses.replace(_OPENCODE_RENDER, plugin=WITH_KBASE)
-_NEW_BANNER = "---\n# !GENERATED! from devpro/definitions/gone.py — x\n# !TUNING! y\n---\n\nbody\n"
+_NEW_BANNER = "---\n# !GENERATED! from devpro/definitions/gone.py — x\n---\n\nbody\n"
 
 
 def _definition_install(

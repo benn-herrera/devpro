@@ -1,10 +1,10 @@
 """Compare two rendered slots under the justfile's `RENDERED_DIR` by text.
 
 A file's text is its bytes after two steps. First, its body (`body`): a file whose first line is
-`---` and whose next lines match the banner shape (`BANNER`) has those lines
-replaced by the constant line `# !BANNER!`. A file whose first two lines match the comment shape
-(`COMMENT`) — a skill's supporting file, which has no frontmatter and carries the same two banners as
-HTML comments — has them replaced the same way. Replacing rather than deleting means a file that loses
+`---` and whose next line matches the banner shape (`BANNER`) has that line
+replaced by the constant line `# !BANNER!`. A file whose first line matches the comment shape
+(`COMMENT`) — a skill's supporting file, which has no frontmatter and carries the same banner as an
+HTML comment — has it replaced the same way. Replacing rather than deleting means a file that loses
 its banner still differs, and a block of any other shape stays in place, so it shows as a difference
 rather than hiding one. Any other file whose lines from line 1, or from line 2 below a `#!` line,
 match the copied-package banner shape (`INSTALLED_BANNER`) has them
@@ -32,10 +32,10 @@ import re
 import sys
 from pathlib import Path
 
-# Line 2 onward of a bannered file: each entry is a line prefix. `COMMENT` is a skill's
-# supporting file, whose banner lines are HTML comments from its first line.
-BANNER: tuple[bytes, ...] = (b"# !GENERATED! from ", b"# !TUNING! ")
-COMMENT: tuple[bytes, ...] = (b"<!-- !GENERATED! from ", b"<!-- !TUNING! ")
+# Line 2 of a bannered file, and line 1 of a comment-bannered one: each entry is a line prefix.
+# `COMMENT` is a skill's supporting file, whose banner is an HTML comment from its first line.
+BANNER: tuple[bytes, ...] = (b"# !GENERATED! from ",)
+COMMENT: tuple[bytes, ...] = (b"<!-- !GENERATED! from ",)
 # A copied package file's banner, from line 1, or from line 2 below a `#!` line.
 INSTALLED_BANNER: tuple[bytes, ...] = (b"# !INSTALLED! from ",)
 FENCE_OPEN = re.compile(rb" {0,3}(?:(`{3,})[^`]*|(~{3,}).*)")

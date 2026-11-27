@@ -79,6 +79,7 @@ from devpro.render import (
     harness_file_text,
     render_all,
     shipped_harness_files,
+    tuning_table,
     write_renders,
 )
 from devpro.runner_file import (
@@ -157,6 +158,9 @@ SHIPPED_PACKAGES: tuple[ShippedPackage, ...] = (
 # rendered. The directory below this one in the source is the harness's own
 # name, and the destination is ROOT itself — both stated, neither derived from a directory listing.
 HARNESS_RESOURCES_SOURCE = "harnesses/resources"
+# The tuning table: the set's one carrier of what it is tuned for and dispatches on, written at ROOT's
+# root on every install beside the rendered definitions.
+TUNING_TABLE = PurePosixPath("tuning.md")
 # The interpreter the install-time probe runs a guardrail hook script under, found on PATH, and how long
 # that run may take before it counts as failed.
 GUARDRAIL_INTERPRETER = "perl"
@@ -565,6 +569,9 @@ def install(
         # where the probe fails: a render is replaced whole, so a later probe failure rewrites it.
         registration = guardrail.registration if guardrail_skipped is None else guardrail.registration_without_hook
         renders = (*renders, (PurePosixPath(registration.path), harness_file_text(registration, ctx)))
+    # The tuning table sits at ROOT's own root, written with the renders and removed with them by the
+    # replacement: it is in neither pass-over, so an earlier install's copy never stands beside this one.
+    renders = (*renders, (TUNING_TABLE, tuning_table(ctx)))
     registers_the_hook = guardrail is not None and guardrail_skipped is None
     # Everything this install copies, the wrapper with it, in one list for the report and for verbose's
     # write log. A re-entry run writes neither the copy (dropped from `packages` above) nor the wrapper.

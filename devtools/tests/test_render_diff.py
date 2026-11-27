@@ -6,18 +6,11 @@ from pathlib import Path
 
 from devtools.render_diff import body, line_kinds, text, walk
 
-NEW_BANNER = b"---\n# !GENERATED! from x\n# !TUNING! y\nname: a\n---\ntext\n"
-OTHER_BANNER = b"---\n# !GENERATED! from x\n# !TUNING! z\nname: a\n---\ntext\n"
+NEW_BANNER = b"---\n# !GENERATED! from x\nname: a\n---\ntext\n"
+OTHER_BANNER = b"---\n# !GENERATED! from y\nname: a\n---\ntext\n"
 BANNERED_BODY = b"---\n# !BANNER!\nname: a\n---\ntext\n"
-COMMENT_BANNER = (
-    b"<!-- !GENERATED! from devpro/definitions/kbase.py \xe2\x80\x94 x -->\n"
-    b"<!-- !TUNING! family=claude category=none member=none category-map=a stock=b harness=claude -->\n"
-    b"\n# Reading\n\nA paragraph.\n"
-)
-COMMENT_BANNER_OTHER = COMMENT_BANNER.replace(
-    b"<!-- !TUNING! family=claude category=none member=none category-map=a stock=b harness=claude -->",
-    b"<!-- !TUNING! family=gemma-4 category=none member=none category-map=c stock=none harness=opencode -->",
-)
+COMMENT_BANNER = b"<!-- !GENERATED! from devpro/definitions/kbase.py \xe2\x80\x94 x -->\n\n# Reading\n\nA paragraph.\n"
+COMMENT_BANNER_OTHER = COMMENT_BANNER.replace(b"kbase.py", b"guide.py")
 
 
 def run_walk(a: Path, b: Path) -> list[str]:
@@ -53,9 +46,9 @@ class BodyTest(unittest.TestCase):
                 self.assertEqual(body(data), data)
 
     def test_unbannered_files_unchanged(self) -> None:
-        short_block = b"---\n# !GENERATED! from x\nname: a\n"
-        wrong_prefix = b"---\n# !GENERATED! from x\n# other\nname: a\n"
-        for data in (b"no frontmatter\n# !GENERATED! from x\n", short_block, wrong_prefix):
+        not_a_fence = b"x: a\n# !GENERATED! from x\n" + b"---\n" * 3
+        wrong_prefix = b"---\n#x !GENERATED! from x\nx: a\n" + b"---\n" * 3
+        for data in (b"no frontmatter\n# !GENERATED! from x\n", not_a_fence, wrong_prefix):
             with self.subTest(data=data):
                 self.assertEqual(body(data), data)
 
