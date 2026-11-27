@@ -187,7 +187,8 @@ span column, and draws `dispatcher` in no column at all, as the child row under 
 
 ```
 its script renders the feed the server answers at `/api/traces`: one JSON entry per session carrying
-`harness`, `id`, `models`, `records`, `agents`, `first`, `last`, `span`, `plan`, `directives`, and
+`harness`, `id`, `models`, `records`, `agents`, `unreviewed`, `first`, `last`, `span`, `plan`,
+`directives`, and
 `dispatcher` where a
 session was dispatched — `models` the distinct models the session's records name, in the order
 they first appear, empty where none does, `plan` and `directives` the stamp's two fields, `null`
@@ -197,7 +198,8 @@ names, `id` in the session column, `models` in the model column, joined by `, `,
 `first` and `last` in the first-to-last line, `span` in the
 span column, `plan` in the plan column — the title cut with its ellipsis where long, the whole in
 the cell's `title` — and `directives` in the directives column, the digest's first twelve
-characters, the whole in the cell's `title`, and draws `dispatcher` in no column at all, as the
+characters, the whole in the cell's `title`, `unreviewed` after the count in the agents cell, and
+draws `dispatcher` in no column at all, as the
 child row under its dispatcher's row.
 ```
 

@@ -36,6 +36,7 @@ from devpro.profiler.pages import (
     SHARED_CSS,
     dispatches,
     read_sessions,
+    traces_feed,
 )
 from tests.conftest import page_data
 
@@ -104,20 +105,12 @@ def test_the_profiler_view_serves_its_list_and_its_pages(tmp_path: Path, serve) 
     assert (data["session"], [call["name"] for call in data["calls"]]) == ("s-one", ["ls"])
 
 
-SESSION_KEYS = {
-    "harness",
-    "id",
-    "models",
-    "records",
-    "agents",
-    "first",
-    "last",
-    "span",
-    "plan",
-    "directives",
-    "unreviewed",
-}
-DISPATCHED_KEYS = SESSION_KEYS | {"dispatcher"}
+def _feed_schema(directory: Path) -> tuple[set[str], set[str]]:
+    """What `pages.traces_feed` emits: the keys a session's entry carries and those a dispatched
+    session's adds, read off the rows it answers — the one home of the schema a client reads."""
+    entries = [entry for entry in traces_feed(directory) if "id" in entry]
+    dispatched = next(entry for entry in entries if "dispatcher" in entry)
+    return set(entries[0]), set(dispatched)
 
 
 def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) -> None:
@@ -130,7 +123,9 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
     moments as epoch milliseconds and the span in seconds — and `dispatcher`, whose two halves are
     the session that dispatched the child and the call that did, on a child's entry alone.
     A feed answering an empty list, one entry per store instead of per session, or an entry whose
-    moments are strings is the index drawing nothing, or drawing what the script cannot read."""
+    moments are strings is the index drawing nothing, or drawing what the script cannot read. The
+    schemas pinned are `pages.traces_feed`'s own answers: the served feed is its entries, the
+    server adding no key and dropping none."""
     root = project(tmp_path / "proj", {})
     store(root, "s-claude", [_tool_call("s-claude", "2026-01-01T00:00:09.000Z", "ls")], directory=".profiler-claude")
     store(
@@ -150,6 +145,7 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
     )
     status, content_type, body = serve(root).get("api/traces")
     entries = json.loads(body)
+    client, dispatched = _feed_schema(root)
 
     assert (status, content_type) == (200, "application/json")
     assert entries == [
@@ -194,7 +190,7 @@ def test_the_traces_feed_answers_one_entry_per_session(tmp_path: Path, serve) ->
             "unreviewed": False,
         },
     ]
-    assert [set(entry) for entry in entries] == [SESSION_KEYS, DISPATCHED_KEYS, SESSION_KEYS]
+    assert [set(entry) for entry in entries] == [client, dispatched, client]
 
 
 def test_the_feed_and_the_page_carry_each_sessions_stamp(tmp_path: Path, serve) -> None:
@@ -897,6 +893,68 @@ def test_a_session_page_draws_the_agents_its_child_dispatched(tmp_path: Path, se
         }
     ]
     assert [(row["id"], row["agents"]) for row in child["children"]] == [("s-grand", [])]
+
+
+def test_the_depth_draw_reads_the_sessions_the_read_returned(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: the depth-2 draw rebuilt each child's store path from
+    its session id and parsed that store per render, a guessing read beyond the one `read_sessions`
+    made — a child whose store the guess missed drew with no agents, whatever the read carried.
+
+    The draw's child records come from the read's own sessions: a child the read holds whose store is
+    gone from disk still draws its agents from what the read carried, where a draw that re-read the
+    store off the child's id would draw none, and the agents are its own and no deeper."""
+    root = project(tmp_path / "proj", {})
+    store(
+        root,
+        "s-parent",
+        [
+            record("2026-01-01T00:00:00.000Z", tool="Agent", name="devpro-coder", session="s-parent")
+            | {"harness": "opencode", "child_agent_id": "s-child"},
+        ],
+        directory=".profiler-opencode",
+    )
+    child = store(
+        root,
+        "s-child",
+        [
+            record("2026-01-01T00:00:01.000Z", tool="Agent", name="devpro-architect", session="s-child")
+            | {"harness": "opencode", "child_agent_id": "s-grand"},
+        ],
+        directory=".profiler-opencode",
+    )
+    store(
+        root,
+        "s-grand",
+        [_tool_call("s-grand", "2026-01-01T00:00:04.000Z", "ls") | {"harness": "opencode"}],
+        directory=".profiler-opencode",
+    )
+    served = serve(root)
+    child_record = page_data(served.get("page/s-child")[2].decode("utf-8"))
+
+    child.unlink()
+    parent = page_data(served.get("page/s-parent")[2].decode("utf-8"))
+
+    # The dispatcher's page drew s-child's agents after s-child's store was gone: the read's records,
+    # not a re-read of the store.
+    assert parent["children"] == [
+        {
+            "id": "s-child",
+            "name": "devpro-coder",
+            "tool": "Agent",
+            "agents": [],
+            "unreviewed": False,
+        }
+    ]
+    # One level and no deeper: s-child's page carries s-grand, and s-grand dispatches nothing.
+    assert child_record["children"] == [
+        {
+            "id": "s-grand",
+            "name": "devpro-architect",
+            "tool": "Agent",
+            "agents": [],
+            "unreviewed": False,
+        }
+    ]
 
 
 def test_a_fanout_with_no_review_before_its_first_dispatch_is_marked(tmp_path: Path, serve) -> None:

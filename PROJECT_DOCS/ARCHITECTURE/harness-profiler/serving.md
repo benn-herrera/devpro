@@ -26,7 +26,8 @@ and the body's rows take their column widths from one source, so every header si
 names at every width the data produces, and the first-to-last column is wide enough that its line
 never wraps. The index's page file is static — no row is in its text — and
 its script renders the feed the server answers at `/api/traces`: one JSON entry per session carrying
-`harness`, `id`, `models`, `records`, `agents`, `first`, `last`, `span`, `plan`, `directives`, and
+`harness`, `id`, `models`, `records`, `agents`, `unreviewed`, `first`, `last`, `span`, `plan`,
+`directives`, and
 `dispatcher` where a
 session was dispatched — `models` the distinct models the session's records name, in the order
 they first appear, empty where none does, `plan` and `directives` the stamp's two fields, `null`
@@ -36,7 +37,8 @@ names, `id` in the session column, `models` in the model column, joined by `, `,
 `first` and `last` in the first-to-last line, `span` in the
 span column, `plan` in the plan column — the title cut with its ellipsis where long, the whole in
 the cell's `title` — and `directives` in the directives column, the digest's first twelve
-characters, the whole in the cell's `title`, and draws `dispatcher` in no column at all, as the
+characters, the whole in the cell's `title`, `unreviewed` after the count in the agents cell, and
+draws `dispatcher` in no column at all, as the
 child row under its dispatcher's row.
 The agents cell reads the count with the postscript `agents` — `1 agent`, `3 agents`. The index's row
 links and the session page's return link carry the query, so the controls' state and the sort in

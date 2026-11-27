@@ -39,14 +39,13 @@ import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
-from pathlib import Path
 from typing import Any, TextIO
 from urllib.parse import unquote, urlsplit
 
 from devpro import __version__
 from devpro.profiler import pages
 from devpro.profiler.pages import PAGE_PREFIX, PROFILER_PATH, Dispatcher, dispatcher_of, read_sessions
-from devpro.profiler.values import TRACE_DIR, Json, git_root
+from devpro.profiler.values import Json, git_root
 
 from ..errors import InputError
 from ..kanban.server import HOST, KanbanServer
@@ -161,9 +160,10 @@ class DashboardServer(ThreadingHTTPServer):
         where one did.
 
         The store read is the page's own; the dispatcher its band names is looked up beside it, once,
-        as the depth-2 chain's map is — one `dispatches` over the sessions this read holds, and the
-        detector's verdicts off it, threaded to the render as `pages.Depth`. The page of the session
-        that named this one is a second render, never a second index."""
+        as the depth-2 chain's measurements are — one `dispatches` over the sessions this read holds,
+        the detector's verdicts off it, and the same sessions threaded to the render as `pages.Depth`,
+        so no chain re-reads or rebuilds a child's store. The page of the session that named this one
+        is a second render, never a second index."""
         session_record = pages.session_for(PAGE_PREFIX + session, self.root)
         if session_record is None:
             return None
@@ -174,7 +174,7 @@ class DashboardServer(ThreadingHTTPServer):
             return_to=PROFILER_PATH,
             dispatcher=dispatcher_of(session, sessions),
             depth=pages.Depth(
-                directory=Path(self.root) / TRACE_DIR.parent,
+                sessions=sessions,
                 dispatched=dispatched,
                 verdicts=pages.review_fanouts(sessions, dispatched),
             ),

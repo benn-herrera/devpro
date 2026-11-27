@@ -11,7 +11,7 @@ import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, cast
 
 from .directives import read_stamp, write_manifest
 from .values import (
@@ -39,6 +39,7 @@ from .values import (
     _without_jsonl,
     branch_of,
     clip,
+    earliest_stamp,
     first_line,
     mask,
     one_line,
@@ -422,10 +423,11 @@ def stored_stamp(file: Path) -> CaptureStamp | None:
     absent from the copy, never filled in later — so the session's stamp is its first record's and
     every later record copies it. A store holding records and no stamp is one written before the stamp,
     and its records are read as unstamped, never freshly stamped beside them; a store whose first
-    `STAMP_READ_RECORDS` records hold no stamp is read that way too, so the window decides the answer
-    and never fresh-stamps beside a store it could not read whole."""
+    `STAMP_READ_RECORDS` records hold no stamp carrying an `at` is read that way too, so the window
+    decides the answer and never fresh-stamps beside a store it could not read whole. The selection
+    is `values.earliest_stamp`'s, the one the page and the feed read a session's stamp by."""
     text = read_text(file) or ""
-    stamped: list[Json] = []
+    window: list[Json] = []
     for read, line in enumerate(text.split("\n")):
         if read >= STAMP_READ_RECORDS:
             break
@@ -433,17 +435,10 @@ def stored_stamp(file: Path) -> CaptureStamp | None:
             record = json.loads(line) if line else None
         except ValueError:
             continue
-        if isinstance(record, dict) and record.get("at") is not None and ({"plan", "directives"} & set(record)):
-            stamped.append(record)
-    if not stamped:
-        return None
-    earliest = min(stamped, key=lambda record: str(record["at"]))
-    held: CaptureStamp = {}
-    if isinstance(earliest.get("plan"), str):
-        held["plan"] = earliest["plan"]
-    if isinstance(earliest.get("directives"), str):
-        held["directives"] = earliest["directives"]
-    return held
+        if isinstance(record, dict) and ({"plan", "directives"} & set(record)):
+            window.append(record)
+    found = earliest_stamp(window)
+    return cast(CaptureStamp, found) if found else None
 
 
 def session_stamp(file: Path, directory: Path) -> CaptureStamp:

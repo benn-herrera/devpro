@@ -47,7 +47,7 @@ from devpro.components import NAME
 from devpro.dashboard.server import BOARD_PATH
 from devpro.harnesses import claude, mage, opencode
 from devpro.install_base import HARNESS_OWNERSHIP_MARKERS
-from devpro.profiler.capture import mask
+from devpro.profiler.capture import mask, stored_stamp
 from devpro.profiler.directives import read_stamp
 from devpro.profiler.hooks import RETIRED_HOOK_FILES, RETIRED_LAUNCHERS
 from devpro.profiler.pages import (
@@ -72,7 +72,7 @@ from devpro.profiler.pages import (
     stamp,
     store_directories,
 )
-from devpro.profiler.values import CAPTURED_EVENTS, _epoch_ms
+from devpro.profiler.values import CAPTURED_EVENTS, _epoch_ms, earliest_stamp
 from tests.conftest import page_data
 from tests.fixtures import fixture_file
 from tests.test_devpro_install import _claude_plugin, _definition_install
@@ -240,11 +240,18 @@ def index_head_classes(index: str) -> list[str]:
     return [cls for cls in re.findall(r'<th class="([^"]+)"', head) if cls.startswith("col-")]
 
 
-def index_row_colspan(index: str) -> int:
-    """The span the index's row script gives a full-width row — the table's column count as its own
-    script states it."""
+def index_row_colspan(index: str) -> str:
+    """The span the index's row script gives a full-width row, as its script's own expression: the
+    header-cell count the script reads, never a literal."""
     script = index.split("<script>", 1)[1].split("</script>", 1)[0]
-    return int(re.search(r"cell\.colSpan = (\d+);", script).group(1))
+    return re.search(r"cell\.colSpan = (.+);", script).group(1)
+
+
+def index_width_terms(index: str) -> int:
+    """The terms of the table's floor — the width list's one home in its stylesheet — that the floor's
+    `calc` sums."""
+    floor = re.search(r"min-width: calc\((.*?)\);", index).group(1)
+    return len(re.findall(r"nth\(var\(--widths\), \d+\)", floor))
 
 
 def _plan(root: Path, title: str) -> None:
@@ -1548,11 +1555,14 @@ def test_the_served_index_lists_every_recorded_session(tmp_path: Path) -> None:
     # row states — the layer's `--zebra`, which the layer switches with the color scheme itself, so
     # the template carries no second rule for it.
     assert '<tbody id="rows"></tbody>' in index and 'href="/page/' not in index
-    # The header and the row script agree on the table's columns: every head carries a `col-*` class of
-    # its own, and the span the script gives a full-width row is that many. A column added to the head
-    # and not to the script's span, or to neither the head nor the widths, overruns the table.
+    # The table's column count has one home — the header's cells. The row script's full-width span is
+    # the header-cell count it reads rather than a literal, and the stylesheet's floor sums one width
+    # per header cell: a column added to the head and not to the widths overruns the table, and a span
+    # pinned as a literal is the count written twice, drifting on the next column.
     head_classes = index_head_classes(index)
-    assert len(head_classes) == len(set(head_classes)) == index_row_colspan(index)
+    assert len(head_classes) == len(set(head_classes))
+    assert index_row_colspan(index) == "document.querySelectorAll('table thead th').length"
+    assert index_width_terms(index) == len(head_classes)
     # Each column's share of the table comes from the page's own stylesheet, beside the header's class,
     # and the table's layout is the fixed one that gives that share to header and body alike.
     assert re.search(r"table \{ border-collapse: collapse; table-layout: fixed; \}", index)
@@ -1932,6 +1942,28 @@ def test_the_readers_read_a_copy_of_a_store_as_no_store_at_all(tmp_path: Path) -
 
     assert [session["id"] for session in list_sessions(project)] == ["s-only"]
     assert [session["id"] for session in read_sessions(project)] == ["s-only"]
+
+
+def test_the_capture_and_the_read_side_select_the_earliest_stamp_by_one_rule(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect: the read side and the capture selected a store's
+    earliest stamp differently — the read skipped a record with no `at` where the capture ordered by
+    it — so a store holding one stamped a page stated as unstamped while the capture copied that
+    stamp onto every later record, the page and the capture disagreeing about one session's stamp.
+
+    A record with no `at` never governs the ordering, on either side: the two readers pick the one
+    stamped record carrying an `at`, whichever order the records stand in, and a store of stamped
+    records none of which carries one is unstamped to both."""
+    store = tmp_path / "s.jsonl"
+    unplaced = {"session": "s", "plan": "no moment", "directives": "d" * 64}
+    placed = {"session": "s", "at": "2026-01-01T00:00:00.000Z", "plan": "at start", "directives": "a" * 64}
+    store.write_text("\n".join(json.dumps(record) for record in (unplaced, placed)) + "\n", encoding="utf-8")
+
+    assert earliest_stamp([unplaced, placed]) == {"plan": "at start", "directives": "a" * 64}
+    assert stored_stamp(store) == {"plan": "at start", "directives": "a" * 64}
+    store.write_text(json.dumps(unplaced) + "\n", encoding="utf-8")
+
+    assert earliest_stamp([unplaced]) == {}
+    assert stored_stamp(store) is None
 
 
 def test_an_unrecorded_session_id_is_a_404_and_no_traceback(tmp_path: Path, _wrapper: Path) -> None:

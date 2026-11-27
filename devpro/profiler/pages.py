@@ -39,6 +39,7 @@ from .values import (
     _local,
     _round_half_up,
     clip,
+    earliest_stamp,
     mask,
     read_text,
 )
@@ -708,12 +709,13 @@ def render_tree(records: list[Json], *, verbose: bool = False, color: bool = Fal
 
 
 class Depth(NamedTuple):
-    """What a page's depth-2 chain reads, built once at the read boundary: the scratch directory
-    the child's own store is found under, `dispatches`' map of the stores' hierarchy, and
-    `review_fanouts`' verdicts. Threading the three as one value keeps the render signatures to the
-    session and its dispatcher, and the reads stay the caller's — nothing is rebuilt per render."""
+    """What a page's depth-2 chain reads, built once at the read boundary: the sessions
+    `read_sessions` read, `dispatches`' map of their hierarchy, and `review_fanouts`' verdicts.
+    Threading them as one value keeps the render signatures to the session and its dispatcher, and
+    the reads stay the caller's — the chain rebuilds no store path and parses no store the read did
+    not, nothing being rebuilt per render."""
 
-    directory: Path
+    sessions: list[Json]
     dispatched: dict[str, tuple[str, str, str | None]]
     verdicts: dict[str, bool]
 
@@ -735,13 +737,13 @@ def session_data(
 
     An opencode dispatch's child ends in the child's own store, and the join to it is already in the
     session's records by the time they reach here (`joined_session`, at the read boundary). The stamp
-    is the session's, read off the same records (`session_stamp`), `None` for a session that carries
+    is the session's, read off the same records (`earliest_stamp`), `None` for a session that carries
     none.
 
     `children` is the depth-2 chain: beneath each dispatch the page draws the agents the child
-    dispatched of its own, read from the child's store through `depth`, and its `unreviewed` mark
-    where the detector holds one. A page rendered without a read of the stores (`depth` is `None`)
-    carries no children and no mark: the standalone text-less render and a test's own payload."""
+    dispatched of its own, read from the child's records in `depth`'s sessions, and its `unreviewed`
+    mark where the detector holds one. A page rendered without a read of the stores (`depth` is
+    `None`) carries no children and no mark: the standalone text-less render and a test's own payload."""
     calls = unique_calls(fill_context_tokens(session["records"]))
     contexts, markers = contexts_of(
         session["records"],
@@ -749,7 +751,7 @@ def session_data(
         root_hue=dispatcher.hue if dispatcher else 0,
     )
     spend = _context_spend(session["records"])
-    stamp = session_stamp(session["records"])
+    stamp = earliest_stamp(session["records"])
     by_context: dict[str, list[Json]] = {}
     for record in calls:
         by_context.setdefault(context_of(record), []).append(record)
@@ -846,8 +848,9 @@ def render_html(session: Json, *, dispatcher: Dispatcher | None, depth: Depth | 
 def session_of(path: Path) -> Json:
     """One trace as `list_sessions` shapes it: its records and its first and last moments.
 
-    It reads the store path it is given, so the store a session id names is `session_store`'s to
-    build: the read a dispatched session's own store takes beside the join (`joined_session`)."""
+    It reads the store path the listing found, its id the file's name, so nothing derives a store's
+    path from a session id: a page's dispatcher and its depth-2 chains read the sessions a read
+    returned."""
     records = read_trace(path)
     starts: list[int] = []
     ends: list[int] = []
@@ -864,14 +867,6 @@ def session_of(path: Path) -> Json:
         "first": min(starts, default=math.inf),
         "last": max(ends, default=-math.inf),
     }
-
-
-def session_store(directory: Path | str, identifier: str) -> Path:
-    """The store path a session id names: its trace in whichever store the captures write
-    (`values.TRACE_STORES`, under `directory` — the scratch directory `store_directories` reads).
-    `session_of` takes a path, and the stores are flat, one file per session under each."""
-    named = [Path(directory) / name / f"{identifier}.jsonl" for name in TRACE_STORES]
-    return next((path for path in named if path.is_file()), named[0])
 
 
 def list_sessions(directory: Path | str) -> list[Json]:
@@ -951,7 +946,7 @@ def tree(argv: list[str], directory: Path | str, *, color: bool = False) -> str:
             joined_session(chosen[0], sessions),
             dispatcher=dispatcher_of(chosen[0]["id"], sessions),
             depth=Depth(
-                directory=Path(directory) / TRACE_DIR.parent,
+                sessions=sessions,
                 dispatched=dispatched,
                 verdicts=review_fanouts(sessions, dispatched),
             ),
@@ -990,18 +985,6 @@ def session_harness(session: Json) -> str:
     """The harness's name, as the session's own records carry it, masked and clipped like any field."""
     harness = next((record.get("harness") for record in session["records"] if record.get("harness")), "")
     return clip(mask(str(harness)), NAME_LIMIT)
-
-
-def session_stamp(records: list[Json]) -> Json:
-    """The session's operational-context stamp, read off its records the way the capture set it: the
-    earliest-`at` record carrying either `plan` or `directives`, its two fields and nothing where a
-    field is absent. A record carrying neither is a store written before the stamp, so a session of
-    them is unstamped and the read infers nothing — `{}`."""
-    stamped = [record for record in records if record.get("at") is not None and ({"plan", "directives"} & set(record))]
-    if not stamped:
-        return {}
-    earliest = min(stamped, key=lambda record: str(record["at"]))
-    return {key: earliest[key] for key in ("plan", "directives") if key in earliest}
 
 
 def models_in(records: list[Json]) -> list[str]:
@@ -1073,15 +1056,14 @@ def _child_page(record: Json) -> str | None:
     return PAGE_PREFIX + quote(str(record["child_agent_id"])) if dispatch_child(record) is not None else None
 
 
-def child_dispatches(directory: Path | str, session: Json) -> list[Json]:
-    """The agents a dispatched session dispatched of its own, read from its own store beside the
-    join the dispatch row's signals take — one level deeper and no deeper.
+def child_dispatches(records: list[Json]) -> list[Json]:
+    """The agents a dispatched session dispatched of its own, read from its records in the sessions
+    `read_sessions` already read — one level deeper and no deeper.
 
     Each is the call that dispatched it: its name and tool, and the child session's page where its
     record names one. A record naming a child and no session — claude's — is no agent here, its
     calls drawn as contexts on the session's page already. The stored record, for an opencode call,
     carries `agent_id: null` and the agent in `name`."""
-    records = read_trace(session_store(directory, str(session["id"])))
     return [
         {"name": record.get("name"), "tool": record.get("tool"), "childPage": _child_page(record)}
         for record in records
@@ -1091,17 +1073,21 @@ def child_dispatches(directory: Path | str, session: Json) -> list[Json]:
 
 def depth_children(depth: Depth, session: Json) -> list[Json]:
     """A session's children as its page draws them beneath its dispatches: each child's own
-    dispatched agents, read from the child's store, and its `unreviewed` mark where the detector
-    holds one. `depth` is the read boundary's one build of the stores' hierarchy and verdicts.
+    dispatched agents, read from the child's records `depth`'s sessions hold, and its `unreviewed`
+    mark where the detector holds one. `depth` is the read boundary's one build of the sessions, the
+    stores' hierarchy and the verdicts.
 
     Every child the session dispatched is here, a child of no agents carrying none; the agents are
-    one level deeper and no deeper, the child's own store and never its children's."""
+    one level deeper and no deeper, the child's own records and never its children's. A dispatch
+    whose child the read holds no session for is absent from the draw: the store a child's id names
+    is never guessed from the id."""
+    sessions = {session["id"]: session["records"] for session in depth.sessions}
     return [
         {
             "id": child,
             "name": name,
             "tool": tool,
-            "agents": child_dispatches(depth.directory, {"id": child}),
+            "agents": child_dispatches(sessions.get(child, [])),
             "unreviewed": depth.verdicts.get(child, False),
         }
         for child, (parent, name, tool) in sorted(depth.dispatched.items())
@@ -1190,7 +1176,7 @@ def _feed_entry(
     `unreviewed` where one of those children is a fan-out its trace records no review before its
     first dispatch for, and the stamp's `plan` and `directives`, `null` where the session's records
     carry none. The count is the count the index's column sorts on, the mark standing beside it."""
-    stamp = session_stamp(session["records"])
+    stamp = earliest_stamp(session["records"])
     entry = {
         "harness": session_harness(session),
         "id": session["id"],
@@ -1312,22 +1298,21 @@ tr:nth-child(odd) td { background: var(--zebra); }
 td small { color: var(--muted); }
 tr td:first-child.child { border-left: 3px solid var(--accent); }
 tr td:first-child.child + td { padding-left: 2.4rem; }
-/* Each column's width, declared once as a custom property on the table: the `.col-*` rules read the
-   properties, and the table's floor below is their sum, so no width is written twice. The fixed layout
-   gives each column its width and measures no cell's content, so header and body stand in the same
-   columns; a viewport narrower than the floor overruns it and `main` scrolls the table. */
-table { --w-harness: 7.5rem; --w-session: 32ch; --w-model: 12rem; --w-records: 8rem; --w-agents: 8rem; --w-one: 15rem; --w-span: 7rem;
-  --w-plan: 16rem; --w-directives: 11rem;
-  min-width: calc(var(--w-harness) + var(--w-session) + var(--w-model) + var(--w-records) + var(--w-agents) + var(--w-one) + var(--w-span) + var(--w-plan) + var(--w-directives)); }
-.col-harness { width: var(--w-harness); }
-.col-session { width: var(--w-session); }
-.col-model { width: var(--w-model); }
-.col-records { width: var(--w-records); }
-.col-agents { width: var(--w-agents); }
-.col-one { width: var(--w-one); }
-.col-span { width: var(--w-span); }
-.col-plan { width: var(--w-plan); }
-.col-directives { width: var(--w-directives); }
+/* Each column's width, declared once as a custom property on the table, in the header's own order —
+   one per `<th>` below — and the table's floor is the header's cell count: the script's full-width
+   row spans that many (`wideRow`). The fixed layout gives each column its width and measures no
+   cell's content, so header and body stand in the same columns; a viewport narrower than the floor
+   overruns it and `main` scrolls the table. */
+table { --widths: 7.5rem 32ch 12rem 8rem 8rem 15rem 7rem 16rem 11rem; min-width: calc(nth(var(--widths), 1) + nth(var(--widths), 2) + nth(var(--widths), 3) + nth(var(--widths), 4) + nth(var(--widths), 5) + nth(var(--widths), 6) + nth(var(--widths), 7) + nth(var(--widths), 8) + nth(var(--widths), 9)); }
+.col-harness { width: nth(var(--widths), 1); }
+.col-session { width: nth(var(--widths), 2); }
+.col-model { width: nth(var(--widths), 3); }
+.col-records { width: nth(var(--widths), 4); }
+.col-agents { width: nth(var(--widths), 5); }
+.col-one { width: nth(var(--widths), 6); }
+.col-span { width: nth(var(--widths), 7); }
+.col-plan { width: nth(var(--widths), 8); }
+.col-directives { width: nth(var(--widths), 9); }
 /* The plan cell's title is cut to its column, its ellipsis the cell's own; the whole stands in its
    `title`, as does the digest's. The digest is one machine token, so it does not wrap. */
 .col-plan { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1489,7 +1474,8 @@ const row = ({ session, dispatched, children = 0 }) => {
 // it draws no session.
 const wideRow = (text) => {
   const cell = el('td', text);
-  cell.colSpan = 9;
+  // The header-cell count is the table's one count: the floor's terms and this span derive from it.
+  cell.colSpan = document.querySelectorAll('table thead th').length;
   const tr = el('tr');
   tr.append(cell);
   return tr;

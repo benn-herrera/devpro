@@ -167,6 +167,23 @@ def read_json(file: Path) -> object:
         return None
 
 
+def earliest_stamp(records: list[Json]) -> Json:
+    """The operational-context stamp a session's records state: the earliest-`at` record carrying
+    either `plan` or `directives`, its two fields and nothing where a field is absent. A session of
+    records carrying neither is unstamped and the read infers nothing — `{}`.
+
+    A record with no `at` never governs the ordering: the earliest is the least `at` among the
+    records carrying one. The capture's copy off a store and the read side's page and feed select by
+    this one reader, so the stamp one states is the stamp the other copies."""
+    stamped = [
+        record for record in records if isinstance(record.get("at"), str) and ({"plan", "directives"} & set(record))
+    ]
+    if not stamped:
+        return {}
+    earliest = min(stamped, key=lambda record: record["at"])
+    return {key: earliest[key] for key in ("plan", "directives") if key in earliest}
+
+
 def _without_jsonl(path: Path | str) -> Path:
     """`path` with a trailing `.jsonl` dropped: the directory a session's subagent transcripts sit in."""
     text = str(path)
