@@ -43,7 +43,7 @@ draft plan before anything is approved or dispatched.
 | P3 | landed | expert |
 | P4 | landed | expert |
 | PR | landed | expert |
-| PB | landed | expert |
+| PB | in progress | expert |
 | B1 | drafted | expert |
 | B2 | drafted | expert |
 | B3 | drafted | expert |
