@@ -12,7 +12,7 @@ import hashlib
 import os
 from pathlib import Path
 
-from ..install_base import HARNESS_OWNERSHIP_MARKERS, INSTALLED_BANNER
+from ..install_base import GENERATED_MARK, HARNESS_OWNERSHIP_MARKERS, INSTALLED_BANNER
 from .values import Json, _json, read_text
 
 # A harness's project harness directory below the project root. `devpro install` resolves the harness from
@@ -30,7 +30,6 @@ PLAN_FILES = (Path("ACTIVE_PLAN.md"), Path("ACTIVE_PLAN") / "entry-point.md")
 HEADING = "# "
 # A rendered definition's banner is written first: `# !GENERATED! from …` in its frontmatter, or inside
 # the HTML comment a skill's supporting file opens with, and on the second line behind a frontmatter fence.
-GENERATED_BANNER = "!GENERATED! from "
 GENERATED_BANNER_HEAD = 2
 # A carried file's installed banner sits on one of the file's first ten lines.
 BANNER_LINES = 10
@@ -77,7 +76,7 @@ def is_installed(path: Path) -> bool:
     if text is None:
         return False
     lines = text.split("\n")
-    if any(GENERATED_BANNER in line for line in lines[:GENERATED_BANNER_HEAD]):
+    if any(GENERATED_MARK in line for line in lines[:GENERATED_BANNER_HEAD]):
         return True
     if any(INSTALLED_BANNER.search(line) for line in lines[:BANNER_LINES]):
         return True

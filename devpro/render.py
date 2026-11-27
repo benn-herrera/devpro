@@ -18,6 +18,7 @@ from devpro.definitions import discover
 from devpro.errors import InputError
 from devpro.family import Family
 from devpro.harness import AgentFields, FrontmatterForm, Harness, HarnessFile, ShippedDefinition, quoted
+from devpro.install_base import GENERATED_MARK
 from devpro.loading import load
 from devpro.vocabulary import (
     ALL,
@@ -35,7 +36,6 @@ from devpro.vocabulary import (
     reference,
 )
 
-GENERATED_MARK = "!GENERATED! from "
 GENERATED_NOTICE = "do not edit here: request changes to devpro."
 PLACEHOLDER = re.compile(r"@![a-z0-9.-]+!@")
 

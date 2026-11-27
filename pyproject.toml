@@ -55,6 +55,9 @@ version = { attr = "devpro.__version__" }
 [tool.mypy]
 strict = true
 python_version = "3.11"
+# Keep mypy's cache out of the project root: it writes under the scratch directory instead, so a lint
+# run leaves no `.mypy_cache` beside the source.
+cache_dir = ".devpro-temp/.mypy_cache"
 
 [tool.pytest.ini_options]
 # Keep pytest's cache out of the project root: it writes under the scratch directory instead, so a

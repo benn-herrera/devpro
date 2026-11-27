@@ -50,6 +50,7 @@ from devpro.context import HarnessSettings, MapSupply, Render, harness_named
 from devpro.errors import InputError
 from devpro.harness import KBASE_OWNER, GuardrailHook, Harness, HarnessFile
 from devpro.install_base import (
+    GENERATED_MARK,
     INSTALLED_BANNER,
     KB_TOOLS_DIR,
     PACKAGE_ROOT,
@@ -70,7 +71,6 @@ from devpro.profiler.stores import OLD_STORE_SUFFIX, OLD_STORES
 from devpro.profiler.stores import rename_stores as migrate_stores
 from devpro.profiler.values import NEW_STORE_PREFIX, TRACE_DIR
 from devpro.render import (
-    GENERATED_MARK,
     GENERATED_NOTICE,
     harness_file_text,
     render_all,

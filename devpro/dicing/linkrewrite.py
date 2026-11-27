@@ -57,10 +57,9 @@ def _anchor_homes(outline: Outline, lines: list[str]) -> dict[str, tuple[str, st
     homes: dict[str, tuple[str, str]] = {}
     per_file: dict[int, list[str]] = {}
     for no, anchor in heading_anchor_list(lines):
-        held = owner.get(no)
-        if held is None:
+        s = owner.get(no)
+        if s is None:
             continue
-        s = held
         local = per_file.setdefault(s.id, [])
         local.append(anchor.base)
         n = local.count(anchor.base) - 1

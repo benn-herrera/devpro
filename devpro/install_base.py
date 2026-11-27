@@ -38,6 +38,10 @@ INSTALLED_MARK = "!INSTALLED!"
 # A carried file's installed banner: the mark, a word naming where it came from, and the repository's
 # name. A harness resource and a rendered definition's digest (`devpro.profiler.directives`) read it.
 INSTALLED_BANNER = re.compile(re.escape(INSTALLED_MARK) + r" .* devpro")
+# The mark a rendered definition's banner opens with: `devpro.render.generated_text` writes it ahead of the
+# definition's module path, and a rendered definition's digest (`devpro.profiler.directives`) reads it from
+# the banner's first lines.
+GENERATED_MARK = "!GENERATED! from "
 # The ownership markers a harness-rendered file is read as, wherever `{plugin}` stands: each marker's leading
 # quoted field, which is what a registry's and every other marker's `{plugin}` slot leaves of it — the
 # guardrail registrations' (`no readable script at`), the plugin manifest's (`"name": "`), the `.mcp.json`
