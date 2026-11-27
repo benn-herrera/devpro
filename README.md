@@ -81,9 +81,10 @@ holds neither, or holds both, pass `--harness=claude` or `--harness=opencode`. A
 that names harnesses installs for each of them instead, one install apiece.
 
 Add the installed tree and the agents file's backup to the project's `.gitignore`, listing the lines of
-the harness you installed. The install writes the `.devpro-temp/` line itself, once, to the one
-directory of that name; leave it to the install, and run the install again if you write it by hand in
-another form:
+the harness you installed: each install replaces the plugin directory whole, so the tree is output,
+not source, and keeping it out of git keeps the diff to what you wrote. The install writes the
+`.devpro-temp/` line itself, once, to the one directory of that name; leave it to the install, and run
+the install again if you write it by hand in another form:
 
 ```text
 # the install wrote:
@@ -101,7 +102,7 @@ with neither runner file gets a new `Makefile` holding them. One is the devpro t
 `devpro`, written on every project install of a nested plugin; another is the kb-tools package's,
 `kb`, written with `--components=kbase`. A line an earlier release wrote for the docdicer tools
 package — retired with the absorbed dicing verbs, and none of its snippet paths point at anything
-any more — the install removes, naming the removal in its report.
+any more — is left where it stands: no install edits a line it did not write, so deleting it is yours.
 
 The install gives the project its own copy of devpro, `tools/devpro/` in the install directory,
 and a wrapper, `tools/devpro.sh`, that runs it; the recipes, hooks and session commands run that
@@ -111,6 +112,13 @@ replaces the copy (Updating, below); one run from the project's own copy, as the
 passes over that copy and the wrapper that runs it — writing everything else — so the copy is the
 one its last global install wrote. The wrapper's interpreter lookup and what the copy holds are in
 [SPEC Shipped files](PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md).
+
+Each install replaces the plugin directory whole before it writes: renders, hand-written files and
+scratch copies alike go, and nothing in it is yours to keep. `devpro install . --dry-run` writes
+nothing and lists what the install would create, change and remove — a hand-written file or a safety
+copy inside the directory among the removals — so a file you mean to keep lives outside it. The
+`.devpro-temp/` stores beside the project, the agents file's backup and your runner file's include
+lines all sit outside it.
 
 The install also writes the devpro block into the project's `AGENTS.md`, created with it where absent —
 unless `~/.claude/CLAUDE.md` or `~/.config/opencode/AGENTS.md` already holds an agents-file block,
@@ -214,24 +222,16 @@ nothing about them, so the project keeps the version its global install delivere
 Installed with pipx, update with `pipx install --force` of the next release's tagged URL, then `pipx
 ensurepath` and a new shell, then the same install line.
 
-A project installed by 0.17.x upgrades in two runs. The first removes the dicing snippets package's
-retired home, `skills/docdicer/dicing-snippets/`, with everything under it, along with the
-`docdicer` skill's earlier files, and removes the docdicer include line from the project's runner
-file, naming it in the report; the
-include line it writes for the devpro tools package lands in the same runner file. Then the
-tree is exhausted: a second install reports nothing and leaves the same files where it left them.
+A project installed by 0.17.x upgrades in one run: an install replaces the plugin directory whole,
+so the dicing snippets package's retired home, `skills/docdicer/dicing-snippets/`, and the `docdicer`
+skill's earlier files go with the tree, and the include line it writes for the devpro tools package
+lands in your runner file. The docdicer include line in that runner file stays until you delete it:
+no install edits a line it did not write.
 
 A line already in your `justfile` or `Makefile` that names this install's snippets is rewritten in
 place, not appended beside: the install rewrites only the snippets path that line names, keeping the
 rest of it, an assignment's left-hand side and a trailing comment among them, and every line ending
 in the file.
-
-What survives both runs is the launcher's `.venv` under `skills/docdicer/tools/`, with everything in
-it, and the directory `skills/docdicer/tools/` holding it. Nothing uses what is there: no
-definition, no include line, and no install removes it or writes into it. Delete
-`skills/docdicer/tools/` once, and the upgrade is complete. That is the old directory
-under `skills/docdicer/`; the install directory's own `tools/`, holding the project's copy of devpro
-and its wrapper, is current and stays.
 
 A project that recorded sessions before this release keeps them: the profiler's stores were named
 `claude-profiler/` and `opencode-profiler/` under `.devpro-temp/`, and the install renames each such
