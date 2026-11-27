@@ -20,7 +20,7 @@ before anything is approved or dispatched.
 | B1 | dispatchable | expert |
 | B2 | dispatchable | expert |
 | B3 | dispatchable | expert |
-| B4 | drafted | expert |
+| B4 | dispatchable | expert |
 | B5 | dispatchable | expert |
 | B6 | dispatchable | expert |
 | B7 | dispatchable | expert |
@@ -32,7 +32,7 @@ before anything is approved or dispatched.
 | B13 | dispatchable | expert |
 | B14 | dispatchable | mechanical |
 | B15 | dispatchable | expert |
-| B16 | drafted | expert |
+| B16 | dispatchable | expert |
 
 ### R1 — the panel runs and the findings synthesize
 
@@ -145,67 +145,66 @@ In-scope tests: a new test-changed selection case asserting a changed `deco.js` 
 assets); no existing test pins the map's rows. Done-line: `just test`, `just lint`,
 `just test-changed`.
 
-### B4 — `init`'s harness scope — the user's call at the hold
+### B4 — `profiler init claude`: the verb is harness-scoped
 
 Intended lifetime: shipped. Rating: expert. Fixes F4.
 
-Scope (held until the ruling): `devpro/profiler/hooks.py` (`INSTALL_WRAPPER` :44, `_hook_command`
-:52-54, `is_our_command` :82-84, `merge_hooks` :92-105, `init` :117-134) and
-`PROJECT_DOCS/ARCHITECTURE/harness-profiler/what-init-writes.md`. Fact (re-run): with
-`PYTHONPATH=.`, `hooks.is_our_command('"$CLAUDE_PROJECT_DIR/devpro/plugins/devpro/tools/devpro.sh" profiler
+The ruling: `init` is claude-shaped because claude is the only harness it slots to — opencode's
+capture is the plugin the install ships and wires, with no python-side init — and the contract
+becomes explicit: the verb is `profiler init claude`, the harness stated as the argument the
+`capture` verb already takes.
+
+Scope: `devpro/profiler/hooks.py` (`INSTALL_WRAPPER` :44, `_hook_command` :52-54, `is_our_command`
+:82-84, `merge_hooks` :92-105, `init` :117-134), `devpro/profiler/cli.py` (the verb's
+registration), `PROJECT_DOCS/ARCHITECTURE/harness-profiler/what-init-writes.md`, and the profiler
+skill's text where it names the verb. Fact (re-run): with `PYTHONPATH=.`,
+`hooks.is_our_command('"$CLAUDE_PROJECT_DIR/devpro/plugins/devpro/tools/devpro.sh" profiler
 capture claude')` → `False`, while `HOOK_COMMAND` names the `.claude/skills/devpro/tools/devpro.sh`
-wrapper — a re-`init` over an opencode-shaped repo appends a duplicate registration. Context
-fact, not a scope file: the rendered copies carry a newer text-scan `merge_hooks`
-(`rendered/latest/devpro/skills/devpro/tools/devpro/hooks.py`) than the live module — the
-duplicate-of-a-rule the fix closes; rendered outputs are build products and are never edited.
+wrapper — a re-`init` over an opencode-shaped repo appends a duplicate registration. The fix:
+`init claude` refuses — exit 2, `error: ` before a message naming it — where the project's devpro
+install is opencode-shaped or the existing entry names a wrapper it does not recognize, and
+`merge_hooks` appends nothing in that case. Rendered outputs are build products and are never
+edited; the rendered copies' newer text-scan `merge_hooks` is context the fix closes.
 
-**The ruling the item carries, for the hold:** whether `init` supports a non-claude harness —
-(a) refuse a repo whose wrapper it cannot name, naming the wrapper found, or (b) widen: take the
-wrapper from `ctx.bound_harness.project_wrapper` and the capture's harness from that context, no
-`"claude"` literal. Nothing written separates the two. No code changes until decided.
-
-In-scope tests: the init migration and merge-hooks cases in `tests/test_devpro_profiler.py`.
+In-scope tests: the init migration and merge-hooks cases in `tests/test_devpro_profiler.py`; a new
+test names the refusal's defect — the duplicate a re-`init` over an opencode-shaped repo appends.
 Done-line: `just test`, `just lint`.
 
-### B5 — README's install requirements state one floor and a held tag
+### B5 — README's install line carries no version pin
 
 Intended lifetime: shipped. Rating: expert. Fixes F5, F6.
 
-Scope: `README.md` (:50, :64, :69-70), `PROJECT_DOCS/SPEC/guide-and-readme.md` (:37-39),
-`devpro/definitions/skills/guide.py` (its *Requirements* is the survivor). Facts (re-run):
-README:50 carries the two-number lead with a colon clause ("every project install of a nested
-plugin writes that line, an `import?`"); README:64-70 states the pipx line "names the newest
-release tag. Nothing checks it: the release plan re-stamps it, by hand"; the SPEC leaf repeats both
-numbers while the guide states 1.33.0 alone.
+The ruling: the version number leaves the README — text that needs constant attention or rot; the
+installed version is discoverable on the machine without it. The pipx line installs unpinned from
+the repository; the "names the newest release tag" sentence and its manual restamp go; the `just`
+floor is stated once — 1.33.0 for every project install of a nested plugin — matching the guide.
 
-Decisions carried, flagged for the hold: the `just` floor is stated once — 1.33.0 for every
-project install of a nested plugin, 1.27.0 named only for a runner the install does not write;
-the pipx tag is held by a check (a recipe or test asserting the README's pinned tag equals the
-version home, `devpro/__init__.py:66`), and SPEC states the tag-of-record contract — rather than
-SPEC restating the manual step as unenforceable.
+Scope: `README.md` (:50 the floor sentence, :64 the tag, :69-70 the newest-release sentence),
+`PROJECT_DOCS/SPEC/guide-and-readme.md` (:37-39), `devpro/definitions/skills/guide.py` (its
+*Requirements* is the survivor). Facts (re-run): README:50 carries the two-number lead with a
+colon clause ("every project install of a nested plugin writes that line, an `import?`");
+README:64-70 states the pipx line "names the newest release tag. Nothing checks it: the release
+plan re-stamps it, by hand"; the SPEC leaf repeats both numbers while the guide states 1.33.0
+alone.
 
-In-scope tests: the tag check the decision adds — TEST_PRECONDITION: the unenforceable restamp F5
-states. Done-line: `just test`, `just check-links`.
+In-scope tests: none — the enforcement hole dissolves with the pin. Done-line: `just test`,
+`just check-links`.
 
-### B6 — the dashboard's stop and exit contracts match Serving
+### B6 — the dashboard's stop answers any shape
 
-Intended lifetime: shipped. Rating: expert. Fixes F7.
+Intended lifetime: shipped. Rating: expert. Fixes F7's stop half.
 
-Scope: `devpro/kanban/server.py` (:292-294 the 415, :309-310 the 400, :302-307 the stop),
-`devpro/dashboard/server.py` (:317-329 `serve`), `devpro/dashboard/cli.py` (:55-61 `run` returns
-0 unconditionally), `PROJECT_DOCS/ARCHITECTURE/harness-profiler/serving.md`, SPEC
-`package-and-command.md`. Facts (re-run): the stop answers `{}` only for `application/json` with
-a parseable body — any other sender meets 415/400 and the server keeps serving; after
-`serve_forever` returns on its own, `serve` falls through and the process exits 0, indistinguishable
-from the two ends Serving admits.
+The ruling: the stop-shape defect is worth its few lines — `GET /api/stop` answers the stop and a
+POST answers it whatever the body or content type, the panel's `{}` body contract being the page's
+choice, not the endpoint's requirement; no body is required and none is parsed, and the page's own
+stop keeps working unchanged. The exit-contract half is dropped as ruled: a natural
+`serve_forever` return on a loopback surface is a theoretical end, not worth the stop-flag
+machinery it would take to distinguish.
 
-**The ruling the item carries, flagged for the hold:** the stop is routed before the board's moves
-and answers `{}` whatever the body or content type; a `serve_forever` that returns with no stop and
-no interrupt is a refusal — exit 2, `error: ` before the message on stderr. The exit half moves a
-SPEC sentence ("either exits 0"), so the user confirms it at the hold.
-
-In-scope tests: the stop-route cases in `tests/dashboard/test_server.py`; the exit-path
-TEST_PRECONDITION in `tests/dashboard/test_board_panel.py`. Done-line: `just test`, `just lint`.
+Scope: `devpro/kanban/server.py` (:292-294 the 415, :309-310 the 400, :302-307 the stop).
+`devpro/dashboard/server.py` and `devpro/dashboard/cli.py` leave this item's scope — the exit
+half is ruled out. In-scope tests: the stop-route cases in `tests/dashboard/test_server.py` gain
+the GET and the no-body cases. Done-line: `just test`, `just lint`.
 
 ### B7 — the install's ARCHITECTURE statements catch up
 
@@ -392,29 +391,21 @@ rule is read; `PROJECT_DOCS/SPEC/write-safety.md` — the `.bak` carve-out ARCHI
 In-scope tests: none — text only. Serial: after B2 (shared file `PROJECT_DOCS/entry-point.md`).
 Done-line: `just check-links`, `just test`, `just lint`.
 
-### B16 — the `.venv` carve-out under a package destination — the user's call at the hold
+### B16 — the `.venv` carve-out is retired
 
 Intended lifetime: shipped. Rating: expert. Fixes F19.
 
-Scope (held until the ruling): `PROJECT_DOCS/SPEC/write-safety.md` (:18-19 the carve-out,
-:43-44 the comparison exclusion), `PROJECT_DOCS/ARCHITECTURE/install/renders-and-copies.md`
-(:22 "no venv is ever delivered", :96-98 `_clear_package_destination` — no carve-out),
-`PROJECT_DOCS/ARCHITECTURE/subsystem-map.md:139` (a `VENV_DIR` held by `install_base.py` that the
-package does not define — `grep -rn "VENV" devpro/` returns nothing), and
-`devpro/install.py:525` `_clear_package_destination` (removes every entry under the destination,
-directories included).
+The ruling: the carve-out is stale — leftovers from when docdicer was a separate tool with its own
+`.venv` — and the code's removal behavior stands; SPEC's promise goes.
 
-**The ruling the item carries, for the hold:** either (a) the carve-out is still intended —
-implement the `.venv`-stays exception and its comparison exclusion, describe both in
-renders-and-copies, and correct subsystem-map's `VENV_DIR` name — or (b) the carve-out is
-retired: SPEC's write-safety sentence changes and the code stands. Deleting a consumer's `.venv`
-is data loss; both directions are defensible and nothing written separates them. No change until
-decided. Serial: after B7 (shared file `ARCHITECTURE/install/renders-and-copies.md`).
+Scope: `PROJECT_DOCS/SPEC/write-safety.md` (:18-19 the carve-out, :43-44 the comparison exclusion)
+loses the exception; `PROJECT_DOCS/ARCHITECTURE/install/renders-and-copies.md` (:22) keeps its "no
+venv is ever delivered" statement; `PROJECT_DOCS/ARCHITECTURE/subsystem-map.md:139`'s `VENV_DIR`
+line — a constant the package does not define — is corrected or dropped. No code change:
+`install.py:525`'s clear already removes everything under the destination.
 
-In-scope tests: the preflight and stale-comparison cases in `tests/test_devpro_install.py` —
-the comparison exclusion's tests, in the direction the ruling picks; a test failing on behavior
-the ruling does not state it changes is reported as a finding. Done-line: `just test`, `just
-lint`, `just check-links`.
+In-scope tests: none — document only. Done-line: `just check-links`.
+Serial: after B7 (shared file `renders-and-copies.md`).
 
 **The hold.** The plan stops here: the items above are drafted, not approved. The user discusses
 the findings, the remedies and the decisions the items carry — named in B4, B5, B6, B11, B16 and
