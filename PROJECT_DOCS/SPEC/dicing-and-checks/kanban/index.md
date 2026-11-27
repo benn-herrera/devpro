@@ -28,7 +28,8 @@ the verb runs in. The project root is the nearest of that directory and its ance
 `.git` entry, that directory itself where none does; the board then reads the documents at the
 paths below, a document that is absent contributing no cards. Once the server is listening it prints
 the page's URL, `http://127.0.0.1:<port>/`, on a line of its own to stdout; the user opens that URL.
-The server accepts connections from the local machine only (`127.0.0.1`), and refuses a request whose
+That URL is the dashboard's root, which answers a redirect to the board panel at `/board/`, the
+landing surface, so opening the URL shows the board. The server accepts connections from the local machine only (`127.0.0.1`), and refuses a request whose
 `Host` header is not the server's own address (`127.0.0.1` or `localhost`, with the port), so that
 a page served from elsewhere cannot drive the board. The server serves the served documents, and
 no other file of the project: every `.md` file at the project root's top level, every `.md` file

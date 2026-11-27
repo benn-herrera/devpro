@@ -189,14 +189,24 @@ calls recorded, and a session's page names them for the session, for each contex
 call, showing none where no record names one.
 The index's rows alternate their tone — a zebra the eye reads across the
 columns — and each row's harness carries its own mark, a dot in the harness's brand colors:
-opencode's periwinkle, claude's coral. On the page of a session nothing dispatched, the session's
+opencode's periwinkle, claude's coral. The index is a table the reader narrows and orders: a
+dispatched child's row shows beneath the session that dispatched it or stays out of the list, the
+harnesses are shown one at a time or together, and the reader sorts the rows by a session's agent
+count, record count, last moment or span, any order reversed, a session's page and the way back to
+the list keeping the list as the reader left it. A moment and a span read, wherever the view
+presents them, in the reader's local time; the span is one duration notation, reading as a duration
+whether it is under a second, a few seconds, a minute or hours. A dispatch row's agent names read
+without the `devpro-` prefix the delivered set gives them. A
+fan-out that records no dispatch of the post-plan review's seat up to its first dispatch is marked
+as unreviewed, on the dispatcher's row and beside the dispatch that opened it on the session page.
+A feed the view cannot assemble is named in the index's own notice, never as a session. On the page of a session nothing dispatched, the session's
 own context wears the motif's accent, its labels dark enough to read on it; on a dispatched
 session's page it wears the color the context its dispatching call opened wears on the
 dispatcher's page; and no other context wears a hue that reads as the accent in the mode shown.
 
 A claude project install also carries the plan-state reminder in that registration: one ungated
 `PostToolUse` entry matched on `Agent`, running `<install-dir>/hooks/state-table-reminder.sh`, which
-reads the same gate at the project root and injects the same sentence as opencode's — `Reminder: keep
+reads the same gate at the project root and injects the same sentence as opencode's — `Automated reminder: keep
 the ACTIVE_PLAN state table up to date.` That entry is written on every claude project install,
 whatever the probe decides about the guardrail's, so its script runs on every project claude
 install. A user-level claude install writes no registration, so the reminder never registers there.

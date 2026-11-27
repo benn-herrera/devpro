@@ -106,8 +106,10 @@ any more — the install removes, naming the removal in its report.
 The install gives the project its own copy of devpro, `tools/devpro/` in the install directory,
 and a wrapper, `tools/devpro.sh`, that runs it; the recipes, hooks and session commands run that
 copy, not the `devpro` on your `PATH`. So the project's devpro does not change when the global one
-does: a `brew upgrade` changes no project's checks. Only rerunning the project's install replaces
-the copy (Updating, below). The wrapper's interpreter lookup and what the copy holds are in
+does: a `brew upgrade` changes no project's checks. Only an install run from the global devpro
+replaces the copy (Updating, below); one run from the project's own copy, as the wrapper runs it,
+passes over that copy and the wrapper that runs it — writing everything else — so the copy is the
+one its last global install wrote. The wrapper's interpreter lookup and what the copy holds are in
 [SPEC Shipped files](PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md).
 
 The install also writes the devpro block into the project's `AGENTS.md`, created with it where absent —
@@ -132,9 +134,11 @@ This writes `~/Mage/Skills/devpro/` and that plugin's `CLAUDE.md`, holding the a
 reaches no project: a mage session works with the skills where Mage opens it. To run the process in
 a project, install into that project as above, under claude or opencode. The kbase component is
 optional: `--components=kbase` adds the `kbase` skill and the `.mcp.json` entry Mage starts the
-`kbase` executable from. No devpro install provides, runs or checks that executable: install it
-with `brew install benn-herrera/tap/kbase` (0.11.1 or later; platforms as under Requirements). Restart Mage after installing or
-upgrading kbase, so it starts the server.
+`kbase` executable from. No devpro install writes, copies, verifies or locates that executable:
+install it with `brew install benn-herrera/tap/kbase` (0.11.1 or later, on macOS or Linux; a native
+Windows install has none). kbase needs more than the executable: pandoc 3.12, git and a way to reach
+a model are kbase's own requirements, which the operator meets (SPEC.md, Deployed Surfaces,
+Plugins). Restart Mage after installing or upgrading kbase, so it starts the server.
 
 ## Next: ask your agent
 
@@ -166,10 +170,15 @@ It serves the project the command runs in, up to the nearest directory holding a
 `<project-dir>` names another directory inside the project to serve from anywhere. The port is
 loopback only, `127.0.0.1`, and the system picks a free one unless `--port` names one. The URL opens
 on the board — its root answers a redirect to `/board/` — and the profiler view is the second view,
-at `/profiler/`: the session records the activity profiler captured, one row per session, each
-linking to that session's page. A top nav switches between the two: its `kanban` link is the board
-panel at `/board/`, its `profiler` link the profiler view at `/profiler/`, and at the nav's right
-edge sit the server's live/idle indicator and its stop.
+at `/profiler/`. Its index lists the session records the activity profiler captured, one row per
+session, each linking to that session's page; the index shows or hides the sessions a session
+dispatched and either harness's records, and sorts on the agent count, record count, last moment or
+span. A session that dispatched agents which ran without dispatching the post-plan review first is
+marked unreviewed, on its dispatcher's row and beside the dispatch on the session's page. Recorded
+moments and spans show in your own local time, never UTC, and the pages open only from the machine
+that runs the server — the URL is not one to share. A top nav switches between the two:
+its `kanban` link is the board panel at `/board/`, its `profiler` link the profiler view at
+`/profiler/`, and at the nav's right edge sit the server's live/idle indicator and its stop.
 
 The board is the project's roadmap, its active design and its active plan as a set of columns of
 cards, live: an edit to a watched file shows on the open page within about a second. Dropping a
@@ -197,14 +206,18 @@ hook; the skill names that `init`.
 
 To update, run `brew upgrade devpro`, then the same install line with `--dry-run` added to preview
 it, then without to apply it. The upgrade alone reaches no project: each project keeps the copy of
-devpro its last install wrote, and the rerun is what replaces it.
+devpro its last install wrote, and only an install run from the global devpro replaces it. An
+install run from the project's own wrapper, `tools/devpro.sh install .`, writes everything an
+install writes except that copy and the wrapper that runs it: it passes both over, reporting
+nothing about them, so the project keeps the version its global install delivered.
 
 Installed with pipx, update with `pipx install --force` of the next release's tagged URL, then `pipx
 ensurepath` and a new shell, then the same install line.
 
-A project installed by 0.17.x upgrades in two runs. The first removes `skills/docdicer/tools/`'s own
-files — the dicer, its runner snippets — along with the `docdicer` skill's earlier files, and
-removes the docdicer include line from the project's runner file, naming it in the report; the
+A project installed by 0.17.x upgrades in two runs. The first removes the dicing snippets package's
+retired home, `skills/docdicer/dicing-snippets/`, with everything under it, along with the
+`docdicer` skill's earlier files, and removes the docdicer include line from the project's runner
+file, naming it in the report; the
 include line it writes for the devpro tools package lands in the same runner file. Then the
 tree is exhausted: a second install reports nothing and leaves the same files where it left them.
 
@@ -215,13 +228,15 @@ in the file.
 
 What survives both runs is the launcher's `.venv` under `skills/docdicer/tools/`, with everything in
 it, and the directory `skills/docdicer/tools/` holding it. Nothing uses what is there: no
-definition, no include line, and no install writes into it. Delete `skills/docdicer/tools/` once, and the upgrade is complete. That is the old directory
+definition, no include line, and no install removes it or writes into it. Delete
+`skills/docdicer/tools/` once, and the upgrade is complete. That is the old directory
 under `skills/docdicer/`; the install directory's own `tools/`, holding the project's copy of devpro
 and its wrapper, is current and stays.
 
 A project that recorded sessions before this release keeps them: the profiler's stores were named
-`claude-profiler/` and `opencode-profiler/` under `.devpro-temp/`, and the install renames each to
-its `.profiler-claude/` or `.profiler-opencode/` in place, printing `renamed <old> → <new>`. An old
+`claude-profiler/` and `opencode-profiler/` under `.devpro-temp/`, and the install renames each such
+store it finds to its `.profiler-claude/` or `.profiler-opencode/` in place, printing
+`renamed <old> → <new>`. An old
 store stands only where the new name already holds a store too, and the install names it instead of
 moving it: the two are never merged, and merging or deleting the old one is yours.
 
