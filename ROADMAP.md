@@ -7,12 +7,6 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Features
 
-### Project name should be centered in dashboard nav bar
-
-Right now the project name only appears on the browser tab. 
-Centered, bold in current light/dark mode opposite accent color?
-Correct treatment up for debate, but needs to be highly visible.
-
 ### A live agents panel on the dashboard
 
 A starting refinement, not a design: the placement, grouping and join below are the requester's
@@ -80,11 +74,6 @@ scheme's scope however it expands.
 When roadmap, design, or plan are not kanban compliant an indication should show on the kanban
 board or in the nav area - maybe an 'errors' top level nav
 
-### Auto-reload devpro development skill after compaction
-
-compaction hook to record a marker, context hook to inject the `@devpro-development` command.
-note: only necessary for opencode. claude code automatically reloads active skills after a compaction (verify that)
-
 ### An introduction to the process
 
 The development skill's references serve an agent mid-process; a person arriving cold asks what
@@ -130,35 +119,6 @@ workflow is already in place.
 
 ## Maintenance
 
-### The periodic review's panel gains the test-suite audit seat
-
-The next periodic review (and each after, while the finding holds) staffs one more seat: a
-test-suite audit. Three lenses, in the user's framing:
-
-The seat is test-driven, not yet a fixture: this review's run was its first, and its full work —
-the inventory and the behavioral probes below — runs as the second ticket of the next plan (the
-eyeball audit of the tests remaining after the managed-directory strip), on a quiescent
-repository. The `development` skill's *Periodic
-review* section gains the seat as its default panel's ninth only if that drive earns it; until
-the drive is ruled on, the seat is chartered here and named nowhere in the definition.
-
-- **Shotgun versus deliberate.** Sort parametrized and generated tests by whether each case could
-  fail differently — a property or oracle stated, counterexamples minimized — or whether the family
-  iterates an input space proving one trivial fact. Collapse the shotgun kind to the envelope of
-  distinct failure modes; the count drops as a side effect, never as a goal.
-- **Tier balance.** Classify the suite by what it exercises — unit, contract/integration,
-  end-to-end — and read the unit layer's marginal tests against what the integration tier holds.
-  Reading rule: past roughly eighty percent unit coverage, the marginal tests are prime suspects
-  for form-over-function; where no coverage metric exists, distinguish organic bloat from
-  metric-chasing.
-- **Gap by mechanism.** A coverage gap is never the finding by itself; name the mechanism the gap
-  needs — unit for algorithmic behavior, integration or contract instruments for wiring and seams,
-  structural comparison and behavioral probes for structural logic — and propose that mechanism.
-- **Deliverable, named ahead of the review:** a reorganization item for the accumulated test
-  monoliths — `tests/test_devpro_profiler.py`-scale files — collecting tests by subject and splitting
-  along the package's seams, the layout `tests/dashboard/` and `tests/dicing/` already model. The
-  review's burndown drafts the split from the audit's inventory, with no behavior change riding it.
-
 ### (STICKY) Periodic load-bearing-ness pruning pass
 
 A pass over definition clauses, across model generations: apply strip-first-observe-patch
@@ -181,14 +141,6 @@ its purpose survives (a package's row names the commit that carries its work; a 
 be that commit), its form changes, and the rule lives in the process skill and the agent
 definitions, so the change is a definitions-and-CONVENTIONS amendment, not a habit.
 
-### The cold-read script is unreliable under opencode
-
-`devpro/development-tools/cold-read.sh` runs each read in a fresh directory, and in a directory
-where opencode's background service has never run a session, models a provider plugin discovers
-(`opencode-models-discovery`) are reported "Model unavailable", even after `opencode models` runs
-there; the run fails or falls back to opencode's free models. Whether the composed agent file's
-`"*": deny` blocks every tool is therefore unconfirmed by a live run.
-
 ### The TypeScript compiler rides unpinned
 
 `just lint`'s type check runs `bunx tsc`, which takes the latest compiler at run time, so a compiler
@@ -198,24 +150,13 @@ beside `@opencode/plugin`, would hold it.
 currently vetoed because bun gets updated and if we break under a new bun that is a finding.
 mind may change about this later.
 
-### The install's fully-owned wipe semantics
+### The cold-read script is unreliable under opencode
 
-The user's ruling: devpro is exclusively a harness plugin, and a harness plugin's directory is
-100% its own — the loose-files-into-shared-locations era is history. The install therefore
-replaces the plugin directory wholesale: wipe the tree, copy fresh, no banner recognition, no
-foreign-file refusal, no stale list, no prune's per-file judgment, no `.bak` carve-out, no
-`RETIRED_*` inventory — the retirement question dissolves with the wipe. Two exceptions stand:
-the re-entry run passes over the copy it runs from (and keeps its symlinked-copy refusal), and
-the shared files outside the directory keep their handling — the agents file's block and the
-hook entries in the settings file. The managed-directories notion is past the Pieces table's
-"is not" barrier: the thesis's entry for it names the wipe.
-
-The work is a design before it is a plan — SPEC's write-safety and deployed-surfaces, the
-THESIS Pieces entry, ARCHITECTURE's install leaves and the `install.py` rewrite — drafted once
-the periodic review's burndown lands and the repository is quiescent. B16's document-only
-carve-out retirement is subsumed by the write-safety rewrite either way. The next plan holds
-exactly two tickets, in this order: the strip this design describes, then the eyeball audit of
-the tests that remain after the cleanup (the test-suite audit seat's drive, per its own ticket).
+`devpro/development-tools/cold-read.sh` runs each read in a fresh directory, and in a directory
+where opencode's background service has never run a session, models a provider plugin discovers
+(`opencode-models-discovery`) are reported "Model unavailable", even after `opencode models` runs
+there; the run fails or falls back to opencode's free models. Whether the composed agent file's
+`"*": deny` blocks every tool is therefore unconfirmed by a live run.
 
 ## Testing
 
