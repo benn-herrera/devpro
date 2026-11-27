@@ -42,9 +42,9 @@ the piece resembles and is not — the direction work on it must not drift.
 Where a piece is in this table, its conventional answer is the default. A design that grows a piece
 toward its "is not" column is out of scope, however natural the next step looks.
 
-## What is new
+## The new results
 
-Two things, and only these. The machinery behind both is standard, and listed above.
+The machinery behind both is standard, and listed above.
 
 **Shared text exists once.** Agents in a set share text because they must share behavior: a rule
 stated to one agent and not its neighbor is two agents that will act differently in the same
@@ -59,6 +59,12 @@ must carry it is declared, not remembered.
 harness and model family. A harness selects which harness-specific
 paragraphs it carries, and supplies its own layout and names. A family supplies its default model
 for each category, and may add text at anchors but never replace or remove a definition's base text.
+
+**The document tools are absorbed, not built.** The plan-status form a tool reads, the category map
+an agent's model is taken from, and the dicing and check machinery — the split of a document
+into a tree, the rewriting of its links, the live board and the checks — come from projects of
+their own, carried into devpro as devpro code; ARCHITECTURE.md's Repo Layout names each, and what
+they must achieve is SPEC's to state.
 
 ## The process it ships
 
