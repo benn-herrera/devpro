@@ -33,7 +33,7 @@ before anything is approved or dispatched.
 | B14 | dispatchable | mechanical |
 | B15 | landed | expert |
 | B16 | dispatchable | expert |
-| B18 | in progress | expert |
+| B18 | landed | expert |
 
 ### R1 — the panel runs and the findings synthesize
 
@@ -419,7 +419,7 @@ its dependencies, and it is none of devpro's concern. The pointer to the kbase s
 `references/installing.md` (SPEC `plugins.md:96-100`) retires with the claim it cannot support:
 that reference names no prerequisite.
 
-Scope: `PROJECT_DOCS/SPEC/plugins.md` (:96-108 — the span naming kbase's own requirement and
-where its prerequisites live). Fact (re-run): the kbase skill's `references/installing.md` names
-no pandoc, git or model — the sources disagree with the SPEC sentence. In-scope tests: none —
-document only. Done-line: `just check-links`.
+Scope: `PROJECT_DOCS/SPEC/deployed-surfaces/plugins.md` (:96-108 — the span naming kbase's own
+requirement and where its prerequisites live). Fact (re-run): the kbase skill's
+`references/installing.md` names no pandoc, git or model — the sources disagree with the SPEC
+sentence. In-scope tests: none — document only. Done-line: `just check-links`.
