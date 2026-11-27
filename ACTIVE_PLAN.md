@@ -30,7 +30,7 @@ before anything is approved or dispatched.
 | B11 | landed | expert |
 | B12 | landed | expert |
 | B13 | landed | expert |
-| B14 | in progress | mechanical |
+| B14 | landed | mechanical |
 | B15 | landed | expert |
 | B16 | landed | expert |
 | B17 | landed | expert |
