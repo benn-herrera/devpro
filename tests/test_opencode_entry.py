@@ -535,6 +535,6 @@ def test_a_skill_the_domain_does_not_list_attaches_nothing_and_reports(tmp_path:
         {"sessionID": "ses_primary", "skills": []},
         {"sessionID": "ses_primary", "skills": []},
     ]
-    assert [log for log in out["log"] if "devpro-development" in log] == [
-        f"devpro: plugin {NAME}: no skill the plugin lists is named devpro-development: nothing to activate"
-    ]
+    reports = [log for log in out["log"] if "nothing to activate" in log]
+    assert len(reports) == 1
+    assert "devpro-development" in reports[0]

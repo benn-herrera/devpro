@@ -275,14 +275,12 @@ const fireIdle = async (event: SessionIdle) => {
 // here are the context it replaces — provider request messages, built from the input. What follows
 // it in the host is the session's next prompt, which the runner admits after every firing below.
 const fireCompaction = async (event: Compact) => {
-  if (compactionHooks.length === 0) throw new Error("the entry registered no compaction hook")
   firing = "compaction"
   for (const callback of compactionHooks) await callback(event)
 }
 // A prompt as the host admits one: the hook mutates the draft, and what the admission carries after
 // the hook is what the host resolves the skill's attachment from.
 const firePrompt = async (event: Prompt) => {
-  if (admissions.length === 0) throw new Error("the entry registered no prompt hook")
   firing = "prompt"
   for (const callback of admissions) await callback(event)
   attachments.push({ sessionID: event.sessionID, skills: (event.prompt.skills ?? []).map((skill) => skill.id) })

@@ -10,13 +10,11 @@
 //
 // The floor is 2.3.0, where the `subagent` call stops defaulting to the foreground: from it the call
 // returns at once and the child runs in the background, so `execute.after`'s return is the dispatch
-// moment rather than a nudge behind the idle that reports the child's completion. The skill's reload
-// stands on a surface read from the host's published declarations — the `prompt` and `compaction`
-// events of `SessionHooks`, which the pinned 2.4.1 declares — and no path here checks the host's
-// version: the hooks register on every install.
+// moment rather than a nudge behind the idle that reports the child's completion.
 
 import { Plugin } from "@opencode/plugin"
 import type { SessionRequestMessage } from "@opencode/plugin/promise/session"
+import { Skill } from "@opencode/schema/skill"
 import { existsSync, readFileSync, statSync, watch } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { basename, dirname, join } from "node:path"
@@ -49,7 +47,11 @@ const registryPath = join(here, "registry.json")
 const guardrailPath = join(here, "guardrail.ts")
 const profilerPath = join(here, "profiler.ts")
 
-function log(message: string, err: unknown): void {
+function log(message: string, err?: unknown): void {
+  if (err === undefined) {
+    console.error(`devpro: plugin ${basename(here)}: ${message}`)
+    return
+  }
   console.error(`devpro: plugin ${basename(here)}: ${message}:`, err)
 }
 
@@ -67,22 +69,7 @@ function planStanding(root: string): boolean {
   return (existsSync(file) && statSync(file).isFile()) || (existsSync(tree) && statSync(tree).isDirectory())
 }
 
-// The development skill's reload: the host's compaction replaces the session's context with a
-// summary, which drops the skill's text, and no declared hook fires when the compacted context
-// resumes. The one the host declares for a compaction, `compaction`, runs before its request; the
-// event after it that can carry an activation is the session's next `prompt`, the admission the
-// host resolves a prompt's attachments at. So the compaction's hook reads the skill's name off its
-// pre-compaction context and records the session there, and that prompt attaches the skill. The
-// marker is a set of session ids, added at a compaction and removed by the prompt that reads it, so
-// a session compacted twice is reloaded twice; the name is the marker's text because the host's
-// request messages carry an activation as a `skill` tool call and its `<skill_content name="…">`
-// result, not as a skill-kind message, so a context holding the name only through the Agents file's
-// mention of it marks too.
 const skillName = "devpro-development"
-
-// The marker's text, the skill's name without the invocation's `@`: a skill message nests its body
-// under a `content` part, so a JSON-escaped copy of the request would not hold the name itself.
-const skillMark = skillName
 
 // Whether a compaction request's context still holds a skill's activation. The host records an
 // activation as a `SessionMessage.Skill` whose body is a plain `text` field
@@ -92,7 +79,7 @@ const skillMark = skillName
 // `tool-result`, whose `<skill_content name="…">` header carries the skill's name
 // (`.devpro-temp/b2-probe/README.md`).
 function holdsInvocation(text: string): boolean {
-  return text.includes(skillMark)
+  return text.includes(skillName)
 }
 
 // The texts a compaction request's message holds: each part's `text`, and a tool result's own text
@@ -234,16 +221,15 @@ export default Plugin.define({
       // where the transform above put the skill, and its entry is the one the host activates.
       const listed = (await ctx.skill.list()).data.find((skill) => String(skill.name) === skillName)
       if (listed === undefined) {
-        log(`no skill the plugin lists is named ${skillName}`, "nothing to activate")
+        log(`no skill the plugin lists is named ${skillName}: nothing to activate`)
         return
       }
-      // The prompt's own list is kept. The brands the host puts on a skill's id are made from its
-      // strings, and no maker stands in the published declarations this file is checked against, so the
-      // id the attachment carries is the string the domain lists for the skill.
-      const id = String(listed.id)
+      // The prompt's own list is kept. The id the attachment carries is made from the one the domain
+      // lists for the skill, the schema's maker putting the host's brand on it.
+      const id = Skill.ID.make(listed.id)
       const attached = prompt.prompt.skills ?? []
-      if (attached.some((skill) => String(skill.id) === id)) return
-      prompt.prompt.skills = [...attached, { id } as { id: NonNullable<typeof attached[number]>["id"] }]
+      if (attached.some((skill) => String(skill.id) === String(id))) return
+      prompt.prompt.skills = [...attached, { id }]
     })
     await ctx.session.hook("compaction", (compaction) => {
       if (!compaction.messages.some((message) => textOf(message).some(holdsInvocation))) return
