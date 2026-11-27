@@ -23,7 +23,7 @@ before anything is approved or dispatched.
 | B4 | landed | expert |
 | B5 | landed | expert |
 | B6 | landed | expert |
-| B7 | in progress | expert |
+| B7 | landed | expert |
 | B8 | dispatchable | expert |
 | B9 | dispatchable | expert |
 | B10 | dispatchable | expert |
