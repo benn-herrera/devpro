@@ -30,7 +30,8 @@ rides the session's next prompt, the host's own attachment path, the idle mentio
 live compaction test found inert deleted — and P7 applies the revised text.
 
 P7 owes its `devpro-prompt-engineer` usability review and `devpro-architect` revision
-(*Dispatchability*); P1–P6 are landed and owe neither, PR and PB are `dispatchable`.
+(*Dispatchability*); P1–P6 are landed and owe neither; PR is landed, PB's drafting is in
+progress.
 
 ## Status
 
@@ -44,7 +45,16 @@ P7 owes its `devpro-prompt-engineer` usability review and `devpro-architect` rev
 | P6 | landed | mechanical |
 | P7 | landed | expert |
 | PR | landed | expert |
-| PB | dispatchable | expert |
+| PB | landed | expert |
+| B1 | landed | expert |
+| B2 | dispatchable | expert |
+| B3 | dispatchable | mechanical |
+| B4 | dispatchable | expert |
+| B5 | dispatchable | expert |
+| B6 | dispatchable | mechanical |
+| B7 | dispatchable | mechanical |
+| B8 | dispatchable | mechanical |
+| B9 | dispatchable | expert |
 
 ### P1 — the paired deltas applied to the project documents
 
@@ -520,6 +530,345 @@ exists, committed, its entries naming their seats.
 
 ## Post-plan burndown
 
+Drafted from [ACTIVE_PLAN_REVIEW.md](ACTIVE_PLAN_REVIEW.md) — the post-plan review landed at
+`1088921f` — one item per root-cause group, each citing its findings' IDs. The findings' severity
+is the review document's; the items carry the fix. B5, B8 and B9's leaf and ticket text is the
+prompt-engineer seat's to write; the other items go to the coder seats. The items' usability
+review has run (`.devpro-temp/pb-pe-review.md`); the `devpro-architect` revision follows it, its
+report at `.devpro-temp/pb-architect-revision.md` (*Dispatchability*); after both, the ticket's
+remaining work is each item's row set by its state, then the dispatches. Run order: B1 lands
+before the rest — until its commit, the conftest check keeps `just lint` red on the live tree, and
+every item's done-line or checkpoint gate runs `just lint`; B2 lands before B3 and B7, whose items
+state the dependency; nothing else orders the items. Items that edit a
+landed SPEC or ARCHITECTURE leaf also revise that leaf's pair in `ACTIVE_DESIGN.md` — the
+pair's from-text becomes the leaf's current text, its becomes the new, the pairs re-verified
+with `just dev-check-design-deltas-applied` — and `ACTIVE_DESIGN.md` is left unstaged, as it is
+through the run.
+
 ### PB Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+The ticket's remaining work after the items' usability review and `devpro-architect` revision:
+each item's row set by its state, then the dispatches.
+
+### B1 — every conftest's test-shaped functions eliminated (R1, R2, R3; the owner's ruling extends it to every conftest in the repository)
+
+Intended lifetime: shipped. Rating: expert.
+
+**No function in a `conftest.py` starts with `test_`** — pytest collects no test function from a
+`conftest.py` in directory traversal (`--collect-only` verified), so the prefix there is either a
+helper doing its job under a name that hides it or a test the gate never runs. The three files
+carrying test-shaped functions: `tests/install/conftest.py`, `tests/profiler/conftest.py`,
+`tests/render/conftest.py`; `tests/conftest.py` and `tests/dashboard/conftest.py` have none.
+
+Scope (facts — commands and answers):
+- `grep -c '^def test_' tests/{profiler,install,render}/conftest.py` → **54, 146, 116**.
+- Name-diff of each conftest's test functions against the same directory's `test_*.py` (the
+  scan is kept at `.devpro-temp/conftest-scan/`): **render 116 of 116** by-name duplicates;
+  **profiler 53 of 54** duplicates, the one unique being R1's retired-path test; **install 135
+  of 146** duplicates, **11 tests that exist only in the conftest** —
+  `test_a_failed_probe_leaves_no_earlier_script_and_names_the_skip_and_its_reason`,
+  `test_a_safety_copy_inside_the_install_directory_goes_with_the_tree`,
+  `test_a_second_install_of_a_plugin_with_a_manifest_rewrites_the_same_manifest`,
+  `test_a_second_install_replaces_the_tree_whole_and_leaves_no_stale_render`,
+  `test_a_second_run_over_a_fresh_tree_reports_up_to_date_and_changes_no_byte_or_mode`,
+  `test_a_user_level_opencode_install_copies_the_entry_and_the_guardrail_beside_it`,
+  `test_an_install_removes_the_retired_launcher_and_its_directory`,
+  `test_an_install_under_a_symlinked_install_directory_is_refused_with_nothing_written`,
+  `test_an_operators_manifest_without_the_marker_is_refused_with_nothing_written`,
+  `test_install_writes_every_render_and_stamps_the_packages_once`,
+  `test_reinstalling_over_a_copy_of_another_version_reports_both_versions`.
+- `tests/render/conftest.py`: delete all 116 `def test_` functions — each duplicates a collected
+  test by name; the collected copy governs.
+- `tests/profiler/conftest.py`: delete all 54 — the 53 by-name duplicates and R1's
+  `test_init_removes_the_skill_an_older_init_rendered_under_its_former_name` (defined at
+  `:1277`; a re-run no longer removes `.claude/skills/show-profile/SKILL.md` — P6 deleted that
+  machinery — so the test fails when run; delete, do not rewire). R2's duplicated strict-fill
+  test (`:2030–2085`) and its mark loop (`:1736`) are within the 53.
+- `tests/install/conftest.py`: delete the 135 by-name duplicates. The 11 whose names appear in
+  no `test_*.py` are triaged — each is one of: **a duplicate** whose
+  collected copy exists under a different name (the earlier elimination renamed tests while
+  moving them; verify by matching the body's coverage against `test_*.py`, then delete the
+  conftest copy), **a helper misnamed with the `test_` prefix** (bare-rename it if something
+  uses it; delete it if nothing does), or **a zombie** asserting machinery an earlier plan
+  removed (the R1 pattern — `test_an_install_removes_the_retired_launcher_and_its_directory`
+  names one; delete it, recording in the report what it asserted). The report names each of the
+  11 with its category and the fact that puts it there — the counterpart's file:line for a
+  duplicate, the dead assertion for a zombie; the done-line's checks cannot catch a wrong
+  category, so this record is the item's completion observation. A test that is none of the
+  three — genuinely unique live coverage — is reported to the session before any action, never
+  moved or deleted on the executor's own reading.
+- Trim `tests/profiler/test_init.py:1`'s module docstring to its surviving topics (R3).
+- The check that keeps this eliminated: the `lint` recipe's python section now ends with
+  `@! grep '^def test_' tests/conftest.py tests/*/conftest.py` — added ahead of the deletions, so
+  `just lint` is red against the live tree until this package lands;
+  its failure prints the offending lines. The red run is recorded before any deletion
+  (`.devpro-temp/conftest-scan/lint-check-red.md`: exit 1, the 316 live lines printed) — the
+  evidence the pattern matches, so the check's later green is not vacuous. The deletions above
+  are what make it green, and this package's commit stages the justfile line with them.
+- No fixture or helper any `test_*.py` file uses is deleted — the gate proves it.
+
+In-scope tests: deletions and bare-renames only — the gate's collected count is unchanged,
+because nothing the conftests held was ever collected. Done-line: `just test devpro`,
+`just dev-check-links`, `just lint` (whose python section now carries the conftest check).
+Checkpoint gate once before the commit: `just test`, `just lint`, `just sweep-python`. The
+commit stages, beside its own paths, `ACTIVE_PLAN.md` and `ACTIVE_PLAN_REVIEW.md` — the review
+document's addendum records this scope extension.
+
+### B2 — the marker read: the declared shape, the host probe, the match or the narrowing (R4, R5, R6, R7, R10)
+
+Intended lifetime: shipped. Rating: expert.
+
+Outcome: the entry's marker matches a shape the pinned host declares; the runner's stand-in
+models the declared shape and is type-checked against the pin; SPEC's clause states exactly what
+the marker establishes — never more.
+
+Scope (facts from the review document's R4–R7, R10):
+- `devpro/harnesses/resources/opencode/index.ts:84–102`: rewrite the block comment to state what
+  is established — the host records a skill activation as a `SessionMessage.Skill` whose body is
+  a plain `text` field (`@opencode/schema/dist/session-message.d.ts:540–554`, no `content`);
+  whether the host's compaction builder carries the skill message into the hook's `messages` is
+  a live observation, not a declaration (R4). Take `textOf`'s parameter as the declared
+  `SessionRequestMessage` type and read `part.text` under a `"text" in part` narrowing; delete
+  the `as Record<string, unknown>` cast (R7 — the hook's parameter is already typed;
+  `SessionCompaction.messages` → `Array<SessionRequestMessage>`, a narrowing probe compiles).
+- `tests/opencode_entry_runner.ts`: give `Compact` and `skillMessage` the declared shapes — a
+  skill activation is `{ type: "skill", skill, name, text }`, its body in `text`, and user
+  messages' parts are `TextPart | MediaPart` — and type-check the runner against
+  `@opencode/plugin`'s re-exports in this change (R5; the runner is deliberately outside
+  `tsconfig.json`'s program, `justfile:240`, which is why the invented shape passed the gate).
+- The host probe (R6): the probe is one run against the pinned host — a session whose context
+  held an activated skill goes through a compaction, and the compaction hook's `messages` are
+  read: the observation is whether any message is skill-kind (`type: "skill"` carrying the
+  skill's `name`). The report names the probe, its output, and the branch it selects; where the
+  probe cannot run headless, the report says so and the session runs it with the operator, the
+  branch selection following its output. Where the
+  kind is reachable — match the kind (`type === "skill" && name === skillName`, or
+  `skill === id`), and add the runner case whose context holds the Agents file's text and no
+  skill message, asserting nothing attaches (the empty case exists), the case's comment naming
+  its defect — R6's false positive, the marker firing on the Agents file's text with no skill
+  activation. Where it is not — keep the
+  textual marker, change nothing else, and report to the session before touching SPEC
+  (narrowing SPEC's "where the session's context held the skill before it" to "held the skill's
+  text or its name" is a requirement change the user decides): the runner case is not added
+  until the session rules, and the marker's behavior is unchanged until then — this package
+  closes on this branch's own work, the narrowing and any runner case a later change once the
+  session rules.
+- `tests/test_opencode_entry.py:85–110`: the default `compactions` becomes the live case —
+  `("devpro-development",)` — and the two tests needing "context held nothing" pass
+  `("", "")` explicitly (R10; the current default conflates "no compaction" with "compacted an
+  empty context").
+
+In-scope tests: the runner's rewrite is the R5 fix — the stand-in models the API's real
+semantics (`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/a-stand-in-models-the-api-s-real-semantics.md`),
+the leaf R6 turns on; the rewritten tests pin the branch R6's probe selects. The runner's
+type-check is a new justfile recipe (`lint-runner-typescript`, `_js-deps`-dependent, running
+`bunx tsc --noEmit` over a tsconfig whose `include` takes the runner — the lint recipe's own
+scope comment, `justfile:240`, is why the main program excludes it), added in this package.
+Done-line: `just test devpro`, `just dev-check-links`, `just lint`, `just lint-runner-typescript`.
+Checkpoint gate once before the commit: `just test`, `just lint`, `just sweep-python`.
+
+### B3 — the entry's text and small code notes (R8, R9, R11, R12)
+
+Intended lifetime: shipped. Rating: mechanical.
+
+Outcome: the entry explains the reload once; the runner's `fireCompaction`/`firePrompt` carry
+no redundant guard throws; the log line reads once; the brand is made by the schema's maker.
+
+Scope (facts from the review document's R8, R9, R11, R12; B2's rewritten comment at `:84–102`
+is the text this item dedups — lands after B2):
+- `index.ts`: one block comment above the two hooks stating the marker's lifecycle (recorded at
+  a compaction whose context held the skill, spent by the next prompt, N compactions reload N
+  times); the header keeps one clause; `skillMark` (`:82`) collapses into `skillName` (R8).
+- `tests/opencode_entry_runner.ts`: delete `fireCompaction`/`firePrompt`'s unconditional-guard
+  throws (R9 — the code reaching them has already established a hook is registered).
+- `index.ts:229`: the failed-lookup `log` call takes the whole sentence as its message and drops
+  the `err` argument — today it prints `…: nothing to activate: nothing to activate`; update
+  `tests/test_opencode_entry.py`'s pin to the substring (`nothing to activate`), not the whole
+  line (R11).
+- `index.ts:232–238`: replace the `as { id: … }` assertion with `Skill.ID.make` from
+  `@opencode/schema/skill` (`skill.d.ts:3`, `Schema.brand<Schema.String, "Skill.ID">` with
+  `.make`; compile-probe verified) and correct the "no maker stands in the published
+  declarations" comment (R12).
+
+In-scope tests: `tests/test_opencode_entry.py`'s R11 pin update names its defect — the
+doubled-print is the defect the exact-string assertion pinned. Done-line: `just test devpro`,
+`just dev-check-links`, `just lint`. Checkpoint gate once: `just test`, `just lint`,
+`just sweep-python`.
+
+### B4 — the version claims (R13, R14, R15, R16)
+
+Intended lifetime: shipped. Rating: expert.
+
+Outcome: one floor claim, the host reference's, stated where a consumer reads it and where the
+entry's own rules put the pin's numeral.
+
+Scope (facts from the review document's R13–R16):
+- Read the host reference — `node_modules/@opencode/plugin/dist/promise/session.d.ts`, the
+  `ModelHooks`/`SessionHooks` declarations (the twin `effect/session.d.ts` is line-identical) —
+  for what an undeclared hook name does at `ctx.session.hook`/`ctx.tool.hook` registration, and
+  quote the finding in the report (never an inference — CONVENTIONS, *A hook contract is read,
+  not assumed*). On that read the executor selects the branch and states the choice in the
+  report: where an undeclared hook throws, the entry's floor line states 2.4.1 outright; where
+  it is accepted as a no-op, the floor line states 2.3.0 with "your mileage may vary" plus a
+  sentence naming the reload's two hooks (`SessionHooks.prompt`, `SessionHooks.compaction`)
+  observed at 2.4.1 and unverified below it (R13).
+- `index.ts:3, 6, 11–16`: the floor paragraph is the single statement — the `(floor 2.3.0)`
+  label on line 6 is cut, the negative clause "no path here checks the host's version" is cut
+  (CONVENTIONS, *No version-conditional code paths*, already forbids the branch), and the
+  numeral `2.4.1` is replaced by "the `@opencode/plugin` declarations `package.json` pins"
+  (R15, R16).
+- `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md`, the opencode paragraph: one sentence
+  stating the consumer-facing requirement — the entry requires an opencode that returns the
+  `subagent` call at dispatch and declares the `SessionHooks` events it registers on, with the
+  numeral the selected branch's: 2.4.1 or later where the read supports the throws branch, 2.3.0
+  or later — the two hooks observed at 2.4.1 — where it supports the no-op branch — and
+  `PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md:20–24`
+  cut to its load-bearing content (the `subagent`-foreground observation), citing the SPEC
+  sentence, with "not an API one: every API the entry uses exists at 2.2.6" gone (R13, R14).
+  Both leaves' pairs in `ACTIVE_DESIGN.md` are revised in the same commit.
+
+In-scope tests: none — document and header edits; `just dev-check-links` and
+`just dev-check-design-deltas-applied` confirm the pairs. Done-line: `just dev-check-links`,
+`just dev-check-design-deltas-applied`, `just lint`. Checkpoint gate once: `just test`,
+`just lint`, `just sweep-python`.
+
+### B5 — the documents' altitudes (R17, R18, R19, R21, R22's leaf clause)
+
+Intended lifetime: shipped. Rating: expert.
+
+Outcome: SPEC owns the outcomes; ARCHITECTURE cites them; each site states the facts only it
+adds.
+
+Scope (facts from the review document's R17–R22; line numbers the usability review checked):
+- `PROJECT_DOCS/ARCHITECTURE/install/opencode-entry.md`: the reload paragraph keeps the entry's
+  placement (which hooks it registers; the id resolved from the plugin's skill domain; a failed
+  lookup attaches nothing and logs) and cites SPEC for the outcome (R17); "never assumed" is
+  dropped from the id clause — the CONVENTIONS citation one clause later is the only statement
+  of the rule (R18); the Contexts list gains a "*The skill's reload.*" bullet beside
+  "*Reminder.*" and the opening sentence is reduced to a clause naming the reload (R19).
+- `PROJECT_DOCS/SPEC/deployed-surfaces/shipped-files.md:128`: the clause "where it cannot read
+  as the stop's label" is cut — position and separator are the requirement, the reason belongs
+  to the design record (R21).
+- `PROJECT_DOCS/ARCHITECTURE/harness-profiler/the-page-template-and-its-presentation.md:53`:
+  the clause "the name a fill the strict fill carries" uses `fill` twice for two things — the
+  fill mark and the filling act; name the machinery's operation once (R22's leaf half).
+- R20's document half: SPEC owns what the name is and the grammar every page's nav must hold,
+  including the board's; `PROJECT_DOCS/ARCHITECTURE/harness-profiler/serving.md` keeps the
+  nav's element order and drops the restatement of the name's source; the template leaf names
+  both carriers — the templates' pages take the name from the strict fill, the board page's
+  from the payload its script reads — citing SPEC for what it is.
+- Each edited leaf's pair in `ACTIVE_DESIGN.md` is revised in the same change, per the section
+  opening.
+
+In-scope tests: none — document edits; the delta check and the link check confirm. Done-line:
+`just dev-check-links`, `just dev-check-design-deltas-applied`, `just dev-check-plan`.
+Checkpoint gate once: `just test`, `just lint`, `just sweep-python`.
+
+### B6 — the project name's binding test and docstrings (R20's code half, R22's docstring half)
+
+Intended lifetime: shipped. Rating: mechanical.
+
+Outcome: the board's title and the profiler's nav and title are bound to one name by a test;
+the name's docstrings state their own contracts.
+
+Scope (facts from the review document's R20, R22):
+- One test in `tests/dashboard/test_server.py`, beside
+  `test_the_board_pages_nav_slot_is_filled_from_the_payloads_project` (`:624`) and using the
+  same `serve` fixture the suite's server tests use: open `/board/`, `/profiler/` and
+  `/page/<sid>`, read the project name from the board's `<title>`, the profiler's `<title>` and
+  its `.project-name` span, and assert all equal — what the binding SPEC's clause states (R20).
+  The test embeds `clauses.TEST_PRECONDITION` naming its defect: the three call sites derive
+  the served project's name independently and no test binds them (R20's code half), so a surface
+  whose derivation changes alone lands unchecked.
+  Three call sites each derive the name with `os.path.basename`
+  (`devpro/dashboard/server.py:161, 186`, `devpro/profiler/pages.py:846`) and nothing binds
+  them; `devpro/kanban/server.py:174` is out of scope — the board payload's `project:` field is
+  the board's own.
+- `devpro/profiler/pages.py:285–293` (R22): `project_fill`'s docstring states it always takes
+  the raw (unescaped) name — today it implies the name arrives escaped while `project_fills`
+  re-escapes the same value (a probe confirmed no double-encode ships; the footgun is the
+  docstring's implied contract).
+
+In-scope tests: the added test names its defect — R20's code half, the unbound derivations
+above; R22 changes no behavior. Done-line:
+`just test devpro`, `just dev-check-links`, `just lint`. Checkpoint gate once: `just test`,
+`just lint`, `just sweep-python`.
+
+### B7 — the test instruments' contracts (R23, R24, R25)
+
+Intended lifetime: shipped. Rating: mechanical.
+
+Outcome: the runner's stdout contract is parseable in one pass; the reload tests carry the
+convention's clause; no docstring claims a comparison another test makes. Lands after B2 — its
+header's host-fact clause drops only once B2 gives the stand-in the declared shape.
+
+Scope (facts from the review document's R23–R25):
+- `tests/opencode_entry_runner.ts` header (R23): the JSON's keys one per line in output order,
+  as `tests/profiler/profiler_contract_runner.ts` does; the prose states the driven surface
+  (which input keys the runner fires, in what order); `attachments` described as "the ids the
+  prompt draft carries before the hook runs" — not where they came from; the "fails where"
+  sentence extended to the reload hooks (`fireCompaction`/`firePrompt`); the reflowed reload
+  paragraph restored to its ~100-column wrap and the "the host admits the prompt a compaction
+  is followed by" clause cut — the header states what the runner constructs; what the host
+  admits is B2's probe's observation, never the runner's claim.
+- `tests/test_opencode_entry.py` (R24, corrected against the file): the reload group is the
+  five tests at `:323, 349, 373, 405, 437`; none of them carries the
+  `clauses.TEST_PRECONDITION` clause — all paraphrase it as "It fails on…" — while the sibling
+  suites embed the clause object itself (`tests/profiler/test_fill.py`,
+  `tests/dashboard/test_server.py`). The five gain the clause embedding, following the
+  siblings' pattern; the review document's R24 said "two of six lack the marker four siblings
+  carry" and is corrected there.
+- `tests/test_opencode_entry.py` (R25): `test_a_skill_the_domain_does_not_list_attaches_nothing_and_reports`
+  (`:437`) loses the sentence claiming the differential comparison
+  `test_the_attachment_names_the_skill_the_domain_lists` (`:405`) makes.
+
+In-scope tests: docstring and header edits; the runner's header is prose its own output must
+match, checked by the suite. Done-line: `just test devpro`, `just dev-check-links`, `just lint`.
+Checkpoint gate once: `just test`, `just lint`, `just sweep-python`.
+
+### B8 — the ROADMAP ticket's text (R27, R28)
+
+Intended lifetime: shipped. Rating: mechanical.
+
+Outcome: the ticket states facts and direction; its instruments resolve.
+
+Scope (facts from the review document's R27, R28):
+- Cut the second sentence's rule citation ("the noise the project's own emphasis-economy rule
+  forbids…") — the next paragraph already carries the direction, and the ticket's third
+  paragraph already states the fact without surroundings (R27).
+- The third paragraph's instrument enumeration resolves: name the recipe target
+  (`render-diff`'s slot per
+  `PROJECT_DOCS/CONVENTIONS/planning-and-execution/render-diff-slots-and-output.md`) and the test
+  file the render-property assertions live in; where they live in no one file, state the search
+  without the enumeration (R28).
+
+In-scope tests: none. Done-line: `just dev-check-roadmap`, `just dev-check-links`. Checkpoint
+gate once: `just test`, `just lint`, `just sweep-python`.
+
+### B9 — the CONVENTIONS leaves the review's gaps named (R29, R30, R31)
+
+Intended lifetime: shipped. Rating: expert.
+
+Outcome: the house rules name the two traps the review found and the one sentence that scopes
+the type check.
+
+Scope (facts from the review document's R29–R31; the proposals they carry are quoted at their
+sources):
+- A new leaf under the [Planning and Execution](PROJECT_DOCS/CONVENTIONS/entry-point.md) tree: **no function in a `conftest.py` starts with `test_`**; the file
+  carries fixtures and bare-named helpers, and a test-shaped function found there is one of a
+  stale duplicate, a misnamed helper, or a zombie asserting removed machinery — the pytest
+  traversal-collection trap is why the prefix never runs (R29; the proposed wording stands at
+  `.devpro-temp/pr-review-python-coder.md:265–268`).
+- A new leaf under the [Code, Definitions and Install](PROJECT_DOCS/CONVENTIONS/entry-point.md)
+  tree: a runner's stand-in is type-checked against the pinned host declarations in the change
+  that edits it; where it cannot be, a comment names the field it models and where in the
+  declarations it is declared (R30; the proposed wording stands at
+  `.devpro-temp/pr-review-typescript-coder.md:268–271`).
+- R31's one sentence — the type check holds that a name exists, never that a read is right —
+  lands where its reader looks for it: the prompt-engineer writing these leaves decides which
+  leaf carries it (R30's, a stand-in's own, or the hook-contract leaf) and writes the smallest
+  statement.
+
+In-scope tests: none. Done-line: `just dev-check-links`, `just dev-check-plan`. Checkpoint gate
+once: `just test`, `just lint`, `just sweep-python`.
+

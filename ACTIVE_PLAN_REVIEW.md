@@ -199,9 +199,12 @@ neither confirms nor contradicts R6.
   surface; describe ids as "the prompt draft carries before the hook runs"; extend the failures
   sentence; restore the wrap and drop the host-fact claim until R5's fix gives the runner the
   declared shape.
-- **R24 — prompt-engineer.** Two of the six reload tests carry the "It fails on…" prose without
-  the `clauses.TEST_PRECONDITION` marker four siblings carry. Fix: the marker wins (it is the
-  convention); the two gain it.
+- **R24 — prompt-engineer (arithmetic corrected against the file during drafting).** The reload
+  group in `tests/test_opencode_entry.py` is the five tests at `:323, 349, 373, 405, 437`; none
+  of them carries the `clauses.TEST_PRECONDITION` clause — all paraphrase it as "It fails on…" —
+  while the sibling suites embed the clause object itself (`tests/profiler/test_fill.py`,
+  `tests/dashboard/test_server.py`). Fix: the five gain the clause embedding, following the
+  siblings' pattern.
 - **R25 — prompt-engineer.** `test_a_skill_the_domain_does_not_list_attaches_nothing_and_reports`'s
   docstring claims the differential comparison a different test makes. Fix: cut the sentence.
 - **R26 — Note (architect; typescript-coder flagged the sibling).** Two form pins the suites
@@ -239,6 +242,25 @@ neither confirms nor contradicts R6.
   publishes exactly one name). The `clip` duplication P3 landed is compliant; what survives is a
   note — P3's row-draw test binds one copy, and any future drift between the copies stays
   unreported unless a binding test is wanted. No CONVENTIONS change, no code change.
+
+## Addendum — the conftest sweep's true scope (found during burndown drafting)
+
+R1–R3's scope was `tests/profiler/conftest.py`'s leftovers. During the burndown's drafting, the
+owner ruled wider and named the rot directly: **no function in any `conftest.py` starts with
+`test_`** — the three rotten files are `tests/install/conftest.py`, `tests/profiler/conftest.py`
+and `tests/render/conftest.py` (`tests/conftest.py` and `tests/dashboard/conftest.py` are
+clean), every test-shaped function in them is invisible to `just test` (R1's traversal trap),
+and each is one of **a duplicate** of collected coverage, **a helper with a bad (test-prefixed)
+name**, or **a zombie** asserting machinery an earlier plan removed.
+
+The counts and overlap (scan kept at `.devpro-temp/conftest-scan/`):
+`grep -c '^def test_' tests/{profiler,install,render}/conftest.py` → 54, 146, 116. Name-diff
+against each directory's `test_*.py`: render 116/116 by-name duplicates; profiler 53/54
+duplicates (the one unique is R1's retired-path test — a zombie); install 135/146 duplicates,
+11 names appearing in no `test_*.py` — triaged per the owner's taxonomy (duplicates under
+renamed forms, misnamed helpers, or zombies), never moved on the executor's own reading. The
+four seats reviewed the landed range and none swept past the profiler conftest; this addendum
+is the record of the extension. B1 carries the scope.
 
 ## Settled-without-finding (for the record)
 

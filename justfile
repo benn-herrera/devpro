@@ -228,6 +228,13 @@ lint: _venv _lint-shell _lint-typescript
     @{{VENV_PYTHON}} -m isort --profile black --check-only --line-length 120 tests devpro devtools
     @{{VENV_PYTHON}} -m flake8 --ignore="{{FLAKE8_IGNORE}}" devpro devtools tests
     @{{VENV_PYTHON}} -m mypy devpro devtools
+    @! grep '^def test_' tests/conftest.py tests/*/conftest.py
+
+# The last line of `lint` enforces that no function in any conftest.py starts with test_: pytest
+# collects no test function from a conftest.py in directory traversal, so a test_ prefix there is
+# either a helper hiding under a test's name or a test the gate never runs. grep exits 0 on a
+# match and 1 on none, so the inversion passes the check on no lines, and its failure prints the
+# offending lines.
 
 # A missing shellcheck fails the lint, never skips the step.
 _lint-shell:

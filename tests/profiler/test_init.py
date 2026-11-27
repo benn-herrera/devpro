@@ -1,4 +1,4 @@
-"""retired launchers• skill removal• store rename"""
+"""An opencode-shaped repository's refusal, and the store rename."""
 
 import json
 import subprocess
