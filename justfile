@@ -65,7 +65,7 @@ _venv:
     # Runs `${1}` against the floor above; a venv that exists, or one just built, must pass it. A
     # below-floor venv is deleted and rebuilt once from `python3`, and a rebuild that lands below
     # the floor again (or an interpreter that fails the test) is refused rather than kept.
-    below_floor() {
+    function below_floor() {
         ! "$1" -c "import sys; sys.exit(sys.version_info < tuple(map(int, '${floor}'.split('.'))))"
     }
     if [[ -x {{VENV_PYTHON}} ]] && below_floor {{VENV_PYTHON}}; then
