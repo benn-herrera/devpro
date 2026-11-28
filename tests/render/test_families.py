@@ -184,11 +184,14 @@ def test_the_router_routes_to_every_reference_that_ships_and_no_other(skill: Def
 @pytest.mark.parametrize("harness", harnesses(), ids=lambda name: name)
 def test_the_development_skill_names_the_target_that_counts_landed_plans(harness: str) -> None:
     """The section states a count, so it must name a recipe the runner carries: a target the skill names
-    and the justfile lacks is a count its reader cannot read."""
+    and the justfile lacks is a count its reader cannot read. The count names the target by the skill's
+    own convention — "`plan-count` runner target", never "`just plan-count`" — so the parser reads
+    backticked names, and the vacuity guard refuses a section whose count names none."""
     ctx = build_render(components="", harness=harness, family="claude")
     [text] = [text for path, text in render_all(ctx) if str(path).endswith("development/SKILL.md")]
-    targets = set(re.findall(r"`just ([\w-]+)`", text))
-    assert targets, "no `just` target parsed from the rendered section, so the check below would pass vacuously"
+    count_section = text[text.index("## Periodic review") :]
+    targets = set(re.findall(r"`([\w-]+)` runner target", count_section))
+    assert targets, "no runner target parsed from the count's section, so the check below would pass vacuously"
     justfile = Path(__file__).resolve().parents[2] / "justfile"
     recipes = set(re.findall(r"^([a-z][\w-]*) *[^\n:]*:", justfile.read_text(encoding="utf-8"), re.M))
     assert sorted(targets - recipes) == []
