@@ -114,10 +114,10 @@ def running_dispatches(directory: Path | str) -> list[Dispatch]:
     as `read_sessions` reads them again. Under opencode the dispatch is the acknowledgment `execute.after`
     wrote, its `child_agent_id` the child's session; the child's idle with an empty `background`
     (`child_episodes`' end contract) closes it. Under claude the `Agent` tool call whose `child_agent_id`
-    names the child opens the dispatch and the `SubagentStop` event record closes it, matched by the
-    parent session and the agent type in the order the records stand: two concurrent dispatches of one
-    agent type in one session close in the order they opened. A dispatch with no closing record is
-    running.
+    names the child opens the dispatch and the `SubagentStop` event record closes it, its own `agent_id`
+    the child's id the opening call named — the key the session page's stop join reads — so each stop ends
+    the dispatch it names, and two dispatches of one session close at their own stops. A dispatch with no
+    closing record is running.
 
     The color is assigned here, in the running set's order, and holds while the dispatch runs: it is the
     dispatch's place among the running ones, its hue the palette's next. The running set is ordered by
@@ -166,20 +166,13 @@ def _dispatched(record: Json) -> Dispatch | None:
 
 def _ended(sessions: list[Json]) -> set[str]:
     """The ids of the dispatches a closing record ends: opencode's child idled with an empty
-    `background`, and claude's `SubagentStop`, its session and agent type matched against each `Agent`
-    call of that session in file order."""
+    `background`, and claude's `SubagentStop`, its `agent_id` the child's id — the opening `Agent`
+    call's `child_agent_id`, the key the session page's stop join reads — so each stop ends the dispatch it names."""
     ended = {str(record["session"]) for record in child_episodes(sessions).values()}
-    calls: dict[tuple[str, str], int] = {}
     for session in sessions:
         for record in session["records"]:
-            if record.get("harness") != "claude":
-                continue
-            key = (str(record.get("session")), str(record.get("agent_type")))
-            if record.get("tool") == "Agent" and record.get("child_agent_id"):
-                calls[key] = calls.get(key, 0) + 1
-            elif record.get("event") == "SubagentStop" and calls.get(key, 0) > 0:
-                calls[key] -= 1
-                ended.add(str(record["session"]))
+            if record.get("harness") == "claude" and record.get("event") == "SubagentStop" and record.get("agent_id"):
+                ended.add(str(record["agent_id"]))
     return ended
 
 

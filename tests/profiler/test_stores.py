@@ -1,11 +1,12 @@
-"""list_sessions• read_sessions• copy-as-no-store"""
+"""list_sessions• read_sessions• copy-as-no-store• the claude dispatch's closing record"""
 
+import json
 import shutil
 from pathlib import Path
 
-from devpro.profiler.read import list_sessions, read_sessions
+from devpro.profiler.read import list_sessions, read_sessions, running_dispatches
 
-from .conftest import _write_store
+from .conftest import _claude_store, _stop_at, _write_store
 
 
 def test_the_readers_read_a_copy_of_a_store_as_no_store_at_all(tmp_path: Path) -> None:
@@ -26,3 +27,70 @@ def test_the_readers_read_a_copy_of_a_store_as_no_store_at_all(tmp_path: Path) -
 
     assert [session["id"] for session in list_sessions(project)] == ["s-only"]
     assert [session["id"] for session in read_sessions(project)] == ["s-only"]
+
+
+def test_a_claude_dispatch_ends_at_its_stop(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect (R1): the closing matcher reads the `SubagentStop`'s
+    parent session id, so a claude dispatch's id — the opening `Agent` call's `child_agent_id` — never
+    matches the ended set, and every claude dispatch shows running forever.
+
+    A claude `Agent` call opening a child keeps the dispatch running until that child's `SubagentStop`,
+    whose own `agent_id` is the child's id the call named: the stop ends it, the derivation leaving no
+    claude dispatch running. Without the fix the dispatch still runs past its stop."""
+    project = tmp_path / "project"
+    _claude_store(
+        project,
+        "s-parent",
+        "2026-01-01T00:00:00.000Z",
+        extra={"tool": "Agent", "name": "devpro-coder", "agent_type": "devpro-coder", "child_agent_id": "a1"},
+    )
+    assert [dispatch.id for dispatch in running_dispatches(project)] == ["a1"]
+
+    _stop_at(project, "s-parent", "2026-01-01T00:00:02.000Z", "a1")
+    assert running_dispatches(project) == []
+
+
+def test_two_claude_dispatches_close_in_opening_order(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect (R1): a claude dispatch never closes, so two of one
+    session and one agent type — the case the old session-and-type match conflated — keep running past
+    both their stops rather than closing at their own.
+
+    Two `Agent` calls of one agent type open `a-first` then `a-second`, their `SubagentStops` appended
+    after: both run in opening order, the palette's first and second; `a-first`'s stop leaves
+    `a-second` running in its opening place, and `a-second`'s stop leaves none. Without the fix neither
+    closes and the set never shrinks."""
+    project = tmp_path / "project"
+    store = project / ".devpro-temp" / ".profiler-claude"
+    store.mkdir(parents=True)
+    openings = [
+        ("2026-01-01T00:00:01.000Z", "a-first"),
+        ("2026-01-01T00:00:02.000Z", "a-second"),
+    ]
+    (store / "s-parent.jsonl").write_text(
+        "".join(
+            json.dumps(
+                {
+                    "v": 4,
+                    "harness": "claude",
+                    "at": at,
+                    "session": "s-parent",
+                    "tool": "Agent",
+                    "name": "devpro-coder",
+                    "agent_type": "devpro-coder",
+                    "child_agent_id": child,
+                    "ok": True,
+                }
+            )
+            + "\n"
+            for at, child in openings
+        ),
+        encoding="utf-8",
+    )
+    running = running_dispatches(project)
+    assert [(dispatch.id, dispatch.hue) for dispatch in running] == [("a-first", 1), ("a-second", 2)]
+
+    _stop_at(project, "s-parent", "2026-01-01T00:00:03.000Z", "a-first")
+    assert [dispatch.id for dispatch in running_dispatches(project)] == ["a-second"]
+
+    _stop_at(project, "s-parent", "2026-01-01T00:00:04.000Z", "a-second")
+    assert running_dispatches(project) == []
