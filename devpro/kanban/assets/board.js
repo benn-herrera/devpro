@@ -157,11 +157,10 @@ function renderColumns(payload) {
   for (const section of boardEl.querySelectorAll(".column")) {
     scrolled.set(section.dataset.column, section.querySelector(".cards").scrollTop);
   }
-  // The modes' fixed columns: the roadmap in both, the design in execution alone, the plan's words
-  // between them, and the agents column last in both.
-  const keys = [ROADMAP, DESIGN, ...plan_columns];
-  if (payload.mode === "planning") keys.splice(keys.indexOf(DESIGN), 1);
-  keys.push(AGENTS);
+  // The modes' columns, left to right: planning's Roadmap, Design, Drafted, Dispatchable, Agents;
+  // execution's Design, Drafted, Dispatchable, In progress, Landed, Agents. Drafted through Landed
+  // are the plan columns, read-only, and the agents column is last in both.
+  const keys = [...(payload.mode === "planning" ? [ROADMAP] : []), DESIGN, ...plan_columns, AGENTS];
   const plan = new Set(plan_columns);
   const lists = new Map();
   const sections = keys.map((key) => {
@@ -184,7 +183,7 @@ function renderColumns(payload) {
   ]);
   for (const key of collapsed) if (!bands.has(key)) collapsed.delete(key);
   const roadmap = lists.get(ROADMAP);
-  for (const notice of board.notices) lists.get(notice.column).append(noticeEl(notice));
+  for (const notice of board.notices) lists.get(notice.column)?.append(noticeEl(notice));
   for (const card of showing(board.roadmap, ROADMAP)) roadmap.append(roadmapCard(card, ROADMAP));
   if (board.parked.length) {
     for (const card of showing([PARKED_BAND_CARD, ...board.parked], ROADMAP)) {
@@ -195,7 +194,7 @@ function renderColumns(payload) {
   for (const card of showing(board.design, DESIGN)) lists.get(DESIGN).append(designCard(card, DESIGN));
   // A work package whose State cell opens with no state word names no column: the board draws no card.
   for (const pkg of board.packages) lists.get(pkg.state)?.append(packageCard(pkg));
-  for (const dispatch of agents) lists.get(AGENTS).append(dispatchCard(dispatch));
+  for (const dispatch of agents) lists.get(AGENTS)?.append(dispatchCard(dispatch));
   boardEl.replaceChildren(...sections);
   for (const [key, list] of lists) list.scrollTop = scrolled.get(key) ?? 0;
 }

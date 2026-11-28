@@ -21,7 +21,7 @@ package adds code for it.
 | P6 | landed | expert | persistent | dispatched when P1–P5 are `landed` |
 | P7 | landed | mechanical | persistent | drafting ticket |
 | B1 | in progress | mechanical | shipped | closes R1 |
-| B2 | in progress | expert | shipped | closes R3 |
+| B2 | landed | expert | shipped | closes R3 |
 | B3 | dispatchable | expert | shipped | closes R2; after B1 |
 | B4 | landed | mechanical | shipped | closes R4 |
 | B5 | dispatchable | mechanical | persistent | closes R5 |

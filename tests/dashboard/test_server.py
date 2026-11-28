@@ -7,6 +7,7 @@ import io
 import json
 import os
 import re
+import shutil
 import socket
 import subprocess
 import sys
@@ -351,6 +352,77 @@ def test_the_board_payload_is_the_model(tmp_path: Path, serve) -> None:
     assert payload["mode"] == "planning"
     assert payload["agents"] == []
     assert payload["project"] == "proj"
+
+
+@pytest.mark.parametrize(
+    "state, mode, columns",
+    [
+        pytest.param(
+            "in progress",
+            "execution",
+            ["design", "drafted", "dispatchable", "in progress", "landed", "agents"],
+            id="execution",
+        ),
+        pytest.param("", "planning", ["roadmap", "design", "drafted", "dispatchable", "agents"], id="planning"),
+    ],
+)
+def test_the_boards_columns_are_the_contracts_in_both_modes_with_a_design_present(
+    tmp_path: Path, serve, state: str, mode: str, columns: list[str]
+) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a board script that draws fixed columns the columns
+    delta contradicts — the roadmap kept in execution, the design dropped in planning, where the
+    design's cards are still appended to it — or a payload whose plan columns are not its mode's.
+    The plan's one state cell settles the mode and the active design stands beside it, so the draw
+    with a design and no dispatched row is the one asked. The script's fixed columns are read from
+    the names its `keys` statement lists, and held to the contract's on either side of the payload's
+    plan columns: a column drawn with no list beneath it, and a column the contract asks for and
+    nothing draws, are the one failure."""
+    plan = (
+        "# Plan\n\nRelease: 9.9.9\n\n## Status\n\n| Package | Rating | State |\n|---|---|---|\n"
+        f"| P1 | expert | {state} |\n"
+    )
+    root = project(
+        tmp_path / "proj",
+        {"ACTIVE_PLAN.md": plan, "ROADMAP.md": "## Next\n\n### Two\n\nMore.\n", "ACTIVE_DESIGN.md": "# Design\n"},
+    )
+
+    payload = json.loads(serve(root).get("api/board")[2])
+
+    assert payload["mode"] == mode
+    assert _drawn_columns(payload) == columns
+
+
+def test_every_list_the_script_appends_cards_to_is_a_column_it_draws() -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a card appended to a column's list the draw has no
+    list for — `lists.get(DESIGN).append` where planning dropped the design — which throws mid-draw
+    and leaves the whole board undrawn.
+
+    Each `lists.get(NAME)` the script appends to is read from the source, and the names the `keys`
+    statement builds the columns from are the ones a column is drawn under: a name drawn in neither
+    mode's keys is a list that is always absent."""
+    script = (ASSETS / "board.js").read_text(encoding="utf-8")
+    keys = re.search(r"const keys = (.+);\n", script).group(1)
+
+    appended = set(re.findall(r"lists\.get\((\w+)\)[^;]*\.append", script))
+
+    assert appended
+    assert appended <= set(re.findall(r"\b(ROADMAP|DESIGN|AGENTS)\b", keys))
+
+
+def _drawn_columns(payload: dict) -> list[str]:
+    """The columns the board script draws for payload: the fixed ones its `keys` statement names,
+    resolved against its own constants and the payload's mode, the payload's plan columns between
+    them, and the agents column last."""
+    script = (ASSETS / "board.js").read_text(encoding="utf-8")
+    keys = re.search(r"const keys = (.+);\n", script).group(1)
+    names = {"ROADMAP": "roadmap", "DESIGN": "design", "AGENTS": "agents"}
+    before, after = keys.split("...plan_columns")
+    fixed = [
+        names[name]
+        for name in re.findall(r"\b(ROADMAP|DESIGN)\b", before)
+        if payload["mode"] == "planning" or name != "ROADMAP"
+    ]
+    return fixed + payload["plan_columns"] + [names[name] for name in re.findall(r"\b(AGENTS)\b", after)]
 
 
 def test_a_running_dispatch_colors_its_packages_dots(tmp_path: Path, serve) -> None:
@@ -1389,8 +1461,6 @@ def test_the_decoration_and_the_pages_script_share_one_scope(tmp_path: Path, ser
 
     A skip without bun is the fixture's own: the compile needs an engine, and the engines a test
     environment carries are the ones the profiler's own fixtures already require."""
-    import shutil
-
     if shutil.which("bun") is None:
         pytest.skip("bun is not installed")
     root = project(tmp_path / "proj", {})
@@ -1425,6 +1495,78 @@ def test_dashboard_root_is_the_git_root_of_the_directory_it_runs_in(tmp_path: Pa
     monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(elsewhere))
 
     assert dashboard_root() == str(root)
+
+
+@pytest.mark.slow
+def test_a_board_with_a_design_and_no_dispatched_row_draws(tmp_path: Path, serve) -> None:
+    """`clauses.TEST_PRECONDITION`: the defect is a board page that throws while drawing a project in
+    planning mode with a design present — `lists.get(DESIGN)` undefined where the design's cards are
+    appended — leaving the whole board undrawn, which no payload test reaches.
+
+    The project's plan holds no `in progress` and no `landed` row, and an active design with a ticket
+    in it stands beside it: the normal pre-execution state. The page is loaded from the dashboard as
+    served, and which columns it draws is `#board`'s own records after the draw; before the change the
+    design's card was appended to a column planning never drew, the draw threw, and `#alert` read
+    `board not drawn`."""
+    if shutil.which("bun") is None or shutil.which("firefox") is None:
+        pytest.skip("the page draw needs bun and firefox")
+    root = project(
+        tmp_path / "proj",
+        {
+            "ACTIVE_PLAN.md": PLAN,
+            "ROADMAP.md": "## Next\n\n### Two\n\nMore.\n",
+            "ACTIVE_DESIGN.md": "# Design\n\n## Drafts\n\n### A ticket\n\nText.\n",
+        },
+    )
+    driver = tmp_path / "draw.ts"
+    driver.write_text(DRAW_DRIVER, encoding="utf-8")
+
+    drawn = subprocess.run(
+        ["bun", str(driver), serve(root).url],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        stdin=subprocess.DEVNULL,
+    )
+
+    assert drawn.returncode == 0, drawn.stderr
+    assert json.loads(drawn.stdout) == ["roadmap", "design", "drafted", "dispatchable", "agents"]
+
+
+# The page draw's driver: the board as the dashboard serves it, in headless firefox, waiting until the
+# board has drawn its columns or the page has named why it did not. The columns it prints are
+# `#board`'s own.
+DRAW_DRIVER = """\
+const base = process.argv[2];
+const { default: puppeteer } = await import("puppeteer-core");
+const browser = await puppeteer.launch({
+  browser: "firefox",
+  executablePath: Bun.which("firefox"),
+  headless: true,
+  protocol: "webDriverBiDi",
+  protocolTimeout: 60000,
+});
+try {
+  const page = await browser.newPage();
+  await page.goto(`${base}board/`, { waitUntil: "load", timeout: 60000 });
+  await page.waitForFunction(
+    () => document.querySelectorAll("#board .column").length > 0 || document.getElementById("alert").textContent.length > 0,
+    { timeout: 60000 },
+  );
+  const seen = await page.evaluate(() => ({
+    columns: [...document.querySelectorAll("#board .column")].map((s) => s.dataset.column),
+    alert: document.getElementById("alert").textContent,
+  }));
+  if (!seen.columns.length) {
+    process.stderr.write(seen.alert + "\\n");
+    process.exitCode = 1;
+  } else {
+    process.stdout.write(JSON.stringify(seen.columns) + "\\n");
+  }
+} finally {
+  await browser.close();
+}
+"""
 
 
 @dataclass
