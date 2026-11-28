@@ -184,11 +184,14 @@ function renderColumns(payload) {
   for (const key of collapsed) if (!bands.has(key)) collapsed.delete(key);
   const roadmap = lists.get(ROADMAP);
   for (const notice of board.notices) lists.get(notice.column)?.append(noticeEl(notice));
-  for (const card of showing(board.roadmap, ROADMAP)) roadmap.append(roadmapCard(card, ROADMAP));
-  if (board.parked.length) {
-    for (const card of showing([PARKED_BAND_CARD, ...board.parked], ROADMAP)) {
-      const element = isBand(card) ? separatorEl(card, ROADMAP) : parkedCard(card, { kind: "parked", card });
-      roadmap.append(element);
+  // The roadmap column exists in planning mode only; execution's columns carry no roadmap to append to.
+  if (roadmap) {
+    for (const card of showing(board.roadmap, ROADMAP)) roadmap.append(roadmapCard(card, ROADMAP));
+    if (board.parked.length) {
+      for (const card of showing([PARKED_BAND_CARD, ...board.parked], ROADMAP)) {
+        const element = isBand(card) ? separatorEl(card, ROADMAP) : parkedCard(card, { kind: "parked", card });
+        roadmap.append(element);
+      }
     }
   }
   for (const card of showing(board.design, DESIGN)) lists.get(DESIGN).append(designCard(card, DESIGN));
