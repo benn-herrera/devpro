@@ -11,7 +11,9 @@ package's run covers only its own changes; cumulative coverage is the checkpoint
 (`just test`, `just lint`, `just sweep-python`). This plan is not a release's hardening plan and
 names no release: the version bump is an ordinary commit under the version leaf
 (CONVENTIONS, [Version has one home](PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/version-has-one-home.md)),
-`just tag` is not part of this plan, and the README hand-edit that leaf's step names is P13's.
+`just tag` is not part of this plan, and the README hand-edit that leaf's step names is gone with
+the tag itself — P13 landed it, the owner's later ruling (MB6c) removes it, B13 executes the
+removal.
 The untracked `SUGGESTED_MECHANICAL_FIXES.md` is the transient review the design captured and
 cites nowhere: no package commits it.
 
@@ -20,7 +22,9 @@ cites nowhere: no package commits it.
 in P1, the first package that changes block content, as a named edit in P1's scope and commit.
 
 **The one choice this plan puts to the user at approval** is P13's side of the README pipx-tag
-discrepancy; the plan's recommended reading is stated there.
+discrepancy; the plan's recommended reading is stated there. Superseded: the owner's later
+ruling (MB6c) removes the hand-kept tag outright — B13 executes the removal and supersedes
+B1's guard direction.
 
 ## Status
 
@@ -38,10 +42,10 @@ discrepancy; the plan's recommended reading is stated there.
 | P10 | landed: 3cf25488 (gate batched with P6–P10) | mechanical | MB1a, MB7, MB14, MB16 |
 | P11 | landed: f959aa54 | mechanical | MB12 |
 | P12 | landed: 113b813f | mechanical | ARCH delta |
-| P13 | landed: dbc05b64 | mechanical | the pipx decision |
+| P13 | landed: dbc05b64 — superseded by MB6c/B13: the tag it landed is removed | mechanical | the pipx decision |
 | P14 | landed: 934eff29 (ACTIVE_PLAN_REVIEW.md, 24 findings) | expert | — |
 | P15 | landed: 4cba2de2 (11 items drafted B1–B11, all rows drafted) | expert | — |
-| B1 | landed: 8a8e8524 (gate + refusal probe green; R1's full close is the release wait — the tag is cut by the release) | mechanical | R1, R2 |
+| B1 | landed: 8a8e8524 — superseded in part by MB6c/B13: the owner's ruling removes the hand-kept README tag the guard polices; R2's brew/no-tag statement persists in B13's rewrite | mechanical | R1, R2 |
 | B2 | landed: 2210ac49 (the flag ticket under Maintenance — superseded by B12's removal, which removes it). Incident on the record: the dispatch used git stash/pop mid-task — a forbidden working-tree command — verified no data lost, corrected course; accepted with the violation named here | mechanical | R3 (flag; superseded by the owner's removal decision) |
 | B3 | landed: 8ceceb77 (two invariant facts pinned — no precedence pin, per the corrected scope; B12's "drop the pin" edit will find none and no-op) | mechanical | R4; R5 closed by measurement |
 | B4 | landed: 69bc4c9d (R6, R18, R23 closed; one fact for the record: the guide's term renders in `references/using.md`, not `SKILL.md` — the item's done-line grep named the wrong file, the report measured the right one) | mechanical | R6, R18, R23 |
@@ -52,6 +56,7 @@ discrepancy; the plan's recommended reading is stated there.
 | B9 | dispatchable (fires after B12 on clauses.py) | mechanical | R15, R16, R17, R24 |
 | B10 | landed: a9c52eb3 (pure deletion, verified no pins; the render-surface half of its done-line went red on B12's in-flight clauses.py state — not B10's scope — and the batched tail gate re-runs it whole after B12 lands) | mechanical | R19 |
 | B11 | dispatchable (fires after B9 on clauses.py) | mechanical | R20, R21, R22 |
+| B13 | landed: f8aad90a (one judgment on the record: SPEC's count moved two → three install sources — the rewrite would have self-contradicted; the release-tag URL stays a source without the `@v<version>` spelling, per MB6c) | mechanical | MB6c — supersedes B1's direction |
 | B12 | in progress: dispatch ses_ddef66388ffeW5WVeZ4bTqnIGd — the owner's removal decision, corrected mid-run; the span is deleted outright, not reworded | mechanical | R3, W7, W8 — resolved by removal |
 
 Serial order per shared file, nothing concurrent across these runs:
@@ -403,6 +408,9 @@ The decision the design leaves to this plan, put to the user at approval — a f
 The user picks the side at approval; approval of this plan's stated side is the quote that
 authorizes the edit.
 
+Superseded after landing: the owner's ruling (MB6c) removes the hand-kept tag outright — B13
+executes the removal, and the choice above is the historical record of what P13 settled.
+
 Done-line: `just test-changed` (docs surface, `justfile:329`'s `*.md docs` row) and
 `just check-links`.
 
@@ -436,7 +444,10 @@ the review document.
 
 Serial order per shared file, nothing concurrent across these runs:
 `devpro/definitions/skills/development.py`: B4 → B5 → B7. `guide.py`: B4 → B5 → B10.
-`clauses.py`: B9 → B12 → B11. `README.md`: B1 → B10.
+`clauses.py`: B9 → B12 → B11. `README.md`: B1 → B10 → B13 — B13 is the last reader of README and
+runs after all three of B4/B5/B9. B13 edits
+`PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/version-has-one-home.md` too: B9's two
+leaves stand, B13's edit of the third is its own commit, and no other item edits that leaf.
 `tests/render/test_structural_rules.py`: B3 → B8 — B8 updates the `REVIEW_SEVERITY` carrier set
 B3's test pins. `tests/render/conftest.py`: B8 alone — B3's test reads its helpers and edits
 nothing. `PROJECT_DOCS/ARCHITECTURE/subsystem-map.md`: B5 → B9 — B5 cites the main-session term at
@@ -866,3 +877,55 @@ Done-line: `just test render`; `just test dupe_sweep`; then `just render latest`
 `grep -rn "PROJECT_PRECEDENCE" devpro/ tests/` reports nothing, and
 `grep -rn "The project's own documents modify the process" rendered/latest/devpro/` reports
 nothing, and `grep -rn "no carve-out" rendered/latest/devpro/` reports nothing.
+
+### B13 The README's pipx line carries no version tag
+
+Rating: mechanical. Lifetime: shipped — README and tag.sh; the SPEC and CONVENTIONS leaves persist.
+
+Scope: `README.md` — :61's pipx install line loses `@v0.18.1` and reads
+`pipx install "git+https://github.com/benn-herrera/devpro"`, unpinned; :219's sentence is
+rewritten without the hand-kept tag — the brew-carries-no-tag half stands; :221's update sentence
+is rewritten without "the next release's tagged URL". `devtools/scripts/tag.sh` — the README-tag
+comment paragraph (:33–37) and the read-and-refuse block (:38–42) are deleted; the dirty-tree,
+version-read and duplicate-tag checks stand. `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/version-has-one-home.md` —
+the fourth-carrier sentence (:5–7, inside the leaf's opening paragraph — the paragraph around it
+stands) is deleted, the leaf stating the version's carriers as the one constant and the three
+filled render slots. `PROJECT_DOCS/SPEC/package-and-command.md` — :4–5's sources sentence gains
+the unpinned git URL as the README's stated source, beside the release tag's URL and the built
+wheel; the release tag's URL stays a source but loses the `@v<version>` pipx spelling in the
+rewrite (the tag itself is `v<version>`, the CONVENTIONS leaf's) — the done-line's placeholder
+grep expects SPEC clean of it.
+
+Design entry: [MB6c](ACTIVE_DESIGN.md#code-delta) — the owner's decision, quoted there: the hand
+edit beside each bump is rot bait; a guard can only name its failure loudly, never prevent it.
+
+Facts: README.md:61 reads `pipx install "git+https://github.com/benn-herrera/devpro@v0.18.1"`;
+:219 reads "The pipx install and update URLs pin a release tag (`@v<version>`, hand-edited beside
+each version bump)…"; tag.sh's guard reads `readme_tag=…` from the pipx line and refuses a
+mismatch against `__version__` (tag.sh:33–42, the region this item deletes); version-has-one-home.md:5–7
+reads "A fourth carrier is hand-kept, not filled: `README.md`'s pipx tag, `@v<version>`; its step
+is the hand edit beside the `__version__` bump…"; SPEC/package-and-command.md:4–5 reads "a
+release tag's git URL, `git+https://github.com/benn-herrera/devpro@v<version>`, or a built wheel."
+
+Reference searches: `git grep -n 'hand-kept\|hand-edited\|@v<' -- PROJECT_DOCS` prints six hits —
+the leaf's two lines (:5–6) and four unrelated ones: renders-and-copies' managed-path list,
+undice's regenerated block, the THESIS entry-point's hand-kept files, and
+SPEC/package-and-command.md:5, whose `@v<version>` is the release tag's URL — the pipx spelling
+this item's SPEC edit drops, so that hit goes with the edit. Only the leaf states the README tag.
+`git grep -l tag.sh -- devtools tests` prints nothing — no test in either tree names the script;
+B1's refusal probe was a manual run against a scratch README.
+
+Tests and fixtures: none pin the changed behavior — the leaves are checked by the docs surface,
+which the done-line runs.
+
+Done-line: `just test-changed`; `just lint` — `devtools/scripts/` selects the `ALL` surface (B1's
+accepted call), so this test-changed is the full gate, not a delta run; `just check-links` — the
+one recipe that reads both
+edited leaves; then `git grep -E '@v[0-9]+' -- README.md devtools` reports nothing (it is red
+before the change: README:61 is its only match — the tag.sh guard's literals do not match the
+pattern), `git grep -n '@v<version>' -- PROJECT_DOCS/SPEC PROJECT_DOCS/CONVENTIONS` reports
+nothing — the check that sees SPEC's placeholder — and `grep -c README devtools/scripts/tag.sh`
+reports `0`, the script consulting nothing hand-edited.
+
+Findings: supersedes B1's fix direction per MB6c — the guard was landed for a carrier this
+decision removes.
