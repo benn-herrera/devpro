@@ -72,7 +72,10 @@ design edits either file.
 The owner's decision, superseding MB6 and MB6a: **the precedence clause is removed entirely.**
 A project can override the process by writing its own text — the agents file, its documents, a
 file's own header — and can be as explicit as it likes; granting permission ahead of time for
-what is in the user's power already is machinery for nothing. The review's R3, W7 and W8, R4's
+what is in the user's power already is machinery for nothing. The owner's words: "we can't
+pre-emptively de-conflict text that we can't even be sure exists. It is up to a downstream user
+to either be clear about how their rule does *not* conflict with what exists or be explicit in
+what they are overriding. We don't have a scrying glass." The review's R3, W7 and W8, R4's
 precedence pin, and R5's closure note all go with it. The change:
 
 - `devpro/clauses.py`: `PROJECT_PRECEDENCE` is deleted.

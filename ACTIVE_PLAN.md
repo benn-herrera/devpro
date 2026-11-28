@@ -521,16 +521,17 @@ Done-line: `just dev-check-roadmap` (the skill's rule: run it after each edit to
 
 Rating: mechanical. Lifetime: persistent — the suite.
 
-Scope: `tests/render/test_structural_rules.py` — one test asserting three corpus facts: every
-agent-kind definition renders the precedence span (directly or through its stack constant);
+Scope: `tests/render/test_structural_rules.py` — one test asserting two corpus facts:
 `clauses.VENV_PROBE_RULE` is passed at exactly `devpro/definitions/agents/python_coder.py`'s and
 `ml_engineer.py`'s `verification_evidence` call sites; the definition modules whose body names
 `clauses.REVIEW_SEVERITY` are exactly architect, security-reviewer, tech-writer and
 shell-dsl-coder. The set grows only by a deliberate edit; B8's edit is scheduled after this test
-lands (the serial sentence below states that order). No grain fix: R5's premise was measured false
-(the Facts state the run), so no test_prose.py or conftest.py change belongs to this item.
+lands (the serial sentence below states that order). The third fact the draft asserted — every
+agent-kind definition renders the precedence span — is **dropped: B12 removes the span outright**
+(the owner's decision, the design's MB6b entry), so no test pins it.
 
-Findings: closes R4; records R5's closure.
+Findings: closes R4 — two of its three invariants survive the span's removal; records R5's
+closure.
 
 Facts: R4 measured — `grep -rn "PROJECT_PRECEDENCE|VENV_PROBE_RULE|CONCURRENT_DISPATCHES" tests/
 devtools/tests/` returns nothing, and the clause-group check covers group members only
