@@ -20,7 +20,7 @@ defect, every seat that reported it named, grouped by root cause. Severities are
   P1's code-delta commit and the README tag landed separately, against the leaf's ordering
   (architect).
 
-## The precedence span's wording — owner decision
+## The precedence span's wording — open owner call
 
 - **R3 — Warning** (python-coder; prompt-engineer): the span's "no list of qualifying documents
   and no carve-out" admits two readings — no exception to the precedence itself, or no
@@ -28,8 +28,8 @@ defect, every seat that reported it named, grouped by root cause. Severities are
   exceptions (e.g. structural-rules' value-constant exemption). Its heading ("The project's own
   documents modify the process") states a narrower rule than its body, which also governs file
   headers and settled style (prompt-engineer W7). Eleven seats that write no code carry "the
-  code you change" (prompt-engineer W8). The fix is the owner's: scope the prohibition to the
-  precedence, and reconcile heading, body and audience.
+  code you change" (prompt-engineer W8). **The owner has not decided the reading**; until they
+  do, the item is a flag, not a fix — no wording change to the span is authorized.
 
 ## The reach invariants' tests
 
