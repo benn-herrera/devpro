@@ -182,7 +182,8 @@ changes cannot be seen at its source or corrected there.
 
 Must-see:
 
-- Each PROJECT_DOCS/ subtree entry point has a "Must-see:" section for critical content before any H2 or 'Contents:'
+- Each PROJECT_DOCS/ subtree entry point (SPEC, ARCHITECTURE, CONVENTIONS) has "Must-see:" before any H2 or 'Contents:'
+- The omnibus root PROJECT_DOCS/entry-point.md (THESIS) is exempt; its opening "does not" list is its critical content
 - It is a bullet list with at most 1 level of nesting. Each (sub)bullet is one line with a max of 120 characters
 - It is aggressively curated with a cap at 20 lines – over-limit entries are re-homed or removed. It may be empty
 
