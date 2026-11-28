@@ -482,7 +482,8 @@ approved can run as approved.
   no single change caused accumulates whether or not anyone looks, and is found on a count the
   process keeps, not when someone remembers; and the review's product is high-level signal about
   the whole project, which a project mid-flight buries under undone work that is not signal.
-- The {PERIODIC_REVIEW_INTERVAL_TERM}'s count is what the `plan-count` runner target prints:
+- The {PERIODIC_REVIEW_INTERVAL_TERM}'s count is what the `plan-count` runner target — the target
+  the consuming project provides in its own runner, a Makefile project naming it there — prints:
   the commits landed since the last periodic review, read from the landing commits' subjects — a
   plan's says it lands a plan, a periodic review's that it lands a periodic review. The periodic
   review's own landing commit writes its full hash to the base the target counts from, alongside the

@@ -348,7 +348,7 @@ commits' messages.
   pull-request description carries a paragraph opening `ai assisted by [devpro]`, and no co-author
   trailer.
 - **When the session asks the user anything**, it is one of:
-  - a go for a dispatch that would raise the number of agents running at once past the cap the
+  - a go for a dispatch that would raise the count of `concurrent dispatches` past the cap the
     development skill states (*Dispatch*). It names the count; answer with the count: "Go, 3 agents."
   - an escalation: a choice where two readings lead to materially different work and nothing written
     settles it. It states what it checked — the contract documents, the plan and design, the agents'
