@@ -170,7 +170,7 @@ bindable term that has no default and is unbound, ask the user for it then, thro
 
 - The plan's first draft is the {clauses.ref(name="architect")} definition's to write: the session
   dispatches it — from the accepted design where one precedes the plan, from the findings where
-  none does. The session drafts a plan itself only when the user asks the session itself to, and
+  none does. The main session drafts a plan itself only when the user asks the session itself to, and
   a request for the plan is not that ask. *Purpose:* the plan is written by the seat that also
   reviews and revises it, so one discipline owns the artifact, and what the session approves is
   that discipline's output.
@@ -439,7 +439,7 @@ approved can run as approved.
   section's items from the {REVIEW_DOCUMENT_TERM} — work packages under the section, one per
   root-cause group, each with its own ID, status-table row, rating and one-commit close — then one
   `{clauses.ref(name="prompt-engineer")}` usability review over the drafted items together, the
-  revision applied, and each item's row set by its state. The session drafts the items itself only
+  revision applied, and each item's row set by its state. The main session drafts the items itself only
   when the user asks the session itself to, and a request for the plan is not that ask. The
   ticket's row still moves through the states. *Purpose:* the burndown items' real dispatches are
   visible on the board, each with its own rating.
@@ -476,8 +476,9 @@ approved can run as approved.
 
 - The periodic review waits for one trigger whose two conditions are met together: the
   {PERIODIC_REVIEW_INTERVAL_TERM}'s count of plans has landed since the last periodic review, and
-  a coherent feature boundary is reached — where a project carries incomplete work split across
-  plans, the interval's being met is not enough. Other plans may be made active until both hold.
+  the boundary is the user's direction, the review running when the user judges the project holds a
+  coherent set of functionality — where a project carries incomplete work split across plans, the
+  interval's being met is not enough. Other plans may be made active until both hold.
   It looks past single changes, at what has accumulated across them. *Purpose:* drift that
   no single change caused accumulates whether or not anyone looks, and is found on a count the
   process keeps, not when someone remembers; and the review's product is high-level signal about
@@ -500,7 +501,7 @@ approved can run as approved.
 - The review runs like the burndown section, wider in panel and aperture: its tracking plan opens
   as the panel is dispatched, carrying a ticket per seat beside a ticket for drafting the review's
   plan from the findings; that drafting is the {clauses.ref(name="architect")} definition's to
-  write — the session drafts it only when the user asks the session itself to, and a request for the plan is not that ask — and the drafted items take the
+  write — the main session drafts it only when the user asks the session itself to, and a request for the plan is not that ask — and the drafted items take the
   `{clauses.ref(name="prompt-engineer")}` usability review and the revision any plan's packages
   take to become dispatchable. *Purpose:* the review's running state is on the board as any plan's
   is, and its plan is drafted from findings, never before them.
