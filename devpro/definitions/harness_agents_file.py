@@ -134,8 +134,8 @@ changes cannot be seen at its source or corrected there.
   - File-writing tools — formatter, renderer, build
 - **The shell tool carries the operator's interactive aliases.** Its shell is non-interactive, yet
   an alias like `rm -i` still fires there and blocks on a prompt nobody answers. Tool commands and
-  dispatched instructions call any command the operator's profile may alias through `command` —
-  `command rm`, `command cp`, `command mv` and `command ls` are examples, not the whole set.
+  dispatched instructions run every command through `command` — `command rm`, `command cp`,
+  `command mv` and `command ls` are examples.
   Scripts on disk run under their own shebang and are unaffected.
 - **Code that calls a network API follows the usage guidelines provided for it** — rate limits,
   concurrency, `Retry-After`, identification — whether an ad-hoc script or product code. Compliance
