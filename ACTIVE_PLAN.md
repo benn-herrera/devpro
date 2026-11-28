@@ -46,13 +46,13 @@ discrepancy; the plan's recommended reading is stated there.
 | B3 | in progress: dispatch ses_ddefeb53afferTki1L3DAoLcpW | mechanical | R4; R5 closed by measurement |
 | B4 | in progress: dispatch ses_ddefeb53affd2m3FhZrsYY3Tyt | mechanical | R6, R18, R23 |
 | B5 | drafted | mechanical | R8, R10; R7 flagged for the owner |
-| B6 | in progress: dispatch ses_ddefeb539ffeQocyJvINwKShmZ | mechanical | R9 |
+| B6 | landed: 2bc7e633 (the design's MB16 "becomes" text superseded by this item's mechanical form — recorded here; the design leaves at the plan's landing) | mechanical | R9 |
 | B7 | drafted | mechanical | R11 |
 | B8 | in progress: dispatch ses_ddefeb538ffe3Y7lr0y0j810hc | mechanical | R12, R13, R14 |
 | B9 | drafted | mechanical | R15, R16, R17, R24 |
 | B10 | drafted | mechanical | R19 |
 | B11 | drafted | mechanical | R20, R21, R22 |
-| B12 | drafted | mechanical | R3, W7, W8 — the owner's wording decision |
+| B12 | in progress: dispatch ses_ddef66388ffeW5WVeZ4bTqnIGd — the owner's removal decision, corrected mid-run; the span is deleted outright, not reworded | mechanical | R3, W7, W8 — resolved by removal |
 
 Serial order per shared file, nothing concurrent across these runs:
 `devpro/definitions/skills/development.py`: P5 → P6 → P7 → P8 → P9. `guide.py`: P6 → P7 → P8.
@@ -827,31 +827,31 @@ Done-line: `just test-changed`; `just lint`; then the render probe —
 `grep -c "A probe that imports" rendered/latest/devpro/skills/devpro/agents/python-coder.md`
 reports `1` and the rendered paragraph's spacing is unchanged.
 
-### B12 The precedence span states the owner's intent
+### B12 The precedence span is removed outright
 
 Rating: mechanical. Lifetime: shipped.
 
-Scope: `devpro/clauses.py` — `PROJECT_PRECEDENCE` reworded verbatim to the design's MB6a entry
-(`ACTIVE_DESIGN.md`, Code delta — the owner decision of 2026-11-27); `ROADMAP.md` — B2's flag
-ticket is removed, its supersession named in this item's commit body.
+Scope: `devpro/clauses.py` — `PROJECT_PRECEDENCE` deleted; the twelve interpolations and the two
+stacks' embeddings removed; `devpro/definitions/skills/development.py` — the opening governance
+paragraph deleted; `ROADMAP.md` — B2's flag ticket removed, its supersession named in this item's
+commit body; `tests/render/test_structural_rules.py` — B3's precedence pin dropped (edit B3's
+landed test; if B3 has not landed, note the pin's removal as owed to its landing).
 
-Entry: [MB6a](ACTIVE_DESIGN.md#code-delta) — it carries the corrected span byte for byte. The
-decision it records: any project document might override some element of the process; a project
-document is, by definition, more specific about the project's needs; there is no special set of
-documents (not only THESIS, SPEC, ARCHITECTURE, CONVENTIONS) with that power — any project can
-be constructed however it needs to be. The wording carries the review's W7 (the heading no
-longer states a narrower rule than the body) and W8 (the span is seat-neutral — "wherever you
-work", not "the code you change").
+Entry: [MB6b](ACTIVE_DESIGN.md#code-delta) — the owner's decision: a project can override the
+process by writing its own text (the agents file, its documents, a file's own header) and can be
+as explicit as it likes; granting permission ahead of time for what is in the user's power
+already is machinery for nothing. The review's R3, W7, W8, R4's precedence pin, and R5's closure
+note go with it.
 
-Reference search — the span's name is unchanged, only its text moves: `git grep -l
-PROJECT_PRECEDENCE -- devpro` prints the twelve interpolation sites, the two stacks and the
-development skill's opening (P5's reach); no importer or interpolation site changes.
+Reference search — the span's name and text are removed everywhere: `git grep -n
+PROJECT_PRECEDENCE -- devpro tests` prints the constant, the twelve interpolation sites, the two
+stacks and the skill's opening before the removal, nothing after.
 
-Tests and fixtures: `tests/render/test_prose.py`'s shared-paragraph check reads the constant and
-passes against the new text (the R5-closure measurement's harness); the render probe re-runs.
+Tests and fixtures: `tests/render/test_prose.py`'s shared-paragraph check loses one span;
+`tests/render/test_structural_rules.py`'s invariant test drops its precedence pin; the corpus
+/join-site checks re-run against the stacks' shorter bodies.
 
-Done-line: `just test render`; then `just render latest`, then
-`grep -rln "higher precedence" rendered/latest/devpro/skills/devpro/agents/` reports all 28
-agent files, and `grep -rn "no carve-out" rendered/latest/devpro/` reports nothing, and
+Done-line: `just test render`; `just test dupe_sweep`; then `just render latest`, then
+`grep -rn "PROJECT_PRECEDENCE" devpro/ tests/` reports nothing, and
 `grep -rn "The project's own documents modify the process" rendered/latest/devpro/` reports
-nothing.
+nothing, and `grep -rn "no carve-out" rendered/latest/devpro/` reports nothing.

@@ -20,16 +20,17 @@ defect, every seat that reported it named, grouped by root cause. Severities are
   P1's code-delta commit and the README tag landed separately, against the leaf's ordering
   (architect).
 
-## The precedence span's wording — open owner call
+## The precedence span's wording — resolved by removal (owner decision, 2026-11-27)
 
-- **R3 — Warning** (python-coder; prompt-engineer): the span's "no list of qualifying documents
-  and no carve-out" admits two readings — no exception to the precedence itself, or no
-  exceptions anywhere — and the second collides with the project's own leaves that name
-  exceptions (e.g. structural-rules' value-constant exemption). Its heading ("The project's own
-  documents modify the process") states a narrower rule than its body, which also governs file
-  headers and settled style (prompt-engineer W7). Eleven seats that write no code carry "the
-  code you change" (prompt-engineer W8). **The owner has not decided the reading**; until they
-  do, the item is a flag, not a fix — no wording change to the span is authorized.
+- **R3 — resolved** (python-coder; prompt-engineer): the span's "no list of qualifying
+  documents and no carve-out" was badly worded — the owner first ruled a wording fix, then,
+  seeing the prompt-engineer's findings on their own two-sentence replacement (modalities,
+  uncheckable evidence, no named comparison), ruled the root cause: **the clause is removed
+  outright.** A project can override the process by writing its own text — the agents file, its
+  documents, a file's own header — and can be as explicit as it likes; granting permission
+  ahead of time for what is in the user's power already is machinery for nothing. R3, W7, W8,
+  R4's precedence pin, and R5's closure note go with it; the review's R11 (the governance
+  paragraph burying Route) closes with the skill's opening deletion.
 
 ## The reach invariants' tests
 

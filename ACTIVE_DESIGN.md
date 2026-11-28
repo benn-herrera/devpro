@@ -67,6 +67,25 @@ design edits either file.
 
 ## Code delta
 
+### [Rendering](PROJECT_DOCS/ARCHITECTURE/rendering/index.md) — MB6b: the precedence span is removed outright (owner decision, 2026-11-27)
+
+The owner's decision, superseding MB6 and MB6a: **the precedence clause is removed entirely.**
+A project can override the process by writing its own text — the agents file, its documents, a
+file's own header — and can be as explicit as it likes; granting permission ahead of time for
+what is in the user's power already is machinery for nothing. The review's R3, W7 and W8, R4's
+precedence pin, and R5's closure note all go with it. The change:
+
+- `devpro/clauses.py`: `PROJECT_PRECEDENCE` is deleted.
+- The twelve interpolations and the two stacks' embeddings are removed (P5's reach unwound).
+- `devpro/definitions/skills/development.py`'s opening governance paragraph is deleted (the
+  review's R11 closes with it).
+- B3's invariant test drops the precedence pin when the span dies.
+- B2's flag ticket is removed (superseded).
+
+The rendering leaves' statements about shared text stay true: the remaining shared spans are
+one constant each.
+
+
 ### [Rendering](PROJECT_DOCS/ARCHITECTURE/rendering/index.md) — MB6a: the precedence span states the owner's intent (user decision, 2026-11-27)
 
 The MB6 span's "no list of qualifying documents and no carve-out" is badly worded, per the
