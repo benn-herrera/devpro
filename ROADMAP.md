@@ -5,6 +5,18 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
+### A resumed dispatch's store ends in its earlier close
+
+A follow-up to an idle child continues the same session id, and the opencode capture writes no
+record of the reopened run: the child's store ends in the `experimental.idle` that closed the
+earlier run, and `running_dispatches` (`devpro/profiler/read.py`) reads a dispatch whose store's
+tail is a closing idle as closed. Observed 2026-11-27: a devpro-architect follow-up dispatched
+from the main session — the dispatch-start record with the child's id present in the main store —
+never appeared in the board's agents column, because the child's store had gone silent at its
+first run's close. The fix is the killed-child rule's dual: a resumed run writes an opening record
+to the child's store (or opens a store of its own), so the running set tracks it. The activity-dots
+ticket reads the same running set, so this blocks its whole-document case as well.
+
 ## Features
 
 ### Antigravity TUI harness support
@@ -45,6 +57,20 @@ note: my lean is to add a new section `[<provider>.agent-pins]`
 
 When roadmap, design, or plan are not kanban compliant an indication should show on the kanban
 board or in the nav area - maybe an 'errors' top level nav
+
+### Activity dots on the board
+
+One dot fact: a running agent holds an artifact. One dot per running agent, filled, colored by the
+dispatch hue the board already uses (hue names the agent — its definition's `color`), and
+right-anchored: bottom-right on package cards, right side of the column header for the
+whole-document case — an agent active on a whole design or plan — which today has no home on the
+board at all, since a dispatch whose note names no package appears on no card. Same glyph
+everywhere: the position carries the attachment, the count says how many, the hue says who; no
+shape distinction between card and header dots, because the predicate is identical. Known today:
+cards carry a dot row (`dispatch_colors`, matched by the dispatch note naming the package,
+`devpro/kanban/assets/board.js`), left-justified — the right anchor is a one-line
+`justify-content: flex-end`. New: the header dots' match rule — what in a running dispatch's note
+or record names whole-document activity — is the design question the work settles.
 
 ### An introduction to the process
 
