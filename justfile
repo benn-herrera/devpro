@@ -303,27 +303,41 @@ sweep-python *args:
 #
 # Changed paths are the uncommitted tree (`git status`: staged, unstaged and
 # untracked, both sides of a rename) plus, when <base> is given, everything
-# committed since it (`git diff base...HEAD`). Each path selects the surface
-# its prefix names in TEST_SURFACE_MAP below; a path matching no row
-# (ROADMAP_DESIGNS/, scratch) selects nothing. There are no cross-surface
+# committed since it (`git diff base...HEAD`). Each path takes its surfaces from
+# the first TEST_SURFACE_MAP row that matches it — the rows stand most specific
+# first, a broader row below a specific one is shadowed, and
+# devtools/tests/test_changed_map.py refuses that ordering. A path matching no
+# row (ROADMAP_DESIGNS/, scratch) selects nothing. There are no cross-surface
 # "just in case" rows. The one exception is the runner itself: `justfile`
 # and `devtools/scripts/` — where every recipe body lives, inline or scripted — select
 # every surface, because a change to the `test` recipe, or to the script it
 # runs, cannot be validated by skipping it. With nothing selected, it says so
 # and exits zero without running tests. Git is only read.
 #
-# One row per line: "<path prefix, or exact file> <surface | ALL>". A prefix
+# One row per line: "<path prefix, or exact file> <surface...>". The surface field
+# names one or more surfaces, or ALL. A prefix
 # ending in `/` matches everything under it; one starting `*` is a glob over
 # top-level file names. `docs` is the link check: the documents it reads
 # (PROJECT_DOCS/, top-level *.md, and images/, which README.md shows). `wheel` is
 # check-wheel: the build configuration it builds from, and the package tree
 # whose data it checks.
 TEST_SURFACE_MAP := "
-devpro/ devpro
-devpro/ wheel
+devpro/definitions/ render dupe_sweep
+devpro/clauses.py render dupe_sweep
+devpro/profiler/ profiler
+devpro/kanban/ kanban
+devpro/ devpro wheel
+tests/render/ render
+tests/test_clause_groups.py render
+tests/test_cross_references.py render
+tests/profiler/ profiler
+tests/dicing/test_board.py kanban
+tests/dashboard/test_board_panel.py kanban
 tests/ devpro
-devtools/render_diff.py devpro
-devtools/clause_join_sites.py devpro
+devtools/render_diff.py render
+devtools/clause_join_sites.py render
+justfile ALL
+devtools/scripts/ ALL
 devtools/ dupe_sweep
 PROJECT_DOCS/ docs
 *.md docs
@@ -331,8 +345,6 @@ images/ docs
 pyproject.toml wheel
 package.json dupe_sweep
 bun.lock dupe_sweep
-justfile ALL
-devtools/scripts/ ALL
 "
 
 # Prints each chosen surface and the paths that chose it, and runs none when nothing maps to a

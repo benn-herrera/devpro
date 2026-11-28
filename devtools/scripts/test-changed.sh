@@ -10,9 +10,12 @@
 # validated by skipping it. With nothing selected, it says so and exits zero without running tests.
 # Git is only read.
 #
-# TEST_SURFACE_MAP is one row per line: "<path prefix, or exact file> <surface | ALL>". A prefix
+# TEST_SURFACE_MAP is one row per line: "<path prefix, or exact file> <surface...>". A prefix
 # ending in `/` matches everything under it; one starting `*` is a glob over top-level file names
-# (`*.md` matches `README.md`, never `agent-sandboxing/README.md`).
+# (`*.md` matches `README.md`, never `agent-sandboxing/README.md`). Rows stand most specific
+# first and the FIRST row that matches a path names all the surfaces the path selects — a broader
+# row below a specific one is shadowed by design, and devtools/tests/test_changed_map.py refuses
+# that ordering. The surface field names one or more surfaces, or ALL.
 set -euo pipefail
 : "${PROJECT_ROOT:?PROJECT_ROOT is empty or unset — run this script through its justfile recipe}"
 : "${TEST_SURFACE_MAP:?TEST_SURFACE_MAP is empty or unset — run this script through its justfile recipe}"
@@ -21,7 +24,7 @@ set -euo pipefail
 
 cd "${PROJECT_ROOT}"
 base="${1}"
-all_surfaces=(devpro dupe_sweep docs wheel)
+all_surfaces=(devpro profiler kanban render dupe_sweep docs wheel)
 rows="${TEST_SURFACE_MAP}"
 
 changed=()
@@ -60,8 +63,11 @@ for path in ${changed[@]+"${changed[@]}"}; do
                     hits+="${each} ${path}"$'\n'
                 done
             else
-                hits+="${surface} ${path}"$'\n'
+                for each in ${surface}; do
+                    hits+="${each} ${path}"$'\n'
+                done
             fi
+            break
         fi
     done <<< "${rows}"
 done

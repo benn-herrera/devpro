@@ -36,6 +36,9 @@ full_run=0
 case "${surface}" in
     "") dirs=(tests devtools/tests); full_run=1 ;;
     devpro) dirs=(tests) ;;
+    profiler) dirs=(tests/profiler) ;;
+    kanban) dirs=(tests/dicing/test_board.py tests/dashboard/test_board_panel.py) ;;
+    render) dirs=(tests/render tests/test_clause_groups.py tests/test_cross_references.py devtools/tests/test_render_diff.py devtools/tests/test_clause_join_sites.py) ;;
     dupe_sweep) dirs=(devtools/tests) ;;
     cold-read) dirs=(tests) ;;
     slow) dirs=(devtools/tests) ;;
@@ -54,7 +57,7 @@ case "${surface}" in
         exec "${JUST}" --justfile "${JUSTFILE}" check-wheel
         ;;
     *)
-        printf '%s\n' "error: unknown test surface '${surface}' — valid values: devpro, dupe_sweep, cold-read, slow, docs, wheel; a leading flag binds here instead — pass it with an explicit empty surface: just test \"\" ${surface}" >&2
+        printf '%s\n' "error: unknown test surface '${surface}' — valid values: devpro, profiler, kanban, render, dupe_sweep, cold-read, slow, docs, wheel; a leading flag binds here instead — pass it with an explicit empty surface: just test \"\" ${surface}" >&2
         exit 1
         ;;
 esac
