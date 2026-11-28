@@ -5,6 +5,16 @@ A finished item leaves nothing. Do not mark it as done and let it persist. Just 
 
 ## Bugs
 
+### The install tests' stray-file probe races parallel workers
+
+`tests/install/test_checkout.py` plants a probe file (`zz_probe_stray.txt`) in the real `devpro/`
+tree and unlinks it in a `finally`; under parallel pytest workers another test's preflight walk
+(`tests/install/test_dry_run.py`) can see the file mid-flight and fail. Observed 2026-11-27: a
+docs-change run of `just test-changed` failed `test_dry_run.py[opencode]` with
+`FileNotFoundError: devpro/zz_probe_stray.txt`, passed in isolation, and passed on re-run. The
+defect is the probe's shared-tree placement, not either test: the probe belongs in an isolated
+tree, or the walk reads only the tree it owns.
+
 ### A resumed dispatch's store ends in its earlier close
 
 A follow-up to an idle child continues the same session id, and the opencode capture writes no
@@ -60,17 +70,25 @@ board or in the nav area - maybe an 'errors' top level nav
 
 ### Activity dots on the board
 
-One dot fact: a running agent holds an artifact. One dot per running agent, filled, colored by the
-dispatch hue the board already uses (hue names the agent — its definition's `color`), and
-right-anchored: bottom-right on package cards, right side of the column header for the
-whole-document case — an agent active on a whole design or plan — which today has no home on the
-board at all, since a dispatch whose note names no package appears on no card. Same glyph
-everywhere: the position carries the attachment, the count says how many, the hue says who; no
-shape distinction between card and header dots, because the predicate is identical. Known today:
-cards carry a dot row (`dispatch_colors`, matched by the dispatch note naming the package,
-`devpro/kanban/assets/board.js`), left-justified — the right anchor is a one-line
-`justify-content: flex-end`. New: the header dots' match rule — what in a running dispatch's note
-or record names whole-document activity — is the design question the work settles.
+One dot fact: an agent is holding an artifact, or the artifact is not being attended. The agents
+column's cards already carry their dots top-left; package cards and column headers carry a dot in
+the same top-left place — filled with the dispatch hue the board already uses (one hue per running
+dispatch: the same dot names the dispatch on its agents-column card and on every package card it
+attends; the hue is the dispatch's place in the running set, not the agent's definition `color`)
+while attended, and a gray reserved for the purpose while not.
+One glyph everywhere: the position carries the attachment, the count says how many, the hue says
+who, the gray says not attended; no shape distinction between card and header dots, because the
+predicate is identical. Known today: package cards carry a dot row (`dispatch_colors`, matched by
+the dispatch note naming the package, `devpro/kanban/assets/board.js`) as a bottom row; the
+top-left placement and the gray state are the work, and if the gray's constant ink reads as noise
+in practice, absence is the fallback to fall back to. Open: the header dots' match rule — what in
+a running dispatch's note or record names whole-document activity (an agent active on a whole
+design or plan, which today appears on no card) — is the design question the work settles. The
+dispatch hue and the profile view's row colors already share one palette (`--c0`…`--c7`), but the
+value derivations differ — the board's dot hue is the dispatch's rank in the running history, the
+profiler's call hues are per-call context — so the requirement, not a fact: the dispatch dot's hue
+on the board is the top color of that agent's data row in the profile view, one derivation
+carried by both surfaces.
 
 ### An introduction to the process
 
