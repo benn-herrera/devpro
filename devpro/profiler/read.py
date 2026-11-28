@@ -51,15 +51,21 @@ def child_episodes(sessions: list[Json]) -> dict[tuple[str | None, str], Json]:
     opencode session idles each time an episode closes — the agent loop finished and nothing is
     queued — and a wake that follows its own background work, or a dispatcher's follow-up, opens
     another episode whose idle is later. An idle seen with background work listed is no episode's end,
-    so it is not kept; the latest kept one ends the child, and the span the join reads runs from the
-    dispatch to it — including, where the child opened background work of its own, the wait for it.
-    The `background` field is the capture's own: claude stamps a bool and opencode a count, and both
-    read as none held where falsy — `0`, `False` and a record naming neither alike."""
+    so it is not kept — unless the store holds no record after it: a session whose last record is an
+    idle has ended, the background it listed never woke, and that idle ends the child whatever it
+    listed. The `background` field is the capture's own: claude stamps a bool and opencode a count,
+    and both read as none held where falsy — `0`, `False` and a record naming neither alike."""
     episodes: dict[tuple[str | None, str], Json] = {}
     for session in sessions:
         for record in session["records"]:
             if record.get("event") == IDLE and record.get("session") and not record.get("background"):
                 episodes[(record.get("harness"), str(record["session"]))] = record
+    for session in sessions:
+        records = session["records"]
+        if records:
+            last = records[-1]
+            if last.get("event") == IDLE and last.get("session"):
+                episodes[(last.get("harness"), str(last["session"]))] = last
     return episodes
 
 

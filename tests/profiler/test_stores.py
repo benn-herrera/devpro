@@ -94,3 +94,68 @@ def test_two_claude_dispatches_close_in_opening_order(tmp_path: Path) -> None:
 
     _stop_at(project, "s-parent", "2026-01-01T00:00:04.000Z", "a-second")
     assert running_dispatches(project) == []
+
+
+def test_an_opencode_dispatch_whose_child_idled_last_ends_at_that_idle(tmp_path: Path) -> None:
+    """`clauses.TEST_PRECONDITION`. The defect (the killed child, found live): a child that idled with
+    background work listed and never woke — the idle its store's last record — kept its dispatch
+    running forever, the episode contract reading a background-listed idle as no episode's end.
+
+    An opencode dispatch's child idles with `background: 1` as its store's last record: the idle ends
+    it — the agent loop finished and nothing followed to wake it. A record after the idle (the wake)
+    leaves the dispatch running, the idle no longer last, until a falsy-background idle or a final
+    idle closes it."""
+    project = tmp_path / "project"
+    store = project / ".devpro-temp" / ".profiler-opencode"
+    store.mkdir(parents=True)
+    opener = {
+        "v": 4,
+        "harness": "opencode",
+        "at": "2026-01-01T00:00:00.000Z",
+        "session": "s-parent",
+        "tool": "subagent",
+        "name": "devpro-coder",
+        "child_agent_id": "c1",
+        "ok": True,
+    }
+    (store / "s-parent.jsonl").write_text(json.dumps(opener) + "\n", encoding="utf-8")
+    idle_with_work = {
+        "v": 4,
+        "harness": "opencode",
+        "at": "2026-01-01T00:00:02.000Z",
+        "session": "c1",
+        "event": "experimental.idle",
+        "background": 1,
+    }
+    (store / "c1.jsonl").write_text(
+        json.dumps(
+            {
+                "v": 4,
+                "harness": "opencode",
+                "at": "2026-01-01T00:00:01.000Z",
+                "session": "c1",
+                "tool": "shell",
+                "ok": True,
+            }
+        )
+        + "\n"
+        + json.dumps(idle_with_work)
+        + "\n",
+        encoding="utf-8",
+    )
+    assert running_dispatches(project) == []
+
+    (store / "c1.jsonl").open("a", encoding="utf-8").write(
+        json.dumps(
+            {
+                "v": 4,
+                "harness": "opencode",
+                "at": "2026-01-01T00:00:03.000Z",
+                "session": "c1",
+                "tool": "shell",
+                "ok": True,
+            }
+        )
+        + "\n"
+    )
+    assert [dispatch.id for dispatch in running_dispatches(project)] == ["c1"]

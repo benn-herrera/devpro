@@ -9,7 +9,8 @@ A **dispatch** is identified by the id the capture records for the dispatched ch
 session's id under opencode, the child agent's id — `child_agent_id` — under claude. Under opencode
 the dispatch record — the
 acknowledgment `execute.after` observed ([the opencode capture](../../../PROJECT_DOCS/ARCHITECTURE/harness-profiler/the-opencode-capture.md#the-opencode-capture)) — opens it, and the child's idle record with an empty
-`background` closes it. Under claude the `Agent` tool-call record whose `child_agent_id` names the
+`background` closes it — as does, for the child that idled with work listed and never woke, its
+store's last record being that idle. Under claude the `Agent` tool-call record whose `child_agent_id` names the
 child opens it, and the `SubagentStop` event record closes it, its own `agent_id` the child's id
 the opening call named — the key the session page's stop join reads: each stop ends the dispatch it
 names, and two dispatches of one session close at their own stops. A dispatch whose closing record

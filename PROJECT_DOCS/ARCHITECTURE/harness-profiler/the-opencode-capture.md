@@ -45,7 +45,9 @@ follow-up, opens a new episode whose end is a later idle — so the join reads t
 empty-background idle in the child's store, which converges to the true end as episodes close. An
 idle seen with background work listed ends nothing, so a child that opened background work of its own
 ends at the idle after that work reported; the span the join reads therefore includes the wait for it,
-and is not the child's working time alone. The
+and is not the child's working time alone. One exception, the killed child's: a session whose last
+record is an idle has ended, the background it listed never woke — the idle that stands last ends the
+child whatever it listed, and no record follows to wake it. The
 idle record is an event and no tool, its `session` the child's id, appended to the store that id
 names — the child's own `.devpro-temp/.profiler-opencode/<session-id>.jsonl`, which the render
 reads beside the dispatch's. A child whose end signal never comes — killed, or still running — leaves

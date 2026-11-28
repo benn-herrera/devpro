@@ -53,8 +53,9 @@ def test_an_intermediate_idle_fills_nothing(tmp_path: Path, _wrapper: Path) -> N
 
     A child that idles with a shell still running and idles again 20 s later with none: the join reads
     the latest empty-background idle, so the row's span is the 40 s to that last idle and not the first
-    idle's 20 s or the background-laden idle's 30 s, and an idle with background work standing alone
-    fills nothing — a parent's row whose child's store holds only such an idle keeps the firing cost."""
+    idle's 20 s or the background-laden idle's 30 s. A background-laden idle standing as the child's
+    last record ends the child — the killed child's rule: the span reads to that idle, the store's last
+    word on the run, and not the placeholder the acknowledgment carried."""
     project = tmp_path / "project"
     project.mkdir()
     _dispatch_store(project, "ses_parent", "2026-01-01T00:00:00.000Z", "ses_child")
@@ -66,7 +67,7 @@ def test_an_intermediate_idle_fills_nothing(tmp_path: Path, _wrapper: Path) -> N
     )
     _idle_store(project, "ses_busy", [("2026-01-01T00:00:30.000Z", 1)])
 
-    for session, span in (("ses_parent", 40_000), ("ses_other", 500)):
+    for session, span in (("ses_parent", 40_000), ("ses_other", 30_000)):
         page = _run(_wrapper, "tree", session, "--format", "html", cwd=project)
         assert page.returncode == 0, page.stderr
         [call] = page_data(page.stdout)["calls"]

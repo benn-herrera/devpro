@@ -343,7 +343,7 @@ function dispatchCard(dispatch) {
   const head = el("div", "title");
   head.append(a);
   e.append(head);
-  e.append(el("div", "meta", `session ${dispatch.session}`));
+  e.append(el("div", "meta", dispatch.session));
   if (dispatch.model) e.append(el("div", "meta", dispatch.model));
   return e;
 }
