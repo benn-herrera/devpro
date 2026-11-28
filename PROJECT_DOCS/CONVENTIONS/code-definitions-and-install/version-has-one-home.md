@@ -2,9 +2,8 @@
 
 The version lives in `__version__` in `devpro/__init__.py` alone, and `just tag` cuts `v<version>`
 from it. A bump is `just bump-version M|m|p`, which edits that one constant in that one file and
-nothing else, committed before the tag, since `just tag` refuses while `devpro/` is uncommitted. A fourth carrier is hand-kept, not filled: `README.md`'s
-pipx tag, `@v<version>`; its step is the hand edit beside the `__version__` bump, before
-`just tag` cuts the release tag. `pyproject.toml` reads it and holds no copy. Three rendered
+nothing else, committed before the tag, since `just tag` refuses while `devpro/` is uncommitted.
+`pyproject.toml` reads it and holds no copy. Three rendered
 files carry the version, all filled from that constant: the plugin manifest's `version` in
 `.claude-plugin/plugin.json` (claude and mage), the agents file's begin marker line (every harness),
 and the `version` in opencode's `registry.json`. So after a bump, `just render-diff` shows the

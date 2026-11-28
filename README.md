@@ -58,7 +58,7 @@ brew install devpro
 ```
 or
 ```sh
-pipx install "git+https://github.com/benn-herrera/devpro@v0.18.1"
+pipx install "git+https://github.com/benn-herrera/devpro"
 pipx ensurepath
 ```
 then open a new shell, so `devpro` is on your `PATH`.
@@ -216,9 +216,9 @@ install run from the project's own wrapper, `tools/devpro.sh install .`, writes 
 install writes except that copy and the wrapper that runs it: it passes both over, reporting
 nothing about them, so the project keeps the version its global install delivered.
 
-The pipx install and update URLs pin a release tag (`@v<version>`, hand-edited beside each version bump); brew carries no tag — `brew upgrade` moves to the tapped formula's current release.
+The pipx install and update URLs carry no tag — pipx installs the repository's default branch, not a release; brew carries no tag — `brew upgrade` moves to the tapped formula's current release.
 
-Installed with pipx, update with `pipx install --force` of the next release's tagged URL, then `pipx
+Installed with pipx, update by reinstalling with `pipx install --force`, then `pipx
 ensurepath` and a new shell, then the same install line.
 
 A project installed by 0.17.x upgrades in one run: an install replaces the plugin directory whole,
