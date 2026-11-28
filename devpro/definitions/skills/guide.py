@@ -447,11 +447,12 @@ commits' messages.
 *Periodic review*; `references/project-documents.md`, *Full review*. Where the post-plan review
 above follows one plan, this one looks at what many plans have left behind.
 
-- **Due** once the periodic review interval's count of plans (this page's *Getting started*) has
-  landed since the last periodic review, counted from the landing commits' messages. A review the
-  user directs over accumulated work is this same review.
-- **What it holds up:** when due, the next plan made active is the periodic review, before any
-  other. A request can still be designed; its plan waits.
+- **Due** when two conditions are met together: the periodic review interval's count of plans
+  (this page's *Getting started*) has landed since the last periodic review, counted from the
+  landing commits' messages, and a coherent feature boundary is reached. A review the user directs
+  over accumulated work is this same review.
+- **What it holds up:** until both conditions hold, other plans run. A request can still be
+  designed; its plan waits.
 - **What it holds:** the full review of the project documents, skipped where none changed
   substantively: each changed document read whole against the documents above it and the code. By
   default eight seats staff it, two of each of four kinds — an architect, a prompt engineer, a

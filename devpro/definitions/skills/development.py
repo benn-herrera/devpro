@@ -474,15 +474,15 @@ approved can run as approved.
 
 ## Periodic review
 
-- Once the {PERIODIC_REVIEW_INTERVAL_TERM}'s count of plans has landed since the last periodic
-  review, the next plan is a periodic review, before any other plan is made active. It looks past
-  single changes, at what has accumulated across them. The review also waits for a coherent
-  feature boundary: where a project carries incomplete work split across plans, the interval's
-  being met is not enough — the boundary is, and the review waits for it. *Purpose:* drift that
+- The periodic review waits for one trigger whose two conditions are met together: the
+  {PERIODIC_REVIEW_INTERVAL_TERM}'s count of plans has landed since the last periodic review, and
+  a coherent feature boundary is reached — where a project carries incomplete work split across
+  plans, the interval's being met is not enough. Other plans may be made active until both hold.
+  It looks past single changes, at what has accumulated across them. *Purpose:* drift that
   no single change caused accumulates whether or not anyone looks, and is found on a count the
   process keeps, not when someone remembers; and the review's product is high-level signal about
   the whole project, which a project mid-flight buries under undone work that is not signal.
-- The {PERIODIC_REVIEW_INTERVAL_TERM}'s count is what the runner target `just plan-count` prints:
+- The {PERIODIC_REVIEW_INTERVAL_TERM}'s count is what the `plan-count` runner target prints:
   the commits landed since the last periodic review, read from the landing commits' subjects — a
   plan's says it lands a plan, a periodic review's that it lands a periodic review. The periodic
   review's own landing commit writes its full hash to the base the target counts from, alongside the
