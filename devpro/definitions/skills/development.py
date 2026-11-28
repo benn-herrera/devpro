@@ -23,6 +23,7 @@ POST_PLAN_REVIEWERS_TERM = "post-plan reviewers"
 REVIEW_DOCUMENT_TERM = "review document"
 PLAN_SIZE_LIMIT_TERM = "plan size limit"
 PERIODIC_REVIEW_INTERVAL_TERM = "periodic review interval"
+CONCURRENT_DISPATCHES_TERM = "concurrent dispatches"
 SPEC_DELTA_TERM = "## SPEC delta"
 ARCHITECTURE_DELTA_TERM = "## ARCHITECTURE delta"
 CODE_DELTA_TERM = "## Code delta"
@@ -85,6 +86,7 @@ binding replaces the default. A term marked — has no default.
 | {STEP_DOWN_APPLICATION_TERM} | — | how a mechanical dispatch gets the {STEP_DOWN_MODEL_TERM} where a dispatch cannot choose its model |
 | {PLAN_SIZE_LIMIT_TERM} | {clauses.PLAN_SIZE_LIMIT_DEFAULT} | the length past which a plan or design is diced |
 | {PERIODIC_REVIEW_INTERVAL_TERM} | {clauses.PERIODIC_REVIEW_INTERVAL_DEFAULT} | the number of landed plans between periodic reviews |
+| {CONCURRENT_DISPATCHES_TERM} | {clauses.CONCURRENT_DISPATCHES_DEFAULT} | the agents that may run at once, each instance of the same agent counted separately; a dispatch that would exceed it waits for a go naming the count |
 
 Where CONVENTIONS.md binds no {STEP_DOWN_MODEL_TERM}, it is `{clauses.STEP_DOWN_MODEL}` — both
 disciplines' mechanical members; a dispatch runs on the side its dispatched agent's `category=`
@@ -344,9 +346,12 @@ approved can run as approved.
 - A plan states a package's rating, never its model: the {STEP_DOWN_MODEL_TERM} is resolved when the
   dispatch is made, as *Terms* states, not written into the plan. *Purpose:* a model recorded in a
   plan is a pin the plan cannot keep current.
-- Before dispatching, state the agent count and model. More than one agent at once on the most
-  capable model the installed agents name waits for a go that names the count. *Purpose:* a
-  fan-out's cost shows only once it is spent.
+- Before dispatching, state the agent count and model. A dispatch that would raise the count of
+  {CONCURRENT_DISPATCHES_TERM} past the cap — {clauses.CONCURRENT_DISPATCHES_DEFAULT}, or the
+  number CONVENTIONS.md binds it to — waits for a go naming the count. The cap counts every agent
+  running at once, whatever its model, each instance of the same agent separately, and it governs
+  within an approved plan: up to the cap, the plan's dispatches need nothing further. *Purpose:*
+  a fan-out's cost shows only once it is spent.
 - At the dispatch's return, a dispatch of a plan package names the package, sets its `State` cell — the
   value the state *Plan status* defines for a dispatch — and writes its dispatch note into the row:
   the capture's record of the dispatch is the identifier's source — never inferred; the writer is the
