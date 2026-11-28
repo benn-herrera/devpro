@@ -85,14 +85,14 @@ profiler view reads ([Shipped files](../../../../PROJECT_DOCS/SPEC/deployed-surf
 harness: the board starts no observation of its own. A change in the stores surfaces on the open
 page as [live following](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/live-following.md#live-following) follows any watched file.
 
-A dispatch card shows the agent's name, the model it runs, the session that dispatched it, and a
-link to the dispatched work's page where the capture records a session id for it — the child
-session's page under opencode, the dispatching session's page under claude, whose store holds the
-child's records. A running dispatch's color is a function of the dispatch alone: its rank in the
-order the capture opened the dispatches of the stores, closed ones included, counted against a fixed
-palette. The color is the same at every read and stable while the dispatch runs, distinct among the
-concurrently running dispatches up to the palette's size, and shared where more than the palette's
-size run at once.
+A dispatch card shows the agent's name, the child's model where the capture's records name it, the
+session that dispatched it, and a link to the dispatched work's page: one page per harness — the
+child session's page under opencode, whose records name the child's session id, and the dispatching
+session's page under claude, whose store holds the child's records. A running dispatch's color is a
+function of the dispatch alone: its rank in the order the capture opened the dispatches of the
+stores, closed ones included, counted against a fixed palette. The color is the same at every read
+and stable while the dispatch runs, distinct among the concurrently running dispatches up to the
+palette's size, and shared where more than the palette's size run at once.
 
 A dispatch is **joined** where the active plan names it: the row of the package the dispatch works
 under carries the dispatch's identifier as its dispatch note ([Plan Status Form](../../../../PROJECT_DOCS/SPEC/plan-status-form.md#plan-status-form)), and that package's
@@ -118,9 +118,10 @@ parked tree's `entry-point.md`, and the active design and the active plan, a dic
 A change to a watched file, to its content, creation or deletion, appears on the open page without
 a reload, within about a second. The watched files are `ROADMAP.md`, each parked file and each
 parked tree's `entry-point.md`, and the active design and the active plan, a diced one as every
-`.md` file beneath its entry point's directory — and every record file beneath the activity
-capture's stores, `.devpro-temp/.profiler-claude/` and `.devpro-temp/.profiler-opencode/`, whose
-changes surface the agents column (the agents column).
+`.md` file beneath its entry point's directory — and the activity capture's two store directories,
+`.devpro-temp/.profiler-claude/` and `.devpro-temp/.profiler-opencode/`, watched as directories
+rather than their record files one by one, so a record appended or a session file created changes
+what the poll reads and surfaces the agents column.
 ```
 
 ### [Plan Status Form](PROJECT_DOCS/SPEC/plan-status-form.md#plan-status-form)
@@ -140,6 +141,9 @@ changes surface the agents column (the agents column).
 - **dispatch note** — the identifier of the dispatched agent run a package is under, as the
   activity capture records it, written into the package's row when the dispatch returns. The row's
   State cell's note carries it; the form gives it no cell of its own.
+- **identifier** — the id the capture records for a dispatched child: the child session's id under
+  opencode, the child agent's id under claude — what the dispatch note names, and what a plan
+  reader matches a note's tokens against.
 ```
 
 **As it stands:**
@@ -341,19 +345,20 @@ session's id under opencode, the child agent's id — `child_agent_id` — under
 the dispatch record — the
 acknowledgment `execute.after` observed ([the opencode capture](../../../../PROJECT_DOCS/ARCHITECTURE/harness-profiler/the-opencode-capture.md#the-opencode-capture)) — opens it, and the child's idle record with an empty
 `background` closes it. Under claude the `Agent` tool-call record whose `child_agent_id` names the
-child opens it, and the `SubagentStop` event record closes it, matched by the parent session, the
-agent type and the order of the records, the ids the claude capture holds: two concurrent
-dispatches of one agent type in one session close in the order they opened. A dispatch whose
-closing record is absent is running; one with both is done.
+child opens it, and the `SubagentStop` event record closes it, its own `agent_id` the child's id
+the opening call named — the key the session page's stop join reads: each stop ends the dispatch it
+names, and two dispatches of one session close at their own stops. A dispatch whose closing record
+is absent is running; one with both is done.
 
 The panel derives the running set over the records the stores hold and orders it by the opening
 record's `at`. Each dispatch's color is read from a fixed palette by its open-order rank over every
 dispatch the stores' records open, closed ones included, modulo the palette's size: the same color at
 every read and stable while the dispatch runs, distinct among the concurrently running dispatches up
 to the palette's size and shared beyond it. A dispatch card's fields are the records': the agent's
-name, the model it runs, the dispatching session, and the dispatch's identifier, which the card links
-to `/page/<id>` where that identifier is a session id — under claude the card links the dispatching
-session's page, the store holding the child's records.
+name, the child's model where the records name one — the child's own calls' under opencode, and none
+where no record names it, a claude child's records living in no store — the dispatching session, and
+the dispatch's identifier, which the card links to `/page/<id>` where that identifier is a session id
+— under claude the card links the dispatching session's page, the store holding the child's records.
 
 The board's mode is the status table's: planning while no row of the active plan's status table is
 `in progress` or `landed`, execution otherwise — the plan the board already reads, read once more;

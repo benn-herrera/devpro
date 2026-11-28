@@ -331,7 +331,7 @@ function packageCard(pkg) {
   return e;
 }
 
-// A running dispatch's card: a dot in its color, the agent's name, the model it runs, and the session
+// A running dispatch's card: a dot in its color, the agent's name, the model the records name, and the session
 // that dispatched it; the name links the page the capture recorded a session id for.
 function dispatchCard(dispatch) {
   const e = el("div", "card dispatch");

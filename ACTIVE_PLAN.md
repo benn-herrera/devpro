@@ -25,7 +25,7 @@ package adds code for it.
 | B3 | landed | expert | shipped | closes R2; after B1 |
 | B4 | landed | mechanical | shipped | closes R4 |
 | B5 | landed | mechanical | persistent | closes R5 |
-| B6 | dispatchable | expert | shipped | closes R6; after B3 |
+| B6 | landed | expert | shipped | closes R6; after B3 |
 | B7 | landed | mechanical | persistent | closes R7 |
 | B8 | dispatchable | mechanical | shipped | closes R8; after B3 |
 

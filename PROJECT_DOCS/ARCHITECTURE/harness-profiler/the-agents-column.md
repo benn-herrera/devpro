@@ -10,19 +10,20 @@ session's id under opencode, the child agent's id — `child_agent_id` — under
 the dispatch record — the
 acknowledgment `execute.after` observed ([the opencode capture](../../../PROJECT_DOCS/ARCHITECTURE/harness-profiler/the-opencode-capture.md#the-opencode-capture)) — opens it, and the child's idle record with an empty
 `background` closes it. Under claude the `Agent` tool-call record whose `child_agent_id` names the
-child opens it, and the `SubagentStop` event record closes it, matched by the parent session, the
-agent type and the order of the records, the ids the claude capture holds: two concurrent
-dispatches of one agent type in one session close in the order they opened. A dispatch whose
-closing record is absent is running; one with both is done.
+child opens it, and the `SubagentStop` event record closes it, its own `agent_id` the child's id
+the opening call named — the key the session page's stop join reads: each stop ends the dispatch it
+names, and two dispatches of one session close at their own stops. A dispatch whose closing record
+is absent is running; one with both is done.
 
 The panel derives the running set over the records the stores hold and orders it by the opening
 record's `at`. Each dispatch's color is read from a fixed palette by its open-order rank over every
 dispatch the stores' records open, closed ones included, modulo the palette's size: the same color at
 every read and stable while the dispatch runs, distinct among the concurrently running dispatches up
 to the palette's size and shared beyond it. A dispatch card's fields are the records': the agent's
-name, the model it runs, the dispatching session, and the dispatch's identifier, which the card links
-to `/page/<id>` where that identifier is a session id — under claude the card links the dispatching
-session's page, the store holding the child's records.
+name, the child's model where the records name one — the child's own calls' under opencode, and none
+where no record names it, a claude child's records living in no store — the dispatching session, and
+the dispatch's identifier, which the card links to `/page/<id>` where that identifier is a session id
+— under claude the card links the dispatching session's page, the store holding the child's records.
 
 The board's mode is the status table's: planning while no row of the active plan's status table is
 `in progress` or `landed`, execution otherwise — the plan the board already reads, read once more;

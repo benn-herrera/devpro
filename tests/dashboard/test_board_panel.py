@@ -480,6 +480,48 @@ def test_more_running_dispatches_than_hues_share_a_color_rather_than_shift(tmp_p
     assert hues == expected and expected[f"s-running-{DISPATCH_HUES + 1}"] == expected["s-running-1"]
 
 
+def test_an_opencode_card_names_the_model_the_childs_records_carry(tmp_path, serve):
+    """`clauses.TEST_PRECONDITION`: the defect (R6) is a card's model read off the opening record —
+    the *dispatching session's* model — where the child runs another, the step-down scheme making
+    that routinely wrong; the child's own call records name the model it ran.
+
+    `s-closed` runs one call naming `reaper/Qwen3.8-Flash-Next` and idles; `s-child`, dispatched
+    after it, runs a call of its own and is still running. `s-closed` is gone from the running set
+    once its idle closes it; `s-child`'s card shows `wafer.ai/child-model`, its own call's, never
+    `wafer.ai/parent-model`, the dispatching session's the opening record names."""
+    root = _project(tmp_path / "proj", {})
+    store = Path(root) / ".devpro-temp" / ".profiler-opencode"
+    _append(store / "s-parent.jsonl", _dispatch("2026-01-01T00:00:05.000Z", "s-closed"))
+    _append(store / "s-closed.jsonl", _call("2026-01-01T00:00:06.000Z", "s-closed", "reaper/Qwen3.8-Flash-Next"))
+    _append(store / "s-closed.jsonl", _idle("2026-01-01T00:00:07.000Z", "s-closed"))
+    _append(store / "s-parent.jsonl", _dispatch("2026-01-01T00:00:09.000Z", "s-child"))
+    _append(store / "s-child.jsonl", _call("2026-01-01T00:00:10.000Z", "s-child", "wafer.ai/child-model"))
+    client = serve(root)
+
+    models = {a["id"]: a["model"] for a in client.board()["agents"]}
+
+    assert models == {"s-child": "wafer.ai/child-model"}
+
+
+def test_a_claude_card_names_no_model_where_no_record_does(tmp_path, serve):
+    """`clauses.TEST_PRECONDITION`: the defect (R6) is a card's model read off the opening record,
+    whose model under claude is the dispatching session's; a claude child's own records stand in no
+    store — claude holds none — so the derivation names none rather than the session's.
+
+    An `Agent` call on `wafer.ai/parent-model` opens the dispatch and no record names the child: the
+    card shows no model, and the dispatch still runs (no stop record stands)."""
+    root = _project(tmp_path / "proj", {})
+    store = Path(root) / ".devpro-temp" / ".profiler-claude"
+    call = record("2026-01-01T00:00:05.000Z", tool="Agent", name="devpro-python-coder", session="s-claude") | {
+        "child_agent_id": "a-child",
+        "model": "wafer.ai/parent-model",
+    }
+    _append(store / "s-claude.jsonl", json.dumps(call) + "\n")
+    client = serve(root)
+
+    assert [(a["id"], a["model"]) for a in client.board()["agents"]] == [("a-child", None)]
+
+
 def test_an_unreadable_store_keeps_the_last_good_board_and_is_named(tmp_path):
     """`clauses.TEST_PRECONDITION`: the defect is a store that cannot be read blanking the running set
     and the agents column with it, and the store left unnamed on stderr — the operator reading a board
@@ -532,6 +574,12 @@ def _dispatch(at: str, child: str) -> str:
 def _idle(at: str, child: str) -> str:
     """One idle record line closing the dispatch of the child session `child`: no background work held."""
     row = record(at, session=child) | {"harness": "opencode", "event": "experimental.idle", "background": 0}
+    return json.dumps(row) + "\n"
+
+
+def _call(at: str, session: str, model: str) -> str:
+    """One opencode call record line: a call the child session `session` ran, naming the model it ran."""
+    row = record(at, session=session) | {"harness": "opencode", "model": model}
     return json.dumps(row) + "\n"
 
 

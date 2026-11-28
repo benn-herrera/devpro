@@ -98,8 +98,8 @@ class Dispatch:
     dispatch note names it by."""
 
     id: str  # the dispatch's identifier: the child session's id under opencode, `child_agent_id`'s under claude
-    name: str | None  # the agent it runs, as the opening record names it
-    model: str | None  # the model it runs, as its records name it
+    name: str | None  # the agent its idle record stamps, else the opening record's name
+    model: str | None  # the model its own latest call names, and none where its records name none
     session: str  # the session that dispatched it
     page: str  # the page the card links: the child's under opencode, the dispatching session's under claude
     at: str  # the opening record's `at`
@@ -128,26 +128,62 @@ def running_dispatches(directory: Path | str) -> list[Dispatch]:
     nothing is pruned. A store that cannot be read raises out of this, as it does from
     `read_sessions`."""
     sessions = read_sessions(directory)
-    history = _opened(sessions)
+    history = _opened(sessions, child_episodes(sessions))
     history.sort(key=lambda dispatch: (_epoch_ms(dispatch.at) or 0))
     hues = {dispatch.id: rank % DISPATCH_HUES + 1 for rank, dispatch in enumerate(history)}
     ended = _ended(sessions)
     return [replace(dispatch, hue=hues[dispatch.id]) for dispatch in history if dispatch.id not in ended]
 
 
-def _opened(sessions: list[Json]) -> list[Dispatch]:
-    """Every dispatch the sessions' records open, in the order their opening records stand in the read."""
+def _opened(sessions: list[Json], episodes: dict[tuple[str | None, str], Json]) -> list[Dispatch]:
+    """Every dispatch the sessions' records open, in the order their opening records stand in the read,
+    each read against the child's own records through `_children` and `episodes` — the read boundary's
+    one build of each map."""
+    children = _children(sessions)
     opened: list[Dispatch] = []
     for session in sessions:
         for record in session["records"]:
-            dispatch = _dispatched(record)
+            dispatch = _dispatched(record, children, episodes)
             if dispatch is not None:
                 opened.append(dispatch)
     return opened
 
 
-def _dispatched(record: Json) -> Dispatch | None:
-    """The dispatch a record opens, as it stands in the store, or nothing where it opens none."""
+def _children(sessions: list[Json]) -> dict[tuple[str | None, str], list[Json]]:
+    """A child's own records, keyed on the store's harness with its id as `child_episodes` keys its
+    map, so the join across stores rides on neither alone.
+
+    Under opencode a child is a session the stores hold — its id the trace's file name (`session_of`) —
+    and its records its session's. Under claude the child's calls are written into the dispatching
+    session's own records, each naming the child in `agent_id`, the id the child's context calls carry.
+    A child no record names carries none, the record that dispatched it included: that record's model
+    is the dispatching session's, and never a model of its own. Every child is registered before any
+    record is read, a child itself dispatched being no exception."""
+    children: dict[tuple[str | None, str], list[Json]] = {}
+    for session in sessions:
+        for record in session["records"]:
+            child = record.get("child_agent_id")
+            if child:
+                children.setdefault((record.get("harness"), str(child)), [])
+    held = {(session_harness(session), session["id"]): session["records"] for session in sessions}
+    for session in sessions:
+        for record in session["records"]:
+            key = (record.get("harness"), str(record.get("agent_id")))
+            if record.get("agent_id") and key in children:
+                children[key] = session["records"]
+    return {key: held.get(key, records) for key, records in children.items()}
+
+
+def _dispatched(
+    record: Json, children: dict[tuple[str | None, str], list[Json]], episodes: dict[tuple[str | None, str], Json]
+) -> Dispatch | None:
+    """The dispatch a record opens, as it stands in the store, or nothing where it opens none.
+
+    The model and the agent are what the child's own records name: the model of the child's latest
+    call that names one, as `pages.models_in` reads a session's models, and its idle's agent where
+    it stamps one, else the opening record's name. A child whose records name no model names none:
+    the opening record's is the dispatching session's, the step-down scheme's to run, and never the
+    child's. A child no record names carries no model for the same reason."""
     child = record.get("child_agent_id")
     if not child or not isinstance(record.get("at"), str):
         return None
@@ -157,10 +193,13 @@ def _dispatched(record: Json) -> Dispatch | None:
         page = quote(str(record.get("session")))
     else:
         return None
+    calls = children.get((record.get("harness"), str(child)), [])
+    model = next((call.get("model") for call in reversed(calls) if call.get("model")), None)
+    episode = episodes.get((record.get("harness"), str(child)), {})
     return Dispatch(
         id=str(child),
-        name=record.get("name"),
-        model=record.get("model"),
+        name=episode.get("agent_type") or record.get("name"),
+        model=model,
         session=str(record.get("session")),
         page=page,
         at=record["at"],

@@ -3,9 +3,10 @@
 A change to a watched file, to its content, creation or deletion, appears on the open page without
 a reload, within about a second. The watched files are `ROADMAP.md`, each parked file and each
 parked tree's `entry-point.md`, and the active design and the active plan, a diced one as every
-`.md` file beneath its entry point's directory — and every record file beneath the activity
-capture's stores, `.devpro-temp/.profiler-claude/` and `.devpro-temp/.profiler-opencode/`, whose
-changes surface the agents column (the agents column).
+`.md` file beneath its entry point's directory — and the activity capture's two store directories,
+`.devpro-temp/.profiler-claude/` and `.devpro-temp/.profiler-opencode/`, watched as directories
+rather than their record files one by one, so a record appended or a session file created changes
+what the poll reads and surfaces the agents column.
 
 The page's header holds a **connection indicator**, which says whether the server is answering.
 When three consecutive attempts of the page to reach the server fail, the indicator says the server

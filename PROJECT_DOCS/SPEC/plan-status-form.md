@@ -40,6 +40,9 @@ Terms:
 - **dispatch note** — the identifier of the dispatched agent run a package is under, as the
   activity capture records it, written into the package's row when the dispatch returns. The row's
   State cell's note carries it; the form gives it no cell of its own.
+- **identifier** — the id the capture records for a dispatched child: the child session's id under
+  opencode, the child agent's id under claude — what the dispatch note names, and what a plan
+  reader matches a note's tokens against.
 - **plan size limit** — the length past which the `development` skill dices a plan before
   it is approved.
 
