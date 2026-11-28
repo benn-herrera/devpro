@@ -44,6 +44,15 @@ first run's close. The fix is the killed-child rule's dual: a resumed run writes
 to the child's store (or opens a store of its own), so the running set tracks it. The activity-dots
 ticket reads the same running set, so this blocks its whole-document case as well.
 
+The flip side, same root cause, observed 2026-11-27: when the child's store *does* hold records —
+a follow-up to a live child — the main store's second `Agent` record opens a second `Dispatch`
+with the same id, and `running_dispatches` returns both, so the board draws **two cards for one
+live agent** (measured: `duplicated ids: {ses_…: 2}` while one agent ran). The repair is one
+mechanism for both faces: the capture models a *run*, not a session — a resumed run opens the
+dispatch it resumes (or the reader collapses a history holding one id twice to its last opening,
+keeping one running dispatch and its rank in the palette).
+
+
 ## Features
 
 ### Antigravity TUI harness support
