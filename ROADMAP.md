@@ -87,25 +87,29 @@ board or in the nav area - maybe an 'errors' top level nav
 
 ### Activity dots on the board
 
-One dot fact: an agent is holding an artifact, or the artifact is not being attended. The agents
-column's cards already carry their dots top-left; package cards and column headers carry a dot in
-the same top-left place — filled with the dispatch hue the board already uses (one hue per running
-dispatch: the same dot names the dispatch on its agents-column card and on every package card it
-attends; the hue is the dispatch's place in the running set, not the agent's definition `color`)
-while attended, and a gray reserved for the purpose while not.
-One glyph everywhere: the position carries the attachment, the count says how many, the hue says
-who, the gray says not attended; no shape distinction between card and header dots, because the
-predicate is identical. Known today: package cards carry a dot row (`dispatch_colors`, matched by
-the dispatch note naming the package, `devpro/kanban/assets/board.js`) as a bottom row; the
-top-left placement and the gray state are the work, and if the gray's constant ink reads as noise
-in practice, absence is the fallback to fall back to. Open: the header dots' match rule — what in
-a running dispatch's note or record names whole-document activity (an agent active on a whole
-design or plan, which today appears on no card) — is the design question the work settles. The
-dispatch hue and the profile view's row colors already share one palette (`--c0`…`--c7`), but the
-value derivations differ — the board's dot hue is the dispatch's rank in the running history, the
-profiler's call hues are per-call context — so the requirement, not a fact: the dispatch dot's hue
-on the board is the top color of that agent's data row in the profile view, one derivation
-carried by both surfaces.
+One dot fact: an agent is holding an artifact — or the artifact is not being attended.
+
+- **Placement** — top-left everywhere: the agents column's cards already carry their dots there;
+  package cards and column headers join them in the same place.
+- **Color while attended** — the dispatch hue the board already uses: one hue per running
+  dispatch, the same dot naming the dispatch on its agents-column card and on every package card
+  it attends. The hue is the dispatch's place in the running set, not the agent's definition
+  `color`.
+- **Color while not attended** — a gray reserved for the purpose. If the gray's constant ink
+  reads as noise in practice, absence is the fallback.
+- **One glyph everywhere** — no shape distinction between card and header dots: the position
+  carries the attachment, the count says how many, the hue says who, the gray says not attended;
+  the predicate is identical.
+- **What exists today** — package cards carry a dot row (`dispatch_colors`, matched by the
+  dispatch note naming the package, `devpro/kanban/assets/board.js`) as a bottom row. The
+  top-left placement and the gray state are the work.
+- **The open design question** — the header dots' match rule: what in a running dispatch's note
+  or record names whole-document activity (an agent active on a whole design or plan, which
+  today appears on no card).
+- **The profile view requirement** — the dispatch dot's hue on the board is the top color of
+  that agent's data row in the profile view. The palette is already shared (`--c0`…`--c7`), but
+  the derivations differ — the board's hue is the dispatch's rank in the running history, the
+  profiler's is per-call context. One derivation carried by both surfaces.
 
 ### An introduction to the process
 
