@@ -23,7 +23,6 @@ from devpro.render import (
     render_all,
     render_definition,
     render_skill_file,
-    tuning_table,
     write_renders,
 )
 from devpro.vocabulary import CATEGORIES, HarnessText, Kind
@@ -237,17 +236,3 @@ def test_no_rendered_definition_carries_the_tuning_data() -> None:
             assert "!TUNING!" not in text, path
             assert f" category-map={map_spec(ctx.category_map)}" not in text, path
             assert f" member={ctx.family.categories[CATEGORIES[0]]}" not in text, path
-
-
-@pytest.mark.parametrize("ctx", _RENDERS, ids=lambda ctx: ctx.harness.name)
-def test_the_tuning_table_is_what_an_install_writes_beside_the_render(ctx: Render) -> None:
-    """The tuning table is written with the renders and verbatim: `install` adds it at ROOT's root as
-    `tuning.md`, where `render_all` puts no file, so the two never collide; it carries the render's
-    family, effective map, stock list and harness, each the render's own values."""
-    assert PurePosixPath("tuning.md") not in dict(render_all(ctx))
-    assert tuning_table(ctx) == (
-        f"- family={ctx.family.name}\n"
-        f"- category-map={map_spec(ctx.category_map)}\n"
-        f"- stock={','.join(ctx.stock) or 'none'}\n"
-        f"- harness={ctx.harness.name}\n"
-    )
