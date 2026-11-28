@@ -210,7 +210,7 @@ Systematically evaluate (use judgment about which apply):
 
 1. **Understand context**: Read files, trace call paths, check dependency manifests. Ask if
    ambiguous.
-2. **Classify severity**: {clauses.REVIEW_SEVERITY}
+2. {clauses.REVIEW_SEVERITY}
 3. **Be actionable**: Every finding needs concrete suggestion. "This is complex" is useless. "This
    three-layer abstraction could collapse to one function—X and Y are only call sites" is useful.
 4. **Acknowledge strengths**: Signal design choices to preserve during refactoring.

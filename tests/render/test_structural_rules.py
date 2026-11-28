@@ -472,8 +472,9 @@ def _passes_venv_probe_rule(tree: ast.Module) -> bool:
 def test_the_reach_invariants_are_pinned() -> None:
     """Two corpus facts the suite holds to. The venv-probe sentence reaches only the two seats that run a
     Python probe: `python_coder` and `ml_engineer` pass `probe_rule=clauses.VENV_PROBE_RULE` to
-    `verification_evidence`, and no other call site does. The review-severity ladder is named in only four
-    bodies — `architect`, `security_reviewer`, `tech_writer` and `shell_dsl_coder` — the fixed home of the
+    `verification_evidence`, and no other call site does. The review-severity ladder is named in only five
+    bodies — `architect`, `prose_architect`, `security_reviewer`, `tech_writer` and `shell_dsl_coder` — the
+    fixed home of the
     two Critical definitions it carries. A corpus change that reaches either constant at a new home, or
     drops it from one of these, fails here; either set grows only by a deliberate edit."""
     modules = _modules("definitions")
@@ -482,5 +483,5 @@ def test_the_reach_invariants_are_pinned() -> None:
     severity_carriers = {
         PurePosixPath(path).stem for path, tree in modules if _references_clauses(tree, "REVIEW_SEVERITY")
     }
-    expected = {"architect", "security_reviewer", "tech_writer", "shell_dsl_coder"}
+    expected = {"architect", "prose_architect", "security_reviewer", "tech_writer", "shell_dsl_coder"}
     assert severity_carriers == expected, sorted(severity_carriers)

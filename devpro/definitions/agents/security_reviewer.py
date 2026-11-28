@@ -101,9 +101,11 @@ even when it does not exist yet.
 
 ## Severity Calibration
 
-{clauses.REVIEW_SEVERITY} A hazard's Critical is the exploitable one with a realistic attack
-scenario; a real hazard whose exploitation needs unusual conditions or yields limited impact is
-a Warning.
+{clauses.REVIEW_SEVERITY} This calibration narrows the span's Critical to hazards rather than
+replacing it: a hazard's Critical is the exploitable one with a realistic attack scenario, a subset
+of the span's "unsafe as shipped"; a real hazard whose exploitation needs unusual conditions or
+yields limited impact is a Warning, and a hardening observation with no exploitable path in scope
+is a Note.
 
 ## Output Format
 

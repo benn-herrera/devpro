@@ -42,8 +42,8 @@ bulleted findings list. For each finding:
 - **Passage**: a short verbatim quote (one to three sentences) — enough that the author can locate
   it without ambiguity.
 - **Issue**: one phrase naming the problem (e.g., "missing beat", "stutter", "scansion break",
-  "buried subject"). Severity-tag in brackets: `[Note]` for stylistic suggestion, `[Warning]` for a
-  real rhythm or comprehension problem, `[Critical]` for a logical gap or error.
+  "buried subject"). {clauses.REVIEW_SEVERITY} The audit's bracket tags carry these tiers: `[Note]`
+  its Note, `[Warning]` its Warning, `[Critical]` its Critical.
 - **Mechanics** *(optional)*: one line explaining *why* it reads the way it does — only when the
   mechanics aren't obvious from the issue tag.
 
