@@ -1,8 +1,8 @@
 """Compare two rendered slots under the justfile's `RENDERED_DIR` by text.
 
 A file's text is its bytes after two steps. First, its body (`body`): a file whose first line is
-`---` and whose next line matches the banner shape (`BANNER`) has that line
-replaced by the constant line `# !BANNER!`. A file whose first line matches the comment shape
+`---`, whose next line matches the banner shape (`BANNER`), and whose frontmatter a `---` closes
+has that line replaced by the constant line `# !BANNER!`. A file whose first line matches the comment shape
 (`COMMENT`) — a skill's supporting file, which has no frontmatter and carries the same banner as an
 HTML comment — has it replaced the same way. Replacing rather than deleting means a file that loses
 its banner still differs, and a block of any other shape stays in place, so it shows as a difference
@@ -47,7 +47,7 @@ THEMATIC_BREAK = re.compile(rb" {0,3}([-*_])(?: *\1){2,} *")
 
 def body(data: bytes) -> bytes:
     lines = data.split(b"\n")
-    if lines[0] == b"---":
+    if lines[0] == b"---" and b"---" in lines[2:]:
         start, shape = 1, BANNER
     elif lines[0].startswith(COMMENT[0]):
         start, shape = 0, COMMENT

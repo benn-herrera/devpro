@@ -39,7 +39,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 
 from .. import __version__
 from ..dicing.textfile import read_text
-from ..doccheck.planform import ACTIVE_PLAN, Plan, active_document, read_plan
+from ..doccheck.planform import Plan
 from ..profiler.read import Dispatch, dispatch_notes, running_dispatches
 from .board import (
     MoveRefused,
@@ -206,9 +206,12 @@ class KanbanServer:
             replace(pkg, dispatch_colors=dispatch_notes([pkg.note], self._agents) if pkg.state in columns else [])
             for pkg in self._board.packages
         ]
+        board = asdict(self._board)
+        board.pop("plan")
+        board["packages"] = [asdict(package) for package in packages]
         return {
             "version": self._version,
-            "board": {**asdict(self._board), "packages": [asdict(package) for package in packages]},
+            "board": board,
             "plan_columns": list(columns),
             "mode": mode,
             "agents": [asdict(dispatch) for dispatch in self._agents],
@@ -247,11 +250,10 @@ class KanbanServer:
         self._lock.notify_all()
 
     def _read_board(self) -> None:
-        """Read the board, then the plan its mode is read from — the plan the board itself read, read
-        once more, and None where the project has no active plan."""
+        """Read the board, whose model carries the plan its mode is read from — the one the board read
+        once, and None where the project has no active plan."""
         self._board = read_board(self.root)
-        plan_path = active_document(self.root, ACTIVE_PLAN)
-        self._plan: Plan | None = read_plan(plan_path) if plan_path else None
+        self._plan: Plan | None = self._board.plan
 
     def _read_stores(self) -> None:
         """Read the activity capture's stores for the running dispatches. Raises OSError where a store

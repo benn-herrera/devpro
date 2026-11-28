@@ -135,6 +135,7 @@ class Board:
     packages: list[PackageCard]  # the active plan's work packages, each in the column its state names
     notices: list[Notice]  # the breaches of ROADMAP.md, then the layout breaches of the design
     sha256: dict[str, str | None]  # each file a move may write, relative to the root: its digest, None if absent
+    plan: Plan | None  # the active plan this board was read from; None where there is none
 
 
 class MoveRefused(Exception):
@@ -182,6 +183,7 @@ def read_board(root: str) -> Board:
         packages=[_package_card(root, p) for p in plan.packages] if plan else [],
         notices=now.notices,
         sha256=now.sha256,
+        plan=plan,
     )
 
 

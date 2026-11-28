@@ -46,9 +46,10 @@ class BodyTest(unittest.TestCase):
                 self.assertEqual(body(data), data)
 
     def test_unbannered_files_unchanged(self) -> None:
+        short_block = b"---\n# !GENERATED! from x\nname: a\n"
         not_a_fence = b"x: a\n# !GENERATED! from x\n" + b"---\n" * 3
         wrong_prefix = b"---\n#x !GENERATED! from x\nx: a\n" + b"---\n" * 3
-        for data in (b"no frontmatter\n# !GENERATED! from x\n", not_a_fence, wrong_prefix):
+        for data in (b"no frontmatter\n# !GENERATED! from x\n", short_block, not_a_fence, wrong_prefix):
             with self.subTest(data=data):
                 self.assertEqual(body(data), data)
 

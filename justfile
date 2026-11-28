@@ -184,9 +184,9 @@ check-links:
 # not be MADE is fatal — a missing slot, or a file that cannot be read.
 #
 # Files compare by text, not by bytes: a file whose first line is `---` and whose
-# next line has one of the two frontmatter banner shapes has that line replaced by
+# next line has the frontmatter banner shape has that line replaced by
 # the one constant line `# !BANNER!`; so does a skill's supporting file, which has
-# no frontmatter and carries the third shape, the HTML comment `<!-- !GENERATED!
+# no frontmatter and carries the other shape, the HTML comment `<!-- !GENERATED!
 # ... -->` from its first line. Then, outside fenced code, whitespace inside a
 # paragraph collapses to one space, while headings, thematic breaks, table rows, list items,
 # fenced blocks and frontmatter stay exact (devtools/render_diff.py states the rules). A copied

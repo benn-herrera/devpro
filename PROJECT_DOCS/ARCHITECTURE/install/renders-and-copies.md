@@ -96,7 +96,7 @@ the file's own text. No harness's list reaches another harness's resources: open
 plugin's own, and `_CROSS_HARNESS_SOURCES` is gone with the profiler payload's cross-harness entry.
 A guardrail script is the exception to copying every file: it joins the
 copies only when the probe below passes; its registration joins the rendered definitions on every
-install. A
+install, and the tuning table `tuning.md` is written at ROOT's root beside them. A
 user-level install's resource copies are the harness's entry (`Harness.entry_resource`,
 opencode's `index.ts`) and the guardrail resource beside it: the plugin cannot register without the
 entry, and the entry imports the guardrail only where `guardrail.ts` stands beside it — the

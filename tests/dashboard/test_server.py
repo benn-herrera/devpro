@@ -347,7 +347,9 @@ def test_the_board_payload_is_the_model(tmp_path: Path, serve) -> None:
 
     payload = json.loads(serve(root).get("api/board")[2])
 
-    assert payload["board"] == json.loads(json.dumps(asdict(read_board(str(root)))))
+    board = asdict(read_board(str(root)))
+    board.pop("plan")  # the plan rides the model, not the wire
+    assert payload["board"] == json.loads(json.dumps(board))
     assert payload["plan_columns"] == ["drafted", "dispatchable"]
     assert payload["mode"] == "planning"
     assert payload["agents"] == []

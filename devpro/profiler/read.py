@@ -165,7 +165,9 @@ def _children(sessions: list[Json]) -> dict[tuple[str | None, str], list[Json]]:
             child = record.get("child_agent_id")
             if child:
                 children.setdefault((record.get("harness"), str(child)), [])
-    held = {(session_harness(session), session["id"]): session["records"] for session in sessions}
+    held: dict[tuple[str | None, str], list[Json]] = {
+        (session_harness(session), session["id"]): session["records"] for session in sessions
+    }
     for session in sessions:
         for record in session["records"]:
             key = (record.get("harness"), str(record.get("agent_id")))

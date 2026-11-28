@@ -147,6 +147,6 @@ error; anything else gets the default traceback. The panel serves the project's 
 `/board/` and, at the board's own root paths, its payload, its moves and its stop (SPEC.md, Dicing
 and Checks, Kanban): its two moves write the project's `ROADMAP.md` and the active design, and its
 stop button ends the server as an interrupt does. Its payload carries `devpro_version`, the version
-the board's connection indicator names, beside its `version`, `board`, `plan_columns` and `project`
-keys. A board file that cannot be read, and a port that cannot be bound, refuse the verb before it
+the board's connection indicator names, beside its `version`, `board`, `plan_columns`, `mode`
+and `agents` keys, and each package card's `dispatch_colors`. A board file that cannot be read, and a port that cannot be bound, refuse the verb before it
 prints the URL: exit 2, and `error: ` before the message on stderr.

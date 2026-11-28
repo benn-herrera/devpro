@@ -20,7 +20,13 @@ import pytest
 
 from devpro.dashboard.server import BOARD_PATH
 from devpro.profiler.pages import COLUMNS
+from tests.conftest import _dispatch_store
 from tests.install.conftest import _claude_plugin, _definition_install
+
+# Re-exported so the profiler suite's tests import the shared dispatch-store writer from its own
+# conftest; the definition lives in the shared `tests/conftest.py` (see its `__all__`). Its own
+# `_write_store` stays — the call-record helper its other tests import.
+__all__ = ["_dispatch_store"]
 
 LAYER_LINK = f'<link rel="stylesheet" href="{BOARD_PATH}board.css">'
 _HERE = Path(__file__).parent
@@ -218,28 +224,6 @@ def _run_ts(
     )
     assert done.returncode == 0, done.stderr
     return done
-
-
-def _dispatch_store(root: Path, session: str, at: str, child: str, *, duration_ms: int = 500) -> Path:
-    """An opencode store under `root` holding one dispatch record for `session`: the launch
-    acknowledgment the capture writes when a `subagent` call returns, its `at` the dispatch moment,
-    its `duration_ms` the firing cost, its `background` true, and the child's session id."""
-    return _write_store(
-        root,
-        ".profiler-opencode",
-        session,
-        at,
-        harness="opencode",
-        extra={
-            "tool": "Agent",
-            "name": "devpro-python-coder",
-            "duration_ms": duration_ms,
-            "child_agent_id": child,
-            "child_agent_type": "devpro-python-coder",
-            "background": True,
-            "model": "wafer.ai/parent-model",
-        },
-    )
 
 
 def _idle_store(root: Path, session: str, idles: list[tuple[str, int]]) -> Path:

@@ -17,7 +17,7 @@ package adds code for it.
 | P2 | landed | expert | shipped | |
 | P3 | landed | expert | shipped | |
 | P4 | landed | mechanical | persistent | parallel with code packages |
-| P5 | landed | mechanical | transient | no closing commit: untracked output |
+| P5 | landed | mechanical | transient | the output is untracked output |
 | P6 | landed | expert | persistent | dispatched when P1–P5 are `landed` |
 | P7 | landed | mechanical | persistent | drafting ticket |
 | B1 | landed | mechanical | shipped | closes R1 |
@@ -27,7 +27,7 @@ package adds code for it.
 | B5 | landed | mechanical | persistent | closes R5 |
 | B6 | landed | expert | shipped | closes R6; after B3 |
 | B7 | landed | mechanical | persistent | closes R7 |
-| B8 | dispatchable | mechanical | shipped | closes R8; after B3 |
+| B8 | landed | mechanical | shipped | closes R8; after B3 |
 
 ## Sequencing
 

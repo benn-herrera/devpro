@@ -20,6 +20,7 @@ import http.client
 import io
 import json
 import os
+import re
 import select
 import signal
 import socket
@@ -44,6 +45,7 @@ from devpro.kanban import board as board_module
 from devpro.kanban import server as server_module
 from devpro.kanban.board import read_board
 from devpro.profiler.read import DISPATCH_HUES
+from tests.conftest import _dispatch_store
 
 from .conftest import record
 
@@ -282,7 +284,9 @@ def test_a_change_to_a_watched_file_is_followed(tmp_path, serve, change):
     # The change lands by the first board the poll reads after it, the registered change irrelevant:
     # the board, not the version it bumps, is what says the changed files were read.
     changed = client.board(since=board["version"])
-    assert changed["board"] == _json_round_trip(asdict(read_board(root)))
+    model = asdict(read_board(root))
+    model.pop("plan")  # the plan rides the model, not the wire
+    assert changed["board"] == _json_round_trip(model)
 
     assert changed["version"] != board["version"]
     assert changed["board"] != board["board"]
@@ -480,6 +484,21 @@ def test_more_running_dispatches_than_hues_share_a_color_rather_than_shift(tmp_p
     assert hues == expected and expected[f"s-running-{DISPATCH_HUES + 1}"] == expected["s-running-1"]
 
 
+def test_the_palette_size_is_held_across_read_and_css() -> None:
+    """`DISPATCH_HUES` (`read.py`) is the number of hues `board.js` maps a dispatch's place to, through
+    `board.css`'s `--c0…--c7`; the two live apart with no test holding them one, so one can move and
+    the board draw a hue with no variable (`hueColor`'s `var(--c${hue - 1})` reaching past the set) or
+    leave variables unused. Each `:root` block of `board.css`, light and dark, declares exactly the
+    palette `DISPATCH_HUES` names."""
+    css = (Path(__file__).resolve().parents[2] / "devpro" / "kanban" / "assets" / "board.css").read_text(
+        encoding="utf-8"
+    )
+    want = {f"c{n}" for n in range(DISPATCH_HUES)}
+    for root_block in re.findall(r":root\s*\{[^}]*\}", css):
+        variables = {m.group(1) for m in re.finditer(r"--(c\d+):", root_block)}
+        assert variables == want
+
+
 def test_an_opencode_card_names_the_model_the_childs_records_carry(tmp_path, serve):
     """`clauses.TEST_PRECONDITION`: the defect (R6) is a card's model read off the opening record —
     the *dispatching session's* model — where the child runs another, the step-down scheme making
@@ -528,27 +547,26 @@ def test_an_unreadable_store_keeps_the_last_good_board_and_is_named(tmp_path):
     that says no agent works while the capture holds its records.
 
     A store the poll cannot list is named on stderr as the live-following rule names an unreadable
-    watched file, and the board keeps the last running set and its version until the store reads
-    again."""
+    watched file, and the board keeps its one running dispatch through the unreadable poll and reads
+    it again once the store is readable."""
     if os.geteuid() == 0:
         pytest.skip("root reads any directory")
     root = _project(tmp_path / "proj", {"ROADMAP.md": _ROADMAP})
-    store = Path(root) / ".devpro-temp" / ".profiler-opencode"
-    _append(store / "s-parent.jsonl", _dispatch("2026-01-01T00:00:05.000Z", "s-child"))
+    store = _dispatch_store(Path(root), "s-parent", "2026-01-01T00:00:05.000Z", "s-child")
     err = io.StringIO()
     server = DashboardServer(root, stderr=err)
     try:
         server.start()
         before = server.board.payload(None)
+        assert len(before["agents"]) == 1
         store.chmod(0)
         deadline = time.monotonic() + _TIMEOUT
         while str(store) not in err.getvalue() and time.monotonic() < deadline:
             time.sleep(0.05)
         assert server.board.payload(None)["agents"] == before["agents"]
         store.chmod(0o755)
-        _append(store / "s-parent.jsonl", _dispatch("2026-01-01T00:00:07.000Z", "s-next"))
-        after = before
-        while len(after["agents"]) != 2 and time.monotonic() < deadline:
+        after = server.board.payload(str(before["version"]))
+        while after["agents"] == before["agents"] and time.monotonic() < deadline:
             after = server.board.payload(str(after["version"]))
     finally:
         store.chmod(0o755)
@@ -556,7 +574,7 @@ def test_an_unreadable_store_keeps_the_last_good_board_and_is_named(tmp_path):
 
     named = err.getvalue().splitlines()
     assert len(named) == 1 and str(store) in named[0]
-    assert len(after["agents"]) == 2
+    assert len(after["agents"]) == 1 and after["agents"] == before["agents"]
 
 
 def _dispatch(at: str, child: str) -> str:
@@ -716,7 +734,9 @@ def test_a_read_that_fails_once_is_retried_without_a_further_edit(tmp_path, serv
         after = client.board(since=after["version"])
 
     assert len(calls) >= 2
-    assert after["board"] == _json_round_trip(asdict(read_board(root)))
+    model = asdict(read_board(root))
+    model.pop("plan")  # the plan rides the model, not the wire
+    assert after["board"] == _json_round_trip(model)
     assert len(after["board"]["roadmap"]) == 3
 
 
