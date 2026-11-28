@@ -103,7 +103,7 @@ class Dispatch:
     session: str  # the session that dispatched it
     page: str  # the page the card links: the child's under opencode, the dispatching session's under claude
     at: str  # the opening record's `at`
-    hue: int  # its color: its place among the running dispatches, its hue the palette's next
+    hue: int  # its color: its open-order rank over the store's dispatch history, modulo the palette
 
 
 def running_dispatches(directory: Path | str) -> list[Dispatch]:
@@ -119,16 +119,20 @@ def running_dispatches(directory: Path | str) -> list[Dispatch]:
     the dispatch it names, and two dispatches of one session close at their own stops. A dispatch with no
     closing record is running.
 
-    The color is assigned here, in the running set's order, and holds while the dispatch runs: it is the
-    dispatch's place among the running ones, its hue the palette's next. The running set is ordered by
-    the opening record's `at`, so a batch of records written in one moment is colored in that rather
-    than its store's order. A store that cannot be read raises out of this, as it does from
+    The color is a function of the dispatch alone: its rank in the store's full dispatch history —
+    every dispatch the records open, closed ones included — ordered by the opening record's `at`,
+    modulo the palette, so it is the same color at every read, holds while the dispatch runs, and is
+    distinct among the concurrently running up to the palette's size. The history's order by `at`
+    colors a batch of records written in one moment in that rather than its store's order, and two
+    records of one moment keep the read's order among the ties. No map is carried across reads and
+    nothing is pruned. A store that cannot be read raises out of this, as it does from
     `read_sessions`."""
     sessions = read_sessions(directory)
+    history = _opened(sessions)
+    history.sort(key=lambda dispatch: (_epoch_ms(dispatch.at) or 0))
+    hues = {dispatch.id: rank % DISPATCH_HUES + 1 for rank, dispatch in enumerate(history)}
     ended = _ended(sessions)
-    running = [dispatch for dispatch in _opened(sessions) if dispatch.id not in ended]
-    running.sort(key=lambda dispatch: (_epoch_ms(dispatch.at) or 0))
-    return [replace(dispatch, hue=place % DISPATCH_HUES + 1) for place, dispatch in enumerate(running)]
+    return [replace(dispatch, hue=hues[dispatch.id]) for dispatch in history if dispatch.id not in ended]
 
 
 def _opened(sessions: list[Json]) -> list[Dispatch]:

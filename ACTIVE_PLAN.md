@@ -22,7 +22,7 @@ package adds code for it.
 | P7 | landed | mechanical | persistent | drafting ticket |
 | B1 | landed | mechanical | shipped | closes R1 |
 | B2 | landed | expert | shipped | closes R3 |
-| B3 | dispatchable | expert | shipped | closes R2; after B1 |
+| B3 | landed | expert | shipped | closes R2; after B1 |
 | B4 | landed | mechanical | shipped | closes R4 |
 | B5 | dispatchable | mechanical | persistent | closes R5 |
 | B6 | dispatchable | expert | shipped | closes R6; after B3 |

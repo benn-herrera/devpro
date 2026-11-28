@@ -43,6 +43,7 @@ from devpro.dashboard.server import DashboardServer
 from devpro.kanban import board as board_module
 from devpro.kanban import server as server_module
 from devpro.kanban.board import read_board
+from devpro.profiler.read import DISPATCH_HUES
 
 from .conftest import record
 
@@ -390,9 +391,9 @@ def test_a_change_to_the_stores_is_followed(tmp_path, serve):
 
 
 def test_a_running_dispatch_keeps_its_color_as_another_opens(tmp_path, serve):
-    """`clauses.TEST_PRECONDITION`: the defect is a color read off the running set's size at each
-    payload — every dispatch recolored as one opens or ends — where a color holds while its dispatch
-    runs and only the set's newest takes the palette's next hue.
+    """`clauses.TEST_PRECONDITION`: the defect is a color read off the running set's place at each
+    payload — every dispatch recolored as one opens or ends — where a color is the dispatch's own,
+    fixed by its rank among every dispatch the stores opened, and holds while it runs.
 
     Two dispatches open in `at` order, the palette's first and second; a third opens later and takes
     the third, and every earlier dispatch keeps the hue it had."""
@@ -417,6 +418,66 @@ def test_a_running_dispatch_keeps_its_color_as_another_opens(tmp_path, serve):
         ("s-late", 3),
         ("s-third", 4),
     ]
+
+
+def test_closing_a_dispatch_leaves_the_later_hues_unchanged(tmp_path, serve):
+    """`clauses.TEST_PRECONDITION`: the defect (R2) is a hue read off the dispatch's place among the
+    dispatches *still running*, so closing an earlier one shifts every later one a hue down — a
+    recoloring of a dispatch that is working, while the leaves say a running dispatch's color is
+    stable while it runs.
+
+    Three open in `at` order and take the palette's first three; `s-first` ends and leaves the running
+    set, and `s-second` and `s-third` keep the hues they had — the closed dispatch's rank in the
+    stores' history still counted, nothing pruned. Without the fix `s-second` is recolored 1 and
+    `s-third` 2."""
+    root = _project(tmp_path / "proj", {})
+    store = Path(root) / ".devpro-temp" / ".profiler-opencode"
+    opened = [("2026-01-01T00:00:01.000Z", "s-first"), ("2026-01-01T00:00:03.000Z", "s-second")]
+    opened += [("2026-01-01T00:00:05.000Z", "s-third")]
+    _append(store / "s-parent.jsonl", "".join(_dispatch(at, child) for at, child in opened))
+    client = serve(root)
+    board = client.board()
+
+    _append(store / "s-first.jsonl", _idle("2026-01-01T00:00:07.000Z", "s-first"))
+    after = client.board(since=board["version"])
+
+    assert [(a["id"], a["hue"]) for a in board["agents"]] == [
+        ("s-first", 1),
+        ("s-second", 2),
+        ("s-third", 3),
+    ]
+    assert [(a["id"], a["hue"]) for a in after["agents"]] == [("s-second", 2), ("s-third", 3)]
+
+
+def test_more_running_dispatches_than_hues_share_a_color_rather_than_shift(tmp_path, serve):
+    """`clauses.TEST_PRECONDITION`: the defect (R2) is a hue read off the dispatch's place among the
+    dispatches still running, which shifts every hue when one of them closes; the palette is smaller
+    than the set the store holds, so a hue that follows a running dispatch's count is a promise the
+    leaves cannot keep however many dispatches run.
+
+    Seven closed dispatches hold ranks 0 to 6, then nine running ones hold 7 to 15: `s-running-1`
+    takes hue 8 and `s-running-2` hue 1, and `s-running-9`, whose rank wraps past the palette's size,
+    takes hue 8 again — the hue `s-running-1` holds — so more running dispatches than hues share a
+    color rather than start a new round. The closed dispatches' ranks still count, so `s-running-1`'s
+    hue is its own rank's, not the palette's first. Read off the running set's places — the defect —
+    the closed dispatches' ranks are dropped and each running dispatch is colored by the place it
+    holds, so `s-running-1` takes hue 1 where its rank gives 8."""
+    root = _project(tmp_path / "proj", {})
+    store = Path(root) / ".devpro-temp" / ".profiler-opencode"
+    closed = [("2026-01-01T00:00:00.000Z", f"s-closed-{n}") for n in range(DISPATCH_HUES - 1)]
+    running = [("2026-01-01T00:01:00.000Z", f"s-running-{n}") for n in range(1, DISPATCH_HUES + 2)]
+    last = ("2026-01-01T00:02:00.000Z", running[-1][1])
+    _append(store / "s-parent.jsonl", "".join(_dispatch(at, child) for at, child in closed + running[:-1] + [last]))
+    for _, child in closed:
+        _append(store / f"{child}.jsonl", _idle("2026-01-01T00:00:30.000Z", child))
+    client = serve(root)
+
+    hues = {a["id"]: a["hue"] for a in client.board()["agents"]}
+
+    # Ranks are enumerate's, 0-based: the closed dispatches hold 0 to 6, the running ones 7 onward.
+    closed_count = len(closed)
+    expected = {f"s-running-{n}": (closed_count + n - 1) % DISPATCH_HUES + 1 for n in range(1, DISPATCH_HUES + 2)}
+    assert hues == expected and expected[f"s-running-{DISPATCH_HUES + 1}"] == expected["s-running-1"]
 
 
 def test_an_unreadable_store_keeps_the_last_good_board_and_is_named(tmp_path):
@@ -465,6 +526,12 @@ def _dispatch(at: str, child: str) -> str:
         "child_agent_type": "devpro-python-coder",
         "background": True,
     }
+    return json.dumps(row) + "\n"
+
+
+def _idle(at: str, child: str) -> str:
+    """One idle record line closing the dispatch of the child session `child`: no background work held."""
+    row = record(at, session=child) | {"harness": "opencode", "event": "experimental.idle", "background": 0}
     return json.dumps(row) + "\n"
 
 

@@ -87,8 +87,11 @@ page as [live following](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/
 A dispatch card shows the agent's name, the model it runs, the session that dispatched it, and a
 link to the dispatched work's page where the capture records a session id for it — the child
 session's page under opencode, the dispatching session's page under claude, whose store holds the
-child's records. Each running dispatch has its own color, distinct among the running dispatches and
-stable while it runs.
+child's records. A running dispatch's color is a function of the dispatch alone: its rank in the
+order the capture opened the dispatches of the stores, closed ones included, counted against a fixed
+palette. The color is the same at every read and stable while the dispatch runs, distinct among the
+concurrently running dispatches up to the palette's size, and shared where more than the palette's
+size run at once.
 
 A dispatch is **joined** where the active plan names it: the row of the package the dispatch works
 under carries the dispatch's identifier as its dispatch note ([Plan Status Form](../../../../PROJECT_DOCS/SPEC/plan-status-form.md#plan-status-form)), and that package's
@@ -342,12 +345,14 @@ agent type and the order of the records, the ids the claude capture holds: two c
 dispatches of one agent type in one session close in the order they opened. A dispatch whose
 closing record is absent is running; one with both is done.
 
-The panel derives the running set over the records the stores hold, orders it by the opening
-record's `at`, and assigns each dispatch its color from a fixed palette in that order, stable while
-the dispatch runs. A dispatch card's fields are the records': the agent's name, the model it runs,
-the dispatching session, and the dispatch's identifier, which the card links to `/page/<id>` where
-that identifier is a session id — under claude the card links the dispatching session's page, the
-store holding the child's records.
+The panel derives the running set over the records the stores hold and orders it by the opening
+record's `at`. Each dispatch's color is read from a fixed palette by its open-order rank over every
+dispatch the stores' records open, closed ones included, modulo the palette's size: the same color at
+every read and stable while the dispatch runs, distinct among the concurrently running dispatches up
+to the palette's size and shared beyond it. A dispatch card's fields are the records': the agent's
+name, the model it runs, the dispatching session, and the dispatch's identifier, which the card links
+to `/page/<id>` where that identifier is a session id — under claude the card links the dispatching
+session's page, the store holding the child's records.
 
 The board's mode is the status table's: planning while no row of the active plan's status table is
 `in progress` or `landed`, execution otherwise — the plan the board already reads, read once more;

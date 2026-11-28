@@ -15,12 +15,14 @@ agent type and the order of the records, the ids the claude capture holds: two c
 dispatches of one agent type in one session close in the order they opened. A dispatch whose
 closing record is absent is running; one with both is done.
 
-The panel derives the running set over the records the stores hold, orders it by the opening
-record's `at`, and assigns each dispatch its color from a fixed palette in that order, stable while
-the dispatch runs. A dispatch card's fields are the records': the agent's name, the model it runs,
-the dispatching session, and the dispatch's identifier, which the card links to `/page/<id>` where
-that identifier is a session id — under claude the card links the dispatching session's page, the
-store holding the child's records.
+The panel derives the running set over the records the stores hold and orders it by the opening
+record's `at`. Each dispatch's color is read from a fixed palette by its open-order rank over every
+dispatch the stores' records open, closed ones included, modulo the palette's size: the same color at
+every read and stable while the dispatch runs, distinct among the concurrently running dispatches up
+to the palette's size and shared beyond it. A dispatch card's fields are the records': the agent's
+name, the model it runs, the dispatching session, and the dispatch's identifier, which the card links
+to `/page/<id>` where that identifier is a session id — under claude the card links the dispatching
+session's page, the store holding the child's records.
 
 The board's mode is the status table's: planning while no row of the active plan's status table is
 `in progress` or `landed`, execution otherwise — the plan the board already reads, read once more;
