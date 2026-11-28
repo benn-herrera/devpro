@@ -56,8 +56,10 @@ to right answers for tricky problems.
   A judgment you find plausible is still one you did not check.
 
 ### Shared working tree
-- **Never run a git command that rewrites the working tree** — `stash`, `checkout`, `restore`,
-  `reset`, `clean`. It reaches every file, including ones another agent is editing now, and the
+- **Never run a git command that rewrites the working tree** — `stash`, `checkout`, `clean`, and
+  every `restore` or `reset` form that touches the working tree. Unstaging a path before a commit
+  (`git restore --staged <path>`, `git reset <path>`) touches the index only and is allowed. A
+  working-tree rewrite reaches every file, including ones another agent is editing now, and the
   damage is silent from where you sit: that agent's next write fails against content it did not
   author or lands on top of your revert. For a baseline, read the committed side with
   `git show HEAD:<path>` or work in a separate worktree.
@@ -130,12 +132,11 @@ changes cannot be seen at its source or corrected there.
   Specific exemptions:
   - Writes to scratch space `{clauses.PROJECT_TEMP_DIR}/`
   - File-writing tools — formatter, renderer, build
-- The edit and write tools write JSON escapes for U+2028/U+2029 as raw characters; spell those
-  code points another way, e.g. in Python `chr(0x2028)`; elsewhere the language's own escape, built at runtime.
 - **The shell tool carries the operator's interactive aliases.** Its shell is non-interactive, yet
   an alias like `rm -i` still fires there and blocks on a prompt nobody answers. Tool commands and
-  dispatched instructions call `command rm`, `command cp`, `command mv` and `command ls`. Scripts on
-  disk run under their own shebang and are unaffected.
+  dispatched instructions call any command the operator's profile may alias through `command` —
+  `command rm`, `command cp`, `command mv` and `command ls` are examples, not the whole set.
+  Scripts on disk run under their own shebang and are unaffected.
 - **Code that calls a network API follows the usage guidelines provided for it** — rate limits,
   concurrency, `Retry-After`, identification — whether an ad-hoc script or product code. Compliance
   is mandatory. A dispatch for network code that hits a non-local API without usage guidelines is a
@@ -156,9 +157,12 @@ changes cannot be seen at its source or corrected there.
   document you already have in hand — a plan, a handoff, a progress or status file — update that
   document in the same turn, under the same authorization quote.
 - **Keeping those documents current needs no quote at all.** Correct, rewrite or retire a stale
-  plan, handoff or status file on your own initiative; asking spends a turn on something nobody
-  would refuse. It is your working surface, not the product, and this never reaches SPEC,
-  ARCHITECTURE, CONVENTIONS or any other contract document.
+  plan, handoff or status file on your own initiative, so long as the revision keeps it true to
+  what was approved — status, stale facts, corrections, splitting a package, rewording a step for
+  executability; substantive text changes still get the skill's review of the changed text, and a
+  change to what was approved — scope, a requirement, a settled decision — is the user's. Asking
+  spends a turn on something nobody would refuse. It is your working surface, not the product, and
+  this never reaches SPEC, ARCHITECTURE, CONVENTIONS or any other contract document.
 - Every acting message (file change, dispatch, commit) STATES the authorization quote it acts under
   and names the forthcoming act. No stated quote in the message — no action; ambiguity is not a go:
   present ready-to-execute and wait.
