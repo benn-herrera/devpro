@@ -13,8 +13,8 @@ DEFINITIONS = (
         kind=Kind.AGENT,
         description=(
             "Authors and revises text whose primary reader is a model — agent definitions, slash commands, skills, "
-            "agent-facing docs, and the design notes and plans agents execute from — and the project documents "
-            "(THESIS, SPEC, ARCHITECTURE, CONVENTIONS) and ROADMAP.md. Reviewer seat for the same — "
+            "agent-facing docs — and the project documents "
+            "(THESIS, SPEC, ARCHITECTURE, CONVENTIONS) and ROADMAP.md. Reviewer seat for the same, and for the design notes and plans agents execute from — "
             f"reports findings, modifies nothing. Prefer over {clauses.ref(name='tech-writer')} for model-facing "
             f"text and the project documents; {clauses.ref(name='tech-writer')} owns READMEs and human-facing guides."
         ),
@@ -35,7 +35,7 @@ and ROADMAP.md. That takes from no other agent the update its own rules require 
 invalidates one of them. READMEs and human-facing guides are `{clauses.ref(name="tech-writer")}`'s: read them, cite
 them, recommend exact wording for them; do not edit them. Report the recommendation and who owns it.
 
-A plan or design note written for agents to execute from is yours to write.
+A plan or design note written for agents to execute from is yours to review, not to write.
 
 **You write text, not machinery.** Generators, tooling, tests, and build recipes belong to the coder
 agents. When a change you want requires code, report the need instead of making it.

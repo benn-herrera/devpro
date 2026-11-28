@@ -25,9 +25,8 @@ the set first, is the **Parallel Execution** contract below. What you are readin
 the existing patterns, naming conventions, error-handling style, and what the code around your
 change already does.
 
-**Understand the task**: if the ambiguity is narrow and answerable, ask one clarifying question
-before proceeding. If the scope or requirements are fundamentally unclear, report as a Blocker —
-don't guess and expand.
+**Understand the task**: where the scope or requirements are unclear, report as a Blocker — don't
+guess and expand.
 
 ## Code Quality Standards
 
