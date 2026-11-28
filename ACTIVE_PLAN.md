@@ -51,13 +51,13 @@ B1's guard direction.
 | B4 | landed: 69bc4c9d (R6, R18, R23 closed; one fact for the record: the guide's term renders in `references/using.md`, not `SKILL.md` — the item's done-line grep named the wrong file, the report measured the right one) | mechanical | R6, R18, R23 |
 | B5 | landed: e84e3f49 (three seat-word sites + the trigger gloss's deciding half; R7 retained for the owner; one premise note for the record — the item called two sites "byte-identical", they differ in "a plan"/"the items", the seat word applied identically and the difference left standing) | mechanical | R8, R10; R7 flagged for the owner |
 | B6 | landed: 2bc7e633 (the design's MB16 "becomes" text superseded by this item's mechanical form — recorded here; the design leaves at the plan's landing) | mechanical | R9 |
-| B7 | dispatchable (dissolves at B12's landing — B12's scope deletes the governance paragraph outright, the paragraph B7 was to move; R11 closes by removal, no own dispatch or commit) | mechanical | R11 |
+| B7 | landed: closed by B12's 19741d33 — the governance paragraph B7 was to move is deleted outright per MB6b; R11 closes by removal, no own dispatch or commit | mechanical | R11 |
 | B8 | landed: 22cfc235 (all three fixes verbatim where drafted; conftest tuple + B3's carrier set updated in-commit; its lint citation quoted the shell/docs legs — the batched tail gate runs lint whole) | mechanical | R12, R13, R14 |
-| B9 | dispatchable (fires after B12 on clauses.py) | mechanical | R15, R16, R17, R24 |
+| B9 | landed: 369184eb (all four named edits + the stale render gone, nothing revives it; its flag on the-count-is-a-target.md:14 — a third retired-naming instance — corrected by the session under R24's settled root cause, 9d7b67bb) | mechanical | R15, R16, R17, R24 |
 | B10 | landed: a9c52eb3 (pure deletion, verified no pins; the render-surface half of its done-line went red on B12's in-flight clauses.py state — not B10's scope — and the batched tail gate re-runs it whole after B12 lands) | mechanical | R19 |
-| B11 | dispatchable (fires after B9 on clauses.py) | mechanical | R20, R21, R22 |
+| B11 | landed: 36197696 (R20's one source reads test.sh's arms; R21's slice/guard as named; R22's deviation on the record — the item's literal "into the function's composition" is unimplementable under FUNCTION_RULE's one-bare-f-string body, so the space composes in `VENV_PROBE_RULE` over a space-free `VENV_PROBE_SENTENCE`; render byte-identical, probe 1) | mechanical | R20, R21, R22 |
 | B13 | landed: f8aad90a (one judgment on the record: SPEC's count moved two → three install sources — the rewrite would have self-contradicted; the release-tag URL stays a source without the `@v<version>` spelling, per MB6c) | mechanical | MB6c — supersedes B1's direction |
-| B12 | in progress: dispatch ses_ddef66388ffeW5WVeZ4bTqnIGd — the owner's removal decision, corrected mid-run; the span is deleted outright, not reworded | mechanical | R3, W7, W8 — resolved by removal |
+| B12 | landed: 19741d33 (span + 12 interpolations + 2 stacks + the governance paragraph, verified zero refs; the 5-seat import/f-string cleanup is the lint-forced consequence, in-commit; B2's ticket removal rode the owner-directed 6d015f99; the report's "B3 pin owed" is a stale-scope reading — B3's corrected test has no pin, no-op) | mechanical | R3, W7, W8 — resolved by removal |
 
 Serial order per shared file, nothing concurrent across these runs:
 `devpro/definitions/skills/development.py`: P5 → P6 → P7 → P8 → P9. `guide.py`: P6 → P7 → P8.
