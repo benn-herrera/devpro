@@ -17,6 +17,21 @@ tree, or the walk reads only the tree it owns. `just test-changed` compounds it 
 it selects surfaces from *all* uncommitted paths, so co-dispatched packages run each other's
 surfaces — a package's "only its own changes" coverage holds only serially.
 
+### test-changed's granularity is the directory, not the test
+
+`TEST_SURFACE_MAP` maps changed files to whole surfaces: any edit under `devpro/` selects the
+devpro surface — all ~1700 of the suite's tests — so a one-line text edit in one definition module
+pays the full suite, and the dispatch discipline that runs many small packages pays it per
+package. The correspondence the target promises (changed files → the tests that exercise the
+functions they touch and their outputs) stops at the surface boundary. The concrete case: a
+definition-module edit selects the dashboard's 25-second board-panel test, which cannot observe
+a definition's text — selection is by directory prefix, and both files share it. The repair:
+within-surface selection — map the changed module to the test files that exercise it; the test
+tree's layout already names the seams (`tests/render/`, `tests/install/`, `tests/dicing/`,
+`tests/profiler/`, the dashboard's board panel against `devpro/kanban/`), and the surface whole
+remains the fallback where no finer mapping exists. Iteration speed is the design constraint:
+selection granularity is iteration speed, and one directory is no granularity.
+
 ### A resumed dispatch's store ends in its earlier close
 
 A follow-up to an idle child continues the same session id, and the opencode capture writes no
@@ -158,6 +173,17 @@ The process consequence: the "one commit closes a package" rule was written for 
 its purpose survives (a package's row names the commit that carries its work; a merge commit can
 be that commit), its form changes, and the rule lives in the process skill and the agent
 definitions, so the change is a definitions-and-CONVENTIONS amendment, not a habit.
+
+### The install sources move under devpro/install/
+
+`devpro/install.py`, `devpro/install_base.py` and `devpro/install_target.py` are the only command
+sources sitting loose at the package root, and their tests already name the verb's home:
+`tests/install/`. Move the three under `devpro/install/` as a package — renaming nothing — and
+re-point every importer (the reference search runs at execution). CONVENTIONS' one-way module
+split governs the import layer the subsystem map's install entry states: `install_base` imports
+no other install module, `preflight` imports `install_base`, `agents_file` imports `install_base`
+and its dependents, `install` imports all of them. TEST_SURFACE_MAP needs no new row — the
+`devpro/` fallback covers the subtree.
 
 ### The TypeScript compiler rides unpinned
 
