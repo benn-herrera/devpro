@@ -225,31 +225,6 @@ where opencode's background service has never run a session, models a provider p
 there; the run fails or falls back to opencode's free models. Whether the composed agent file's
 `"*": deny` blocks every tool is therefore unconfirmed by a live run.
 
-### The precedence span's reading awaits the owner's ruling
-
-`clauses.PROJECT_PRECEDENCE` (`devpro/clauses.py`) opens "The project's own documents modify the
-process" and closes "there is no list of qualifying documents and no carve-out." That last phrase
-admits two readings, and the owner has not chosen between them. Flagged from the post-plan review
-(R3); no wording to the span is drafted here, and `devpro/clauses.py` is untouched.
-
-The two readings of "no list of qualifying documents and no carve-out": either no exception to the
-precedence itself — any project document governs where it departs, and the check keeps no whitelist
-— or no exceptions anywhere — nothing at all may override the general approach. The second collides
-with the project's own leaves that name exceptions. The value-constant exemption is the concrete
-one: `PROJECT_DOCS/ARCHITECTURE/rendering/structural-rules.md` states that a `clauses.py` constant
-carrying a value rather than a clause is not counted by the shared-paragraph check,
-`clauses.VALUE_CONSTANTS` declaring the set, and the same leaf's `EXEMPTIONS` map admits a clause
-group member's omission of one plain entry — both exceptions the "no exceptions anywhere" reading
-leaves no room for.
-
-The reading is load-bearing on its audience: the span's heading states a narrower rule than its
-body, which also governs file headers and settled style, and eleven seats that write no code read
-the body's "the code you change" — a rule scoped to code they do not write.
-
-The decision is the owner's — which reading the span states, or a third wording that separates the
-two. No rewording is drafted until the ruling; it starts from this record and becomes a work item —
-the span's rewording — when it comes.
-
 ## Testing
 
 ### The opencode capture's host-shape reads are verified by live dispatch alone
