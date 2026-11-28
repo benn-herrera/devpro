@@ -6,7 +6,8 @@ activity capture's events alone, so the operator reads who is working on what fr
 itself, a card's link carrying them to the detail. The package lifetime scale names durability — shipped reaches a user, persistent is tracked
 and does not, transient never commits — so the process a package owes is priced by what the package
 will cost to keep. The rendered definitions carry no tuning data; the set records it once per
-install in a tuning table at the install destination's root, and the coordinator reads what it
+install in a tuning table under the install directory, beside the rendered definitions, and the
+coordinator reads what it
 needs per agent from the dispatch fields it already reads. For the operator watching the board, the
 sessions dispatching under the process, and the agents reading the rendered definitions.
 
@@ -200,9 +201,9 @@ what it dispatches on are readable from the definition alone.
 **Becomes:**
 
 ```
-The rendered set's tuning table, one per install at the install destination's root, records the
-family's name, the effective category map, the categories whose member the family has no
-member-scoped tuning text for (as `stock=`), and the harness it was rendered for, so what the set
+The rendered set's tuning table, one per install under the install directory, beside the rendered definitions, records the
+family's name, the effective category map, the full category list in `CATEGORIES` order,
+comma-joined, `none` when empty (as `stock=`), and the harness it was rendered for, so what the set
 is tuned for and what it dispatches on is readable from the set alone. A definition's category and
 member appear nowhere in the rendered output: the member is the model the definition renders with,
 which the dispatch fields the coordinator reads already carry, and the category map is recorded in
@@ -316,7 +317,7 @@ rendered file takes that comment carrier (`render._comment_banner`), a definitio
 because the body file holds no frontmatter; the entry strips the leading comment lines and the
 blank line after them when it registers the body.
 The tuning data rides on no rendered file. The set's one carrier is the **tuning table**,
-written once per install at the install destination's root as `tuning.md` and replaced wholesale
+written once per install under the install directory, beside the rendered definitions, as `tuning.md` and replaced wholesale
 with the rest of the install (Renders and copies); it records the family, the harness, the
 effective category map and the stock list (SPEC.md, Rendering). No per-definition tuning line
 exists, and `render.tuning_text` and `tuning_line` are gone with it.

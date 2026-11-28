@@ -63,9 +63,9 @@ Every rendering of the definitions in the deployed surfaces has five observable 
   written, naming the category, the value, and the settings-file entry, the harness default, or the
   family that supplied it — and the text each of
   its inherit words renders as, `inherit` among them; an empty rendering leaves the definition
-  without a model line. The rendered set's tuning table, one per install at the install destination's root, records the
-  family's name, the effective category map, the categories whose member the family has no
-  member-scoped tuning text for (as `stock=`), and the harness it was rendered for, so what the set
+  without a model line. The rendered set's tuning table, one per install under the install directory, beside the rendered definitions, records the
+  family's name, the effective category map, the full category list in `CATEGORIES` order,
+  comma-joined, `none` when empty (as `stock=`), and the harness it was rendered for, so what the set
   is tuned for and what it dispatches on is readable from the set alone. A definition's category and
   member appear nowhere in the rendered output: the member is the model the definition renders with,
   which the dispatch fields the coordinator reads already carry, and the category map is recorded in
