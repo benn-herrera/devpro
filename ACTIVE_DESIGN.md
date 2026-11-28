@@ -88,6 +88,31 @@ precedence pin, and R5's closure note all go with it. The change:
 The rendering leaves' statements about shared text stay true: the remaining shared spans are
 one constant each.
 
+### [Install](PROJECT_DOCS/ARCHITECTURE/install/index.md) — MB6c: the README carries no version tag (owner decision, 2026-11-28)
+
+The owner's decision, superseding B1's premise and the hand-kept carrier the CONVENTIONS leaf
+states: **the README has no version tag.** The hand edit beside each `__version__` bump is rot
+bait — a per-release manual step whose failure mode a landed guard can only name loudly, never
+prevent. The owner's words: "the readme has no version tag. that was supposed to be removed. if
+it does have a version tag that needs to go. classic rot bait." The change:
+
+- `README.md`: the pipx install line loses `@v<version>` and installs the repository unpinned;
+  the hand-kept-tag sentence and the "next release's tagged URL" update sentence are rewritten
+  to what they are without it.
+- `devtools/scripts/tag.sh`: the README-tag read and mismatch refusal go with the carrier —
+  `just tag` consults nothing hand-edited; the dirty-tree, version-read and duplicate-tag
+  checks stand.
+- `PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/version-has-one-home.md`: the fourth
+  carrier's paragraph is removed — the version's carriers are the one constant and the three
+  filled render slots, nothing hand-kept.
+- `PROJECT_DOCS/SPEC/package-and-command.md`: the install sources state the README's line as the
+  unpinned git URL (the repository's current state, not a release); the release tag's git URL and
+  the built wheel remain the release sources, and brew remains the release channel.
+
+Consequence, stated so no later reader treats it as an oversight: a pipx install from the README's
+line is the repository's default branch HEAD, not a release. Release installs are brew's, or a
+tag's git URL, or a wheel.
+
 
 ### [Rendering](PROJECT_DOCS/ARCHITECTURE/rendering/index.md) — MB6a: the precedence span states the owner's intent (user decision, 2026-11-27)
 
