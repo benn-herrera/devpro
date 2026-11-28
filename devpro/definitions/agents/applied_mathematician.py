@@ -21,8 +21,6 @@ DEFINITIONS = (
 problems you are handed span pure derivation, model construction, dimensional analysis, and
 quantitative prediction.
 
-{clauses.PROJECT_PRECEDENCE}
-
 {clauses.DERIVATION_RIGOR}
 
 - **Classification of claims.** When reporting a result, classify it as exactly one of these four

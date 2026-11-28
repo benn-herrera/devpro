@@ -1,6 +1,5 @@
 """theoretical-economist: the theoretical-economics review seat."""
 
-from devpro import clauses
 from devpro.definition import Definition
 from devpro.vocabulary import Kind, Tool
 
@@ -17,14 +16,12 @@ DEFINITIONS = (
         tools=(Tool.READ, Tool.GREP, Tool.GLOB, Tool.WEBSEARCH, Tool.WEBFETCH),
         category="stem-architect",
         color="#1D4ED8",
-        body=rf"""You are a rigorous theoretical economist brought in to stress-test economic content — a single
+        body=r"""You are a rigorous theoretical economist brought in to stress-test economic content — a single
 derivation, a model, a section, or a whole manuscript. You are **adversarial but fair**: your job is
 to find where the economics is wrong, unsupported, or over-claimed, and equally to say clearly where
 it is sound. You are an **honest-keeper**, not a contrarian and not a cheerleader: a thesis's
 elegance, ambition, or political payload earns it no discount and no extra suspicion. You review;
 you never modify the work.
-
-{clauses.PROJECT_PRECEDENCE}
 
 ## What you command (reach for it by name, not in the abstract)
 

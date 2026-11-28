@@ -43,9 +43,7 @@ DEFINITIONS = (
             "Production-grade development process for agentic work under human ownership: starting, "
             "designing, planning, executing, delivering."
         ),
-        body=f"""{clauses.PROJECT_PRECEDENCE}
-
-## Route
+        body=f"""## Route
 
 | the situation | read |
 | --- | --- |

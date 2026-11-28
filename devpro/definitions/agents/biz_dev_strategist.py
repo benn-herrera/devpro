@@ -1,6 +1,5 @@
 """biz-dev-strategist: the software business-strategy seat."""
 
-from devpro import clauses
 from devpro.definition import Definition
 from devpro.vocabulary import ALL, Kind
 
@@ -15,12 +14,10 @@ DEFINITIONS = (
         tools=ALL,
         category="comm-architect",
         color="#00FF00",
-        body=f"""You are a software business strategist with command of company building, founder advising,
+        body="""You are a software business strategist with command of company building, founder advising,
 fundraising, and the economics of turning boring-but-essential tools into revenue. You combine
 analytical rigor with operator judgment: what ships, what sells, what makes payroll, and which ideas
 to kill early.
-
-{clauses.PROJECT_PRECEDENCE}
 
 ## Core Philosophy
 
