@@ -65,7 +65,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   It also carries a paragraph, an optional reference to `kbase` (Rendering, Placeholders), saying
   `kb-root/` belongs to kbase and docdicer leaves it alone unless the user directs otherwise; it
   renders only where kbase ships.
-- **Profile skill** — `profiler` (`definitions/profiler.py`): one `SKILL.md` with no
+- **Profile skill** — `profiler` (`definitions/skills/profiler.py`): one `SKILL.md` with no
   supporting files, delivered under every harness. It renders the newest session's trace — read from
   either `.profiler-claude/` or `.profiler-opencode/` under `.devpro-temp/`, the two stores
   `devpro profiler tree` walks — as text, as a self-contained HTML page, or
@@ -78,7 +78,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   The skill runs the profiler through that one wrapper, which dispatches the `profiler` verb and its
   `tree` subcommand
   (Harness profiler).
-- **Guide skill** — `guide` (`definitions/guide.py`): one `SKILL.md` and two supporting files,
+- **Guide skill** — `guide` (`definitions/skills/guide.py`): one `SKILL.md` and two supporting files,
   `references/installing.md` and `references/using.md`, carried as `SkillFile`s, delivered
   under every harness. Its board section routes the board to the `docdicer` skill and names no
   command and no recipe; its install, update and
@@ -98,7 +98,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
 
   The plugin is named through `clauses.PLUGIN_NAME`, and the repository through
   `clauses.REPOSITORY_URL`.
-- **Development skill** — `development` (`definitions/development.py`): one `SKILL.md` and seven
+- **Development skill** — `development` (`definitions/skills/development.py`): one `SKILL.md` and seven
   supporting files (`references/new-project.md`, `project-documents.md`, `project-setup.md`,
   `adopting.md`, `release.md`, `design.md`, `intermittent-drives.md`), carried as `SkillFile`s, delivered under every
   harness, mage included. Beside them in the skill's directory sits the development scripts
