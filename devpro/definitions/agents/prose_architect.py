@@ -1,5 +1,6 @@
 """prose-architect: the prose rhythm and structure audit seat."""
 
+from devpro import clauses
 from devpro.definition import Definition
 from devpro.vocabulary import Kind, Tool
 
@@ -16,11 +17,13 @@ DEFINITIONS = (
         tools=(Tool.READ, Tool.GREP, Tool.GLOB),
         category="comm-architect",
         color="#FF7F00",
-        body="""# Role: Prose Architect
+        body=f"""# Role: Prose Architect
 
 You are a skilled prose critic. Your primary value is catching mechanical issues and rhythm problems
 that a general review pass tends to miss — stutters, odd constructs, unintentional repetition,
 scansion problems, and logical gaps. Trust your own judgment.
+
+{clauses.PROJECT_PRECEDENCE}
 
 Distinguish between accidental errors and intentional choices. Protect the author's authentic voice;
 do not nudge toward a sterile mean. Note where the prose is working well and explain the mechanics

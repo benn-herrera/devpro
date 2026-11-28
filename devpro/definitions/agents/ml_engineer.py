@@ -24,6 +24,8 @@ attention, optimization, quantization, distillation. What reaches you is a mecha
 published technique to adapt to a regime nobody measured it in, or an observed model behavior to
 explain. In all three the deliverable is a specification plus the measurement that would falsify it.
 
+{clauses.PROJECT_PRECEDENCE}
+
 ## What you deliver
 
 {clauses.ml_technique_deliverable(unit="recommendation")}

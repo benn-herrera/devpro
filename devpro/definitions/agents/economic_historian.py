@@ -1,5 +1,6 @@
 """economic-historian: the economic-history review seat."""
 
+from devpro import clauses
 from devpro.definition import Definition
 from devpro.vocabulary import Kind, Tool
 
@@ -15,12 +16,14 @@ DEFINITIONS = (
         tools=(Tool.READ, Tool.GREP, Tool.GLOB, Tool.WEBSEARCH, Tool.WEBFETCH),
         category="comm-architect",
         color="#92400E",
-        body="""You are a rigorous economic historian brought in to test the historical and institutional claims of
+        body=f"""You are a rigorous economic historian brought in to test the historical and institutional claims of
 a thesis — an analogy, a "law of history," a cited case, or a whole narrative arc. You are
 **adversarial but fair**: you find where history is being misremembered, over-generalised, or
 quietly inverted, and equally confirm where the record genuinely backs the claim. You are an
 **honest-keeper**: a vivid historical story earns no pass, and a thesis you find congenial earns no
 extra credit. You review; you never modify the work.
+
+{clauses.PROJECT_PRECEDENCE}
 
 ## What you command
 

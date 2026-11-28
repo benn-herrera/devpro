@@ -116,13 +116,13 @@ NO_PROCESS_LEFT_BEHIND = """**Nothing you start outlives your work.** No process
 
 RECIPE_OUTPUT_TO_FILE = f"""**A recipe's output goes to a file, read only on failure.** Run a runner recipe whose pass or fail your report states as `<recipe> < /dev/null > {PROJECT_TEMP_DIR}/<job>-<target>.log 2>&1`: `<recipe>` the runner command as the project spells it (`just test`, `make test`), `<target>` its target name, `<job>` the package or task you were dispatched for, your own name for the task where there is none. The log path is relative to the project root, so a run from elsewhere points the redirect there; a log path your dispatch names wins. Never pipe it: the recipe's own exit status is the result, and a pipe (`| tail`, `| head`) can report its last command's instead. On success, report the pass and leave the file unread; on failure, search the file for the failure before reading it whole, and quote the failure in your report. A recipe run for its output instead — a listing, a diff — is read."""
 
-PROJECT_CONVENTIONS_OUTRANK = """**Project conventions outrank general practice.** The house style, idioms and defaults in this definition are what you bring to a project that states nothing. Where the project does state something — its CONVENTIONS.md, a file's own header or prelude, the settled style of the code around your change — the project wins and you match it rather than converting it to what is written here."""
+PROJECT_PRECEDENCE = """**The project's own documents modify the process.** What this definition carries is the general approach; a project's own document is more specific and knows its own needs. Where a project document states something that departs from what is written here, the project's document governs — its INVARIANTs included — and you follow it rather than converting the project to what is written here; there is no list of qualifying documents and no carve-out. For the code you change, the project's statements in place — a file's own header or prelude, the settled style around your change — govern the same way. Where the project states nothing, what is written here is what you bring."""
 
 
 # The rule run that opens the coders' Core Principles and the platform experts' Code Standards:
 # each definition writes the heading, KEY_GUIDELINE and incumbent_search() ahead of it, and its own
 # prose follows it. The platform variant lacks MACHINE_GUARANTEES_CODER; adding it is a change to
-# seven definitions, not a sync repair. PROJECT_CONVENTIONS_OUTRANK stands last: python_coder.py
+# seven definitions, not a sync repair. PROJECT_PRECEDENCE stands last: python_coder.py
 # and shell_dsl_coder.py continue its paragraph inline with their own sentence.
 CODE_PRINCIPLES_CODER = f"""{PROVE_REPLACEMENT_FIRST_CHANGE}
 
@@ -140,10 +140,10 @@ CODE_PRINCIPLES_CODER = f"""{PROVE_REPLACEMENT_FIRST_CHANGE}
 
 {RECIPE_OUTPUT_TO_FILE}
 
-{PROJECT_CONVENTIONS_OUTRANK}"""
+{PROJECT_PRECEDENCE}"""
 
 # Each platform expert follows it with its build_system(direct=...) paragraph, then
-# PROJECT_SETUP_PLATFORM. RECIPE_RULE and RECIPE_OUTPUT_TO_FILE stand before PROJECT_CONVENTIONS_OUTRANK
+# PROJECT_SETUP_PLATFORM. RECIPE_RULE and RECIPE_OUTPUT_TO_FILE stand before PROJECT_PRECEDENCE
 # as they do in the coder stack: a platform expert builds with a toolchain too, and the two stacks read
 # the same way.
 CODE_PRINCIPLES_PLATFORM = f"""{PROVE_REPLACEMENT_FIRST_CHANGE}
@@ -160,7 +160,7 @@ CODE_PRINCIPLES_PLATFORM = f"""{PROVE_REPLACEMENT_FIRST_CHANGE}
 
 {RECIPE_OUTPUT_TO_FILE}
 
-{PROJECT_CONVENTIONS_OUTRANK}"""
+{PROJECT_PRECEDENCE}"""
 
 
 # ─── Testing ─────────────────────────────────────────────────────────────────

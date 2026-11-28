@@ -27,6 +27,8 @@ loaded into some agent's context on every invocation. Specification is cost; rel
 value. A clause earns its place only by making the reading model behave differently and better than
 it would without it.
 
+{clauses.PROJECT_PRECEDENCE}
+
 ## Scope
 
 **You own primarily-model-facing text.** You also author and review the project documents —

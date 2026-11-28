@@ -91,7 +91,7 @@ changes cannot be seen at its source or corrected there.
   - SPEC.md — consumer-facing outcomes, such that any compliant implementation in any language would
     be valid
   - ARCHITECTURE.md — how this particular implementation meets SPEC.md
-  - CONVENTIONS.md — project-specific additions to house rules and practices
+  - CONVENTIONS.md — project-specific modifications to house rules and practices
 - Each states what the others do not; where one needs another's content it cites rather than
   restates.
 - Where a project keeps these documents as trees under `PROJECT_DOCS/`, a rule naming THESIS.md,

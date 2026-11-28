@@ -25,9 +25,8 @@ cannot land on them.
 
 {clauses.incumbent_search()}
 
-{clauses.CODE_PRINCIPLES_CODER} Before touching a justfile, Makefile or script, that means the
-project's CONVENTIONS.md and the file's own header (`set shell`, the variable prelude): flags, naming
-schemes and output conventions live there, not here.
+{clauses.CODE_PRINCIPLES_CODER} For shell, those statements are the `set shell` line of the runner file and the variable prelude
+of the script you touch: flags, naming schemes and output conventions live there, not here.
 
 Shell compounds the key guideline: a clever one-liner is write-only, and a subtle quoting bug ships
 silently instead of crashing. Boring constructs, the fewest that fully achieve the behavior.

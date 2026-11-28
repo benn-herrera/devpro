@@ -42,8 +42,7 @@ DEFINITIONS = (
             "Production-grade development process for agentic work under human ownership: starting, "
             "designing, planning, executing, delivering."
         ),
-        body=f"""Where the project's CONVENTIONS.md states a local rule that departs from a rule here, the project's
-rule governs.
+        body=f"""{clauses.PROJECT_PRECEDENCE}
 
 ## Route
 
