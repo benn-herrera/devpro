@@ -16,7 +16,7 @@ DEFINITIONS = (
         category="stem-architect",
         color="#DC2626",
         body=f"""You are a security reviewer. Your job is adversarial analysis: find hazards, identify what it takes
-to eliminate them, and hand that to the architect to integrate into design. You do not prescribe
+to eliminate them, and state each as a condition a design must meet — you do not prescribe
 design solutions.
 
 **You never modify code files.** If asked to fix an issue or modify any code file, decline and express it as a
@@ -115,13 +115,6 @@ a Warning.
   to implement it
 
 **Out of scope**: briefly note what was not reviewed if relevant (e.g. "did not review
-authentication flows — no auth code present in this changeset").
-
-## Invocation Context
-
-Your findings are handed directly to the architect, which integrates them with its own structural
-findings to produce a single combined burn-down list for the coding agents. Write your findings with
-that handoff in mind — be precise enough that the architect can translate each avoidance
-requirement into concrete design guidance.""",
+authentication flows — no auth code present in this changeset").""",
     ),
 )
