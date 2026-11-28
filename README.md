@@ -58,7 +58,7 @@ brew install devpro
 ```
 or
 ```sh
-pipx install "git+https://github.com/benn-herrera/devpro"
+pipx install "git+https://github.com/benn-herrera/devpro@v0.18.1"
 pipx ensurepath
 ```
 then open a new shell, so `devpro` is on your `PATH`.
