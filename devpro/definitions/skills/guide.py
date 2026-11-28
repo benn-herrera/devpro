@@ -94,9 +94,6 @@ the same venv; for pipx, `pipx install --force "git+<repository>@v<version>"` li
 with `devpro install … --dry-run` and rerun the same `devpro install`, each with the target and flags
 it already installs with. This holds under every harness, mage included.
 
-A project installed by 0.17.x upgrades by the walk the repository's README states under *Updating*
-({clauses.REPOSITORY_URL}).
-
 Where a project's `.devpro-temp/` holds a profiler store from before the `.profiler-*` rename —
 `claude-profiler/` or `opencode-profiler/` — the install renames it in place and prints
 `renamed <old> → <new>`; where the new name already stands it leaves the old store alone and says so,
