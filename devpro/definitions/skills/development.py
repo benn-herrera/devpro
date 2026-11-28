@@ -170,7 +170,8 @@ bindable term that has no default and is unbound, ask the user for it then, thro
 
 - The plan's first draft is the {clauses.ref(name="architect")} definition's to write: the session
   dispatches it — from the accepted design where one precedes the plan, from the findings where
-  none does — and writes no draft of its own. *Purpose:* the plan is written by the seat that also
+  none does. The session drafts a plan itself only when the user asks the session itself to, and
+  a request for the plan is not that ask. *Purpose:* the plan is written by the seat that also
   reviews and revises it, so one discipline owns the artifact, and what the session approves is
   that discipline's output.
 - Plans and designs are tracked files; notes not yet shaped into either are scratch, in the
@@ -434,15 +435,14 @@ approved can run as approved.
 - Every plan holding a shipped package ends with the post-plan review package, then the
   burndown section and its drafting ticket. *Purpose:* review and its fixes are planned
   work, not a step dropped when the plan lands.
-- The drafting ticket's work: draft the section's items from the {REVIEW_DOCUMENT_TERM}
-  — work packages under the section, one per root-cause group, each with its own ID,
-  status-table row, rating and one-commit close — run one
-  `{clauses.ref(name="prompt-engineer")}` usability review over the drafted items
-  together, apply the revision, and set each item's row by its state. Drafting the items
-  edits the plan, so the session is the worker; the ticket's row still moves through the
-  states.
-  *Purpose:* the burndown items' real dispatches are visible on the board, each with its own
-  rating.
+- The drafting ticket's work: a dispatch to the {clauses.ref(name="architect")}, which drafts the
+  section's items from the {REVIEW_DOCUMENT_TERM} — work packages under the section, one per
+  root-cause group, each with its own ID, status-table row, rating and one-commit close — then one
+  `{clauses.ref(name="prompt-engineer")}` usability review over the drafted items together, the
+  revision applied, and each item's row set by its state. The session drafts the items itself only
+  when the user asks the session itself to, and a request for the plan is not that ask. The
+  ticket's row still moves through the states. *Purpose:* the burndown items' real dispatches are
+  visible on the board, each with its own rating.
 - The items move through the states individually, and the plan lands once the last item's
   row is `landed`; the drafting ticket stays `landed` throughout. Where the review finds
   nothing needing a fix, the drafting ticket lands having drafted no items, and the plan
@@ -499,7 +499,7 @@ approved can run as approved.
 - The review runs like the burndown section, wider in panel and aperture: its tracking plan opens
   as the panel is dispatched, carrying a ticket per seat beside a ticket for drafting the review's
   plan from the findings; that drafting is the {clauses.ref(name="architect")} definition's to
-  write, not the session's, and the drafted items take the
+  write — the session drafts it only when the user asks the session itself to, and a request for the plan is not that ask — and the drafted items take the
   `{clauses.ref(name="prompt-engineer")}` usability review and the revision any plan's packages
   take to become dispatchable. *Purpose:* the review's running state is on the board as any plan's
   is, and its plan is drafted from findings, never before them.

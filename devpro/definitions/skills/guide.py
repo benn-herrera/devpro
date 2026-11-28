@@ -377,7 +377,7 @@ commits' messages.
   given the project documents and the design, not the plan. Appearing: `ACTIVE_PLAN_REVIEW.md`,
   their findings, committed with the review's row `landed`.
 - **The burndown section:** a `## Post-plan burndown` section holding its drafting ticket; the session
-  drafts the burndown items from `ACTIVE_PLAN_REVIEW.md` into the section — one package per root-cause
+  dispatches the architect to draft the burndown items from `ACTIVE_PLAN_REVIEW.md` into the section — one package per root-cause
   group, each with its own row and rating — has the items reviewed as the
   `{clauses.ref(name="development")}` skill's *Post-plan review* states, and runs them like any
   package.
