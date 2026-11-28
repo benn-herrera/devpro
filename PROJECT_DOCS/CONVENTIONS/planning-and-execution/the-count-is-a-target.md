@@ -1,8 +1,8 @@
 # The count is a target
 
-The periodic review interval's count is the output of `just plan-count`: the commits since the base
-`.devpro-temp/plan-count-base` names, then the commit subjects claiming a plan's landing, then that
-claim count and the commit count.
+The periodic review interval's count is the output of the `plan-count` runner target: the commits
+since the base `.devpro-temp/plan-count-base` names, then the commit subjects claiming a plan's
+landing, then that claim count and the commit count.
 
 - The base is a file, not a literal in the recipe: the landing commit of the last periodic review
   writes its own full hash there, the receipt claiming the landing. Its subject claims no landing,

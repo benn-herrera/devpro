@@ -116,7 +116,7 @@ here is a constant or function in `devpro/clauses.py`, and an anchor is spelled 
   on an entry added to an accepted design, and *Roadmap tickets* has it run `check-roadmap` after
   each edit to `ROADMAP.md`. Each term the process names (active plan, step-down model and the
   rest), and a design's fixed summary line, is one module-level `*_TERM` constant that every mention
-  in `SKILL.md` and its six supporting files interpolates; a test reads `development.py` and fails
+  in `SKILL.md` and its seven supporting files interpolates; a test reads `development.py` and fails
   where a term's value is written literally in a body string, so no two mentions can name a term
   differently. Its
   `docdicer` references are optional references (Rendering, Placeholders), and `docdicer` ships

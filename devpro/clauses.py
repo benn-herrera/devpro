@@ -313,7 +313,7 @@ PROJECT_DOCS_SETUP = """**Project documents**: a project with a maintained contr
 
 DATA_FORMATS_SCOPE = """project-owned configuration and structured data files"""
 
-DATA_FORMATS = f"""**Data formats**: the right tool for the job decides. Absent a reason that does, prefer TOML for {DATA_FORMATS_SCOPE}; YAML when the shape is genuinely a tree (deep nesting, nulls, top-level lists); JSON last. Cases that override that order: JSONL for flat records one per line, sorted or append-only — the line is the record, so `grep` returns whole records and `git diff` isolates the changed one; JSON for wire protocols and external API contracts someone else defines. Where the project's `CONVENTIONS.md` says more about formats, it governs."""
+DATA_FORMATS = f"""**Data formats**: the right tool for the job decides. Absent a reason that does, prefer TOML for {DATA_FORMATS_SCOPE}; YAML when the shape is genuinely a tree (deep nesting, nulls, top-level lists); JSON last. Cases that override that order: JSONL for flat records one per line, sorted or append-only — the line is the record, so `grep` returns whole records and `git diff` isolates the changed one; JSON for wire protocols and external API contracts someone else defines."""
 
 COMMERCIAL_APPROVAL_CLAUSE = """unless explicitly approved by the coordinator/user"""
 
