@@ -11,8 +11,8 @@ landing, then that claim count and the commit count.
 - A plan's landing commit says in its subject that it lands a plan; a periodic review's says it
   lands a periodic review. The target matches a subject holding "land"/"lands" then "plan", or
   "plan" then "lands" — so "lands a plan", "lands the plan", "the plan lands" and "Land plan P3" all
-  count. `just plan-count lands` shows every claiming subject for a reader to judge the pattern
-  against; the target emits candidates, never verdicts, as the sweep and spelling recipes do.
+  count. The `plan-count lands` invocation shows every claiming subject for a reader to judge the
+  pattern against; the target emits candidates, never verdicts, as the sweep and spelling recipes do.
 - The target reads git and one file, and writes nothing.
 
 *Purpose:* the count is a machine's answer, not a number kept in prose or in a plan's drafting; the
