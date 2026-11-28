@@ -34,7 +34,7 @@ Landed, Agents. Drafted through Landed are the **plan columns**, which are read-
 The board is in planning mode while the active plan's status table holds no `in progress` and no
 `landed` row, and in execution mode otherwise; a project with no active plan is in planning mode.
 The last column in both modes is the agents column
-([the agents column](PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-agents-column.md#the-agents-column)).
+([the agents column](../../../../PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-agents-column.md#the-agents-column)).
 ```
 
 **As it stands:**
@@ -134,7 +134,7 @@ changes surface the agents column (the agents column).
 - **rating** — a work package's rating as its plan's status table records it: `mechanical`,
   `expert`, or unrated.
 - **dispatch note** — the identifier of the dispatched agent run a package is under, as the
-  activity capture records it, written into the package's row at the dispatch it names. The row's
+  activity capture records it, written into the package's row when the dispatch returns. The row's
   State cell's note carries it; the form gives it no cell of its own.
 ```
 
@@ -150,7 +150,7 @@ changes surface the agents column (the agents column).
 ```
 - A rating cell opens with one of two words: `mechanical`, every edit enumerated, no design choice
   and no debugging; `expert`, anything else. Anything after the word is a note.
-- A dispatch note is written at the dispatch it names, into the row of the package the dispatch
+- A dispatch note is written when the dispatch returns, into the row of the package the dispatch
   works under, and is never inferred from brief or message text.
 ```
 
@@ -392,10 +392,11 @@ The dispatch-note rule the leaf above gains is written by the dispatching sessio
 development skill's *Dispatch* section is where that duty is stated. In
 `devpro/definitions/skills/development.py` (*Dispatch*), the bullet reading "Before the agents go, a
 dispatch of a plan package names the package and sets its `State` cell; the value is the state *Plan
-status* defines for a dispatch." comes to read that the dispatch "names the package, sets its
-`State` cell — the value the state *Plan status* defines for a dispatch — and writes its dispatch
-note into the row: the dispatch's identifier as the capture records it, at the dispatch, never
-inferred." The bullet's *Purpose* sentence stands unchanged.
+status* defines for a dispatch." comes to read: "At the dispatch's return, a dispatch of a plan
+package names the package, sets its `State` cell — the value the state *Plan status* defines for a
+dispatch — and writes its dispatch note into the row: the capture's record of the dispatch is the
+identifier's source — never inferred; the writer is the dispatching session, whose row it is; the
+child never writes it." The bullet's *Purpose* sentence stands unchanged.
 
 ### the package lifetime scale — the definition sources
 

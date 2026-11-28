@@ -38,7 +38,7 @@ Terms:
 - **rating** — a work package's rating as its plan's status table records it: `mechanical`,
   `expert`, or unrated.
 - **dispatch note** — the identifier of the dispatched agent run a package is under, as the
-  activity capture records it, written into the package's row at the dispatch it names. The row's
+  activity capture records it, written into the package's row when the dispatch returns. The row's
   State cell's note carries it; the form gives it no cell of its own.
 - **plan size limit** — the length past which the `development` skill dices a plan before
   it is approved.
@@ -60,7 +60,7 @@ A plan states:
   state set ahead of its condition is as false a claim about the present as one set after it.
 - A rating cell opens with one of two words: `mechanical`, every edit enumerated, no design choice
   and no debugging; `expert`, anything else. Anything after the word is a note.
-- A dispatch note is written at the dispatch it names, into the row of the package the dispatch
+- A dispatch note is written when the dispatch returns, into the row of the package the dispatch
   works under, and is never inferred from brief or message text.
 - The post-plan review is a work package whose title opens with `Post-plan review`. The burndown
   section is a `## Post-plan burndown` section holding its drafting ticket, a work package whose

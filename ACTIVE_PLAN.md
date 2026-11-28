@@ -19,7 +19,15 @@ package adds code for it.
 | P4 | landed | mechanical | persistent | parallel with code packages |
 | P5 | landed | mechanical | transient | no closing commit: untracked output |
 | P6 | landed | expert | persistent | dispatched when P1–P5 are `landed` |
-| P7 | drafted | mechanical | persistent | drafting ticket |
+| P7 | landed | mechanical | persistent | drafting ticket |
+| B1 | in progress | mechanical | shipped | closes R1 |
+| B2 | in progress | expert | shipped | closes R3 |
+| B3 | dispatchable | expert | shipped | closes R2; after B1 |
+| B4 | landed | mechanical | shipped | closes R4 |
+| B5 | dispatchable | mechanical | persistent | closes R5 |
+| B6 | dispatchable | expert | shipped | closes R6; after B3 |
+| B7 | in progress | mechanical | persistent | closes R7 |
+| B8 | dispatchable | mechanical | shipped | closes R8; after B3 |
 
 ## Sequencing
 
@@ -298,6 +306,118 @@ adds the review document.
 no runner target checks it. Where the reviewers name checks, the session runs them before the
 commit.
 
+## Post-plan burndown
+
+Drafted from `ACTIVE_PLAN_REVIEW.md` (commit `288ee74d`), its eight entries' root causes grouped
+into these items. Run order: B1 first (the closing key), then B3 and B6 — all three change
+`read.py`'s derivation; B8 follows B3 (its palette test pins the constant B3's assignment touches);
+B2, B4, B5 and B7 are independent of those and of each other. Where an item edits text the design's
+deltas applied, the design's corresponding text is amended in the same edit — the amended sites are
+named in the item — and its done-line re-runs `check-design --deltas-applied`.
+
+### B1 The claude dispatch closes at its stop record
+
+Closes R1 (code seat, structure seat; both probed). In `devpro/profiler/read.py`, the closing
+matcher reads the stop record's `agent_id` — the child's identifier the session page's stop join
+already reads — instead of the parent session id; the opencode closing path stands. Tests (fixtures
+from `tests/profiler/conftest.py`'s append/create helpers): a claude open plus its stop ends the
+dispatch, and two same-type claude dispatches, their `Agent` records interleaved with their stops,
+close in opening order.
+
+**Done-line:** `just test devpro`, then `just lint`.
+
+### B2 The columns match the contract in both modes, and the page draws with a design present
+
+Closes R3 (structure seat). In `devpro/kanban/assets/board.js`, the column assembly follows the
+columns delta exactly — planning: roadmap, design, drafted, dispatchable, agents; execution:
+design, drafted, dispatchable, in progress, landed, agents — and no card appends to an absent
+column's list, so a project with a design and no dispatched row draws its board. The script's
+comment (board.js:159-161) is restated to the SPEC's wording. The observable the done-line runs:
+`tests/dashboard/test_server.py` asserts the payload's column keys per mode with a design present —
+the assertion fails against the current script's key list.
+
+**Done-line:** `just test devpro`, then `just lint`.
+
+### B3 The hue holds while the dispatch runs
+
+Closes R2 (code seat, structure seat). Owner's call, recorded: stability wins. The hue is a
+function of the dispatch's open-order rank over the store's full dispatch history — closed
+dispatches included — modulo the palette: stateless, identical across refreshes, stable while a
+dispatch runs, distinct among the concurrently running up to the palette, shared beyond it. No map
+is carried across polls; nothing is pruned. Scope: the assignment in `devpro/profiler/read.py`;
+`tests/dashboard/test_board_panel.py`'s pinned color test (lines 394–424, whose assertions encode
+the current place formula) moves with the change; the two leaves' hue sentence — and the design's
+whole-text entries that applied them — are amended in the same edit.
+
+**Done-line:** `just test devpro`, then `just lint`, then `just dev-check-design-deltas-applied`.
+
+### B4 The dispatch-note duty anchors at the dispatch's return
+
+Closes R4 (text seat, structure seat). In `devpro/definitions/skills/development.py` (*Dispatch*),
+the bullet's two sub-clauses fold into one: the note is written when the dispatch returns — the
+capture's record of the dispatch is the identifier's source — never inferred; the writer is the
+dispatching session, whose row it is; the child never writes it. "At the dispatch" as a moment
+disappears; the return is the moment.
+
+**Done-line:** `just test devpro`, then `just test dupe_sweep`.
+
+### B5 The tuning table's leaves match the install
+
+Closes R5 (code seat, probed). Two leaf pairs and two design sites: in
+`PROJECT_DOCS/SPEC/rendering.md` and `PROJECT_DOCS/ARCHITECTURE/banner.md`, "at the install
+destination's root" becomes the placement the install actually writes — under the install
+directory, beside the rendered definitions — and `stock=` keeps its name, its value becoming the
+full category list in `CATEGORIES` order, comma-joined, `none` when empty (owner's call: the code's
+semantics is the right one, and the value is determinate for a set not yet rendered). The design's
+corresponding text — the SPEC rendering pair and the banner pair, two sites — is amended in the
+same edit.
+
+**Done-line:** `just dev-check-links`, then `just dev-check-design-deltas-applied`.
+
+### B6 The agents column says what the derivation knows
+
+Closes R6 (all three seats). In `devpro/profiler/read.py`, the card's model reads the child's own
+records where they carry it — opencode's idle record stamps the child's model — and shows none
+where nothing does; the wording retreats from "the model it runs" to what the records name. In
+`PROJECT_DOCS/SPEC/dicing-and-checks/kanban/the-agents-column.md`, the link sentence states one
+page per harness (opencode: the child's page; claude: the dispatching session's page, whose store
+holds the child's records); in `PROJECT_DOCS/SPEC/plan-status-form.md`, the identifier is defined —
+the capture's id for the dispatched child, the session id under opencode, the agent id under
+claude; in `PROJECT_DOCS/SPEC/dicing-and-checks/kanban/live-following.md`, the watched wording
+names the two store directories the code digests. The design's corresponding Becomes text is
+amended in the same edits.
+
+**Done-line:** `just test devpro`, then `just dev-check-links`, then
+`just dev-check-design-deltas-applied`.
+
+### B7 The install's tuning-table write gets a pin that can fail
+
+Closes R7 (code seat). `tests/render/test_frontmatter.py`'s
+`test_the_tuning_table_is_what_an_install_writes_beside_the_render` is renamed for what it pins and
+re-aimed at the install: the test runs the install path (`devpro/install.py`'s `install`) so that
+deleting the write line fails it, and asserts the table's bytes at the install root beside the
+rendered definitions. B8's byte-exactness pin rides this same install test.
+
+**Done-line:** `just test devpro`.
+
+### B8 The review's note-level drifts
+
+Closes R8 (seats various). Enumerated: `ARCHITECTURE/harness-profiler/serving.md`'s payload
+enumeration gains `mode`, `agents` and `dispatch_colors`, and `ARCHITECTURE/install/renders-and-copies.md`
+names the tuning table as a write site; one test holds the palette size across
+`read.py`'s `DISPATCH_HUES` and the CSS hue count; `justfile`'s render-diff doc block says one
+frontmatter shape; `render_diff.py`'s unchanged-shapes list regains the file-ends-before-the-fence
+case; the restated comment in `devpro/profiler/directives.py` and
+`devpro/harnesses/resources/opencode/profiler.ts` is dropped to one; the board's read path carries
+the `Plan` the model already parsed (dropping the second parse and the `board`/`mode`
+disagreement window), which retires the older-payload `dispatch_colors` guard; the board-panel
+store-writing test consolidates onto `tests/profiler/conftest.py`'s helper; P5's status-table note
+reads "the output is untracked output" rather than naming the commit.
+
+**Done-line:** `just test devpro`, then `just test dupe_sweep`, then `just lint`, then
+`just dev-check-links`.
+
 ### P7 Post-plan burndown
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+This ticket drafted the items above from the review document, ran their one usability review and
+its revision, and set their rows; it stays `landed` while the items move.
