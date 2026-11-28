@@ -13,7 +13,9 @@ tree and unlinks it in a `finally`; under parallel pytest workers another test's
 docs-change run of `just test-changed` failed `test_dry_run.py[opencode]` with
 `FileNotFoundError: devpro/zz_probe_stray.txt`, passed in isolation, and passed on re-run. The
 defect is the probe's shared-tree placement, not either test: the probe belongs in an isolated
-tree, or the walk reads only the tree it owns.
+tree, or the walk reads only the tree it owns. `just test-changed` compounds it under concurrency:
+it selects surfaces from *all* uncommitted paths, so co-dispatched packages run each other's
+surfaces — a package's "only its own changes" coverage holds only serially.
 
 ### A resumed dispatch's store ends in its earlier close
 
