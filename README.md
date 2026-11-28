@@ -216,6 +216,8 @@ install run from the project's own wrapper, `tools/devpro.sh install .`, writes 
 install writes except that copy and the wrapper that runs it: it passes both over, reporting
 nothing about them, so the project keeps the version its global install delivered.
 
+The pipx install and update URLs pin a release tag (`@v<version>`, hand-edited beside each version bump); brew carries no tag — `brew upgrade` moves to the tapped formula's current release.
+
 Installed with pipx, update with `pipx install --force` of the next release's tagged URL, then `pipx
 ensurepath` and a new shell, then the same install line.
 
