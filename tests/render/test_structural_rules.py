@@ -432,3 +432,55 @@ def test_check_structure_holds_a_definition_module_to_its_folder(
         f'{_DEFINITION_HEAD}DEFINITIONS = (Definition(name="p", kind=Kind.{kind}, body="b"),)\n', encoding="utf-8"
     )
     assert check_structure([path]) == ([f"{path}:3: {FOLDER_KIND_RULE}"] if violates else [])
+
+
+def _references_clauses(tree: ast.Module, name: str) -> bool:
+    """True where the module names `clauses.<name>` — an attribute access on the `clauses` name — anywhere."""
+    return any(
+        isinstance(node, ast.Attribute)
+        and node.attr == name
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "clauses"
+        for node in ast.walk(tree)
+    )
+
+
+def _passes_venv_probe_rule(tree: ast.Module) -> bool:
+    """True where the module calls `clauses.verification_evidence(probe_rule=clauses.VENV_PROBE_RULE)`."""
+    for node in ast.walk(tree):
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "verification_evidence"
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "clauses"
+        ):
+            continue
+        for keyword in node.keywords:
+            value = keyword.value
+            if (
+                keyword.arg == "probe_rule"
+                and isinstance(value, ast.Attribute)
+                and value.attr == "VENV_PROBE_RULE"
+                and isinstance(value.value, ast.Name)
+                and value.value.id == "clauses"
+            ):
+                return True
+    return False
+
+
+def test_the_reach_invariants_are_pinned() -> None:
+    """Two corpus facts the suite holds to. The venv-probe sentence reaches only the two seats that run a
+    Python probe: `python_coder` and `ml_engineer` pass `probe_rule=clauses.VENV_PROBE_RULE` to
+    `verification_evidence`, and no other call site does. The review-severity ladder is named in only four
+    bodies — `architect`, `security_reviewer`, `tech_writer` and `shell_dsl_coder` — the fixed home of the
+    two Critical definitions it carries. A corpus change that reaches either constant at a new home, or
+    drops it from one of these, fails here; either set grows only by a deliberate edit."""
+    modules = _modules("definitions")
+    probe_rule_sites = {PurePosixPath(path).stem for path, tree in modules if _passes_venv_probe_rule(tree)}
+    assert probe_rule_sites == {"python_coder", "ml_engineer"}, sorted(probe_rule_sites)
+    severity_carriers = {
+        PurePosixPath(path).stem for path, tree in modules if _references_clauses(tree, "REVIEW_SEVERITY")
+    }
+    expected = {"architect", "security_reviewer", "tech_writer", "shell_dsl_coder"}
+    assert severity_carriers == expected, sorted(severity_carriers)
