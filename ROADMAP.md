@@ -32,6 +32,20 @@ tree's layout already names the seams (`tests/render/`, `tests/install/`, `tests
 remains the fallback where no finer mapping exists. Iteration speed is the design constraint:
 selection granularity is iteration speed, and one directory is no granularity.
 
+### A shared-constant removal mid-run reddens every render gate
+
+The render surface walks every definition module, so a `clauses.py` constant removal that is in
+flight — constant deleted, callers not yet reconciled — fails the import of the whole definition
+tree and turns every concurrently running item's render gate red, including items scoped to files
+the constant never touches. Observed 2026-11-28: B10 (`guide.py`, no shared constant) could not
+re-render while B12's `PROJECT_PRECEDENCE` removal was mid-turn in `clauses.py` with three callers
+unreconciled; the render surface died at conftest import. The convention's serial sentences order
+agents on a shared file, but no gate-scoping rule orders the *gates*, whose blast radius is the
+whole tree. Fix: state in CONVENTIONS.md that an item whose done-line walks definitions cannot
+pass while any shared constant's removal is mid-flight, and that the reconciliation commit — the
+constant's deletion and its callers' unwinding — is one commit, never a half (or batch the
+render-walking gate over the run's change set where the owner directs batching).
+
 ### A resumed dispatch's store ends in its earlier close
 
 A follow-up to an idle child continues the same session id, and the opencode capture writes no

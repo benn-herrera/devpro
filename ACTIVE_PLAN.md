@@ -41,17 +41,17 @@ discrepancy; the plan's recommended reading is stated there.
 | P13 | landed: dbc05b64 | mechanical | the pipx decision |
 | P14 | landed: 934eff29 (ACTIVE_PLAN_REVIEW.md, 24 findings) | expert | — |
 | P15 | landed: 4cba2de2 (11 items drafted B1–B11, all rows drafted) | expert | — |
-| B1 | in progress: dispatch ses_ddefeb53bffe62OThUCslDawh7 | mechanical | R1, R2 |
-| B2 | in progress: dispatch ses_ddefeb53bffd6DzWWstxuINuMQ | mechanical | R3 (flag; no span change authorized) |
-| B3 | in progress: dispatch ses_ddefeb53afferTki1L3DAoLcpW | mechanical | R4; R5 closed by measurement |
-| B4 | in progress: dispatch ses_ddefeb53affd2m3FhZrsYY3Tyt | mechanical | R6, R18, R23 |
-| B5 | drafted | mechanical | R8, R10; R7 flagged for the owner |
+| B1 | landed: 8a8e8524 (gate + refusal probe green; R1's full close is the release wait — the tag is cut by the release) | mechanical | R1, R2 |
+| B2 | landed: 2210ac49 (the flag ticket under Maintenance — superseded by B12's removal, which removes it). Incident on the record: the dispatch used git stash/pop mid-task — a forbidden working-tree command — verified no data lost, corrected course; accepted with the violation named here | mechanical | R3 (flag; superseded by the owner's removal decision) |
+| B3 | landed: 8ceceb77 (two invariant facts pinned — no precedence pin, per the corrected scope; B12's "drop the pin" edit will find none and no-op) | mechanical | R4; R5 closed by measurement |
+| B4 | landed: 69bc4c9d (R6, R18, R23 closed; one fact for the record: the guide's term renders in `references/using.md`, not `SKILL.md` — the item's done-line grep named the wrong file, the report measured the right one) | mechanical | R6, R18, R23 |
+| B5 | landed: e84e3f49 (three seat-word sites + the trigger gloss's deciding half; R7 retained for the owner; one premise note for the record — the item called two sites "byte-identical", they differ in "a plan"/"the items", the seat word applied identically and the difference left standing) | mechanical | R8, R10; R7 flagged for the owner |
 | B6 | landed: 2bc7e633 (the design's MB16 "becomes" text superseded by this item's mechanical form — recorded here; the design leaves at the plan's landing) | mechanical | R9 |
-| B7 | drafted | mechanical | R11 |
-| B8 | in progress: dispatch ses_ddefeb538ffe3Y7lr0y0j810hc | mechanical | R12, R13, R14 |
-| B9 | drafted | mechanical | R15, R16, R17, R24 |
-| B10 | drafted | mechanical | R19 |
-| B11 | drafted | mechanical | R20, R21, R22 |
+| B7 | dispatchable (dissolves at B12's landing — B12's scope deletes the governance paragraph outright, the paragraph B7 was to move; R11 closes by removal, no own dispatch or commit) | mechanical | R11 |
+| B8 | landed: 22cfc235 (all three fixes verbatim where drafted; conftest tuple + B3's carrier set updated in-commit; its lint citation quoted the shell/docs legs — the batched tail gate runs lint whole) | mechanical | R12, R13, R14 |
+| B9 | dispatchable (fires after B12 on clauses.py) | mechanical | R15, R16, R17, R24 |
+| B10 | landed: a9c52eb3 (pure deletion, verified no pins; the render-surface half of its done-line went red on B12's in-flight clauses.py state — not B10's scope — and the batched tail gate re-runs it whole after B12 lands) | mechanical | R19 |
+| B11 | dispatchable (fires after B9 on clauses.py) | mechanical | R20, R21, R22 |
 | B12 | in progress: dispatch ses_ddef66388ffeW5WVeZ4bTqnIGd — the owner's removal decision, corrected mid-run; the span is deleted outright, not reworded | mechanical | R3, W7, W8 — resolved by removal |
 
 Serial order per shared file, nothing concurrent across these runs:
@@ -446,6 +446,20 @@ two leaves are one commit, one direction; no other item edits them. No item edit
 logs its recipe runs under its own ID as the job — `.devpro-temp/B<n>-<target>.log` — so no two
 items' logs collide even back to back.
 
+items' logs collide even back to back.
+
+The tail's four dispatches (B7, B9, B10, B11) run on the coder agent's own model, not the
+step-down — the owner's direction at dispatch resolution time (the step-down host has been running
+hard); their ratings stay mechanical.
+
+The tail's testing gate is batched by the owner's direction (the P6–P10 precedent): the four tail
+items B7, B9, B10, B11 are small mechanical text edits — B11 also touches the test machinery
+(`test_families.py`, `test.sh`) that the batched gate then exercises — so `just test-changed` and
+`just lint` run once at the last of the tail's landings, over the entire change set, not per item.
+Each item's cheap verification probes (render greps, `check-links`, `check-roadmap`) still run and
+are recorded at that item's landing; the heavyweight gate is the one batched run. The plan lands
+when it clears.
+
 ### B1 The release's README tag is guarded and the install paths agree
 
 Rating: mechanical. Lifetime: persistent — the guard is repository machinery; the README text
@@ -765,33 +779,29 @@ Tests and fixtures: tests/render/test_prose.py:104 (one source) — unaffected.
 Done-line: `just test-changed`; `just check-links`; `just lint`; then `ls rendered/agents` fails
 and `grep -rn "says more about formats" rendered/latest/devpro/` reports nothing.
 
-### B10 The 0.17.x upgrade walk's one home is stated and linked honestly
+### B10 The guide points at no upgrade walk that is not there
 
 Rating: mechanical. Lifetime: shipped.
 
-Scope: `devpro/definitions/skills/guide.py` (:97) — the installing reference's sentence about the
-0.17.x walk. Measured state: the walk's substance is in `README.md` (:210–228) alone; guide.py:97
-holds one sentence citing it across the repository boundary ("A project installed by 0.17.x
-upgrades by the walk the repository's README states under *Updating*") — R19's "restated in both"
-premise is false as measured, so no README edit belongs to this item. The fix: the sentence states
-the one home and its own reach — it keeps naming the README's *Updating* section and gains
-`{clauses.REPOSITORY_URL}`, so a consuming-project reader can find the destination — and states
-why it is a prose citation and not a resolvable link: `check-links` cannot resolve a
-`{clauses.REPOSITORY_URL}` link from a consuming project, so the reference names the destination
-in words rather than promising a link no check can follow.
+Scope: `devpro/definitions/skills/guide.py` (:98) — the installing reference's sentence is
+**removed**. There is no upgrade walk: README carries one behavior paragraph about 0.17.x
+upgrades (README.md:222–225, under no walk banner, one statement of behavior), and the guide's
+sentence misnames it "the walk … under *Updating*" — not a walk, and not under *Updating*.
+Removing the sentence closes R19 by removal: one statement of the behavior remains (README), no
+restatement left to drift. The README paragraph takes no edit.
 
-Findings: closes R19.
+Findings: closes R19 by removal — the restatement is deleted, not homed.
 
-Facts: guide.py:97 reads "A project installed by 0.17.x upgrades by the walk the repository's
-README states under *Updating*"; README.md:222 reads "A project installed by 0.17.x upgrades in one
-run: an install replaces the plugin directory whole, …" — the walk's substance is in README, the
-guide's reference points at it across the repository boundary.
+Facts: guide.py:98 reads "A project installed by 0.17.x upgrades by the walk the repository's
+README states under *Updating* ({clauses.REPOSITORY_URL})."; README.md:222–225 reads "A project
+installed by 0.17.x upgrades in one run: an install replaces the plugin directory whole, …" —
+behavior, not a walk, and the guide's pointer misnames both the shape and the section.
 
-Tests and fixtures: none pin either text; the README side takes no edit, so `just check-links`
-verifies the repository's links are undisturbed.
-
-Done-line: `just test-changed`; `just check-links`; then the rendered installing reference's
-sentence carries the repository URL.
+Tests and fixtures: none pin either text; `just check-links` verifies the repository's links are
+undisturbed after the removal.
+Done-line: `just test-changed`; `just check-links`; then
+`grep -rn "the walk the repository's README states" rendered/latest/devpro/` reports nothing — the
+sentence is gone, not relocated.
 
 ### B11 The runner's new machinery seams closed
 
