@@ -256,9 +256,11 @@ INTEGRATION_ARTIFACT = """**Integration tests exercise the delivered artifact** 
 _EVIDENCE_FORMS = "a test, a runner-recipe invocation, or a preserved command with its captured output"
 _EVIDENCE_WHERE = "Where the project defines an evidence location, put it there (integration logs/artifacts included)."
 
-# The venv-probe sentence reaches only the seats that run a Python probe, so it is a constant passed to
-# verification_evidence(probe_rule=...) rather than text the function holds for every caller.
-VENV_PROBE_RULE = " A probe that imports this repository's package first and runs it later — a `python -c`, a one-off script — runs under this repository's own venv interpreter with `PYTHONPATH=.`, or in a fresh process, because an edit made after the first import leaves stale bytecode masking it."
+# The venv-probe sentence reaches only the seats that run a Python probe: `probe_rule` is a parameter so
+# every other caller renders none. The sentence reads space-free; VENV_PROBE_RULE composes the space that
+# joins it to the paragraph, since the function appends probe_rule with no separator of its own.
+VENV_PROBE_SENTENCE = "A probe that imports this repository's package first and runs it later — a `python -c`, a one-off script — runs under this repository's own venv interpreter with `PYTHONPATH=.`, or in a fresh process, because an edit made after the first import leaves stale bytecode masking it."
+VENV_PROBE_RULE = f" {VENV_PROBE_SENTENCE}"
 
 
 def verification_evidence(*, forms: str = _EVIDENCE_FORMS, where: str = _EVIDENCE_WHERE, probe_rule: str = "") -> str:

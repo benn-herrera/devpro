@@ -186,12 +186,19 @@ def test_the_development_skill_names_the_target_that_counts_landed_plans(harness
     """The section states a count, so it must name a recipe the runner carries: a target the skill names
     and the justfile lacks is a count its reader cannot read. The count names the target by the skill's
     own convention — "`plan-count` runner target", never "`just plan-count`" — so the parser reads
-    backticked names, and the vacuity guard refuses a section whose count names none."""
+    backticked names from the count bullet alone, and the vacuity guard names the file it searched when
+    the bullet yields none."""
     ctx = build_render(components="", harness=harness, family="claude")
     [text] = [text for path, text in render_all(ctx) if str(path).endswith("development/SKILL.md")]
-    count_section = text[text.index("## Periodic review") :]
-    targets = set(re.findall(r"`([\w-]+)` runner target", count_section))
-    assert targets, "no runner target parsed from the count's section, so the check below would pass vacuously"
+    section = text[text.index("## Periodic review") :]
+    bullet_start = section.index("count is what the")
+    bullet_end = section.find("\n- ", bullet_start)
+    count_bullet = section[bullet_start:] if bullet_end == -1 else section[bullet_start:bullet_end]
+    targets = set(re.findall(r"`([\w-]+)` runner target", count_bullet))
+    assert targets, (
+        "no runner target parsed from the count bullet in "
+        "skills/development/SKILL.md, so the check below would pass vacuously"
+    )
     justfile = Path(__file__).resolve().parents[2] / "justfile"
     recipes = set(re.findall(r"^([a-z][\w-]*) *[^\n:]*:", justfile.read_text(encoding="utf-8"), re.M))
     assert sorted(targets - recipes) == []
