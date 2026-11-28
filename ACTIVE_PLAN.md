@@ -39,8 +39,19 @@ discrepancy; the plan's recommended reading is stated there.
 | P11 | landed: f959aa54 | mechanical | MB12 |
 | P12 | landed: 113b813f | mechanical | ARCH delta |
 | P13 | landed: dbc05b64 | mechanical | the pipx decision |
-| P14 | dispatchable | expert | — |
-| P15 | dispatchable | expert | — |
+| P14 | landed: 934eff29 (ACTIVE_PLAN_REVIEW.md, 24 findings) | expert | — |
+| P15 | in progress: drafting ses_ddf09ed3cffeh3ppUKjPbHIxnB; usability review ses_ddf031675ffeLkSxyFGLWz8H3G returned findings — the revision applies them now | expert | — |
+| B1 | drafted | mechanical | R1, R2 |
+| B2 | drafted | mechanical | R3 (flag; no span change authorized) |
+| B3 | drafted | mechanical | R4; R5 closed by measurement |
+| B4 | drafted | mechanical | R6, R18, R23 |
+| B5 | drafted | mechanical | R8, R10; R7 flagged for the owner |
+| B6 | drafted | mechanical | R9 |
+| B7 | drafted | mechanical | R11 |
+| B8 | drafted | mechanical | R12, R13, R14 |
+| B9 | drafted | mechanical | R15, R16, R17, R24 |
+| B10 | drafted | mechanical | R19 |
+| B11 | drafted | mechanical | R20, R21, R22 |
 
 Serial order per shared file, nothing concurrent across these runs:
 `devpro/definitions/skills/development.py`: P5 → P6 → P7 → P8 → P9. `guide.py`: P6 → P7 → P8.
@@ -413,4 +424,404 @@ Done-line: `just dev-check-plan` over this plan's final form, and the review doc
 
 ### P15 Post-plan burndown drafting
 
-Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands.
+Drafted from `ACTIVE_PLAN_REVIEW.md` once the post-plan review lands. The review's 24 findings,
+grouped under its eight root-cause headings, close through the eleven items below — groups merged
+where one fix closes them (R6/R18/R23; R8/R10; R12/R13/R14; R15/R16/R17/R24), split where the
+group needs two commits. R3 is drafted as a flag, not a fix: the owner has not decided the span
+reading, and no wording change to the span is authorized in any item. R7's third-site half is
+flagged for the owner the same way — the usability review reversed its premise, and B5 removes no
+sentence without the ruling. R5 is closed by measurement, recorded in B3's facts and rewritten in
+the review document.
+
+Serial order per shared file, nothing concurrent across these runs:
+`devpro/definitions/skills/development.py`: B4 → B5 → B7. `guide.py`: B4 → B5 → B10.
+`clauses.py`: B9 → B11. `README.md`: B1 → B10.
+`tests/render/test_structural_rules.py`: B3 → B8 — B8 updates the `REVIEW_SEVERITY` carrier set
+B3's test pins. `tests/render/conftest.py`: B8 alone — B3's test reads its helpers and edits
+nothing. `PROJECT_DOCS/ARCHITECTURE/subsystem-map.md`: B5 → B9 — B5 cites the main-session term at
+:106–107, B9 edits :119's count; different lines, ordered anyway. `PROJECT_DOCS/CONVENTIONS/`: B9's
+two leaves are one commit, one direction; no other item edits them. No item edits this repository's
+`CONVENTIONS.md`; B4's Dispatch bullet keeps naming it as the file that binds the cap. Each item
+logs its recipe runs under its own ID as the job — `.devpro-temp/B<n>-<target>.log` — so no two
+items' logs collide even back to back.
+
+### B1 The release's README tag is guarded and the install paths agree
+
+Rating: mechanical. Lifetime: persistent — the guard is repository machinery; the README text
+ships.
+
+Scope: `devtools/scripts/tag.sh` — beside its existing refusals (`justfile:106`'s `tag` refuses
+while `devpro/` is uncommitted or the tag exists), a refusal while `README.md`'s pipx line's tag
+differs from what `python3 -m devpro --version` prints, naming README's line; the README tag stays
+hand-kept, the leaf's step unchanged. `README.md` — the *Updating* section gains one sentence
+stating what the tag governs (the pipx install and update URLs) and that the brew path carries no
+tag.
+
+Two calls decided here, so the executor decides nothing:
+
+- The map row the edit pulls: `devtools/scripts/` selects the `ALL` surface (the justfile's
+  `TEST_SURFACE_MAP`), so this package's `just test-changed` is the full gate, not a delta run —
+  accepted explicitly: the guard sits in a script no narrower surface reaches, and the full run is
+  also the only automated exercise the refusal path gets.
+- The *Updating* sentence's text: "The pipx install and update URLs pin a release tag
+  (`@v<version>`, hand-edited beside each version bump); brew carries no tag — `brew upgrade`
+  moves to the tapped formula's current release."
+- The guard stays (the keep-or-drop call): R2's gap is admitted, the check is one refusal in a
+  script that already refuses two ways, and dropping it leaves the leaf's hand-edit step held by
+  nothing again.
+
+Findings: closes R2; R1 is the wait, stated here — the tag resolves when `just tag` cuts `v0.18.1`
+and the release pushes it, the release step this plan names no package for (ACTIVE_PLAN.md:11–14).
+This commit performs the guard, not the release.
+
+Facts: the leaf's step the guard holds — "A fourth carrier is hand-kept, not filled: `README.md`'s
+pipx tag, `@v<version>`; its step is the hand edit beside the `__version__` bump, before `just tag`
+cuts the release tag" (PROJECT_DOCS/CONVENTIONS/code-definitions-and-install/version-has-one-home.md:5–7)
+— is held by nothing today. R1's fact: README.md:61 reads `pipx install
+"git+https://github.com/benn-herrera/devpro@v0.18.1"`; `git tag --list 'v0.18*'` prints only
+`v0.18.0`.
+
+Tests and fixtures: none pin `tag.sh`'s refusals today; the guard's refusal run is its own pin.
+
+Done-line: `just test-changed`; `just lint`; then the refusal probe — the tag script's check path
+run against a scratch copy whose README tag is wrong refuses, naming README's line, and passes with
+the tag matching. No `tag` run is part of this done-line: the tag is cut by the release, not by
+this package's verification.
+
+### B2 The precedence span's open reading is flagged for the owner
+
+Rating: mechanical. Lifetime: persistent — the roadmap ticket.
+
+Scope: `ROADMAP.md` — one ticket stating the open reading and the decision it needs. No other file:
+`devpro/clauses.py:121` keeps the span byte for byte; no item in this section edits it.
+
+Findings: flags R3; closes nothing — R3 stays open until the owner rules.
+
+Facts (R3, as the corrected review states them): the span's "there is no list of qualifying
+documents and no carve-out" admits two readings — no exception to the precedence itself, or no
+exceptions anywhere — and the second collides with the project's own leaves that name exceptions,
+the value-constant exemption among them, quoted: "A `clauses.py` constant carrying a value rather
+than a clause is not counted by the first check; `clauses.VALUE_CONSTANTS` declares the set, and a
+new value constant is added there." (PROJECT_DOCS/ARCHITECTURE/rendering/structural-rules.md:48–49).
+The heading ("The project's own documents modify the process") states a narrower rule than the
+body, which also governs file headers and settled style; eleven seats that write no code read "the
+code you change". The owner has not decided the reading.
+
+The ticket names the two readings and the decision's owner — the ruling is the owner's, and no
+wording is drafted until it is made; the ticket carries the colliding leaves and the audience
+facts, so the ruling starts from the record and converts to a work item when it comes.
+
+Tests and fixtures: none — no behavior changes.
+
+Done-line: `just dev-check-roadmap` (the skill's rule: run it after each edit to `ROADMAP.md`);
+`just test-changed` (docs surface).
+
+### B3 The reach invariants are pinned by tests
+
+Rating: mechanical. Lifetime: persistent — the suite.
+
+Scope: `tests/render/test_structural_rules.py` — one test asserting three corpus facts: every
+agent-kind definition renders the precedence span (directly or through its stack constant);
+`clauses.VENV_PROBE_RULE` is passed at exactly `devpro/definitions/agents/python_coder.py`'s and
+`ml_engineer.py`'s `verification_evidence` call sites; the definition modules whose body names
+`clauses.REVIEW_SEVERITY` are exactly architect, security-reviewer, tech-writer and
+shell-dsl-coder. The set grows only by a deliberate edit; B8's edit is scheduled after this test
+lands (the serial sentence below states that order). No grain fix: R5's premise was measured false
+(the Facts state the run), so no test_prose.py or conftest.py change belongs to this item.
+
+Findings: closes R4; records R5's closure.
+
+Facts: R4 measured — `grep -rn "PROJECT_PRECEDENCE|VENV_PROBE_RULE|CONCURRENT_DISPATCHES" tests/
+devtools/tests/` returns nothing, and the clause-group check covers group members only
+(`UNGROUPED` carries no plain entries, tests/test_clause_groups.py:122). R5 closed by measurement:
+`.devpro-temp/r5-grain-probe.py`, run under `.venv/bin/python` with `PYTHONPATH=.`, composes two
+fixture pairs through `_uncredited_shared_paragraphs` the way `tests/render/test_prose.py`'s own
+fixtures run. Result: two pastes of the span hard-wrapped at different widths (72 and 40 columns)
+are found as one shared unit — `collapsed` (devtools/render_diff.py:86–110) joins a paragraph's
+hard-wrapped lines before the comparison (`tests/render/conftest.py:467` builds the units from
+it) — so a wrapped paste is not a different paragraph and R5's escape does not exist. The same run
+shows a single wrapped paste beside a credited interpolation is not found: one writer, the check's
+designed two-writer scope, grain-independent — a scope limit the closure note records, not a
+defect this plan acts on. The test holds these facts; a corpus change that breaks one fails it.
+
+Tests: these are the tests.
+
+Done-line: `just test-changed`; `just lint`.
+
+### B4 The concurrency cap's statements state one arithmetic and one name
+
+Rating: mechanical. Lifetime: shipped.
+
+Scope: `devpro/definitions/skills/development.py` — the Dispatch bullet (:349–353) and the count
+bullet (:485); `devpro/definitions/skills/guide.py` — the go bullet (:350–351). The naming call:
+the term {CONCURRENT_DISPATCHES_TERM} is the one name the sites keep — the Dispatch bullet's "the
+count of {CONCURRENT_DISPATCHES_TERM}", the table row's term cell, and the guide's go bullet,
+which gains the term (it names the cap and never the term today — guide.py:350–351, measured);
+"count" and "number" survive only as common nouns in the sentences the term anchors. With the term
+at both sites an agent can reconcile the two statements' arithmetic.
+R18's half: the count bullet states that the consuming project provides the `plan-count` target in
+its own runner — a Makefile project spells it there — instead of assuming it exists. The arithmetic
+is stated once, in the skill's Dispatch bullet; the guide's go bullet refers to it by the term, so
+the two sites cannot disagree.
+
+Findings: closes R6, R18, R23.
+
+Facts: R6 — the guide's "a go for a dispatch that would raise the number of agents running at once
+past the cap the development skill states (*Dispatch*)" versus the skill's "A dispatch that would
+raise the count of {CONCURRENT_DISPATCHES_TERM} past the cap" admit different arithmetic, and the
+guide never names the term. R18 — the count bullet's "The {PERIODIC_REVIEW_INTERVAL_TERM}'s count
+is what the `plan-count` runner target prints:" names the target without saying the project
+provides it.
+
+Shared-constant references: `git grep -l CONCURRENT_DISPATCHES -- devpro tests` prints
+`devpro/clauses.py` and `devpro/definitions/skills/development.py` — the constant's default and
+text stand; no table or test change.
+
+Tests and fixtures pinning the changed behavior: the term-value test
+(tests/render/test_structural_rules.py:294) pins every mention to the constant; the count-target
+test (tests/render/test_families.py:186–194) parses "`<name>` runner target" from the Periodic
+review section — the R18 sentence keeps that form.
+
+Done-line: `just test-changed`; `just lint`; then `just render latest`, then
+`grep -c "concurrent dispatches" rendered/latest/devpro/skills/devpro/skills/development/SKILL.md`
+reports at least `2`, and
+`grep -c "concurrent dispatches" rendered/latest/devpro/skills/devpro/skills/guide/SKILL.md`
+reports at least `1` — the item changes the guide's text, so this expectation is the rendered
+truth after it, stated here because guide.py:351 holds no such text today.
+
+### B5 The drafting and trigger boundaries state what they decide
+
+Rating: mechanical. Lifetime: shipped.
+
+Scope: `devpro/definitions/skills/development.py`. Three edits; every wording decided here:
+
+- R10, all three boundary sites, both named: the Plans bullet (:173–174), the burndown bullet
+  (:443–444) and the periodic-review drafting sentence (:502) each gain the seat's name — the main
+  session. The call: the skill's own docstring (development.py:1, "the skill that carries one
+  development process for the main session") and the subsystem map (:106–107) name that seat, so
+  the boundary states it rather than leaving "the session" to the loading agent's guess. The two
+  byte-identical boundary sentences (:173–174, :443–444) change by the seat word only, staying
+  identical to each other; :502's sentence gains the same seat word and loses no sentence — the
+  flag below governs that site.
+- R8, the trigger bullet (:477–480): "a coherent feature boundary is reached" gains the deciding
+  half it lacks — who judges. The call, sourced from the leaf the consuming projects never render
+  (the-gates.md:17–22, quoted: "The periodic review runs at a coherent feature boundary, the
+  user's direction: a full project review makes sense only when the project holds a coherent set
+  of functionality — no incomplete work split across multiple plans, no undone pieces dangling
+  from a landed plan"): the bullet states the boundary is the user's direction — the review runs
+  when the user judges the project holds a coherent set of functionality — so the count says when
+  the review is due and the user's judgment says when its result is worth anything.
+- R7, flagged not fixed: the usability review reversed R7's third-site claim — development.py:502
+  is text about a plan, and the review drafts a plan from findings by its own label, so the copied
+  "a request for the plan is not that ask" is not measured a defect there. Whether that clause
+  stays at :502 is the owner's ruling; this item removes no sentence and flags the reversal here,
+  where the owner meets it at approval.
+
+Findings: closes R8, R10; flags R7 for the owner — its premise is under reversal and no sentence
+moves without the ruling.
+
+Facts: R7 — the boundary is stated three times, byte-identical at two sites (:173–174, :443–444),
+and the third (:502) copies the clause the review now measures as fitting its context. R8 — the
+trigger rewrite deleted "the boundary is", leaving "coherent feature boundary" undecidable at the
+point it fires. R10 — "the session" is unnamed.
+
+Tests and fixtures: none pin these sentences — P8's "asks the session itself × 3" count was a
+one-time render probe, not a standing test; the term-value test pins term spellings only. B3's new
+test does not reach these sites.
+
+Done-line: `just test-changed`; `just lint`; then `just render latest` and a read of the three
+sites in the rendered SKILL.md — each carries the seat name, and the trigger bullet carries the
+user's-direction half.
+
+### B6 The alias rule states a mechanical form, not a recalled list
+
+Rating: mechanical. Lifetime: shipped.
+
+Scope: `devpro/definitions/harness_agents_file.py` (:135–139). The bullet's rule becomes one a
+model follows without recalling the operator's profile: a tool command or dispatched instruction
+runs every command through `command`, the profile's alias set neither enumerated nor recalled. The
+keep-the-examples call: the four `command rm` / `command cp` / `command mv` / `command ls` forms
+stay — they cost one clause, show the rule's most-hit cases, and the rule, not a set, is what the
+bullet obliges.
+
+Findings: closes R9.
+
+Facts (R9, quoted): "Tool commands and dispatched instructions call any command the operator's
+profile may alias through `command` — `command rm`, `command cp`, `command mv` and `command ls`
+are examples, not the whole set." — the obligation requires recalling an unbounded list; a machine
+guarantee handed to a model.
+
+Tests and fixtures: none pin the bullet's text — the render checks are structural, and P10's
+render probes were one-time.
+
+Done-line: `just test-changed`; then `just render latest`, then
+`grep -c "may alias" rendered/latest/devpro/AGENTS.md` reports `0` and the rendered bullet states
+the `command` prefix rule.
+
+### B7 The development skill's governance paragraph moves below its Route table
+
+Rating: mechanical. Lifetime: shipped.
+
+Scope: `devpro/definitions/skills/development.py` (:46–48): the `{clauses.PROJECT_PRECEDENCE}`
+paragraph moves from the body's first position to the end of the *Route* section — its own
+paragraph immediately before the `## Terms` heading (## Route runs :48–61, ## Terms opens :62,
+measured). One interpolation, one site — the no-shared-clause-twice checks are unaffected.
+
+Findings: closes R11.
+
+Facts (R11, quoted): the skill "now opens with a governance paragraph ahead of its *Route* table,
+burying the routing a newcomer needs first."
+
+Shared-span references: `git grep -l PROJECT_PRECEDENCE -- devpro` prints 14 files — the span's
+text once in `devpro/clauses.py:121`, twelve agent definitions, this skill. Only this skill's
+placement moves; the definitions' placements (the design's "directly after the body's opening
+paragraph") stand.
+
+Tests and fixtures pinning the changed behavior: tests/render/test_prose.py:104 (one source) and
+:143 (no span twice) — both unaffected, still one interpolation.
+
+Done-line: `just test-changed`; `just lint`; then the rendered SKILL.md reads *Route* before the
+governance paragraph.
+
+### B8 The severity ladder's reach and seams close
+
+Rating: mechanical. Lifetime: shipped.
+
+Scope: `devpro/definitions/agents/prose_architect.py` (:45–46) — the ladder the R12 measurement
+names ("Severity-tag in brackets: `[Note]` for stylistic suggestion, `[Warning]` for a real rhythm
+or comprehension problem, `[Critical]` for a logical gap or error.") is replaced by
+`{clauses.REVIEW_SEVERITY}` and the mapping sentence, drafted here so the executor drafts nothing:
+"{clauses.REVIEW_SEVERITY} The audit's bracket tags carry these tiers: `[Note]` its Note,
+`[Warning]` its Warning, `[Critical]` its Critical." — the bracket tags stay in the output format;
+the ladder behind them is the shared one. `devpro/definitions/agents/architect.py` (:213) —
+R14's doubled label: the item reads `2. {clauses.REVIEW_SEVERITY}` — the local
+"**Classify severity**: " lead goes, the span's own label carries the line, and the Review
+Process list's other items keep their labels. `devpro/definitions/agents/security_reviewer.py`
+(:104–106) — R13's seams: the domain sentence gains the Note mapping and states that it *narrows*
+the span's Critical for hazards, so the two definitions cannot drift apart silently.
+
+Findings: closes R12, R13, R14.
+
+Facts: R12 — the seat the MB13 sweep missed carries its own ladder. R13 — the shared ladder's Note
+has no security gloss and the two Critical definitions coexist with no precedence rule. R14 — the
+architect's line renders "**Classify severity**: **Severity by when the cost lands**:".
+
+Shared-constant references: `git grep -l REVIEW_SEVERITY -- devpro tests` prints
+`devpro/clauses.py`, `agents/architect.py`, `agents/security_reviewer.py`, `agents/shell_dsl_coder.py`,
+`agents/tech_writer.py`, `tests/render/conftest.py`. The constant's text stands; prose-architect is
+a new carrier. The join-site tuple (tests/render/conftest.py:356, 391, 396) gains
+prose_architect's site and changes architect's — updated deliberately in this commit.
+
+Tests and fixtures: tests/test_clause_groups.py — prose-architect is ungrouped, so no table row
+changes; tests/render/conftest.py's join-site tuple above; and B3's pinned `REVIEW_SEVERITY`
+carrier set gains prose-architect — updated in this commit (B3 lands first; the serial order
+between them is the set's). tests/render/test_prose.py:104, :143.
+
+Done-line: `just test-changed`; `just lint`; then `just render latest`, then
+`grep -c "Severity by when the cost lands"
+rendered/latest/devpro/skills/devpro/agents/prose-architect.md` reports `1`, and the architect's
+rendered Review Process item 2 reads one label.
+
+### B9 Stale text and artifacts removed
+
+Rating: mechanical. Lifetime: mixed — the deletions are one commit; the corrected documents
+persist.
+
+Scope: `rendered/agents/` — the git-ignored stale render, populated today, removed from the
+filesystem (it carries the retired pipeline text; an install from it without regeneration revives
+what MB10 retired; nothing reads it back — fresh renders go to `rendered/latest/` and the
+reference slots). The observation is not "deleted" — a git-ignored deletion produces no diff — it
+is the before-and-after counts in the Facts, plus the render run showing nothing revives the path.
+`devpro/clauses.py:323` — `DATA_FORMATS`' tail sentence "Where the project's `CONVENTIONS.md` says
+more about formats, it governs." deleted; the span's general rule covers it.
+`PROJECT_DOCS/ARCHITECTURE/subsystem-map.md:119` — "its six supporting files" reads "seven", the
+count the entry's own list (:102–103) states.
+`PROJECT_DOCS/CONVENTIONS/planning-and-execution/the-count-is-a-target.md:3` and `the-gates.md:9`
+— "`just plan-count`" reads "the `plan-count` runner target", the naming MB3 retired leaving this
+repository's CONVENTIONS too. The replacement wordings are fixed as stated here; the executor
+drafts nothing.
+
+Findings: closes R15, R16, R17, R24.
+
+Facts: R15's observation, repeatable today: `find rendered/agents -name '*.md' | wc -l` reports
+`50`, `grep -rl "burn-down" rendered/agents | wc -l` reports `4`, and the root is git-ignored
+(justfile:96–100 names the render slots' root so). The work is the filesystem deletion plus the
+check-runner step that prevents revival: the render writes only its own slots, so after deletion a
+fresh `just render latest` leaving `rendered/agents` absent is the repeated observation. R16's
+defect line, quoted: "Where the project's `CONVENTIONS.md` says more about formats, it governs."
+(devpro/clauses.py:323). R17's defect phrase, quoted: "in `SKILL.md` and its six supporting files
+interpolates" (subsystem-map.md:119). R24's lines: the-count-is-a-target.md:3 and the-gates.md:9,
+both reading "`just plan-count`".
+
+Shared-constant references (R16): `git grep -l DATA_FORMATS -- devpro tests` prints
+`devpro/clauses.py`, nine agent files, `tests/render/conftest.py`, `tests/test_clause_groups.py` —
+the edit keeps the constant's name, so the plain-entry tables do not move; only the tail sentence
+goes.
+
+Tests and fixtures: tests/render/test_prose.py:104 (one source) — unaffected.
+
+Done-line: `just test-changed`; `just check-links`; `just lint`; then `ls rendered/agents` fails
+and `grep -rn "says more about formats" rendered/latest/devpro/` reports nothing.
+
+### B10 The 0.17.x upgrade walk's one home is stated and linked honestly
+
+Rating: mechanical. Lifetime: shipped.
+
+Scope: `devpro/definitions/skills/guide.py` (:97) — the installing reference's sentence about the
+0.17.x walk. Measured state: the walk's substance is in `README.md` (:210–228) alone; guide.py:97
+holds one sentence citing it across the repository boundary ("A project installed by 0.17.x
+upgrades by the walk the repository's README states under *Updating*") — R19's "restated in both"
+premise is false as measured, so no README edit belongs to this item. The fix: the sentence states
+the one home and its own reach — it keeps naming the README's *Updating* section and gains
+`{clauses.REPOSITORY_URL}`, so a consuming-project reader can find the destination — and states
+why it is a prose citation and not a resolvable link: `check-links` cannot resolve a
+`{clauses.REPOSITORY_URL}` link from a consuming project, so the reference names the destination
+in words rather than promising a link no check can follow.
+
+Findings: closes R19.
+
+Facts: guide.py:97 reads "A project installed by 0.17.x upgrades by the walk the repository's
+README states under *Updating*"; README.md:222 reads "A project installed by 0.17.x upgrades in one
+run: an install replaces the plugin directory whole, …" — the walk's substance is in README, the
+guide's reference points at it across the repository boundary.
+
+Tests and fixtures: none pin either text; the README side takes no edit, so `just check-links`
+verifies the repository's links are undisturbed.
+
+Done-line: `just test-changed`; `just check-links`; then the rendered installing reference's
+sentence carries the repository URL.
+
+### B11 The runner's new machinery seams closed
+
+Rating: mechanical. Lifetime: persistent — devtools and tests; the clauses.py edit ships.
+
+Scope: `devtools/scripts/test.sh` and `devtools/tests/test_changed_map.py` (R20) — the surface
+names are defined in test.sh's case statement and re-pinned in the test's `SURFACES` set
+(test_changed_map.py:11); one edit adds a surface after this closes — the test reads the names
+from test.sh, or test.sh derives them from the map the justfile holds, the coder picks the single
+source. `tests/render/test_families.py` (:186–194, R21, restated to the measured defect) — the
+vacuity assert (:194) is a block-level assert naming no path, so a failure does not say which
+construction broke; and the slice starts at the `## Periodic review` section rather than the count
+bullet, so the parsed targets are the section's, not the count's. The missing-heading `ValueError`
+at :196 is unreachable today because :194 fires first — stated so nobody fixes a defect that
+cannot fire. The fix: the test slices from the count bullet, and the guard's message names the
+path it searched. `devpro/clauses.py`
+(:268, R22) — the leading space moves from `VENV_PROBE_RULE` into `verification_evidence()`'s
+composition, so the empty default still renders no separator and the constant reads like every
+other constant; the structural rule holds — three keyword-only parameters, no call.
+
+Findings: closes R20, R21, R22.
+
+Facts: R20 — a new surface needs an edit in two places (measured: test_changed_map.py's `SURFACES`
+set against test.sh's case arms). R21, R22 as the review states them.
+
+Shared-constant references (R22): `git grep -l VENV_PROBE_RULE -- devpro tests` prints
+`devpro/clauses.py`, `devpro/definitions/agents/ml_engineer.py`, `devpro/definitions/agents/python_coder.py`
+— the call sites stand; only the constant's first character and the function's composition move.
+
+Tests and fixtures: `test_changed_map.py` is itself the changed test; the sentinel sweep
+(tests/render/conftest.py:601) reads `VALUE_CONSTANTS`, which the change does not touch.
+
+Done-line: `just test-changed`; `just lint`; then the render probe —
+`grep -c "A probe that imports" rendered/latest/devpro/skills/devpro/agents/python-coder.md`
+reports `1` and the rendered paragraph's spacing is unchanged.

@@ -38,9 +38,15 @@ defect, every seat that reported it named, grouped by root cause. Severities are
   only), that only python-coder and ml-engineer pass `VENV_PROBE_RULE`, or the MB13 seat set.
   Grep of tests/ for the three new constants returns nothing. One small test in
   `tests/render/test_structural_rules.py` closes all three.
-- **R5 — Warning** (python-coder): the uncredited-shared-paragraph check judges at paragraph
-  grain, so a hard-wrapped paste of the new span is a different paragraph and passes — measured,
-  not guessed. The "shared text cannot disagree" property escapes by line-wrapping.
+- **R5 — Note, closed by measurement** (python-coder; measured by the drafting session): the
+  premise — a hard-wrapped paste of the new span escapes the uncredited-shared-paragraph check as a
+  different paragraph — is false. `collapsed` (devtools/render_diff.py:86–110) joins a paragraph's
+  hard-wrapped lines before the grain comparison (`tests/render/conftest.py:467` builds the units
+  from it), and the probe `.devpro-temp/r5-grain-probe.py` (run under the repository's venv,
+  `PYTHONPATH=.`) finds two pastes of the span wrapped at different widths (72 and 40 columns) as
+  one shared unit. The probe also shows a single uncredited paste beside a credited interpolation
+  is not found — one writer, the check's designed two-writer scope, grain-independent — recorded
+  here as a scope limit, not a defect this plan acts on.
 
 ## The reworked rules' model-facing precision
 
@@ -63,8 +69,9 @@ defect, every seat that reported it named, grouped by root cause. Severities are
 
 ## The severity ladder's reach
 
-- **R12 — Warning** (prompt-engineer): the prose-architect keeps a four-word severity ladder of
-  its own (`prose_architect.py:45–46`) — a seat the MB13 unification's sweep missed.
+- **R12 — Warning** (prompt-engineer): the prose-architect keeps a severity ladder of its own —
+  measured, the bracket-tag sentence at `prose_architect.py:45–46` — a seat the MB13 unification's
+  sweep missed.
 - **R13 — Note** (security-reviewer; prompt-engineer): the shared ladder's Note has no security
   gloss mapping, the security reviewer's Critical is narrower than the span's, and the two
   Critical definitions coexist with no precedence rule between them — severity drift across
