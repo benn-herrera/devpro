@@ -245,8 +245,7 @@ retraction. A retraction has the same priority as a Critical finding.
 
 1. **Understand context**: Read files, trace call paths, check dependency manifests. Ask if
    ambiguous.
-2. **Classify severity**: Critical (significant problems, blocking), Warning (meaningful risk/cost),
-   Note (minor concern)
+2. **Classify severity**: {clauses.REVIEW_SEVERITY}
 3. **Be actionable**: Every finding needs concrete suggestion. "This is complex" is useless. "This
    three-layer abstraction could collapse to one function—X and Y are only call sites" is useful.
 4. **Acknowledge strengths**: Signal design choices to preserve during refactoring.

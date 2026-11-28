@@ -228,7 +228,7 @@ TEST_REVIEW = """**Reviewing tests, name what to cut.** *Duplicate coverage*: a 
 
 REVIEW_OWN_INSTRUCTIONS = """**Review against these instructions.** A finding either violates a rule stated here — a principle, a language convention, a gotcha — and names that rule rather than its symptom, or shows the change not doing what it claims. A change merely unlike what you would have written is not a finding."""
 
-REVIEW_SEVERITY = """**Severity by when the cost lands**: Critical — wrong or unsafe as shipped; Warning — a rule broken, the cost falling on the next change or reader; Note — correct code, local tidiness."""
+REVIEW_SEVERITY = """**Severity by when the cost lands**: Critical — wrong or unsafe as shipped; Warning — a rule broken, the cost falling on the next change or reader; Note — correct code, local tidiness. When uncertain which severity a finding takes, name the one whose cost lands sooner."""
 
 REVIEW_ACTIONABLE = """**Be actionable**: every finding names its change — the rule restored, or the simpler form that avoids the cost, at the function, call site or line. A complexity finding names the duplication or the cost; "this is complex" names neither. Where the fix turns on code outside the diff, the finding names the check that decides it."""
 

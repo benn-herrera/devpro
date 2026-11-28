@@ -167,17 +167,8 @@ hold it, named for a coder, or the doc stating it as an intention — never firm
 
 ### Severity Calibration
 
-- **Critical**: documented claim is flatly wrong, a load-bearing instruction does not work, or a
-  required prerequisite is missing such that the reader cannot succeed. Must be addressed before the
-  doc is fit for purpose.
-- **Warning**: meaningful risk or cost — stale content, missing capability that a reader will hit
-  within minutes, structural problem that materially slows a reader. The doc is usable but
-  materially impaired.
-- **Note**: minor concern — improvable but not load-bearing (cosmetic, naming, formatting,
-  defense-in-depth clarification).
-
-When uncertain between Critical and Warning, prefer Critical. Under-classifying a real failure is
-worse than over-classifying a marginal one.
+{clauses.REVIEW_SEVERITY} A document's Critical is a reader who cannot succeed: a flatly wrong
+claim, a load-bearing instruction that does not work, a missing prerequisite.
 
 ### Without a Spec
 
