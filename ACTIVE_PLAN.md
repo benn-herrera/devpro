@@ -26,19 +26,19 @@ discrepancy; the plan's recommended reading is stated there.
 
 | Package | State | Rating | Design entries |
 | --- | --- | --- | --- |
-| P1 | dispatchable | mechanical | MB9 |
-| P2 | dispatchable | mechanical | MB13 |
-| P3 | dispatchable | mechanical | MB8, MB11 |
-| P4 | dispatchable | mechanical | MB10 |
-| P5 | dispatchable | mechanical | MB6 |
-| P6 | dispatchable | mechanical | MB5 |
-| P7 | dispatchable | mechanical | MB2, MB3 |
-| P8 | dispatchable | mechanical | MB15, MB17 |
-| P9 | dispatchable | mechanical | MB4, MB1b |
-| P10 | dispatchable | mechanical | MB1a, MB7, MB14, MB16 |
-| P11 | dispatchable | mechanical | MB12 |
-| P12 | dispatchable | mechanical | ARCH delta |
-| P13 | dispatchable | mechanical | the pipx decision |
+| P1 | landed: c4f2d78 | mechanical | MB9 |
+| P2 | landed: 52609761 | mechanical | MB13 |
+| P3 | landed: 171b3a99 | mechanical | MB8, MB11 |
+| P4 | landed: 848c35cf | mechanical | MB10 |
+| P5 | landed: 2b19ce55 | mechanical | MB6 |
+| P6 | landed: 995dc0a4 (gate batched with P6–P10) | mechanical | MB5 |
+| P7 | landed: 65b406bc (gate batched with P6–P10) | mechanical | MB2, MB3 |
+| P8 | landed: cb8972da (gate batched with P6–P10; the silent dispatch's work verified against the design's texts, render probe run by the session: `asks the session itself` × 3) | mechanical | MB15, MB17 |
+| P9 | landed: 0569acbc (gate batched with P6–P10) | mechanical | MB4, MB1b |
+| P10 | landed: 3cf25488 (gate batched with P6–P10) | mechanical | MB1a, MB7, MB14, MB16 |
+| P11 | landed: f959aa54 | mechanical | MB12 |
+| P12 | landed: 113b813f | mechanical | ARCH delta |
+| P13 | landed: dbc05b64 | mechanical | the pipx decision |
 | P14 | dispatchable | expert | — |
 | P15 | dispatchable | expert | — |
 
@@ -244,10 +244,13 @@ Tests and fixtures pinning the changed behavior: `tests/render/conftest.py:601` 
 sweep, which reads `VALUE_CONSTANTS`) and the term-value test that reads `development.py` for a
 term's value written literally — the table row interpolates `{CONCURRENT_DISPATCHES_TERM}`.
 
-Done-line: `just test-changed`; then `just render latest`, then
+Done-line: the render probe — `just render latest`, then
 `grep -rn "most capable model" rendered/latest/devpro/` reports nothing, and
 `grep -c "concurrent dispatches" rendered/latest/devpro/skills/devpro/skills/development/SKILL.md`
-reports at least `2` (the table row and the Dispatch bullet).
+reports at least `2` (the table row and the Dispatch bullet). The `just test-changed` and
+`just lint` of P6–P10 run once as the batch gate, at the last of the group's landings, over the
+checkpoint base (`just test-changed 1af120a8`): the user directs batching text-change tickets'
+testing — one gate run for the group, and a failure's forensics read five small diffs.
 
 ### P7 The periodic review's trigger is one condition, its count target named without a runner
 
@@ -267,8 +270,11 @@ Reference search — `git grep -n "just plan-count" -- devpro` prints only:
 devpro/definitions/skills/development.py:481:- The {PERIODIC_REVIEW_INTERVAL_TERM}'s count is what the runner target `just plan-count` prints:
 ```
 
-Done-line: `just test-changed`; then `just render latest`, then
-`grep -rn "just plan-count" rendered/latest/devpro/` reports nothing.
+Done-line: the render probe — `just render latest`, then
+`grep -rn "just plan-count" rendered/latest/devpro/` reports nothing. The `just test-changed`
+and `just lint` of P6–P10 run once as the batch gate, at the last of the group's landings, over
+the checkpoint base (`just test-changed 1af120a8`): the user directs batching text-change
+tickets' testing — one gate run for the group, and a failure's forensics read five small diffs.
 
 ### P8 The architect drafts the burndown items; the session drafts only on the user's ask
 
@@ -283,9 +289,13 @@ and [MB17](ACTIVE_DESIGN.md#subsystem-map-development-skill--mb17-the-session-dr
 — they give all three replacement texts, the guide's replacement, and the statement that the
 "so the session is the worker" sentence is removed with the whole-bullet rewrite.
 
-Done-line: `just test-changed`; then `just render latest`, then
+Done-line: the render probe — `just render latest`, then
 `grep -c "asks the session itself" rendered/latest/devpro/skills/devpro/skills/development/SKILL.md`
-reports `3` — the three drafting rules' boundary sentence, stated in the same terms.
+reports `3` — the three drafting rules' boundary sentence, stated in the same terms. The
+`just test-changed` and `just lint` of P6–P10 run once as the batch gate, at the last of the
+group's landings, over the checkpoint base (`just test-changed 1af120a8`): the user directs
+batching text-change tickets' testing — one gate run for the group, and a failure's forensics
+read five small diffs.
 
 ### P9 The skill cites no source path; unstaging names its index-only commands
 
@@ -305,8 +315,11 @@ Reference search — `git grep -n "devpro/clauses" -- devpro/definitions` prints
 devpro/definitions/skills/development.py:312:  (`clauses.TEST_PRECONDITION` in `devpro/clauses.py`), which the coder and platform-expert
 ```
 
-Done-line: `just test-changed`; then `just render latest`, then
-`grep -rn "devpro/clauses" rendered/latest/devpro/` reports nothing.
+Done-line: the render probe — `just render latest`, then
+`grep -rn "devpro/clauses" rendered/latest/devpro/` reports nothing. The `just test-changed`
+and `just lint` of P6–P10 run once as the batch gate, at the last of the group's landings, over
+the checkpoint base (`just test-changed 1af120a8`): the user directs batching text-change
+tickets' testing — one gate run for the group, and a failure's forensics read five small diffs.
 
 ### P10 The agents-file block's rules: unstaging, escapes, boundaries, aliases
 
@@ -321,9 +334,12 @@ Entries: [MB1a](ACTIVE_DESIGN.md#agents-file--mb1a-the-git-ban-allows-index-only
 [MB14](ACTIVE_DESIGN.md#agents-file--mb14-the-stale-plan-revision-gets-its-boundary),
 [MB16](ACTIVE_DESIGN.md#agents-file--mb16-the-command-alias-rule-states-the-principle).
 
-Done-line: `just test-changed`; then `just render latest`, then
+Done-line: the render probe — `just render latest`, then
 `grep -n "U+2028" rendered/latest/devpro/AGENTS.md` reports nothing, and
-`grep -c "touches the index only" rendered/latest/devpro/AGENTS.md` reports `1`.
+`grep -c "touches the index only" rendered/latest/devpro/AGENTS.md` reports `1`. P10's landing
+runs the batch gate when it is the last of P6–P10's landings: `just test-changed 1af120a8`;
+`just lint` — one gate run for the group's five commits; the user directs batching text-change
+tickets' testing.
 
 ### P11 The repository's own AGENTS.md tail states the Must-see rule's coverage
 
