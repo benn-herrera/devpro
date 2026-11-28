@@ -110,36 +110,25 @@ board or in the nav area - maybe an 'errors' top level nav
 
 ### Activity dots on the board
 
-One dot fact: an agent is holding an artifact — or the artifact is not being attended.
-
-- **Placement** — bottom-left everywhere: the package cards cards already carry their dots there;
-  agents column's join them in the same place.
-- Column headers for Design and Drafted can also receive dots when their content (design or plan)
-  is getting dispatched agent attention (review or revision)
+- **Column headers for Design and Drafted can also receive dots**
+  - When their content (design or plan) is getting dispatched agent attention (review or revision)
   - The dots will appear right justified in the column header cell.
-- **Colored dot while attended** — the dispatch hue the board already uses: one hue per running
+- **Dot coloring** — the dispatch hue the board already uses: one hue per running
   dispatch, the same dot naming the dispatch on its agents-column card and on every package card
   it attends. The hue is the dispatch's place in the running set, not the agent's definition
   `color`.
   - Fully unsaturated colors are to be replaced in the agent color options - they can resemble colors
     for 'disabled element', 'inactive', or look like glyph typos too easily.
-- **No dots while not attended** - same as now
-- **One glyph everywhere** — no shape distinction between card and header dots: the position
-  carries the attachment, the count says how many, the hue says who; the predicate is identical.
-- **What exists today** — package cards carry a dot row (`dispatch_colors`, matched by the
-  dispatch note naming the package, `devpro/kanban/assets/board.js`) as a bottom row. The
-  uniform bottom-left placement in cards, the right-justified column header dots, and the gray
-  color palette removal/replacement are the work.
+  - The dispatch dot's hue on the board is the top color of that agent's data row in the profile view. 
+    The palette is already shared (`--c0`…`--c7`), but the derivations differ — the board's hue is
+    the dispatch's rank in the running history, the profiler's is per-call context. One derivation carried
+    by both surfaces.  
 - **The open design question** — the header dots' match rule: what in a running dispatch's note
   or record names whole-document activity (an agent active on a whole design or plan, which
   today appears on no card)
   - ANSWER: for now it is only Drafted and Dispatchable columns
   - Only when the entire ACTIVE_DESIGN or ACTIVE_PLAN is receiving agent attention, which is
   - dispatched prompt engineer review, dispatched architect drafting or revision
-- **The profile view requirement** — the dispatch dot's hue on the board is the top color of
-  that agent's data row in the profile view. The palette is already shared (`--c0`…`--c7`), but
-  the derivations differ — the board's hue is the dispatch's rank in the running history, the
-  profiler's is per-call context. One derivation carried by both surfaces.
 
 ### An introduction to the process
 
