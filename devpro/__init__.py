@@ -71,4 +71,4 @@ if getattr(sys, "version_info") < (3, 11):
     sys.stderr.write("error: devpro needs Python 3.11 or later, running under %s (%s)\n" % (_running, sys.executable))
     sys.exit(1)
 
-__version__ = "0.18.0"
+__version__ = "0.18.1"

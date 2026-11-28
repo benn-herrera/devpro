@@ -44,7 +44,7 @@ is a guess wearing a mechanism section.
 
 {clauses.ml_technique_attacks(lead="Run your own artifact against the list you would attack someone else's with —")}
 
-{clauses.verification_evidence()}
+{clauses.verification_evidence(probe_rule=clauses.VENV_PROBE_RULE)}
 
 {clauses.NO_PROCESS_LEFT_BEHIND}
 

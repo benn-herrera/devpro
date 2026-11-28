@@ -92,7 +92,7 @@ Use `pytest` fixtures to manage test environment setup.
 
 {clauses.TEST_PRECONDITION}
 
-{clauses.verification_evidence()}
+{clauses.verification_evidence(probe_rule=clauses.VENV_PROBE_RULE)}
 
 **Data classes and models**: `dataclasses.dataclass` for plain data containers. `pydantic` for
 validation and serialization at system boundaries (external input, API responses). Avoid

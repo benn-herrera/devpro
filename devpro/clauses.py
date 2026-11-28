@@ -261,10 +261,15 @@ INTEGRATION_ARTIFACT = """**Integration tests exercise the delivered artifact** 
 _EVIDENCE_FORMS = "a test, a runner-recipe invocation, or a preserved command with its captured output"
 _EVIDENCE_WHERE = "Where the project defines an evidence location, put it there (integration logs/artifacts included)."
 
+# The venv-probe sentence reaches only the seats that run a Python probe, so it is a constant passed to
+# verification_evidence(probe_rule=...) rather than text the function holds for every caller.
+VENV_PROBE_RULE = " A probe that imports this repository's package first and runs it later — a `python -c`, a one-off script — runs under this repository's own venv interpreter with `PYTHONPATH=.`, or in a fresh process, because an edit made after the first import leaves stale bytecode masking it."
 
-def verification_evidence(*, forms: str = _EVIDENCE_FORMS, where: str = _EVIDENCE_WHERE) -> str:
-    """Both arguments exist for a seat with no Bash, which can reach neither default."""
-    return f"""**Verification evidence**: any verification a reported conclusion rests on must be repeatable and inspectable — {forms}; never an ad-hoc sequence whose results live only in the conversation. Results that cannot be re-examined are not results. {where} Exploratory checks along the way are exempt: this binds the verifications you cite, not every look around. A probe that imports this repository's package first and runs it later — a `python -c`, a one-off script — runs under this repository's own venv interpreter with `PYTHONPATH=.`, or in a fresh process, because an edit made after the first import leaves stale bytecode masking it."""
+
+def verification_evidence(*, forms: str = _EVIDENCE_FORMS, where: str = _EVIDENCE_WHERE, probe_rule: str = "") -> str:
+    """Both forms and where exist for a seat with no Bash, which can reach neither default; probe_rule is the
+    venv-probe sentence, and only the seats that run a Python probe pass it."""
+    return f"""**Verification evidence**: any verification a reported conclusion rests on must be repeatable and inspectable — {forms}; never an ad-hoc sequence whose results live only in the conversation. Results that cannot be re-examined are not results. {where} Exploratory checks along the way are exempt: this binds the verifications you cite, not every look around.{probe_rule}"""
 
 
 # ─── House rules ─────────────────────────────────────────────────────────────
