@@ -40,18 +40,19 @@ discrepancy; the plan's recommended reading is stated there.
 | P12 | landed: 113b813f | mechanical | ARCH delta |
 | P13 | landed: dbc05b64 | mechanical | the pipx decision |
 | P14 | landed: 934eff29 (ACTIVE_PLAN_REVIEW.md, 24 findings) | expert | — |
-| P15 | in progress: drafting ses_ddf09ed3cffeh3ppUKjPbHIxnB; usability review ses_ddf031675ffeLkSxyFGLWz8H3G returned findings — the revision applies them now | expert | — |
-| B1 | drafted | mechanical | R1, R2 |
-| B2 | drafted | mechanical | R3 (flag; no span change authorized) |
-| B3 | drafted | mechanical | R4; R5 closed by measurement |
-| B4 | drafted | mechanical | R6, R18, R23 |
+| P15 | landed: 4cba2de2 (11 items drafted B1–B11, all rows drafted) | expert | — |
+| B1 | in progress: dispatch ses_ddefeb53bffe62OThUCslDawh7 | mechanical | R1, R2 |
+| B2 | in progress: dispatch ses_ddefeb53bffd6DzWWstxuINuMQ | mechanical | R3 (flag; no span change authorized) |
+| B3 | in progress: dispatch ses_ddefeb53afferTki1L3DAoLcpW | mechanical | R4; R5 closed by measurement |
+| B4 | in progress: dispatch ses_ddefeb53affd2m3FhZrsYY3Tyt | mechanical | R6, R18, R23 |
 | B5 | drafted | mechanical | R8, R10; R7 flagged for the owner |
-| B6 | drafted | mechanical | R9 |
+| B6 | in progress: dispatch ses_ddefeb539ffeQocyJvINwKShmZ | mechanical | R9 |
 | B7 | drafted | mechanical | R11 |
-| B8 | drafted | mechanical | R12, R13, R14 |
+| B8 | in progress: dispatch ses_ddefeb538ffe3Y7lr0y0j810hc | mechanical | R12, R13, R14 |
 | B9 | drafted | mechanical | R15, R16, R17, R24 |
 | B10 | drafted | mechanical | R19 |
 | B11 | drafted | mechanical | R20, R21, R22 |
+| B12 | drafted | mechanical | R3, W7, W8 — the owner's wording decision |
 
 Serial order per shared file, nothing concurrent across these runs:
 `devpro/definitions/skills/development.py`: P5 → P6 → P7 → P8 → P9. `guide.py`: P6 → P7 → P8.
@@ -435,7 +436,7 @@ the review document.
 
 Serial order per shared file, nothing concurrent across these runs:
 `devpro/definitions/skills/development.py`: B4 → B5 → B7. `guide.py`: B4 → B5 → B10.
-`clauses.py`: B9 → B11. `README.md`: B1 → B10.
+`clauses.py`: B9 → B12 → B11. `README.md`: B1 → B10.
 `tests/render/test_structural_rules.py`: B3 → B8 — B8 updates the `REVIEW_SEVERITY` carrier set
 B3's test pins. `tests/render/conftest.py`: B8 alone — B3's test reads its helpers and edits
 nothing. `PROJECT_DOCS/ARCHITECTURE/subsystem-map.md`: B5 → B9 — B5 cites the main-session term at
@@ -825,3 +826,32 @@ Tests and fixtures: `test_changed_map.py` is itself the changed test; the sentin
 Done-line: `just test-changed`; `just lint`; then the render probe —
 `grep -c "A probe that imports" rendered/latest/devpro/skills/devpro/agents/python-coder.md`
 reports `1` and the rendered paragraph's spacing is unchanged.
+
+### B12 The precedence span states the owner's intent
+
+Rating: mechanical. Lifetime: shipped.
+
+Scope: `devpro/clauses.py` — `PROJECT_PRECEDENCE` reworded verbatim to the design's MB6a entry
+(`ACTIVE_DESIGN.md`, Code delta — the owner decision of 2026-11-27); `ROADMAP.md` — B2's flag
+ticket is removed, its supersession named in this item's commit body.
+
+Entry: [MB6a](ACTIVE_DESIGN.md#code-delta) — it carries the corrected span byte for byte. The
+decision it records: any project document might override some element of the process; a project
+document is, by definition, more specific about the project's needs; there is no special set of
+documents (not only THESIS, SPEC, ARCHITECTURE, CONVENTIONS) with that power — any project can
+be constructed however it needs to be. The wording carries the review's W7 (the heading no
+longer states a narrower rule than the body) and W8 (the span is seat-neutral — "wherever you
+work", not "the code you change").
+
+Reference search — the span's name is unchanged, only its text moves: `git grep -l
+PROJECT_PRECEDENCE -- devpro` prints the twelve interpolation sites, the two stacks and the
+development skill's opening (P5's reach); no importer or interpolation site changes.
+
+Tests and fixtures: `tests/render/test_prose.py`'s shared-paragraph check reads the constant and
+passes against the new text (the R5-closure measurement's harness); the render probe re-runs.
+
+Done-line: `just test render`; then `just render latest`, then
+`grep -rln "higher precedence" rendered/latest/devpro/skills/devpro/agents/` reports all 28
+agent files, and `grep -rn "no carve-out" rendered/latest/devpro/` reports nothing, and
+`grep -rn "The project's own documents modify the process" rendered/latest/devpro/` reports
+nothing.

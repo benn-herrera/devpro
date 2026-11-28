@@ -67,6 +67,27 @@ design edits either file.
 
 ## Code delta
 
+### [Rendering](PROJECT_DOCS/ARCHITECTURE/rendering/index.md) — MB6a: the precedence span states the owner's intent (user decision, 2026-11-27)
+
+The MB6 span's "no list of qualifying documents and no carve-out" is badly worded, per the
+owner: the intent is that **any** project document *might* override some element of the
+process — a project document is, by definition, more specific about the project's needs than
+the general process is — and "the project docs" (THESIS, SPEC, ARCHITECTURE, CONVENTIONS) is
+not a special set with that power. There is no special set of documents with this property;
+any project can be constructed however it needs to be. The review's R3 (the carve-out
+ambiguity), W7 (heading narrower than body) and W8 ("the code you change" carried by
+non-coding seats) are all this one wording defect. The decision: fix the wording — **with the owner's own words**, the whole span:
+
+```
+This is a general process, but individual projects may have specific needs. A project's
+documentation of those process needs is higher precedence when it conflicts with the general
+process.
+```
+
+The rendering leaves' statements about shared text stay true: the span is one constant,
+carried by every agent definition, no copy in the agents-file block.
+
+
 ### [Agents File](PROJECT_DOCS/ARCHITECTURE/agents-file.md) — MB1a: the git ban allows index-only unstaging
 
 `devpro/definitions/harness_agents_file.py`'s Shared working tree bullet bans `restore` and `reset`
