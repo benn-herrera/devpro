@@ -311,9 +311,8 @@ A work package is dispatchable only when:
   a finding, never edited to pass. *Purpose:* an expectation moves only with its requirement, so an
   invariant test still stops wrong work;
 - a package that adds a test names the defect the test fails on, by the test-precondition clause
-  (`clauses.TEST_PRECONDITION` in `devpro/clauses.py`), which the coder and platform-expert
-  definitions carry. *Purpose:* an order for a test with no named defect is refused before
-  a dispatch exists;
+  the coder and platform-expert definitions carry. *Purpose:* an order for a test with no named
+  defect is refused before a dispatch exists;
 - its done-line names, from the project's runner targets, those that check what the package changes
   (a package that changes only documents names only document checks, such as a link check or a delta
   check), run once, at the package's end; the package is done when that run passes, or fails only
@@ -380,9 +379,10 @@ approved can run as approved.
   edit does not fail another's build.
 - When dispatches are concurrent, a package stages and commits only its own paths
   (`git commit -- <paths>`), never the shared index whole; where the index holds a path another
-  package staged, that path is unstaged before the commit, or the commit waits. *Purpose:* disjoint
-  edits stay disjoint when two agents share a working tree — a commit that reads the whole index
-  either carries another package's work or leaves it behind.
+  package staged, that path is unstaged before the commit (`git restore --staged <path>`, which
+  touches the index only), or the commit waits. *Purpose:* disjoint edits stay disjoint when two
+  agents share a working tree — a commit that reads the whole index either carries another
+  package's work or leaves it behind.
 
 ## Acceptance
 
